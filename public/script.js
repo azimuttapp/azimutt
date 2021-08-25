@@ -1,6 +1,6 @@
 window.addEventListener('load', function() {
     const isDev = window.location.hostname === 'localhost'
-    const isProd = window.location.hostname === 'schema-viz.netlify.app'
+    const isProd = window.location.hostname === 'azimutt.app'
     const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics'))
     const analytics = initAnalytics(isProd && !skipAnalytics)
     const errorTracking = initErrorTracking(isProd)

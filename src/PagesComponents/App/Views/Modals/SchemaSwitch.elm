@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewSchemaSwitchModal)
 
-import Conf exposing (conf, schemaSamples)
+import Conf exposing (conf, constants, schemaSamples)
 import Dict
 import FileValue exposing (hiddenInputSingle)
 import FontAwesome.Icon exposing (viewIcon)
@@ -134,6 +134,6 @@ viewFooter =
     p [ class "fw-lighter fst-italic text-muted" ]
         [ bText "Azimutt"
         , text " is "
-        , a [ href "https://github.com/loicknuchel/schema-viz", target "_blank" ] [ text "open source" ]
+        , a [ href constants.azimuttGithub, target "_blank" ] [ text "open source" ]
         , text ", feel free to report bugs, ask questions or request features in github issues."
         ]

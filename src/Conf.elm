@@ -1,4 +1,4 @@
-module Conf exposing (conf, schemaSamples)
+module Conf exposing (conf, constants, schemaSamples)
 
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
@@ -54,6 +54,13 @@ conf =
             , ( "redo", [ { hotkey | key = Just "Z", ctrl = True, shift = True } ] )
             , ( "help", [ { hotkey | key = Just "?" } ] )
             ]
+    }
+
+
+constants : { azimuttTwitter : String, azimuttGithub : String }
+constants =
+    { azimuttTwitter = "https://twitter.com/azimuttapp"
+    , azimuttGithub = "https://github.com/azimuttapp/azimutt"
     }
 
 
