@@ -1,0 +1,46 @@
+{
+    "type": "application",
+    "source-directories": [
+        "src",
+        ".elm-spa/defaults",
+        ".elm-spa/generated"
+    ],
+    "elm-version": "0.19.1",
+    "dependencies": {
+        "direct": {
+            "dtwrks/elm-book": "1.2.0",
+            "dtwrks/elm-book-interop-elm-css": "1.0.0",
+            "elm/browser": "1.0.2",
+            "elm/core": "1.0.5",
+            "elm/html": "1.0.0",
+            "elm/json": "1.1.3",
+            "elm/random": "1.0.0",
+            "elm/regex": "1.0.0",
+            "elm/svg": "1.0.1",
+            "elm/time": "1.0.0",
+            "elm/url": "1.0.0",
+            "lattyware/elm-fontawesome": "5.0.0",
+            "matheus23/elm-default-tailwind-modules": "2.0.1",
+            "mpizenberg/elm-file": "1.0.0",
+            "rtfeldman/elm-css": "16.1.1",
+            "ryannhg/elm-spa": "6.0.0",
+            "zaboco/elm-draggable": "5.0.0"
+        },
+        "indirect": {
+            "dillonkearns/elm-markdown": "6.0.1",
+            "elm/bytes": "1.0.8",
+            "elm/file": "1.0.5",
+            "elm/parser": "1.1.0",
+            "elm/virtual-dom": "1.0.2",
+            "mpizenberg/elm-pointer-events": "4.0.2",
+            "pablohirafuji/elm-syntax-highlight": "3.4.1",
+            "rtfeldman/elm-hex": "1.0.0"
+        }
+    },
+    "test-dependencies": {
+        "direct": {
+            "elm-explorations/test": "1.2.2"
+        },
+        "indirect": {}
+    }
+}

@@ -1,0 +1,7 @@
+/.coverage
+/.elm-spa
+/elm-stuff
+/local
+/node_modules
+/public/dist
+/review/elm-stuff/
