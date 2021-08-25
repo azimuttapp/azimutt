@@ -1,6 +1,6 @@
 # Azimutt
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/21f157ae-adde-4caa-8fce-4921b917761b/deploy-status)](https://app.netlify.com/sites/schema-viz/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/c5073177-d6c0-4403-b8c2-ee4466234f52/deploy-status)](https://app.netlify.com/sites/azimutt/deploys)
 
 An Entity Relationship diagram (ERD) visualization tool, with various filters and inputs to help understand your SQL
 schema.
