@@ -14,4 +14,4 @@ jobs:
         with:
           elm_review: elm-review
           elm_format: elm-format
-          elm_compiler: elm
+          #elm_compiler: elm
