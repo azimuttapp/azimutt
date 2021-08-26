@@ -2,15 +2,16 @@ name: elm-ci
 on: [pull_request]
 jobs:
   lint:
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - run: yarn --frozen-lockfile
-    - name: Add elm-review, elm and elm-format to path
-      run: yarn bin >> $GITHUB_PATH
-    - uses: sparksp/elm-review-action@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        elm_review: elm-review
-        elm_format: elm-format
-        elm_compiler: elm
+      - uses: actions/checkout@v2
+      - run: yarn --frozen-lockfile
+      - name: Add elm-review, elm and elm-format to path
+        run: yarn bin >> $GITHUB_PATH
+      - uses: sparksp/elm-review-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          elm_review: elm-review
+          elm_format: elm-format
+          elm_compiler: elm
