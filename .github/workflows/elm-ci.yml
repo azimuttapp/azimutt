@@ -12,6 +12,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          #elm_review: elm-review
-          elm_format: elm-format
+          elm_review: npx elm-review
+          elm_format: npx elm-format
           #elm_compiler: elm
