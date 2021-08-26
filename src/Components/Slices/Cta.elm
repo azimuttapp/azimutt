@@ -21,7 +21,7 @@ ctaSlice =
             , div [ css [ Tw.mt_8, Tw.flex, Bp.lg [ Tw.mt_0, Tw.flex_shrink_0 ] ] ]
                 [ a [ href (Route.toHref Route.App), css [ Tw.flex, Tw.items_center, Tw.justify_center, Tw.px_5, Tw.py_3, Tw.h_14, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.shadow_sm, Tw.text_white, Tw.text_indigo_800, Tw.bg_indigo_50, Css.hover [ Tw.bg_indigo_100 ] ] ]
                     [ text "Let's start!" ]
-                , a [ href constants.azimuttGithub, target "blank", css [ Tw.flex, Tw.ml_3, Tw.items_center, Tw.justify_center, Tw.bg_gradient_to_r, Tw.from_purple_600, Tw.to_indigo_600, Tw.px_5, Tw.py_3, Tw.h_14, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.shadow_sm, Tw.text_white, Css.hover [ Tw.from_purple_700, Tw.to_indigo_700, Tw.text_white ] ] ]
+                , a [ href constants.azimuttGithub, target "_blank", css [ Tw.flex, Tw.ml_3, Tw.items_center, Tw.justify_center, Tw.bg_gradient_to_r, Tw.from_purple_600, Tw.to_indigo_600, Tw.px_5, Tw.py_3, Tw.h_14, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.shadow_sm, Tw.text_white, Css.hover [ Tw.from_purple_700, Tw.to_indigo_700, Tw.text_white ] ] ]
                     [ text "Learn more" ]
                 ]
             ]
