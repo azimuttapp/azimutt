@@ -24,7 +24,7 @@ heroSlice =
             , div [ css [ Tw.max_w_7xl, Tw.mx_auto, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
                 [ div [ css [ Tw.relative, Tw.shadow_xl, Bp.sm [ Tw.rounded_2xl, Tw.overflow_hidden ] ] ]
                     [ div [ css [ Tw.absolute, Tw.inset_0 ] ]
-                        [ img [ src "./background_hero.jpeg", alt "A compass on a map", css [ Tw.h_full, Tw.w_full, Tw.object_cover ] ] []
+                        [ img [ src "/assets/images/background_hero.jpeg", alt "A compass on a map", css [ Tw.h_full, Tw.w_full, Tw.object_cover ] ] []
                         , div [ css [ Tw.absolute, Tw.inset_0, Tw.bg_gradient_to_r, Tw.from_green_200, Tw.to_indigo_700, Tw.mix_blend_multiply ] ] []
                         ]
                     , div [ css [ Tw.relative, Tw.px_4, Tw.py_16, Bp.lg [ Tw.py_32, Tw.px_8 ], Bp.sm [ Tw.px_6, Tw.py_24 ] ] ]
