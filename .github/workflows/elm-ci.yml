@@ -1,0 +1,20 @@
+name: elm-ci
+on: [pull_request]
+jobs:
+  elm-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: sparksp/elm-review-action@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        # name: elm-review
+        # elm_review: elm-review
+        # elm_compiler: elm
+        # elm_format: elm-format
+        # elm_review_config: review
+        # elm_json: elm.json
+        # elm_files: |
+        #   src/
+        #   tests/
+        # working-directory: ./
