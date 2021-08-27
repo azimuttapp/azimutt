@@ -18,7 +18,7 @@ import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
 import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setListTable, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, updateLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
-import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hideTables, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Containers as Containers
 import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, trackJsonError, trackPage, trackProjectEvent)
@@ -145,9 +145,8 @@ update msg model =
         ShowTables ids ->
             model |> setProjectWithCmd (setSchemaWithCmd (showTables ids))
 
-        HideTables ids ->
-            ( model |> setProject (setSchema (setLayout (hideTables ids))), Cmd.none )
-
+        --HideTables ids ->
+        --    ( model |> setProject (setSchema (setLayout (hideTables ids))), Cmd.none )
         InitializedTable id position ->
             ( model |> setProject (setSchema (setLayout (setListTable .id id (\t -> { t | position = position })))), Cmd.none )
 
@@ -245,7 +244,7 @@ update msg model =
             ( model, click conf.ids.searchInput )
 
         JsMessage (HotkeyUsed "remove") ->
-            ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (removeElement model.hover) |> Maybe.withDefault Cmd.none )
+            ( model, removeElement model.hover )
 
         JsMessage (HotkeyUsed "move-forward") ->
             ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable 1 model.hover) |> Maybe.withDefault Cmd.none )

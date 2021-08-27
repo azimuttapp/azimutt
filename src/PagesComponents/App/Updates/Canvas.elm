@@ -94,21 +94,9 @@ performZoom delta center canvas =
 computeFit : Area -> Float -> Area -> ZoomLevel -> ( ZoomLevel, Position )
 computeFit viewport padding content zoom =
     let
-        viewportSize : Size
-        viewportSize =
-            viewport |> Area.size |> Size.sub (2 * padding / zoom)
-
-        contentSize : Size
-        contentSize =
-            content |> Area.size
-
-        grow : Size
-        grow =
-            viewportSize |> Size.ratio contentSize
-
         newZoom : ZoomLevel
         newZoom =
-            (zoom * min grow.width grow.height) |> clamp conf.zoom.min conf.zoom.max
+            computeZoom viewport padding content zoom
 
         growFactor : Float
         growFactor =
@@ -131,3 +119,25 @@ computeFit viewport padding content zoom =
             newViewportCenter |> Position.sub newContentCenter
     in
     ( newZoom, offset )
+
+
+computeZoom : Area -> Float -> Area -> Float -> ZoomLevel
+computeZoom viewport padding content zoom =
+    let
+        viewportSize : Size
+        viewportSize =
+            viewport |> Area.size |> Size.sub (2 * padding / zoom)
+
+        contentSize : Size
+        contentSize =
+            content |> Area.size
+
+        grow : Size
+        grow =
+            viewportSize |> Size.ratio contentSize
+
+        newZoom : ZoomLevel
+        newZoom =
+            (zoom * min grow.width grow.height) |> clamp conf.zoom.min 1
+    in
+    newZoom

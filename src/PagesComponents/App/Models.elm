@@ -47,7 +47,7 @@ type Msg
     | ShowTable TableId
     | TableOrder TableId Int
     | ShowTables (List TableId)
-    | HideTables (List TableId)
+      -- | HideTables (List TableId)
     | InitializedTable TableId Position
     | HideAllTables
     | ShowAllTables

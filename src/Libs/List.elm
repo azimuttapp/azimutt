@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, addIf, appendOn, dropUntil, dropWhile, filterMap, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith)
+module Libs.List exposing (addAt, addIf, appendOn, dropUntil, dropWhile, filterMap, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -170,6 +170,11 @@ appendOn maybe transform list =
 zipWith : (a -> b) -> List a -> List ( a, b )
 zipWith transform list =
     list |> List.map (\a -> ( a, transform a ))
+
+
+zipWithIndex : List a -> List ( a, Int )
+zipWithIndex list =
+    list |> List.indexedMap (\i a -> ( a, i ))
 
 
 dropWhile : (a -> Bool) -> List a -> List a

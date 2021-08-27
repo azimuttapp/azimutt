@@ -12,7 +12,7 @@ import Libs.Models exposing (SizeChange)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task exposing (send)
-import Models.Project exposing (CanvasProps, Layout, TableId, TableProps, htmlIdAsTableId)
+import Models.Project exposing (CanvasProps, Layout, TableProps, htmlIdAsTableId)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
 import PagesComponents.App.Models exposing (DragId, Hover, Model, Msg(..))
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setListTable, setPosition, setProject, setSchema)
@@ -75,20 +75,11 @@ dragItem model delta =
             ( model, toastError "Can't dragItem when no drag id" )
 
 
-removeElement : Hover -> Layout -> Cmd Msg
-removeElement hover layout =
-    let
-        selectedTables : List TableId
-        selectedTables =
-            layout.tables |> List.filter (\t -> t.selected) |> List.map .id
-    in
-    if L.nonEmpty selectedTables then
-        send (HideTables selectedTables)
-
-    else
-        (hover.column |> Maybe.map (\c -> send (HideColumn c)))
-            |> M.orElse (hover.table |> Maybe.map (\t -> send (HideTable t)))
-            |> Maybe.withDefault (toastInfo "Can't find an element to remove :(")
+removeElement : Hover -> Cmd Msg
+removeElement hover =
+    (hover.column |> Maybe.map (\c -> send (HideColumn c)))
+        |> M.orElse (hover.table |> Maybe.map (\t -> send (HideTable t)))
+        |> Maybe.withDefault (toastInfo "Can't find an element to remove :(")
 
 
 moveTable : Int -> Hover -> Layout -> Cmd Msg
