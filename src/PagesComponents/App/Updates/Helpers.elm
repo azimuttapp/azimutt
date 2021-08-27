@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setListTable, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
 
 import Draggable
 import Json.Decode as Decode
@@ -52,6 +52,11 @@ setTables transform item =
     { item | tables = item.tables |> transform }
 
 
+setTableInList : (table -> comparable) -> comparable -> (table -> table) -> { item | tables : List table } -> { item | tables : List table }
+setTableInList get id transform item =
+    { item | tables = item.tables |> List.map (\t -> B.cond (get t == id) (transform t) t) }
+
+
 setLayouts : (l -> l) -> { item | layouts : l } -> { item | layouts : l }
 setLayouts transform item =
     { item | layouts = item.layouts |> transform }
@@ -60,11 +65,6 @@ setLayouts transform item =
 setPosition : Draggable.Delta -> ZoomLevel -> { item | position : Position } -> { item | position : Position }
 setPosition ( dx, dy ) zoom item =
     { item | position = Position (item.position.left + (dx / zoom)) (item.position.top + (dy / zoom)) }
-
-
-setListTable : (table -> comparable) -> comparable -> (table -> table) -> { item | tables : List table } -> { item | tables : List table }
-setListTable get id transform item =
-    { item | tables = item.tables |> List.map (\t -> B.cond (get t == id) (transform t) t) }
 
 
 setSettings : (s -> s) -> { item | settings : s } -> { item | settings : s }

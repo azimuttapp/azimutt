@@ -15,7 +15,7 @@ import PagesComponents.App.Models as Models exposing (Model, Msg(..), initConfir
 import PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setListTable, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTables, setTime)
+import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, updateLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
@@ -148,7 +148,7 @@ update msg model =
         --HideTables ids ->
         --    ( model |> setProject (setSchema (setLayout (hideTables ids))), Cmd.none )
         InitializedTable id position ->
-            ( model |> setProject (setSchema (setLayout (setListTable .id id (\t -> { t | position = position })))), Cmd.none )
+            ( model |> setProject (setSchema (setLayout (setTableInList .id id (\t -> { t | position = position })))), Cmd.none )
 
         HideAllTables ->
             ( model |> setProject (setSchema (setLayout hideAllTables)), Cmd.none )
