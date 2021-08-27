@@ -6,7 +6,6 @@ const assets = [
     '/assets/bootstrap.bundle.min.js.map',
     '/assets/bootstrap.min.css',
     '/assets/bootstrap.min.css.map',
-    '/assets/insights.js',
     '/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js',
     '/assets/uuidv4.min.js',
     '/dist/elm.js',

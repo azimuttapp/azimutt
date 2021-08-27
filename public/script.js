@@ -191,48 +191,22 @@ window.addEventListener('load', function() {
 
     function initAnalytics(shouldTrack) {
         if (shouldTrack) {
-            // see https://getinsights.io/projects/TelOpGhJG0jZQtCk
-            // initial: https://getinsights.io/js/insights.js
-            return loadScript('/assets/insights.js').then(() => {
-                insights.init('TelOpGhJG0jZQtCk')
-                insights.trackPages({hash: true, search: true})
-                return {
-                    trackPage: name => {
-                        insights.track({
-                            id: 'page-view',
-                            parameters: {
-                                name,
-                                path: insights.parameters.path().value,
-                                locale: insights.parameters.locale().value,
-                                screenType: insights.parameters.screenType().value,
-                                referrer: insights.parameters.referrer().value,
-                            }
-                        })
-                    },
-                    trackEvent: (name, details) => {
-                        insights.track({
-                            id: name,
-                            parameters: {
-                                ...details,
-                                locale: insights.parameters.locale().value,
-                                screenType: insights.parameters.screenType().value,
-                                referrer: insights.parameters.referrer().value,
-                            }
-                        })
-                    },
-                    trackError: (name, details) => {
-                        insights.track({
-                            id: name + '-error',
-                            parameters: {
-                                ...details,
-                                locale: insights.parameters.locale().value,
-                                screenType: insights.parameters.screenType().value,
-                                referrer: insights.parameters.referrer().value,
-                            }
-                        })
-                    }
+            const waitSplitbee = (resolve, reject, timeout) => {
+                if (timeout <= 0) {
+                    reject()
+                } else if (splitbee) {
+                    resolve({
+                        trackPage: name => { /* automatically tracked, do nothing */ },
+                        trackEvent: (name, details) => { splitbee.track(name, details) },
+                        trackError: (name, details) => { /* don't track errors in splitbee */ }
+                    })
+                } else {
+                    setTimeout(() => {
+                        waitSplitbee(resolve, reject, timeout - 100)
+                    }, 100)
                 }
-            })
+            }
+            return new Promise((resolve, reject) => waitSplitbee(resolve, reject, 3000))
         } else {
             return Promise.resolve({
                 trackPage: name => console.log('analytics.page', name),
