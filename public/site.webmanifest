@@ -1,7 +1,7 @@
 {
-  "name": "Azimutt",
   "short_name": "Azimutt",
-  "description": "Explore and understand your SQL schema",
+  "name": "Azimutt - Explore your database schema",
+  "description": "Database schema explorer that help you understand it: search and display what you need, in and out relations, find possible paths and much more...",
   "start_url": "/app?source=pwa",
   "display": "standalone",
   "theme_color": "#f1f6f8",
