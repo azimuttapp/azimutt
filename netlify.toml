@@ -1,6 +1,6 @@
 [build]
-  publish = "public"
-  command = "npx elm-spa build"
+  publish = "public/dist"
+  command = "npm run build"
 
 [[redirects]]
   from = "/bee.js"

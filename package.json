@@ -1,7 +1,31 @@
 {
+  "name": "azimutt",
+  "version": "1.0.0",
+  "description": "Explore your database schema",
+  "main": "index.js",
+  "scripts": {
+    "start": "npm install && npm run dev",
+    "dev": "concurrently \"elm-spa watch\" \"vite\"",
+    "build": "elm-spa gen && vite build",
+    "serve": "vite preview"
+  },
+  "keywords": [],
+  "author": "Loïc Knuchel",
+  "license": "MIT",
   "devDependencies": {
+    "concurrently": "^6.2.1",
     "elm-coverage": "github:marc136/elm-coverage",
     "elm-review": "^2.5.5",
-    "elm-test": "^0.19.1-revision7"
+    "elm-spa": "^6.0.4",
+    "elm-test": "^0.19.1-revision7",
+    "sass": "^1.38.2",
+    "vite": "^2.5.1",
+    "vite-plugin-elm": "^2.4.3"
+  },
+  "dependencies": {
+    "@sentry/browser": "^6.11.0",
+    "@sentry/tracing": "^6.11.0",
+    "bootstrap": "^5.1.0",
+    "uuid": "^3.4.0"
   }
 }

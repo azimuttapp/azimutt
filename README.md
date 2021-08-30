@@ -34,15 +34,15 @@ For me, this tool is the missing piece between a classic ERD tool and a Data cat
 
 [Azimutt](https://azimutt.app) is a Single Page Application built with Elm that parse and explore your database schema.
 
-First launch:
+Dependencies:
 
-- install `npm`, [Elm](https://guide.elm-lang.org/install/elm.html) & [elm-spa](https://www.elm-spa.dev)
-- run `npm install` to download npm dependencies
-- run `elm-spa server` to generate needed files (`.elm-spa/defaults` & `.elm-spa/generated`)
+```npm install -g elm elm-spa```
 
 Dev commands:
 
-- launch dev server: `elm-spa server` or `elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js`
+- launch dev server: `npm start` or `npm run dev` to not run npm install first
+- build production: `npm run build`
+- preview production build: `npm run serve`
 - launch design system: `elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js` (needs `npm install -g elm-book` or use `npx`)
 - launch the tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
 - run linter: `elm-review` (needs `npm install -g elm-review` or use `npx`)
@@ -51,8 +51,6 @@ Dev commands:
 - install deps `elm-json install author/package` (needs `npm install --g elm-json`)
 - uninstall deps `elm-json uninstall author/package`
 - update deps `elm-json upgrade` (use `--unsafe` flag for major versions)
-
-If `elm-spa` don't display a relevant error, try using `elm-live` instead or compile with `elm-make`: `elm make .elm-spa/defaults/Main.elm`.
 
 Elm folders are `src` for sources, `tests` for tests and `public` for static assets.
 

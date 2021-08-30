@@ -1,3 +1,9 @@
+import { Elm } from '../.elm-spa/defaults/Main.elm'
+import * as bootstrap from 'bootstrap'
+import { v4 as uuidv4 } from 'uuid'
+import * as Sentry from '@sentry/browser'
+import { Integrations } from '@sentry/tracing'
+
 window.addEventListener('load', function() {
     const isDev = window.location.hostname === 'localhost'
     const isProd = window.location.hostname === 'azimutt.app'
@@ -219,10 +225,15 @@ window.addEventListener('load', function() {
     function initErrorTracking(shouldTrack) {
         if (shouldTrack) {
             // see https://sentry.io
-            // initial: https://js.sentry-cdn.com/268b122ecafb4f20b6316b87246e509c.min.js
-            return loadScript('/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js').then(() => ({
+            Sentry.init({
+                dsn: "https://268b122ecafb4f20b6316b87246e509c@o937148.ingest.sentry.io/5887547",
+                release: "azimutt@1.0.0",
+                integrations: [new Integrations.BrowserTracing()],
+                tracesSampleRate: 1.0
+            })
+            return Promise.resolve({
                 trackError: (name, details) => Sentry.captureException(new Error(JSON.stringify({name, ...details})))
-            }))
+            })
         } else {
             return Promise.resolve({
                 trackError: (name, details) => console.log('error.track', name, details)

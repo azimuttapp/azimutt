@@ -2,13 +2,6 @@ const version = 1
 const assetsCache = 'azimutt-static'
 const assets = [
     '/',
-    '/assets/bootstrap.bundle.min.js',
-    '/assets/bootstrap.bundle.min.js.map',
-    '/assets/bootstrap.min.css',
-    '/assets/bootstrap.min.css.map',
-    '/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js',
-    '/assets/uuidv4.min.js',
-    '/dist/elm.js',
     '/samples/basic.json',
     '/samples/gospeak.sql',
     '/samples/wordpress.sql',
@@ -25,9 +18,8 @@ const assets = [
     '/safari-pinned-tab.svg',
     '/screenshot.png',
     '/screenshot-complex.png',
-    '/script.js',
-    '/styles.css',
 ]
+// console.log(`Run V${version}...`)
 
 self.addEventListener('install', installEvent => {
     // console.log(`Installing V${version}...`, installEvent)
