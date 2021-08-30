@@ -6,7 +6,7 @@ import FileValue exposing (hiddenInputSingle)
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
 import Html exposing (Html, a, br, button, div, h5, label, li, p, small, span, text, ul)
-import Html.Attributes exposing (class, for, href, id, style, target, title, type_)
+import Html.Attributes exposing (class, for, href, id, rel, style, target, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsToggle, bsToggleCollapse)
 import Libs.Html exposing (bText, codeText, divIf)
@@ -107,7 +107,7 @@ viewGetSchemaInstructions =
                 , bText "SQL schema"
                 , text " is a SQL file with all the needed instructions to create your database, so it contains your database structure. Here are some ways to get it:"
                 , ul []
-                    [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", a [ href "https://stackoverflow.com/a/54504510/15051232", target "_blank" ] [ text "DBeaver" ], text ")" ]
+                    [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", a [ href "https://stackoverflow.com/a/54504510/15051232", target "_blank", rel "noopener" ] [ text "DBeaver" ], text ")" ]
                     , li [] [ bText "Find it", text " in your project: some frameworks like Rails store the schema in your project, so you may have it (ex: with Rails it's ", codeText "db/structure.sql", text " if you use the SQL version)" ]
                     ]
                 , text "If you have no idea on what I'm talking about just before, ask to the developers working on the project or your database administrator 😇"
@@ -134,6 +134,6 @@ viewFooter =
     p [ class "fw-lighter fst-italic text-muted" ]
         [ bText "Azimutt"
         , text " is "
-        , a [ href constants.azimuttGithub, target "_blank" ] [ text "open source" ]
+        , a [ href constants.azimuttGithub, target "_blank", rel "noopener" ] [ text "open source" ]
         , text ", feel free to report bugs, ask questions or request features in github issues."
         ]

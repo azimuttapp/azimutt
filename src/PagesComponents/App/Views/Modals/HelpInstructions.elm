@@ -2,7 +2,7 @@ module PagesComponents.App.Views.Modals.HelpInstructions exposing (viewHelpModal
 
 import Conf exposing (conf, constants)
 import Html exposing (Html, a, button, div, h2, kbd, p, span, text)
-import Html.Attributes exposing (class, href, id, target, type_)
+import Html.Attributes exposing (class, href, id, rel, target, type_)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal, bsParent, bsTarget, bsToggle)
 import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, ariaLabelledBy)
 
@@ -191,7 +191,7 @@ c value =
 
 extLink : String -> String -> Html msg
 extLink url value =
-    a [ href url, target "_blank" ] [ text value ]
+    a [ href url, target "_blank", rel "noopener" ] [ text value ]
 
 
 feedbackLink : String -> Html msg
