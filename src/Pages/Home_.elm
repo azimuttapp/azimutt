@@ -39,7 +39,7 @@ update _ model =
 
 view : Model -> View msg
 view _ =
-    { title = "Azimutt"
+    { title = "Azimutt - Explore your database schema"
     , body = viewHome
     }
 

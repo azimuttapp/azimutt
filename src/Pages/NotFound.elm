@@ -1,6 +1,7 @@
 module Pages.NotFound exposing (Model, Msg, page)
 
 import Gen.Params.NotFound exposing (Params)
+import Html exposing (text)
 import Page
 import Ports exposing (trackPage)
 import Request exposing (Request)
@@ -40,7 +41,9 @@ update _ model =
 
 view : Model -> View Msg
 view model =
-    View.placeholder ("Page not found " ++ model ++ ".")
+    { title = "Page not found - Azimutt"
+    , body = [ text ("Page not found: " ++ model) ]
+    }
 
 
 addPrefixed : String -> Maybe String -> String -> String

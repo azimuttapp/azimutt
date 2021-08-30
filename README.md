@@ -26,7 +26,9 @@ I really miss an interactive exploration tool with features like:
     - team/code ownership (git blame or specific format)
     - tables/columns updates (from migrations files or schema file history)
 
-For me, this tool is the missing piece between a classic ERD tool and a Data catalog.
+For me, this tool is the missing piece between a classic ERD tool and a Data catalog:
+
+![screenshot](public/assets/images/screenshot-gospeak-schema.png)
 
 ## Installation
 

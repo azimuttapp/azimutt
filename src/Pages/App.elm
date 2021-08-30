@@ -293,6 +293,6 @@ subscriptions model =
 
 view : Model -> View Msg
 view model =
-    { title = "Azimutt"
+    { title = model.project |> Maybe.map (\p -> p.name ++ " - Azimutt") |> Maybe.withDefault "Azimutt - Explore your database schema"
     , body = Containers.root (viewApp model)
     }
