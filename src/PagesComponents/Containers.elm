@@ -1,12 +1,13 @@
 module PagesComponents.Containers exposing (root)
 
+import FontAwesome.Styles as Icon
 import Html exposing (Html, div)
 import Html.Attributes exposing (class, id)
 
 
 root : List (Html msg) -> List (Html msg)
 root children =
-    children ++ [ viewToasts ]
+    [ Icon.css ] ++ children ++ [ viewToasts ]
 
 
 viewToasts : Html msg

@@ -1,6 +1,5 @@
 module PagesComponents.App.View exposing (viewApp)
 
-import FontAwesome.Styles as Icon
 import Html exposing (Html, node, text)
 import Html.Lazy exposing (lazy, lazy2, lazy3, lazy4)
 import Libs.Maybe as M
@@ -19,7 +18,7 @@ import PagesComponents.App.Views.Navbar exposing (viewNavbar)
 viewApp : Model -> List (Html Msg)
 viewApp model =
     List.concatMap identity
-        [ [ Icon.css, node "style" [] [ text "body { overflow: hidden; }" ] ]
+        [ [ node "style" [] [ text "body { overflow: hidden; }" ] ]
         , [ lazy2 viewNavbar model.search model.project ]
         , [ lazy viewMenu (model.project |> Maybe.map .schema) ]
         , [ lazy3 viewErd model.hover model.sizes (model.project |> Maybe.map .schema) ]
