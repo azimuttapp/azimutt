@@ -2,8 +2,8 @@ module PagesComponents.App.Views.Modals.FindPath exposing (viewFindPathModal)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
-import Html exposing (Html, b, br, button, div, input, label, li, ol, option, select, span, text)
-import Html.Attributes as Attributes exposing (class, disabled, for, id, placeholder, selected, title, type_, value)
+import Html exposing (Html, a, b, br, button, div, input, label, li, ol, option, select, span, text)
+import Html.Attributes as Attributes exposing (class, disabled, for, href, id, placeholder, rel, selected, target, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal, bsToggleCollapse)
 import Libs.Html.Attributes exposing (ariaDescribedBy, ariaHidden, ariaLabel, role)
@@ -128,6 +128,11 @@ viewPaths model =
                     , text ":"
                     ]
                 , ol [ class "list-group list-group-numbered mt-3" ] (result.paths |> List.sortBy Nel.length |> List.map (viewPath from))
+                , div [ class "mt-3" ]
+                    [ text "We hope your like this feature. If you have a few minutes, please write us "
+                    , a [ href "https://github.com/azimuttapp/azimutt/discussions/7", target "_blank", rel "noopener" ] [ text "a quick feedback" ]
+                    , text " about it and your use case so we can continue to improve 🚀"
+                    ]
                 ]
 
         _ ->

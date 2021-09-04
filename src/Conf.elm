@@ -57,11 +57,10 @@ conf =
     }
 
 
-constants : { azimuttTwitter : String, azimuttGithub : String, azimuttFeedback : String }
+constants : { azimuttTwitter : String, azimuttGithub : String }
 constants =
     { azimuttTwitter = "https://twitter.com/azimuttapp"
     , azimuttGithub = "https://github.com/azimuttapp/azimutt"
-    , azimuttFeedback = "https://github.com/azimuttapp/azimutt/discussions"
     }
 
 
