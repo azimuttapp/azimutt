@@ -22,7 +22,7 @@ featureSlice =
                         [ h2 [ css [ Tw.text_3xl, Tw.font_extrabold, Tw.tracking_tight, Tw.text_gray_900 ] ]
                             [ text "Explore your database schema" ]
                         , p [ css [ Tw.mt_4, Tw.text_lg, Tw.text_gray_500 ] ]
-                            [ text """Not everyone has the opportunity to work on brand you application where you create everything, including the data model.
+                            [ text """Not everyone has the opportunity to work on brand new application where you create everything, including the data model.
                                       Most of developers evolve and maintain existing applications with an already big schema, sometimes more than 50, 100 or even 500 tables.
                                       Finding the right tables and relations to work with can be hard, and sincerely, no tool really helps. Until now."""
                             , br [] []
@@ -39,7 +39,7 @@ featureSlice =
                     [ blockquote []
                         [ div []
                             [ p [ css [ Tw.text_base, Tw.text_gray_500 ] ]
-                                [ text "“Using Azimutt is like having superpowers!”" ]
+                                [ text "“Using Azimutt is like having super powers!”" ]
                             ]
                         , footer [ css [ Tw.mt_3 ] ]
                             [ div [ css [ Tw.flex, Tw.items_center, Tw.space_x_3 ] ]
