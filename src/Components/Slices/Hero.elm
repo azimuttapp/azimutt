@@ -1,4 +1,4 @@
-module Components.Slices.Hero exposing (heroChapter, heroSimpleSlice, heroSlice)
+module Components.Slices.Hero exposing (heroBasicSlice, heroChapter, heroWithBackgroundImageSlice)
 
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
@@ -15,40 +15,8 @@ import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-heroSlice : Html msg
-heroSlice =
-    div []
-        [ headerSlice "/logo.png"
-        , div [ css [ Tw.relative ] ]
-            [ div [ css [ Tw.absolute, Tw.inset_x_0, Tw.bottom_0, Tw.h_1over2 ] ] []
-            , div [ css [ Tw.max_w_7xl, Tw.mx_auto, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-                [ div [ css [ Tw.relative, Tw.shadow_xl, Bp.sm [ Tw.rounded_2xl, Tw.overflow_hidden ] ] ]
-                    [ div [ css [ Tw.absolute, Tw.inset_0 ] ]
-                        [ img [ src "/assets/images/background_hero.jpeg", alt "A compass on a map", css [ Tw.h_full, Tw.w_full, Tw.object_cover ] ] []
-                        , div [ css [ Tw.absolute, Tw.inset_0, Tw.bg_gradient_to_r, Tw.from_green_200, Tw.to_indigo_700, Tw.mix_blend_multiply ] ] []
-                        ]
-                    , div [ css [ Tw.relative, Tw.px_4, Tw.py_16, Bp.lg [ Tw.py_32, Tw.px_8 ], Bp.sm [ Tw.px_6, Tw.py_24 ] ] ]
-                        [ h1 [ css [ Tw.text_4xl, Tw.font_extrabold, Tw.tracking_tight, Bp.lg [ Tw.text_6xl ], Bp.sm [ Tw.text_5xl ] ] ]
-                            [ span [ css [ Tw.block, Tw.text_white ] ]
-                                [ text "Azimutt" ]
-                            ]
-                        , p [ css [ Tw.mt_6, Tw.max_w_lg, Tw.text_xl, Tw.text_indigo_100 ] ]
-                            [ text "Lost in your database schema ?", br [] [], text "You just found the right ", bText "Azimutt", text " 🎉" ]
-                        , div [ css [ Tw.mt_10 ] ]
-                            [ div [ css [ Tw.space_y_4, Bp.sm [ Tw.space_y_0, Tw.inline_grid, Tw.grid_cols_1, Tw.gap_5 ] ] ]
-                                [ a [ href (Route.toHref Route.App), css [ Tw.flex, Tw.items_center, Tw.justify_center, Tw.px_4, Tw.py_3, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.shadow_sm, Tw.text_indigo_700, Tw.bg_white, Css.hover [ Tw.bg_indigo_50 ], Bp.sm [ Tw.px_8 ] ] ]
-                                    [ text "Explore your schema" ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ]
-
-
-heroSimpleSlice : Html msg
-heroSimpleSlice =
+heroBasicSlice : Html msg
+heroBasicSlice =
     div [ css [ Tw.relative, Tw.bg_gray_50, Tw.overflow_hidden ] ]
         [ div [ css [ Tw.hidden, Bp.sm [ Tw.block, Tw.absolute, Tw.inset_y_0, Tw.h_full, Tw.w_full ] ], ariaHidden True ]
             [ div [ css [ Tw.relative, Tw.h_full, Tw.max_w_7xl, Tw.mx_auto ] ]
@@ -97,9 +65,9 @@ heroSimpleSlice =
                 [ div [ css [ Tw.text_center ] ]
                     [ h1 [ css [ Tw.text_4xl, Tw.tracking_tight, Tw.font_extrabold, Tw.text_gray_900, Bp.md [ Tw.text_6xl ], Bp.sm [ Tw.text_5xl ] ] ]
                         [ span [ css [ Tw.block, Bp.xl [ Tw.inline ] ] ]
-                            [ text "Explore your SQL " ]
+                            [ text "Explore your " ]
                         , span [ css [ Tw.block, Tw.text_blue_600, Bp.xl [ Tw.inline ] ] ]
-                            [ text "Schema" ]
+                            [ text "database schema" ]
                         ]
                     , p [ css [ Tw.mt_3, Tw.max_w_md, Tw.mx_auto, Tw.text_base, Tw.text_gray_500, Bp.md [ Tw.mt_5, Tw.text_xl, Tw.max_w_3xl ], Bp.sm [ Tw.text_lg ] ] ]
                         [ text "Easily visualize your database schema and see how everything fits together." ]
@@ -115,10 +83,48 @@ heroSimpleSlice =
         ]
 
 
+heroWithBackgroundImageSlice : Html msg
+heroWithBackgroundImageSlice =
+    div []
+        [ headerSlice "/logo.png"
+        , div [ css [ Tw.relative ] ]
+            [ div [ css [ Tw.absolute, Tw.inset_x_0, Tw.bottom_0, Tw.h_1over2 ] ] []
+            , div [ css [ Tw.max_w_7xl, Tw.mx_auto, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
+                [ div [ css [ Tw.relative, Tw.shadow_xl, Bp.sm [ Tw.rounded_2xl, Tw.overflow_hidden ] ] ]
+                    [ div [ css [ Tw.absolute, Tw.inset_0 ] ]
+                        [ img [ src "/assets/images/background_hero.jpeg", alt "A compass on a map", css [ Tw.h_full, Tw.w_full, Tw.object_cover ] ] []
+                        , div [ css [ Tw.absolute, Tw.inset_0, Tw.bg_gradient_to_r, Tw.from_green_200, Tw.to_indigo_700, Tw.mix_blend_multiply ] ] []
+                        ]
+                    , div [ css [ Tw.relative, Tw.px_4, Tw.py_16, Bp.lg [ Tw.py_32, Tw.px_8 ], Bp.sm [ Tw.px_6, Tw.py_24 ] ] ]
+                        [ h1 [ css [ Tw.text_4xl, Tw.font_extrabold, Tw.tracking_tight, Bp.lg [ Tw.text_6xl ], Bp.sm [ Tw.text_5xl ] ] ]
+                            [ span [ css [ Tw.block, Tw.text_white ] ]
+                                [ text "Azimutt" ]
+                            ]
+                        , p [ css [ Tw.mt_6, Tw.max_w_lg, Tw.text_xl, Tw.text_indigo_100 ] ]
+                            [ text "Lost in your database schema ?", br [] [], text "You just found the right ", bText "Azimutt", text " 🎉" ]
+                        , div [ css [ Tw.mt_10 ] ]
+                            [ div [ css [ Tw.space_y_4, Bp.sm [ Tw.space_y_0, Tw.inline_grid, Tw.grid_cols_1, Tw.gap_5 ] ] ]
+                                [ a [ href (Route.toHref Route.App), css [ Tw.flex, Tw.items_center, Tw.justify_center, Tw.px_4, Tw.py_3, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.shadow_sm, Tw.text_indigo_700, Tw.bg_white, Css.hover [ Tw.bg_indigo_50 ], Bp.sm [ Tw.px_8 ] ] ]
+                                    [ text "Explore your schema" ]
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+
+heroWithIllustrationSlice : Html msg
+heroWithIllustrationSlice =
+    div [] []
+
+
 heroChapter : Chapter x
 heroChapter =
     chapter "Hero"
         |> renderComponentList
-            [ ( "withImage", heroSlice )
-            , ( "simple", heroSimpleSlice )
+            [ ( "heroBasicSlice", heroBasicSlice )
+            , ( "heroWithBackgroundImageSlice", heroWithBackgroundImageSlice )
+            , ( "heroWithIllustrationSlice", heroWithIllustrationSlice )
             ]

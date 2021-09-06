@@ -6,7 +6,7 @@
   "display": "standalone",
   "theme_color": "#f1f6f8",
   "background_color": "#f1f6f8",
-  "orientation": "landscape-primary",
+  "orientation": "any",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
