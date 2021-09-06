@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Parsers.CreateView exposing (ParsedView, parseView)
 
 import DataSources.SqlParser.Parsers.Select exposing (SelectInfo, parseSelect)
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, noEnclosingQuotes)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Regex as R
 
@@ -23,8 +23,8 @@ parseView statement =
             parseSelect select
                 |> Result.map
                     (\parsedSelect ->
-                        { schema = schema
-                        , table = table
+                        { schema = schema |> Maybe.map noEnclosingQuotes
+                        , table = table |> noEnclosingQuotes
                         , select = parsedSelect
                         , materialized = not (materialized == Nothing)
                         , extra = extra

@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, noEnclosingQuotes, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as R
@@ -49,13 +49,13 @@ parseAlterTable statement =
     case statement |> buildRawSql |> R.matches "^ALTER TABLE(?:[ \t]+ONLY)?[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)[ \t]+(?<command>.*);$" of
         schema :: (Just table) :: (Just command) :: [] ->
             if command |> String.toUpper |> String.startsWith "ADD CONSTRAINT" then
-                parseAlterTableAddConstraint command |> Result.map (AddTableConstraint schema table)
+                parseAlterTableAddConstraint command |> Result.map (AddTableConstraint (schema |> Maybe.map noEnclosingQuotes) (table |> noEnclosingQuotes))
 
             else if command |> String.toUpper |> String.startsWith "ALTER COLUMN" then
-                parseAlterTableAlterColumn command |> Result.map (AlterColumn schema table)
+                parseAlterTableAlterColumn command |> Result.map (AlterColumn (schema |> Maybe.map noEnclosingQuotes) (table |> noEnclosingQuotes))
 
             else if command |> String.toUpper |> String.startsWith "OWNER TO" then
-                parseAlterTableOwnerTo command |> Result.map (AddTableOwner schema table)
+                parseAlterTableOwnerTo command |> Result.map (AddTableOwner (schema |> Maybe.map noEnclosingQuotes) (table |> noEnclosingQuotes))
 
             else
                 Err [ "Command not handled: '" ++ command ++ "'" ]

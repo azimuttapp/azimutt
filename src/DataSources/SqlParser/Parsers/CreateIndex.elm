@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.CreateIndex exposing (ParsedIndex, parseCreateIndex)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, noEnclosingQuotes, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlConstraintName, SqlStatement, SqlTableRef)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as R
@@ -16,7 +16,14 @@ parseCreateIndex statement =
         (Just name) :: schema :: (Just table) :: (Just definition) :: [] ->
             parseIndexDefinition definition
                 |> Result.andThen (\columns -> Nel.fromList columns |> Result.fromMaybe [ "Index can't have empty columns" ])
-                |> Result.map (\columns -> { name = name, table = { schema = schema, table = table }, columns = columns, definition = definition })
+                |> Result.map
+                    (\columns ->
+                        { name = name
+                        , table = { schema = schema |> Maybe.map noEnclosingQuotes, table = table |> noEnclosingQuotes }
+                        , columns = columns
+                        , definition = definition
+                        }
+                    )
 
         _ ->
             Err [ "Can't parse create index: '" ++ buildRawSql statement ++ "'" ]

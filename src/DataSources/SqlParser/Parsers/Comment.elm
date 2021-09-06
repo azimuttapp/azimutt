@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnTable, SqlComment, parseColumnComment, parseTableComment)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, noEnclosingQuotes)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Regex as R
 
@@ -21,7 +21,7 @@ parseTableComment : SqlStatement -> Result (List ParseError) CommentOnTable
 parseTableComment statement =
     case statement |> buildRawSql |> R.matches "^COMMENT ON TABLE[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)[ \t]+IS[ \t]+'(?<comment>(?:[^']|'')+)';$" of
         schema :: (Just table) :: (Just comment) :: [] ->
-            Ok { schema = schema, table = table, comment = comment |> String.replace "''" "'" }
+            Ok { schema = schema |> Maybe.map noEnclosingQuotes, table = table |> noEnclosingQuotes, comment = comment |> String.replace "''" "'" }
 
         _ ->
             Err [ "Can't parse table comment: '" ++ buildRawSql statement ++ "'" ]
@@ -31,7 +31,7 @@ parseColumnComment : SqlStatement -> Result (List ParseError) CommentOnColumn
 parseColumnComment statement =
     case statement |> buildRawSql |> R.matches "^COMMENT ON COLUMN[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\.(?<column>[^ .]+)[ \t]+IS[ \t]+'(?<comment>(?:[^']|'')+)';$" of
         schema :: (Just table) :: (Just column) :: (Just comment) :: [] ->
-            Ok { schema = schema, table = table, column = column, comment = comment |> String.replace "''" "'" }
+            Ok { schema = schema |> Maybe.map noEnclosingQuotes, table = table |> noEnclosingQuotes, column = column |> noEnclosingQuotes, comment = comment |> String.replace "''" "'" }
 
         _ ->
             Err [ "Can't parse column comment: '" ++ buildRawSql statement ++ "'" ]

@@ -58,7 +58,7 @@ parseSelectColumn : RawSql -> Result ParseError SelectColumn
 parseSelectColumn column =
     case column |> R.matches "^(?:(?<table>[^ .]+)\\.)?(?<column>[^ :]+)(?:[ \t]+AS[ \t]+(?<alias>[^ ]+))?$" of
         table :: (Just columnName) :: alias :: [] ->
-            Ok (BasicColumn { table = table, column = columnName |> noEnclosingQuotes, alias = alias })
+            Ok (BasicColumn { table = table |> Maybe.map noEnclosingQuotes, column = columnName |> noEnclosingQuotes, alias = alias })
 
         _ ->
             case column |> R.matches "^(?<formula>.+?)[ \t]+AS[ \t]+(?<alias>[^ ]+)$" of
@@ -73,7 +73,7 @@ parseSelectTable : RawSql -> Result ParseError SelectTable
 parseSelectTable table =
     case table |> R.matches "^(?:(?<schema>[^ .]+)\\.)?(?<table>[^ ]+)(?:[ \t]+(?<alias>[^ ]+))?$" of
         schema :: (Just tableName) :: alias :: [] ->
-            Ok (BasicTable { schema = schema, table = tableName, alias = alias })
+            Ok (BasicTable { schema = schema |> Maybe.map noEnclosingQuotes, table = tableName |> noEnclosingQuotes, alias = alias })
 
         _ ->
             Ok (ComplexTable { definition = table })

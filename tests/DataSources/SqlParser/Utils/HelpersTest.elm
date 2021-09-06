@@ -31,8 +31,8 @@ suite =
         ]
 
 
-stmCheck : String -> String -> (SqlStatement -> Result e a) -> (SqlStatement -> Result e a) -> Test
-stmCheck name sql func result =
+testStatement : String -> String -> (SqlStatement -> Result e a) -> (SqlStatement -> Result e a) -> Test
+testStatement name sql func result =
     let
         statement : SqlStatement
         statement =

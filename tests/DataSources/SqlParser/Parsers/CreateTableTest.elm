@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Parsers.CreateTableTest exposing (..)
 
 import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn)
-import DataSources.SqlParser.Utils.HelpersTest exposing (stmCheck)
+import DataSources.SqlParser.Utils.HelpersTest exposing (testStatement)
 import Expect
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe, test)
@@ -11,8 +11,8 @@ suite : Test
 suite =
     describe "CreateTable"
         [ describe "parseCreateTable"
-            [ stmCheck "basic" "CREATE TABLE aaa.bbb (ccc int);" parseCreateTable (\s -> Ok { schema = Just "aaa", table = "bbb", columns = Nel { name = "ccc", kind = "int", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
-            , stmCheck "complex"
+            [ testStatement "basic" "CREATE TABLE aaa.bbb (ccc int);" parseCreateTable (\s -> Ok { schema = Just "aaa", table = "bbb", columns = Nel { name = "ccc", kind = "int", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
+            , testStatement "complex"
                 "CREATE TABLE public.users (id bigint NOT NULL, name character varying(255), price numeric(8,2)) WITH (autovacuum_enabled='false');"
                 parseCreateTable
                 (\s ->
@@ -31,9 +31,9 @@ suite =
                         , source = s
                         }
                 )
-            , stmCheck "with options" "CREATE TABLE p.table (id bigint NOT NULL)    WITH (autovacuum_analyze_threshold='100000');" parseCreateTable (\s -> Ok { schema = Just "p", table = "table", columns = Nel { name = "id", kind = "bigint", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
-            , stmCheck "without schema, lowercase and no space before body" "create table migrations(version varchar not null);" parseCreateTable (\s -> Ok { schema = Nothing, table = "migrations", columns = Nel { name = "version", kind = "varchar", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
-            , stmCheck "bad" "bad" parseCreateTable (\_ -> Err [ "Can't parse table: 'bad'" ])
+            , testStatement "with options" "CREATE TABLE p.table (id bigint NOT NULL)    WITH (autovacuum_analyze_threshold='100000');" parseCreateTable (\s -> Ok { schema = Just "p", table = "table", columns = Nel { name = "id", kind = "bigint", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
+            , testStatement "without schema, lowercase and no space before body" "create table migrations(version varchar not null);" parseCreateTable (\s -> Ok { schema = Nothing, table = "migrations", columns = Nel { name = "version", kind = "varchar", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
+            , testStatement "bad" "bad" parseCreateTable (\_ -> Err [ "Can't parse table: 'bad'" ])
             ]
         , describe "parseCreateTableColumn"
             [ test "basic"

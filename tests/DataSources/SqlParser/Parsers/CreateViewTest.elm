@@ -2,7 +2,7 @@ module DataSources.SqlParser.Parsers.CreateViewTest exposing (..)
 
 import DataSources.SqlParser.Parsers.CreateView exposing (parseView)
 import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..), SelectInfo, SelectTable(..))
-import DataSources.SqlParser.Utils.HelpersTest exposing (stmCheck)
+import DataSources.SqlParser.Utils.HelpersTest exposing (testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -33,6 +33,6 @@ suite : Test
 suite =
     describe "CreateView"
         [ describe "parseView"
-            [ stmCheck "basic" view parseView (\s -> Ok { schema = Just "public", table = "autocomplete", select = select, materialized = True, extra = Just "WITH NO DATA", source = s })
+            [ testStatement "basic" view parseView (\s -> Ok { schema = Just "public", table = "autocomplete", select = select, materialized = True, extra = Just "WITH NO DATA", source = s })
             ]
         ]
