@@ -364,5 +364,6 @@ statementIsEmpty statement =
 parseLines : FileName -> FileContent -> List SqlLine
 parseLines fileName fileContent =
     fileContent
+        |> String.replace "\u{000D}" "\n"
         |> String.split "\n"
         |> List.indexedMap (\i line -> { file = fileName, line = i + 1, text = line })
