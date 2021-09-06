@@ -274,7 +274,8 @@ window.addEventListener('load', function() {
     })
     // search input parent is the dropdown element, on mousedown it's blurred but we want that only on click
     window.addEventListener('mousedown', e => {
-        const dropdown = e.path.find(e => e.className === 'dropdown')
+        const parents = getParents(e.target)
+        const dropdown = parents.find(e => e.className === 'dropdown')
         const search = Array.from(dropdown?.children || []).find(e => e.id === 'search')
         if (search) {
             setTimeout(() => search.focus(), 10)
@@ -282,15 +283,17 @@ window.addEventListener('load', function() {
     })
     // the second node inside the dropdown element is the dropdown menu, we want to blur the search on click
     window.addEventListener('click', e => {
-        const dropdown = e.path.find(e => e.className === 'dropdown')
+        const parents = getParents(e.target)
+        const dropdown = parents.find(e => e.className === 'dropdown')
         const search = Array.from(dropdown?.children || []).find(e => e.id === 'search')
-        if (search && e.path.find(e => e.className && e.className.includes('dropdown-menu'))) {
+        if (search && parents.find(e => e.className && e.className.includes('dropdown-menu'))) {
             search.blur()
         }
     })
     // blur search when esc key is pressed, doesn't work :(
     window.addEventListener('keydown', e => {
-        const dropdown = e.path.find(e => e.className === 'dropdown')
+        const parents = getParents(e.target)
+        const dropdown = parents.find(e => e.className === 'dropdown')
         const search = Array.from(dropdown?.children || []).find(e => e.id === 'search')
         if (search && e.keyCode === 27) {
             search.blur()
@@ -318,6 +321,16 @@ window.addEventListener('load', function() {
     function maybeElementById(id) {
         const elem = document.getElementById(id)
         return elem ? [elem] : []
+    }
+
+    function getParents(elt) {
+        const parents = [elt]
+        let parent = elt.parentElement
+        while (parent) {
+            parents.push(parent)
+            parent = parent.parentElement
+        }
+        return parents
     }
 
     function randomUID() {
