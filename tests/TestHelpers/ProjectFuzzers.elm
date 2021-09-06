@@ -4,13 +4,13 @@ import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as F exposing (listN, nelN)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName)
+import Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName)
 import TestHelpers.Fuzzers exposing (color, dictSmall, identifier, intPos, intPosSmall, listSmall, nelSmall, position, posix, text, zoomLevel)
 
 
 project : Fuzzer Project
 project =
-    F.map9 Project projectId projectName (nelSmall projectSource) schema (dictSmall layoutName layout) (Fuzz.maybe layoutName) projectSettings posix posix
+    F.map10 Project projectId projectName (nelSmall projectSource) schema (dictSmall layoutName layout) (Fuzz.maybe layoutName) projectSettings posix posix sampleName
 
 
 projectSource : Fuzzer ProjectSource
@@ -157,11 +157,6 @@ columnName =
     identifier
 
 
-columnIndex : Fuzzer ColumnIndex
-columnIndex =
-    Fuzz.intRange 0 100
-
-
 columnType : Fuzzer ColumnType
 columnType =
     Fuzz.oneOf ([ "int", "serial", "varchar", "timestamp", "bigint", "text", "boolean", "character varying(10)" ] |> List.map Fuzz.constant)
@@ -200,3 +195,8 @@ relationName =
 layoutName : Fuzzer LayoutName
 layoutName =
     identifier
+
+
+sampleName : Fuzzer (Maybe SampleName)
+sampleName =
+    Fuzz.oneOf [ Fuzz.constant (Just "basic"), Fuzz.constant Nothing ]

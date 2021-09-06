@@ -91,7 +91,7 @@ viewSampleSchemas =
                 (schemaSamples
                     |> Dict.toList
                     |> List.sortBy (\( _, ( tables, _ ) ) -> tables)
-                    |> List.map (\( name, ( tables, url ) ) -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LoadFile url) ] [ text (name ++ " (" ++ String.fromInt tables ++ " tables)") ] ])
+                    |> List.map (\( name, ( tables, _ ) ) -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LoadSample name) ] [ text (name ++ " (" ++ String.fromInt tables ++ " tables)") ] ])
                 )
             ]
         ]

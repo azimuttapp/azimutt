@@ -5,11 +5,11 @@ import Draggable
 import FileValue exposing (File)
 import Html exposing (Html, text)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (FileUrl, HtmlId, ZoomDelta)
+import Libs.Models exposing (HtmlId, ZoomDelta)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task as T
-import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, Relation, Table, TableId)
+import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, Relation, SampleName, Table, TableId)
 import Ports exposing (JsMsg)
 import Time
 
@@ -38,7 +38,8 @@ type Msg
     | FileDragLeave
     | FileDropped File (List File)
     | FileSelected File
-    | LoadFile FileUrl
+    | LoadSample SampleName
+      -- | LoadFile FileUrl
     | DeleteProject Project
     | UseProject Project
     | ChangedSearch Search

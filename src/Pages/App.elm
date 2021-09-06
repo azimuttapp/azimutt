@@ -1,6 +1,6 @@
 module Pages.App exposing (Model, Msg, page)
 
-import Conf exposing (conf)
+import Conf exposing (conf, schemaSamples)
 import Dict
 import Draggable
 import Gen.Params.App exposing (Params)
@@ -115,11 +115,13 @@ update msg model =
         JsMessage (FileRead now projectId sourceId file content) ->
             model |> createProjectFromFile now projectId sourceId file content
 
-        LoadFile url ->
-            ( model, loadFile url )
+        LoadSample name ->
+            ( model, schemaSamples |> Dict.get name |> Maybe.map (\( _, url ) -> loadFile url (Just name)) |> Maybe.withDefault (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
 
-        JsMessage (FileLoaded now projectId sourceId url content) ->
-            model |> createProjectFromUrl now projectId sourceId url content
+        -- LoadFile url ->
+        --     ( model, loadFile url Nothing )
+        JsMessage (FileLoaded now projectId sourceId url content sample) ->
+            model |> createProjectFromUrl now projectId sourceId url content sample
 
         DeleteProject project ->
             ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, trackProjectEvent "drop" project ] )

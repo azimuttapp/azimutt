@@ -2,7 +2,7 @@ module Conf exposing (conf, constants, schemaSamples)
 
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
-import Libs.Models exposing (Color, HtmlId, ZoomLevel)
+import Libs.Models exposing (Color, FileUrl, HtmlId, ZoomLevel)
 
 
 conf :
@@ -64,7 +64,7 @@ constants =
     }
 
 
-schemaSamples : Dict String ( Int, String )
+schemaSamples : Dict String ( Int, FileUrl )
 schemaSamples =
     Dict.fromList
         [ ( "basic schema", ( 4, "samples/basic.json" ) )

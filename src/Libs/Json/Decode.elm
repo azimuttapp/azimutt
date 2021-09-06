@@ -1,4 +1,4 @@
-module Libs.Json.Decode exposing (defaultField, defaultFieldDeep, dict, map9, matchOn, maybeField, maybeWithDefault, ned, nel, tuple)
+module Libs.Json.Decode exposing (defaultField, defaultFieldDeep, dict, map10, map9, matchOn, maybeField, maybeWithDefault, ned, nel, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)

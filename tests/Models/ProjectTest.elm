@@ -90,6 +90,7 @@ project0 =
     , settings = defaultProjectSettings
     , createdAt = time 1000
     , updatedAt = time 1001
+    , fromSample = Nothing
     }
 
 
@@ -115,6 +116,7 @@ project1 =
     , settings = { findPath = FindPathSettings 4 [] [] }
     , createdAt = time 1000
     , updatedAt = time 1001
+    , fromSample = Just "basic"
     }
 
 
@@ -125,7 +127,7 @@ project1Json =
         ++ """"schema":{"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int"}]}],"relations":[],"""
         ++ """"layout":{"canvas":{"position":{"left":1,"top":2},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":3,"top":4},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
         ++ """"layouts":{"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203}},"""
-        ++ """"settings":{"findPath":{"maxPathLength":4}},"createdAt":1000,"updatedAt":1001,"version":1}"""
+        ++ """"settings":{"findPath":{"maxPathLength":4}},"createdAt":1000,"updatedAt":1001,"fromSample":"basic","version":1}"""
 
 
 project2 : Project
@@ -190,6 +192,7 @@ project2 =
     , settings = { findPath = FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ] }
     , createdAt = time 1000
     , updatedAt = time 1001
+    , fromSample = Nothing
     }
 
 

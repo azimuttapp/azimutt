@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationFull, RelationName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, decodeCanvasProps, decodeCheck, decodeColumn, decodeColumnName, decodeColumnRef, decodeComment, decodeIndex, decodeLayout, decodePrimaryKey, decodeProject, decodeProjectId, decodeProjectName, decodeProjectSettings, decodeProjectSource, decodeProjectSourceContent, decodeProjectSourceId, decodeProjectSourceName, decodeRelation, decodeSchema, decodeSource, decodeSourceLine, decodeTable, decodeTableId, decodeTableProps, decodeUnique, encodeCanvasProps, encodeCheck, encodeColumn, encodeColumnName, encodeColumnRef, encodeComment, encodeIndex, encodeLayout, encodePrimaryKey, encodeProject, encodeProjectId, encodeProjectName, encodeProjectSettings, encodeProjectSource, encodeProjectSourceContent, encodeProjectSourceId, encodeProjectSourceName, encodeRelation, encodeSchema, encodeSource, encodeSourceLine, encodeTable, encodeTableId, encodeTableProps, encodeUnique, extractPath, htmlIdAsTableId, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initTableProps, parseTableId, showColumnRef, showTableId, showTableName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationFull, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, decodeCanvasProps, decodeCheck, decodeColumn, decodeColumnName, decodeColumnRef, decodeComment, decodeIndex, decodeLayout, decodePrimaryKey, decodeProject, decodeProjectId, decodeProjectName, decodeProjectSettings, decodeProjectSource, decodeProjectSourceContent, decodeProjectSourceId, decodeProjectSourceName, decodeRelation, decodeSchema, decodeSource, decodeSourceLine, decodeTable, decodeTableId, decodeTableProps, decodeUnique, encodeCanvasProps, encodeCheck, encodeColumn, encodeColumnName, encodeColumnRef, encodeComment, encodeIndex, encodeLayout, encodePrimaryKey, encodeProject, encodeProjectId, encodeProjectName, encodeProjectSettings, encodeProjectSource, encodeProjectSourceContent, encodeProjectSourceId, encodeProjectSourceName, encodeRelation, encodeSchema, encodeSource, encodeSourceLine, encodeTable, encodeTableId, encodeTableProps, encodeUnique, extractPath, htmlIdAsTableId, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initTableProps, parseTableId, showColumnRef, showTableId, showTableName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
@@ -30,6 +30,7 @@ type alias Project =
     , settings : ProjectSettings
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
+    , fromSample : Maybe SampleName
     }
 
 
@@ -248,8 +249,12 @@ type alias LayoutName =
     String
 
 
-buildProject : ProjectId -> ProjectName -> Nel ProjectSource -> Schema -> Time.Posix -> Project
-buildProject id name sources schema now =
+type alias SampleName =
+    String
+
+
+buildProject : ProjectId -> ProjectName -> Nel ProjectSource -> Schema -> Maybe SampleName -> Time.Posix -> Project
+buildProject id name sources schema sample now =
     { id = id
     , name = name
     , sources = sources
@@ -259,6 +264,7 @@ buildProject id name sources schema now =
     , settings = defaultProjectSettings
     , createdAt = now
     , updatedAt = now
+    , fromSample = sample
     }
 
 
@@ -493,13 +499,14 @@ encodeProject value =
         , ( "settings", value.settings |> E.withDefaultDeep encodeProjectSettings defaultProjectSettings )
         , ( "createdAt", value.createdAt |> encodePosix )
         , ( "updatedAt", value.updatedAt |> encodePosix )
+        , ( "fromSample", value.fromSample |> E.maybe Encode.string )
         , ( "version", currentVersion |> Encode.int )
         ]
 
 
 decodeProject : Decode.Decoder Project
 decodeProject =
-    D.map9 Project
+    D.map10 Project
         (Decode.field "id" decodeProjectId)
         (Decode.field "name" decodeProjectName)
         (Decode.field "sources" (D.nel decodeProjectSource))
@@ -509,6 +516,7 @@ decodeProject =
         (D.defaultFieldDeep "settings" decodeProjectSettings defaultProjectSettings)
         (D.defaultField "createdAt" decodePosix defaultTime)
         (D.defaultField "updatedAt" decodePosix defaultTime)
+        (D.maybeField "fromSample" decodeSampleName)
 
 
 encodeProjectSource : ProjectSource -> Value
@@ -1034,4 +1042,9 @@ encodeLayoutName value =
 
 decodeLayoutName : Decode.Decoder LayoutName
 decodeLayoutName =
+    Decode.string
+
+
+decodeSampleName : Decode.Decoder SampleName
+decodeSampleName =
     Decode.string

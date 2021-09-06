@@ -1,4 +1,4 @@
-module Libs.Fuzz exposing (letter, listN, map6, map7, map8, map9, nel, nelN)
+module Libs.Fuzz exposing (letter, listN, map10, map11, map12, map6, map7, map8, map9, nel, nelN)
 
 import Fuzz exposing (Fuzzer)
 import Libs.Nel exposing (Nel)
@@ -68,3 +68,30 @@ map9 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI =
         (Fuzz.tuple3 ( fuzzA, fuzzB, fuzzC ))
         (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
         (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
+
+
+map10 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k) -> Fuzzer a -> Fuzzer b -> Fuzzer c -> Fuzzer d -> Fuzzer e -> Fuzzer f -> Fuzzer g -> Fuzzer h -> Fuzzer i -> Fuzzer j -> Fuzzer k
+map10 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI fuzzJ =
+    Fuzz.map4 (\( a, b, c ) ( d, e, f ) ( g, h, i ) j -> transform a b c d e f g h i j)
+        (Fuzz.tuple3 ( fuzzA, fuzzB, fuzzC ))
+        (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
+        (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
+        fuzzJ
+
+
+map11 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l) -> Fuzzer a -> Fuzzer b -> Fuzzer c -> Fuzzer d -> Fuzzer e -> Fuzzer f -> Fuzzer g -> Fuzzer h -> Fuzzer i -> Fuzzer j -> Fuzzer k -> Fuzzer l
+map11 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI fuzzJ fuzzK =
+    Fuzz.map4 (\( a, b, c ) ( d, e, f ) ( g, h, i ) ( j, k ) -> transform a b c d e f g h i j k)
+        (Fuzz.tuple3 ( fuzzA, fuzzB, fuzzC ))
+        (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
+        (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
+        (Fuzz.tuple ( fuzzJ, fuzzK ))
+
+
+map12 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l -> m) -> Fuzzer a -> Fuzzer b -> Fuzzer c -> Fuzzer d -> Fuzzer e -> Fuzzer f -> Fuzzer g -> Fuzzer h -> Fuzzer i -> Fuzzer j -> Fuzzer k -> Fuzzer l -> Fuzzer m
+map12 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI fuzzJ fuzzK fuzzL =
+    Fuzz.map4 (\( a, b, c ) ( d, e, f ) ( g, h, i ) ( j, k, l ) -> transform a b c d e f g h i j k l)
+        (Fuzz.tuple3 ( fuzzA, fuzzB, fuzzC ))
+        (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
+        (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
+        (Fuzz.tuple3 ( fuzzJ, fuzzK, fuzzL ))

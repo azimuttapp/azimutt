@@ -7,13 +7,13 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Position exposing (Position)
 import Libs.String as S
-import Models.Project exposing (CanvasProps, Check, Column, ColumnRef, Comment, Index, Layout, PrimaryKey, Project, ProjectId, ProjectSource, ProjectSourceContent(..), Relation, Schema, Table, Unique, buildProject)
+import Models.Project exposing (CanvasProps, Check, Column, ColumnRef, Comment, Index, Layout, PrimaryKey, Project, ProjectId, ProjectSource, ProjectSourceContent(..), Relation, SampleName, Schema, Table, Unique, buildProject)
 import Time
 
 
-buildProjectFromSql : List String -> Time.Posix -> ProjectId -> ProjectSource -> SqlSchema -> Project
-buildProjectFromSql takenNames now id source schema =
-    buildProject id (S.unique takenNames source.name) (Nel source []) (buildSchema now schema) now
+buildProjectFromSql : List String -> Time.Posix -> ProjectId -> ProjectSource -> SqlSchema -> Maybe SampleName -> Project
+buildProjectFromSql takenNames now id source schema sample =
+    buildProject id (S.unique takenNames source.name) (Nel source []) (buildSchema now schema) sample now
 
 
 buildSchema : Time.Posix -> SqlSchema -> Schema

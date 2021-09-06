@@ -10,29 +10,28 @@ import Libs.Bool exposing (cond)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl)
 import Libs.Result as R
+import Libs.String as S
 import Libs.Task as T
-import Models.Project exposing (Project, ProjectId, ProjectName, ProjectSource, ProjectSourceContent(..), ProjectSourceId, decodeProject, extractPath)
+import Models.Project exposing (Project, ProjectId, ProjectName, ProjectSource, ProjectSourceContent(..), ProjectSourceId, SampleName, decodeProject, extractPath)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
 import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml)
 import Ports exposing (activateTooltipsAndPopovers, click, hideModal, observeTablesSize, saveProject, toastError, toastInfo, trackErrorList, trackProjectEvent)
 import Time
 
 
+createProjectFromFile : Time.Posix -> ProjectId -> ProjectSourceId -> File -> FileContent -> Model -> ( Model, Cmd Msg )
+createProjectFromFile now projectId sourceId file content model =
+    buildProject (model.storedProjects |> List.map .name) now projectId (localSource now sourceId file) content Nothing |> loadProject model
+
+
+createProjectFromUrl : Time.Posix -> ProjectId -> ProjectSourceId -> FileUrl -> FileContent -> Maybe SampleName -> Model -> ( Model, Cmd Msg )
+createProjectFromUrl now projectId sourceId path content sample model =
+    buildProject (model.storedProjects |> List.map .name) now projectId (remoteSource now sourceId path content) content sample |> loadProject model
+
+
 useProject : Project -> Model -> ( Model, Cmd Msg )
 useProject project model =
     ( [], Just project ) |> loadProject model
-
-
-createProjectFromFile : Time.Posix -> ProjectId -> ProjectSourceId -> File -> FileContent -> Model -> ( Model, Cmd Msg )
-createProjectFromFile now projectId sourceId file content model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (localSource now sourceId file) content
-        |> (\r -> loadProject model r)
-
-
-createProjectFromUrl : Time.Posix -> ProjectId -> ProjectSourceId -> FileUrl -> FileContent -> Model -> ( Model, Cmd Msg )
-createProjectFromUrl now projectId sourceId path content model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (remoteSource now sourceId path content) content
-        |> (\r -> loadProject model r)
 
 
 loadProject : Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
@@ -66,21 +65,21 @@ loadProject model ( errs, project ) =
     )
 
 
-buildProject : List ProjectName -> Time.Posix -> ProjectId -> ProjectSource -> FileContent -> ( Errors, Maybe Project )
-buildProject takenNames now projectId source content =
+buildProject : List ProjectName -> Time.Posix -> ProjectId -> ProjectSource -> FileContent -> Maybe SampleName -> ( Errors, Maybe Project )
+buildProject takenNames now projectId source content sample =
     let
         path : String
         path =
             extractPath source.source
     in
     if path |> String.endsWith ".sql" then
-        parseSchema path content |> Tuple.mapSecond (\s -> Just (buildProjectFromSql takenNames now projectId source s))
+        parseSchema path content |> Tuple.mapSecond (\s -> Just (buildProjectFromSql takenNames now projectId source s sample))
 
     else if path |> String.endsWith ".json" then
         Decode.decodeString decodeProject content
             |> R.fold
                 (\e -> ( [ "⚠️ Error in <b>" ++ path ++ "</b> ⚠️<br>" ++ decodeErrorToHtml e ], Nothing ))
-                (\project -> ( [], Just project ))
+                (\p -> ( [], Just { p | id = projectId, name = S.unique takenNames p.name, createdAt = now, updatedAt = now, fromSample = sample } ))
 
     else
         ( [ "Invalid file (" ++ path ++ "), expected .sql or .json one" ], Nothing )

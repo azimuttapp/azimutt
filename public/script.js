@@ -37,7 +37,7 @@ window.addEventListener('load', function() {
                 case 'SaveProject':   saveProject(msg.project); break;
                 case 'DropProject':   dropProject(msg.project); break;
                 case 'ReadFile':      readFile(msg.file); break;
-                case 'LoadFile':      loadFile(msg.url); break;
+                case 'LoadFile':      loadFile(msg.url, msg.sample); break;
                 case 'ObserveSizes':  observeSizes(msg.ids); break;
                 case 'ListenKeys':    listenHotkeys(msg.keys); break;
                 case 'TrackPage':     analytics.then(a => a.trackPage(msg.name)); break;
@@ -140,10 +140,10 @@ window.addEventListener('load', function() {
         reader.readAsText(file)
     }
 
-    function loadFile(url) {
+    function loadFile(url, sample) {
         fetch(url)
             .then(res => res.text())
-            .then(content => sendToElm({kind: 'FileLoaded', now: Date.now(), projectId: randomUID(), sourceId: randomUID(), url, content}))
+            .then(content => sendToElm({kind: 'FileLoaded', now: Date.now(), projectId: randomUID(), sourceId: randomUID(), url, content, sample}))
             .catch(err => showToast({kind: 'error', message: err}))
     }
 

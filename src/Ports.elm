@@ -6,10 +6,11 @@ import Json.Decode as Decode exposing (Decoder, Value, errorToString)
 import Json.Encode as Encode
 import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Json.Decode as D
+import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodeSize)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text)
-import Models.Project exposing (Layout, Project, ProjectId, ProjectSourceId, TableId, decodeProject, encodeProject, tableIdAsHtmlId)
+import Models.Project exposing (Layout, Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, tableIdAsHtmlId)
 import Time
 
 
@@ -78,9 +79,9 @@ readFile file =
     messageToJs (ReadFile file)
 
 
-loadFile : FileUrl -> Cmd msg
-loadFile url =
-    messageToJs (LoadFile url)
+loadFile : FileUrl -> Maybe SampleName -> Cmd msg
+loadFile url sample =
+    messageToJs (LoadFile url sample)
 
 
 observeSizes : List HtmlId -> Cmd msg
@@ -116,7 +117,7 @@ trackPage name =
 trackProjectEvent : String -> Project -> Cmd msg
 trackProjectEvent name project =
     messageToJs
-        (TrackEvent (name ++ "-project")
+        (TrackEvent (name ++ (project.fromSample |> Maybe.map (\_ -> "-sample") |> Maybe.withDefault "") ++ "-project")
             (Encode.object
                 [ ( "tableCount", project.schema.tables |> Dict.size |> Encode.int )
                 , ( "layoutCount", project.layouts |> Dict.size |> Encode.int )
@@ -151,7 +152,7 @@ type ElmMsg
     | SaveProject Project
     | DropProject Project
     | ReadFile File
-    | LoadFile FileUrl
+    | LoadFile FileUrl (Maybe SampleName)
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | TrackPage String
@@ -162,7 +163,7 @@ type ElmMsg
 type JsMsg
     = ProjectsLoaded ( List ( ProjectId, Decode.Error ), List Project )
     | FileRead Time.Posix ProjectId ProjectSourceId File FileContent
-    | FileLoaded Time.Posix ProjectId ProjectSourceId FileUrl FileContent
+    | FileLoaded Time.Posix ProjectId ProjectSourceId FileUrl FileContent (Maybe SampleName)
     | SizesChanged (List SizeChange)
     | HotkeyUsed String
     | Error Decode.Error
@@ -223,8 +224,8 @@ elmEncoder elm =
         ReadFile file ->
             Encode.object [ ( "kind", "ReadFile" |> Encode.string ), ( "file", file |> FileValue.encode ) ]
 
-        LoadFile url ->
-            Encode.object [ ( "kind", "LoadFile" |> Encode.string ), ( "url", url |> Encode.string ) ]
+        LoadFile url sample ->
+            Encode.object [ ( "kind", "LoadFile" |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
@@ -264,12 +265,13 @@ jsDecoder =
                         (Decode.field "content" Decode.string)
 
                 "FileLoaded" ->
-                    Decode.map5 FileLoaded
+                    Decode.map6 FileLoaded
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
                         (Decode.field "sourceId" Decode.string)
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
+                        (D.maybeField "sample" Decode.string)
 
                 "SizesChanged" ->
                     Decode.field "sizes"
