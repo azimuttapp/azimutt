@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Utils.HelpersTest exposing (..)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, commaSplit, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, commaSplit)
 import DataSources.SqlParser.Utils.Types exposing (SqlStatement)
 import Expect
 import Test exposing (Test, describe, test)
@@ -14,17 +14,14 @@ fileName =
 suite : Test
 suite =
     describe "Helpers"
-        [ describe "parseIndexDefinition"
-            [ test "with DEFERRABLE" (\_ -> "(cost_attribution_category_id, precedence) DEFERRABLE" |> parseIndexDefinition |> Expect.equal (Ok [ "cost_attribution_category_id", "precedence" ]))
-            ]
-        , describe "buildRawSql"
+        [ describe "buildRawSql"
             [ test "basic"
                 (\_ ->
                     buildRawSql
                         { head = { file = fileName, line = 11, text = "ALTER TABLE ONLY public.users" }
                         , tail = [ { file = fileName, line = 12, text = "  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);" } ]
                         }
-                        |> Expect.equal "ALTER TABLE ONLY public.users\\n  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"
+                        |> Expect.equal "ALTER TABLE ONLY public.users   ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"
                 )
             ]
         , describe "commaSplit"

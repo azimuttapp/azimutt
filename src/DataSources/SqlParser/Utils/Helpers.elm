@@ -1,13 +1,13 @@
-module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildTableName, commaSplit, parseIndexDefinition)
+module DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, commaSplit, noEnclosingQuotes, parseIndexDefinition)
 
-import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlStatement)
 import Libs.Nel as Nel
 import Libs.Regex as R
 
 
 parseIndexDefinition : String -> Result (List ParseError) (List SqlColumnName)
 parseIndexDefinition definition =
-    case definition |> R.matches "^\\((?<columns>[^)]+)\\)(?: DEFERRABLE)?$" of
+    case definition |> R.matches "^\\((?<columns>[^)]+)\\)$" of
         (Just columns) :: [] ->
             Ok (columns |> String.split "," |> List.map String.trim)
 
@@ -22,27 +22,7 @@ parseIndexDefinition definition =
 
 buildRawSql : SqlStatement -> RawSql
 buildRawSql statement =
-    statement |> Nel.toList |> List.map .text |> String.join "\\n"
-
-
-buildSchemaName : String -> SqlSchemaName
-buildSchemaName name =
-    name |> String.trim |> noEnclosingQuotes
-
-
-buildTableName : String -> SqlTableName
-buildTableName name =
-    name |> String.trim |> noEnclosingQuotes
-
-
-buildColumnName : String -> SqlColumnName
-buildColumnName name =
-    name |> String.trim |> noEnclosingQuotes
-
-
-buildConstraintName : String -> SqlConstraintName
-buildConstraintName name =
-    name |> String.trim |> noEnclosingQuotes
+    statement |> Nel.toList |> List.map .text |> String.join " "
 
 
 noEnclosingQuotes : String -> String
