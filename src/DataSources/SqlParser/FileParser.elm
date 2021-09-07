@@ -116,8 +116,8 @@ evolve command tables =
                 |> Maybe.map (\_ -> Err [ "View " ++ id ++ " already exists" ])
                 |> Maybe.withDefault (Ok (tables |> Dict.insert id (buildView view)))
 
-        AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraint pk)) ->
-            updateTable (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = constraint, columns = pk } }) tables
+        AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
+            updateTable (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = defaultPkName table constraintName, columns = pk } }) tables
 
         AlterTable (AddTableConstraint schema table (ParsedForeignKey constraint fk)) ->
             updateColumn (buildId schema table) fk.column (\c -> buildFk tables constraint fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
@@ -201,7 +201,10 @@ buildTable tables table =
                 { schema = table.schema |> withDefaultSchema
                 , table = table.table
                 , columns = columns
-                , primaryKey = table.primaryKey |> M.orElse (table.columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> { name = pk, columns = Nel c.name [] })) |> List.head)
+                , primaryKey =
+                    table.primaryKey
+                        |> Maybe.map (\pk -> { name = defaultPkName table.table pk.name, columns = pk.columns })
+                        |> M.orElse (table.columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> { name = pk, columns = Nel c.name [] })) |> List.head)
                 , uniques = table.uniques
                 , indexes = table.indexes
                 , checks = table.checks
@@ -240,6 +243,11 @@ buildFk tables constraint schema table column =
                 , column = col
                 }
             )
+
+
+defaultPkName : SqlTableName -> Maybe SqlConstraintName -> SqlConstraintName
+defaultPkName table name =
+    name |> Maybe.withDefault (table ++ "_pk")
 
 
 withPkColumn : SqlSchema -> Maybe SqlSchemaName -> SqlTableName -> Maybe SqlColumnName -> Result SchemaError SqlColumnName
@@ -316,7 +324,16 @@ withDefaultSchema schema =
 buildStatements : List SqlLine -> List SqlStatement
 buildStatements lines =
     lines
-        |> List.filter (\line -> not (String.isEmpty (String.trim line.text) || String.startsWith "--" line.text || hasOnlyComment line))
+        |> List.filter
+            (\line ->
+                not
+                    (String.isEmpty (String.trim line.text)
+                        || String.startsWith "--" (String.trim line.text)
+                        || String.startsWith "/*" (String.trim line.text)
+                        || String.startsWith "#" (String.trim line.text)
+                        || hasOnlyComment line
+                    )
+            )
         |> List.foldr
             (\line ( currentStatementLines, statements, nestedBlock ) ->
                 if (line.text |> String.trim |> String.toUpper) == "BEGIN" then

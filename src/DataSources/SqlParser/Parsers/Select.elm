@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..), SelectColumnBasic, SelectColumnComplex, SelectInfo, SelectTable(..), SelectTableBasic, SelectTableComplex, TableAlias, parseSelect, parseSelectColumn, parseSelectTable)
 
-import DataSources.SqlParser.Utils.Helpers exposing (commaSplit, noEnclosingQuotes)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildSchemaName, buildTableName, commaSplit)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlSchemaName, SqlTableName)
 import Libs.List as L
 import Libs.Maybe as M
@@ -58,7 +58,7 @@ parseSelectColumn : RawSql -> Result ParseError SelectColumn
 parseSelectColumn column =
     case column |> R.matches "^(?:(?<table>[^ .]+)\\.)?(?<column>[^ :]+)(?:[ \t]+AS[ \t]+(?<alias>[^ ]+))?$" of
         table :: (Just columnName) :: alias :: [] ->
-            Ok (BasicColumn { table = table |> Maybe.map noEnclosingQuotes, column = columnName |> noEnclosingQuotes, alias = alias })
+            Ok (BasicColumn { table = table |> Maybe.map buildTableName, column = columnName |> buildColumnName, alias = alias })
 
         _ ->
             case column |> R.matches "^(?<formula>.+?)[ \t]+AS[ \t]+(?<alias>[^ ]+)$" of
@@ -73,7 +73,7 @@ parseSelectTable : RawSql -> Result ParseError SelectTable
 parseSelectTable table =
     case table |> R.matches "^(?:(?<schema>[^ .]+)\\.)?(?<table>[^ ]+)(?:[ \t]+(?<alias>[^ ]+))?$" of
         schema :: (Just tableName) :: alias :: [] ->
-            Ok (BasicTable { schema = schema |> Maybe.map noEnclosingQuotes, table = tableName |> noEnclosingQuotes, alias = alias })
+            Ok (BasicTable { schema = schema |> Maybe.map buildSchemaName, table = tableName |> buildTableName, alias = alias })
 
         _ ->
             Ok (ComplexTable { definition = table })

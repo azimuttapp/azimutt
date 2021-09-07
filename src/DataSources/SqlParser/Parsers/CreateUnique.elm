@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.CreateUnique exposing (ParsedUnique, parseCreateUniqueIndex)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, noEnclosingQuotes, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, buildSchemaName, buildTableName, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlConstraintName, SqlStatement, SqlTableRef)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as R
@@ -19,7 +19,7 @@ parseCreateUniqueIndex statement =
                 |> Result.map
                     (\columns ->
                         { name = name
-                        , table = { schema = schema |> Maybe.map noEnclosingQuotes, table = table |> noEnclosingQuotes }
+                        , table = { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName }
                         , columns = columns
                         , definition = definition
                         }
