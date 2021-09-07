@@ -1,6 +1,6 @@
-module DataSources.SqlParser.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint)
+module DataSources.SqlParser.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, noEnclosingQuotes, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildRawSql, buildSchemaName, buildTableName, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as R
@@ -13,7 +13,7 @@ type TableUpdate
 
 
 type TableConstraint
-    = ParsedPrimaryKey SqlConstraintName PrimaryKeyInner
+    = ParsedPrimaryKey (Maybe SqlConstraintName) PrimaryKeyInner
     | ParsedForeignKey SqlConstraintName ForeignKeyInner
     | ParsedUnique SqlConstraintName UniqueInner
     | ParsedCheck SqlConstraintName CheckInner
@@ -48,14 +48,28 @@ parseAlterTable : SqlStatement -> Result (List ParseError) TableUpdate
 parseAlterTable statement =
     case statement |> buildRawSql |> R.matches "^ALTER TABLE(?:[ \t]+ONLY)?[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)[ \t]+(?<command>.*);$" of
         schema :: (Just table) :: (Just command) :: [] ->
-            if command |> String.toUpper |> String.startsWith "ADD CONSTRAINT" then
-                parseAlterTableAddConstraint command |> Result.map (AddTableConstraint (schema |> Maybe.map noEnclosingQuotes) (table |> noEnclosingQuotes))
+            -- FIXME manage multiple commands, ex: "ADD PRIMARY KEY (`id`), ADD KEY `IDX_ABC` (`user_id`), ADD KEY `IDX_DEF` (`event_id`)"
+            -- TODO try to merge "ADD PRIMARY KEY" with "ADD CONSTRAINT" (make CONSTRAINT optional)
+            let
+                schemaName : Maybe SqlSchemaName
+                schemaName =
+                    schema |> Maybe.map buildSchemaName
 
-            else if command |> String.toUpper |> String.startsWith "ALTER COLUMN" then
-                parseAlterTableAlterColumn command |> Result.map (AlterColumn (schema |> Maybe.map noEnclosingQuotes) (table |> noEnclosingQuotes))
+                tableName : SqlTableName
+                tableName =
+                    table |> buildTableName
+            in
+            if command |> String.toUpper |> String.startsWith "ADD PRIMARY KEY " then
+                parseAlterTableAddConstraintPrimaryKey (command |> String.dropLeft 4) |> Result.map (\r -> AddTableConstraint schemaName tableName (ParsedPrimaryKey Nothing r))
 
-            else if command |> String.toUpper |> String.startsWith "OWNER TO" then
-                parseAlterTableOwnerTo command |> Result.map (AddTableOwner (schema |> Maybe.map noEnclosingQuotes) (table |> noEnclosingQuotes))
+            else if command |> String.toUpper |> String.startsWith "ADD CONSTRAINT " then
+                parseAlterTableAddConstraint command |> Result.map (AddTableConstraint schemaName tableName)
+
+            else if command |> String.toUpper |> String.startsWith "ALTER COLUMN " then
+                parseAlterTableAlterColumn command |> Result.map (AlterColumn schemaName tableName)
+
+            else if command |> String.toUpper |> String.startsWith "OWNER TO " then
+                parseAlterTableOwnerTo command |> Result.map (AddTableOwner schemaName tableName)
 
             else
                 Err [ "Command not handled: '" ++ command ++ "'" ]
@@ -69,7 +83,7 @@ parseAlterTableAddConstraint command =
     case command |> R.matches "^ADD CONSTRAINT[ \t]+(?<name>[^ .]+)[ \t]+(?<constraint>.*)$" of
         (Just name) :: (Just constraint) :: [] ->
             if constraint |> String.toUpper |> String.startsWith "PRIMARY KEY" then
-                parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey name)
+                parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey (Just name))
 
             else if constraint |> String.toUpper |> String.startsWith "FOREIGN KEY" then
                 parseAlterTableAddConstraintForeignKey constraint |> Result.map (ParsedForeignKey name)
@@ -91,7 +105,7 @@ parseAlterTableAddConstraintPrimaryKey : RawSql -> Result (List ParseError) Prim
 parseAlterTableAddConstraintPrimaryKey constraint =
     case constraint |> R.matches "^PRIMARY KEY[ \t]+\\((?<columns>[^)]+)\\)$" of
         (Just columns) :: [] ->
-            columns |> String.split "," |> List.map String.trim |> Nel.fromList |> Result.fromMaybe [ "Primary key can't have empty columns" ]
+            columns |> String.split "," |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Primary key can't have empty columns" ]
 
         _ ->
             Err [ "Can't parse primary key: '" ++ constraint ++ "'" ]
@@ -99,7 +113,7 @@ parseAlterTableAddConstraintPrimaryKey constraint =
 
 parseAlterTableAddConstraintForeignKey : RawSql -> Result (List ParseError) ForeignKeyInner
 parseAlterTableAddConstraintForeignKey constraint =
-    case constraint |> R.matches "^FOREIGN KEY[ \t]+\\((?<column>[^)]+)\\)[ \t]+REFERENCES[ \t]+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:[ \t]*\\((?<column_b>[^)]+)\\))?(?:[ \t]+NOT VALID)?$" of
+    case constraint |> R.matches "^FOREIGN KEY[ \t]+\\((?<column>[^)]+)\\)[ \t]+REFERENCES[ \t]+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:[ \t]*\\((?<column_b>[^)]+)\\))?(?:[ \t]+NOT VALID)?(?: ON DELETE (?:NO ACTION|CASCADE|SET NULL|SET DEFAULT))?$" of
         (Just column) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
             Ok { column = column, ref = { schema = schemaDest, table = tableDest, column = columnDest } }
 
