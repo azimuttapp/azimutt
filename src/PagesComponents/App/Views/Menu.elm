@@ -16,7 +16,7 @@ import Libs.List as L
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S exposing (plural)
-import Models.Project exposing (Layout, Schema, Table, TableId, showTableId, tableIdAsString)
+import Models.Project exposing (Layout, Schema, Table, TableId, htmlIdEncode, showTableId, tableIdAsString)
 import PagesComponents.App.Models exposing (Msg(..))
 
 
@@ -76,12 +76,12 @@ viewTableList tables layout =
                 |> List.concatMap
                     (\( groupTitle, groupedTables ) ->
                         [ ( groupTitle
-                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse (groupTitle ++ "-table-list"))
+                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> htmlIdEncode) ++ "-table-list"))
                                 [ text (groupTitle ++ " (" ++ plural (Nel.length groupedTables) "" "1 table" "tables" ++ ")") ]
                           )
                         , ( groupTitle ++ "-collapse"
                           , Keyed.node "div"
-                                [ class "collapse show", id (groupTitle ++ "-table-list") ]
+                                [ class "collapse show", id ((groupTitle |> htmlIdEncode) ++ "-table-list") ]
                                 (groupedTables
                                     |> Nel.map
                                         (\t ->

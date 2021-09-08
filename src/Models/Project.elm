@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationFull, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, decodeCanvasProps, decodeCheck, decodeColumn, decodeColumnName, decodeColumnRef, decodeComment, decodeIndex, decodeLayout, decodePrimaryKey, decodeProject, decodeProjectId, decodeProjectName, decodeProjectSettings, decodeProjectSource, decodeProjectSourceContent, decodeProjectSourceId, decodeProjectSourceName, decodeRelation, decodeSchema, decodeSource, decodeSourceLine, decodeTable, decodeTableId, decodeTableProps, decodeUnique, encodeCanvasProps, encodeCheck, encodeColumn, encodeColumnName, encodeColumnRef, encodeComment, encodeIndex, encodeLayout, encodePrimaryKey, encodeProject, encodeProjectId, encodeProjectName, encodeProjectSettings, encodeProjectSource, encodeProjectSourceContent, encodeProjectSourceId, encodeProjectSourceName, encodeRelation, encodeSchema, encodeSource, encodeSourceLine, encodeTable, encodeTableId, encodeTableProps, encodeUnique, extractPath, htmlIdAsTableId, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initTableProps, parseTableId, showColumnRef, showTableId, showTableName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationFull, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, decodeCanvasProps, decodeCheck, decodeColumn, decodeColumnName, decodeColumnRef, decodeComment, decodeIndex, decodeLayout, decodePrimaryKey, decodeProject, decodeProjectId, decodeProjectName, decodeProjectSettings, decodeProjectSource, decodeProjectSourceContent, decodeProjectSourceId, decodeProjectSourceName, decodeRelation, decodeSchema, decodeSource, decodeSourceLine, decodeTable, decodeTableId, decodeTableProps, decodeUnique, encodeCanvasProps, encodeCheck, encodeColumn, encodeColumnName, encodeColumnRef, encodeComment, encodeIndex, encodeLayout, encodePrimaryKey, encodeProject, encodeProjectId, encodeProjectName, encodeProjectSettings, encodeProjectSource, encodeProjectSourceContent, encodeProjectSourceId, encodeProjectSourceName, encodeRelation, encodeSchema, encodeSource, encodeSourceLine, encodeTable, encodeTableId, encodeTableProps, encodeUnique, extractPath, htmlIdAsTableId, htmlIdDecode, htmlIdEncode, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initTableProps, parseTableId, showColumnRef, showTableId, showTableName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
@@ -268,16 +268,26 @@ buildProject id name sources schema sample now =
     }
 
 
+htmlIdEncode : String -> HtmlId
+htmlIdEncode text =
+    text |> String.replace "$" "_"
+
+
+htmlIdDecode : String -> HtmlId
+htmlIdDecode text =
+    text |> String.replace "_" "$"
+
+
 tableIdAsHtmlId : TableId -> HtmlId
 tableIdAsHtmlId ( schema, table ) =
-    "table-" ++ schema ++ "-" ++ table
+    "table-" ++ schema ++ "-" ++ (table |> htmlIdEncode)
 
 
 htmlIdAsTableId : HtmlId -> TableId
 htmlIdAsTableId id =
     case String.split "-" id of
         "table" :: schema :: table :: [] ->
-            ( schema, table )
+            ( schema, table |> htmlIdDecode )
 
         _ ->
             ( conf.default.schema, id )

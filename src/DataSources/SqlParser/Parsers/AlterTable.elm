@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as R
@@ -87,16 +87,16 @@ parseAlterTableAddConstraint command =
     case command |> R.matches "^ADD CONSTRAINT\\s+(?<name>[^ ]+)\\s+(?<constraint>.*)$" of
         (Just name) :: (Just constraint) :: [] ->
             if constraint |> String.toUpper |> String.startsWith "PRIMARY KEY" then
-                parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey (Just name))
+                parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey (Just (name |> buildConstraintName)))
 
             else if constraint |> String.toUpper |> String.startsWith "FOREIGN KEY" then
-                parseAlterTableAddConstraintForeignKey constraint |> Result.map (ParsedForeignKey name)
+                parseAlterTableAddConstraintForeignKey constraint |> Result.map (ParsedForeignKey (name |> buildConstraintName))
 
             else if constraint |> String.toUpper |> String.startsWith "UNIQUE" then
-                parseAlterTableAddConstraintUnique constraint |> Result.map (ParsedUnique name)
+                parseAlterTableAddConstraintUnique constraint |> Result.map (ParsedUnique (name |> buildConstraintName))
 
             else if constraint |> String.toUpper |> String.startsWith "CHECK" then
-                parseAlterTableAddConstraintCheck constraint |> Result.map (ParsedCheck name)
+                parseAlterTableAddConstraintCheck constraint |> Result.map (ParsedCheck (name |> buildConstraintName))
 
             else
                 Err [ "Constraint not handled: '" ++ constraint ++ "'" ]

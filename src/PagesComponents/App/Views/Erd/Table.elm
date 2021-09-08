@@ -232,9 +232,22 @@ viewColumnName table column =
 
 viewColumnType : Column -> Html msg
 viewColumnType column =
-    column.default
-        |> Maybe.map (\default -> div [ class "type", title ("default value: " ++ default), bsToggle Tooltip, style "text-decoration" "underline" ] [ text (formatColumnType column) ])
-        |> Maybe.withDefault (div [ class "type" ] [ text (formatColumnType column) ])
+    let
+        value : Html msg
+        value =
+            column.default
+                |> Maybe.map (\default -> span [ class "value text-decoration-underline", title ("default value: " ++ default), bsToggle Tooltip ] [ text column.kind ])
+                |> Maybe.withDefault (span [ class "value" ] [ text column.kind ])
+
+        nullable : List (Html msg)
+        nullable =
+            if column.nullable then
+                [ span [ class "nullable", title "nullable", bsToggle Tooltip ] [ text "?" ] ]
+
+            else
+                []
+    in
+    div [ class "type" ] (value :: nullable)
 
 
 viewComment : Comment -> Html msg
@@ -263,11 +276,6 @@ tableNameSize zoom =
 
 
 -- data accessors
-
-
-formatColumnType : Column -> String
-formatColumnType column =
-    column.kind |> withNullableInfo column.nullable
 
 
 formatPkTitle : PrimaryKey -> String
