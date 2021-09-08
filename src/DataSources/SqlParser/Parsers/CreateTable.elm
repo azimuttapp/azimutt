@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (TableConstraint(..), parseAlterTableAddConstraint)
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildTableName, commaSplit)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.List as L
 import Libs.Maybe as M
@@ -49,7 +49,7 @@ type alias ParsedCheck =
 
 parseCreateTable : SqlStatement -> Result (List ParseError) ParsedTable
 parseCreateTable statement =
-    case statement |> buildRawSql |> R.matches "^CREATE TABLE[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)[ \t]*\\((?<body>[^;]+?)\\)(?:[ \t]+WITH[ \t]+\\((?<options>.*?)\\))?(?:[^)]*)?;$" of
+    case statement |> buildSqlLine |> R.matches "^CREATE TABLE\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*\\((?<body>[^;]+?)\\)(?:\\s+WITH\\s+\\((?<options>.*?)\\))?(?:[^)]*)?;$" of
         schema :: (Just table) :: (Just body) :: _ :: [] ->
             let
                 ( constraints, columns ) =
@@ -81,7 +81,7 @@ parseCreateTable statement =
 
 parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn sql =
-    case sql |> R.matches "^(?<name>[^ ]+)[ \t]+(?<type>.*?)(?:[ \t]+DEFAULT[ \t]+(?<default1>.*?))?(?<nullable>[ \t]+NOT NULL)?(?:[ \t]+DEFAULT[ \t]+(?<default2>.*?))?(?:[ \t]+CONSTRAINT[ \t]+(?<constraint>.*))?(?: AUTO_INCREMENT)?$" of
+    case sql |> R.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?: AUTO_INCREMENT)?$" of
         (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: [] ->
             maybeConstraint
                 |> Maybe.map
@@ -104,7 +104,7 @@ parseCreateTableColumn sql =
 
 parseCreateTableColumnPrimaryKey : RawSql -> Result ParseError SqlConstraintName
 parseCreateTableColumnPrimaryKey constraint =
-    case constraint |> R.matches "^(?<constraint>[^ ]+)[ \t]+PRIMARY KEY$" of
+    case constraint |> R.matches "^(?<constraint>[^ ]+)\\s+PRIMARY KEY$" of
         (Just constraintName) :: [] ->
             Ok constraintName
 
@@ -114,7 +114,7 @@ parseCreateTableColumnPrimaryKey constraint =
 
 parseCreateTableColumnForeignKey : RawSql -> Result ParseError ( SqlConstraintName, SqlForeignKeyRef )
 parseCreateTableColumnForeignKey constraint =
-    case constraint |> R.matches "^(?<constraint>[^ ]+)[ \t]+REFERENCES[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)(?:\\.(?<column>[^ .]+))?$" of
+    case constraint |> R.matches "^(?<constraint>[^ ]+)\\s+REFERENCES\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)(?:\\.(?<column>[^ .]+))?$" of
         (Just constraintName) :: (Just table) :: (Just column) :: Nothing :: [] ->
             Ok ( constraintName, { schema = Nothing, table = table, column = Just column } )
 

@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildTableName, commaSplit, parseIndexDefinition)
+module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, parseIndexDefinition)
 
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel
@@ -25,6 +25,11 @@ buildRawSql statement =
     statement |> Nel.toList |> List.map .text |> String.join "\n"
 
 
+buildSqlLine : SqlStatement -> RawSql
+buildSqlLine statement =
+    statement |> Nel.toList |> List.map .text |> String.join " "
+
+
 buildSchemaName : String -> SqlSchemaName
 buildSchemaName name =
     name |> String.trim |> noEnclosingQuotes
@@ -47,32 +52,12 @@ buildConstraintName name =
 
 noEnclosingQuotes : String -> String
 noEnclosingQuotes text =
-    text |> removeEnclosingDoubleQuotes |> removeEnclosingSingleQuotes |> removeEnclosingBackQuotes
+    text |> extract "\"(.*)\"" |> extract "'(.*)'" |> extract "`(.*)`" |> extract "\\[(.*)]"
 
 
-removeEnclosingDoubleQuotes : String -> String
-removeEnclosingDoubleQuotes text =
-    case text |> R.matches "\"(.*)\"" of
-        (Just res) :: [] ->
-            res
-
-        _ ->
-            text
-
-
-removeEnclosingSingleQuotes : String -> String
-removeEnclosingSingleQuotes text =
-    case text |> R.matches "'(.*)'" of
-        (Just res) :: [] ->
-            res
-
-        _ ->
-            text
-
-
-removeEnclosingBackQuotes : String -> String
-removeEnclosingBackQuotes text =
-    case text |> R.matches "`(.*)`" of
+extract : String -> String -> String
+extract regex text =
+    case text |> R.matches regex of
         (Just res) :: [] ->
             res
 

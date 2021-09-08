@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildRawSql, buildSchemaName, buildTableName, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as R
@@ -10,6 +10,7 @@ type TableUpdate
     = AddTableConstraint (Maybe SqlSchemaName) SqlTableName TableConstraint
     | AlterColumn (Maybe SqlSchemaName) SqlTableName ColumnUpdate
     | AddTableOwner (Maybe SqlSchemaName) SqlTableName SqlUser
+    | AttachPartition (Maybe SqlSchemaName) SqlTableName
 
 
 type TableConstraint
@@ -46,7 +47,7 @@ type alias SqlUser =
 
 parseAlterTable : SqlStatement -> Result (List ParseError) TableUpdate
 parseAlterTable statement =
-    case statement |> buildRawSql |> R.matches "^ALTER TABLE(?:[ \t]+ONLY)?[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)[ \t]+(?<command>.*);$" of
+    case statement |> buildSqlLine |> R.matches "^ALTER TABLE(?:\\s+ONLY)?\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+(?<command>.*);$" of
         schema :: (Just table) :: (Just command) :: [] ->
             -- FIXME manage multiple commands, ex: "ADD PRIMARY KEY (`id`), ADD KEY `IDX_ABC` (`user_id`), ADD KEY `IDX_DEF` (`event_id`)"
             -- TODO try to merge "ADD PRIMARY KEY" with "ADD CONSTRAINT" (make CONSTRAINT optional)
@@ -71,6 +72,9 @@ parseAlterTable statement =
             else if command |> String.toUpper |> String.startsWith "OWNER TO " then
                 parseAlterTableOwnerTo command |> Result.map (AddTableOwner schemaName tableName)
 
+            else if command |> String.toUpper |> String.startsWith "ATTACH PARTITION " then
+                Ok (AttachPartition schemaName tableName)
+
             else
                 Err [ "Command not handled: '" ++ command ++ "'" ]
 
@@ -80,7 +84,7 @@ parseAlterTable statement =
 
 parseAlterTableAddConstraint : RawSql -> Result (List ParseError) TableConstraint
 parseAlterTableAddConstraint command =
-    case command |> R.matches "^ADD CONSTRAINT[ \t]+(?<name>[^ .]+)[ \t]+(?<constraint>.*)$" of
+    case command |> R.matches "^ADD CONSTRAINT\\s+(?<name>[^ ]+)\\s+(?<constraint>.*)$" of
         (Just name) :: (Just constraint) :: [] ->
             if constraint |> String.toUpper |> String.startsWith "PRIMARY KEY" then
                 parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey (Just name))
@@ -103,7 +107,7 @@ parseAlterTableAddConstraint command =
 
 parseAlterTableAddConstraintPrimaryKey : RawSql -> Result (List ParseError) PrimaryKeyInner
 parseAlterTableAddConstraintPrimaryKey constraint =
-    case constraint |> R.matches "^PRIMARY KEY[ \t]+\\((?<columns>[^)]+)\\)$" of
+    case constraint |> R.matches "^PRIMARY KEY\\s+\\((?<columns>[^)]+)\\)$" of
         (Just columns) :: [] ->
             columns |> String.split "," |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Primary key can't have empty columns" ]
 
@@ -113,9 +117,21 @@ parseAlterTableAddConstraintPrimaryKey constraint =
 
 parseAlterTableAddConstraintForeignKey : RawSql -> Result (List ParseError) ForeignKeyInner
 parseAlterTableAddConstraintForeignKey constraint =
-    case constraint |> R.matches "^FOREIGN KEY[ \t]+\\((?<column>[^)]+)\\)[ \t]+REFERENCES[ \t]+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:[ \t]*\\((?<column_b>[^)]+)\\))?(?:[ \t]+NOT VALID)?(?: ON DELETE (?:NO ACTION|CASCADE|SET NULL|SET DEFAULT))?$" of
+    let
+        action : String
+        action =
+            "(?:NO ACTION|CASCADE|SET NULL|SET DEFAULT|RESTRICT)"
+
+        triggers : String
+        triggers =
+            "(?:\\s+ON UPDATE " ++ action ++ ")?(?:\\s+ON DELETE " ++ action ++ ")?"
+    in
+    case constraint |> R.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ triggers ++ "$") of
         (Just column) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
-            Ok { column = column, ref = { schema = schemaDest, table = tableDest, column = columnDest } }
+            Ok
+                { column = column |> buildColumnName
+                , ref = { schema = schemaDest |> Maybe.map buildSchemaName, table = tableDest |> buildTableName, column = columnDest |> Maybe.map buildColumnName }
+                }
 
         _ ->
             Err [ "Can't parse foreign key: '" ++ constraint ++ "'" ]
@@ -123,7 +139,7 @@ parseAlterTableAddConstraintForeignKey constraint =
 
 parseAlterTableAddConstraintUnique : RawSql -> Result (List ParseError) UniqueInner
 parseAlterTableAddConstraintUnique constraint =
-    case constraint |> R.matches "^UNIQUE[ \t]+(?<definition>.+)$" of
+    case constraint |> R.matches "^UNIQUE\\s+(?<definition>.+)$" of
         (Just definition) :: [] ->
             parseIndexDefinition definition
                 |> Result.andThen (\columns -> Nel.fromList columns |> Result.fromMaybe [ "Unique index can't have empty columns" ])
@@ -135,7 +151,7 @@ parseAlterTableAddConstraintUnique constraint =
 
 parseAlterTableAddConstraintCheck : RawSql -> Result (List ParseError) CheckInner
 parseAlterTableAddConstraintCheck constraint =
-    case constraint |> R.matches "^CHECK[ \t]+(?<predicate>.*)$" of
+    case constraint |> R.matches "^CHECK\\s+(?<predicate>.*)$" of
         (Just predicate) :: [] ->
             Ok predicate
 
@@ -145,7 +161,7 @@ parseAlterTableAddConstraintCheck constraint =
 
 parseAlterTableAlterColumn : RawSql -> Result (List ParseError) ColumnUpdate
 parseAlterTableAlterColumn command =
-    case command |> R.matches "^ALTER COLUMN[ \t]+(?<column>[^ .]+)[ \t]+SET[ \t]+(?<property>.+)$" of
+    case command |> R.matches "^ALTER COLUMN\\s+(?<column>[^ .]+)\\s+SET\\s+(?<property>.+)$" of
         (Just column) :: (Just property) :: [] ->
             if property |> String.toUpper |> String.startsWith "DEFAULT" then
                 parseAlterTableAlterColumnDefault property |> Result.map (ColumnDefault column)
@@ -162,7 +178,7 @@ parseAlterTableAlterColumn command =
 
 parseAlterTableAlterColumnDefault : RawSql -> Result (List ParseError) SqlColumnValue
 parseAlterTableAlterColumnDefault property =
-    case property |> R.matches "^DEFAULT[ \t]+(?<value>.+)$" of
+    case property |> R.matches "^DEFAULT\\s+(?<value>.+)$" of
         (Just value) :: [] ->
             Ok value
 
@@ -172,7 +188,7 @@ parseAlterTableAlterColumnDefault property =
 
 parseAlterTableAlterColumnStatistics : RawSql -> Result (List ParseError) Int
 parseAlterTableAlterColumnStatistics property =
-    case property |> R.matches "^STATISTICS[ \t]+(?<value>[0-9]+)$" of
+    case property |> R.matches "^STATISTICS\\s+(?<value>[0-9]+)$" of
         (Just value) :: [] ->
             String.toInt value |> Result.fromMaybe [ "Statistics value is not a number: '" ++ value ++ "'" ]
 
@@ -182,7 +198,7 @@ parseAlterTableAlterColumnStatistics property =
 
 parseAlterTableOwnerTo : RawSql -> Result (List ParseError) SqlUser
 parseAlterTableOwnerTo command =
-    case command |> R.matches "^OWNER TO[ \t]+(?<user>.+)$" of
+    case command |> R.matches "^OWNER TO\\s+(?<user>.+)$" of
         (Just user) :: [] ->
             Ok user
 

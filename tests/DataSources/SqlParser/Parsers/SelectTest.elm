@@ -43,6 +43,7 @@ suite =
             , test "with alias" (\_ -> parseSelectColumn "id AS my_id" |> Expect.equal (Ok (BasicColumn { table = Nothing, column = "id", alias = Just "my_id" })))
             , test "with everything" (\_ -> parseSelectColumn "users.id AS my_id" |> Expect.equal (Ok (BasicColumn { table = Just "users", column = "id", alias = Just "my_id" })))
             , test "remove quotes" (\_ -> parseSelectColumn "users.\"id\"" |> Expect.equal (Ok (BasicColumn { table = Just "users", column = "id", alias = Nothing })))
+            , test "with space in alias" (\_ -> parseSelectColumn "a.postal_code AS \"zip code\"" |> Expect.equal (Ok (BasicColumn { table = Just "a", column = "postal_code", alias = Just "zip code" })))
             , test "null" (\_ -> parseSelectColumn "NULL::bigint AS id" |> Expect.equal (Ok (ComplexColumn { formula = "NULL::bigint", alias = "id" })))
             , test "with function" (\_ -> parseSelectColumn "length((users.name)::text) AS name_length" |> Expect.equal (Ok (ComplexColumn { formula = "length((users.name)::text)", alias = "name_length" })))
             , test "with multi function" (\_ -> parseSelectColumn "((users.phone IS NULL) AND (users.old_phone IS NOT NULL)) AS has_deleted_phone" |> Expect.equal (Ok (ComplexColumn { formula = "((users.phone IS NULL) AND (users.old_phone IS NOT NULL))", alias = "has_deleted_phone" })))

@@ -138,6 +138,9 @@ evolve ( statement, command ) tables =
         AlterTable (AddTableOwner _ _ _) ->
             Ok tables
 
+        AlterTable (AttachPartition _ _) ->
+            Ok tables
+
         CreateIndex index ->
             updateTable statement (buildId index.table.schema index.table.table) (\t -> Ok { t | indexes = t.indexes ++ [ { name = index.name, columns = index.columns, definition = index.definition } ] }) tables
 
@@ -170,7 +173,7 @@ updateColumn statement id name transform tables =
             table.columns
                 |> Nel.find (\column -> column.name == name)
                 |> Maybe.map (\column -> transform column |> Result.map (\newColumn -> updateTableColumn name (\_ -> newColumn) table))
-                |> Maybe.withDefault (Err [ "Column '" ++ name ++ "' does not exist in table " ++ id ])
+                |> Maybe.withDefault (Err [ "Column '" ++ name ++ "' does not exist in table " ++ id ++ " (in '" ++ buildRawSql statement ++ "')" ])
         )
         tables
 
@@ -331,7 +334,6 @@ buildStatements lines =
                 not
                     (String.isEmpty (String.trim line.text)
                         || String.startsWith "--" (String.trim line.text)
-                        || String.startsWith "/*" (String.trim line.text)
                         || String.startsWith "#" (String.trim line.text)
                         || hasOnlyComment line
                     )

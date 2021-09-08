@@ -44,7 +44,7 @@ type alias TableAlias =
 
 parseSelect : RawSql -> Result (List ParseError) SelectInfo
 parseSelect select =
-    case select |> R.matches "^SELECT(?:[ \t]+DISTINCT ON \\([^)]+\\))?[ \t]+(?<columns>.+?)(?:[ \t]+FROM[ \t]+(?<tables>.+?))?(?:[ \t]+WHERE[ \t]+(?<where>.+?))?$" of
+    case select |> R.matches "^SELECT(?:\\s+DISTINCT ON \\([^)]+\\))?\\s+(?<columns>.+?)(?:\\s+FROM\\s+(?<tables>.+?))?(?:\\s+WHERE\\s+(?<where>.+?))?$" of
         (Just columnsStr) :: tablesStr :: whereClause :: [] ->
             Result.map2 (\columns tables -> { columns = columns, tables = tables, whereClause = whereClause })
                 (commaSplit columnsStr |> List.map String.trim |> List.map parseSelectColumn |> L.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Select can't have empty columns" ]))
@@ -56,12 +56,12 @@ parseSelect select =
 
 parseSelectColumn : RawSql -> Result ParseError SelectColumn
 parseSelectColumn column =
-    case column |> R.matches "^(?:(?<table>[^ .]+)\\.)?(?<column>[^ :]+)(?:[ \t]+AS[ \t]+(?<alias>[^ ]+))?$" of
+    case column |> R.matches "^(?:(?<table>[^ .]+)\\.)?(?<column>[^ :]+)(?:\\s+AS\\s+(?<alias>.+))?$" of
         table :: (Just columnName) :: alias :: [] ->
-            Ok (BasicColumn { table = table |> Maybe.map buildTableName, column = columnName |> buildColumnName, alias = alias })
+            Ok (BasicColumn { table = table |> Maybe.map buildTableName, column = columnName |> buildColumnName, alias = alias |> Maybe.map buildColumnName })
 
         _ ->
-            case column |> R.matches "^(?<formula>.+?)[ \t]+AS[ \t]+(?<alias>[^ ]+)$" of
+            case column |> R.matches "^(?<formula>.+?)\\s+AS\\s+(?<alias>[^ ]+)$" of
                 (Just formula) :: (Just alias) :: [] ->
                     Ok (ComplexColumn { formula = formula, alias = alias })
 
@@ -71,7 +71,7 @@ parseSelectColumn column =
 
 parseSelectTable : RawSql -> Result ParseError SelectTable
 parseSelectTable table =
-    case table |> R.matches "^(?:(?<schema>[^ .]+)\\.)?(?<table>[^ ]+)(?:[ \t]+(?<alias>[^ ]+))?$" of
+    case table |> R.matches "^(?:(?<schema>[^ .]+)\\.)?(?<table>[^ ]+)(?:\\s+(?<alias>[^ ]+))?$" of
         schema :: (Just tableName) :: alias :: [] ->
             Ok (BasicTable { schema = schema |> Maybe.map buildSchemaName, table = tableName |> buildTableName, alias = alias })
 

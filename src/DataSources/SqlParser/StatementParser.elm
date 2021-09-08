@@ -61,6 +61,9 @@ parseCommand statement =
      else if firstLine |> String.startsWith "COMMENT ON VIEW " then
         Ok (Ignored statement)
 
+     else if firstLine |> String.startsWith "ALTER INDEX " then
+        Ok (Ignored statement)
+
      else if firstLine |> String.startsWith "COMMENT ON INDEX " then
         Ok (Ignored statement)
 
@@ -124,6 +127,9 @@ parseCommand statement =
      else if firstLine |> String.startsWith "ALTER SEQUENCE " then
         Ok (Ignored statement)
 
+     else if firstLine |> String.startsWith "CREATE TRIGGER " then
+        Ok (Ignored statement)
+
      else if firstLine |> String.startsWith "GRANT ALL ON " then
         Ok (Ignored statement)
 
@@ -137,6 +143,12 @@ parseCommand statement =
         Ok (Ignored statement)
 
      else if firstLine |> String.startsWith "START TRANSACTION" then
+        Ok (Ignored statement)
+
+     else if firstLine |> String.startsWith "CREATE AGGREGATE " then
+        Ok (Ignored statement)
+
+     else if firstLine |> String.startsWith "ALTER AGGREGATE " then
         Ok (Ignored statement)
 
      else if firstLine |> String.startsWith "USE " then

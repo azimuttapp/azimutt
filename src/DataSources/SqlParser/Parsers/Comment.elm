@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnTable, SqlComment, parseColumnComment, parseTableComment)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildRawSql, buildSchemaName, buildTableName)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Regex as R
 
@@ -19,7 +19,7 @@ type alias SqlComment =
 
 parseTableComment : SqlStatement -> Result (List ParseError) CommentOnTable
 parseTableComment statement =
-    case statement |> buildRawSql |> R.matches "^COMMENT ON TABLE[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)[ \t]+IS[ \t]+'(?<comment>(?:[^']|'')+)';$" of
+    case statement |> buildSqlLine |> R.matches "^COMMENT ON TABLE\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+IS\\s+'(?<comment>(?:[^']|'')+)';$" of
         schema :: (Just table) :: (Just comment) :: [] ->
             Ok { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, comment = comment |> String.replace "''" "'" }
 
@@ -29,7 +29,7 @@ parseTableComment statement =
 
 parseColumnComment : SqlStatement -> Result (List ParseError) CommentOnColumn
 parseColumnComment statement =
-    case statement |> buildRawSql |> R.matches "^COMMENT ON COLUMN[ \t]+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\.(?<column>[^ .]+)[ \t]+IS[ \t]+'(?<comment>(?:[^']|'')+)';$" of
+    case statement |> buildSqlLine |> R.matches "^COMMENT ON COLUMN\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\.(?<column>[^ .]+)\\s+IS\\s+'(?<comment>(?:[^']|'')+)';$" of
         schema :: (Just table) :: (Just column) :: (Just comment) :: [] ->
             Ok { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, column = column |> buildColumnName, comment = comment |> String.replace "''" "'" }
 
