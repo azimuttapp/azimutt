@@ -130,14 +130,14 @@ suite =
         [ describe "updateTable"
             [ test "basic"
                 (\_ ->
-                    updateTable "public.users" (\t -> Ok { t | comment = Just "A comment ; 'tricky' one" }) (Dict.singleton "public.users" users)
+                    updateTable usersWithComment.source "public.users" (\t -> Ok { t | comment = Just "A comment ; 'tricky' one" }) (Dict.singleton "public.users" users)
                         |> Expect.equal (Ok (Dict.singleton "public.users" usersWithComment))
                 )
             ]
         , describe "updateColumn"
             [ test "basic"
                 (\_ ->
-                    updateColumn "public.users" "id" (\c -> Ok { c | comment = Just "A comment" }) (Dict.singleton "public.users" users)
+                    updateColumn usersWithIdComment.source "public.users" "id" (\c -> Ok { c | comment = Just "A comment" }) (Dict.singleton "public.users" users)
                         |> Expect.equal (Ok (Dict.singleton "public.users" usersWithIdComment))
                 )
             ]

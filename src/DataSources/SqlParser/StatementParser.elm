@@ -21,132 +21,134 @@ type Command
     | Ignored SqlStatement
 
 
-parseCommand : SqlStatement -> Result (List ParseError) Command
+parseCommand : SqlStatement -> Result (List ParseError) ( SqlStatement, Command )
 parseCommand statement =
     let
         firstLine : String
         firstLine =
             statement.head.text |> String.trim |> String.toUpper
     in
-    if firstLine |> String.startsWith "CREATE TABLE " then
+    (if firstLine |> String.startsWith "CREATE TABLE " then
         parseCreateTable statement |> Result.map CreateTable
 
-    else if firstLine |> String.startsWith "CREATE VIEW " then
+     else if firstLine |> String.startsWith "CREATE VIEW " then
         parseView statement |> Result.map CreateView
 
-    else if firstLine |> String.startsWith "CREATE MATERIALIZED VIEW " then
+     else if firstLine |> String.startsWith "CREATE MATERIALIZED VIEW " then
         parseView statement |> Result.map CreateView
 
-    else if firstLine |> String.startsWith "ALTER TABLE " then
+     else if firstLine |> String.startsWith "ALTER TABLE " then
         parseAlterTable statement |> Result.map AlterTable
 
-    else if firstLine |> String.startsWith "CREATE INDEX " then
+     else if firstLine |> String.startsWith "CREATE INDEX " then
         parseCreateIndex statement |> Result.map CreateIndex
 
-    else if firstLine |> String.startsWith "CREATE UNIQUE INDEX " then
+     else if firstLine |> String.startsWith "CREATE UNIQUE INDEX " then
         parseCreateUniqueIndex statement |> Result.map CreateUnique
 
-    else if firstLine |> String.startsWith "COMMENT ON TABLE " then
+     else if firstLine |> String.startsWith "COMMENT ON TABLE " then
         parseTableComment statement |> Result.map TableComment
 
-    else if firstLine |> String.startsWith "COMMENT ON COLUMN " then
+     else if firstLine |> String.startsWith "COMMENT ON COLUMN " then
         parseColumnComment statement |> Result.map ColumnComment
 
-    else if firstLine |> String.startsWith "ALTER COLUMN " then
+     else if firstLine |> String.startsWith "ALTER COLUMN " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE OR REPLACE VIEW " then
+     else if firstLine |> String.startsWith "CREATE OR REPLACE VIEW " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "COMMENT ON VIEW " then
+     else if firstLine |> String.startsWith "COMMENT ON VIEW " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "COMMENT ON INDEX " then
+     else if firstLine |> String.startsWith "COMMENT ON INDEX " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE TYPE " then
+     else if firstLine |> String.startsWith "CREATE TYPE " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "ALTER TYPE " then
+     else if firstLine |> String.startsWith "ALTER TYPE " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE FUNCTION " then
+     else if firstLine |> String.startsWith "CREATE FUNCTION " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "ALTER FUNCTION " then
+     else if firstLine |> String.startsWith "ALTER FUNCTION " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE OPERATOR " then
+     else if firstLine |> String.startsWith "CREATE OPERATOR " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "ALTER OPERATOR " then
+     else if firstLine |> String.startsWith "ALTER OPERATOR " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE DATABASE " then
+     else if firstLine |> String.startsWith "CREATE DATABASE " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE SCHEMA " then
+     else if firstLine |> String.startsWith "CREATE SCHEMA " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "ALTER SCHEMA " then
+     else if firstLine |> String.startsWith "ALTER SCHEMA " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "COMMENT ON SCHEMA " then
+     else if firstLine |> String.startsWith "COMMENT ON SCHEMA " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "DROP SCHEMA " then
+     else if firstLine |> String.startsWith "DROP SCHEMA " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "DROP TABLE " then
+     else if firstLine |> String.startsWith "DROP TABLE " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "LOCK TABLES " then
+     else if firstLine |> String.startsWith "LOCK TABLES " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "UNLOCK TABLES;" then
+     else if firstLine |> String.startsWith "UNLOCK TABLES;" then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE EXTENSION " then
+     else if firstLine |> String.startsWith "CREATE EXTENSION " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "COMMENT ON EXTENSION " then
+     else if firstLine |> String.startsWith "COMMENT ON EXTENSION " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE TEXT SEARCH CONFIGURATION " then
+     else if firstLine |> String.startsWith "CREATE TEXT SEARCH CONFIGURATION " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "ALTER TEXT SEARCH CONFIGURATION " then
+     else if firstLine |> String.startsWith "ALTER TEXT SEARCH CONFIGURATION " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "CREATE SEQUENCE " then
+     else if firstLine |> String.startsWith "CREATE SEQUENCE " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "ALTER SEQUENCE " then
+     else if firstLine |> String.startsWith "ALTER SEQUENCE " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "GRANT ALL ON " then
+     else if firstLine |> String.startsWith "GRANT ALL ON " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "REVOKE ALL ON " then
+     else if firstLine |> String.startsWith "REVOKE ALL ON " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "SELECT " then
+     else if firstLine |> String.startsWith "SELECT " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "INSERT INTO " then
+     else if firstLine |> String.startsWith "INSERT INTO " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "START TRANSACTION" then
+     else if firstLine |> String.startsWith "START TRANSACTION" then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "USE " then
+     else if firstLine |> String.startsWith "USE " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "SET " then
+     else if firstLine |> String.startsWith "SET " then
         Ok (Ignored statement)
 
-    else if firstLine |> String.startsWith "GO " then
+     else if firstLine |> String.startsWith "GO " then
         Ok (Ignored statement)
 
-    else
+     else
         Err [ "Statement not handled: '" ++ buildRawSql statement ++ "'" ]
+    )
+        |> Result.map (\cmd -> ( statement, cmd ))

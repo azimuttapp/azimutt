@@ -6,6 +6,7 @@ import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedT
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView)
 import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..))
 import DataSources.SqlParser.StatementParser exposing (Command(..), parseCommand)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
 import DataSources.SqlParser.Utils.Types exposing (SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Dict exposing (Dict)
 import Libs.List as L
@@ -91,8 +92,8 @@ parseSchema fileName fileContent =
             ( [], Dict.empty )
 
 
-evolve : Command -> SqlSchema -> Result (List SchemaError) SqlSchema
-evolve command tables =
+evolve : ( SqlStatement, Command ) -> SqlSchema -> Result (List SchemaError) SqlSchema
+evolve ( statement, command ) tables =
     case command of
         CreateTable table ->
             let
@@ -117,19 +118,19 @@ evolve command tables =
                 |> Maybe.withDefault (Ok (tables |> Dict.insert id (buildView view)))
 
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
-            updateTable (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = defaultPkName table constraintName, columns = pk } }) tables
+            updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = defaultPkName table constraintName, columns = pk } }) tables
 
         AlterTable (AddTableConstraint schema table (ParsedForeignKey constraint fk)) ->
-            updateColumn (buildId schema table) fk.column (\c -> buildFk tables constraint fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
+            updateColumn statement (buildId schema table) fk.column (\c -> buildFk tables constraint fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
 
         AlterTable (AddTableConstraint schema table (ParsedUnique constraint unique)) ->
-            updateTable (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ { name = constraint, columns = unique.columns, definition = unique.definition } ] }) tables
+            updateTable statement (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ { name = constraint, columns = unique.columns, definition = unique.definition } ] }) tables
 
         AlterTable (AddTableConstraint schema table (ParsedCheck constraint check)) ->
-            updateTable (buildId schema table) (\t -> Ok { t | checks = t.checks ++ [ { name = constraint, predicate = check } ] }) tables
+            updateTable statement (buildId schema table) (\t -> Ok { t | checks = t.checks ++ [ { name = constraint, predicate = check } ] }) tables
 
         AlterTable (AlterColumn schema table (ColumnDefault column default)) ->
-            updateColumn (buildId schema table) column (\c -> Ok { c | default = Just default }) tables
+            updateColumn statement (buildId schema table) column (\c -> Ok { c | default = Just default }) tables
 
         AlterTable (AlterColumn _ _ (ColumnStatistics _ _)) ->
             Ok tables
@@ -138,32 +139,33 @@ evolve command tables =
             Ok tables
 
         CreateIndex index ->
-            updateTable (buildId index.table.schema index.table.table) (\t -> Ok { t | indexes = t.indexes ++ [ { name = index.name, columns = index.columns, definition = index.definition } ] }) tables
+            updateTable statement (buildId index.table.schema index.table.table) (\t -> Ok { t | indexes = t.indexes ++ [ { name = index.name, columns = index.columns, definition = index.definition } ] }) tables
 
         CreateUnique unique ->
-            updateTable (buildId unique.table.schema unique.table.table) (\t -> Ok { t | uniques = t.uniques ++ [ { name = unique.name, columns = unique.columns, definition = unique.definition } ] }) tables
+            updateTable statement (buildId unique.table.schema unique.table.table) (\t -> Ok { t | uniques = t.uniques ++ [ { name = unique.name, columns = unique.columns, definition = unique.definition } ] }) tables
 
         TableComment comment ->
-            updateTable (buildId comment.schema comment.table) (\table -> Ok { table | comment = Just comment.comment }) tables
+            updateTable statement (buildId comment.schema comment.table) (\table -> Ok { table | comment = Just comment.comment }) tables
 
         ColumnComment comment ->
-            updateColumn (buildId comment.schema comment.table) comment.column (\column -> Ok { column | comment = Just comment.comment }) tables
+            updateColumn statement (buildId comment.schema comment.table) comment.column (\column -> Ok { column | comment = Just comment.comment }) tables
 
         Ignored _ ->
             Ok tables
 
 
-updateTable : SqlTableId -> (SqlTable -> Result (List SchemaError) SqlTable) -> SqlSchema -> Result (List SchemaError) SqlSchema
-updateTable id transform tables =
+updateTable : SqlStatement -> SqlTableId -> (SqlTable -> Result (List SchemaError) SqlTable) -> SqlSchema -> Result (List SchemaError) SqlSchema
+updateTable statement id transform tables =
     tables
         |> Dict.get id
         |> Maybe.map (\table -> transform table |> Result.map (\newTable -> tables |> Dict.update id (Maybe.map (\_ -> newTable))))
-        |> Maybe.withDefault (Err [ "Table " ++ id ++ " does not exist" ])
+        |> Maybe.withDefault (Err [ "Table " ++ id ++ " does not exist (in '" ++ buildRawSql statement ++ "')" ])
 
 
-updateColumn : SqlTableId -> SqlColumnName -> (SqlColumn -> Result (List SchemaError) SqlColumn) -> SqlSchema -> Result (List SchemaError) SqlSchema
-updateColumn id name transform tables =
-    updateTable id
+updateColumn : SqlStatement -> SqlTableId -> SqlColumnName -> (SqlColumn -> Result (List SchemaError) SqlColumn) -> SqlSchema -> Result (List SchemaError) SqlSchema
+updateColumn statement id name transform tables =
+    updateTable statement
+        id
         (\table ->
             table.columns
                 |> Nel.find (\column -> column.name == name)

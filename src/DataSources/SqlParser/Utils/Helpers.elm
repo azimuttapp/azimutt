@@ -22,7 +22,7 @@ parseIndexDefinition definition =
 
 buildRawSql : SqlStatement -> RawSql
 buildRawSql statement =
-    statement |> Nel.toList |> List.map .text |> String.join "\\n"
+    statement |> Nel.toList |> List.map .text |> String.join "\n"
 
 
 buildSchemaName : String -> SqlSchemaName

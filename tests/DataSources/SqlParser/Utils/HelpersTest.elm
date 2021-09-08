@@ -24,7 +24,7 @@ suite =
                         { head = { file = fileName, line = 11, text = "ALTER TABLE ONLY public.users" }
                         , tail = [ { file = fileName, line = 12, text = "  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);" } ]
                         }
-                        |> Expect.equal "ALTER TABLE ONLY public.users\\n  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"
+                        |> Expect.equal "ALTER TABLE ONLY public.users\n  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"
                 )
             ]
         , describe "commaSplit"
