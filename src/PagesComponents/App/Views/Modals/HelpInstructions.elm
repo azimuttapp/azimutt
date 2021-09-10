@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.HelpInstructions exposing (viewHelpModal)
 
-import Conf exposing (conf)
+import Conf exposing (conf, constants)
 import Html exposing (Html, a, button, div, h2, kbd, p, span, text)
 import Html.Attributes exposing (class, href, id, rel, target, type_)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal, bsParent, bsTarget, bsToggle)
@@ -24,7 +24,7 @@ viewHelpModal =
             )
         , p [ class "mb-0" ]
             [ text "I hope you find Azimutt as much as useful as I do. The application is quickly evolving and any feedback, feature request or use case description is "
-            , extLink "https://github.com/azimuttapp/azimutt/discussions" "very welcome"
+            , extLink (constants.azimuttGithub ++ "/discussions") "very welcome"
             , text " to help us make the most out of it."
             ]
         ]
@@ -46,7 +46,7 @@ search =
         , p []
             [ soon
             , text " We plan to use full-text search to be typo tolerant and also include table comment and column names & comments to score the results. If you really want this, please "
-            , extLink "https://github.com/azimuttapp/azimutt/discussions/8" "vote and let us know"
+            , extLink (constants.azimuttGithub ++ "/discussions/8") "vote and let us know"
             , text " to help prioritization."
             ]
         , p []
@@ -78,7 +78,7 @@ canvasNavigation =
         , p []
             [ soon
             , text " Group selection using a box or ctrl + click will allow to move multiple tables at once. "
-            , extLink "https://github.com/azimuttapp/azimutt/discussions/9" "Tell us"
+            , extLink (constants.azimuttGithub ++ "/discussions/9") "Tell us"
             , text " if this feature is highly expected."
             ]
         ]
@@ -135,7 +135,7 @@ findPath =
             [ experimental
             , text " Find all the possible paths between two tables. To get relevant results, use the settings to ignore some columns or tables. "
             , text "We are still figuring out how this could be the most interesting so don't hesitate to "
-            , extLink "https://github.com/azimuttapp/azimutt/discussions/7" "come and discuss"
+            , extLink (constants.azimuttGithub ++ "/discussions/7") "come and discuss"
             , text " out it."
             ]
         ]
