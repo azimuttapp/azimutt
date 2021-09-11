@@ -1,78 +1,24 @@
-module Components.Slices.Feature exposing (featureChapter, featureListeSlice, featureSlice)
+module Components.Slices.Feature exposing (coloredSlice, doc)
 
 import Components.Atoms.Icon as Icon
-import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, blockquote, br, div, footer, h2, h3, img, p, span, text)
-import Html.Styled.Attributes exposing (alt, class, css, href, src)
-import Libs.Html.Styled exposing (bText)
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
+import Html.Styled exposing (Html, a, br, div, h2, h3, p, span, text)
+import Html.Styled.Attributes exposing (class, css, href)
+import Tailwind.Breakpoints exposing (lg, sm)
+import Tailwind.Utilities exposing (bg_gradient_to_r, bg_opacity_10, bg_white, flex, font_extrabold, font_medium, from_green_800, gap_x_6, gap_x_8, gap_y_12, gap_y_16, grid, grid_cols_1, grid_cols_2, grid_cols_3, h_12, items_center, justify_center, max_w_3xl, max_w_4xl, max_w_7xl, mt_12, mt_16, mt_2, mt_4, mt_6, mx_auto, pb_24, pt_20, pt_24, px_4, px_6, px_8, py_16, rounded_md, text_3xl, text_base, text_lg, text_purple_200, text_white, to_indigo_700, tracking_tight, w_12)
 
 
-featureSlice : Html msg
-featureSlice =
-    div [ css [ Tw.relative, Tw.pt_16, Tw.pb_32, Tw.overflow_hidden ] ]
-        [ div [ css [ Bp.lg [ Tw.mx_auto, Tw.max_w_7xl, Tw.px_8, Tw.grid, Tw.grid_cols_2, Tw.grid_flow_col_dense, Tw.gap_24 ] ] ]
-            [ div [ css [ Tw.px_4, Tw.max_w_xl, Tw.mx_auto, Bp.lg [ Tw.py_16, Tw.max_w_none, Tw.mx_0, Tw.px_0 ], Bp.sm [ Tw.px_6 ] ] ]
-                [ div []
-                    [ div [ css [ Tw.mt_6 ] ]
-                        [ h2 [ css [ Tw.text_3xl, Tw.font_extrabold, Tw.tracking_tight, Tw.text_gray_900 ] ]
-                            [ text "Explore your database schema" ]
-                        , p [ css [ Tw.mt_4, Tw.text_lg, Tw.text_gray_500 ] ]
-                            [ text """Not everyone has the opportunity to work on brand new application where you create everything, including the data model.
-                                      Most of developers evolve and maintain existing applications with an already big schema, sometimes more than 50, 100 or even 500 tables.
-                                      Finding the right tables and relations to work with can be hard, and sincerely, no tool really helps. Until now."""
-                            , br [] []
-                            , bText "Azimutt"
-                            , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
-                            ]
-                        , div [ css [ Tw.mt_6 ] ]
-                            [ a [ href (Route.toHref Route.App), css [ Tw.inline_flex, Tw.bg_gradient_to_r, Tw.from_green_600, Tw.to_indigo_700, Tw.px_4, Tw.py_2, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.shadow_sm, Tw.text_white, Css.hover [ Tw.from_green_700, Tw.to_indigo_600, Tw.text_white ] ] ]
-                                [ text "Get started" ]
-                            ]
-                        ]
-                    ]
-                , div [ css [ Tw.mt_8, Tw.border_t, Tw.border_gray_200, Tw.pt_6 ] ]
-                    [ blockquote []
-                        [ div []
-                            [ p [ css [ Tw.text_base, Tw.text_gray_500 ] ]
-                                [ text "“Using Azimutt is like having super powers!”" ]
-                            ]
-                        , footer [ css [ Tw.mt_3 ] ]
-                            [ div [ css [ Tw.flex, Tw.items_center, Tw.space_x_3 ] ]
-                                [ div [ css [ Tw.flex_shrink_0 ] ]
-                                    [ img [ src "/assets/images/knuchel_avatar.jpg", alt "Loïc Knuchel picture", css [ Tw.h_6, Tw.w_6, Tw.rounded_full ] ] [] ]
-                                , div [ css [ Tw.text_base, Tw.font_medium, Tw.text_gray_700 ] ]
-                                    [ text "Loïc Knuchel, Principal Engineer @ Doctolib" ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            , div [ css [ Tw.mt_12, Bp.lg [ Tw.mt_0 ], Bp.sm [ Tw.mt_16 ] ] ]
-                [ div [ css [ Tw.pl_4, Tw.neg_mr_48, Bp.lg [ Tw.px_0, Tw.m_0, Tw.relative, Tw.h_full ], Bp.md [ Tw.neg_mr_16 ], Bp.sm [ Tw.pl_6 ] ] ]
-                    [ span [ class "img-swipe" ]
-                        [ img [ src "/assets/images/screenshot.png", alt "Azimutt screenshot", class "img-default", css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.left_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ] ] []
-                        , img [ src "/assets/images/screenshot-complex.png", alt "Azimutt screenshot", class "img-hover", css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.left_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ] ] []
-                        ]
-                    ]
-                ]
-            ]
-        ]
-
-
-featureListeSlice : Html msg
-featureListeSlice =
-    div [ css [ Tw.bg_gradient_to_r, Tw.from_green_800, Tw.to_indigo_700 ] ]
-        [ div [ css [ Tw.max_w_4xl, Tw.mx_auto, Tw.px_4, Tw.py_16, Bp.lg [ Tw.max_w_7xl, Tw.pt_24, Tw.px_8 ], Bp.sm [ Tw.px_6, Tw.pt_20, Tw.pb_24 ] ] ]
-            [ h2 [ css [ Tw.text_3xl, Tw.font_extrabold, Tw.text_white, Tw.tracking_tight ] ]
+coloredSlice : Html msg
+coloredSlice =
+    div [ css [ bg_gradient_to_r, from_green_800, to_indigo_700 ] ]
+        [ div [ css [ max_w_4xl, mx_auto, px_4, py_16, sm [ px_6, pt_20, pb_24 ], lg [ max_w_7xl, pt_24, px_8 ] ] ]
+            [ h2 [ css [ text_3xl, font_extrabold, text_white, tracking_tight ] ]
                 [ text "Explore your SQL schema like never before" ]
-            , p [ css [ Tw.mt_4, Tw.max_w_3xl, Tw.text_lg, Tw.text_purple_200 ] ]
+            , p [ css [ mt_4, max_w_3xl, text_lg, text_purple_200 ] ]
                 [ text "Your new weapons to dig into your schema:" ]
-            , div [ css [ Tw.mt_12, Tw.grid, Tw.grid_cols_1, Tw.gap_x_6, Tw.gap_y_12, Tw.text_white, Bp.lg [ Tw.mt_16, Tw.grid_cols_3, Tw.gap_x_8, Tw.gap_y_16 ], Bp.sm [ Tw.grid_cols_2 ] ] ]
+            , div [ css [ mt_12, grid, grid_cols_1, gap_x_6, gap_y_12, text_white, lg [ mt_16, grid_cols_3, gap_x_8, gap_y_16 ], sm [ grid_cols_2 ] ] ]
                 [ item Icon.inbox
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
@@ -106,18 +52,17 @@ item : Html msg -> String -> List (Html msg) -> Html msg
 item icon title description =
     div []
         [ div []
-            [ span [ css [ Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_md, Tw.bg_white, Tw.bg_opacity_10 ] ] [ icon ] ]
-        , div [ css [ Tw.mt_6 ] ]
-            [ h3 [ css [ Tw.text_lg, Tw.font_medium, Tw.text_white ] ] [ text title ]
-            , p [ css [ Tw.mt_2, Tw.text_base, Tw.text_purple_200 ] ] description
+            [ span [ css [ flex, items_center, justify_center, h_12, w_12, rounded_md, bg_white, bg_opacity_10 ] ] [ icon ] ]
+        , div [ css [ mt_6 ] ]
+            [ h3 [ css [ text_lg, font_medium, text_white ] ] [ text title ]
+            , p [ css [ mt_2, text_base, text_purple_200 ] ] description
             ]
         ]
 
 
-featureChapter : Chapter x
-featureChapter =
-    chapter "Feature"
+doc : Chapter x
+doc =
+    chapter "FeatureGrid"
         |> renderComponentList
-            [ ( "default", featureSlice )
-            , ( "list", featureListeSlice )
+            [ ( "coloredSlice", coloredSlice )
             ]

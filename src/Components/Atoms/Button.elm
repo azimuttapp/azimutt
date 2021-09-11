@@ -1,6 +1,6 @@
-module Components.Atoms.Button exposing (ButtonProps, button, buttonChapter)
+module Components.Atoms.Button exposing (ButtonProps, button, doc)
 
-import Css
+import Css exposing (focus, hover)
 import ElmBook exposing (Msg)
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
@@ -8,7 +8,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled as Styled exposing (Html, text)
 import Html.Styled.Attributes exposing (css, disabled, type_)
 import Html.Styled.Events exposing (onClick)
-import Tailwind.Utilities as Tw
+import Tailwind.Utilities exposing (bg_indigo_600, bg_indigo_700, border, border_transparent, font_medium, inline_flex, items_center, justify_center, outline_none, px_5, py_3, ring_2, ring_indigo_500, ring_offset_2, rounded_md, text_base, text_white)
 
 
 type alias ButtonProps msg =
@@ -21,13 +21,13 @@ button props =
         [ type_ "button"
         , disabled props.disabled
         , onClick props.onClick
-        , css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.px_5, Tw.py_3, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.text_white, Tw.bg_indigo_600, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Tw.ring_indigo_500 ], Css.hover [ Tw.bg_indigo_700 ] ]
+        , css [ inline_flex, items_center, justify_center, px_5, py_3, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_indigo_600, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ bg_indigo_700 ] ]
         ]
         [ text props.label ]
 
 
-buttonChapter : Chapter x
-buttonChapter =
+doc : Chapter x
+doc =
     let
         defaultProps : ButtonProps (Msg state)
         defaultProps =

@@ -1,6 +1,7 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
 import Gen.Params.Home_ exposing (Params)
+import Html.Styled as Styled
 import Page
 import PagesComponents.Home_.View exposing (viewHome)
 import Ports exposing (trackPage)
@@ -40,7 +41,7 @@ update _ model =
 view : Model -> View msg
 view _ =
     { title = "Azimutt - Explore your database schema"
-    , body = viewHome
+    , body = viewHome |> List.map Styled.toUnstyled
     }
 
 
