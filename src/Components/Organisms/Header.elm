@@ -29,7 +29,7 @@ headerSlice url =
                     , menuLink [ text "Roadmap" ] [ href (constants.azimuttGithub ++ "/projects/1"), target "_blank", rel "noopener" ]
                     , menuLink [ text "Source code" ] [ href constants.azimuttGithub, target "_blank", rel "noopener" ]
                     , menuLink [ text "Bug reports" ] [ href (constants.azimuttGithub ++ "/issues"), target "_blank", rel "noopener" ]
-                    , menuLink [ span [ css [ sr_only ] ] [ text "Twitter" ], Icon.twitter ] [ href constants.azimuttTwitter, target "_blank", rel "noopener" ]
+                    , menuLink [ span [ css [ sr_only ] ] [ text "Twitter" ], Icon.twitter [] ] [ href constants.azimuttTwitter, target "_blank", rel "noopener" ]
                     ]
                 ]
             ]

@@ -5,12 +5,14 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.Feature as Feature
 import Components.Organisms.Footer as Footer
 import Components.Slices.Cta as Cta
+import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
+import Conf exposing (constants)
 import Css.Global as Global
 import Gen.Route as Route
-import Html.Styled exposing (Html, br, div, span, text)
-import Html.Styled.Attributes exposing (class, css, title)
+import Html.Styled exposing (Html, a, b, br, div, span, text)
+import Html.Styled.Attributes exposing (class, css, href, rel, target, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText)
 import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800, text_white)
@@ -127,10 +129,23 @@ viewHome =
             , cta = Just { url = Route.App, label = "I'm done..." }
             , quote = Nothing
             }
-
-        --, div [] [ text "Feature: everything is local" ]
-        --, div [] [ text "Feature: PWA" ]
-        --, div [] [ text "Feature: it's open source" ]
+        , FeatureGrid.cardSlice
+            { header = "Last chance"
+            , title = "What more can you want ?"
+            , description = "If you are still not convinced, here are my last words. Azimutt is awesome, build with awesome technology and support your awesome use cases. See below..."
+            , cards =
+                [ { icon = Icon.arrowCircleDown [ text_white ], title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at our fingertips. Whatever happens." ] }
+                , { icon = Icon.shieldCheck [ text_white ], title = "Everything is local", description = [ text "Don't worry about privacy, everything stays on your computer, this is your data! #localStorage" ] }
+                , { icon = Icon.github [ text_white ]
+                  , title = "Fully open source"
+                  , description =
+                        [ text "Want to have a look? Everything is on "
+                        , b [] [ a [ href constants.azimuttGithub, target "_blank", rel "noopener" ] [ text "azimuttap/azimutt" ] ]
+                        , text ", awesomely built with Elm. Come a let's discuss!"
+                        ]
+                  }
+                ]
+            }
         , Cta.slice
         , Footer.slice
         ]

@@ -17,11 +17,11 @@ slice =
         [ div [ css [ flex, space_x_6, md [ order_2 ] ] ]
             [ a [ href constants.azimuttTwitter, target "_blank", rel "noopener", css [ text_gray_400, hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "Twitter" ]
-                , Icon.twitter
+                , Icon.twitter []
                 ]
             , a [ href constants.azimuttGithub, target "_blank", rel "noopener", css [ text_gray_400, hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "GitHub" ]
-                , Icon.github
+                , Icon.github []
                 ]
             ]
         , p [ css [ mt_8, text_base, text_gray_400, md [ mt_0, order_1 ] ] ]
