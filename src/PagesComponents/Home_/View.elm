@@ -33,7 +33,7 @@ viewHome =
                     , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                     ]
                 }
-            , cta = Just { url = Route.App, label = "Get started" }
+            , cta = Just { url = Route.App, label = "Let's try it!" }
             , quote = Just { text = "Using Azimutt is like having super powers!", author = "Loïc Knuchel, Principal Engineer @ Doctolib", avatar = { url = "/assets/images/knuchel_avatar.jpg", alt = "Loïc Knuchel" } }
             }
 
