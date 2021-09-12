@@ -18,6 +18,7 @@ import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.String as S
 import Time
+import Url exposing (percentDecode, percentEncode)
 
 
 type alias Project =
@@ -270,12 +271,12 @@ buildProject id name sources schema sample now =
 
 htmlIdEncode : String -> HtmlId
 htmlIdEncode text =
-    text |> String.replace "$" "_"
+    text |> percentEncode
 
 
 htmlIdDecode : String -> HtmlId
 htmlIdDecode text =
-    text |> String.replace "_" "$"
+    text |> percentDecode |> Maybe.withDefault text
 
 
 tableIdAsHtmlId : TableId -> HtmlId
