@@ -1,4 +1,4 @@
-module Components.Slices.Feature exposing (coloredSlice, doc)
+module Components.Slices.FeatureGrid exposing (coloredSlice, doc)
 
 import Components.Atoms.Icon as Icon
 import ElmBook.Chapter exposing (chapter, renderComponentList)

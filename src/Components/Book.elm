@@ -7,7 +7,7 @@ import Components.Atoms.Link as Link
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Slices.Cta as Cta
-import Components.Slices.Feature as Feature
+import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide
 import Components.Slices.Hero as Hero
 import Css.Global as Global
@@ -32,7 +32,7 @@ main =
             , ( "Atoms", [ Link.doc, Button.doc, Icon.doc, Dots.doc ] )
             , ( "Molecules", [] )
             , ( "Organisms", [ Header.doc, Footer.doc ] )
-            , ( "Slices", [ Hero.doc, Feature.doc, FeatureSideBySide.doc, Cta.doc ] )
+            , ( "Slices", [ Hero.doc, FeatureGrid.doc, FeatureSideBySide.doc, Cta.doc ] )
             ]
 
 

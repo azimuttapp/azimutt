@@ -2,7 +2,7 @@ module PagesComponents.Home_.View exposing (viewHome)
 
 import Components.Organisms.Footer as Footer
 import Components.Slices.Cta as Cta
-import Components.Slices.Feature as Feature
+import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
 import Css.Global as Global
@@ -48,7 +48,7 @@ viewHome =
         --    , cta = Just { url = Route.App, label = "Get started" }
         --    , quote = Nothing
         --    }
-        , Feature.coloredSlice
+        , FeatureGrid.coloredSlice
         , Cta.slice
         , Footer.slice
         ]
