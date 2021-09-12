@@ -216,7 +216,7 @@ update msg model =
                 |> Maybe.withDefault ( model, Cmd.none )
 
         FindPathCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.none ))
+            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, activateTooltipsAndPopovers ))
 
         UpdateFindPathSettings settings ->
             ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )

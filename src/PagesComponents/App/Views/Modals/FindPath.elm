@@ -2,15 +2,16 @@ module PagesComponents.App.Views.Modals.FindPath exposing (viewFindPathModal)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
-import Html exposing (Html, a, b, br, button, div, input, label, li, ol, option, select, span, text)
+import Html exposing (Html, a, abbr, b, br, button, code, div, h2, input, label, option, pre, select, small, span, text)
 import Html.Attributes as Attributes exposing (class, disabled, for, href, id, placeholder, rel, selected, target, title, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal, bsToggleCollapse)
-import Libs.Html.Attributes exposing (ariaDescribedBy, ariaHidden, ariaLabel, role)
+import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal, bsParent, bsTarget, bsToggle, bsToggleCollapse)
+import Libs.Html.Attributes exposing (ariaControls, ariaDescribedBy, ariaExpanded, ariaHidden, ariaLabel, ariaLabelledBy, role)
+import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (HtmlId)
 import Libs.Nel as Nel
-import Models.Project exposing (FindPath, FindPathPath, FindPathSettings, FindPathState(..), FindPathStepDir(..), Table, TableId, parseTableId, showColumnRef, showTableId, stringAsTableId, tableIdAsString)
+import Models.Project exposing (ColumnRef, FindPath, FindPathPath, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Table, TableId, parseTableId, showColumnRef, showTableId, stringAsTableId, tableIdAsString)
 import PagesComponents.App.Models exposing (Msg(..))
 
 
@@ -21,7 +22,7 @@ viewFindPathModal tables settings model =
         ([ viewAlert ]
             ++ [ viewSettings conf.ids.findPathModal settings ]
             ++ [ viewSearchForm tables model.from model.to ]
-            ++ viewPaths model
+            ++ viewPaths conf.ids.findPathModal model
         )
         (viewFooter settings model)
 
@@ -112,8 +113,8 @@ viewSelectInput ref selectedValue buildMsg tables =
         )
 
 
-viewPaths : FindPath -> List (Html msg)
-viewPaths model =
+viewPaths : HtmlId -> FindPath -> List (Html msg)
+viewPaths idPrefix model =
     case ( model.from, model.to, model.result ) of
         ( Just from, Just to, Found result ) ->
             if result.paths |> List.isEmpty then
@@ -121,13 +122,18 @@ viewPaths model =
 
             else
                 [ div [ class "mt-3" ]
-                    [ text ("Found " ++ String.fromInt (List.length result.paths) ++ " paths between tables ")
-                    , b [] [ text (showTableId from) ]
-                    , text " and "
-                    , b [] [ text (showTableId to) ]
-                    , text ":"
-                    ]
-                , ol [ class "list-group list-group-numbered mt-3" ] (result.paths |> List.sortBy Nel.length |> List.map (viewPath from))
+                    ([ text ("Found " ++ String.fromInt (List.length result.paths) ++ " paths between tables ")
+                     , b [] [ text (showTableId from) ]
+                     , text " and "
+                     , b [] [ text (showTableId to) ]
+                     , text ":"
+                     , br [] []
+                     ]
+                        |> L.appendIf ((result.paths |> List.length) > 100)
+                            (small [ class "text-muted" ] [ text "Too much results ? Check 'Search settings' above to ignore some table or columns" ])
+                    )
+                , div [ class "accordion mt-3", id (idPrefix ++ "-paths-accordion") ] (result.paths |> List.sortBy Nel.length |> List.indexedMap (viewPath (idPrefix ++ "-paths-accordion") from))
+                , small [ class "text-muted" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                 , div [ class "mt-3" ]
                     [ text "We hope your like this feature. If you have a few minutes, please write us "
                     , a [ href "https://github.com/azimuttapp/azimutt/discussions/7", target "_blank", rel "noopener" ] [ text "a quick feedback" ]
@@ -139,25 +145,62 @@ viewPaths model =
             []
 
 
-viewPath : TableId -> FindPathPath -> Html msg
-viewPath from path =
-    li [ class "list-group-item" ]
-        (span [] [ text (showTableId from) ]
-            :: (path
-                    |> Nel.toList
-                    |> List.concatMap
-                        (\s ->
-                            [ text " > "
-                            , case s.direction of
-                                Right ->
-                                    span [ title (showColumnRef s.relation.src ++ " -> " ++ showColumnRef s.relation.ref) ] [ text (showTableId s.relation.ref.table) ]
+viewPath : HtmlId -> TableId -> Int -> FindPathPath -> Html msg
+viewPath accordionId from i path =
+    let
+        headerId : HtmlId
+        headerId =
+            accordionId ++ "-" ++ String.fromInt i
 
-                                Left ->
-                                    span [ title (showColumnRef s.relation.ref ++ " <- " ++ showColumnRef s.relation.src) ] [ text (showTableId s.relation.src.table) ]
-                            ]
-                        )
-               )
-        )
+        collapseId : HtmlId
+        collapseId =
+            headerId ++ "-collapse"
+    in
+    div [ class "accordion-item" ]
+        [ h2 [ class "accordion-header", id headerId ]
+            [ button [ type_ "button", class "accordion-button collapsed", ariaControls collapseId, bsTarget collapseId, bsToggle Collapse, ariaExpanded False ]
+                [ span [] (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (showTableId from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep)) ]
+            ]
+        , div [ class "accordion-collapse collapse", id collapseId, bsParent accordionId, ariaLabelledBy headerId ]
+            [ div [ class "accordion-body" ]
+                [ code [] [ pre [ class "mb-0" ] [ text (buildQuery from path) ] ]
+                ]
+            ]
+        ]
+
+
+viewPathStep : FindPathStep -> List (Html msg)
+viewPathStep s =
+    case s.direction of
+        Right ->
+            viewPathStepDetails "→" s.relation.src s.relation.ref
+
+        Left ->
+            viewPathStepDetails "←" s.relation.ref s.relation.src
+
+
+viewPathStepDetails : String -> ColumnRef -> ColumnRef -> List (Html msg)
+viewPathStepDetails dir from to =
+    [ text " > ", abbr [ title (showColumnRef from ++ " " ++ dir ++ " " ++ showColumnRef to), bsToggle Tooltip ] [ text (showTableId to.table) ] ]
+
+
+buildQuery : TableId -> FindPathPath -> String
+buildQuery table joins =
+    "SELECT *"
+        ++ ("\nFROM " ++ showTableId table)
+        ++ (joins
+                |> Nel.toList
+                |> List.map
+                    (\s ->
+                        case s.direction of
+                            Right ->
+                                "\n  JOIN " ++ showTableId s.relation.ref.table ++ " ON " ++ showColumnRef s.relation.ref ++ " = " ++ showColumnRef s.relation.src
+
+                            Left ->
+                                "\n  JOIN " ++ showTableId s.relation.src.table ++ " ON " ++ showColumnRef s.relation.src ++ " = " ++ showColumnRef s.relation.ref
+                    )
+                |> String.join ""
+           )
 
 
 viewFooter : FindPathSettings -> FindPath -> List (Html Msg)

@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, addIf, appendOn, dropUntil, dropWhile, filterMap, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependIf, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -138,8 +138,8 @@ addAt item index list =
         list |> List.foldr (\a ( res, i ) -> ( B.cond (i == index) (item :: a :: res) (a :: res), i - 1 )) ( [], List.length list - 1 ) |> Tuple.first
 
 
-addIf : Bool -> a -> List a -> List a
-addIf predicate item list =
+prependIf : Bool -> a -> List a -> List a
+prependIf predicate item list =
     if predicate then
         item :: list
 
@@ -155,6 +155,15 @@ prependOn maybe transform list =
 
         Nothing ->
             list
+
+
+appendIf : Bool -> a -> List a -> List a
+appendIf predicate item list =
+    if predicate then
+        list ++ [ item ]
+
+    else
+        list
 
 
 appendOn : Maybe b -> (b -> a) -> List a -> List a

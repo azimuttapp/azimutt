@@ -65,7 +65,7 @@ drawRelation src ref optional color index name =
 viewLine : Point -> Point -> Bool -> Maybe Color -> Svg Msg
 viewLine p1 p2 optional color =
     line
-        (L.addIf optional
+        (L.prependIf optional
             (strokeDasharray "4")
             [ x1 (String.fromFloat p1.x)
             , y1 (String.fromFloat p1.y)
