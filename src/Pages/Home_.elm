@@ -4,7 +4,7 @@ import Gen.Params.Home_ exposing (Params)
 import Html.Styled as Styled
 import Page
 import PagesComponents.Home_.View exposing (viewHome)
-import Ports exposing (trackPage)
+import Ports exposing (activateTooltipsAndPopovers, trackPage)
 import Request
 import Shared
 import View exposing (View)
@@ -30,7 +30,7 @@ type alias Msg =
 
 init : ( Model, Cmd msg )
 init =
-    ( (), trackPage "home" )
+    ( (), Cmd.batch [ trackPage "home", activateTooltipsAndPopovers ] )
 
 
 update : msg -> Model -> ( Model, Cmd msg )

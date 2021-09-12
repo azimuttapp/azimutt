@@ -1,16 +1,19 @@
 module PagesComponents.Home_.View exposing (viewHome)
 
+import Components.Atoms.Badge as Badge
+import Components.Atoms.Icon as Icon
+import Components.Molecules.Feature as Feature
 import Components.Organisms.Footer as Footer
 import Components.Slices.Cta as Cta
-import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
 import Css.Global as Global
 import Gen.Route as Route
-import Html.Styled exposing (Html, br, div, text)
-import Html.Styled.Attributes exposing (class)
+import Html.Styled exposing (Html, br, div, span, text)
+import Html.Styled.Attributes exposing (class, css, title)
+import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText)
-import Tailwind.Utilities exposing (globalStyles)
+import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800, text_white)
 
 
 viewHome : List (Html msg)
@@ -18,8 +21,8 @@ viewHome =
     [ div [ class "bg-white" ]
         [ Global.global globalStyles
         , Hero.backgroundImageSlice
-        , FeatureSideBySide.imageSwapSlice { url = "/assets/images/screenshot-complex.png", alt = "Azimutt screenshot" }
-            { image = { url = "/assets/images/screenshot.png", alt = "Azimutt screenshot" }
+        , FeatureSideBySide.imageSwapSlice { url = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
+            { image = { url = "/assets/images/basic-schema.png", alt = "Basic schema by Azimutt" }
             , imagePosition = Right
             , icon = Nothing
             , description =
@@ -34,21 +37,100 @@ viewHome =
                     ]
                 }
             , cta = Just { url = Route.App, label = "Let's try it!" }
-            , quote = Just { text = "Using Azimutt is like having super powers!", author = "Loïc Knuchel, Principal Engineer @ Doctolib", avatar = { url = "/assets/images/knuchel_avatar.jpg", alt = "Loïc Knuchel" } }
+            , quote =
+                Just
+                    { text = "Using Azimutt is like having super powers!"
+                    , author = "Loïc Knuchel, Principal Engineer @ Doctolib"
+                    , avatar = { url = "/assets/images/avatar-loic-knuchel.jpg", alt = "Loïc Knuchel" }
+                    }
+            }
+        , FeatureSideBySide.imageSwapSlice { url = "/assets/images/gospeak-schema-light.png", alt = "Gospeak.io minimal schema by Azimutt" }
+            { image = { url = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
+            , imagePosition = Left
+            , icon = Just (Icon.sparkles [ text_white ])
+            , description =
+                { title = "See what you need"
+                , content =
+                    [ text "Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how."
+                    , div [ css [ mt_3 ] ] []
+                    , Feature.checked { title = "search everywhere", description = Nothing }
+                    , Feature.checked { title = "show, hide and organize tables", description = Nothing }
+                    , Feature.checked { title = "show, hide and sort columns", description = Nothing }
+                    ]
+                }
+            , cta = Just { url = Route.App, label = "Let me see..." }
+            , quote =
+                Just
+                    { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
+                                This feels like the workflow I never knew I wanted until trying it just now."""
+                    , author = "Oliver Searle-Barnes, Freelance, former VP Eng at Zapnito"
+                    , avatar = { url = "/assets/images/avatar-oliver-searle-barnes.png", alt = "Oliver Searle-Barnes" }
+                    }
+            }
+        , FeatureSideBySide.imageSlice
+            { image = { url = "/assets/images/gospeak-incoming-relation.jpg", alt = "Gospeak.io incoming relations by Azimutt" }
+            , imagePosition = Right
+            , icon = Nothing
+            , description =
+                { title = "Follow your mind"
+                , content =
+                    [ text "Relational databases are made of, well, relations."
+                    , br [] []
+                    , text "Did you ever wanted to see what is on the other side of a relation ? With Azimutt, it's just one click away 🤩"
+                    , br [] []
+                    , text "And there's more, how do you see incoming relations ? Azimutt list all of them and is able to show one, many or all of them in just two clicks! 😍"
+                    , div [ css [ mt_3 ] ] []
+                    , Feature.checked { title = "outgoing relations", description = Nothing }
+                    , Feature.checked { title = "incoming relations", description = Nothing }
+                    ]
+                }
+            , cta = Just { url = Route.App, label = "I can't resist, let's go!" }
+            , quote = Nothing
+            }
+        , FeatureSideBySide.imageSlice
+            { image = { url = "/assets/images/gospeak-layouts.jpg", alt = "Gospeak.io layouts by Azimutt" }
+            , imagePosition = Left
+            , icon = Nothing
+            , description =
+                { title = "Context switch like a pro"
+                , content =
+                    [ text "Do you like throwing away your work ? Me neither. And Azimutt has you covered on this."
+                    , text "Once you have finished an investigation, save your meaningful diagram as a layout so you can come back to it later and even improve it."
+                    , br [] []
+                    , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
+                    ]
+                }
+            , cta = Just { url = Route.App, label = "That's enough, I'm in!" }
+            , quote = Nothing
+            }
+        , FeatureSideBySide.imageSlice
+            { image = { url = "/assets/images/gospeak-find-path.png", alt = "Gospeak.io find path with Azimutt" }
+            , imagePosition = Right
+            , icon = Nothing
+            , description =
+                { title = "Relax"
+                , content =
+                    [ text """Sometimes, easily following relations is not enough, especially when you don't know in which direction to go.
+                              And looking at every possible relation can be tedious. So let's grab a """
+                    , span [ title "drink", bsToggle Tooltip ] [ text "🍹" ]
+                    , text """ and let Azimutt do all the work for you."""
+                    , br [] []
+                    , text """It will look for every relation and build possible paths between two tables you want to join.
+                              And as it is helpful, it will even build the SQL request for you with all the needed joins."""
+                    , br [] []
+                    , Badge.basic [ bg_red_100, text_red_800 ] "soon"
+                    , text " It will make you a "
+                    , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
+                    , text ", just as you like!"
+                    ]
+                }
+            , cta = Just { url = Route.App, label = "I'm done..." }
+            , quote = Nothing
             }
 
-        --, FeatureSideBySide.imageSlice
-        --    { image = { url = "https://tailwindui.com/img/component-images/inbox-app-screenshot-2.jpg", alt = "Customer profile user interface" }
-        --    , imagePosition = Left
-        --    , icon = Just (Icon.sparkles [ text_white ])
-        --    , description =
-        --        { title = "Better understand your customers"
-        --        , content = [ text "Semper curabitur ullamcorper posuere nunc sed. Ornare iaculis bibendum malesuada faucibus lacinia porttitor. Pulvinar laoreet sagittis viverra duis. In venenatis sem arcu pretium pharetra at. Lectus viverra dui tellus ornare pharetra." ]
-        --        }
-        --    , cta = Just { url = Route.App, label = "Get started" }
-        --    , quote = Nothing
-        --    }
-        , FeatureGrid.coloredSlice
+        --, div [] [ text "Feature: everything is local" ]
+        --, div [] [ text "Feature: PWA" ]
+        --, div [] [ text "Feature: it's open source" ]
         , Cta.slice
         , Footer.slice
         ]

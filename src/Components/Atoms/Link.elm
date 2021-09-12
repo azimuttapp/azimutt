@@ -29,7 +29,7 @@ doc =
         defaultProps =
             { label = "Click me!", url = "#" }
     in
-    chapter "Links"
+    chapter "Link"
         |> renderComponentList
             [ ( "button Link", link defaultProps )
             ]

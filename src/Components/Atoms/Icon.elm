@@ -1,4 +1,4 @@
-module Components.Atoms.Icon exposing (cross, doc, documentSearch, github, inbox, link, menu, photograph, sparkles, twitter)
+module Components.Atoms.Icon exposing (check, cross, doc, documentSearch, github, inbox, link, menu, photograph, sparkles, twitter)
 
 import Css exposing (Style)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
@@ -8,6 +8,16 @@ import Libs.Html.Styled.Attributes exposing (ariaHidden)
 import Svg.Styled exposing (path, svg)
 import Svg.Styled.Attributes exposing (clipRule, css, d, fill, fillRule, stroke, strokeLinecap, strokeLinejoin, strokeWidth, viewBox)
 import Tailwind.Utilities exposing (h_6, w_6)
+
+
+
+-- sorted alphabetically
+
+
+check : List Style -> Html msg
+check styles =
+    -- Heroicon name: outline/check
+    icon styles "M5 13l4 4L19 7"
 
 
 cross : Html msg
@@ -48,9 +58,9 @@ photograph =
 
 
 sparkles : List Style -> Html msg
-sparkles style =
+sparkles styles =
     -- Heroicon name: outline/sparkles
-    icon style "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+    icon styles "M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
 
 
 twitter : Html msg
@@ -59,8 +69,8 @@ twitter =
 
 
 icon : List Style -> String -> Html msg
-icon style draw =
-    svg [ css ([ h_6, w_6 ] ++ style), fill "none", viewBox "0 0 24 24", stroke "currentColor", ariaHidden True ]
+icon styles draw =
+    svg [ css ([ h_6, w_6 ] ++ styles), fill "none", viewBox "0 0 24 24", stroke "currentColor", ariaHidden True ]
         [ path [ strokeLinecap "round", strokeLinejoin "round", strokeWidth "2", d draw ] []
         ]
 
@@ -76,7 +86,8 @@ doc : Chapter x
 doc =
     chapter "Icon"
         |> renderComponentList
-            [ ( "cross", cross )
+            [ ( "check", check [] )
+            , ( "cross", cross )
             , ( "documentSearch", documentSearch )
             , ( "github", github )
             , ( "inbox", inbox )

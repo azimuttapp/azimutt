@@ -1,9 +1,11 @@
 module Components.Book exposing (main)
 
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
+import Components.Molecules.Feature as Feature
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Slices.Cta as Cta
@@ -28,11 +30,12 @@ main =
         |> withThemeOptions [ ElmBook.ThemeOptions.subtitle "v0.1.0", ElmBook.ThemeOptions.globals [ Global.global globalStyles ], ElmBook.ThemeOptions.logo logo ]
         |> withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
         |> withChapterGroups
+            -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Link.doc, Button.doc, Icon.doc, Dots.doc ] )
-            , ( "Molecules", [] )
-            , ( "Organisms", [ Header.doc, Footer.doc ] )
-            , ( "Slices", [ Hero.doc, FeatureGrid.doc, FeatureSideBySide.doc, Cta.doc ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc ] )
+            , ( "Molecules", [ Feature.doc ] )
+            , ( "Organisms", [ Footer.doc, Header.doc ] )
+            , ( "Slices", [ Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc ] )
             ]
 
 

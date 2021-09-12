@@ -33,7 +33,7 @@ doc =
         defaultProps =
             { label = "Click me!", disabled = False, onClick = logAction "Clicked button" }
     in
-    chapter "Buttons"
+    chapter "Button"
         |> renderComponentList
             [ ( "default", button { defaultProps | onClick = logAction "Clicked default button" } )
             , ( "disabled", button { defaultProps | disabled = True } )
