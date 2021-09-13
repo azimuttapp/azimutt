@@ -72,7 +72,7 @@ viewHome =
         , FeatureSideBySide.imageSlice
             { image = { url = "/assets/images/gospeak-incoming-relation.jpg", alt = "Gospeak.io incoming relations by Azimutt" }
             , imagePosition = Right
-            , icon = Nothing
+            , icon = Just (Icon.lightBulb [ text_white ]) -- arrows-expand / light-bulb / lightning-bolt
             , description =
                 { title = "Follow your mind"
                 , content =
@@ -92,7 +92,7 @@ viewHome =
         , FeatureSideBySide.imageSlice
             { image = { url = "/assets/images/gospeak-layouts.jpg", alt = "Gospeak.io layouts by Azimutt" }
             , imagePosition = Left
-            , icon = Nothing
+            , icon = Just (Icon.colorSwatch [ text_white ]) -- chat-alt-2 / collection / color-swatch
             , description =
                 { title = "Context switch like a pro"
                 , content =
@@ -108,14 +108,14 @@ viewHome =
         , FeatureSideBySide.imageSlice
             { image = { url = "/assets/images/gospeak-find-path.png", alt = "Gospeak.io find path with Azimutt" }
             , imagePosition = Right
-            , icon = Nothing
+            , icon = Just (Icon.beaker [ text_white ])
             , description =
                 { title = "Relax"
                 , content =
                     [ text """Sometimes, easily following relations is not enough, especially when you don't know in which direction to go.
                               And looking at every possible relation can be tedious. So let's grab a """
                     , span [ title "drink", bsToggle Tooltip ] [ text "🍹" ]
-                    , text """ and let Azimutt do all the work for you."""
+                    , text """ and watch Azimutt do the work for you."""
                     , br [] []
                     , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
@@ -126,15 +126,15 @@ viewHome =
                     , text ", just as you like!"
                     ]
                 }
-            , cta = Just { url = Route.App, label = "I'm done..." }
+            , cta = Just { url = Route.App, label = "I'm hooked!" }
             , quote = Nothing
             }
         , FeatureGrid.cardSlice
             { header = "Last chance"
             , title = "What more can you want ?"
-            , description = "If you are still not convinced, here are my last words. Azimutt is awesome, build with awesome technology and support your awesome use cases. See below..."
+            , description = "If you are still not convinced, here are my last words. Azimutt is awesome, built with awesome technology and supports your awesome use cases. See below..."
             , cards =
-                [ { icon = Icon.arrowCircleDown [ text_white ], title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at our fingertips. Whatever happens." ] }
+                [ { icon = Icon.arrowCircleDown [ text_white ], title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at your fingertips. Whatever happens." ] }
                 , { icon = Icon.shieldCheck [ text_white ], title = "Everything is local", description = [ text "Don't worry about privacy, everything stays on your computer, this is your data! #localStorage" ] }
                 , { icon = Icon.github [ text_white ]
                   , title = "Fully open source"
