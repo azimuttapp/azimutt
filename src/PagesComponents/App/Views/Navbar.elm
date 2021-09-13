@@ -86,7 +86,9 @@ viewLayoutButton currentLayout layouts =
              )
                 ++ [ ul [ class "dropdown-menu dropdown-menu-end" ]
                         ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal conf.ids.newLayoutModal) [ viewIcon Icon.plus, text " Create new layout" ] ] ]
-                            ++ (layouts
+                            ++ L.prependOn currentLayout
+                                (\cur -> li [] [ button [ type_ "button", class "dropdown-item", onClick UnloadLayout ] [ viewIcon Icon.arrowLeft, text (" Stop using " ++ cur ++ " layout") ] ])
+                                (layouts
                                     |> Dict.toList
                                     |> List.sortBy (\( name, _ ) -> name)
                                     |> List.map
@@ -103,7 +105,7 @@ viewLayoutButton currentLayout layouts =
                                                     ]
                                                 ]
                                         )
-                               )
+                                )
                         )
                    ]
             )

@@ -77,6 +77,7 @@ type Msg
     | LoadLayout LayoutName
     | UpdateLayout LayoutName
     | DeleteLayout LayoutName
+    | UnloadLayout
     | OpenConfirm Confirm
     | OnConfirm Bool (Cmd Msg)
     | JsMessage JsMsg

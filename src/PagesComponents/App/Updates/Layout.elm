@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, updateLayout)
+module PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
 
 import Dict
 import Libs.Bool as B
@@ -43,3 +43,8 @@ deleteLayout name project =
     { project | currentLayout = B.cond (project.currentLayout == Just name) Nothing (Just name) }
         |> setLayouts (Dict.update name (\_ -> Nothing))
         |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, trackLayoutEvent "delete" (project.layouts |> Dict.get name |> Maybe.withDefault (initLayout (Time.millisToPosix 0))) ] ))
+
+
+unloadLayout : Project -> Project
+unloadLayout project =
+    { project | currentLayout = Nothing }
