@@ -1,9 +1,10 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
 import Gen.Params.Home_ exposing (Params)
+import Html.Styled as Styled
 import Page
 import PagesComponents.Home_.View exposing (viewHome)
-import Ports exposing (trackPage)
+import Ports exposing (activateTooltipsAndPopovers, trackPage)
 import Request
 import Shared
 import View exposing (View)
@@ -29,7 +30,7 @@ type alias Msg =
 
 init : ( Model, Cmd msg )
 init =
-    ( (), trackPage "home" )
+    ( (), Cmd.batch [ trackPage "home", activateTooltipsAndPopovers ] )
 
 
 update : msg -> Model -> ( Model, Cmd msg )
@@ -40,7 +41,7 @@ update _ model =
 view : Model -> View msg
 view _ =
     { title = "Azimutt - Explore your database schema"
-    , body = viewHome
+    , body = viewHome |> List.map Styled.toUnstyled
     }
 
 

@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.FindPath exposing (viewFindPathModal)
 
-import Conf exposing (conf)
+import Conf exposing (conf, constants)
 import Dict exposing (Dict)
 import Html exposing (Html, a, abbr, b, br, button, code, div, h2, input, label, option, pre, select, small, span, text)
 import Html.Attributes as Attributes exposing (class, disabled, for, href, id, placeholder, rel, selected, target, title, type_, value)
@@ -136,7 +136,7 @@ viewPaths idPrefix model =
                 , small [ class "text-muted" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                 , div [ class "mt-3" ]
                     [ text "We hope your like this feature. If you have a few minutes, please write us "
-                    , a [ href "https://github.com/azimuttapp/azimutt/discussions/7", target "_blank", rel "noopener" ] [ text "a quick feedback" ]
+                    , a [ href (constants.azimuttGithub ++ "/discussions/7"), target "_blank", rel "noopener" ] [ text "a quick feedback" ]
                     , text " about it and your use case so we can continue to improve 🚀"
                     ]
                 ]
