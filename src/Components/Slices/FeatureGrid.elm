@@ -7,7 +7,7 @@ import Gen.Route as Route
 import Html.Styled exposing (Html, a, br, div, h2, h3, p, span, text)
 import Html.Styled.Attributes exposing (class, css, href)
 import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (bg_gradient_to_r, bg_gray_50, bg_indigo_500, bg_opacity_10, bg_white, flex, flow_root, font_extrabold, font_medium, font_semibold, from_green_800, gap_8, gap_x_6, gap_x_8, gap_y_12, gap_y_16, grid, grid_cols_1, grid_cols_2, grid_cols_3, h_12, inline_flex, items_center, justify_center, max_w_3xl, max_w_4xl, max_w_7xl, max_w_md, max_w_prose, mt_12, mt_16, mt_2, mt_4, mt_5, mt_6, mt_8, mx_auto, neg_mt_6, p_3, pb_24, pb_8, pt_20, pt_24, pt_6, px_4, px_6, px_8, py_16, py_24, py_32, relative, rounded_lg, rounded_md, shadow_lg, text_3xl, text_4xl, text_base, text_center, text_gray_500, text_gray_900, text_indigo_600, text_lg, text_purple_200, text_white, text_xl, to_indigo_700, tracking_tight, tracking_wider, uppercase, w_12)
+import Tailwind.Utilities exposing (bg_clip_text, bg_gradient_to_r, bg_gray_50, bg_opacity_10, bg_white, flex, flow_root, font_extrabold, font_medium, font_semibold, from_green_600, from_green_800, gap_8, gap_x_6, gap_x_8, gap_y_12, gap_y_16, grid, grid_cols_1, grid_cols_2, grid_cols_3, h_12, inline_flex, items_center, justify_center, max_w_3xl, max_w_4xl, max_w_7xl, max_w_md, max_w_prose, mt_12, mt_16, mt_2, mt_4, mt_5, mt_6, mt_8, mx_auto, neg_mt_6, p_3, pb_24, pb_8, pt_20, pt_24, pt_6, px_4, px_6, px_8, py_16, py_24, py_32, relative, rounded_lg, rounded_md, shadow_lg, text_3xl, text_4xl, text_base, text_center, text_gray_500, text_gray_900, text_lg, text_purple_200, text_transparent, text_white, text_xl, to_indigo_600, to_indigo_700, tracking_tight, tracking_wider, uppercase, w_12)
 
 
 coloredSlice : Html msg
@@ -79,7 +79,7 @@ cardSlice : CardModel msg -> Html msg
 cardSlice model =
     div [ css [ relative, bg_white, py_16, lg [ py_32 ], sm [ py_24 ] ] ]
         [ div [ css [ mx_auto, max_w_md, px_4, text_center, lg [ px_8, max_w_7xl ], sm [ max_w_3xl, px_6 ] ] ]
-            [ h2 [ css [ text_base, font_semibold, tracking_wider, text_indigo_600, uppercase ] ] [ text model.header ]
+            [ h2 [ css [ text_base, font_semibold, tracking_wider, uppercase, bg_gradient_to_r, from_green_600, to_indigo_600, bg_clip_text, text_transparent ] ] [ text model.header ]
             , p [ css [ mt_2, text_3xl, font_extrabold, text_gray_900, tracking_tight, sm [ text_4xl ] ] ] [ text model.title ]
             , p [ css [ mt_5, max_w_prose, mx_auto, text_xl, text_gray_500 ] ] [ text model.description ]
             , div [ css [ mt_12 ] ]
@@ -96,7 +96,7 @@ card model =
         [ div [ css [ flow_root, bg_gray_50, rounded_lg, px_6, pb_8 ] ]
             [ div [ css [ neg_mt_6 ] ]
                 [ div []
-                    [ span [ css [ inline_flex, items_center, justify_center, p_3, bg_indigo_500, rounded_md, shadow_lg ] ] [ model.icon ]
+                    [ span [ css [ inline_flex, items_center, justify_center, p_3, rounded_md, shadow_lg, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ model.icon ]
                     ]
                 , h3 [ css [ mt_8, text_lg, font_medium, text_gray_900, tracking_tight ] ] [ text model.title ]
                 , p [ css [ mt_5, text_base, text_gray_500 ] ] model.description
