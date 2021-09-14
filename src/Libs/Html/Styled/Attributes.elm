@@ -1,4 +1,4 @@
-module Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel)
+module Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, track)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
@@ -19,3 +19,8 @@ ariaLabel text =
 ariaExpanded : Bool -> Attribute msg
 ariaExpanded value =
     attribute "aria-expanded" (B.toString value)
+
+
+track : String -> Attribute msg
+track event =
+    attribute "data-track-event" event

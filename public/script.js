@@ -186,6 +186,15 @@ window.addEventListener('load', function() {
         Object.assign(hotkeys, keys)
     }
 
+    // listen at every click to handle tracked events
+    document.addEventListener('click', event => {
+        const tracked = findParent(event.target, e => e.getAttribute('data-track-event'))
+        if (tracked) {
+            const eventName = tracked.getAttribute('data-track-event')
+            analytics.then(a => a.trackEvent(eventName, {label: tracked.textContent}))
+        }
+    })
+
 
     /* Tracking */
 
@@ -331,6 +340,16 @@ window.addEventListener('load', function() {
             parent = parent.parentElement
         }
         return parents
+    }
+
+    function findParent(elt, predicate) {
+        if (predicate(elt)) {
+            return elt
+        } else if (elt.parentElement) {
+            return findParent(elt.parentElement, predicate)
+        } else {
+            return undefined
+        }
     }
 
     function randomUID() {

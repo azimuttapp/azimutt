@@ -8,6 +8,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
 import Html.Styled exposing (Attribute, Html, a, div, header, img, nav, span, text)
 import Html.Styled.Attributes exposing (alt, css, href, rel, src, target)
+import Libs.Html.Styled.Attributes exposing (track)
 import Tailwind.Breakpoints exposing (lg, md, sm)
 import Tailwind.Utilities exposing (bg_white, flex, flex_1, font_medium, h_10, h_8, hidden, items_center, justify_between, justify_start, max_w_7xl, mx_auto, px_4, px_6, px_8, py_6, relative, space_x_10, sr_only, text_base, text_gray_500, text_gray_900, w_0, w_auto)
 
@@ -25,11 +26,11 @@ headerSlice url =
                         ]
                     ]
                 , nav [ css [ hidden, space_x_10, md [ flex ] ] ]
-                    [ menuLink [ text "Discussions" ] [ href (constants.azimuttGithub ++ "/discussions"), target "_blank", rel "noopener" ]
-                    , menuLink [ text "Roadmap" ] [ href (constants.azimuttGithub ++ "/projects/1"), target "_blank", rel "noopener" ]
-                    , menuLink [ text "Source code" ] [ href constants.azimuttGithub, target "_blank", rel "noopener" ]
-                    , menuLink [ text "Bug reports" ] [ href (constants.azimuttGithub ++ "/issues"), target "_blank", rel "noopener" ]
-                    , menuLink [ span [ css [ sr_only ] ] [ text "Twitter" ], Icon.twitter [] ] [ href constants.azimuttTwitter, target "_blank", rel "noopener" ]
+                    [ menuLink [ text "Discussions" ] [ href (constants.azimuttGithub ++ "/discussions"), target "_blank", rel "noopener", track "header-menu" ]
+                    , menuLink [ text "Roadmap" ] [ href (constants.azimuttGithub ++ "/projects/1"), target "_blank", rel "noopener", track "header-menu" ]
+                    , menuLink [ text "Source code" ] [ href constants.azimuttGithub, target "_blank", rel "noopener", track "header-menu" ]
+                    , menuLink [ text "Bug reports" ] [ href (constants.azimuttGithub ++ "/issues"), target "_blank", rel "noopener", track "header-menu" ]
+                    , menuLink [ span [ css [ sr_only ] ] [ text "Twitter" ], Icon.twitter [] ] [ href constants.azimuttTwitter, target "_blank", rel "noopener", track "header-menu" ]
                     ]
                 ]
             ]
