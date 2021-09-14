@@ -104,7 +104,7 @@ backgroundImageSlice =
                             [ text "Lost in your database schema ?", br [] [], text "You just found the right ", bText "Azimutt", text " 🎉" ]
                         , div [ css [ mt_10 ] ]
                             [ div [ css [ space_y_4, sm [ space_y_0, inline_grid, grid_cols_1, gap_5 ] ] ]
-                                [ a [ href (Route.toHref Route.App), track "hero-cta", css [ flex, items_center, justify_center, px_4, py_3, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_indigo_700, bg_white, hover [ bg_indigo_50 ], sm [ px_8 ] ] ]
+                                [ a [ href (Route.toHref Route.App), track "home-cta", css [ flex, items_center, justify_center, px_4, py_3, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_indigo_700, bg_white, hover [ bg_indigo_50 ], sm [ px_8 ] ] ]
                                     [ text "Explore your schema" ]
                                 ]
                             ]

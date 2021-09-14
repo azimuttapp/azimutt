@@ -38,7 +38,7 @@ viewHome =
                     , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                     ]
                 }
-            , cta = Just { url = Route.App, label = "Let's try it!", track = Just "explore-db-cta" }
+            , cta = Just { url = Route.App, label = "Let's try it!", track = Just "home-cta" }
             , quote =
                 Just
                     { text = "Using Azimutt is like having super powers!"
@@ -60,7 +60,7 @@ viewHome =
                     , Feature.checked { title = "show, hide and sort columns", description = Nothing }
                     ]
                 }
-            , cta = Just { url = Route.App, label = "Let me see...", track = Just "show-tables-cta" }
+            , cta = Just { url = Route.App, label = "Let me see...", track = Just "home-cta" }
             , quote =
                 Just
                     { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
@@ -86,7 +86,7 @@ viewHome =
                     , Feature.checked { title = "incoming relations", description = Nothing }
                     ]
                 }
-            , cta = Just { url = Route.App, label = "I can't resist, let's go!", track = Just "relations-cta" }
+            , cta = Just { url = Route.App, label = "I can't resist, let's go!", track = Just "home-cta" }
             , quote = Nothing
             }
         , FeatureSideBySide.imageSlice
@@ -102,7 +102,7 @@ viewHome =
                     , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
                     ]
                 }
-            , cta = Just { url = Route.App, label = "That's enough, I'm in!", track = Just "layouts-cta" }
+            , cta = Just { url = Route.App, label = "That's enough, I'm in!", track = Just "home-cta" }
             , quote = Nothing
             }
         , FeatureSideBySide.imageSlice
@@ -126,7 +126,7 @@ viewHome =
                     , text ", just as you like!"
                     ]
                 }
-            , cta = Just { url = Route.App, label = "I'm hooked!", track = Just "find-path-cta" }
+            , cta = Just { url = Route.App, label = "I'm hooked!", track = Just "home-cta" }
             , quote = Nothing
             }
         , FeatureGrid.cardSlice
