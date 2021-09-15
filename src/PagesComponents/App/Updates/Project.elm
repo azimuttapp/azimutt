@@ -36,7 +36,7 @@ useProject project model =
 
 
 loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
-loadProject buildTrackEvent model ( errs, project ) =
+loadProject projectEvent model ( errs, project ) =
     ( { model | switch = initSwitch, project = project, sizes = model.sizes |> Dict.filter (\id _ -> not (id |> String.startsWith "table-")) }
     , Cmd.batch
         ((errs |> List.map toastError)
@@ -57,7 +57,7 @@ loadProject buildTrackEvent model ( errs, project ) =
                                    , hideModal conf.ids.projectSwitchModal
                                    , saveProject p
                                    , activateTooltipsAndPopovers
-                                   , track (buildTrackEvent p)
+                                   , track (projectEvent p)
                                    ]
                         )
                     |> Maybe.withDefault []
