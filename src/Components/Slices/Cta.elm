@@ -1,6 +1,6 @@
 module Components.Slices.Cta exposing (doc, slice)
 
-import Conf exposing (constants)
+import Conf exposing (constants, events)
 import Css exposing (hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
@@ -20,7 +20,7 @@ slice =
                 [ span [ css [ block ] ] [ text "Ready to explore your SQL schema?" ]
                 ]
             , div [ css [ mt_8, flex, lg [ mt_0, flex_shrink_0 ] ] ]
-                [ a [ href (Route.toHref Route.App), track "home-cta", css [ flex, items_center, justify_center, px_5, py_3, h_14, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_white, bg_gradient_to_r, from_green_600, to_indigo_600, hover [ text_white, from_green_700, to_indigo_700 ] ] ]
+                [ a ([ href (Route.toHref Route.App), css [ flex, items_center, justify_center, px_5, py_3, h_14, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_white, bg_gradient_to_r, from_green_600, to_indigo_600, hover [ text_white, from_green_700, to_indigo_700 ] ] ] ++ track (events.openAppCta "home-cta"))
                     [ text "Explore now!" ]
                 , a [ href constants.azimuttGithub, target "_blank", rel "noopener", css [ flex, ml_3, items_center, justify_center, px_5, py_3, h_14, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_indigo_800, bg_indigo_50, hover [ text_indigo_800, bg_indigo_100 ] ] ]
                     [ text "Learn more" ]

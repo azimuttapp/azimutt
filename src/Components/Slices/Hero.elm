@@ -3,6 +3,7 @@ module Components.Slices.Hero exposing (backgroundImageSlice, basicSlice, doc)
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
 import Components.Organisms.Header exposing (headerSlice)
+import Conf exposing (events)
 import Css exposing (focus, hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
@@ -104,7 +105,7 @@ backgroundImageSlice =
                             [ text "Lost in your database schema ?", br [] [], text "You just found the right ", bText "Azimutt", text " 🎉" ]
                         , div [ css [ mt_10 ] ]
                             [ div [ css [ space_y_4, sm [ space_y_0, inline_grid, grid_cols_1, gap_5 ] ] ]
-                                [ a [ href (Route.toHref Route.App), track "home-cta", css [ flex, items_center, justify_center, px_4, py_3, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_indigo_700, bg_white, hover [ bg_indigo_50 ], sm [ px_8 ] ] ]
+                                [ a ([ href (Route.toHref Route.App), css [ flex, items_center, justify_center, px_4, py_3, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_indigo_700, bg_white, hover [ bg_indigo_50 ], sm [ px_8 ] ] ] ++ track (events.openAppCta "home-hero"))
                                     [ text "Explore your schema" ]
                                 ]
                             ]

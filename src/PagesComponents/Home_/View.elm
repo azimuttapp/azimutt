@@ -8,7 +8,7 @@ import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
-import Conf exposing (constants)
+import Conf exposing (constants, events)
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, b, br, div, span, text)
@@ -38,7 +38,7 @@ viewHome =
                     , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                     ]
                 }
-            , cta = Just { url = Route.App, label = "Let's try it!", track = Just "home-cta" }
+            , cta = Just { url = Route.App, label = "Let's try it!", track = Just (events.openAppCta "home-explore-section") }
             , quote =
                 Just
                     { text = "Using Azimutt is like having super powers!"
@@ -60,7 +60,7 @@ viewHome =
                     , Feature.checked { title = "show, hide and sort columns", description = Nothing }
                     ]
                 }
-            , cta = Just { url = Route.App, label = "Let me see...", track = Just "home-cta" }
+            , cta = Just { url = Route.App, label = "Let me see...", track = Just (events.openAppCta "home-display-section") }
             , quote =
                 Just
                     { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
@@ -86,7 +86,7 @@ viewHome =
                     , Feature.checked { title = "incoming relations", description = Nothing }
                     ]
                 }
-            , cta = Just { url = Route.App, label = "I can't resist, let's go!", track = Just "home-cta" }
+            , cta = Just { url = Route.App, label = "I can't resist, let's go!", track = Just (events.openAppCta "home-relations-section") }
             , quote = Nothing
             }
         , FeatureSideBySide.imageSlice
@@ -102,7 +102,7 @@ viewHome =
                     , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
                     ]
                 }
-            , cta = Just { url = Route.App, label = "That's enough, I'm in!", track = Just "home-cta" }
+            , cta = Just { url = Route.App, label = "That's enough, I'm in!", track = Just (events.openAppCta "home-layouts-section") }
             , quote = Nothing
             }
         , FeatureSideBySide.imageSlice
@@ -126,7 +126,7 @@ viewHome =
                     , text ", just as you like!"
                     ]
                 }
-            , cta = Just { url = Route.App, label = "I'm hooked!", track = Just "home-cta" }
+            , cta = Just { url = Route.App, label = "I'm hooked!", track = Just (events.openAppCta "home-find-path-section") }
             , quote = Nothing
             }
         , FeatureGrid.cardSlice

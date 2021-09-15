@@ -1,4 +1,4 @@
-module Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, track)
+module Libs.Html.Styled.Attributes exposing (TrackEvent, ariaExpanded, ariaHidden, ariaLabel, track)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
@@ -21,6 +21,10 @@ ariaExpanded value =
     attribute "aria-expanded" (B.toString value)
 
 
-track : String -> Attribute msg
+type alias TrackEvent =
+    { name : String, details : List ( String, String ) }
+
+
+track : TrackEvent -> List (Attribute msg)
 track event =
-    attribute "data-track-event" event
+    attribute "data-track-event" event.name :: (event.details |> List.map (\( k, v ) -> attribute ("data-track-event-" ++ k) v))

@@ -191,7 +191,13 @@ window.addEventListener('load', function() {
         const tracked = findParent(event.target, e => e.getAttribute('data-track-event'))
         if (tracked) {
             const eventName = tracked.getAttribute('data-track-event')
-            analytics.then(a => a.trackEvent(eventName, {label: tracked.textContent}))
+            const details = {label: tracked.textContent}
+            for (const attr of event.target.attributes) {
+                if (attr.name.startsWith('data-track-event-')) {
+                    details[attr.name.replace('data-track-event-', '')] = attr.value
+                }
+            }
+            analytics.then(a => a.trackEvent(eventName, details))
         }
     })
 

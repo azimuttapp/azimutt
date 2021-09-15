@@ -1,7 +1,7 @@
 module Components.Organisms.Header exposing (doc, headerSlice)
 
 import Components.Atoms.Icon as Icon
-import Conf exposing (constants)
+import Conf exposing (constants, events)
 import Css exposing (hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
@@ -26,11 +26,11 @@ headerSlice url =
                         ]
                     ]
                 , nav [ css [ hidden, space_x_10, md [ flex ] ] ]
-                    [ menuLink [ text "Discussions" ] [ href (constants.azimuttGithub ++ "/discussions"), target "_blank", rel "noopener", track "header-menu" ]
-                    , menuLink [ text "Roadmap" ] [ href (constants.azimuttGithub ++ "/projects/1"), target "_blank", rel "noopener", track "header-menu" ]
-                    , menuLink [ text "Source code" ] [ href constants.azimuttGithub, target "_blank", rel "noopener", track "header-menu" ]
-                    , menuLink [ text "Bug reports" ] [ href (constants.azimuttGithub ++ "/issues"), target "_blank", rel "noopener", track "header-menu" ]
-                    , menuLink [ span [ css [ sr_only ] ] [ text "Twitter" ], Icon.twitter [] ] [ href constants.azimuttTwitter, target "_blank", rel "noopener", track "header-menu" ]
+                    [ menuLink [ text "Discussions" ] ([ href (constants.azimuttGithub ++ "/discussions"), target "_blank", rel "noopener" ] ++ track events.headerMenu)
+                    , menuLink [ text "Roadmap" ] ([ href (constants.azimuttGithub ++ "/projects/1"), target "_blank", rel "noopener" ] ++ track events.headerMenu)
+                    , menuLink [ text "Source code" ] ([ href constants.azimuttGithub, target "_blank", rel "noopener" ] ++ track events.headerMenu)
+                    , menuLink [ text "Bug reports" ] ([ href (constants.azimuttGithub ++ "/issues"), target "_blank", rel "noopener" ] ++ track events.headerMenu)
+                    , menuLink [ span [ css [ sr_only ] ] [ text "Twitter" ], Icon.twitter [] ] ([ href constants.azimuttTwitter, target "_blank", rel "noopener" ] ++ track events.headerMenu)
                     ]
                 ]
             ]
