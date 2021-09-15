@@ -1,9 +1,9 @@
-module Libs.Html.Styled.Attributes exposing (TrackEvent, ariaExpanded, ariaHidden, ariaLabel, track)
+module Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, track)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
 import Libs.Bool as B
-import Libs.Models exposing (Text)
+import Libs.Models exposing (Text, TrackEvent)
 
 
 ariaHidden : Bool -> Attribute msg
@@ -19,10 +19,6 @@ ariaLabel text =
 ariaExpanded : Bool -> Attribute msg
 ariaExpanded value =
     attribute "aria-expanded" (B.toString value)
-
-
-type alias TrackEvent =
-    { name : String, details : List ( String, String ) }
 
 
 track : TrackEvent -> List (Attribute msg)

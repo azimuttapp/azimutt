@@ -11,10 +11,10 @@ import Components.Slices.Hero as Hero
 import Conf exposing (constants, events)
 import Css.Global as Global
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, b, br, div, span, text)
-import Html.Styled.Attributes exposing (class, css, href, rel, target, title)
+import Html.Styled exposing (Html, b, br, div, span, text)
+import Html.Styled.Attributes exposing (class, css, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
-import Libs.Html.Styled exposing (bText)
+import Libs.Html.Styled exposing (bText, extLink)
 import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800, text_white)
 
 
@@ -140,7 +140,7 @@ viewHome =
                   , title = "Fully open source"
                   , description =
                         [ text "Want to have a look? Everything is on "
-                        , b [] [ a [ href constants.azimuttGithub, target "_blank", rel "noopener" ] [ text "azimuttap/azimutt" ] ]
+                        , b [] [ extLink constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
                         , text ", awesomely built with Elm. Come a let's discuss!"
                         ]
                   }

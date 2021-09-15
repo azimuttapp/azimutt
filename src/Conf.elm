@@ -2,8 +2,7 @@ module Conf exposing (conf, constants, events, schemaSamples)
 
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
-import Libs.Html.Styled.Attributes exposing (TrackEvent)
-import Libs.Models exposing (Color, FileUrl, HtmlId, ZoomLevel)
+import Libs.Models exposing (Color, FileUrl, HtmlId, TrackEvent, ZoomLevel)
 
 
 conf :
@@ -76,11 +75,9 @@ schemaSamples =
 
 events :
     { openAppCta : String -> TrackEvent
-    , headerMenu : TrackEvent
     }
 events =
     { openAppCta = openAppCta
-    , headerMenu = { name = "header-menu", details = [] }
     }
 
 

@@ -1,4 +1,4 @@
-module Libs.Models exposing (Color, FileContent, FileName, FileUrl, HtmlId, Millis, SizeChange, Text, UID, ZoomDelta, ZoomLevel)
+module Libs.Models exposing (Color, FileContent, FileName, FileUrl, HtmlId, Millis, SizeChange, Text, TrackEvent, UID, ZoomDelta, ZoomLevel)
 
 import Libs.Size exposing (Size)
 
@@ -45,3 +45,7 @@ type alias Color =
 
 type alias Millis =
     Int
+
+
+type alias TrackEvent =
+    { name : String, details : List ( String, String ) }
