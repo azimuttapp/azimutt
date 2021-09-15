@@ -43,7 +43,7 @@ type Msg
     | DeleteProject Project
     | UseProject Project
     | ChangedSearch Search
-    | SelectTable TableId
+    | SelectTable TableId Bool
     | HideTable TableId
     | ShowTable TableId
     | TableOrder TableId Int

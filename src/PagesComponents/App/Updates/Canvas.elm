@@ -3,11 +3,12 @@ module PagesComponents.App.Updates.Canvas exposing (computeFit, fitCanvas, handl
 import Conf exposing (conf)
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
+import Libs.Bool as B
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (HtmlId, ZoomLevel)
 import Libs.Position as Position exposing (Position)
 import Libs.Size as Size exposing (Size)
-import Models.Project exposing (CanvasProps, Layout, tablesArea, viewportArea, viewportSize)
+import Models.Project exposing (CanvasProps, Layout, TableProps, tablesArea, viewportArea, viewportSize)
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setTables)
 
 
@@ -35,9 +36,13 @@ fitCanvas sizes layout =
                     viewport =
                         viewportArea size layout.canvas
 
+                    selectedTables : List TableProps
+                    selectedTables =
+                        layout.tables |> List.filter .selected
+
                     contentArea : Area
                     contentArea =
-                        tablesArea sizes layout.tables
+                        tablesArea sizes (B.cond (selectedTables |> List.isEmpty) layout.tables selectedTables)
 
                     padding : Float
                     padding =
