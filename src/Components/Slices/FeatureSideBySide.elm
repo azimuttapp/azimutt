@@ -7,6 +7,8 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route exposing (Route)
 import Html.Styled exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
 import Html.Styled.Attributes exposing (alt, class, css, href, src)
+import Libs.Html.Styled.Attributes exposing (track)
+import Libs.Models exposing (TrackEvent)
 import Tailwind.Breakpoints exposing (lg, md, sm)
 import Tailwind.Utilities exposing (absolute, bg_gradient_to_r, border, border_gray_200, border_t, border_transparent, col_start_1, col_start_2, flex, flex_shrink_0, font_extrabold, font_medium, from_green_600, from_green_700, gap_24, grid, grid_cols_2, grid_flow_col_dense, h_12, h_6, h_full, inline_flex, items_center, justify_center, left_0, m_0, max_w_7xl, max_w_none, max_w_xl, mt_0, mt_12, mt_16, mt_3, mt_4, mt_6, mt_8, mx_0, mx_auto, neg_ml_16, neg_ml_48, neg_mr_16, neg_mr_48, overflow_hidden, pb_32, pl_4, pl_6, pr_4, pr_6, pt_6, px_0, px_4, px_6, px_8, py_2, py_32, relative, right_0, ring_1, ring_black, ring_opacity_5, rounded_full, rounded_md, rounded_xl, shadow_sm, shadow_xl, space_x_3, text_3xl, text_base, text_gray_500, text_gray_700, text_gray_900, text_lg, text_white, to_indigo_600, to_indigo_700, tracking_tight, w_12, w_6, w_auto, w_full)
 
@@ -35,7 +37,7 @@ type alias Description msg =
 
 
 type alias Cta =
-    { url : Route, label : String }
+    { url : Route, label : String, track : Maybe TrackEvent }
 
 
 type alias Quote =
@@ -136,7 +138,12 @@ featureDescription d =
 featureCta : Cta -> Html msg
 featureCta cta =
     div [ css [ mt_6 ] ]
-        [ a [ href (Route.toHref cta.url), css [ inline_flex, px_4, py_2, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_white, bg_gradient_to_r, from_green_600, to_indigo_600, hover [ text_white, from_green_700, to_indigo_700 ] ] ]
+        [ a
+            ([ href (Route.toHref cta.url)
+             , css [ inline_flex, px_4, py_2, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_white, bg_gradient_to_r, from_green_600, to_indigo_600, hover [ text_white, from_green_700, to_indigo_700 ] ]
+             ]
+                ++ (cta.track |> Maybe.map track |> Maybe.withDefault [])
+            )
             [ text cta.label ]
         ]
 
@@ -170,7 +177,7 @@ dsModelFull =
         { title = "Better understand your customers"
         , content = [ text "Semper curabitur ullamcorper posuere nunc sed. Ornare iaculis bibendum malesuada faucibus lacinia porttitor. Pulvinar laoreet sagittis viverra duis. In venenatis sem arcu pretium pharetra at. Lectus viverra dui tellus ornare pharetra." ]
         }
-    , cta = Just { url = Route.App, label = "Get started" }
+    , cta = Just { url = Route.App, label = "Get started", track = Nothing }
     , quote =
         Just
             { text = "Cras velit quis eros eget rhoncus lacus ultrices sed diam. Sit orci risus aenean curabitur donec aliquet. Mi venenatis in euismod ut."

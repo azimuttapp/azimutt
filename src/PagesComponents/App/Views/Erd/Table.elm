@@ -14,7 +14,7 @@ import Html.Lazy exposing (lazy3, lazy4)
 import Libs.Bootstrap exposing (Toggle(..), bsDropdown, bsToggle, bsToggleCollapse)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html exposing (divIf)
-import Libs.Html.Events exposing (stopClick)
+import Libs.Html.Attributes exposing (track)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (ZoomLevel)
@@ -24,6 +24,7 @@ import Libs.String as S
 import Models.Project exposing (Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
 import PagesComponents.App.Models exposing (Hover, Msg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, placeAt, sizeAttr, withColumnName)
+import Tracking exposing (events)
 
 
 viewTable : Hover -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
@@ -54,11 +55,11 @@ viewTable hover zoom index table props tableRelations domInfo =
 
 viewHeader : ZoomLevel -> Int -> Table -> Html Msg
 viewHeader zoom index table =
-    div [ class "header", style "display" "flex", style "align-items" "center", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ]
-        [ div [ style "flex-grow" "1" ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (showTableName table.schema table.name) ] ])
+    div [ class "header", style "display" "flex", style "align-items" "center" ]
+        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (showTableName table.schema table.name) ] ])
         , bsDropdown (tableIdAsHtmlId table.id ++ "-settings-dropdown")
             []
-            (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px", stopClick Noop ] ++ attrs) [ viewIcon Icon.ellipsisV ])
+            (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])
             (\attrs ->
                 ul attrs
                     [ li [] [ button [ type_ "button", class "dropdown-item", onClick (HideTable table.id) ] [ text "Hide table" ] ]
@@ -163,7 +164,7 @@ viewColumnIcon table column columnRelations attrs =
 
         ( ( _, Just fk ), _ ) ->
             -- TODO: know fk table state to not put onClick when it's already shown (so Update.elm#showTable on Shown state could issue an error)
-            div (class "icon" :: onClick (ShowTable fk.ref.table.id) :: attrs) [ div [ title (formatFkTitle fk), bsToggle Tooltip ] [ viewIcon Icon.externalLinkAlt ] ]
+            div (class "icon" :: onClick (ShowTable fk.ref.table.id) :: attrs ++ track events.showTableWithForeignKey) [ div [ title (formatFkTitle fk), bsToggle Tooltip ] [ viewIcon Icon.externalLinkAlt ] ]
 
         ( _, ( u :: us, _ ) ) ->
             div (class "icon" :: attrs) [ div [ title (formatUniqueTitle (u :: us)), bsToggle Tooltip ] [ viewIcon Icon.fingerprint ] ]
@@ -179,13 +180,14 @@ viewColumnDropdown : List RelationFull -> ColumnRef -> (List (Attribute Msg) -> 
 viewColumnDropdown columnRelations ref element =
     case
         columnRelations
+            |> List.filter (\relation -> relation.src.table.id /= ref.table)
             |> L.groupBy (\relation -> relation.src.table.id |> tableIdAsString)
             |> Dict.values
             |> List.concatMap (\tableRelations -> [ tableRelations.head ])
             |> List.map
                 (\relation ->
                     li []
-                        [ button [ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ]
+                        [ button ([ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ] ++ track events.showTableWithIncomingRelationsDropdown)
                             [ viewIcon Icon.externalLinkAlt
                             , text " "
                             , b [] [ text (showTableId relation.src.table.id) ]
@@ -201,7 +203,7 @@ viewColumnDropdown columnRelations ref element =
         items ->
             bsDropdown (columnRefAsHtmlId ref ++ "-relations-dropdown")
                 [ class "dropdown-menu-end" ]
-                (\attrs -> element attrs)
+                (\attrs -> element (attrs ++ track events.openIncomingRelationsDropdown))
                 (\attrs -> ul attrs (items ++ viewShowAllOption columnRelations))
 
 
