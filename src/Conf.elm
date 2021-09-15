@@ -1,8 +1,8 @@
-module Conf exposing (conf, constants, events, schemaSamples)
+module Conf exposing (conf, constants, schemaSamples)
 
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
-import Libs.Models exposing (Color, FileUrl, HtmlId, TrackEvent, ZoomLevel)
+import Libs.Models exposing (Color, FileUrl, HtmlId, ZoomLevel)
 
 
 conf :
@@ -71,16 +71,3 @@ schemaSamples =
         , ( "wordpress", ( 12, "samples/wordpress.sql" ) )
         , ( "gospeak.io", ( 26, "samples/gospeak.sql" ) )
         ]
-
-
-events :
-    { openAppCta : String -> TrackEvent
-    }
-events =
-    { openAppCta = openAppCta
-    }
-
-
-openAppCta : String -> TrackEvent
-openAppCta source =
-    { name = "open-app-cta", details = [ ( "source", source ) ] }

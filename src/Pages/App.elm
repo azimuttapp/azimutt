@@ -21,10 +21,11 @@ import PagesComponents.App.Updates.Project exposing (createProjectFromFile, crea
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Containers as Containers
-import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, trackJsonError, trackPage, trackProjectEvent)
+import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackJsonError, trackPage)
 import Request
 import Shared
 import Time
+import Tracking exposing (events)
 import View exposing (View)
 
 
@@ -124,7 +125,7 @@ update msg model =
             model |> createProjectFromUrl now projectId sourceId url content sample
 
         DeleteProject project ->
-            ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, trackProjectEvent "drop" project ] )
+            ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, track (events.deleteProject project) ] )
 
         UseProject project ->
             model |> useProject project
@@ -216,7 +217,7 @@ update msg model =
                 |> Maybe.withDefault ( model, Cmd.none )
 
         FindPathCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, activateTooltipsAndPopovers ))
+            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ activateTooltipsAndPopovers, track (events.findPathResult result) ] ))
 
         UpdateFindPathSettings settings ->
             ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )
@@ -264,7 +265,7 @@ update msg model =
             ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable -1000 model.hover) |> Maybe.withDefault Cmd.none )
 
         JsMessage (HotkeyUsed "save") ->
-            ( model, model.project |> Maybe.map (\p -> Cmd.batch [ saveProject p, toastInfo "Project saved", trackProjectEvent "save" p ]) |> Maybe.withDefault (toastWarning "No project to save") )
+            ( model, model.project |> Maybe.map (\p -> Cmd.batch [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ]) |> Maybe.withDefault (toastWarning "No project to save") )
 
         JsMessage (HotkeyUsed "help") ->
             ( model, showModal conf.ids.helpModal )

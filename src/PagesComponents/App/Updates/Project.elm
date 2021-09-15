@@ -8,34 +8,35 @@ import FileValue exposing (File)
 import Json.Decode as Decode
 import Libs.Bool exposing (cond)
 import Libs.List as L
-import Libs.Models exposing (FileContent, FileUrl)
+import Libs.Models exposing (FileContent, FileUrl, TrackEvent)
 import Libs.Result as R
 import Libs.String as S
 import Libs.Task as T
 import Models.Project exposing (Project, ProjectId, ProjectName, ProjectSource, ProjectSourceContent(..), ProjectSourceId, SampleName, decodeProject, extractPath)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
 import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml)
-import Ports exposing (activateTooltipsAndPopovers, click, hideModal, observeTablesSize, saveProject, toastError, toastInfo, trackErrorList, trackProjectEvent)
+import Ports exposing (activateTooltipsAndPopovers, click, hideModal, observeTablesSize, saveProject, toastError, toastInfo, track, trackErrorList)
 import Time
+import Tracking exposing (events)
 
 
 createProjectFromFile : Time.Posix -> ProjectId -> ProjectSourceId -> File -> FileContent -> Model -> ( Model, Cmd Msg )
 createProjectFromFile now projectId sourceId file content model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (localSource now sourceId file) content Nothing |> loadProject "create" model
+    buildProject (model.storedProjects |> List.map .name) now projectId (localSource now sourceId file) content Nothing |> loadProject events.createProject model
 
 
 createProjectFromUrl : Time.Posix -> ProjectId -> ProjectSourceId -> FileUrl -> FileContent -> Maybe SampleName -> Model -> ( Model, Cmd Msg )
 createProjectFromUrl now projectId sourceId path content sample model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (remoteSource now sourceId path content) content sample |> loadProject "create" model
+    buildProject (model.storedProjects |> List.map .name) now projectId (remoteSource now sourceId path content) content sample |> loadProject events.createProject model
 
 
 useProject : Project -> Model -> ( Model, Cmd Msg )
 useProject project model =
-    ( [], Just project ) |> loadProject "use" model
+    ( [], Just project ) |> loadProject events.loadProject model
 
 
-loadProject : String -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
-loadProject action model ( errs, project ) =
+loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
+loadProject buildTrackEvent model ( errs, project ) =
     ( { model | switch = initSwitch, project = project, sizes = model.sizes |> Dict.filter (\id _ -> not (id |> String.startsWith "table-")) }
     , Cmd.batch
         ((errs |> List.map toastError)
@@ -56,7 +57,7 @@ loadProject action model ( errs, project ) =
                                    , hideModal conf.ids.projectSwitchModal
                                    , saveProject p
                                    , activateTooltipsAndPopovers
-                                   , trackProjectEvent action p
+                                   , track (buildTrackEvent p)
                                    ]
                         )
                     |> Maybe.withDefault []

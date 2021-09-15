@@ -8,7 +8,7 @@ import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
-import Conf exposing (constants, events)
+import Conf exposing (constants)
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, b, br, div, span, text)
@@ -16,6 +16,7 @@ import Html.Styled.Attributes exposing (class, css, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText, extLink)
 import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800, text_white)
+import Tracking exposing (events)
 
 
 viewHome : List (Html msg)

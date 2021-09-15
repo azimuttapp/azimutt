@@ -1,6 +1,6 @@
 module Components.Slices.Cta exposing (doc, slice)
 
-import Conf exposing (constants, events)
+import Conf exposing (constants)
 import Css exposing (hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
@@ -11,6 +11,7 @@ import Libs.Html.Styled exposing (extLink)
 import Libs.Html.Styled.Attributes exposing (track)
 import Tailwind.Breakpoints exposing (lg, sm)
 import Tailwind.Utilities exposing (bg_gradient_to_r, bg_indigo_100, bg_indigo_50, bg_white, block, border, border_transparent, flex, flex_shrink_0, font_extrabold, font_medium, from_green_600, from_green_700, h_14, items_center, justify_between, justify_center, max_w_4xl, max_w_7xl, ml_3, mt_0, mt_8, mx_auto, px_4, px_5, px_6, px_8, py_16, py_24, py_3, rounded_md, shadow_sm, text_4xl, text_base, text_gray_900, text_indigo_800, text_white, to_indigo_600, to_indigo_700, tracking_tight)
+import Tracking exposing (events)
 
 
 slice : Html msg

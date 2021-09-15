@@ -11,13 +11,14 @@ import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy2)
 import Libs.Bool exposing (cond)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsBackdrop, bsButton, bsButtonGroup, bsDismiss, bsScroll, bsToggleCollapse)
-import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
+import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, track)
 import Libs.List as L
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S exposing (plural)
 import Models.Project exposing (Layout, Schema, Table, TableId, htmlIdEncode, showTableId, tableIdAsString)
 import PagesComponents.App.Models exposing (Msg(..))
+import Tracking exposing (events)
 
 
 viewMenu : Maybe Schema -> Html Msg
@@ -29,7 +30,7 @@ viewMenu schema =
             ]
         , div [ class "offcanvas-body" ]
             ([ div [] [ bsButton Primary [ onClick ChangeProject ] [ text "Switch from project" ] ]
-             , div [ style "margin-top" "1em" ] [ bsButton Primary [ onClick (FindPath Nothing Nothing) ] [ text "Find path" ] ]
+             , div [ style "margin-top" "1em" ] [ bsButton Primary ([ onClick (FindPath Nothing Nothing) ] ++ track events.openFindPath) [ text "Find path" ] ]
              ]
                 ++ (schema
                         |> Maybe.map
