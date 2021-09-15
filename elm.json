@@ -22,6 +22,7 @@
             "lattyware/elm-fontawesome": "5.0.0",
             "matheus23/elm-default-tailwind-modules": "2.0.1",
             "mpizenberg/elm-file": "1.0.0",
+            "mpizenberg/elm-pointer-events": "4.0.2",
             "rtfeldman/elm-css": "16.1.1",
             "ryannhg/elm-spa": "6.0.0",
             "zaboco/elm-draggable": "5.0.0"
@@ -32,7 +33,6 @@
             "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
             "elm/virtual-dom": "1.0.2",
-            "mpizenberg/elm-pointer-events": "4.0.2",
             "pablohirafuji/elm-syntax-highlight": "3.4.1",
             "rtfeldman/elm-hex": "1.0.0"
         }

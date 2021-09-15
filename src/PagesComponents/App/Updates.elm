@@ -12,10 +12,10 @@ import Libs.Models exposing (SizeChange)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task exposing (send)
-import Models.Project exposing (CanvasProps, Layout, TableProps, htmlIdAsTableId)
+import Models.Project exposing (CanvasProps, Layout, TableId, TableProps, htmlIdAsTableId)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
 import PagesComponents.App.Models exposing (DragId, Hover, Model, Msg(..))
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setTableInList)
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setTableList)
 import Ports exposing (toastError, toastInfo)
 
 
@@ -69,7 +69,16 @@ dragItem model delta =
                 ( model |> setProject (setSchema (setLayout (setCanvas (setPosition delta 1)))), Cmd.none )
 
             else
-                ( model |> setProject (setSchema (setLayout (\l -> l |> setTableInList .id (htmlIdAsTableId id) (setPosition delta l.canvas.zoom)))), Cmd.none )
+                let
+                    tableId : TableId
+                    tableId =
+                        htmlIdAsTableId id
+
+                    selected : Bool
+                    selected =
+                        model.project |> Maybe.andThen (\p -> p.schema.layout.tables |> L.findBy .id tableId |> Maybe.map .selected) |> Maybe.withDefault False
+                in
+                ( model |> setProject (setSchema (setLayout (\l -> l |> setTableList (\t -> t.id == tableId || (selected && t.selected)) (setPosition delta l.canvas.zoom)))), Cmd.none )
 
         Nothing ->
             ( model, toastError "Can't dragItem when no drag id" )

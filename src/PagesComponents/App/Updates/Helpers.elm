@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
 
 import Draggable
 import Json.Decode as Decode
@@ -52,9 +52,14 @@ setTables transform item =
     { item | tables = item.tables |> transform }
 
 
+setTableList : (table -> Bool) -> (table -> table) -> { item | tables : List table } -> { item | tables : List table }
+setTableList predicate transform item =
+    setTables (\tables -> tables |> List.map (\t -> B.cond (predicate t) (transform t) t)) item
+
+
 setTableInList : (table -> comparable) -> comparable -> (table -> table) -> { item | tables : List table } -> { item | tables : List table }
 setTableInList get id transform item =
-    { item | tables = item.tables |> List.map (\t -> B.cond (get t == id) (transform t) t) }
+    setTableList (\t -> get t == id) transform item
 
 
 setLayouts : (l -> l) -> { item | layouts : l } -> { item | layouts : l }

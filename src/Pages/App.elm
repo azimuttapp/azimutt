@@ -132,8 +132,8 @@ update msg model =
         ChangedSearch search ->
             ( { model | search = search }, Cmd.none )
 
-        SelectTable id ->
-            ( model |> setProject (setSchema (setLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) False }))))), Cmd.none )
+        SelectTable id ctrl ->
+            ( model |> setProject (setSchema (setLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }))))), Cmd.none )
 
         HideTable id ->
             ( model |> setProject (setSchema (setLayout (hideTable id))), Cmd.none )

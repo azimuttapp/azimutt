@@ -8,6 +8,7 @@ import FontAwesome.Solid as Icon
 import Html exposing (Attribute, Html, b, button, div, li, span, text, ul)
 import Html.Attributes exposing (class, classList, id, style, title, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
+import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy3, lazy4)
 import Libs.Bootstrap exposing (Toggle(..), bsDropdown, bsToggle, bsToggleCollapse)
@@ -53,7 +54,7 @@ viewTable hover zoom index table props tableRelations size =
 
 viewHeader : ZoomLevel -> Int -> Table -> Html Msg
 viewHeader zoom index table =
-    div [ class "header", style "display" "flex", style "align-items" "center", onClick (SelectTable table.id) ]
+    div [ class "header", style "display" "flex", style "align-items" "center", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ]
         [ div [ style "flex-grow" "1" ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (showTableName table.schema table.name) ] ])
         , bsDropdown (tableIdAsHtmlId table.id ++ "-settings-dropdown")
             []
