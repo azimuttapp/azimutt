@@ -4,6 +4,7 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
+import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (HtmlId, ZoomLevel)
 import Libs.Position as Position exposing (Position)
@@ -21,14 +22,14 @@ handleWheel event canvas =
         canvas |> performMove event.delta.x event.delta.y
 
 
-zoomCanvas : Dict HtmlId Size -> Float -> CanvasProps -> CanvasProps
-zoomCanvas sizes delta canvas =
-    viewportSize sizes |> Maybe.map (\size -> canvas |> performZoom delta (Area.center (viewportArea size canvas))) |> Maybe.withDefault canvas
+zoomCanvas : Dict HtmlId DomInfo -> Float -> CanvasProps -> CanvasProps
+zoomCanvas domInfos delta canvas =
+    viewportSize domInfos |> Maybe.map (\size -> canvas |> performZoom delta (Area.center (viewportArea size canvas))) |> Maybe.withDefault canvas
 
 
-fitCanvas : Dict HtmlId Size -> Layout -> Layout
-fitCanvas sizes layout =
-    viewportSize sizes
+fitCanvas : Dict HtmlId DomInfo -> Layout -> Layout
+fitCanvas domInfos layout =
+    viewportSize domInfos
         |> Maybe.map
             (\size ->
                 let
@@ -42,7 +43,7 @@ fitCanvas sizes layout =
 
                     contentArea : Area
                     contentArea =
-                        tablesArea sizes (B.cond (selectedTables |> List.isEmpty) layout.tables selectedTables)
+                        tablesArea domInfos (B.cond (selectedTables |> List.isEmpty) layout.tables selectedTables)
 
                     padding : Float
                     padding =

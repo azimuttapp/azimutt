@@ -15,7 +15,7 @@ import Libs.Task exposing (send)
 import Models.Project exposing (CanvasProps, Layout, TableId, TableProps, htmlIdAsTableId)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
 import PagesComponents.App.Models exposing (CursorMode(..), DragId, Hover, Model, Msg(..))
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setSize, setTableList)
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setTableList)
 import Ports exposing (toastError, toastInfo)
 
 
@@ -26,7 +26,7 @@ updateSizes sizeChanges model =
 
 updateSize : SizeChange -> Model -> Model
 updateSize change model =
-    { model | sizes = model.sizes |> Dict.update change.id (\_ -> B.cond (change.size == Size 0 0) Nothing (Just change.size)) }
+    { model | domInfos = model.domInfos |> Dict.update change.id (\_ -> B.cond (change.size == Size 0 0) Nothing (Just { position = change.position, size = change.size })) }
 
 
 initializeTableOnFirstSize : Model -> SizeChange -> Maybe (Cmd Msg)
@@ -37,9 +37,9 @@ initializeTableOnFirstSize model change =
                 Maybe.map3 (\t props canvasSize -> ( t, props, canvasSize ))
                     (p.schema.tables |> Dict.get (htmlIdAsTableId change.id))
                     (p.schema.layout.tables |> L.findBy .id (htmlIdAsTableId change.id))
-                    (model.sizes |> Dict.get conf.ids.erd)
-                    |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.sizes |> Dict.member change.id))
-                    |> Maybe.map (\( t, _, canvasSize ) -> t.id |> initializeTable change.size (getArea canvasSize p.schema.layout.canvas))
+                    (model.domInfos |> Dict.get conf.ids.erd)
+                    |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.domInfos |> Dict.member change.id))
+                    |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (getArea canvasInfos.size p.schema.layout.canvas))
             )
 
 
@@ -66,11 +66,7 @@ dragItem delta model =
     case model.dragId of
         Just id ->
             if id == conf.ids.erd then
-                if model.cursorMode == Select then
-                    ( { model | selectSquare = model.selectSquare |> Maybe.map (setSize delta 1) }, Cmd.none )
-
-                else
-                    ( model |> setProject (setSchema (setLayout (setCanvas (setPosition delta 1)))), Cmd.none )
+                ( model |> setProject (setSchema (setLayout (setCanvas (setPosition delta 1)))), Cmd.none )
 
             else
                 let

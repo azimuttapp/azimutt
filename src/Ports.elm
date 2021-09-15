@@ -7,7 +7,7 @@ import Json.Encode as Encode
 import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
-import Libs.Json.Formats exposing (decodeSize)
+import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text)
 import Models.Project exposing (Layout, Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, tableIdAsHtmlId)
@@ -275,8 +275,9 @@ jsDecoder =
 
                 "SizesChanged" ->
                     Decode.field "sizes"
-                        (Decode.map2 (\id size -> { id = id, size = size })
+                        (Decode.map3 SizeChange
                             (Decode.field "id" Decode.string)
+                            (Decode.field "position" decodePosition)
                             (Decode.field "size" decodeSize)
                             |> Decode.list
                         )

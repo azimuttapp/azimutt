@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import Draggable
 import FileValue exposing (File)
 import Html exposing (Html, text)
+import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (HtmlId, ZoomDelta)
 import Libs.Position exposing (Position)
@@ -23,7 +24,7 @@ type alias Model =
     , newLayout : Maybe LayoutName
     , findPath : Maybe FindPath
     , confirm : Confirm
-    , sizes : Dict HtmlId Size
+    , domInfos : Dict HtmlId DomInfo
     , dragId : Maybe DragId
     , drag : Draggable.State DragId
     , cursorMode : CursorMode
@@ -38,7 +39,7 @@ type CursorMode
 
 
 type alias SelectSquare =
-    { topLeft : Position, size : Size }
+    { position : Position, size : Size }
 
 
 type Msg
@@ -77,6 +78,9 @@ type Msg
     | StartDragging DragId
     | StopDragging
     | OnDragBy Draggable.Delta
+    | DragStart2 DragId Position
+    | DragMove2 DragId Position
+    | DragEnd2 DragId Position
     | CursorMode CursorMode
     | FindPath (Maybe TableId) (Maybe TableId)
     | FindPathFrom (Maybe TableId)

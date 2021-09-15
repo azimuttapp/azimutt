@@ -12,6 +12,7 @@ import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy3, lazy4)
 import Libs.Bootstrap exposing (Toggle(..), bsDropdown, bsToggle, bsToggleCollapse)
+import Libs.DomInfo exposing (DomInfo)
 import Libs.Html exposing (divIf)
 import Libs.Html.Events exposing (stopClick)
 import Libs.List as L
@@ -19,15 +20,14 @@ import Libs.Maybe as M
 import Libs.Models exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.Size exposing (Size)
 import Libs.String as S
 import Models.Project exposing (Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
 import PagesComponents.App.Models exposing (Hover, Msg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, placeAt, sizeAttr, withColumnName)
 
 
-viewTable : Hover -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe Size -> Html Msg
-viewTable hover zoom index table props tableRelations size =
+viewTable : Hover -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
+viewTable hover zoom index table props tableRelations domInfo =
     let
         hiddenColumns : List Column
         hiddenColumns =
@@ -40,7 +40,7 @@ viewTable hover zoom index table props tableRelations size =
          , id (tableIdAsHtmlId table.id)
          , placeAt props.position
          , style "z-index" (String.fromInt (conf.zIndex.tables + index))
-         , size |> Maybe.map sizeAttr |> Maybe.withDefault (style "visibility" "hidden")
+         , domInfo |> Maybe.map (\i -> sizeAttr i.size) |> Maybe.withDefault (style "visibility" "hidden")
          , onMouseEnter (HoverTable (Just table.id))
          , onMouseLeave (HoverTable Nothing)
          ]

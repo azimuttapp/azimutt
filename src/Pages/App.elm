@@ -6,7 +6,8 @@ import Draggable
 import Gen.Params.App exposing (Params)
 import Libs.Bool as B
 import Libs.List as L
-import Libs.Position exposing (Position)
+import Libs.Models exposing (ZoomLevel)
+import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task exposing (sendAfter)
 import Models.Project exposing (FindPathState(..))
@@ -62,10 +63,10 @@ init =
       , newLayout = Nothing
       , findPath = Nothing
       , confirm = initConfirm
-      , sizes = Dict.empty
+      , domInfos = Dict.empty
       , dragId = Nothing
       , drag = Draggable.init
-      , cursorMode = Drag
+      , cursorMode = Select
       , selectSquare = Nothing
       , hover = initHover
       }
@@ -187,22 +188,57 @@ update msg model =
             ( model |> setProject (setSchema (setLayout (setCanvas (handleWheel event)))), Cmd.none )
 
         Zoom delta ->
-            ( model |> setProject (setSchema (setLayout (setCanvas (zoomCanvas model.sizes delta)))), Cmd.none )
+            ( model |> setProject (setSchema (setLayout (setCanvas (zoomCanvas model.domInfos delta)))), Cmd.none )
 
         FitContent ->
-            ( model |> setProject (setSchema (setLayout (fitCanvas model.sizes))), Cmd.none )
+            ( model |> setProject (setSchema (setLayout (fitCanvas model.domInfos))), Cmd.none )
 
         DragMsg dragMsg ->
             model |> Draggable.update dragConfig dragMsg
 
         StartDragging id ->
-            ( { model | dragId = Just id, selectSquare = B.cond (model.cursorMode == Select && id == conf.ids.erd) (Just { topLeft = Position 0 0, size = Size 0 0 }) Nothing }, Cmd.none )
+            ( { model | dragId = Just id }, Cmd.none )
 
         StopDragging ->
-            ( { model | dragId = Nothing, selectSquare = Nothing }, Cmd.none )
+            ( { model | dragId = Nothing }, Cmd.none )
 
         OnDragBy delta ->
             dragItem delta model
+
+        DragStart2 id pos ->
+            if id == conf.ids.erd then
+                let
+                    erdPos : Position
+                    erdPos =
+                        model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
+
+                    zoom : ZoomLevel
+                    zoom =
+                        model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
+                in
+                ( { model | selectSquare = Just { position = pos |> Position.sub erdPos |> Position.div zoom, size = Size 0 0 } }, Cmd.none )
+
+            else
+                ( model, Cmd.none )
+
+        DragMove2 id pos ->
+            if id == conf.ids.erd then
+                let
+                    zoom : ZoomLevel
+                    zoom =
+                        model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
+                in
+                ( { model | selectSquare = model.selectSquare |> Maybe.map (\sq -> { sq | size = Size ((pos.left - sq.position.left) / zoom) ((pos.top - sq.position.top) / zoom) }) }, Cmd.none )
+
+            else
+                ( model, Cmd.none )
+
+        DragEnd2 id _ ->
+            if id == conf.ids.erd then
+                ( { model | selectSquare = Nothing }, Cmd.none )
+
+            else
+                ( model, Cmd.none )
 
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )

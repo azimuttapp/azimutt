@@ -6,6 +6,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Area exposing (Area)
 import Libs.Dict as D
+import Libs.DomInfo exposing (DomInfo)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodeColor, decodePosition, decodePosix, decodeZoomLevel, encodeColor, encodePosition, encodePosix, encodeZoomLevel)
@@ -420,9 +421,9 @@ withNullableInfo nullable text =
         text
 
 
-viewportSize : Dict HtmlId Size -> Maybe Size
-viewportSize sizes =
-    sizes |> Dict.get conf.ids.erd
+viewportSize : Dict HtmlId DomInfo -> Maybe Size
+viewportSize domInfos =
+    domInfos |> Dict.get conf.ids.erd |> Maybe.map .size
 
 
 viewportArea : Size -> CanvasProps -> Area
@@ -447,12 +448,12 @@ viewportArea size canvas =
     Area left top right bottom
 
 
-tablesArea : Dict HtmlId Size -> List TableProps -> Area
-tablesArea sizes tables =
+tablesArea : Dict HtmlId DomInfo -> List TableProps -> Area
+tablesArea domInfos tables =
     let
         positions : List ( TableProps, Size )
         positions =
-            tables |> L.zipWith (\t -> sizes |> Dict.get (tableIdAsHtmlId t.id) |> Maybe.withDefault (Size 0 0))
+            tables |> L.zipWith (\t -> domInfos |> Dict.get (tableIdAsHtmlId t.id) |> Maybe.map .size |> Maybe.withDefault (Size 0 0))
 
         left : Float
         left =

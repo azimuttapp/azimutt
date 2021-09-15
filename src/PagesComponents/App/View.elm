@@ -22,7 +22,7 @@ viewApp model =
         [ [ Icon.css, node "style" [] [ text "body { overflow: hidden; }" ] ]
         , [ lazy2 viewNavbar model.search model.project ]
         , [ lazy viewMenu (model.project |> Maybe.map .schema) ]
-        , [ lazy6 viewErd model.hover model.cursorMode model.selectSquare (model.dragId /= Nothing) model.sizes (model.project |> Maybe.map .schema) ]
+        , [ lazy6 viewErd model.hover model.cursorMode model.selectSquare (model.dragId /= Nothing) model.domInfos (model.project |> Maybe.map .schema) ]
         , [ lazy2 viewCommands model.cursorMode (model.project |> Maybe.map (\p -> p.schema.layout.canvas)) ]
         , [ lazy4 viewSchemaSwitchModal model.time model.switch (model.project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Load a new schema") model.storedProjects ]
         , [ lazy viewCreateLayoutModal model.newLayout ]

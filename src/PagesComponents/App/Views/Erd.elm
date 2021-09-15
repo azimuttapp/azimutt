@@ -4,15 +4,18 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, classList, id, style)
+import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy2, lazy6, lazy7)
+import Libs.Bool as B
 import Libs.Dict as D
+import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (onWheel)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (HtmlId, ZoomLevel)
 import Libs.Ned as Ned
-import Libs.Position exposing (Position)
+import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Relation, RelationFull, Schema, Table, TableId, TableProps, tableIdAsHtmlId, tableIdAsString, viewportSize)
 import PagesComponents.App.Models exposing (CursorMode(..), Hover, Msg(..), SelectSquare)
@@ -21,24 +24,29 @@ import PagesComponents.App.Views.Erd.Table exposing (viewTable)
 import PagesComponents.App.Views.Helpers exposing (dragAttrs, placeAt, sizeAttr)
 
 
-viewErd : Hover -> CursorMode -> Maybe SelectSquare -> Bool -> Dict HtmlId Size -> Maybe Schema -> Html Msg
-viewErd hover cursorMode selectSquare dragging sizes schema =
+viewErd : Hover -> CursorMode -> Maybe SelectSquare -> Bool -> Dict HtmlId DomInfo -> Maybe Schema -> Html Msg
+viewErd hover cursorMode selectSquare dragging domInfos schema =
     div
         ([ class "erd"
          , classList [ ( "cursor-hand", cursorMode == Drag && not dragging ), ( "cursor-hand-drag", cursorMode == Drag && dragging ) ]
          , id conf.ids.erd
-         , sizeAttr (viewportSize sizes |> Maybe.withDefault (Size 0 0))
+         , sizeAttr (viewportSize domInfos |> Maybe.withDefault (Size 0 0))
          , onWheel OnWheel
          ]
-            ++ dragAttrs conf.ids.erd
+            ++ B.cond (cursorMode == Select)
+                [ Pointer.onDown (\e -> DragStart2 conf.ids.erd (Position.from e.pointer.pagePos))
+                , Pointer.onMove (\e -> DragMove2 conf.ids.erd (Position.from e.pointer.pagePos))
+                , Pointer.onUp (\e -> DragEnd2 conf.ids.erd (Position.from e.pointer.pagePos))
+                ]
+                (dragAttrs conf.ids.erd)
         )
         [ div [ class "canvas", placeAndZoom (schema |> Maybe.map (\s -> s.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1)) ]
-            (schema |> Maybe.map (\s -> viewErdContent hover selectSquare sizes s.layout.canvas.zoom s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
+            (schema |> Maybe.map (\s -> viewErdContent hover selectSquare domInfos s.layout.canvas.zoom s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
         ]
 
 
-viewErdContent : Hover -> Maybe SelectSquare -> Dict HtmlId Size -> ZoomLevel -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)
-viewErdContent hover selectSquare sizes zoom layoutTables tables relations =
+viewErdContent : Hover -> Maybe SelectSquare -> Dict HtmlId DomInfo -> ZoomLevel -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)
+viewErdContent hover selectSquare domInfos zoom layoutTables tables relations =
     let
         layoutTablesDict : Dict TableId ( TableProps, Int )
         layoutTablesDict =
@@ -52,9 +60,9 @@ viewErdContent hover selectSquare sizes zoom layoutTables tables relations =
         shownRelations =
             relations
                 |> List.filter (\r -> Dict.member r.src.table layoutTablesDict || Dict.member r.ref.table layoutTablesDict)
-                |> List.filterMap (buildRelationFull tables layoutTablesDict layoutTablesDictSize sizes)
+                |> List.filterMap (buildRelationFull tables layoutTablesDict layoutTablesDictSize domInfos)
     in
-    [ lazy6 viewTables hover sizes zoom layoutTables shownRelations tables
+    [ lazy6 viewTables hover domInfos zoom layoutTables shownRelations tables
     , lazy2 viewRelations hover shownRelations
     , selectSquare |> Maybe.map viewSelectSquare |> Maybe.withDefault (div [] [])
     ]
@@ -65,30 +73,30 @@ viewSelectSquare selectSquare =
     let
         ( top, height ) =
             if selectSquare.size.height > 0 then
-                ( selectSquare.topLeft.top, selectSquare.size.height )
+                ( selectSquare.position.top, selectSquare.size.height )
 
             else
-                ( selectSquare.topLeft.top + selectSquare.size.height, -selectSquare.size.height )
+                ( selectSquare.position.top + selectSquare.size.height, -selectSquare.size.height )
 
         ( left, width ) =
             if selectSquare.size.width > 0 then
-                ( selectSquare.topLeft.left, selectSquare.size.width )
+                ( selectSquare.position.left, selectSquare.size.width )
 
             else
-                ( selectSquare.topLeft.left + selectSquare.size.width, -selectSquare.size.width )
+                ( selectSquare.position.left + selectSquare.size.width, -selectSquare.size.width )
     in
     div [ placeAt (Position left top), style "width" (String.fromFloat width ++ "px"), style "height" (String.fromFloat height ++ "px"), style "background" "red" ] []
 
 
-viewTables : Hover -> Dict HtmlId Size -> ZoomLevel -> List TableProps -> List RelationFull -> Dict TableId Table -> Html Msg
-viewTables hover sizes zoom layoutTables shownRelations tables =
+viewTables : Hover -> Dict HtmlId DomInfo -> ZoomLevel -> List TableProps -> List RelationFull -> Dict TableId Table -> Html Msg
+viewTables hover domInfos zoom layoutTables shownRelations tables =
     Keyed.node "div"
         [ class "tables" ]
         (layoutTables
             |> List.reverse
             |> L.filterZip (\t -> tables |> Dict.get t.id)
-            |> List.map (\( p, t ) -> ( ( t, p ), ( shownRelations |> List.filter (\r -> r.src.table.id == t.id || r.ref.table.id == t.id), sizes |> Dict.get (tableIdAsHtmlId p.id) ) ))
-            |> List.indexedMap (\i ( ( table, props ), ( rels, size ) ) -> ( tableIdAsString table.id, lazy7 viewTable hover zoom i table props rels size ))
+            |> List.map (\( p, t ) -> ( ( t, p ), ( shownRelations |> List.filter (\r -> r.src.table.id == t.id || r.ref.table.id == t.id), domInfos |> Dict.get (tableIdAsHtmlId p.id) ) ))
+            |> List.indexedMap (\i ( ( table, props ), ( rels, domInfo ) ) -> ( tableIdAsString table.id, lazy7 viewTable hover zoom i table props rels domInfo ))
         )
 
 
@@ -102,15 +110,15 @@ placeAndZoom props =
     style "transform" ("translate(" ++ String.fromFloat props.position.left ++ "px, " ++ String.fromFloat props.position.top ++ "px) scale(" ++ String.fromFloat props.zoom ++ ")")
 
 
-buildRelationFull : Dict TableId Table -> Dict TableId ( TableProps, Int ) -> Int -> Dict HtmlId Size -> Relation -> Maybe RelationFull
-buildRelationFull tables layoutTables layoutTablesSize sizes rel =
+buildRelationFull : Dict TableId Table -> Dict TableId ( TableProps, Int ) -> Int -> Dict HtmlId DomInfo -> Relation -> Maybe RelationFull
+buildRelationFull tables layoutTables layoutTablesSize domInfos rel =
     Maybe.map2 (\src ref -> { name = rel.name, src = src, ref = ref, sources = rel.sources })
-        (buildColumnRefFull tables layoutTables layoutTablesSize sizes rel.src)
-        (buildColumnRefFull tables layoutTables layoutTablesSize sizes rel.ref)
+        (buildColumnRefFull tables layoutTables layoutTablesSize domInfos rel.src)
+        (buildColumnRefFull tables layoutTables layoutTablesSize domInfos rel.ref)
 
 
-buildColumnRefFull : Dict TableId Table -> Dict TableId ( TableProps, Int ) -> Int -> Dict HtmlId Size -> ColumnRef -> Maybe ColumnRefFull
-buildColumnRefFull tables layoutTables layoutTablesSize sizes ref =
+buildColumnRefFull : Dict TableId Table -> Dict TableId ( TableProps, Int ) -> Int -> Dict HtmlId DomInfo -> ColumnRef -> Maybe ColumnRefFull
+buildColumnRefFull tables layoutTables layoutTablesSize domInfos ref =
     (tables |> Dict.get ref.table |> M.andThenZip (\table -> table.columns |> Ned.get ref.column))
         |> Maybe.map
             (\( table, column ) ->
@@ -120,7 +128,7 @@ buildColumnRefFull tables layoutTables layoutTablesSize sizes ref =
                 , props =
                     M.zip
                         (layoutTables |> Dict.get ref.table)
-                        (sizes |> Dict.get (tableIdAsHtmlId ref.table))
-                        |> Maybe.map (\( ( t, i ), s ) -> ( t, layoutTablesSize - 1 - i, s ))
+                        (domInfos |> Dict.get (tableIdAsHtmlId ref.table))
+                        |> Maybe.map (\( ( t, i ), d ) -> ( t, layoutTablesSize - 1 - i, d.size ))
                 }
             )
