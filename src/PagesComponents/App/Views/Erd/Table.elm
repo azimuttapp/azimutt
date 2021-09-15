@@ -8,6 +8,7 @@ import FontAwesome.Solid as Icon
 import Html exposing (Attribute, Html, b, button, div, li, span, text, ul)
 import Html.Attributes exposing (class, classList, id, style, title, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
+import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy3, lazy4)
 import Libs.Bootstrap exposing (Toggle(..), bsDropdown, bsToggle, bsToggleCollapse)
@@ -55,7 +56,7 @@ viewTable hover zoom index table props tableRelations size =
 viewHeader : ZoomLevel -> Int -> Table -> Html Msg
 viewHeader zoom index table =
     div [ class "header", style "display" "flex", style "align-items" "center" ]
-        [ div [ style "flex-grow" "1", onClick (SelectTable table.id) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (showTableName table.schema table.name) ] ])
+        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (showTableName table.schema table.name) ] ])
         , bsDropdown (tableIdAsHtmlId table.id ++ "-settings-dropdown")
             []
             (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])
