@@ -21,21 +21,21 @@ import Time
 
 createProjectFromFile : Time.Posix -> ProjectId -> ProjectSourceId -> File -> FileContent -> Model -> ( Model, Cmd Msg )
 createProjectFromFile now projectId sourceId file content model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (localSource now sourceId file) content Nothing |> loadProject model
+    buildProject (model.storedProjects |> List.map .name) now projectId (localSource now sourceId file) content Nothing |> loadProject "create" model
 
 
 createProjectFromUrl : Time.Posix -> ProjectId -> ProjectSourceId -> FileUrl -> FileContent -> Maybe SampleName -> Model -> ( Model, Cmd Msg )
 createProjectFromUrl now projectId sourceId path content sample model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (remoteSource now sourceId path content) content sample |> loadProject model
+    buildProject (model.storedProjects |> List.map .name) now projectId (remoteSource now sourceId path content) content sample |> loadProject "create" model
 
 
 useProject : Project -> Model -> ( Model, Cmd Msg )
 useProject project model =
-    ( [], Just project ) |> loadProject model
+    ( [], Just project ) |> loadProject "use" model
 
 
-loadProject : Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
-loadProject model ( errs, project ) =
+loadProject : String -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
+loadProject action model ( errs, project ) =
     ( { model | switch = initSwitch, project = project, sizes = model.sizes |> Dict.filter (\id _ -> not (id |> String.startsWith "table-")) }
     , Cmd.batch
         ((errs |> List.map toastError)
@@ -56,7 +56,7 @@ loadProject model ( errs, project ) =
                                    , hideModal conf.ids.projectSwitchModal
                                    , saveProject p
                                    , activateTooltipsAndPopovers
-                                   , trackProjectEvent "load" p
+                                   , trackProjectEvent action p
                                    ]
                         )
                     |> Maybe.withDefault []
