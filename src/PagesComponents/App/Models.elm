@@ -1,4 +1,4 @@
-module PagesComponents.App.Models exposing (Confirm, DragId, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, Error, Errors, Hover, Model, Msg(..), Search, SelectSquare, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import Draggable
@@ -26,8 +26,19 @@ type alias Model =
     , sizes : Dict HtmlId Size
     , dragId : Maybe DragId
     , drag : Draggable.State DragId
+    , cursorMode : CursorMode
+    , selectSquare : Maybe SelectSquare
     , hover : Hover
     }
+
+
+type CursorMode
+    = Drag
+    | Select
+
+
+type alias SelectSquare =
+    { topLeft : Position, size : Size }
 
 
 type Msg
@@ -66,6 +77,7 @@ type Msg
     | StartDragging DragId
     | StopDragging
     | OnDragBy Draggable.Delta
+    | CursorMode CursorMode
     | FindPath (Maybe TableId) (Maybe TableId)
     | FindPathFrom (Maybe TableId)
     | FindPathTo (Maybe TableId)

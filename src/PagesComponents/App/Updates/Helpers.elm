@@ -1,10 +1,11 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSize, setSwitch, setTableInList, setTableList, setTables, setTime)
 
 import Draggable
 import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Models exposing (ZoomLevel)
 import Libs.Position exposing (Position)
+import Libs.Size exposing (Size)
 
 
 setTime : (t -> t) -> { item | time : t } -> { item | time : t }
@@ -70,6 +71,11 @@ setLayouts transform item =
 setPosition : Draggable.Delta -> ZoomLevel -> { item | position : Position } -> { item | position : Position }
 setPosition ( dx, dy ) zoom item =
     { item | position = Position (item.position.left + (dx / zoom)) (item.position.top + (dy / zoom)) }
+
+
+setSize : Draggable.Delta -> ZoomLevel -> { item | size : Size } -> { item | size : Size }
+setSize ( dx, dy ) zoom item =
+    { item | size = Size (item.size.width + (dx / zoom)) (item.size.height + (dy / zoom)) }
 
 
 setSettings : (s -> s) -> { item | settings : s } -> { item | settings : s }

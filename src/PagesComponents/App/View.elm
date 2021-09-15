@@ -2,7 +2,7 @@ module PagesComponents.App.View exposing (viewApp)
 
 import FontAwesome.Styles as Icon
 import Html exposing (Html, node, text)
-import Html.Lazy exposing (lazy, lazy2, lazy3, lazy4)
+import Html.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy6)
 import Libs.Maybe as M
 import PagesComponents.App.Models exposing (Model, Msg(..))
 import PagesComponents.App.Views.Command exposing (viewCommands)
@@ -22,8 +22,8 @@ viewApp model =
         [ [ Icon.css, node "style" [] [ text "body { overflow: hidden; }" ] ]
         , [ lazy2 viewNavbar model.search model.project ]
         , [ lazy viewMenu (model.project |> Maybe.map .schema) ]
-        , [ lazy3 viewErd model.hover model.sizes (model.project |> Maybe.map .schema) ]
-        , [ lazy viewCommands (model.project |> Maybe.map (\p -> p.schema.layout.canvas)) ]
+        , [ lazy6 viewErd model.hover model.cursorMode model.selectSquare (model.dragId /= Nothing) model.sizes (model.project |> Maybe.map .schema) ]
+        , [ lazy2 viewCommands model.cursorMode (model.project |> Maybe.map (\p -> p.schema.layout.canvas)) ]
         , [ lazy4 viewSchemaSwitchModal model.time model.switch (model.project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Load a new schema") model.storedProjects ]
         , [ lazy viewCreateLayoutModal model.newLayout ]
         , Maybe.map2 (\p fp -> lazy3 viewFindPathModal p.schema.tables p.settings.findPath fp) model.project model.findPath |> M.toList

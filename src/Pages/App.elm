@@ -6,12 +6,14 @@ import Draggable
 import Gen.Params.App exposing (Params)
 import Libs.Bool as B
 import Libs.List as L
+import Libs.Position exposing (Position)
+import Libs.Size exposing (Size)
 import Libs.Task exposing (sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
@@ -63,6 +65,8 @@ init =
       , sizes = Dict.empty
       , dragId = Nothing
       , drag = Draggable.init
+      , cursorMode = Drag
+      , selectSquare = Nothing
       , hover = initHover
       }
     , Cmd.batch
@@ -192,13 +196,16 @@ update msg model =
             model |> Draggable.update dragConfig dragMsg
 
         StartDragging id ->
-            ( { model | dragId = Just id }, Cmd.none )
+            ( { model | dragId = Just id, selectSquare = B.cond (model.cursorMode == Select && id == conf.ids.erd) (Just { topLeft = Position 0 0, size = Size 0 0 }) Nothing }, Cmd.none )
 
         StopDragging ->
-            ( { model | dragId = Nothing }, Cmd.none )
+            ( { model | dragId = Nothing, selectSquare = Nothing }, Cmd.none )
 
         OnDragBy delta ->
-            dragItem model delta
+            dragItem delta model
+
+        CursorMode mode ->
+            ( { model | cursorMode = mode }, Cmd.none )
 
         FindPath from to ->
             ( { model | findPath = Just { from = from, to = to, result = Empty } }, showModal conf.ids.findPathModal )

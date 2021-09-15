@@ -14,8 +14,8 @@ import Libs.Size exposing (Size)
 import Libs.Task exposing (send)
 import Models.Project exposing (CanvasProps, Layout, TableId, TableProps, htmlIdAsTableId)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
-import PagesComponents.App.Models exposing (DragId, Hover, Model, Msg(..))
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setTableList)
+import PagesComponents.App.Models exposing (CursorMode(..), DragId, Hover, Model, Msg(..))
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setSize, setTableList)
 import Ports exposing (toastError, toastInfo)
 
 
@@ -61,12 +61,16 @@ dragConfig =
         ]
 
 
-dragItem : Model -> Draggable.Delta -> ( Model, Cmd Msg )
-dragItem model delta =
+dragItem : Draggable.Delta -> Model -> ( Model, Cmd Msg )
+dragItem delta model =
     case model.dragId of
         Just id ->
             if id == conf.ids.erd then
-                ( model |> setProject (setSchema (setLayout (setCanvas (setPosition delta 1)))), Cmd.none )
+                if model.cursorMode == Select then
+                    ( { model | selectSquare = model.selectSquare |> Maybe.map (setSize delta 1) }, Cmd.none )
+
+                else
+                    ( model |> setProject (setSchema (setLayout (setCanvas (setPosition delta 1)))), Cmd.none )
 
             else
                 let

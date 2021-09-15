@@ -3,7 +3,7 @@ module PagesComponents.App.Views.Erd exposing (viewErd)
 import Conf exposing (conf)
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, div)
-import Html.Attributes exposing (class, id, style)
+import Html.Attributes exposing (class, classList, id, style)
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy2, lazy6, lazy7)
 import Libs.Dict as D
@@ -15,22 +15,30 @@ import Libs.Ned as Ned
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Relation, RelationFull, Schema, Table, TableId, TableProps, tableIdAsHtmlId, tableIdAsString, viewportSize)
-import PagesComponents.App.Models exposing (Hover, Msg(..))
+import PagesComponents.App.Models exposing (CursorMode(..), Hover, Msg(..), SelectSquare)
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation)
 import PagesComponents.App.Views.Erd.Table exposing (viewTable)
-import PagesComponents.App.Views.Helpers exposing (dragAttrs, sizeAttr)
+import PagesComponents.App.Views.Helpers exposing (dragAttrs, placeAt, sizeAttr)
 
 
-viewErd : Hover -> Dict HtmlId Size -> Maybe Schema -> Html Msg
-viewErd hover sizes schema =
-    div ([ class "erd", id conf.ids.erd, sizeAttr (viewportSize sizes |> Maybe.withDefault (Size 0 0)), onWheel OnWheel ] ++ dragAttrs conf.ids.erd)
+viewErd : Hover -> CursorMode -> Maybe SelectSquare -> Bool -> Dict HtmlId Size -> Maybe Schema -> Html Msg
+viewErd hover cursorMode selectSquare dragging sizes schema =
+    div
+        ([ class "erd"
+         , classList [ ( "cursor-hand", cursorMode == Drag && not dragging ), ( "cursor-hand-drag", cursorMode == Drag && dragging ) ]
+         , id conf.ids.erd
+         , sizeAttr (viewportSize sizes |> Maybe.withDefault (Size 0 0))
+         , onWheel OnWheel
+         ]
+            ++ dragAttrs conf.ids.erd
+        )
         [ div [ class "canvas", placeAndZoom (schema |> Maybe.map (\s -> s.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1)) ]
-            (schema |> Maybe.map (\s -> viewErdContent hover sizes s.layout.canvas.zoom s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
+            (schema |> Maybe.map (\s -> viewErdContent hover selectSquare sizes s.layout.canvas.zoom s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
         ]
 
 
-viewErdContent : Hover -> Dict HtmlId Size -> ZoomLevel -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)
-viewErdContent hover sizes zoom layoutTables tables relations =
+viewErdContent : Hover -> Maybe SelectSquare -> Dict HtmlId Size -> ZoomLevel -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)
+viewErdContent hover selectSquare sizes zoom layoutTables tables relations =
     let
         layoutTablesDict : Dict TableId ( TableProps, Int )
         layoutTablesDict =
@@ -48,7 +56,28 @@ viewErdContent hover sizes zoom layoutTables tables relations =
     in
     [ lazy6 viewTables hover sizes zoom layoutTables shownRelations tables
     , lazy2 viewRelations hover shownRelations
+    , selectSquare |> Maybe.map viewSelectSquare |> Maybe.withDefault (div [] [])
     ]
+
+
+viewSelectSquare : SelectSquare -> Html msg
+viewSelectSquare selectSquare =
+    let
+        ( top, height ) =
+            if selectSquare.size.height > 0 then
+                ( selectSquare.topLeft.top, selectSquare.size.height )
+
+            else
+                ( selectSquare.topLeft.top + selectSquare.size.height, -selectSquare.size.height )
+
+        ( left, width ) =
+            if selectSquare.size.width > 0 then
+                ( selectSquare.topLeft.left, selectSquare.size.width )
+
+            else
+                ( selectSquare.topLeft.left + selectSquare.size.width, -selectSquare.size.width )
+    in
+    div [ placeAt (Position left top), style "width" (String.fromFloat width ++ "px"), style "height" (String.fromFloat height ++ "px"), style "background" "red" ] []
 
 
 viewTables : Hover -> Dict HtmlId Size -> ZoomLevel -> List TableProps -> List RelationFull -> Dict TableId Table -> Html Msg
