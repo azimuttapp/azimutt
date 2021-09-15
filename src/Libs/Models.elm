@@ -48,4 +48,4 @@ type alias Millis =
 
 
 type alias TrackEvent =
-    { name : String, details : List ( String, String ) }
+    { name : String, details : List ( String, String ), enabled : Bool }

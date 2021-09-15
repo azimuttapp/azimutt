@@ -111,7 +111,11 @@ listenHotkeys keys =
 
 track : TrackEvent -> Cmd msg
 track event =
-    messageToJs (TrackEvent event.name (Encode.object (event.details |> List.map (\( k, v ) -> ( k, v |> Encode.string )))))
+    if event.enabled then
+        messageToJs (TrackEvent event.name (Encode.object (event.details |> List.map (\( k, v ) -> ( k, v |> Encode.string )))))
+
+    else
+        Cmd.none
 
 
 trackPage : String -> Cmd msg

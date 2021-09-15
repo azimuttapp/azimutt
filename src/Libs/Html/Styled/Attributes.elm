@@ -23,4 +23,8 @@ ariaExpanded value =
 
 track : TrackEvent -> List (Attribute msg)
 track event =
-    attribute "data-track-event" event.name :: (event.details |> List.map (\( k, v ) -> attribute ("data-track-event-" ++ k) v))
+    if event.enabled then
+        attribute "data-track-event" event.name :: (event.details |> List.map (\( k, v ) -> attribute ("data-track-event-" ++ k) v))
+
+    else
+        []

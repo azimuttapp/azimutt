@@ -3,11 +3,12 @@ module Libs.Html exposing (bText, codeText, divIf, extLink)
 import Html exposing (Attribute, Html, a, b, code, div, text)
 import Html.Attributes exposing (href, rel, target)
 import Libs.Html.Attributes exposing (track)
+import Tracking exposing (events)
 
 
 extLink : String -> List (Attribute msg) -> List (Html msg) -> Html msg
 extLink url attrs children =
-    a ([ href url, target "_blank", rel "noopener" ] ++ track { name = "external-link", details = [ ( "url", url ) ] } ++ attrs) children
+    a ([ href url, target "_blank", rel "noopener" ] ++ track (events.externalLink url) ++ attrs) children
 
 
 bText : String -> Html msg
