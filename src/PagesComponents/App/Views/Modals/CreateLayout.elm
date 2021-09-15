@@ -1,11 +1,11 @@
 module PagesComponents.App.Views.Modals.CreateLayout exposing (viewCreateLayoutModal)
 
 import Conf exposing (conf)
-import Html exposing (Html, a, button, div, input, label, text)
-import Html.Attributes exposing (autofocus, class, disabled, for, href, id, rel, target, type_, value)
+import Html exposing (Html, button, div, input, label, text)
+import Html.Attributes exposing (autofocus, class, disabled, for, id, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal)
-import Libs.Html exposing (bText)
+import Libs.Html exposing (bText, extLink)
 import Models.Project exposing (LayoutName)
 import PagesComponents.App.Models exposing (Msg(..))
 import Url exposing (percentEncode)
@@ -21,7 +21,7 @@ viewCreateLayoutModal newLayout =
             ]
         , div [ class "mt-3" ]
             [ text "Do you like Azimutt ? Consider "
-            , a [ href (sendTweet "Hi @azimuttapp team, well done with your app, I really like it 👍"), target "_blank", rel "noopener" ] [ text "sending us a tweet" ]
+            , extLink (sendTweet "Hi @azimuttapp team, well done with your app, I really like it 👍") [] [ text "sending us a tweet" ]
             , text ", it will help "
             , bText "keep our motivation high"
             , text " 🥰"

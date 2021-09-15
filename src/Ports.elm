@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, trackErrorList, trackJsonError, trackLayoutEvent, trackPage, trackProjectEvent)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackErrorList, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -9,8 +9,8 @@ import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodeSize)
 import Libs.List as L
-import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text)
-import Models.Project exposing (Layout, Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, tableIdAsHtmlId)
+import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text, TrackEvent)
+import Models.Project exposing (Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, tableIdAsHtmlId)
 import Time
 
 
@@ -109,26 +109,18 @@ listenHotkeys keys =
     messageToJs (ListenKeys keys)
 
 
+track : TrackEvent -> Cmd msg
+track event =
+    if event.enabled then
+        messageToJs (TrackEvent event.name (Encode.object (event.details |> List.map (\( k, v ) -> ( k, v |> Encode.string )))))
+
+    else
+        Cmd.none
+
+
 trackPage : String -> Cmd msg
 trackPage name =
     messageToJs (TrackPage name)
-
-
-trackProjectEvent : String -> Project -> Cmd msg
-trackProjectEvent name project =
-    messageToJs
-        (TrackEvent (name ++ (project.fromSample |> Maybe.map (\_ -> "-sample") |> Maybe.withDefault "") ++ "-project")
-            (Encode.object
-                [ ( "tableCount", project.schema.tables |> Dict.size |> Encode.int )
-                , ( "layoutCount", project.layouts |> Dict.size |> Encode.int )
-                ]
-            )
-        )
-
-
-trackLayoutEvent : String -> Layout -> Cmd msg
-trackLayoutEvent name layout =
-    messageToJs (TrackEvent (name ++ "-layout") (Encode.object [ ( "tableCount", layout.tables |> List.length |> Encode.int ) ]))
 
 
 trackJsonError : String -> Decode.Error -> Cmd msg

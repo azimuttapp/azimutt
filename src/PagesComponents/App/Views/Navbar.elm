@@ -9,27 +9,28 @@ import Html.Attributes exposing (alt, attribute, autocomplete, class, height, id
 import Html.Events exposing (onClick, onInput)
 import Html.Lazy exposing (lazy2)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsToggle, bsToggleCollapse, bsToggleDropdown, bsToggleModal, bsToggleOffcanvas)
-import Libs.Html.Attributes exposing (ariaExpanded, ariaLabel)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaLabel, track)
 import Libs.List as L
 import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project exposing (Column, Layout, LayoutName, Project, ProjectName, Schema, Table, TableId, showTableId)
 import PagesComponents.App.Models exposing (Msg(..), Search)
+import Tracking exposing (events)
 
 
 viewNavbar : Search -> Maybe Project -> Html Msg
 viewNavbar search project =
     nav [ id "navbar", class "navbar navbar-expand-md navbar-light bg-white shadow-sm" ]
         [ div [ class "container-fluid" ]
-            [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas conf.ids.menu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
+            [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas conf.ids.menu ++ track events.openMenu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
             , button ([ type_ "button", class "navbar-toggler", ariaLabel "Toggle navigation" ] ++ bsToggleCollapse "navbar-content")
                 [ span [ class "navbar-toggler-icon" ] []
                 ]
             , div [ class "collapse navbar-collapse", id "navbar-content" ]
                 ([ lazy2 viewSearchBar (project |> Maybe.map .schema) search
                  , ul [ class "navbar-nav me-auto" ]
-                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal conf.ids.helpModal) [ text "?" ] ]
+                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal conf.ids.helpModal ++ track events.openHelp) [ text "?" ] ]
                     ]
                  ]
                     ++ (project |> Maybe.map (\p -> [ viewTitle p.name p.schema.tables p.currentLayout, lazy2 viewLayoutButton p.currentLayout p.layouts ]) |> Maybe.withDefault [])
@@ -71,7 +72,7 @@ viewTitle projectName tables layoutName =
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
 viewLayoutButton currentLayout layouts =
     if Dict.isEmpty layouts then
-        bsButton Primary ([ title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal) [ text "Save layout" ]
+        bsButton Primary ([ title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
 
     else
         div [ class "btn-group" ]

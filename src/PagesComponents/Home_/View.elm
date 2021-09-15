@@ -11,11 +11,12 @@ import Components.Slices.Hero as Hero
 import Conf exposing (constants)
 import Css.Global as Global
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, b, br, div, span, text)
-import Html.Styled.Attributes exposing (class, css, href, rel, target, title)
+import Html.Styled exposing (Html, b, br, div, span, text)
+import Html.Styled.Attributes exposing (class, css, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
-import Libs.Html.Styled exposing (bText)
+import Libs.Html.Styled exposing (bText, extLink)
 import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800, text_white)
+import Tracking exposing (events)
 
 
 viewHome : List (Html msg)
@@ -38,7 +39,7 @@ viewHome =
                     , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                     ]
                 }
-            , cta = Just { url = Route.App, label = "Let's try it!" }
+            , cta = Just { url = Route.App, label = "Let's try it!", track = Just (events.openAppCta "home-explore-section") }
             , quote =
                 Just
                     { text = "Using Azimutt is like having super powers!"
@@ -60,7 +61,7 @@ viewHome =
                     , Feature.checked { title = "show, hide and sort columns", description = Nothing }
                     ]
                 }
-            , cta = Just { url = Route.App, label = "Let me see..." }
+            , cta = Just { url = Route.App, label = "Let me see...", track = Just (events.openAppCta "home-display-section") }
             , quote =
                 Just
                     { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
@@ -86,7 +87,7 @@ viewHome =
                     , Feature.checked { title = "incoming relations", description = Nothing }
                     ]
                 }
-            , cta = Just { url = Route.App, label = "I can't resist, let's go!" }
+            , cta = Just { url = Route.App, label = "I can't resist, let's go!", track = Just (events.openAppCta "home-relations-section") }
             , quote = Nothing
             }
         , FeatureSideBySide.imageSlice
@@ -102,7 +103,7 @@ viewHome =
                     , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
                     ]
                 }
-            , cta = Just { url = Route.App, label = "That's enough, I'm in!" }
+            , cta = Just { url = Route.App, label = "That's enough, I'm in!", track = Just (events.openAppCta "home-layouts-section") }
             , quote = Nothing
             }
         , FeatureSideBySide.imageSlice
@@ -126,7 +127,7 @@ viewHome =
                     , text ", just as you like!"
                     ]
                 }
-            , cta = Just { url = Route.App, label = "I'm hooked!" }
+            , cta = Just { url = Route.App, label = "I'm hooked!", track = Just (events.openAppCta "home-find-path-section") }
             , quote = Nothing
             }
         , FeatureGrid.cardSlice
@@ -140,7 +141,7 @@ viewHome =
                   , title = "Fully open source"
                   , description =
                         [ text "Want to have a look? Everything is on "
-                        , b [] [ a [ href constants.azimuttGithub, target "_blank", rel "noopener" ] [ text "azimuttap/azimutt" ] ]
+                        , b [] [ extLink constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
                         , text ", awesomely built with Elm. Come a let's discuss!"
                         ]
                   }
