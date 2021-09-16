@@ -55,4 +55,11 @@ isInside area point =
 
 doOverlap : Area -> Area -> Bool
 doOverlap area item =
-    isInside area (topLeft item) || isInside area (topRight item) || isInside area (bottomLeft item) || isInside area (bottomRight item)
+    isInside area (topLeft item)
+        || isInside area (topRight item)
+        || isInside area (bottomLeft item)
+        || isInside area (bottomRight item)
+        || isInside item (topLeft area)
+        || isInside item (topRight area)
+        || isInside item (bottomLeft area)
+        || isInside item (bottomRight area)

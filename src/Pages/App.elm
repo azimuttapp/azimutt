@@ -214,13 +214,17 @@ update msg model =
                     erdPos =
                         model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
 
+                    canvasPos : Position
+                    canvasPos =
+                        model.project |> Maybe.map (\p -> p.schema.layout.canvas.position) |> Maybe.withDefault (Position 0 0)
+
                     zoom : ZoomLevel
                     zoom =
                         model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
 
                     square : SelectSquare
                     square =
-                        { position = pos |> Position.sub erdPos |> Position.div zoom, size = Size 0 0 }
+                        { position = pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div zoom, size = Size 0 0 }
                 in
                 ( { model | selectSquare = Just square }, Cmd.none )
 
@@ -236,13 +240,17 @@ update msg model =
                             erdPos =
                                 model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
 
+                            canvasPos : Position
+                            canvasPos =
+                                p.schema.layout.canvas.position
+
                             zoom : ZoomLevel
                             zoom =
                                 p.schema.layout.canvas.zoom
 
                             square : SelectSquare
                             square =
-                                { sq | size = pos |> Position.sub erdPos |> Position.div zoom |> Position.sub sq.position |> Position.toTuple |> Size.fromTuple }
+                                { sq | size = pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div zoom |> Position.sub sq.position |> Position.toTuple |> Size.fromTuple }
 
                             area : Area
                             area =
