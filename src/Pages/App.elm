@@ -4,6 +4,7 @@ import Conf exposing (conf, schemaSamples)
 import Dict
 import Draggable
 import Gen.Params.App exposing (Params)
+import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.List as L
 import Libs.Models exposing (ZoomLevel)
@@ -15,10 +16,10 @@ import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
 import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), SelectSquare, initConfirm, initHover, initSwitch, initTimeInfo)
-import PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
+import PagesComponents.App.Updates exposing (dragConfig, dragItem, isInside, moveTable, removeElement, toArea, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
+import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
@@ -139,36 +140,36 @@ update msg model =
             ( { model | search = search }, Cmd.none )
 
         SelectTable id ctrl ->
-            ( model |> setProject (setSchema (setLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }))))), Cmd.none )
+            ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }))), Cmd.none )
 
         HideTable id ->
-            ( model |> setProject (setSchema (setLayout (hideTable id))), Cmd.none )
+            ( model |> setCurrentLayout (hideTable id), Cmd.none )
 
         ShowTable id ->
             model |> setProjectWithCmd (setSchemaWithCmd (showTable id))
 
         TableOrder id index ->
-            ( model |> setProject (setSchema (setLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))))), Cmd.none )
+            ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
 
         ShowTables ids ->
             model |> setProjectWithCmd (setSchemaWithCmd (showTables ids))
 
         --HideTables ids ->
-        --    ( model |> setProject (setSchema (setLayout (hideTables ids))), Cmd.none )
+        --    ( model |> setCurrentLayout (hideTables ids), Cmd.none )
         InitializedTable id position ->
-            ( model |> setProject (setSchema (setLayout (setTableInList .id id (\t -> { t | position = position })))), Cmd.none )
+            ( model |> setCurrentLayout (setTableInList .id id (\t -> { t | position = position })), Cmd.none )
 
         HideAllTables ->
-            ( model |> setProject (setSchema (setLayout hideAllTables)), Cmd.none )
+            ( model |> setCurrentLayout hideAllTables, Cmd.none )
 
         ShowAllTables ->
             model |> setProjectWithCmd (setSchemaWithCmd showAllTables)
 
         HideColumn { table, column } ->
-            ( model |> hoverNextColumn table column |> setProject (setSchema (setLayout (hideColumn table column))), Cmd.none )
+            ( model |> hoverNextColumn table column |> setCurrentLayout (hideColumn table column), Cmd.none )
 
         ShowColumn { table, column } ->
-            ( model |> setProject (setSchema (setLayout (showColumn table column))), activateTooltipsAndPopovers )
+            ( model |> setCurrentLayout (showColumn table column), activateTooltipsAndPopovers )
 
         SortColumns id kind ->
             ( model |> setProject (setSchema (sortColumns id kind)), activateTooltipsAndPopovers )
@@ -186,13 +187,13 @@ update msg model =
             ( { model | hover = model.hover |> (\h -> { h | column = c }) }, Cmd.none )
 
         OnWheel event ->
-            ( model |> setProject (setSchema (setLayout (setCanvas (handleWheel event)))), Cmd.none )
+            ( model |> setCurrentLayout (setCanvas (handleWheel event)), Cmd.none )
 
         Zoom delta ->
-            ( model |> setProject (setSchema (setLayout (setCanvas (zoomCanvas model.domInfos delta)))), Cmd.none )
+            ( model |> setCurrentLayout (setCanvas (zoomCanvas model.domInfos delta)), Cmd.none )
 
         FitContent ->
-            ( model |> setProject (setSchema (setLayout (fitCanvas model.domInfos))), Cmd.none )
+            ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
 
         DragMsg dragMsg ->
             model |> Draggable.update dragConfig dragMsg
@@ -217,31 +218,41 @@ update msg model =
                     zoom =
                         model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
 
-                    square : Maybe SelectSquare
+                    square : SelectSquare
                     square =
-                        Just { position = pos |> Position.sub erdPos |> Position.div zoom, size = Size 0 0 }
+                        { position = pos |> Position.sub erdPos |> Position.div zoom, size = Size 0 0 }
                 in
-                ( { model | selectSquare = square }, Cmd.none )
+                ( { model | selectSquare = Just square }, Cmd.none )
 
             else
                 ( model, Cmd.none )
 
         DragMove2 id pos ->
             if id == conf.ids.erd then
-                let
-                    erdPos : Position
-                    erdPos =
-                        model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
+                Maybe.map2
+                    (\p sq ->
+                        let
+                            erdPos : Position
+                            erdPos =
+                                model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
 
-                    zoom : ZoomLevel
-                    zoom =
-                        model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
+                            zoom : ZoomLevel
+                            zoom =
+                                p.schema.layout.canvas.zoom
 
-                    square : Maybe SelectSquare
-                    square =
-                        model.selectSquare |> Maybe.map (\sq -> { sq | size = pos |> Position.sub erdPos |> Position.div zoom |> Position.sub sq.position |> Position.toTuple |> Size.fromTuple })
-                in
-                ( { model | selectSquare = square }, Cmd.none )
+                            square : SelectSquare
+                            square =
+                                { sq | size = pos |> Position.sub erdPos |> Position.div zoom |> Position.sub sq.position |> Position.toTuple |> Size.fromTuple }
+
+                            area : Area
+                            area =
+                                toArea square
+                        in
+                        ( { model | selectSquare = Just square } |> setCurrentLayout (setTables (List.map (\t -> { t | selected = t |> isInside model.domInfos area }))), Cmd.none )
+                    )
+                    model.project
+                    model.selectSquare
+                    |> Maybe.withDefault ( model, Cmd.none )
 
             else
                 ( model, Cmd.none )

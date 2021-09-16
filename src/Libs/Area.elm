@@ -1,4 +1,4 @@
-module Libs.Area exposing (Area, center, move, scale, size)
+module Libs.Area exposing (Area, center, doOverlap, isInside, move, scale, size)
 
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
@@ -26,3 +26,33 @@ scale factor area =
 size : Area -> Size
 size area =
     Size (area.right - area.left) (area.bottom - area.top)
+
+
+topLeft : Area -> Position
+topLeft area =
+    Position area.left area.top
+
+
+topRight : Area -> Position
+topRight area =
+    Position area.right area.top
+
+
+bottomLeft : Area -> Position
+bottomLeft area =
+    Position area.left area.bottom
+
+
+bottomRight : Area -> Position
+bottomRight area =
+    Position area.right area.bottom
+
+
+isInside : Area -> Position -> Bool
+isInside area point =
+    area.left <= point.left && point.left <= area.right && area.top <= point.top && point.top <= area.bottom
+
+
+doOverlap : Area -> Area -> Bool
+doOverlap area item =
+    isInside area (topLeft item) || isInside area (topRight item) || isInside area (bottomLeft item) || isInside area (bottomRight item)

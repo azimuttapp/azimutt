@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSize, setSwitch, setTableInList, setTableList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSize, setSwitch, setTableInList, setTableList, setTables, setTime)
 
 import Draggable
 import Json.Decode as Decode
@@ -41,6 +41,11 @@ setSchemaWithCmd transform item =
 setLayout : (l -> l) -> { item | layout : l } -> { item | layout : l }
 setLayout transform item =
     { item | layout = item.layout |> transform }
+
+
+setCurrentLayout : (l -> l) -> { m | project : Maybe { p | schema : { s | layout : l } } } -> { m | project : Maybe { p | schema : { s | layout : l } } }
+setCurrentLayout transform item =
+    setProject (setSchema (setLayout transform)) item
 
 
 setCanvas : (l -> l) -> { item | canvas : l } -> { item | canvas : l }
