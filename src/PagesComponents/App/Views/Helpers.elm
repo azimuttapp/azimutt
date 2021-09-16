@@ -1,16 +1,17 @@
-module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, formatDate, onClickConfirm, placeAt, sizeAttr, withColumnName)
+module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, dragAttrs2, formatDate, onClickConfirm, placeAt, sizeAttr, withColumnName)
 
 import Draggable
 import Html exposing (Attribute, text)
 import Html.Attributes exposing (attribute, style)
 import Html.Events exposing (onClick)
+import Html.Events.Extra.Pointer as Pointer
 import Libs.DateTime as DateTime
 import Libs.Models exposing (HtmlId)
-import Libs.Position exposing (Position)
+import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task as T
 import Models.Project exposing (ColumnName, ColumnRef, tableIdAsHtmlId)
-import PagesComponents.App.Models exposing (DragId, Msg(..), TimeInfo)
+import PagesComponents.App.Models exposing (DragId, Msg(..), SelectSquare, TimeInfo)
 import Time
 
 
@@ -22,6 +23,20 @@ placeAt p =
 dragAttrs : DragId -> List (Attribute Msg)
 dragAttrs id =
     Draggable.mouseTrigger id DragMsg :: Draggable.touchTriggers id DragMsg
+
+
+dragAttrs2 : DragId -> Maybe SelectSquare -> List (Attribute Msg)
+dragAttrs2 id selectSquare =
+    Pointer.onDown (\e -> DragStart2 id (Position.fromTuple e.pointer.pagePos))
+        :: (selectSquare
+                |> Maybe.map
+                    (\_ ->
+                        [ Pointer.onMove (\e -> DragMove2 id (Position.fromTuple e.pointer.pagePos))
+                        , Pointer.onUp (\e -> DragEnd2 id (Position.fromTuple e.pointer.pagePos))
+                        ]
+                    )
+                |> Maybe.withDefault []
+           )
 
 
 sizeAttr : Size -> Attribute msg

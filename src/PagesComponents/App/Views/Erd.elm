@@ -4,7 +4,6 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, classList, id, style)
-import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy2, lazy6, lazy7)
 import Libs.Bool as B
@@ -15,13 +14,13 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (HtmlId, ZoomLevel)
 import Libs.Ned as Ned
-import Libs.Position as Position exposing (Position)
+import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Relation, RelationFull, Schema, Table, TableId, TableProps, tableIdAsHtmlId, tableIdAsString, viewportSize)
 import PagesComponents.App.Models exposing (CursorMode(..), Hover, Msg(..), SelectSquare)
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation)
 import PagesComponents.App.Views.Erd.Table exposing (viewTable)
-import PagesComponents.App.Views.Helpers exposing (dragAttrs, placeAt, sizeAttr)
+import PagesComponents.App.Views.Helpers exposing (dragAttrs, dragAttrs2, placeAt, sizeAttr)
 
 
 viewErd : Hover -> CursorMode -> Maybe SelectSquare -> Bool -> Dict HtmlId DomInfo -> Maybe Schema -> Html Msg
@@ -33,12 +32,7 @@ viewErd hover cursorMode selectSquare dragging domInfos schema =
          , sizeAttr (viewportSize domInfos |> Maybe.withDefault (Size 0 0))
          , onWheel OnWheel
          ]
-            ++ B.cond (cursorMode == Select)
-                [ Pointer.onDown (\e -> DragStart2 conf.ids.erd (Position.from e.pointer.pagePos))
-                , Pointer.onMove (\e -> DragMove2 conf.ids.erd (Position.from e.pointer.pagePos))
-                , Pointer.onUp (\e -> DragEnd2 conf.ids.erd (Position.from e.pointer.pagePos))
-                ]
-                (dragAttrs conf.ids.erd)
+            ++ B.cond (cursorMode == Select) (dragAttrs2 conf.ids.erd selectSquare) (dragAttrs conf.ids.erd)
         )
         [ div [ class "canvas", placeAndZoom (schema |> Maybe.map (\s -> s.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1)) ]
             (schema |> Maybe.map (\s -> viewErdContent hover selectSquare domInfos s.layout.canvas.zoom s.layout.tables s.tables s.relations) |> Maybe.withDefault [])

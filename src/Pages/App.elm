@@ -8,13 +8,13 @@ import Libs.Bool as B
 import Libs.List as L
 import Libs.Models exposing (ZoomLevel)
 import Libs.Position as Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Size as Size exposing (Size)
 import Libs.Task exposing (sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), SelectSquare, initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
@@ -216,8 +216,12 @@ update msg model =
                     zoom : ZoomLevel
                     zoom =
                         model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
+
+                    square : Maybe SelectSquare
+                    square =
+                        Just { position = pos |> Position.sub erdPos |> Position.div zoom, size = Size 0 0 }
                 in
-                ( { model | selectSquare = Just { position = pos |> Position.sub erdPos |> Position.div zoom, size = Size 0 0 } }, Cmd.none )
+                ( { model | selectSquare = square }, Cmd.none )
 
             else
                 ( model, Cmd.none )
@@ -225,11 +229,19 @@ update msg model =
         DragMove2 id pos ->
             if id == conf.ids.erd then
                 let
+                    erdPos : Position
+                    erdPos =
+                        model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
+
                     zoom : ZoomLevel
                     zoom =
                         model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
+
+                    square : Maybe SelectSquare
+                    square =
+                        model.selectSquare |> Maybe.map (\sq -> { sq | size = pos |> Position.sub erdPos |> Position.div zoom |> Position.sub sq.position |> Position.toTuple |> Size.fromTuple })
                 in
-                ( { model | selectSquare = model.selectSquare |> Maybe.map (\sq -> { sq | size = Size ((pos.left - sq.position.left) / zoom) ((pos.top - sq.position.top) / zoom) }) }, Cmd.none )
+                ( { model | selectSquare = square }, Cmd.none )
 
             else
                 ( model, Cmd.none )

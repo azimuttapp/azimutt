@@ -1,13 +1,18 @@
-module Libs.Position exposing (Position, add, div, from, sub)
+module Libs.Position exposing (Position, add, div, fromTuple, sub, toTuple)
 
 
 type alias Position =
     { left : Float, top : Float }
 
 
-from : ( Float, Float ) -> Position
-from ( left, top ) =
+fromTuple : ( Float, Float ) -> Position
+fromTuple ( left, top ) =
     Position left top
+
+
+toTuple : Position -> ( Float, Float )
+toTuple pos =
+    ( pos.left, pos.top )
 
 
 add : Position -> Position -> Position

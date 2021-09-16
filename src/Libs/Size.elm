@@ -1,8 +1,18 @@
-module Libs.Size exposing (Size, div, mult, ratio, sub)
+module Libs.Size exposing (Size, div, fromTuple, mult, ratio, sub, toTuple)
 
 
 type alias Size =
     { width : Float, height : Float }
+
+
+fromTuple : ( Float, Float ) -> Size
+fromTuple ( width, height ) =
+    Size width height
+
+
+toTuple : Size -> ( Float, Float )
+toTuple pos =
+    ( pos.width, pos.height )
 
 
 mult : Float -> Size -> Size
