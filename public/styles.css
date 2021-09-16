@@ -76,6 +76,12 @@
     transform-origin: top left;
 }
 
+.selection-area {
+    z-index: calc(var(--modal-backdrop-z-index) - 1);
+    border: 2px solid rgba(36, 215, 188, 1);
+    background-color: rgba(36, 215, 188, 0.2);
+}
+
 .erd-table {
     position: absolute;
     min-width: 200px;

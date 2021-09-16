@@ -79,7 +79,7 @@ viewSelectSquare selectSquare =
             else
                 ( selectSquare.position.left + selectSquare.size.width, -selectSquare.size.width )
     in
-    div [ placeAt (Position left top), style "width" (String.fromFloat width ++ "px"), style "height" (String.fromFloat height ++ "px"), style "background" "red" ] []
+    div [ class "selection-area", placeAt (Position left top), style "width" (String.fromFloat width ++ "px"), style "height" (String.fromFloat height ++ "px") ] []
 
 
 viewTables : Hover -> Dict HtmlId DomInfo -> ZoomLevel -> List TableProps -> List RelationFull -> Dict TableId Table -> Html Msg
