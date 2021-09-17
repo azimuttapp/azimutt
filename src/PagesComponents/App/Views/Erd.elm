@@ -68,16 +68,7 @@ viewErdContent hover selection domInfos canvas layoutTables tables relations =
 
 viewSelectSquare : Area -> Html msg
 viewSelectSquare area =
-    let
-        pos : Position
-        pos =
-            Position area.left area.top
-
-        s : Size
-        s =
-            Size (area.right - area.left) (area.bottom - area.top)
-    in
-    div ([ class "selection-area", placeAt pos ] ++ size s) []
+    div ([ class "selection-area", placeAt area.position ] ++ size area.size) []
 
 
 viewTables : Hover -> Dict HtmlId DomInfo -> ZoomLevel -> List TableProps -> List RelationFull -> Dict TableId Table -> Html Msg

@@ -2,13 +2,13 @@ module PagesComponents.App.Updates.Drag exposing (Model, dragEnd, dragMove, drag
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
-import Libs.Area exposing (Area, overlap)
+import Libs.Area as Area exposing (Area, overlap)
 import Libs.Delta as Delta
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Models exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
-import Libs.Size as Size exposing (Size)
+import Libs.Size exposing (Size)
 import Models.Project exposing (CanvasProps, Project, TableId, TableProps, htmlIdAsTableId, tableIdAsHtmlId)
 import PagesComponents.App.Models exposing (CursorMode(..), DragId, DragState, Msg)
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
@@ -83,35 +83,21 @@ computeSelectedArea domInfos canvas dragState =
 
         position : Position
         position =
-            dragState.init |> Position.sub erdPos |> Position.sub canvas.position |> Position.div canvas.zoom
+            dragState.init |> Position.sub erdPos |> Position.sub canvas.position
 
         size : Size
         size =
-            Size (dragState.last.left - dragState.init.left) (dragState.last.top - dragState.init.top) |> Size.div canvas.zoom
-
-        ( top, height ) =
-            if size.height > 0 then
-                ( position.top, size.height )
-
-            else
-                ( position.top + size.height, -size.height )
-
-        ( left, width ) =
-            if size.width > 0 then
-                ( position.left, size.width )
-
-            else
-                ( position.left + size.width, -size.width )
+            Size (dragState.last.left - dragState.init.left) (dragState.last.top - dragState.init.top)
     in
-    { left = left, top = top, right = left + width, bottom = top + height }
+    Area position size |> Area.div canvas.zoom |> Area.normalize
 
 
 tableArea : TableProps -> Dict HtmlId DomInfo -> Area
 tableArea table domInfos =
     domInfos
         |> Dict.get (tableIdAsHtmlId table.id)
-        |> Maybe.map (\domInfo -> { left = table.position.left, top = table.position.top, right = table.position.left + domInfo.size.width, bottom = table.position.top + domInfo.size.height })
-        |> Maybe.withDefault { left = 0, top = 0, right = 0, bottom = 0 }
+        |> Maybe.map (\domInfo -> { position = table.position, size = domInfo.size })
+        |> Maybe.withDefault { position = Position 0 0, size = Size 0 0 }
 
 
 badDrag : String -> Model x -> ( Model x, Cmd Msg )

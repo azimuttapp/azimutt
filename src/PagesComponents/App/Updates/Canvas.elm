@@ -110,11 +110,11 @@ computeFit viewport padding content zoom =
 
         newViewport : Area
         newViewport =
-            viewport |> Area.scale (1 / growFactor)
+            viewport |> Area.div growFactor
 
         newViewportCenter : Position
         newViewportCenter =
-            newViewport |> Area.center |> Position.sub (Position newViewport.left newViewport.top)
+            newViewport |> Area.center |> Position.sub newViewport.position
 
         newContentCenter : Position
         newContentCenter =
@@ -132,15 +132,11 @@ computeZoom viewport padding content zoom =
     let
         viewportSize : Size
         viewportSize =
-            viewport |> Area.size |> Size.sub (2 * padding / zoom)
-
-        contentSize : Size
-        contentSize =
-            content |> Area.size
+            viewport.size |> Size.sub (2 * padding / zoom)
 
         grow : Size
         grow =
-            viewportSize |> Size.ratio contentSize
+            viewportSize |> Size.ratio content.size
 
         newZoom : ZoomLevel
         newZoom =

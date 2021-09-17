@@ -2,7 +2,6 @@ module PagesComponents.App.Updates exposing (moveTable, removeElement, updateSiz
 
 import Conf exposing (conf)
 import Dict
-import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
@@ -10,7 +9,7 @@ import Libs.Models exposing (SizeChange)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task exposing (send)
-import Models.Project exposing (CanvasProps, Layout, TableProps, htmlIdAsTableId)
+import Models.Project exposing (Layout, TableProps, htmlIdAsTableId, viewportArea)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
 import PagesComponents.App.Models exposing (CursorMode(..), Hover, Model, Msg(..))
 import Ports exposing (toastInfo)
@@ -36,17 +35,8 @@ initializeTableOnFirstSize model change =
                     (p.schema.layout.tables |> L.findBy .id (htmlIdAsTableId change.id))
                     (model.domInfos |> Dict.get conf.ids.erd)
                     |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.domInfos |> Dict.member change.id))
-                    |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (getArea canvasInfos.size p.schema.layout.canvas))
+                    |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (viewportArea canvasInfos.size p.schema.layout.canvas))
             )
-
-
-getArea : Size -> CanvasProps -> Area
-getArea canvasSize canvas =
-    { left = (0 - canvas.position.left) / canvas.zoom
-    , right = (canvasSize.width - canvas.position.left) / canvas.zoom
-    , top = (0 - canvas.position.top) / canvas.zoom
-    , bottom = (canvasSize.height - canvas.position.top) / canvas.zoom
-    }
 
 
 removeElement : Hover -> Cmd Msg
