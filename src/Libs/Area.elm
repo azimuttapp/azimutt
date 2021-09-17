@@ -1,4 +1,4 @@
-module Libs.Area exposing (Area, center, doOverlap, isInside, move, scale, size)
+module Libs.Area exposing (Area, center, inside, move, overlap, scale, size)
 
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
@@ -48,18 +48,20 @@ bottomRight area =
     Position area.right area.bottom
 
 
-isInside : Area -> Position -> Bool
-isInside area point =
+inside : Position -> Area -> Bool
+inside point area =
     area.left <= point.left && point.left <= area.right && area.top <= point.top && point.top <= area.bottom
 
 
-doOverlap : Area -> Area -> Bool
-doOverlap area item =
-    isInside area (topLeft item)
-        || isInside area (topRight item)
-        || isInside area (bottomLeft item)
-        || isInside area (bottomRight item)
-        || isInside item (topLeft area)
-        || isInside item (topRight area)
-        || isInside item (bottomLeft area)
-        || isInside item (bottomRight area)
+overlap : Area -> Area -> Bool
+overlap area1 area2 =
+    not
+        -- area2 is on the left of area1
+        ((area2.right <= area1.left)
+            -- area2 is on the right of area1
+            || (area2.left >= area1.right)
+            -- area2 is below of area1
+            || (area2.top >= area1.bottom)
+            -- area2 is above of area1
+            || (area2.bottom <= area1.top)
+        )
