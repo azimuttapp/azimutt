@@ -75,8 +75,8 @@ type Msg
     | Zoom ZoomDelta
     | FitContent
     | DragStart DragId Position
-    | DragMove DragId Position
-    | DragEnd DragId Position
+    | DragMove Position
+    | DragEnd Position
     | CursorMode CursorMode
     | FindPath (Maybe TableId) (Maybe TableId)
     | FindPathFrom (Maybe TableId)

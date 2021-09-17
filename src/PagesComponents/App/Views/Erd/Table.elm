@@ -22,31 +22,30 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S
 import Models.Project exposing (Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
-import PagesComponents.App.Models exposing (DragState, Hover, Msg(..))
-import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, placeAt, sizeAttr, withColumnName)
+import PagesComponents.App.Models exposing (Hover, Msg(..))
+import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)
 
 
-viewTable : Hover -> Maybe DragState -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
-viewTable hover dragState zoom index table props tableRelations domInfo =
+viewTable : Hover -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
+viewTable hover zoom index table props tableRelations domInfo =
     let
         hiddenColumns : List Column
         hiddenColumns =
             table.columns |> Ned.values |> Nel.filter (\c -> props.columns |> L.hasNot c.name)
     in
     div
-        ([ class "erd-table"
-         , class props.color
-         , classList [ ( "selected", props.selected ) ]
-         , id (tableIdAsHtmlId table.id)
-         , placeAt props.position
-         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
-         , domInfo |> Maybe.map (\i -> sizeAttr i.size) |> Maybe.withDefault (style "visibility" "hidden")
-         , onMouseEnter (HoverTable (Just table.id))
-         , onMouseLeave (HoverTable Nothing)
-         ]
-            ++ dragAttrs (tableIdAsHtmlId table.id) dragState
-        )
+        [ class "erd-table"
+        , class props.color
+        , classList [ ( "selected", props.selected ) ]
+        , id (tableIdAsHtmlId table.id)
+        , placeAt props.position
+        , style "z-index" (String.fromInt (conf.zIndex.tables + index))
+        , domInfo |> Maybe.map (\i -> sizeAttr i.size) |> Maybe.withDefault (style "visibility" "hidden")
+        , onMouseEnter (HoverTable (Just table.id))
+        , onMouseLeave (HoverTable Nothing)
+        , onDrag (tableIdAsHtmlId table.id)
+        ]
         [ lazy3 viewHeader zoom index table
         , lazy4 viewColumns hover table tableRelations props.columns
         , lazy4 viewHiddenColumns (tableIdAsHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns

@@ -1,11 +1,10 @@
-module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, formatDate, onClickConfirm, placeAt, size, sizeAttr, withColumnName)
+module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragUpdate, formatDate, onClickConfirm, onDrag, placeAt, size, sizeAttr, withColumnName)
 
 import Html exposing (Attribute, text)
 import Html.Attributes exposing (attribute, style)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Pointer as Pointer
 import Libs.DateTime as DateTime
-import Libs.Maybe as M
 import Libs.Models exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
@@ -25,19 +24,22 @@ size s =
     [ style "width" (String.fromFloat s.width ++ "px"), style "height" (String.fromFloat s.height ++ "px") ]
 
 
-dragAttrs : DragId -> Maybe DragState -> List (Attribute Msg)
-dragAttrs id dragState =
-    Pointer.onDown (\e -> DragStart id (Position.fromTuple e.pointer.pagePos))
-        :: (dragState
-                |> M.filter (\s -> s.id == id)
-                |> Maybe.map
-                    (\_ ->
-                        [ Pointer.onMove (\e -> DragMove id (Position.fromTuple e.pointer.pagePos))
-                        , Pointer.onUp (\e -> DragEnd id (Position.fromTuple e.pointer.pagePos))
-                        ]
-                    )
-                |> Maybe.withDefault []
-           )
+onDrag : DragId -> Attribute Msg
+onDrag id =
+    Pointer.onDown (\e -> e.pointer.pagePos |> Position.fromTuple |> DragStart id)
+
+
+dragUpdate : Maybe DragState -> List (Attribute Msg)
+dragUpdate dragState =
+    -- should have only one in the drag container
+    dragState
+        |> Maybe.map
+            (\_ ->
+                [ Pointer.onMove (\e -> e.pointer.pagePos |> Position.fromTuple |> DragMove)
+                , Pointer.onUp (\e -> e.pointer.pagePos |> Position.fromTuple |> DragEnd)
+                ]
+            )
+        |> Maybe.withDefault []
 
 
 sizeAttr : Size -> Attribute msg

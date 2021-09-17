@@ -6,7 +6,6 @@ import Libs.Area exposing (Area, overlap)
 import Libs.Delta as Delta
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
-import Libs.Maybe as M
 import Libs.Models exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size as Size exposing (Size)
@@ -33,20 +32,18 @@ dragStart id pos model =
         |> Maybe.withDefault ( model |> dragAction { id = id, init = pos, last = pos, delta = pos |> Position.diff pos |> Delta.fromTuple }, Cmd.none )
 
 
-dragMove : DragId -> Position -> Model x -> ( Model x, Cmd Msg )
-dragMove id pos model =
+dragMove : Position -> Model x -> ( Model x, Cmd Msg )
+dragMove pos model =
     model.dragState
-        |> M.filter (\ds -> ds.id == id)
         |> Maybe.map (\ds -> ( model |> dragAction { ds | last = pos, delta = pos |> Position.diff ds.last |> Delta.fromTuple }, Cmd.none ))
-        |> Maybe.withDefault (badDrag "move" id model)
+        |> Maybe.withDefault (badDrag "dragMove" model)
 
 
-dragEnd : DragId -> Position -> Model x -> ( Model x, Cmd Msg )
-dragEnd id _ model =
+dragEnd : Position -> Model x -> ( Model x, Cmd Msg )
+dragEnd _ model =
     model.dragState
-        |> M.filter (\ds -> ds.id == id)
         |> Maybe.map (\_ -> ( { model | dragState = Nothing, selection = Nothing }, Cmd.none ))
-        |> Maybe.withDefault (badDrag "end" id model)
+        |> Maybe.withDefault (badDrag "dragEnd" model)
 
 
 dragAction : DragState -> Model x -> Model x
@@ -117,10 +114,6 @@ tableArea table domInfos =
         |> Maybe.withDefault { left = 0, top = 0, right = 0, bottom = 0 }
 
 
-badDrag : String -> DragId -> Model x -> ( Model x, Cmd Msg )
-badDrag kind id model =
-    ( model
-    , model.dragState
-        |> Maybe.map (\ds -> toastInfo ("Dragging an other id (" ++ ds.id ++ " != " ++ id ++ ", on " ++ kind ++ ")"))
-        |> Maybe.withDefault (toastInfo ("Not in drag state (" ++ kind ++ ")"))
-    )
+badDrag : String -> Model x -> ( Model x, Cmd Msg )
+badDrag kind model =
+    ( model, toastInfo ("Can't " ++ kind ++ ", not in drag state") )

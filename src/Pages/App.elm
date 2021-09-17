@@ -196,11 +196,11 @@ update msg model =
         DragStart id pos ->
             model |> dragStart id pos
 
-        DragMove id pos ->
-            model |> dragMove id pos
+        DragMove pos ->
+            model |> dragMove pos
 
-        DragEnd id pos ->
-            model |> dragEnd id pos
+        DragEnd pos ->
+            model |> dragEnd pos
 
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )
