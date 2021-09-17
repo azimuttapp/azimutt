@@ -7,7 +7,7 @@ import FontAwesome.Regular as IconLight
 import FontAwesome.Solid as Icon
 import Html exposing (Attribute, Html, b, button, div, li, span, text, ul)
 import Html.Attributes exposing (class, classList, id, style, title, type_)
-import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
+import Html.Events exposing (onClick, onDoubleClick)
 import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy3, lazy4)
@@ -42,8 +42,8 @@ viewTable hover zoom index table props tableRelations domInfo =
         , placeAt props.position
         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
         , domInfo |> Maybe.map (\i -> sizeAttr i.size) |> Maybe.withDefault (style "visibility" "hidden")
-        , onMouseEnter (HoverTable (Just table.id))
-        , onMouseLeave (HoverTable Nothing)
+        , Pointer.onEnter (\_ -> HoverTable (Just table.id))
+        , Pointer.onLeave (\_ -> HoverTable Nothing)
         , onDrag (tableIdAsHtmlId table.id)
         ]
         [ lazy3 viewHeader zoom index table
@@ -118,7 +118,14 @@ viewColumn isHover columnRelations table column =
         ref =
             ColumnRef table.id column.name
     in
-    div [ class "column", classList [ ( "hover", isHover ) ], id (columnRefAsHtmlId ref), onDoubleClick (HideColumn ref), onMouseEnter (HoverColumn (Just ref)), onMouseLeave (HoverColumn Nothing) ]
+    div
+        [ class "column"
+        , classList [ ( "hover", isHover ) ]
+        , id (columnRefAsHtmlId ref)
+        , onDoubleClick (HideColumn ref)
+        , Pointer.onEnter (\_ -> HoverColumn (Just ref))
+        , Pointer.onLeave (\_ -> HoverColumn Nothing)
+        ]
         [ viewColumnDropdown columnRelations ref (viewColumnIcon table column columnRelations)
         , viewColumnName table column
         , viewColumnType column

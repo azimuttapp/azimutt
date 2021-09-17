@@ -37,6 +37,7 @@ dragUpdate dragState =
             (\_ ->
                 [ Pointer.onMove (\e -> e.pointer.pagePos |> Position.fromTuple |> DragMove)
                 , Pointer.onUp (\e -> e.pointer.pagePos |> Position.fromTuple |> DragEnd)
+                , Pointer.onCancel (\e -> e.pointer.pagePos |> Position.fromTuple |> DragEnd)
                 ]
             )
         |> Maybe.withDefault []
