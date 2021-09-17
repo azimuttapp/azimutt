@@ -27,13 +27,13 @@ size s =
 
 dragAttrs : DragId -> Maybe DragState -> List (Attribute Msg)
 dragAttrs id dragState =
-    Pointer.onDown (\e -> DragStart2 id (Position.fromTuple e.pointer.pagePos))
+    Pointer.onDown (\e -> DragStart id (Position.fromTuple e.pointer.pagePos))
         :: (dragState
                 |> M.filter (\s -> s.id == id)
                 |> Maybe.map
                     (\_ ->
-                        [ Pointer.onMove (\e -> DragMove2 id (Position.fromTuple e.pointer.pagePos))
-                        , Pointer.onUp (\e -> DragEnd2 id (Position.fromTuple e.pointer.pagePos))
+                        [ Pointer.onMove (\e -> DragMove id (Position.fromTuple e.pointer.pagePos))
+                        , Pointer.onUp (\e -> DragEnd id (Position.fromTuple e.pointer.pagePos))
                         ]
                     )
                 |> Maybe.withDefault []

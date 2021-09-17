@@ -5,7 +5,7 @@ import Dict
 import Gen.Params.App exposing (Params)
 import Libs.Bool as B
 import Libs.List as L
-import Libs.Task exposing (sendAfter)
+import Libs.Task exposing (send, sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
@@ -62,7 +62,7 @@ init =
       , findPath = Nothing
       , confirm = initConfirm
       , domInfos = Dict.empty
-      , cursorMode = Drag
+      , cursorMode = Select
       , selection = Nothing
       , dragState = Nothing
       , hover = initHover
@@ -137,6 +137,9 @@ update msg model =
         SelectTable id ctrl ->
             ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }))), Cmd.none )
 
+        SelectAllTables ->
+            ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = True }))), Cmd.none )
+
         HideTable id ->
             ( model |> setCurrentLayout (hideTable id), Cmd.none )
 
@@ -190,13 +193,13 @@ update msg model =
         FitContent ->
             ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
 
-        DragStart2 id pos ->
+        DragStart id pos ->
             model |> dragStart id pos
 
-        DragMove2 id pos ->
+        DragMove id pos ->
             model |> dragMove id pos
 
-        DragEnd2 id pos ->
+        DragEnd id pos ->
             model |> dragEnd id pos
 
         CursorMode mode ->
@@ -264,6 +267,9 @@ update msg model =
 
         JsMessage (HotkeyUsed "move-to-back") ->
             ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable -1000 model.hover) |> Maybe.withDefault Cmd.none )
+
+        JsMessage (HotkeyUsed "select-all") ->
+            ( model, send SelectAllTables )
 
         JsMessage (HotkeyUsed "save") ->
             ( model, model.project |> Maybe.map (\p -> Cmd.batch [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ]) |> Maybe.withDefault (toastWarning "No project to save") )

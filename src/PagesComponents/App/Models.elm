@@ -55,6 +55,7 @@ type Msg
     | UseProject Project
     | ChangedSearch Search
     | SelectTable TableId Bool
+    | SelectAllTables
     | HideTable TableId
     | ShowTable TableId
     | TableOrder TableId Int
@@ -73,9 +74,9 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
     | FitContent
-    | DragStart2 DragId Position
-    | DragMove2 DragId Position
-    | DragEnd2 DragId Position
+    | DragStart DragId Position
+    | DragMove DragId Position
+    | DragEnd DragId Position
     | CursorMode CursorMode
     | FindPath (Maybe TableId) (Maybe TableId)
     | FindPathFrom (Maybe TableId)
