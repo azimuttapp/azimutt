@@ -4,20 +4,17 @@ import Conf exposing (conf, schemaSamples)
 import Dict
 import Draggable
 import Gen.Params.App exposing (Params)
-import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.List as L
-import Libs.Models exposing (ZoomLevel)
-import Libs.Position as Position exposing (Position)
-import Libs.Size as Size exposing (Size)
 import Libs.Task exposing (sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), SelectSquare, initConfirm, initHover, initSwitch, initTimeInfo)
-import PagesComponents.App.Updates exposing (dragConfig, dragItem, isInside, moveTable, removeElement, toArea, updateSizes)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
+import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
 import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
@@ -69,7 +66,8 @@ init =
       , dragId = Nothing
       , drag = Draggable.init
       , cursorMode = Select
-      , selectSquare = Nothing
+      , selection = Nothing
+      , dragState = Nothing
       , hover = initHover
       }
     , Cmd.batch
@@ -205,72 +203,16 @@ update msg model =
             ( { model | dragId = Nothing }, Cmd.none )
 
         OnDragBy delta ->
-            dragItem delta model
+            model |> dragItem delta
 
         DragStart2 id pos ->
-            if id == conf.ids.erd then
-                let
-                    erdPos : Position
-                    erdPos =
-                        model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
-
-                    canvasPos : Position
-                    canvasPos =
-                        model.project |> Maybe.map (\p -> p.schema.layout.canvas.position) |> Maybe.withDefault (Position 0 0)
-
-                    zoom : ZoomLevel
-                    zoom =
-                        model.project |> Maybe.map (\p -> p.schema.layout.canvas.zoom) |> Maybe.withDefault 1
-
-                    square : SelectSquare
-                    square =
-                        { position = pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div zoom, size = Size 0 0 }
-                in
-                ( { model | selectSquare = Just square }, Cmd.none )
-
-            else
-                ( model, Cmd.none )
+            model |> dragStart id pos
 
         DragMove2 id pos ->
-            if id == conf.ids.erd then
-                Maybe.map2
-                    (\p sq ->
-                        let
-                            erdPos : Position
-                            erdPos =
-                                model.domInfos |> Dict.get conf.ids.erd |> Maybe.map .position |> Maybe.withDefault (Position 0 0)
+            model |> dragMove id pos
 
-                            canvasPos : Position
-                            canvasPos =
-                                p.schema.layout.canvas.position
-
-                            zoom : ZoomLevel
-                            zoom =
-                                p.schema.layout.canvas.zoom
-
-                            square : SelectSquare
-                            square =
-                                { sq | size = pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div zoom |> Position.sub sq.position |> Position.toTuple |> Size.fromTuple }
-
-                            area : Area
-                            area =
-                                toArea square
-                        in
-                        ( { model | selectSquare = Just square } |> setCurrentLayout (setTables (List.map (\t -> { t | selected = t |> isInside model.domInfos area }))), Cmd.none )
-                    )
-                    model.project
-                    model.selectSquare
-                    |> Maybe.withDefault ( model, Cmd.none )
-
-            else
-                ( model, Cmd.none )
-
-        DragEnd2 id _ ->
-            if id == conf.ids.erd then
-                ( { model | selectSquare = Nothing }, Cmd.none )
-
-            else
-                ( model, Cmd.none )
+        DragEnd2 id pos ->
+            model |> dragEnd id pos
 
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )

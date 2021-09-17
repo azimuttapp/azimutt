@@ -1,14 +1,14 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, Error, Errors, Hover, Model, Msg(..), Search, SelectSquare, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import Draggable
 import FileValue exposing (File)
 import Html exposing (Html, text)
+import Libs.Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (HtmlId, ZoomDelta)
 import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
 import Libs.Task as T
 import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, Relation, SampleName, Table, TableId)
 import Ports exposing (JsMsg)
@@ -28,7 +28,8 @@ type alias Model =
     , dragId : Maybe DragId
     , drag : Draggable.State DragId
     , cursorMode : CursorMode
-    , selectSquare : Maybe SelectSquare
+    , selection : Maybe Area
+    , dragState : Maybe DragState
     , hover : Hover
     }
 
@@ -38,8 +39,8 @@ type CursorMode
     | Select
 
 
-type alias SelectSquare =
-    { position : Position, size : Size }
+type alias DragState =
+    { id : DragId, init : Position, last : Position }
 
 
 type Msg

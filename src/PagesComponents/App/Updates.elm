@@ -1,21 +1,20 @@
-module PagesComponents.App.Updates exposing (dragConfig, dragItem, isInside, moveTable, removeElement, toArea, updateSizes)
+module PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
 
 import Conf exposing (conf)
-import Dict exposing (Dict)
+import Dict
 import Draggable
 import Draggable.Events exposing (onDragBy, onDragEnd, onDragStart)
-import Libs.Area as Area exposing (Area)
+import Libs.Area exposing (Area)
 import Libs.Bool as B
-import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (HtmlId, SizeChange)
+import Libs.Models exposing (SizeChange)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task exposing (send)
-import Models.Project exposing (CanvasProps, Layout, TableId, TableProps, htmlIdAsTableId, tableIdAsHtmlId)
+import Models.Project exposing (CanvasProps, Layout, TableId, TableProps, htmlIdAsTableId)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
-import PagesComponents.App.Models exposing (CursorMode(..), DragId, Hover, Model, Msg(..), SelectSquare)
+import PagesComponents.App.Models exposing (CursorMode(..), DragId, Hover, Model, Msg(..))
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setTableList)
 import Ports exposing (toastError, toastInfo)
 
@@ -83,36 +82,6 @@ dragItem delta model =
 
         Nothing ->
             ( model, toastError "Can't dragItem when no drag id" )
-
-
-isInside : Dict HtmlId DomInfo -> Area -> TableProps -> Bool
-isInside domInfos selection table =
-    domInfos |> Dict.get (tableIdAsHtmlId table.id) |> Maybe.map (\domInfo -> Area.doOverlap selection (tableToArea table domInfo)) |> Maybe.withDefault False
-
-
-tableToArea : TableProps -> DomInfo -> Area
-tableToArea table domInfo =
-    { left = table.position.left, top = table.position.top, right = table.position.left + domInfo.size.width, bottom = table.position.top + domInfo.size.height }
-
-
-toArea : SelectSquare -> Area
-toArea square =
-    let
-        ( top, height ) =
-            if square.size.height > 0 then
-                ( square.position.top, square.size.height )
-
-            else
-                ( square.position.top + square.size.height, -square.size.height )
-
-        ( left, width ) =
-            if square.size.width > 0 then
-                ( square.position.left, square.size.width )
-
-            else
-                ( square.position.left + square.size.width, -square.size.width )
-    in
-    { left = left, top = top, right = left + width, bottom = top + height }
 
 
 removeElement : Hover -> Cmd Msg

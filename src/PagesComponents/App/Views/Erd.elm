@@ -6,6 +6,7 @@ import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, classList, id, style)
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy2, lazy6, lazy7)
+import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Dict as D
 import Libs.DomInfo exposing (DomInfo)
@@ -17,30 +18,33 @@ import Libs.Ned as Ned
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Relation, RelationFull, Schema, Table, TableId, TableProps, tableIdAsHtmlId, tableIdAsString, viewportSize)
-import PagesComponents.App.Models exposing (CursorMode(..), Hover, Msg(..), SelectSquare)
+import PagesComponents.App.Models exposing (CursorMode(..), DragState, Hover, Msg(..))
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation)
 import PagesComponents.App.Views.Erd.Table exposing (viewTable)
-import PagesComponents.App.Views.Helpers exposing (dragAttrs, dragAttrs2, placeAt, sizeAttr)
+import PagesComponents.App.Views.Helpers exposing (dragAttrs, dragAttrs2, placeAt, size, sizeAttr)
 
 
-viewErd : Hover -> CursorMode -> Maybe SelectSquare -> Bool -> Dict HtmlId DomInfo -> Maybe Schema -> Html Msg
-viewErd hover cursorMode selectSquare dragging domInfos schema =
+viewErd : Hover -> CursorMode -> Maybe DragState -> Maybe Area -> Dict HtmlId DomInfo -> Maybe Schema -> Html Msg
+viewErd hover cursorMode dragState selection domInfos schema =
     div
         ([ class "erd"
-         , classList [ ( "cursor-hand", cursorMode == Drag && not dragging ), ( "cursor-hand-drag", cursorMode == Drag && dragging ) ]
+         , classList
+            [ ( "cursor-hand", cursorMode == Drag && dragState /= Nothing )
+            , ( "cursor-hand-drag", cursorMode == Drag && dragState == Nothing )
+            ]
          , id conf.ids.erd
          , sizeAttr (viewportSize domInfos |> Maybe.withDefault (Size 0 0))
          , onWheel OnWheel
          ]
-            ++ B.cond (cursorMode == Select) (dragAttrs2 conf.ids.erd selectSquare) (dragAttrs conf.ids.erd)
+            ++ B.cond (cursorMode == Select) (dragAttrs2 conf.ids.erd dragState) (dragAttrs conf.ids.erd)
         )
         [ div [ class "canvas", placeAndZoom (schema |> Maybe.map (\s -> s.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1)) ]
-            (schema |> Maybe.map (\s -> viewErdContent hover selectSquare domInfos s.layout.canvas.zoom s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
+            (schema |> Maybe.map (\s -> viewErdContent hover selection domInfos s.layout.canvas s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
         ]
 
 
-viewErdContent : Hover -> Maybe SelectSquare -> Dict HtmlId DomInfo -> ZoomLevel -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)
-viewErdContent hover selectSquare domInfos zoom layoutTables tables relations =
+viewErdContent : Hover -> Maybe Area -> Dict HtmlId DomInfo -> CanvasProps -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)
+viewErdContent hover selection domInfos canvas layoutTables tables relations =
     let
         layoutTablesDict : Dict TableId ( TableProps, Int )
         layoutTablesDict =
@@ -56,30 +60,24 @@ viewErdContent hover selectSquare domInfos zoom layoutTables tables relations =
                 |> List.filter (\r -> Dict.member r.src.table layoutTablesDict || Dict.member r.ref.table layoutTablesDict)
                 |> List.filterMap (buildRelationFull tables layoutTablesDict layoutTablesDictSize domInfos)
     in
-    [ lazy6 viewTables hover domInfos zoom layoutTables shownRelations tables
+    [ lazy6 viewTables hover domInfos canvas.zoom layoutTables shownRelations tables
     , lazy2 viewRelations hover shownRelations
-    , selectSquare |> Maybe.map viewSelectSquare |> Maybe.withDefault (div [] [])
+    , selection |> Maybe.map viewSelectSquare |> Maybe.withDefault (div [] [])
     ]
 
 
-viewSelectSquare : SelectSquare -> Html msg
-viewSelectSquare selectSquare =
+viewSelectSquare : Area -> Html msg
+viewSelectSquare area =
     let
-        ( top, height ) =
-            if selectSquare.size.height > 0 then
-                ( selectSquare.position.top, selectSquare.size.height )
+        pos : Position
+        pos =
+            Position area.left area.top
 
-            else
-                ( selectSquare.position.top + selectSquare.size.height, -selectSquare.size.height )
-
-        ( left, width ) =
-            if selectSquare.size.width > 0 then
-                ( selectSquare.position.left, selectSquare.size.width )
-
-            else
-                ( selectSquare.position.left + selectSquare.size.width, -selectSquare.size.width )
+        s : Size
+        s =
+            Size (area.right - area.left) (area.bottom - area.top)
     in
-    div [ class "selection-area", placeAt (Position left top), style "width" (String.fromFloat width ++ "px"), style "height" (String.fromFloat height ++ "px") ] []
+    div ([ class "selection-area", placeAt pos ] ++ size s) []
 
 
 viewTables : Hover -> Dict HtmlId DomInfo -> ZoomLevel -> List TableProps -> List RelationFull -> Dict TableId Table -> Html Msg
