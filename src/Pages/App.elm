@@ -2,7 +2,6 @@ module Pages.App exposing (Model, Msg, page)
 
 import Conf exposing (conf, schemaSamples)
 import Dict
-import Draggable
 import Gen.Params.App exposing (Params)
 import Libs.Bool as B
 import Libs.List as L
@@ -12,7 +11,7 @@ import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
 import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
-import PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
+import PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
@@ -63,9 +62,7 @@ init =
       , findPath = Nothing
       , confirm = initConfirm
       , domInfos = Dict.empty
-      , dragId = Nothing
-      , drag = Draggable.init
-      , cursorMode = Select
+      , cursorMode = Drag
       , selection = Nothing
       , dragState = Nothing
       , hover = initHover
@@ -193,18 +190,6 @@ update msg model =
         FitContent ->
             ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
 
-        DragMsg dragMsg ->
-            model |> Draggable.update dragConfig dragMsg
-
-        StartDragging id ->
-            ( { model | dragId = Just id }, Cmd.none )
-
-        StopDragging ->
-            ( { model | dragId = Nothing }, Cmd.none )
-
-        OnDragBy delta ->
-            model |> dragItem delta
-
         DragStart2 id pos ->
             model |> dragStart id pos
 
@@ -301,10 +286,9 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
+subscriptions _ =
     Sub.batch
-        [ Draggable.subscriptions DragMsg model.drag
-        , Time.every (10 * 1000) TimeChanged
+        [ Time.every (10 * 1000) TimeChanged
         , onJsMessage JsMessage
         ]
 

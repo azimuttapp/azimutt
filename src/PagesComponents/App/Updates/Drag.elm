@@ -3,14 +3,16 @@ module PagesComponents.App.Updates.Drag exposing (Model, dragEnd, dragMove, drag
 import Conf exposing (conf)
 import Dict exposing (Dict)
 import Libs.Area exposing (Area, overlap)
+import Libs.Delta as Delta
 import Libs.DomInfo exposing (DomInfo)
+import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size as Size exposing (Size)
-import Models.Project exposing (CanvasProps, Project, TableProps, tableIdAsHtmlId)
+import Models.Project exposing (CanvasProps, Project, TableId, TableProps, htmlIdAsTableId, tableIdAsHtmlId)
 import PagesComponents.App.Models exposing (CursorMode(..), DragId, DragState, Msg)
-import PagesComponents.App.Updates.Helpers exposing (setCurrentLayout, setTables)
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
 import Ports exposing (toastInfo)
 
 
@@ -27,15 +29,15 @@ type alias Model x =
 dragStart : DragId -> Position -> Model x -> ( Model x, Cmd Msg )
 dragStart id pos model =
     model.dragState
-        |> Maybe.map (\ds -> ( model, toastInfo ("Already in drag state (id: " ++ ds.id ++ ")") ))
-        |> Maybe.withDefault ( model |> dragAction { id = id, init = pos, last = pos }, Cmd.none )
+        |> Maybe.map (\_ -> ( model, Cmd.none {- toastInfo ("Can't drag " ++ id ++ ", already dragging " ++ ds.id) -} ))
+        |> Maybe.withDefault ( model |> dragAction { id = id, init = pos, last = pos, delta = pos |> Position.diff pos |> Delta.fromTuple }, Cmd.none )
 
 
 dragMove : DragId -> Position -> Model x -> ( Model x, Cmd Msg )
 dragMove id pos model =
     model.dragState
         |> M.filter (\ds -> ds.id == id)
-        |> Maybe.map (\ds -> ( model |> dragAction { ds | last = pos }, Cmd.none ))
+        |> Maybe.map (\ds -> ( model |> dragAction { ds | last = pos, delta = pos |> Position.diff ds.last |> Delta.fromTuple }, Cmd.none ))
         |> Maybe.withDefault (badDrag "move" id model)
 
 
@@ -49,25 +51,30 @@ dragEnd id _ model =
 
 dragAction : DragState -> Model x -> Model x
 dragAction dragState model =
-    case ( model.cursorMode, dragState.id ) of
-        ( Select, "erd" ) ->
+    case ( model.cursorMode, dragState.id, model.project |> Maybe.map (\p -> p.schema.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1) ) of
+        ( Select, "erd", canvas ) ->
             let
                 area : Area
                 area =
-                    computeSelection model dragState
+                    computeSelectedArea model.domInfos canvas dragState
             in
             { model | dragState = Just dragState, selection = Just area }
                 |> setCurrentLayout (setTables (List.map (\t -> { t | selected = overlap area (tableArea t model.domInfos) })))
 
-        _ ->
-            { model | dragState = Just dragState }
+        ( Drag, "erd", canvas ) ->
+            { model | dragState = Just dragState } |> setCurrentLayout (setCanvas (setPosition dragState.delta canvas.zoom))
 
+        ( _, id, canvas ) ->
+            let
+                tableId : TableId
+                tableId =
+                    htmlIdAsTableId id
 
-computeSelection : Model x -> DragState -> Area
-computeSelection model dragState =
-    computeSelectedArea model.domInfos
-        (model.project |> Maybe.map (\p -> p.schema.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1))
-        dragState
+                selected : Bool
+                selected =
+                    model.project |> Maybe.andThen (\p -> p.schema.layout.tables |> L.findBy .id tableId |> Maybe.map .selected) |> Maybe.withDefault False
+            in
+            { model | dragState = Just dragState } |> setCurrentLayout (setTableList (\t -> t.id == tableId || (selected && t.selected)) (setPosition dragState.delta canvas.zoom))
 
 
 computeSelectedArea : Dict HtmlId DomInfo -> CanvasProps -> DragState -> Area

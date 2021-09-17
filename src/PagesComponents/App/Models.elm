@@ -1,10 +1,10 @@
 module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
-import Draggable
 import FileValue exposing (File)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
+import Libs.Delta exposing (Delta)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (HtmlId, ZoomDelta)
@@ -25,8 +25,6 @@ type alias Model =
     , findPath : Maybe FindPath
     , confirm : Confirm
     , domInfos : Dict HtmlId DomInfo
-    , dragId : Maybe DragId
-    , drag : Draggable.State DragId
     , cursorMode : CursorMode
     , selection : Maybe Area
     , dragState : Maybe DragState
@@ -40,7 +38,7 @@ type CursorMode
 
 
 type alias DragState =
-    { id : DragId, init : Position, last : Position }
+    { id : DragId, init : Position, last : Position, delta : Delta }
 
 
 type Msg
@@ -75,10 +73,6 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
     | FitContent
-    | DragMsg (Draggable.Msg DragId)
-    | StartDragging DragId
-    | StopDragging
-    | OnDragBy Draggable.Delta
     | DragStart2 DragId Position
     | DragMove2 DragId Position
     | DragEnd2 DragId Position

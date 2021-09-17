@@ -1,4 +1,4 @@
-module Libs.Position exposing (Position, add, div, fromTuple, sub, toTuple)
+module Libs.Position exposing (Position, add, diff, div, fromTuple, sub, toTuple)
 
 
 type alias Position =
@@ -28,3 +28,8 @@ sub delta pos =
 div : Float -> Position -> Position
 div factor pos =
     Position (pos.left / factor) (pos.top / factor)
+
+
+diff : Position -> Position -> ( Float, Float )
+diff to from =
+    ( from.left - to.left, from.top - to.top )

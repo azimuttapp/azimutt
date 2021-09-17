@@ -22,13 +22,13 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S
 import Models.Project exposing (Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
-import PagesComponents.App.Models exposing (Hover, Msg(..))
+import PagesComponents.App.Models exposing (DragState, Hover, Msg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)
 
 
-viewTable : Hover -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
-viewTable hover zoom index table props tableRelations domInfo =
+viewTable : Hover -> Maybe DragState -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
+viewTable hover dragState zoom index table props tableRelations domInfo =
     let
         hiddenColumns : List Column
         hiddenColumns =
@@ -45,7 +45,7 @@ viewTable hover zoom index table props tableRelations domInfo =
          , onMouseEnter (HoverTable (Just table.id))
          , onMouseLeave (HoverTable Nothing)
          ]
-            ++ dragAttrs (tableIdAsHtmlId table.id)
+            ++ dragAttrs (tableIdAsHtmlId table.id) dragState
         )
         [ lazy3 viewHeader zoom index table
         , lazy4 viewColumns hover table tableRelations props.columns

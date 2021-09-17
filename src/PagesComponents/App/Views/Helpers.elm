@@ -1,6 +1,5 @@
-module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, dragAttrs2, formatDate, onClickConfirm, placeAt, size, sizeAttr, withColumnName)
+module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, formatDate, onClickConfirm, placeAt, size, sizeAttr, withColumnName)
 
-import Draggable
 import Html exposing (Attribute, text)
 import Html.Attributes exposing (attribute, style)
 import Html.Events exposing (onClick)
@@ -26,13 +25,8 @@ size s =
     [ style "width" (String.fromFloat s.width ++ "px"), style "height" (String.fromFloat s.height ++ "px") ]
 
 
-dragAttrs : DragId -> List (Attribute Msg)
-dragAttrs id =
-    Draggable.mouseTrigger id DragMsg :: Draggable.touchTriggers id DragMsg
-
-
-dragAttrs2 : DragId -> Maybe DragState -> List (Attribute Msg)
-dragAttrs2 id dragState =
+dragAttrs : DragId -> Maybe DragState -> List (Attribute Msg)
+dragAttrs id dragState =
     Pointer.onDown (\e -> DragStart2 id (Position.fromTuple e.pointer.pagePos))
         :: (dragState
                 |> M.filter (\s -> s.id == id)
