@@ -8,6 +8,7 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
+            "avh4/elm-color": "1.0.0",
             "dtwrks/elm-book": "1.2.0",
             "dtwrks/elm-book-interop-elm-css": "1.0.0",
             "elm/browser": "1.0.2",
@@ -19,6 +20,8 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
+            "elm-community/graph": "6.0.0",
+            "elm-community/typed-svg": "7.0.0",
             "gampleman/elm-visualization": "2.3.0",
             "lattyware/elm-fontawesome": "5.0.0",
             "matheus23/elm-default-tailwind-modules": "2.0.1",
@@ -28,12 +31,13 @@
             "ryannhg/elm-spa": "6.0.0"
         },
         "indirect": {
-            "avh4/elm-color": "1.0.0",
+            "avh4/elm-fifo": "1.0.4",
             "dillonkearns/elm-markdown": "6.0.1",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
             "elm/virtual-dom": "1.0.2",
+            "elm-community/intdict": "3.0.0",
             "elm-community/list-extra": "8.5.1",
             "folkertdev/elm-deque": "3.0.1",
             "folkertdev/one-true-path-experiment": "6.0.0",
