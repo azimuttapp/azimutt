@@ -19,6 +19,7 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
+            "gampleman/elm-visualization": "2.3.0",
             "lattyware/elm-fontawesome": "5.0.0",
             "matheus23/elm-default-tailwind-modules": "2.0.1",
             "mpizenberg/elm-file": "1.0.0",
@@ -27,13 +28,29 @@
             "ryannhg/elm-spa": "6.0.0"
         },
         "indirect": {
+            "avh4/elm-color": "1.0.0",
             "dillonkearns/elm-markdown": "6.0.1",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
             "elm/virtual-dom": "1.0.2",
+            "elm-community/list-extra": "8.5.1",
+            "folkertdev/elm-deque": "3.0.1",
+            "folkertdev/one-true-path-experiment": "6.0.0",
+            "folkertdev/svg-path-lowlevel": "4.0.1",
+            "ianmackenzie/elm-1d-parameter": "1.0.1",
+            "ianmackenzie/elm-float-extra": "1.1.0",
+            "ianmackenzie/elm-geometry": "3.9.1",
+            "ianmackenzie/elm-interval": "2.0.0",
+            "ianmackenzie/elm-triangular-mesh": "1.1.0",
+            "ianmackenzie/elm-units": "2.9.0",
+            "ianmackenzie/elm-units-interval": "2.3.0",
+            "ianmackenzie/elm-units-prefixed": "2.7.0",
+            "justinmimbs/date": "3.2.1",
+            "justinmimbs/time-extra": "1.1.0",
             "pablohirafuji/elm-syntax-highlight": "3.4.1",
-            "rtfeldman/elm-hex": "1.0.0"
+            "rtfeldman/elm-hex": "1.0.0",
+            "ryannhg/date-format": "2.3.0"
         }
     },
     "test-dependencies": {
