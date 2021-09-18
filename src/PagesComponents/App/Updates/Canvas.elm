@@ -24,7 +24,7 @@ handleWheel event canvas =
 
 zoomCanvas : Dict HtmlId DomInfo -> Float -> CanvasProps -> CanvasProps
 zoomCanvas domInfos delta canvas =
-    viewportSize domInfos |> Maybe.map (\size -> canvas |> performZoom delta (Area.center (viewportArea size canvas))) |> Maybe.withDefault canvas
+    viewportSize domInfos |> Maybe.map (\size -> canvas |> performZoom delta (viewportArea size canvas |> Area.center)) |> Maybe.withDefault canvas
 
 
 fitCanvas : Dict HtmlId DomInfo -> Layout -> Layout
