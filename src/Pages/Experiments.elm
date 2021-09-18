@@ -1,13 +1,10 @@
-module Pages.Experiments exposing (Model, Msg, page)
+module Pages.Experiments exposing (Drag, Entity, Model, Msg, page)
 
-import Browser
 import Browser.Events
 import Color
-import Force exposing (State)
+import Force
 import Gen.Params.Experiments exposing (Params)
-import Graph exposing (Edge, Graph, Node, NodeContext, NodeId)
-import Html
-import Html.Events exposing (on)
+import Graph exposing (Edge, Graph, NodeContext, NodeId)
 import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode
 import Page
@@ -27,7 +24,7 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
+page _ _ =
     Page.element
         { init = init
         , update = \msg model -> ( update msg model, Cmd.none )
@@ -71,12 +68,15 @@ type alias Entity =
 init : ( Model, Cmd Msg )
 init =
     let
+        graph : Graph Entity ()
         graph =
             Graph.mapContexts initializeNode miserablesGraph
 
+        link : { a | from : b, to : c } -> ( b, c )
         link { from, to } =
             ( from, to )
 
+        forces : List (Force.Force NodeId)
         forces =
             [ Force.links <| List.map link <| Graph.edges graph
             , Force.manyBody <| List.map .id <| Graph.nodes graph
@@ -106,7 +106,7 @@ type Msg
 
 
 update : Msg -> Model -> Model
-update msg ({ drag, graph, simulation } as model) =
+update msg { drag, graph, simulation } =
     case msg of
         Tick t ->
             let
@@ -140,7 +140,7 @@ update msg ({ drag, graph, simulation } as model) =
 
         DragEnd xy ->
             case drag of
-                Just { start, index } ->
+                Just { index } ->
                     Model Nothing
                         (Graph.update index (Maybe.map (updateNode xy)) graph)
                         simulation
@@ -152,6 +152,7 @@ update msg ({ drag, graph, simulation } as model) =
 updateNode : ( Float, Float ) -> NodeContext Entity () -> NodeContext Entity ()
 updateNode ( x, y ) nodeCtx =
     let
+        nodeValue : Entity
         nodeValue =
             nodeCtx.node.label
     in
@@ -161,6 +162,7 @@ updateNode ( x, y ) nodeCtx =
 updateContextWithValue : NodeContext Entity () -> Entity -> NodeContext Entity ()
 updateContextWithValue nodeCtx value =
     let
+        node : Graph.Node Entity
         node =
             nodeCtx.node
     in
@@ -170,6 +172,7 @@ updateContextWithValue nodeCtx value =
 updateGraphWithList : Graph Entity () -> List Entity -> Graph Entity ()
 updateGraphWithList =
     let
+        graphUpdater : Entity -> Maybe (NodeContext Entity ()) -> Maybe (NodeContext Entity ())
         graphUpdater value =
             Maybe.map (\ctx -> updateContextWithValue ctx value)
     in
@@ -237,9 +240,11 @@ nodeElement node =
 linkElement : Graph Entity () -> Edge () -> Svg msg
 linkElement graph edge =
     let
+        source : Force.Entity Int { value : String }
         source =
             Maybe.withDefault (Force.entity 0 "") <| Maybe.map (.node >> .label) <| Graph.get edge.from graph
 
+        target : Force.Entity Int { value : String }
         target =
             Maybe.withDefault (Force.entity 0 "") <| Maybe.map (.node >> .label) <| Graph.get edge.to graph
     in
