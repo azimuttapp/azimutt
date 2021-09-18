@@ -58,10 +58,7 @@ dragAction dragState model =
             { model | dragState = Just dragState, selection = Just area }
                 |> setCurrentLayout (setTables (List.map (\t -> { t | selected = overlap area (tableArea t model.domInfos) })))
 
-        ( Drag, "erd", _ ) ->
-            { model | dragState = Just dragState } |> setCurrentLayout (setCanvas (setPosition dragState.delta 1))
-
-        ( _, id, canvas ) ->
+        ( Select, id, canvas ) ->
             let
                 tableId : TableId
                 tableId =
@@ -72,6 +69,12 @@ dragAction dragState model =
                     model.project |> Maybe.andThen (\p -> p.schema.layout.tables |> L.findBy .id tableId |> Maybe.map .selected) |> Maybe.withDefault False
             in
             { model | dragState = Just dragState } |> setCurrentLayout (setTableList (\t -> t.id == tableId || (selected && t.selected)) (setPosition dragState.delta canvas.zoom))
+
+        ( Drag, "erd", _ ) ->
+            { model | dragState = Just dragState } |> setCurrentLayout (setCanvas (setPosition dragState.delta 1))
+
+        ( Drag, _, _ ) ->
+            model
 
 
 computeSelectedArea : Dict HtmlId DomInfo -> CanvasProps -> DragState -> Area
