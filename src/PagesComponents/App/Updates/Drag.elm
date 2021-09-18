@@ -58,8 +58,8 @@ dragAction dragState model =
             { model | dragState = Just dragState, selection = Just area }
                 |> setCurrentLayout (setTables (List.map (\t -> { t | selected = overlap area (tableArea t model.domInfos) })))
 
-        ( Drag, "erd", canvas ) ->
-            { model | dragState = Just dragState } |> setCurrentLayout (setCanvas (setPosition dragState.delta canvas.zoom))
+        ( Drag, "erd", _ ) ->
+            { model | dragState = Just dragState } |> setCurrentLayout (setCanvas (setPosition dragState.delta 1))
 
         ( _, id, canvas ) ->
             let
