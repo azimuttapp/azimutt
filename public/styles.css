@@ -128,6 +128,7 @@
 .erd-table.selected.violet { box-shadow: var(--tw-violet) 0 0 0 3px; }
 .erd-table.selected.purple { box-shadow: var(--tw-purple) 0 0 0 3px; }
 .erd-table.selected.fuchsia { box-shadow: var(--tw-fuchsia) 0 0 0 3px; }
+.erd-table.selected.pink { box-shadow: var(--tw-pink) 0 0 0 3px; }
 .erd-table.selected.rose { box-shadow: var(--tw-rose) 0 0 0 3px; }
 
 .erd-table .column:hover .icon, .erd-table .column:hover .name, .erd-table .column:hover .type, .erd-table .column.hover .icon, .erd-table .column.hover .name, .erd-table .column.hover .type { color: var(--tw-blueGray); }
