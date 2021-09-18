@@ -24,7 +24,7 @@ viewApp model =
         , [ lazy viewMenu (model.project |> Maybe.map .schema) ]
         , [ lazy3 viewErd model.hover model.sizes (model.project |> Maybe.map .schema) ]
         , [ lazy viewCommands (model.project |> Maybe.map (\p -> p.schema.layout.canvas)) ]
-        , [ lazy4 viewSchemaSwitchModal model.time model.switch (model.project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Load a new schema") model.storedProjects ]
+        , [ lazy4 viewSchemaSwitchModal model.time model.switch (model.project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Choose your project:") model.storedProjects ]
         , [ lazy viewCreateLayoutModal model.newLayout ]
         , Maybe.map2 (\p fp -> lazy3 viewFindPathModal p.schema.tables p.settings.findPath fp) model.project model.findPath |> M.toList
         , [ viewHelpModal ]

@@ -4,62 +4,51 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
-import Html exposing (Html, button, div, h5, text)
+import Html exposing (Html, br, button, div, h5, text)
 import Html.Attributes exposing (class, id, style, tabindex, title, type_)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy2)
 import Libs.Bool exposing (cond)
-import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsBackdrop, bsButton, bsButtonGroup, bsDismiss, bsScroll, bsToggleCollapse)
-import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, track)
+import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll, bsToggleCollapse)
+import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
 import Libs.List as L
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S exposing (plural)
 import Models.Project exposing (Layout, Schema, Table, TableId, htmlIdEncode, showTableId, tableIdAsString)
 import PagesComponents.App.Models exposing (Msg(..))
-import Tracking exposing (events)
 
 
 viewMenu : Maybe Schema -> Html Msg
 viewMenu schema =
     div [ id conf.ids.menu, class "offcanvas offcanvas-start", bsScroll True, bsBackdrop "false", ariaLabelledBy (conf.ids.menu ++ "-label"), tabindex -1 ]
         [ div [ class "offcanvas-header" ]
-            [ h5 [ class "offcanvas-title", id (conf.ids.menu ++ "-label") ] [ text "Menu" ]
+            [ h5 [ class "offcanvas-title", id (conf.ids.menu ++ "-label") ] [ text (schema |> Maybe.map (\_ -> "Table list") |> Maybe.withDefault "Menu") ]
             , button [ type_ "button", class "btn-close text-reset", bsDismiss Offcanvas, ariaLabel "Close" ] []
             ]
         , div [ class "offcanvas-body" ]
-            ([ div [] [ bsButton Primary [ onClick ChangeProject ] [ text "Switch from project" ] ]
-             , div [ style "margin-top" "1em" ] [ bsButton Primary ([ onClick (FindPath Nothing Nothing) ] ++ track events.openFindPath) [ text "Find path" ] ]
-             ]
-                ++ (schema
-                        |> Maybe.map
-                            (\s ->
-                                if Dict.isEmpty s.tables then
-                                    []
-
-                                else
-                                    [ div [ style "margin-top" "1em" ]
-                                        [ bsButtonGroup "Toggle all"
-                                            [ bsButton Secondary [ onClick HideAllTables ] [ text "Hide all tables" ]
-                                            , bsButton Secondary [ onClick ShowAllTables ] [ text "Show all tables" ]
-                                            ]
-                                        ]
-                                    , div [ style "margin-top" "1em" ]
-                                        [ text
-                                            ((s.tables |> Dict.size |> String.fromInt)
-                                                ++ " tables, "
-                                                ++ (s.tables |> Dict.foldl (\_ t c -> c + Ned.size t.columns) 0 |> String.fromInt)
-                                                ++ " columns, "
-                                                ++ (s.relations |> List.length |> String.fromInt)
-                                                ++ " relations"
-                                            )
-                                        ]
-                                    , lazy2 viewTableList s.tables s.layout
-                                    ]
-                            )
-                        |> Maybe.withDefault []
-                   )
+            (schema
+                |> Maybe.map
+                    (\s ->
+                        [ div []
+                            [ text
+                                ((s.tables |> Dict.size |> String.fromInt)
+                                    ++ " tables, "
+                                    ++ (s.tables |> Dict.foldl (\_ t c -> c + Ned.size t.columns) 0 |> String.fromInt)
+                                    ++ " columns, "
+                                    ++ (s.relations |> List.length |> String.fromInt)
+                                    ++ " relations"
+                                )
+                            ]
+                        , lazy2 viewTableList s.tables s.layout
+                        ]
+                    )
+                |> Maybe.withDefault
+                    [ text "You should load a project!"
+                    , br [] []
+                    , button [ type_ "button", class "btn btn-primary my-3", onClick ChangeProject ] [ text "Load a project" ]
+                    ]
             )
         ]
 
