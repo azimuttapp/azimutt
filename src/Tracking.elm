@@ -31,7 +31,7 @@ events :
     , externalLink : String -> TrackEvent
     }
 events =
-    { openAppCta = openAppCta
+    { openAppCta = \source -> { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
     , openMenu = { name = "open-menu", details = [], enabled = True }
     , openHelp = { name = "open-help", details = [], enabled = True }
     , openTableSettings = { name = "open-table-settings", details = [], enabled = True }
@@ -40,7 +40,6 @@ events =
     , openIncomingRelationsDropdown = { name = "open-incoming-relations-dropdown", details = [], enabled = True }
     , openSaveLayout = { name = "open-save-layout", details = [], enabled = True }
     , openFindPath = { name = "open-find-path", details = [], enabled = True }
-    , findPathResult = findPathResults
     , createProject = projectEvent "create"
     , loadProject = projectEvent "load"
     , updateProject = projectEvent "update"
@@ -49,25 +48,8 @@ events =
     , loadLayout = layoutEvent "load"
     , updateLayout = layoutEvent "update"
     , deleteLayout = layoutEvent "delete"
-    , externalLink = externalLink
-    }
-
-
-openAppCta : String -> TrackEvent
-openAppCta source =
-    { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
-
-
-findPathResults : FindPathResult -> TrackEvent
-findPathResults result =
-    { name = "find-path-results"
-    , details =
-        [ ( "found-paths", String.fromInt (result.paths |> List.length) )
-        , ( "ignored-columns", String.fromInt (result.settings.ignoredColumns |> List.length) )
-        , ( "ignored-tables", String.fromInt (result.settings.ignoredTables |> List.length) )
-        , ( "max-path-length", String.fromInt result.settings.maxPathLength )
-        ]
-    , enabled = True
+    , findPathResult = findPathResults
+    , externalLink = \url -> { name = "external-link", details = [ ( "url", url ) ], enabled = True }
     }
 
 
@@ -87,6 +69,14 @@ layoutEvent eventName layout =
     { name = eventName ++ "-layout", details = [ ( "table-count", layout.tables |> List.length |> String.fromInt ) ], enabled = True }
 
 
-externalLink : String -> TrackEvent
-externalLink url =
-    { name = "external-link", details = [ ( "url", url ) ], enabled = True }
+findPathResults : FindPathResult -> TrackEvent
+findPathResults result =
+    { name = "find-path-results"
+    , details =
+        [ ( "found-paths", String.fromInt (result.paths |> List.length) )
+        , ( "ignored-columns", String.fromInt (result.settings.ignoredColumns |> List.length) )
+        , ( "ignored-tables", String.fromInt (result.settings.ignoredTables |> List.length) )
+        , ( "max-path-length", String.fromInt result.settings.maxPathLength )
+        ]
+    , enabled = True
+    }
