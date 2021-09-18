@@ -1,16 +1,16 @@
-module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragUpdate, formatDate, onClickConfirm, onDrag, placeAt, size, sizeAttr, withColumnName)
+module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, formatDate, onClickConfirm, onDrag, placeAt, size, sizeAttr, withColumnName)
 
 import Html exposing (Attribute, text)
 import Html.Attributes exposing (attribute, style)
 import Html.Events exposing (onClick)
-import Html.Events.Extra.Pointer as Pointer
+import Html.Events.Extra.Mouse as Mouse
 import Libs.DateTime as DateTime
 import Libs.Models exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task as T
 import Models.Project exposing (ColumnName, ColumnRef, tableIdAsHtmlId)
-import PagesComponents.App.Models exposing (DragId, DragState, Msg(..), TimeInfo)
+import PagesComponents.App.Models exposing (DragId, Msg(..), TimeInfo)
 import Time
 
 
@@ -26,21 +26,7 @@ size s =
 
 onDrag : DragId -> Attribute Msg
 onDrag id =
-    Pointer.onDown (\e -> e.pointer.pagePos |> Position.fromTuple |> DragStart id)
-
-
-dragUpdate : Maybe DragState -> List (Attribute Msg)
-dragUpdate dragState =
-    -- should have only one in the drag container
-    dragState
-        |> Maybe.map
-            (\_ ->
-                [ Pointer.onMove (\e -> e.pointer.pagePos |> Position.fromTuple |> DragMove)
-                , Pointer.onUp (\e -> e.pointer.pagePos |> Position.fromTuple |> DragEnd)
-                , Pointer.onCancel (\e -> e.pointer.pagePos |> Position.fromTuple |> DragEnd)
-                ]
-            )
-        |> Maybe.withDefault []
+    Mouse.onDown (.pagePos >> Position.fromTuple >> DragStart id)
 
 
 sizeAttr : Size -> Attribute msg

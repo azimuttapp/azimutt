@@ -1,16 +1,20 @@
 module Pages.App exposing (Model, Msg, page)
 
+import Browser.Events
 import Conf exposing (conf, schemaSamples)
 import Dict
 import Gen.Params.App exposing (Params)
+import Html.Events.Extra.Mouse as Mouse
+import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
+import Libs.Position as Position
 import Libs.Task exposing (send, sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (CursorMode(..), Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
@@ -292,11 +296,25 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
+subscriptions model =
     Sub.batch
-        [ Time.every (10 * 1000) TimeChanged
-        , onJsMessage JsMessage
-        ]
+        ([ Time.every (10 * 1000) TimeChanged
+         , onJsMessage JsMessage
+         ]
+            ++ dragSubscriptions model.dragState
+        )
+
+
+dragSubscriptions : Maybe DragState -> List (Sub Msg)
+dragSubscriptions drag =
+    case drag of
+        Nothing ->
+            []
+
+        Just _ ->
+            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> DragMove) Mouse.eventDecoder)
+            , Browser.Events.onMouseUp (Decode.map (.pagePos >> Position.fromTuple >> DragEnd) Mouse.eventDecoder)
+            ]
 
 
 
