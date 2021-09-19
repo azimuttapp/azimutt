@@ -27,7 +27,8 @@ initGraph domInfos project =
     , simulation =
         Force.simulation
             [ graph |> Graph.edges |> List.map (\{ from, to } -> ( from, to )) |> Force.links
-            , graph |> Graph.nodes |> List.map .id |> Force.manyBody
+            , graph |> Graph.nodes |> List.map .id |> Force.manyBodyStrength -800
+            , graph |> Graph.nodes |> List.map .id |> Force.collision 70
             , Force.center (size.width / 2) (size.height / 2)
             ]
     }
@@ -65,7 +66,7 @@ buildGraph schema =
 
                 edges : List ( NodeId, NodeId )
                 edges =
-                    s.relations |> List.filterMap (buildEdge visibleTables)
+                    s.relations |> List.filter (\r -> r.src.column /= "created_by" && r.src.column /= "updated_by") |> List.filterMap (buildEdge visibleTables)
             in
             Graph.fromNodeLabelsAndEdgePairs nodeLabels edges
 
