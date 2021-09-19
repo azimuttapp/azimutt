@@ -20,11 +20,11 @@ viewApp : Model -> List (Html Msg)
 viewApp model =
     List.concatMap identity
         [ [ Icon.css, node "style" [] [ text "body { overflow: hidden; }" ] ]
-        , [ lazy2 viewNavbar model.search model.project ]
+        , [ lazy3 viewNavbar model.search model.storedProjects model.project ]
         , [ lazy viewMenu (model.project |> Maybe.map .schema) ]
         , [ lazy6 viewErd model.hover model.cursorMode model.dragState model.selection model.domInfos (model.project |> Maybe.map .schema) ]
         , [ lazy2 viewCommands model.cursorMode (model.project |> Maybe.map (\p -> p.schema.layout.canvas)) ]
-        , [ lazy4 viewSchemaSwitchModal model.time model.switch (model.project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Load a new schema") model.storedProjects ]
+        , [ lazy4 viewSchemaSwitchModal model.time model.switch (model.project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Choose your project:") model.storedProjects ]
         , [ lazy viewCreateLayoutModal model.newLayout ]
         , Maybe.map2 (\p fp -> lazy3 viewFindPathModal p.schema.tables p.settings.findPath fp) model.project model.findPath |> M.toList
         , [ viewHelpModal ]

@@ -12,6 +12,9 @@ conf :
     , zIndex : { tables : Int }
     , ids :
         { searchInput : HtmlId
+        , navFeaturesDropdown : HtmlId
+        , navProjectDropdown : HtmlId
+        , navLayoutDropdown : HtmlId
         , menu : HtmlId
         , erd : HtmlId
         , projectSwitchModal : HtmlId
@@ -30,6 +33,9 @@ conf =
     , zIndex = { tables = 10 }
     , ids =
         { searchInput = "search"
+        , navFeaturesDropdown = "navbar-features-dropdown"
+        , navProjectDropdown = "navbar-project-dropdown"
+        , navLayoutDropdown = "navbar-layout-dropdown"
         , menu = "menu"
         , erd = "erd"
         , projectSwitchModal = "project-switch-modal"

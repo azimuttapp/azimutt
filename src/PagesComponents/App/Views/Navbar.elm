@@ -4,23 +4,23 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
-import Html exposing (Html, b, button, div, form, img, input, li, nav, span, text, ul)
+import Html exposing (Html, b, button, div, form, hr, img, input, li, nav, ol, span, text, ul)
 import Html.Attributes exposing (alt, attribute, autocomplete, class, height, id, placeholder, src, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Html.Lazy exposing (lazy2)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsToggle, bsToggleCollapse, bsToggleDropdown, bsToggleModal, bsToggleOffcanvas)
-import Libs.Html.Attributes exposing (ariaExpanded, ariaLabel, track)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaLabel, ariaLabelledBy, track)
 import Libs.List as L
 import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project exposing (Column, Layout, LayoutName, Project, ProjectName, Schema, Table, TableId, showTableId)
+import Models.Project exposing (Column, Layout, LayoutName, Project, Schema, Table, TableId, showTableId)
 import PagesComponents.App.Models exposing (Msg(..), Search)
 import Tracking exposing (events)
 
 
-viewNavbar : Search -> Maybe Project -> Html Msg
-viewNavbar search project =
+viewNavbar : Search -> List Project -> Maybe Project -> Html Msg
+viewNavbar search storedProjects project =
     nav [ id "navbar", class "navbar navbar-expand-md navbar-light bg-white shadow-sm" ]
         [ div [ class "container-fluid" ]
             [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas conf.ids.menu ++ track events.openMenu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
@@ -29,11 +29,33 @@ viewNavbar search project =
                 ]
             , div [ class "collapse navbar-collapse", id "navbar-content" ]
                 ([ lazy2 viewSearchBar (project |> Maybe.map .schema) search
-                 , ul [ class "navbar-nav me-auto" ]
+                 , ul [ class "navbar-nav" ]
                     [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal conf.ids.helpModal ++ track events.openHelp) [ text "?" ] ]
                     ]
                  ]
-                    ++ (project |> Maybe.map (\p -> [ viewTitle p.name p.schema.tables p.currentLayout, lazy2 viewLayoutButton p.currentLayout p.layouts ]) |> Maybe.withDefault [])
+                    ++ (project
+                            |> Maybe.map
+                                (\p ->
+                                    [ viewTitle storedProjects p
+                                    , lazy2 viewLayoutButton p.currentLayout p.layouts
+                                    , div [ class "dropdown mx-3" ]
+                                        [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
+                                        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledBy conf.ids.navFeaturesDropdown ]
+                                            [ li []
+                                                [ div [ class "btn-group" ]
+                                                    [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]
+                                                    , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
+                                                    ]
+                                                ]
+                                            , li [] [ button ([ type_ "button", class "dropdown-item", onClick (FindPath Nothing Nothing) ] ++ track events.openFindPath) [ text "Find path between tables" ] ]
+                                            , li [] [ hr [ class "dropdown-divider" ] [] ]
+                                            , li [] [ button [ type_ "button", class "dropdown-item", onClick ChangeProject ] [ text "Move to project..." ] ]
+                                            ]
+                                        ]
+                                    ]
+                                )
+                            |> Maybe.withDefault []
+                       )
                 )
             ]
         ]
@@ -64,26 +86,70 @@ viewSearchBar schema search =
             )
 
 
-viewTitle : ProjectName -> Dict TableId Table -> Maybe LayoutName -> Html msg
-viewTitle projectName tables layoutName =
-    div [ class "me-auto", title (String.fromInt (Dict.size tables) ++ " tables") ] [ text (projectName ++ (layoutName |> Maybe.map (\name -> " > " ++ name) |> Maybe.withDefault "")) ]
+viewTitle : List Project -> Project -> Html Msg
+viewTitle storedProjects project =
+    nav [ class "mx-auto", ariaLabel "breadcrumb" ]
+        [ ol [ class "breadcrumb my-auto" ]
+            ([ li [ class "breadcrumb-item" ]
+                [ div [ class "dropdown d-inline-block" ]
+                    [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navProjectDropdown, title (String.fromInt (Dict.size project.schema.tables) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text project.name ]
+                    , ul [ class "dropdown-menu", ariaLabelledBy conf.ids.navProjectDropdown ]
+                        (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
+                            [ storedProjects
+                                |> List.filter (\p -> p.name /= project.name)
+                                |> List.map (\p -> li [] [ button [ type_ "button", class "dropdown-item", onClick (UseProject p) ] [ text p.name ] ])
+                            , [ li [] [ button [ type_ "button", class "dropdown-item", onClick ChangeProject ] [ text "Move to project..." ] ] ]
+                            ]
+                        )
+                    ]
+                ]
+             ]
+                |> L.appendOn project.currentLayout
+                    (\currentLayout ->
+                        li [ class "breadcrumb-item" ]
+                            [ div [ class "dropdown d-inline-block" ]
+                                [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navLayoutDropdown, title (String.fromInt (tablesInLayout project currentLayout) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text currentLayout ]
+                                , ul [ class "dropdown-menu", ariaLabelledBy conf.ids.navLayoutDropdown ]
+                                    (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
+                                        [ project.layouts
+                                            |> Dict.keys
+                                            |> List.filter (\l -> l /= currentLayout)
+                                            |> List.map (\l -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LoadLayout l) ] [ text l ] ])
+                                        , [ li [] [ button [ type_ "button", class "dropdown-item", onClick UnloadLayout ] [ text ("Stop using " ++ currentLayout) ] ] ]
+                                        ]
+                                    )
+                                ]
+                            ]
+                    )
+            )
+        ]
+
+
+intersperse : a -> List (List a) -> List a
+intersperse a list =
+    List.intersperse [ a ] (list |> List.filter (\l -> l /= [])) |> List.concatMap identity
+
+
+tablesInLayout : Project -> LayoutName -> Int
+tablesInLayout project layout =
+    project.layouts |> Dict.get layout |> Maybe.map (\l -> l.tables |> List.length) |> Maybe.withDefault 0
 
 
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
 viewLayoutButton currentLayout layouts =
     if Dict.isEmpty layouts then
-        bsButton Primary ([ title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
+        bsButton Secondary ([ title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
 
     else
         div [ class "btn-group" ]
             ((currentLayout
                 |> Maybe.map
                     (\layout ->
-                        [ bsButton Primary [ onClick (UpdateLayout layout) ] [ text ("Update '" ++ layout ++ "'") ]
-                        , bsButton Primary [ class "dropdown-toggle dropdown-toggle-split", bsToggle Dropdown, ariaExpanded False ] [ span [ class "visually-hidden" ] [ text "Toggle Dropdown" ] ]
+                        [ bsButton Secondary [ onClick (UpdateLayout layout) ] [ text ("Update '" ++ layout ++ "'") ]
+                        , bsButton Secondary [ class "dropdown-toggle dropdown-toggle-split", bsToggle Dropdown, ariaExpanded False ] [ span [ class "visually-hidden" ] [ text "Toggle Dropdown" ] ]
                         ]
                     )
-                |> Maybe.withDefault [ bsButton Primary [ class "dropdown-toggle", bsToggle Dropdown, ariaExpanded False ] [ text "Layouts" ] ]
+                |> Maybe.withDefault [ bsButton Secondary [ class "dropdown-toggle", bsToggle Dropdown, ariaExpanded False ] [ text "Layouts" ] ]
              )
                 ++ [ ul [ class "dropdown-menu dropdown-menu-end" ]
                         ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal conf.ids.newLayoutModal) [ viewIcon Icon.plus, text " Create new layout" ] ] ]

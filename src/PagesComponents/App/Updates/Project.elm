@@ -8,6 +8,7 @@ import FileValue exposing (File)
 import Json.Decode as Decode
 import Libs.Bool exposing (cond)
 import Libs.List as L
+import Libs.Maybe as M
 import Libs.Models exposing (FileContent, FileUrl, TrackEvent)
 import Libs.Result as R
 import Libs.String as S
@@ -37,7 +38,12 @@ useProject project model =
 
 loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
 loadProject projectEvent model ( errs, project ) =
-    ( { model | switch = initSwitch, project = project, domInfos = model.domInfos |> Dict.filter (\id _ -> not (id |> String.startsWith "table-")) }
+    ( { model
+        | switch = initSwitch
+        , storedProjects = model.storedProjects |> L.appendOn (project |> M.filter (\p -> model.storedProjects |> List.all (\s -> s.name /= p.name))) identity
+        , project = project
+        , domInfos = model.domInfos |> Dict.filter (\id _ -> not (id |> String.startsWith "table-"))
+      }
     , Cmd.batch
         ((errs |> List.map toastError)
             ++ cond (List.isEmpty errs) [] [ trackErrorList "parse-project" errs ]
