@@ -1,13 +1,14 @@
-module PagesComponents.App.Models exposing (Confirm, DragId, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
-import Draggable
 import FileValue exposing (File)
 import Html exposing (Html, text)
+import Libs.Area exposing (Area)
+import Libs.Delta exposing (Delta)
+import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (HtmlId, ZoomDelta)
 import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
 import Libs.Task as T
 import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, Relation, SampleName, Table, TableId)
 import Ports exposing (JsMsg)
@@ -23,11 +24,21 @@ type alias Model =
     , newLayout : Maybe LayoutName
     , findPath : Maybe FindPath
     , confirm : Confirm
-    , sizes : Dict HtmlId Size
-    , dragId : Maybe DragId
-    , drag : Draggable.State DragId
+    , domInfos : Dict HtmlId DomInfo
+    , cursorMode : CursorMode
+    , selection : Maybe Area
+    , dragState : Maybe DragState
     , hover : Hover
     }
+
+
+type CursorMode
+    = Drag
+    | Select
+
+
+type alias DragState =
+    { id : DragId, init : Position, last : Position, delta : Delta }
 
 
 type Msg
@@ -44,6 +55,7 @@ type Msg
     | UseProject Project
     | ChangedSearch Search
     | SelectTable TableId Bool
+    | SelectAllTables
     | HideTable TableId
     | ShowTable TableId
     | TableOrder TableId Int
@@ -62,10 +74,10 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
     | FitContent
-    | DragMsg (Draggable.Msg DragId)
-    | StartDragging DragId
-    | StopDragging
-    | OnDragBy Draggable.Delta
+    | DragStart DragId Position
+    | DragMove Position
+    | DragEnd Position
+    | CursorMode CursorMode
     | FindPath (Maybe TableId) (Maybe TableId)
     | FindPathFrom (Maybe TableId)
     | FindPathTo (Maybe TableId)

@@ -1,21 +1,25 @@
 module Pages.App exposing (Model, Msg, page)
 
+import Browser.Events
 import Conf exposing (conf, schemaSamples)
 import Dict
-import Draggable
 import Gen.Params.App exposing (Params)
+import Html.Events.Extra.Mouse as Mouse
+import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
-import Libs.Task exposing (sendAfter)
+import Libs.Position as Position
+import Libs.Task exposing (send, sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
-import PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
+import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
+import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
@@ -61,9 +65,10 @@ init =
       , newLayout = Nothing
       , findPath = Nothing
       , confirm = initConfirm
-      , sizes = Dict.empty
-      , dragId = Nothing
-      , drag = Draggable.init
+      , domInfos = Dict.empty
+      , cursorMode = Select
+      , selection = Nothing
+      , dragState = Nothing
       , hover = initHover
       }
     , Cmd.batch
@@ -134,36 +139,39 @@ update msg model =
             ( { model | search = search }, Cmd.none )
 
         SelectTable id ctrl ->
-            ( model |> setProject (setSchema (setLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }))))), Cmd.none )
+            ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }))), Cmd.none )
+
+        SelectAllTables ->
+            ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = True }))), Cmd.none )
 
         HideTable id ->
-            ( model |> setProject (setSchema (setLayout (hideTable id))), Cmd.none )
+            ( model |> setCurrentLayout (hideTable id), Cmd.none )
 
         ShowTable id ->
             model |> setProjectWithCmd (setSchemaWithCmd (showTable id))
 
         TableOrder id index ->
-            ( model |> setProject (setSchema (setLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))))), Cmd.none )
+            ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
 
         ShowTables ids ->
             model |> setProjectWithCmd (setSchemaWithCmd (showTables ids))
 
         --HideTables ids ->
-        --    ( model |> setProject (setSchema (setLayout (hideTables ids))), Cmd.none )
+        --    ( model |> setCurrentLayout (hideTables ids), Cmd.none )
         InitializedTable id position ->
-            ( model |> setProject (setSchema (setLayout (setTableInList .id id (\t -> { t | position = position })))), Cmd.none )
+            ( model |> setCurrentLayout (setTableInList .id id (\t -> { t | position = position })), Cmd.none )
 
         HideAllTables ->
-            ( model |> setProject (setSchema (setLayout hideAllTables)), Cmd.none )
+            ( model |> setCurrentLayout hideAllTables, Cmd.none )
 
         ShowAllTables ->
             model |> setProjectWithCmd (setSchemaWithCmd showAllTables)
 
         HideColumn { table, column } ->
-            ( model |> hoverNextColumn table column |> setProject (setSchema (setLayout (hideColumn table column))), Cmd.none )
+            ( model |> hoverNextColumn table column |> setCurrentLayout (hideColumn table column), Cmd.none )
 
         ShowColumn { table, column } ->
-            ( model |> setProject (setSchema (setLayout (showColumn table column))), activateTooltipsAndPopovers )
+            ( model |> setCurrentLayout (showColumn table column), activateTooltipsAndPopovers )
 
         SortColumns id kind ->
             ( model |> setProject (setSchema (sortColumns id kind)), activateTooltipsAndPopovers )
@@ -181,25 +189,25 @@ update msg model =
             ( { model | hover = model.hover |> (\h -> { h | column = c }) }, Cmd.none )
 
         OnWheel event ->
-            ( model |> setProject (setSchema (setLayout (setCanvas (handleWheel event)))), Cmd.none )
+            ( model |> setCurrentLayout (setCanvas (handleWheel event)), Cmd.none )
 
         Zoom delta ->
-            ( model |> setProject (setSchema (setLayout (setCanvas (zoomCanvas model.sizes delta)))), Cmd.none )
+            ( model |> setCurrentLayout (setCanvas (zoomCanvas model.domInfos delta)), Cmd.none )
 
         FitContent ->
-            ( model |> setProject (setSchema (setLayout (fitCanvas model.sizes))), Cmd.none )
+            ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
 
-        DragMsg dragMsg ->
-            model |> Draggable.update dragConfig dragMsg
+        DragStart id pos ->
+            model |> dragStart id pos
 
-        StartDragging id ->
-            ( { model | dragId = Just id }, Cmd.none )
+        DragMove pos ->
+            model |> dragMove pos
 
-        StopDragging ->
-            ( { model | dragId = Nothing }, Cmd.none )
+        DragEnd pos ->
+            model |> dragEnd pos
 
-        OnDragBy delta ->
-            dragItem model delta
+        CursorMode mode ->
+            ( { model | cursorMode = mode }, Cmd.none )
 
         FindPath from to ->
             ( { model | findPath = Just { from = from, to = to, result = Empty } }, showModal conf.ids.findPathModal )
@@ -264,6 +272,9 @@ update msg model =
         JsMessage (HotkeyUsed "move-to-back") ->
             ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable -1000 model.hover) |> Maybe.withDefault Cmd.none )
 
+        JsMessage (HotkeyUsed "select-all") ->
+            ( model, send SelectAllTables )
+
         JsMessage (HotkeyUsed "save") ->
             ( model, model.project |> Maybe.map (\p -> Cmd.batch [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ]) |> Maybe.withDefault (toastWarning "No project to save") )
 
@@ -287,10 +298,23 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Draggable.subscriptions DragMsg model.drag
-        , Time.every (10 * 1000) TimeChanged
-        , onJsMessage JsMessage
-        ]
+        ([ Time.every (10 * 1000) TimeChanged
+         , onJsMessage JsMessage
+         ]
+            ++ dragSubscriptions model.dragState
+        )
+
+
+dragSubscriptions : Maybe DragState -> List (Sub Msg)
+dragSubscriptions drag =
+    case drag of
+        Nothing ->
+            []
+
+        Just _ ->
+            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> DragMove) Mouse.eventDecoder)
+            , Browser.Events.onMouseUp (Decode.map (.pagePos >> Position.fromTuple >> DragEnd) Mouse.eventDecoder)
+            ]
 
 
 

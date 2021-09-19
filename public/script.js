@@ -150,6 +150,10 @@ window.addEventListener('load', function() {
     const resizeObserver = new ResizeObserver(entries => {
         const sizes = entries.map(entry => ({
             id: entry.target.id,
+            position: {
+                left: entry.target.offsetLeft,
+                top: entry.target.offsetTop
+            },
             size: {
                 width: entry.contentRect.width,
                 height: entry.contentRect.height

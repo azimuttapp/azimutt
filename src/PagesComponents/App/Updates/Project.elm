@@ -42,7 +42,7 @@ loadProject projectEvent model ( errs, project ) =
         | switch = initSwitch
         , storedProjects = model.storedProjects |> L.appendOn (project |> M.filter (\p -> model.storedProjects |> List.all (\s -> s.name /= p.name))) identity
         , project = project
-        , sizes = model.sizes |> Dict.filter (\id _ -> not (id |> String.startsWith "table-"))
+        , domInfos = model.domInfos |> Dict.filter (\id _ -> not (id |> String.startsWith "table-"))
       }
     , Cmd.batch
         ((errs |> List.map toastError)

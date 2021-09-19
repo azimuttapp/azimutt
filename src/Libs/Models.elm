@@ -1,5 +1,6 @@
 module Libs.Models exposing (Color, FileContent, FileName, FileUrl, HtmlId, Millis, SizeChange, Text, TrackEvent, UID, ZoomDelta, ZoomLevel)
 
+import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 
 
@@ -36,7 +37,7 @@ type alias ZoomDelta =
 
 
 type alias SizeChange =
-    { id : HtmlId, size : Size }
+    { id : HtmlId, position : Position, size : Size }
 
 
 type alias Color =

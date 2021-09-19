@@ -16,5 +16,5 @@ initializeTable size area id =
 positionGen : Size -> Area -> Random.Generator Position
 positionGen size area =
     Random.map2 Position
-        (Random.float area.left (max area.left (area.right - size.width)))
-        (Random.float area.top (max area.top (area.bottom - size.height)))
+        (Random.float 0 (max 0 (area.size.width - size.width)) |> Random.map (\v -> area.position.left + v))
+        (Random.float 0 (max 0 (area.size.height - size.height)) |> Random.map (\v -> area.position.top + v))

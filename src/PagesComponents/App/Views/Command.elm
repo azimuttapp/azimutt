@@ -4,22 +4,26 @@ import Conf exposing (conf)
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
 import Html exposing (Html, button, div, li, text, ul)
-import Html.Attributes exposing (class, id, title, type_)
+import Html.Attributes exposing (class, classList, id, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, role)
 import Models.Project exposing (CanvasProps)
-import PagesComponents.App.Models exposing (Msg(..))
+import PagesComponents.App.Models exposing (CursorMode(..), Msg(..))
 
 
-viewCommands : Maybe CanvasProps -> Html Msg
-viewCommands canvas =
+viewCommands : CursorMode -> Maybe CanvasProps -> Html Msg
+viewCommands cursorMode canvas =
     canvas
         |> Maybe.map
             (\c ->
                 div [ class "commands btn-toolbar", role "toolbar", ariaLabel "Diagram commands" ]
                     [ div [ class "btn-group me-2", role "group" ]
                         [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", title "Fit content in view", bsToggle Tooltip, onClick FitContent ] [ viewIcon Icon.expand ]
+                        ]
+                    , div [ class "btn-group me-2", role "group" ]
+                        [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", cursorMode == Drag ) ], title "Drag tool", bsToggle Tooltip, onClick (CursorMode Drag) ] [ viewIcon Icon.handPaper ]
+                        , button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", cursorMode == Select ) ], title "Select tool", bsToggle Tooltip, onClick (CursorMode Select) ] [ viewIcon Icon.mousePointer ]
                         ]
                     , div [ class "btn-group", role "group" ]
                         [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", onClick (Zoom (-c.zoom / 10)) ] [ viewIcon Icon.minus ]

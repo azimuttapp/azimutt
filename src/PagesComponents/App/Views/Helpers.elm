@@ -1,12 +1,12 @@
-module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, dragAttrs, formatDate, onClickConfirm, placeAt, sizeAttr, withColumnName)
+module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, formatDate, onClickConfirm, onDrag, placeAt, size, sizeAttr, withColumnName)
 
-import Draggable
 import Html exposing (Attribute, text)
 import Html.Attributes exposing (attribute, style)
 import Html.Events exposing (onClick)
+import Html.Events.Extra.Mouse as Mouse
 import Libs.DateTime as DateTime
 import Libs.Models exposing (HtmlId)
-import Libs.Position exposing (Position)
+import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task as T
 import Models.Project exposing (ColumnName, ColumnRef, tableIdAsHtmlId)
@@ -19,14 +19,19 @@ placeAt p =
     style "transform" ("translate(" ++ String.fromFloat p.left ++ "px, " ++ String.fromFloat p.top ++ "px)")
 
 
-dragAttrs : DragId -> List (Attribute Msg)
-dragAttrs id =
-    Draggable.mouseTrigger id DragMsg :: Draggable.touchTriggers id DragMsg
+size : Size -> List (Attribute msg)
+size s =
+    [ style "width" (String.fromFloat s.width ++ "px"), style "height" (String.fromFloat s.height ++ "px") ]
+
+
+onDrag : DragId -> Attribute Msg
+onDrag id =
+    Mouse.onDown (.pagePos >> Position.fromTuple >> DragStart id)
 
 
 sizeAttr : Size -> Attribute msg
-sizeAttr size =
-    attribute "data-size" (String.fromInt (round size.width) ++ "x" ++ String.fromInt (round size.height))
+sizeAttr s =
+    attribute "data-size" (String.fromInt (round s.width) ++ "x" ++ String.fromInt (round s.height))
 
 
 onClickConfirm : String -> Msg -> Attribute Msg

@@ -1,10 +1,7 @@
-module PagesComponents.App.Updates exposing (dragConfig, dragItem, moveTable, removeElement, updateSizes)
+module PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 
 import Conf exposing (conf)
 import Dict
-import Draggable
-import Draggable.Events exposing (onDragBy, onDragEnd, onDragStart)
-import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
@@ -12,11 +9,10 @@ import Libs.Models exposing (SizeChange)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task exposing (send)
-import Models.Project exposing (CanvasProps, Layout, TableId, TableProps, htmlIdAsTableId)
+import Models.Project exposing (Layout, TableProps, htmlIdAsTableId, viewportArea)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
-import PagesComponents.App.Models exposing (DragId, Hover, Model, Msg(..))
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setPosition, setProject, setSchema, setTableList)
-import Ports exposing (toastError, toastInfo)
+import PagesComponents.App.Models exposing (CursorMode(..), Hover, Model, Msg(..))
+import Ports exposing (toastInfo)
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -26,7 +22,7 @@ updateSizes sizeChanges model =
 
 updateSize : SizeChange -> Model -> Model
 updateSize change model =
-    { model | sizes = model.sizes |> Dict.update change.id (\_ -> B.cond (change.size == Size 0 0) Nothing (Just change.size)) }
+    { model | domInfos = model.domInfos |> Dict.update change.id (\_ -> B.cond (change.size == Size 0 0) Nothing (Just { position = change.position, size = change.size })) }
 
 
 initializeTableOnFirstSize : Model -> SizeChange -> Maybe (Cmd Msg)
@@ -37,51 +33,10 @@ initializeTableOnFirstSize model change =
                 Maybe.map3 (\t props canvasSize -> ( t, props, canvasSize ))
                     (p.schema.tables |> Dict.get (htmlIdAsTableId change.id))
                     (p.schema.layout.tables |> L.findBy .id (htmlIdAsTableId change.id))
-                    (model.sizes |> Dict.get conf.ids.erd)
-                    |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.sizes |> Dict.member change.id))
-                    |> Maybe.map (\( t, _, canvasSize ) -> t.id |> initializeTable change.size (getArea canvasSize p.schema.layout.canvas))
+                    (model.domInfos |> Dict.get conf.ids.erd)
+                    |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.domInfos |> Dict.member change.id))
+                    |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (viewportArea canvasInfos.size p.schema.layout.canvas))
             )
-
-
-getArea : Size -> CanvasProps -> Area
-getArea canvasSize canvas =
-    { left = (0 - canvas.position.left) / canvas.zoom
-    , right = (canvasSize.width - canvas.position.left) / canvas.zoom
-    , top = (0 - canvas.position.top) / canvas.zoom
-    , bottom = (canvasSize.height - canvas.position.top) / canvas.zoom
-    }
-
-
-dragConfig : Draggable.Config DragId Msg
-dragConfig =
-    Draggable.customConfig
-        [ onDragStart StartDragging
-        , onDragEnd StopDragging
-        , onDragBy OnDragBy
-        ]
-
-
-dragItem : Model -> Draggable.Delta -> ( Model, Cmd Msg )
-dragItem model delta =
-    case model.dragId of
-        Just id ->
-            if id == conf.ids.erd then
-                ( model |> setProject (setSchema (setLayout (setCanvas (setPosition delta 1)))), Cmd.none )
-
-            else
-                let
-                    tableId : TableId
-                    tableId =
-                        htmlIdAsTableId id
-
-                    selected : Bool
-                    selected =
-                        model.project |> Maybe.andThen (\p -> p.schema.layout.tables |> L.findBy .id tableId |> Maybe.map .selected) |> Maybe.withDefault False
-                in
-                ( model |> setProject (setSchema (setLayout (\l -> l |> setTableList (\t -> t.id == tableId || (selected && t.selected)) (setPosition delta l.canvas.zoom)))), Cmd.none )
-
-        Nothing ->
-            ( model, toastError "Can't dragItem when no drag id" )
 
 
 removeElement : Hover -> Cmd Msg
