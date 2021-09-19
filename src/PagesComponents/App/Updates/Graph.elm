@@ -7,7 +7,7 @@ import Graph exposing (Graph, NodeContext, NodeId)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Models exposing (HtmlId)
 import Libs.Size exposing (Size)
-import Models.Project exposing (Project, Schema, TableId, showTableId)
+import Models.Project exposing (Project, Relation, Schema, TableId, TableProps, showTableId)
 import PagesComponents.App.Models exposing (Entity, GraphMode, Model, NodeLabel)
 
 
@@ -20,10 +20,10 @@ initGraph domInfos project =
 
         graph : Graph NodeLabel ()
         graph =
-            buildLayoutGraph (project |> Maybe.map .schema)
+            buildGraph (project |> Maybe.map .schema)
     in
     { canvas = size
-    , graph = Graph.mapContexts initializeNode graph
+    , graph = Graph.mapContexts initNode graph
     , simulation =
         Force.simulation
             [ graph |> Graph.edges |> List.map (\{ from, to } -> ( from, to )) |> Force.links
@@ -47,37 +47,43 @@ advanceSimulation model =
         |> Maybe.withDefault model
 
 
-buildLayoutGraph : Maybe Schema -> Graph NodeLabel ()
-buildLayoutGraph schema =
+buildGraph : Maybe Schema -> Graph NodeLabel ()
+buildGraph schema =
     case schema of
         Nothing ->
             Graph.fromNodeLabelsAndEdgePairs [] []
 
         Just s ->
             let
-                visibleTables : Dict TableId Int
+                visibleTables : Dict TableId NodeId
                 visibleTables =
                     s.layout.tables |> List.indexedMap (\i t -> ( t.id, i )) |> Dict.fromList
 
-                nodes : List NodeLabel
-                nodes =
-                    s.layout.tables |> List.map (.id >> showTableId)
+                nodeLabels : List NodeLabel
+                nodeLabels =
+                    s.layout.tables |> List.map buildNodeLabel
 
                 edges : List ( NodeId, NodeId )
                 edges =
-                    s.relations
-                        |> List.filterMap
-                            (\r ->
-                                Maybe.map2 (\src ref -> ( src, ref ))
-                                    (visibleTables |> Dict.get r.src.table)
-                                    (visibleTables |> Dict.get r.ref.table)
-                            )
+                    s.relations |> List.filterMap (buildEdge visibleTables)
             in
-            Graph.fromNodeLabelsAndEdgePairs nodes edges
+            Graph.fromNodeLabelsAndEdgePairs nodeLabels edges
 
 
-initializeNode : NodeContext NodeLabel () -> NodeContext Entity ()
-initializeNode ctx =
+buildNodeLabel : TableProps -> NodeLabel
+buildNodeLabel table =
+    { name = showTableId table.id, color = table.color, columns = table.columns |> List.length }
+
+
+buildEdge : Dict TableId NodeId -> Relation -> Maybe ( NodeId, NodeId )
+buildEdge visibleTables relation =
+    Maybe.map2 (\src ref -> ( src, ref ))
+        (visibleTables |> Dict.get relation.src.table)
+        (visibleTables |> Dict.get relation.ref.table)
+
+
+initNode : NodeContext NodeLabel () -> NodeContext Entity ()
+initNode ctx =
     { node = { label = Force.entity ctx.node.id ctx.node.label, id = ctx.node.id }
     , incoming = ctx.incoming
     , outgoing = ctx.outgoing

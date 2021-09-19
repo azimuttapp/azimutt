@@ -9,7 +9,7 @@ import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (HtmlId, ZoomDelta)
+import Libs.Models exposing (Color, HtmlId, ZoomDelta)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task as T
@@ -51,7 +51,7 @@ type alias Entity =
 
 
 type alias NodeLabel =
-    String
+    { name : String, color : Color, columns : Int }
 
 
 type CursorMode
