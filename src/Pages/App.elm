@@ -3,6 +3,7 @@ module Pages.App exposing (Model, Msg, page)
 import Browser.Events
 import Conf exposing (conf, schemaSamples)
 import Dict
+import Force
 import Gen.Params.App exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode
@@ -14,11 +15,12 @@ import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, GraphMode, Model, Msg(..), ViewMode(..), initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
+import PagesComponents.App.Updates.Graph exposing (advanceSimulation, initGraph)
 import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
@@ -66,10 +68,12 @@ init =
       , findPath = Nothing
       , confirm = initConfirm
       , domInfos = Dict.empty
+      , viewMode = Erd
       , cursorMode = Select
       , selection = Nothing
       , dragState = Nothing
       , hover = initHover
+      , graph = Nothing
       }
     , Cmd.batch
         [ observeSize conf.ids.erd
@@ -206,6 +210,15 @@ update msg model =
         DragEnd pos ->
             model |> dragEnd pos
 
+        ViewMode Erd ->
+            ( { model | viewMode = Erd, graph = Nothing }, Cmd.none )
+
+        ViewMode Graph ->
+            ( { model | viewMode = Graph, graph = Just (initGraph model.domInfos model.project) }, Cmd.none )
+
+        Tick _ ->
+            ( advanceSimulation model, Cmd.none )
+
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )
 
@@ -302,6 +315,7 @@ subscriptions model =
          , onJsMessage JsMessage
          ]
             ++ dragSubscriptions model.dragState
+            ++ graphSubscriptions model.graph
         )
 
 
@@ -315,6 +329,16 @@ dragSubscriptions drag =
             [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> DragMove) Mouse.eventDecoder)
             , Browser.Events.onMouseUp (Decode.map (.pagePos >> Position.fromTuple >> DragEnd) Mouse.eventDecoder)
             ]
+
+
+graphSubscriptions : Maybe GraphMode -> List (Sub Msg)
+graphSubscriptions graph =
+    case graph |> Maybe.map (.simulation >> Force.isCompleted) of
+        Just False ->
+            [ Browser.Events.onAnimationFrame Tick ]
+
+        _ ->
+            []
 
 
 

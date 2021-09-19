@@ -41,6 +41,8 @@ viewTable hover zoom index table props tableRelations domInfo =
         , id (tableIdAsHtmlId table.id)
         , placeAt props.position
         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
+
+        -- FIXME: when changing viewMode, tables are hidden so loose their size, either recompute them or store in layout
         , domInfo |> Maybe.map (\i -> sizeAttr i.size) |> Maybe.withDefault (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)

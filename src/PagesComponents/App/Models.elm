@@ -1,14 +1,17 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Entity, Error, Errors, GraphMode, Hover, Model, Msg(..), NodeLabel, Search, Switch, TimeInfo, ViewMode(..), initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
+import Force
+import Graph exposing (Graph, NodeId)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (HtmlId, ZoomDelta)
+import Libs.Models exposing (Color, HtmlId, ZoomDelta)
 import Libs.Position exposing (Position)
+import Libs.Size exposing (Size)
 import Libs.Task as T
 import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, Relation, SampleName, Table, TableId)
 import Ports exposing (JsMsg)
@@ -25,11 +28,30 @@ type alias Model =
     , findPath : Maybe FindPath
     , confirm : Confirm
     , domInfos : Dict HtmlId DomInfo
+    , viewMode : ViewMode
     , cursorMode : CursorMode
     , selection : Maybe Area
     , dragState : Maybe DragState
     , hover : Hover
+    , graph : Maybe GraphMode
     }
+
+
+type ViewMode
+    = Erd
+    | Graph
+
+
+type alias GraphMode =
+    { canvas : Size, graph : Graph Entity (), simulation : Force.State NodeId }
+
+
+type alias Entity =
+    Force.Entity NodeId { value : NodeLabel }
+
+
+type alias NodeLabel =
+    { name : String, color : Color, columns : Int }
 
 
 type CursorMode
@@ -74,10 +96,11 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
     | FitContent
+    | ViewMode ViewMode
+    | CursorMode CursorMode
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position
-    | CursorMode CursorMode
     | FindPath (Maybe TableId) (Maybe TableId)
     | FindPathFrom (Maybe TableId)
     | FindPathTo (Maybe TableId)
@@ -93,6 +116,7 @@ type Msg
     | OpenConfirm Confirm
     | OnConfirm Bool (Cmd Msg)
     | JsMessage JsMsg
+    | Tick Time.Posix
     | Noop
 
 

@@ -17,14 +17,15 @@ import Libs.Ned as Ned
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Relation, RelationFull, Schema, Table, TableId, TableProps, tableIdAsHtmlId, tableIdAsString, viewportSize)
-import PagesComponents.App.Models exposing (CursorMode(..), DragState, Hover, Msg(..))
+import PagesComponents.App.Models exposing (CursorMode(..), DragState, GraphMode, Hover, Msg(..), ViewMode(..))
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation)
 import PagesComponents.App.Views.Erd.Table exposing (viewTable)
+import PagesComponents.App.Views.Graph exposing (viewGraph)
 import PagesComponents.App.Views.Helpers exposing (onDrag, placeAt, size, sizeAttr)
 
 
-viewErd : Hover -> CursorMode -> Maybe DragState -> Maybe Area -> Dict HtmlId DomInfo -> Maybe Schema -> Html Msg
-viewErd hover cursorMode dragState selection domInfos schema =
+viewErd : Hover -> Maybe GraphMode -> CursorMode -> Maybe DragState -> Maybe Area -> Dict HtmlId DomInfo -> Maybe Schema -> Html Msg
+viewErd hover graphMode cursorMode dragState selection domInfos schema =
     div
         [ class "erd"
         , classList
@@ -36,9 +37,13 @@ viewErd hover cursorMode dragState selection domInfos schema =
         , onWheel OnWheel
         , onDrag conf.ids.erd
         ]
-        [ div [ class "canvas", placeAndZoom (schema |> Maybe.map (\s -> s.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1)) ]
-            (schema |> Maybe.map (\s -> viewErdContent hover selection domInfos s.layout.canvas s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
-        ]
+        (graphMode
+            |> Maybe.map (\m -> [ viewGraph m ])
+            |> Maybe.withDefault
+                [ div [ class "canvas", placeAndZoom (schema |> Maybe.map (\s -> s.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1)) ]
+                    (schema |> Maybe.map (\s -> viewErdContent hover selection domInfos s.layout.canvas s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
+                ]
+        )
 
 
 viewErdContent : Hover -> Maybe Area -> Dict HtmlId DomInfo -> CanvasProps -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)

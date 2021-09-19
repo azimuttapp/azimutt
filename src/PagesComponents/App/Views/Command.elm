@@ -9,11 +9,11 @@ import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, role)
 import Models.Project exposing (CanvasProps)
-import PagesComponents.App.Models exposing (CursorMode(..), Msg(..))
+import PagesComponents.App.Models exposing (CursorMode(..), Msg(..), ViewMode(..))
 
 
-viewCommands : CursorMode -> Maybe CanvasProps -> Html Msg
-viewCommands cursorMode canvas =
+viewCommands : ViewMode -> CursorMode -> Maybe CanvasProps -> Html Msg
+viewCommands viewMode cursorMode canvas =
     canvas
         |> Maybe.map
             (\c ->
@@ -22,8 +22,12 @@ viewCommands cursorMode canvas =
                         [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", title "Fit content in view", bsToggle Tooltip, onClick FitContent ] [ viewIcon Icon.expand ]
                         ]
                     , div [ class "btn-group me-2", role "group" ]
-                        [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", cursorMode == Drag ) ], title "Drag tool", bsToggle Tooltip, onClick (CursorMode Drag) ] [ viewIcon Icon.handPaper ]
-                        , button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", cursorMode == Select ) ], title "Select tool", bsToggle Tooltip, onClick (CursorMode Select) ] [ viewIcon Icon.mousePointer ]
+                        [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", viewMode == Erd ) ], title "Erd view", bsToggle Tooltip, onClick (ViewMode Erd) ] [ viewIcon Icon.sitemap ] -- or Icon.thLarge
+                        , button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", viewMode == Graph ) ], title "Graph view", bsToggle Tooltip, onClick (ViewMode Graph) ] [ viewIcon Icon.projectDiagram ] -- or Icon.th
+                        ]
+                    , div [ class "btn-group me-2", role "group" ]
+                        [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", cursorMode == Select ) ], title "Select tool", bsToggle Tooltip, onClick (CursorMode Select) ] [ viewIcon Icon.mousePointer ]
+                        , button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", cursorMode == Drag ) ], title "Drag tool", bsToggle Tooltip, onClick (CursorMode Drag) ] [ viewIcon Icon.handPaper ]
                         ]
                     , div [ class "btn-group", role "group" ]
                         [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", onClick (Zoom (-c.zoom / 10)) ] [ viewIcon Icon.minus ]
