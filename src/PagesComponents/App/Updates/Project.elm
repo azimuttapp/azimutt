@@ -37,7 +37,7 @@ useProject project model =
 
 loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
 loadProject projectEvent model ( errs, project ) =
-    ( { model | switch = initSwitch, project = project, sizes = model.sizes |> Dict.filter (\id _ -> not (id |> String.startsWith "table-")) }
+    ( { model | switch = initSwitch, project = project, domInfos = model.domInfos |> Dict.filter (\id _ -> not (id |> String.startsWith "table-")) }
     , Cmd.batch
         ((errs |> List.map toastError)
             ++ cond (List.isEmpty errs) [] [ trackErrorList "parse-project" errs ]

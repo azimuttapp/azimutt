@@ -50,6 +50,7 @@ conf =
             , ( "move-backward", [ { hotkey | key = Just "ArrowDown", ctrl = True } ] )
             , ( "move-to-top", [ { hotkey | key = Just "ArrowUp", ctrl = True, shift = True } ] )
             , ( "move-to-back", [ { hotkey | key = Just "ArrowDown", ctrl = True, shift = True } ] )
+            , ( "select-all", [ { hotkey | key = Just "a", ctrl = True, preventDefault = True } ] )
             , ( "undo", [ { hotkey | key = Just "z", ctrl = True } ] )
             , ( "redo", [ { hotkey | key = Just "Z", ctrl = True, shift = True } ] )
             , ( "help", [ { hotkey | key = Just "?" } ] )

@@ -1,8 +1,8 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
 
-import Draggable
 import Json.Decode as Decode
 import Libs.Bool as B
+import Libs.Delta exposing (Delta)
 import Libs.Models exposing (ZoomLevel)
 import Libs.Position exposing (Position)
 
@@ -42,6 +42,11 @@ setLayout transform item =
     { item | layout = item.layout |> transform }
 
 
+setCurrentLayout : (l -> l) -> { m | project : Maybe { p | schema : { s | layout : l } } } -> { m | project : Maybe { p | schema : { s | layout : l } } }
+setCurrentLayout transform item =
+    setProject (setSchema (setLayout transform)) item
+
+
 setCanvas : (l -> l) -> { item | canvas : l } -> { item | canvas : l }
 setCanvas transform item =
     { item | canvas = item.canvas |> transform }
@@ -67,9 +72,9 @@ setLayouts transform item =
     { item | layouts = item.layouts |> transform }
 
 
-setPosition : Draggable.Delta -> ZoomLevel -> { item | position : Position } -> { item | position : Position }
-setPosition ( dx, dy ) zoom item =
-    { item | position = Position (item.position.left + (dx / zoom)) (item.position.top + (dy / zoom)) }
+setPosition : Delta -> ZoomLevel -> { item | position : Position } -> { item | position : Position }
+setPosition delta zoom item =
+    { item | position = Position (item.position.left + (delta.dx / zoom)) (item.position.top + (delta.dy / zoom)) }
 
 
 setSettings : (s -> s) -> { item | settings : s } -> { item | settings : s }
