@@ -1,4 +1,4 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, ViewMode(..), initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -28,6 +28,7 @@ type alias Model =
     , cursorMode : CursorMode
     , selection : Maybe Area
     , dragState : Maybe DragState
+    , viewMode : ViewMode
     , hover : Hover
     }
 
@@ -39,6 +40,11 @@ type CursorMode
 
 type alias DragState =
     { id : DragId, init : Position, last : Position, delta : Delta }
+
+
+type ViewMode
+    = Graph
+    | Erd
 
 
 type Msg
