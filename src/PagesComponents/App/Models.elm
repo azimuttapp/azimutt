@@ -25,12 +25,17 @@ type alias Model =
     , findPath : Maybe FindPath
     , confirm : Confirm
     , domInfos : Dict HtmlId DomInfo
+    , viewMode : ViewMode
     , cursorMode : CursorMode
     , selection : Maybe Area
     , dragState : Maybe DragState
-    , viewMode : ViewMode
     , hover : Hover
     }
+
+
+type ViewMode
+    = Graph
+    | Erd
 
 
 type CursorMode
@@ -40,11 +45,6 @@ type CursorMode
 
 type alias DragState =
     { id : DragId, init : Position, last : Position, delta : Delta }
-
-
-type ViewMode
-    = Graph
-    | Erd
 
 
 type Msg
@@ -80,10 +80,11 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
     | FitContent
+    | ViewMode ViewMode
+    | CursorMode CursorMode
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position
-    | CursorMode CursorMode
     | FindPath (Maybe TableId) (Maybe TableId)
     | FindPathFrom (Maybe TableId)
     | FindPathTo (Maybe TableId)

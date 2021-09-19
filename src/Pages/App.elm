@@ -66,10 +66,10 @@ init =
       , findPath = Nothing
       , confirm = initConfirm
       , domInfos = Dict.empty
+      , viewMode = Graph
       , cursorMode = Select
       , selection = Nothing
       , dragState = Nothing
-      , viewMode = Graph
       , hover = initHover
       }
     , Cmd.batch
@@ -206,6 +206,9 @@ update msg model =
 
         DragEnd pos ->
             model |> dragEnd pos
+
+        ViewMode mode ->
+            ( { model | viewMode = mode }, Cmd.none )
 
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )

@@ -9,17 +9,21 @@ import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, role)
 import Models.Project exposing (CanvasProps)
-import PagesComponents.App.Models exposing (CursorMode(..), Msg(..))
+import PagesComponents.App.Models exposing (CursorMode(..), Msg(..), ViewMode(..))
 
 
-viewCommands : CursorMode -> Maybe CanvasProps -> Html Msg
-viewCommands cursorMode canvas =
+viewCommands : ViewMode -> CursorMode -> Maybe CanvasProps -> Html Msg
+viewCommands viewMode cursorMode canvas =
     canvas
         |> Maybe.map
             (\c ->
                 div [ class "commands btn-toolbar", role "toolbar", ariaLabel "Diagram commands" ]
                     [ div [ class "btn-group me-2", role "group" ]
                         [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", title "Fit content in view", bsToggle Tooltip, onClick FitContent ] [ viewIcon Icon.expand ]
+                        ]
+                    , div [ class "btn-group me-2", role "group" ]
+                        [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", viewMode == Graph ) ], title "Graph view", bsToggle Tooltip, onClick (ViewMode Graph) ] [ viewIcon Icon.projectDiagram ] -- or Icon.th
+                        , button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", viewMode == Erd ) ], title "Erd view", bsToggle Tooltip, onClick (ViewMode Erd) ] [ viewIcon Icon.sitemap ] -- or Icon.thLarge
                         ]
                     , div [ class "btn-group me-2", role "group" ]
                         [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", classList [ ( "active", cursorMode == Drag ) ], title "Drag tool", bsToggle Tooltip, onClick (CursorMode Drag) ] [ viewIcon Icon.handPaper ]
