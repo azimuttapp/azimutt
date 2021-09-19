@@ -14,7 +14,7 @@ import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), ViewMode(..), initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
@@ -69,6 +69,7 @@ init =
       , cursorMode = Select
       , selection = Nothing
       , dragState = Nothing
+      , viewMode = Graph
       , hover = initHover
       }
     , Cmd.batch
