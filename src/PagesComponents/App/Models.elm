@@ -1,4 +1,4 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, VirtualRelation, initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -23,6 +23,7 @@ type alias Model =
     , search : Search
     , newLayout : Maybe LayoutName
     , findPath : Maybe FindPath
+    , virtualRelation : Maybe VirtualRelation
     , confirm : Confirm
     , domInfos : Dict HtmlId DomInfo
     , cursorMode : CursorMode
@@ -30,6 +31,10 @@ type alias Model =
     , dragState : Maybe DragState
     , hover : Hover
     }
+
+
+type alias VirtualRelation =
+    { src : Maybe ColumnRef, mouse : Position }
 
 
 type CursorMode
@@ -83,6 +88,10 @@ type Msg
     | FindPathTo (Maybe TableId)
     | FindPathSearch
     | FindPathCompute (Dict TableId Table) (List Relation) TableId TableId FindPathSettings
+    | VirtualRelationCreate
+    | VirtualRelationColumn ColumnRef Position
+    | VirtualRelationMove Position
+    | VirtualRelationCancel
     | UpdateFindPathSettings FindPathSettings
     | NewLayout LayoutName
     | CreateLayout LayoutName

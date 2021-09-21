@@ -1,9 +1,10 @@
-module PagesComponents.App.Views.Erd.Relation exposing (viewRelation)
+module PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
 
 import Conf exposing (conf)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (Color)
+import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Models.Project exposing (Column, ColumnRefFull, RelationFull, RelationName, Table, TableProps, showTableId)
 import PagesComponents.App.Models exposing (Hover, Msg)
@@ -38,6 +39,22 @@ viewRelation hover { name, src, ref } =
             case ( positionX ( sProps, sSize ) ( rProps, rSize ), ( positionY sProps src.column, positionY rProps ref.column ) ) of
                 ( ( srcX, refX ), ( srcY, refY ) ) ->
                     drawRelation { x = srcX, y = srcY } { x = refX, y = refY } src.column.nullable color (conf.zIndex.tables - 1) label
+
+
+viewVirtualRelation : ( ColumnRefFull, Position ) -> Svg Msg
+viewVirtualRelation ( src, pos ) =
+    case src.props |> M.filter (\( p, _, _ ) -> p |> .columns |> List.member src.column.name) of
+        Just ( props, _, size ) ->
+            drawRelation
+                { x = props.position.left + size.width, y = positionY props src.column }
+                { x = pos.left, y = pos.top }
+                src.column.nullable
+                (Just props.color)
+                conf.zIndex.tables
+                "virtual relation"
+
+        Nothing ->
+            svg [ class "erd-relation" ] [ text "virtual relation" ]
 
 
 drawRelation : Point -> Point -> Bool -> Maybe Color -> Int -> String -> Svg Msg
