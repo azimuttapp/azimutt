@@ -4,7 +4,7 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
-import Html exposing (Html, b, button, div, form, hr, img, input, li, nav, ol, span, text, ul)
+import Html exposing (Html, b, button, div, form, hr, img, input, kbd, li, nav, ol, span, text, ul)
 import Html.Attributes exposing (alt, attribute, autocomplete, class, height, id, placeholder, src, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Html.Lazy exposing (lazy2)
@@ -15,12 +15,12 @@ import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project exposing (Column, Layout, LayoutName, Project, Schema, Table, TableId, showTableId)
-import PagesComponents.App.Models exposing (Msg(..), Search)
+import PagesComponents.App.Models exposing (Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
 import Tracking exposing (events)
 
 
-viewNavbar : Search -> List Project -> Maybe Project -> Html Msg
-viewNavbar search storedProjects project =
+viewNavbar : Search -> List Project -> Maybe Project -> Maybe VirtualRelation -> Html Msg
+viewNavbar search storedProjects project virtualRelation =
     nav [ id "navbar", class "navbar navbar-expand-md navbar-light bg-white shadow-sm" ]
         [ div [ class "container-fluid" ]
             [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas conf.ids.menu ++ track events.openMenu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
@@ -42,12 +42,26 @@ viewNavbar search storedProjects project =
                                         [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
                                         , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledBy conf.ids.navFeaturesDropdown ]
                                             [ li []
-                                                [ div [ class "btn-group" ]
+                                                [ div [ class "btn-group w-100" ]
                                                     [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]
                                                     , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
                                                     ]
                                                 ]
-                                            , li [] [ button ([ type_ "button", class "dropdown-item", onClick (FindPath Nothing Nothing) ] ++ track events.openFindPath) [ text "Find path between tables" ] ]
+                                            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPath Nothing Nothing) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
+                                            , virtualRelation
+                                                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg Cancel) ] [ text "Cancel virtual relation" ] ])
+                                                |> Maybe.withDefault
+                                                    (li []
+                                                        [ button
+                                                            [ type_ "button"
+                                                            , class "dropdown-item d-flex justify-content-between"
+                                                            , title "A virtual relation is a relation which is not materialized by a foreign key"
+                                                            , bsToggle Tooltip
+                                                            , onClick (VirtualRelationMsg Create)
+                                                            ]
+                                                            [ text "Create a virtual relation", kbd [ class "ms-3" ] [ text "alt + v" ] ]
+                                                        ]
+                                                    )
                                             , li [] [ hr [ class "dropdown-divider" ] [] ]
                                             , li [] [ button [ type_ "button", class "dropdown-item", onClick ChangeProject ] [ text "Move to project..." ] ]
                                             ]

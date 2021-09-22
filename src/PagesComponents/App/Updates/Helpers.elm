@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
 
 import Json.Decode as Decode
 import Libs.Bool as B
@@ -35,6 +35,11 @@ setSchema transform item =
 setSchemaWithCmd : (s -> ( s, Cmd msg )) -> { item | schema : s } -> ( { item | schema : s }, Cmd msg )
 setSchemaWithCmd transform item =
     transform item.schema |> Tuple.mapFirst (\s -> { item | schema = s })
+
+
+setRelations : (r -> r) -> { item | relations : r } -> { item | relations : r }
+setRelations transform item =
+    { item | relations = item.relations |> transform }
 
 
 setLayout : (l -> l) -> { item | layout : l } -> { item | layout : l }

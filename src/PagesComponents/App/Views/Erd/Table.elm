@@ -8,9 +8,10 @@ import FontAwesome.Solid as Icon
 import Html exposing (Attribute, Html, b, button, div, li, span, text, ul)
 import Html.Attributes exposing (class, classList, id, style, title, type_)
 import Html.Events exposing (onClick, onDoubleClick)
+import Html.Events.Extra.Mouse as Mouse
 import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
-import Html.Lazy exposing (lazy3, lazy4)
+import Html.Lazy exposing (lazy3, lazy4, lazy5)
 import Libs.Bootstrap exposing (Toggle(..), bsDropdown, bsToggle, bsToggleCollapse)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html exposing (divIf)
@@ -20,15 +21,16 @@ import Libs.Maybe as M
 import Libs.Models exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
+import Libs.Position as Position
 import Libs.String as S
 import Models.Project exposing (Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
-import PagesComponents.App.Models exposing (Hover, Msg(..))
+import PagesComponents.App.Models exposing (Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)
 
 
-viewTable : Hover -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
-viewTable hover zoom index table props tableRelations domInfo =
+viewTable : Hover -> Maybe VirtualRelation -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
+viewTable hover virtualRelation zoom index table props tableRelations domInfo =
     let
         hiddenColumns : List Column
         hiddenColumns =
@@ -47,7 +49,7 @@ viewTable hover zoom index table props tableRelations domInfo =
         , onDrag (tableIdAsHtmlId table.id)
         ]
         [ lazy3 viewHeader zoom index table
-        , lazy4 viewColumns hover table tableRelations props.columns
+        , lazy5 viewColumns hover virtualRelation table tableRelations props.columns
         , lazy4 viewHiddenColumns (tableIdAsHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns
         ]
 
@@ -100,32 +102,34 @@ viewHeader zoom index table =
         ]
 
 
-viewColumns : Hover -> Table -> List RelationFull -> List ColumnName -> Html Msg
-viewColumns hover table tableRelations columns =
+viewColumns : Hover -> Maybe VirtualRelation -> Table -> List RelationFull -> List ColumnName -> Html Msg
+viewColumns hover virtualRelation table tableRelations columns =
     Keyed.node "div"
         [ class "columns" ]
         (columns
             |> List.filterMap (\c -> table.columns |> Ned.get c)
             |> L.zipWith (\c -> tableRelations |> filterColumnRelations table.id c.name)
-            |> List.map (\( c, columnRelations ) -> ( c.name, lazy4 viewColumn (isRelationHover hover columnRelations) columnRelations table c ))
+            |> List.map (\( c, columnRelations ) -> ( c.name, lazy5 viewColumn (isRelationHover hover columnRelations) virtualRelation columnRelations table c ))
         )
 
 
-viewColumn : Bool -> List RelationFull -> Table -> Column -> Html Msg
-viewColumn isHover columnRelations table column =
+viewColumn : Bool -> Maybe VirtualRelation -> List RelationFull -> Table -> Column -> Html Msg
+viewColumn isHover virtualRelation columnRelations table column =
     let
         ref : ColumnRef
         ref =
             ColumnRef table.id column.name
     in
     div
-        [ class "column"
-        , classList [ ( "hover", isHover ) ]
-        , id (columnRefAsHtmlId ref)
-        , onDoubleClick (HideColumn ref)
-        , Pointer.onEnter (\_ -> HoverColumn (Just ref))
-        , Pointer.onLeave (\_ -> HoverColumn Nothing)
-        ]
+        ([ class "column"
+         , classList [ ( "hover", isHover ) ]
+         , id (columnRefAsHtmlId ref)
+         , onDoubleClick (HideColumn ref)
+         , Pointer.onEnter (\_ -> HoverColumn (Just ref))
+         , Pointer.onLeave (\_ -> HoverColumn Nothing)
+         ]
+            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> Update ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
+        )
         [ viewColumnDropdown columnRelations ref (viewColumnIcon table column columnRelations)
         , viewColumnName table column
         , viewColumnType column

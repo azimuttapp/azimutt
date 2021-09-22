@@ -30,7 +30,7 @@ initializeTableOnFirstSize model change =
     model.project
         |> Maybe.andThen
             (\p ->
-                Maybe.map3 (\t props canvasSize -> ( t, props, canvasSize ))
+                Maybe.map3 (\t props canvasInfos -> ( t, props, canvasInfos ))
                     (p.schema.tables |> Dict.get (htmlIdAsTableId change.id))
                     (p.schema.layout.tables |> L.findBy .id (htmlIdAsTableId change.id))
                     (model.domInfos |> Dict.get conf.ids.erd)
