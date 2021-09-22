@@ -5,7 +5,7 @@ import DataSources.SqlParser.Parsers.Comment exposing (SqlComment)
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView)
 import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..))
-import DataSources.SqlParser.StatementParser exposing (Command(..), parseCommand)
+import DataSources.SqlParser.StatementParser exposing (Command(..), parseStatement)
 import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
 import DataSources.SqlParser.Utils.Types exposing (SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Dict exposing (Dict)
@@ -82,7 +82,7 @@ parseSchema fileName fileContent =
         |> buildStatements
         |> List.foldl
             (\statement ( errs, schema ) ->
-                case statement |> parseCommand |> Result.andThen (\command -> schema |> evolve command) of
+                case statement |> parseStatement |> Result.andThen (\command -> schema |> evolve command) of
                     Ok newSchema ->
                         ( errs, newSchema )
 
@@ -104,7 +104,7 @@ evolve ( statement, command ) tables =
             tables
                 |> Dict.get id
                 |> Maybe.map (\_ -> Err [ "Table " ++ id ++ " already exists" ])
-                |> Maybe.withDefault (buildTable tables table |> Result.map (\sqlTable -> tables |> Dict.insert id sqlTable))
+                |> Maybe.withDefault (buildTable tables statement table |> Result.map (\sqlTable -> tables |> Dict.insert id sqlTable))
 
         CreateView view ->
             let
@@ -115,7 +115,7 @@ evolve ( statement, command ) tables =
             tables
                 |> Dict.get id
                 |> Maybe.map (\_ -> Err [ "View " ++ id ++ " already exists" ])
-                |> Maybe.withDefault (Ok (tables |> Dict.insert id (buildView view)))
+                |> Maybe.withDefault (Ok (tables |> Dict.insert id (buildView statement view)))
 
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = defaultPkName table constraintName, columns = pk } }) tables
@@ -194,8 +194,8 @@ updateTableColumn column transform table =
     }
 
 
-buildTable : SqlSchema -> ParsedTable -> Result (List SchemaError) SqlTable
-buildTable tables table =
+buildTable : SqlSchema -> SqlStatement -> ParsedTable -> Result (List SchemaError) SqlTable
+buildTable tables source table =
     table.columns
         |> Nel.toList
         |> List.map (buildColumn tables)
@@ -213,7 +213,7 @@ buildTable tables table =
                 , uniques = table.uniques
                 , indexes = table.indexes
                 , checks = table.checks
-                , source = table.source
+                , source = source
                 , comment = Nothing
                 }
             )
@@ -280,8 +280,8 @@ withPkColumn tables schema table name =
                 |> Maybe.withDefault (Err ("Table " ++ buildId schema table ++ " does not exist (yet)"))
 
 
-buildView : ParsedView -> SqlTable
-buildView view =
+buildView : SqlStatement -> ParsedView -> SqlTable
+buildView source view =
     { schema = view.schema |> withDefaultSchema
     , table = view.table
     , columns = view.select.columns |> Nel.map buildViewColumn
@@ -289,7 +289,7 @@ buildView view =
     , uniques = []
     , indexes = []
     , checks = []
-    , source = view.source
+    , source = source
     , comment = Nothing
     }
 

@@ -107,7 +107,7 @@ parseAlterTableAddConstraint command =
 
 parseAlterTableAddConstraintPrimaryKey : RawSql -> Result (List ParseError) PrimaryKeyInner
 parseAlterTableAddConstraintPrimaryKey constraint =
-    case constraint |> R.matches "^PRIMARY KEY\\s+\\((?<columns>[^)]+)\\)$" of
+    case constraint |> R.matches "^PRIMARY KEY\\s*\\((?<columns>[^)]+)\\)$" of
         (Just columns) :: [] ->
             columns |> String.split "," |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Primary key can't have empty columns" ]
 

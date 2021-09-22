@@ -1,95 +1,66 @@
 module DataSources.SqlParser.Parsers.CreateTableTest exposing (..)
 
 import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn)
-import DataSources.SqlParser.Utils.HelpersTest exposing (testStatement)
-import Expect
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParse, testParseSql)
 import Libs.Nel exposing (Nel)
-import Test exposing (Test, describe, test)
+import Test exposing (Test, describe)
 
 
 suite : Test
 suite =
     describe "CreateTable"
         [ describe "parseCreateTable"
-            [ testStatement "basic" "CREATE TABLE aaa.bbb (ccc int);" parseCreateTable (\s -> Ok { schema = Just "aaa", table = "bbb", columns = Nel { name = "ccc", kind = "int", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
-            , testStatement "complex"
+            [ testParse ( parseCreateTable, "basic" )
+                "CREATE TABLE aaa.bbb (ccc int);"
+                { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] }
+            , testParse ( parseCreateTable, "complex" )
                 "CREATE TABLE public.users (id bigint NOT NULL, name character varying(255), price numeric(8,2)) WITH (autovacuum_enabled='false');"
-                parseCreateTable
-                (\s ->
-                    Ok
-                        { schema = Just "public"
-                        , table = "users"
-                        , columns =
-                            Nel { name = "id", kind = "bigint", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing }
-                                [ { name = "name", kind = "character varying(255)", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing }
-                                , { name = "price", kind = "numeric(8,2)", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing }
-                                ]
-                        , primaryKey = Nothing
-                        , uniques = []
-                        , indexes = []
-                        , checks = []
-                        , source = s
-                        }
-                )
-            , testStatement "with options" "CREATE TABLE p.table (id bigint NOT NULL)    WITH (autovacuum_analyze_threshold='100000');" parseCreateTable (\s -> Ok { schema = Just "p", table = "table", columns = Nel { name = "id", kind = "bigint", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
-            , testStatement "without schema, lowercase and no space before body" "create table migrations(version varchar not null);" parseCreateTable (\s -> Ok { schema = Nothing, table = "migrations", columns = Nel { name = "version", kind = "varchar", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, uniques = [], indexes = [], checks = [], source = s })
-            , testStatement "bad" "bad" parseCreateTable (\_ -> Err [ "Can't parse table: 'bad'" ])
+                { parsedTable
+                    | schema = Just "public"
+                    , table = "users"
+                    , columns =
+                        Nel { parsedColumn | name = "id", kind = "bigint", nullable = False }
+                            [ { parsedColumn | name = "name", kind = "character varying(255)" }
+                            , { parsedColumn | name = "price", kind = "numeric(8,2)" }
+                            ]
+                }
+            , testParse ( parseCreateTable, "with options" )
+                "CREATE TABLE p.table (id bigint NOT NULL)    WITH (autovacuum_analyze_threshold='100000');"
+                { parsedTable | schema = Just "p", table = "table", columns = Nel { parsedColumn | name = "id", kind = "bigint", nullable = False } [] }
+            , testParse ( parseCreateTable, "without schema, lowercase and no space before body" )
+                "create table migrations(version varchar not null);"
+                { parsedTable | table = "migrations", columns = Nel { parsedColumn | name = "version", kind = "varchar", nullable = False } [] }
             ]
         , describe "parseCreateTableColumn"
-            [ test "basic"
-                (\_ ->
-                    "id bigint NOT NULL"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "id", kind = "bigint", nullable = False, default = Nothing, primaryKey = Nothing, foreignKey = Nothing })
-                )
-            , test "nullable"
-                (\_ ->
-                    "id bigint"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "id", kind = "bigint", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing })
-                )
-            , test "with default"
-                (\_ ->
-                    "status character varying(255) DEFAULT 'done'::character varying"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "status", kind = "character varying(255)", nullable = True, default = Just "'done'::character varying", primaryKey = Nothing, foreignKey = Nothing })
-                )
-            , test "with comma in type"
-                (\_ ->
-                    "price numeric(8,2)"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "price", kind = "numeric(8,2)", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing })
-                )
-            , test "with enclosing quotes"
-                (\_ ->
-                    "\"id\" bigint"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "id", kind = "bigint", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing })
-                )
-            , test "with primary key"
-                (\_ ->
-                    "id bigint NOT NULL CONSTRAINT users_pk PRIMARY KEY"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "id", kind = "bigint", nullable = False, default = Nothing, primaryKey = Just "users_pk", foreignKey = Nothing })
-                )
-            , test "with foreign key having schema, table & column"
-                (\_ ->
-                    "user_id bigint CONSTRAINT users_fk REFERENCES public.users.id"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "user_id", kind = "bigint", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Just ( "users_fk", { schema = Just "public", table = "users", column = Just "id" } ) })
-                )
-            , test "with foreign key having table & column"
-                (\_ ->
-                    "user_id bigint CONSTRAINT users_fk REFERENCES users.id"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "user_id", kind = "bigint", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Just ( "users_fk", { schema = Nothing, table = "users", column = Just "id" } ) })
-                )
-            , test "with foreign key having only table"
-                (\_ ->
-                    "user_id bigint CONSTRAINT users_fk REFERENCES users"
-                        |> parseCreateTableColumn
-                        |> Expect.equal (Ok { name = "user_id", kind = "bigint", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Just ( "users_fk", { schema = Nothing, table = "users", column = Nothing } ) })
-                )
-            , test "bad" (\_ -> "bad" |> parseCreateTableColumn |> Expect.equal (Err "Can't parse column: 'bad'"))
+            [ testParseSql ( parseCreateTableColumn, "basic" )
+                "id bigint NOT NULL"
+                { parsedColumn | name = "id", kind = "bigint", nullable = False }
+            , testParseSql ( parseCreateTableColumn, "nullable" )
+                "id bigint"
+                { parsedColumn | name = "id", kind = "bigint" }
+            , testParseSql ( parseCreateTableColumn, "with default" )
+                "status character varying(255) DEFAULT 'done'::character varying"
+                { parsedColumn | name = "status", kind = "character varying(255)", default = Just "'done'::character varying" }
+            , testParseSql ( parseCreateTableColumn, "with comma in type" )
+                "price numeric(8,2)"
+                { parsedColumn | name = "price", kind = "numeric(8,2)" }
+            , testParseSql ( parseCreateTableColumn, "with enclosing quotes" )
+                "\"id\" bigint"
+                { parsedColumn | name = "id", kind = "bigint" }
+            , testParseSql ( parseCreateTableColumn, "with primary key" )
+                "id bigint PRIMARY KEY"
+                { parsedColumn | name = "id", kind = "bigint", primaryKey = Just "" }
+            , testParseSql ( parseCreateTableColumn, "with primary key constraint" )
+                "id bigint NOT NULL CONSTRAINT users_pk PRIMARY KEY"
+                { parsedColumn | name = "id", kind = "bigint", nullable = False, primaryKey = Just "users_pk" }
+            , testParseSql ( parseCreateTableColumn, "with foreign key having schema, table & column" )
+                "user_id bigint CONSTRAINT users_fk REFERENCES public.users.id"
+                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( "users_fk", { schema = Just "public", table = "users", column = Just "id" } ) }
+            , testParseSql ( parseCreateTableColumn, "with foreign key having table & column" )
+                "user_id bigint CONSTRAINT users_fk REFERENCES users.id"
+                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( "users_fk", { schema = Nothing, table = "users", column = Just "id" } ) }
+            , testParseSql ( parseCreateTableColumn, "with foreign key having only table" )
+                "user_id bigint CONSTRAINT users_fk REFERENCES users"
+                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( "users_fk", { schema = Nothing, table = "users", column = Nothing } ) }
             ]
         ]
