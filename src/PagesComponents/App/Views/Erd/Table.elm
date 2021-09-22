@@ -128,7 +128,7 @@ viewColumn isHover virtualRelation columnRelations table column =
          , Pointer.onEnter (\_ -> HoverColumn (Just ref))
          , Pointer.onLeave (\_ -> HoverColumn Nothing)
          ]
-            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> (\p -> VirtualRelationMsg (Update ref p))) ]) |> Maybe.withDefault [])
+            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> Update ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
         )
         [ viewColumnDropdown columnRelations ref (viewColumnIcon table column columnRelations)
         , viewColumnName table column

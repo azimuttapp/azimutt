@@ -339,7 +339,7 @@ virtualRelationSubscription virtualRelation =
             []
 
         Just _ ->
-            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> (\p -> VirtualRelationMsg (Move p))) Mouse.eventDecoder) ]
+            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> Move >> VirtualRelationMsg) Mouse.eventDecoder) ]
 
 
 
