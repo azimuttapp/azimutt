@@ -15,7 +15,7 @@ import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project exposing (Column, Layout, LayoutName, Project, Schema, Table, TableId, showTableId)
-import PagesComponents.App.Models exposing (Msg(..), Search, VirtualRelation)
+import PagesComponents.App.Models exposing (Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
 import Tracking exposing (events)
 
 
@@ -49,7 +49,7 @@ viewNavbar search storedProjects project virtualRelation =
                                                 ]
                                             , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPath Nothing Nothing) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
                                             , virtualRelation
-                                                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick VirtualRelationCancel ] [ text "Cancel virtual relation" ] ])
+                                                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg Cancel) ] [ text "Cancel virtual relation" ] ])
                                                 |> Maybe.withDefault
                                                     (li []
                                                         [ button
@@ -57,7 +57,7 @@ viewNavbar search storedProjects project virtualRelation =
                                                             , class "dropdown-item d-flex justify-content-between"
                                                             , title "A virtual relation is a relation which is not materialized by a foreign key"
                                                             , bsToggle Tooltip
-                                                            , onClick VirtualRelationCreate
+                                                            , onClick (VirtualRelationMsg Create)
                                                             ]
                                                             [ text "Create a virtual relation", kbd [ class "ms-3" ] [ text "alt + v" ] ]
                                                         ]

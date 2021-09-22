@@ -8,21 +8,22 @@ import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
-import Libs.Position as Position exposing (Position)
+import Libs.Position as Position
 import Libs.Task exposing (send, sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), VirtualRelation, initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setRelations, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
+import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Containers as Containers
 import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackJsonError, trackPage)
@@ -231,25 +232,8 @@ update msg model =
         UpdateFindPathSettings settings ->
             ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )
 
-        VirtualRelationCreate ->
-            ( { model | virtualRelation = Just { src = Nothing, mouse = Position 0 0 } }, Cmd.none )
-
-        VirtualRelationColumn ref pos ->
-            case model.virtualRelation |> Maybe.map (\{ src } -> src) of
-                Nothing ->
-                    ( model, Cmd.none )
-
-                Just Nothing ->
-                    ( { model | virtualRelation = Just { src = Just ref, mouse = pos } }, Cmd.none )
-
-                Just (Just from) ->
-                    ( { model | virtualRelation = Nothing } |> setProject (setSchema (setRelations (\relations -> relations ++ [ { name = "virtual relation", src = from, ref = ref, sources = [] } ]))), Cmd.none )
-
-        VirtualRelationMove pos ->
-            ( { model | virtualRelation = model.virtualRelation |> Maybe.map (\vr -> { vr | mouse = pos }) }, Cmd.none )
-
-        VirtualRelationCancel ->
-            ( { model | virtualRelation = Nothing }, Cmd.none )
+        VirtualRelationMsg m ->
+            ( updateVirtualRelation m model, Cmd.none )
 
         NewLayout name ->
             ( { model | newLayout = B.cond (String.length name == 0) Nothing (Just name) }, Cmd.none )
@@ -300,13 +284,13 @@ update msg model =
             ( model, send (FindPath Nothing Nothing) )
 
         JsMessage (HotkeyUsed "create-virtual-relation") ->
-            ( model, send VirtualRelationCreate )
+            ( model, send (VirtualRelationMsg Create) )
 
         JsMessage (HotkeyUsed "save") ->
             ( model, model.project |> Maybe.map (\p -> Cmd.batch [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ]) |> Maybe.withDefault (toastWarning "No project to save") )
 
         JsMessage (HotkeyUsed "cancel") ->
-            ( model, model.virtualRelation |> Maybe.map (\_ -> send VirtualRelationCancel) |> Maybe.withDefault Cmd.none )
+            ( model, model.virtualRelation |> Maybe.map (\_ -> send (VirtualRelationMsg Cancel)) |> Maybe.withDefault Cmd.none )
 
         JsMessage (HotkeyUsed "help") ->
             ( model, showModal conf.ids.helpModal )
@@ -355,7 +339,7 @@ virtualRelationSubscription virtualRelation =
             []
 
         Just _ ->
-            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> VirtualRelationMove) Mouse.eventDecoder) ]
+            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> (\p -> VirtualRelationMsg (Move p))) Mouse.eventDecoder) ]
 
 
 
