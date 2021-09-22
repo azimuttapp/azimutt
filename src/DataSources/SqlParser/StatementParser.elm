@@ -1,4 +1,4 @@
-module DataSources.SqlParser.StatementParser exposing (Command(..), parseCommand)
+module DataSources.SqlParser.StatementParser exposing (Command(..), parseStatement)
 
 import DataSources.SqlParser.Parsers.AlterTable exposing (TableUpdate, parseAlterTable)
 import DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnTable, parseColumnComment, parseTableComment)
@@ -21,8 +21,8 @@ type Command
     | Ignored SqlStatement
 
 
-parseCommand : SqlStatement -> Result (List ParseError) ( SqlStatement, Command )
-parseCommand statement =
+parseStatement : SqlStatement -> Result (List ParseError) ( SqlStatement, Command )
+parseStatement statement =
     let
         firstLine : String
         firstLine =

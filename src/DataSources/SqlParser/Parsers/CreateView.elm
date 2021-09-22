@@ -12,7 +12,6 @@ type alias ParsedView =
     , select : SelectInfo
     , materialized : Bool
     , extra : Maybe String
-    , source : SqlStatement
     }
 
 
@@ -28,7 +27,6 @@ parseView statement =
                         , select = parsedSelect
                         , materialized = not (materialized == Nothing)
                         , extra = extra
-                        , source = statement
                         }
                     )
 
