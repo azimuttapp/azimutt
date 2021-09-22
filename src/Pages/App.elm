@@ -9,7 +9,6 @@ import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
 import Libs.Position as Position
-import Libs.Task exposing (sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
@@ -18,8 +17,8 @@ import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState,
 import PagesComponents.App.Updates exposing (updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
-import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
+import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
+import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
@@ -212,26 +211,8 @@ update msg model =
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )
 
-        FindPath from to ->
-            ( { model | findPath = Just { from = from, to = to, result = Empty } }, Cmd.batch [ showModal conf.ids.findPathModal, track events.openFindPath ] )
-
-        FindPathFrom from ->
-            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | from = from }) }, Cmd.none )
-
-        FindPathTo to ->
-            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | to = to }) }, Cmd.none )
-
-        FindPathSearch ->
-            model.findPath
-                |> Maybe.andThen (\fp -> Maybe.map3 (\p from to -> ( p, from, to )) model.project fp.from fp.to)
-                |> Maybe.map (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, sendAfter 300 (FindPathCompute p.schema.tables p.schema.relations from to p.settings.findPath) ))
-                |> Maybe.withDefault ( model, Cmd.none )
-
-        FindPathCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ activateTooltipsAndPopovers, track (events.findPathResult result) ] ))
-
-        UpdateFindPathSettings settings ->
-            ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )
+        FindPathMsg m ->
+            handleFindPath m model
 
         VirtualRelationMsg m ->
             ( updateVirtualRelation m model, Cmd.none )

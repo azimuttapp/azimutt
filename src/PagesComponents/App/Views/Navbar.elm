@@ -15,7 +15,7 @@ import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project exposing (Column, Layout, LayoutName, Project, Schema, Table, TableId, showTableId)
-import PagesComponents.App.Models exposing (Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
+import PagesComponents.App.Models exposing (FindPathMsg(..), Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
 import Tracking exposing (events)
 
 
@@ -47,7 +47,7 @@ viewNavbar search storedProjects project virtualRelation =
                                                     , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
                                                     ]
                                                 ]
-                                            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPath Nothing Nothing) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
+                                            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPathMsg (Init Nothing Nothing)) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
                                             , virtualRelation
                                                 |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg Cancel) ] [ text "Cancel virtual relation" ] ])
                                                 |> Maybe.withDefault

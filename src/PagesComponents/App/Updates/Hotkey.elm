@@ -2,7 +2,7 @@ module PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
 
 import Conf exposing (conf)
 import Libs.Task exposing (send)
-import PagesComponents.App.Models exposing (Model, Msg(..), VirtualRelationMsg(..))
+import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..), VirtualRelationMsg(..))
 import PagesComponents.App.Updates exposing (moveTable, removeElement)
 import Ports exposing (click, saveProject, showModal, toastInfo, toastWarning, track)
 import Tracking exposing (events)
@@ -33,7 +33,7 @@ handleHotkey model hotkey =
             [ send SelectAllTables ]
 
         "find-path" ->
-            [ send (FindPath Nothing Nothing) ]
+            [ send (FindPathMsg (Init Nothing Nothing)) ]
 
         "create-virtual-relation" ->
             [ send (VirtualRelationMsg Create) ]

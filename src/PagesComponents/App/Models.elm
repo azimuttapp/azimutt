@@ -1,4 +1,4 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, Hover, Model, Msg(..), Search, Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, FindPathMsg(..), Hover, Model, Msg(..), Search, Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -83,12 +83,7 @@ type Msg
     | DragMove Position
     | DragEnd Position
     | CursorMode CursorMode
-    | FindPath (Maybe TableId) (Maybe TableId)
-    | FindPathFrom (Maybe TableId)
-    | FindPathTo (Maybe TableId)
-    | FindPathSearch
-    | FindPathCompute (Dict TableId Table) (List Relation) TableId TableId FindPathSettings
-    | UpdateFindPathSettings FindPathSettings
+    | FindPathMsg FindPathMsg
     | VirtualRelationMsg VirtualRelationMsg
     | NewLayout LayoutName
     | CreateLayout LayoutName
@@ -100,6 +95,15 @@ type Msg
     | OnConfirm Bool (Cmd Msg)
     | JsMessage JsMsg
     | Noop
+
+
+type FindPathMsg
+    = Init (Maybe TableId) (Maybe TableId)
+    | UpdateFrom (Maybe TableId)
+    | UpdateTo (Maybe TableId)
+    | Search
+    | Compute (Dict TableId Table) (List Relation) TableId TableId FindPathSettings
+    | SettingsUpdate FindPathSettings
 
 
 type VirtualRelationMsg
