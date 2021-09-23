@@ -1,4 +1,4 @@
-module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildStatements, parseLines, parseSchema, updateColumn, updateTable)
+module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildStatements, parseLines, parseSchema)
 
 import DataSources.SqlParser.Parsers.AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.Parsers.Comment exposing (SqlComment)
@@ -340,11 +340,14 @@ buildStatements lines =
             )
         |> List.foldr
             (\line ( currentStatementLines, statements, nestedBlock ) ->
-                if (line.text |> String.trim |> String.toUpper) == "BEGIN" then
+                if (line.text |> String.trim |> String.toUpper) == "BEGIN" || (line.text |> String.trim |> String.toUpper |> String.contains "CASE ") then
                     ( line :: currentStatementLines, statements, nestedBlock + 1 )
 
-                else if (line.text |> String.trim |> String.toUpper) == "END" || (line.text |> String.trim |> String.toUpper) == "END;" then
+                else if (line.text |> String.trim |> String.toUpper) == "END" then
                     ( line :: currentStatementLines, statements, nestedBlock - 1 )
+
+                else if (line.text |> String.trim |> String.toUpper) == "END;" then
+                    ( line :: [], addStatement currentStatementLines statements, nestedBlock - 1 )
 
                 else if (line.text |> String.endsWith ";") && nestedBlock == 0 then
                     ( line :: [], addStatement currentStatementLines statements, nestedBlock )

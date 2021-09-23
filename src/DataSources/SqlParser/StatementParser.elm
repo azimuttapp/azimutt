@@ -154,6 +154,15 @@ parseStatement statement =
      else if firstLine |> String.startsWith "USE " then
         Ok (Ignored statement)
 
+     else if firstLine |> String.startsWith "PRAGMA " then
+        Ok (Ignored statement)
+
+     else if firstLine |> String.startsWith "BEGIN" then
+        Ok (Ignored statement)
+
+     else if firstLine |> String.startsWith "COMMIT" then
+        Ok (Ignored statement)
+
      else if firstLine |> String.startsWith "SET " then
         Ok (Ignored statement)
 
