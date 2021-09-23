@@ -16,7 +16,7 @@ import PagesComponents.App.Updates.Helpers exposing (setCanvas, setTables)
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
 handleWheel event canvas =
     if event.keys.ctrl then
-        canvas |> performZoom (event.delta.y * conf.zoom.speed) (Position event.mouse.x event.mouse.y)
+        canvas |> performZoom (-event.delta.y * conf.zoom.speed) (Position event.mouse.x event.mouse.y)
 
     else
         canvas |> performMove event.delta.x event.delta.y
