@@ -64,7 +64,7 @@ index =
 
 check : Fuzzer Check
 check =
-    Fuzz.map3 Check checkName text (listN 1 source)
+    Fuzz.map4 Check checkName (listSmall columnName) text (listN 1 source)
 
 
 comment : Fuzzer Comment

@@ -44,5 +44,23 @@ suite =
                         , foreignKeys = [ { name = Nothing, src = "trackartist", ref = { schema = Nothing, table = "artist", column = Just "artistid" } } ]
                     }
                 )
+            , testParseStatement "test"
+                """CREATE TABLE IF NOT EXISTS "tasks" (
+                     ulid text not null primary key,
+                     state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable')),
+                     foreign key(`ulid`) references `tasks`(`ulid`),
+                     constraint `no_duplicate_state` unique (`ulid`, `state`)
+                   );"""
+                (CreateTable
+                    { parsedTable
+                        | table = "tasks"
+                        , columns =
+                            Nel { parsedColumn | name = "ulid", kind = "text", nullable = False, primaryKey = Just "" }
+                                [ { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
+                                ]
+                        , foreignKeys = [ { name = Nothing, src = "ulid", ref = { schema = Nothing, table = "tasks", column = Just "ulid" } } ]
+                        , uniques = [ { name = "no_duplicate_state", columns = Nel "ulid" [ "state" ], definition = "(`ulid`, `state`)" } ]
+                    }
+                )
             ]
         ]

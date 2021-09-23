@@ -1,165 +1,110 @@
 module DataSources.SqlParser.FileParserTest exposing (..)
 
-import DataSources.SqlParser.FileParser exposing (SqlTable, buildStatements, parseLines, updateColumn, updateTable)
-import DataSources.SqlParser.Utils.Types exposing (SqlLine, SqlStatement)
-import Dict
+import DataSources.SqlParser.FileParser exposing (buildStatements, parseLines)
 import Expect
-import Libs.Nel exposing (Nel)
+import Libs.Nel as Nel
 import Test exposing (Test, describe, test)
-
-
-fileName : String
-fileName =
-    "file.sql"
-
-
-fileContent : String
-fileContent =
-    """
--- a comment
-
-CREATE TABLE public.users (
-  id bigint NOT NULL,
-  name character varying(255)
-);
-
-COMMENT ON TABLE public.users IS 'A comment ; ''tricky'' one';
-
-ALTER TABLE ONLY public.users
-  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);
-"""
-
-
-fileLines : List SqlLine
-fileLines =
-    [ { file = fileName, line = 1, text = "" }
-    , { file = fileName, line = 2, text = "-- a comment" }
-    , { file = fileName, line = 3, text = "" }
-    , { file = fileName, line = 4, text = "CREATE TABLE public.users (" }
-    , { file = fileName, line = 5, text = "  id bigint NOT NULL," }
-    , { file = fileName, line = 6, text = "  name character varying(255)" }
-    , { file = fileName, line = 7, text = ");" }
-    , { file = fileName, line = 8, text = "" }
-    , { file = fileName, line = 9, text = "COMMENT ON TABLE public.users IS 'A comment ; ''tricky'' one';" }
-    , { file = fileName, line = 10, text = "" }
-    , { file = fileName, line = 11, text = "ALTER TABLE ONLY public.users" }
-    , { file = fileName, line = 12, text = "  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);" }
-    , { file = fileName, line = 13, text = "" }
-    ]
-
-
-fileStatements : List SqlStatement
-fileStatements =
-    [ createUsersStatement, commentUsersStatement, addPrimaryKeyOnUsersStatement ]
-
-
-createUsersStatement : SqlStatement
-createUsersStatement =
-    { head = { file = fileName, line = 4, text = "CREATE TABLE public.users (" }
-    , tail =
-        [ { file = fileName, line = 5, text = "  id bigint NOT NULL," }
-        , { file = fileName, line = 6, text = "  name character varying(255)" }
-        , { file = fileName, line = 7, text = ");" }
-        ]
-    }
-
-
-commentUsersStatement : SqlStatement
-commentUsersStatement =
-    { head = { file = fileName, line = 9, text = "COMMENT ON TABLE public.users IS 'A comment ; ''tricky'' one';" }, tail = [] }
-
-
-addPrimaryKeyOnUsersStatement : SqlStatement
-addPrimaryKeyOnUsersStatement =
-    { head = { file = fileName, line = 11, text = "ALTER TABLE ONLY public.users" }
-    , tail = [ { file = fileName, line = 12, text = "  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);" } ]
-    }
-
-
-users : SqlTable
-users =
-    { schema = "public"
-    , table = "users"
-    , columns =
-        Nel { name = "id", kind = "bigint", nullable = False, default = Nothing, foreignKey = Nothing, comment = Nothing }
-            [ { name = "name", kind = "character varying(255)", nullable = True, default = Nothing, foreignKey = Nothing, comment = Nothing } ]
-    , primaryKey = Nothing
-    , indexes = []
-    , uniques = []
-    , checks = []
-    , comment = Nothing
-    , source = createUsersStatement
-    }
-
-
-usersWithComment : SqlTable
-usersWithComment =
-    { schema = "public"
-    , table = "users"
-    , columns =
-        Nel { name = "id", kind = "bigint", nullable = False, default = Nothing, foreignKey = Nothing, comment = Nothing }
-            [ { name = "name", kind = "character varying(255)", nullable = True, default = Nothing, foreignKey = Nothing, comment = Nothing } ]
-    , primaryKey = Nothing
-    , indexes = []
-    , uniques = []
-    , checks = []
-    , comment = Just "A comment ; 'tricky' one"
-    , source = createUsersStatement
-    }
-
-
-usersWithIdComment : SqlTable
-usersWithIdComment =
-    { schema = "public"
-    , table = "users"
-    , columns =
-        Nel { name = "id", kind = "bigint", nullable = False, default = Nothing, foreignKey = Nothing, comment = Just "A comment" }
-            [ { name = "name", kind = "character varying(255)", nullable = True, default = Nothing, foreignKey = Nothing, comment = Nothing } ]
-    , primaryKey = Nothing
-    , indexes = []
-    , uniques = []
-    , checks = []
-    , comment = Nothing
-    , source = createUsersStatement
-    }
 
 
 suite : Test
 suite =
     describe "FileParser"
-        [ describe "updateTable"
-            [ test "basic"
-                (\_ ->
-                    updateTable usersWithComment.source "public.users" (\t -> Ok { t | comment = Just "A comment ; 'tricky' one" }) (Dict.singleton "public.users" users)
-                        |> Expect.equal (Ok (Dict.singleton "public.users" usersWithComment))
-                )
-            ]
-        , describe "updateColumn"
-            [ test "basic"
-                (\_ ->
-                    updateColumn usersWithIdComment.source "public.users" "id" (\c -> Ok { c | comment = Just "A comment" }) (Dict.singleton "public.users" users)
-                        |> Expect.equal (Ok (Dict.singleton "public.users" usersWithIdComment))
-                )
-            ]
-        , describe "buildStatements"
-            [ test "basic" (\_ -> buildStatements fileLines |> Expect.equal fileStatements)
-            , test "with BEGIN"
-                (\_ ->
-                    buildStatements
-                        [ { file = fileName, line = 1, text = "CREATE FUNCTION public.set_log_min_duration(integer) RETURNS void" }
-                        , { file = fileName, line = 2, text = "    LANGUAGE plpgsql STRICT SECURITY DEFINER" }
-                        , { file = fileName, line = 3, text = "    SET search_path TO 'pg_catalog', 'pg_temp'" }
-                        , { file = fileName, line = 4, text = "AS $_$" }
-                        , { file = fileName, line = 5, text = "BEGIN" }
-                        , { file = fileName, line = 6, text = "    EXECUTE 'SET log_min_duration_statement = ' || $1::text;" }
-                        , { file = fileName, line = 7, text = "END" }
-                        , { file = fileName, line = 8, text = "$_$;" }
-                        ]
-                        |> List.length
-                        |> Expect.equal 1
-                )
-            ]
-        , describe "parseLines"
-            [ test "basic" (\_ -> parseLines fileName fileContent |> Expect.equal fileLines)
+        [ describe "buildStatements"
+            [ testBuildStatements "basic"
+                """-- a comment
+
+                   CREATE TABLE public.users (
+                     id bigint NOT NULL,
+                     name character varying(255)
+                   );
+
+                   COMMENT ON TABLE public.users IS 'A comment ; ''tricky'' one';
+
+                   ALTER TABLE ONLY public.users
+                     ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"""
+                [ """CREATE TABLE public.users (
+                       id bigint NOT NULL,
+                       name character varying(255)
+                     );"""
+                , """COMMENT ON TABLE public.users IS 'A comment ; ''tricky'' one';"""
+                , """ALTER TABLE ONLY public.users
+                       ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"""
+                ]
+            , testBuildStatements "nested begin"
+                """CREATE FUNCTION public.set_log_min_duration(integer) RETURNS void
+                       LANGUAGE plpgsql STRICT SECURITY DEFINER
+                       SET search_path TO 'pg_catalog', 'pg_temp'
+                   AS $_$
+                   BEGIN
+                       EXECUTE 'SET log_min_duration_statement = ' || $1::text;
+                   END
+                   $_$;"""
+                [ """CREATE FUNCTION public.set_log_min_duration(integer) RETURNS void
+                         LANGUAGE plpgsql STRICT SECURITY DEFINER
+                         SET search_path TO 'pg_catalog', 'pg_temp'
+                     AS $_$
+                     BEGIN
+                         EXECUTE 'SET log_min_duration_statement = ' || $1::text;
+                     END
+                     $_$;""" ]
+
+            --, testBuildStatements "case blocks"
+            --    """PRAGMA foreign_keys=OFF;
+            --
+            --       CREATE VIEW `tasks_view` as
+            --       select
+            --       `tasks`.`ulid` as `ulid`,
+            --       ifnull(`tasks`.`priority_adjustment`, 0.0)
+            --        + case   when waiting_utc is null then 0.0
+            --        when waiting_utc >= datetime('now') then 0.0
+            --        when waiting_utc <  datetime('now') then -10.0
+            --       end
+            --       as `priority`
+            --       from
+            --       `tasks`;
+            --
+            --       CREATE TRIGGER `set_modified_utc_after_update`
+            --       after update on `tasks`
+            --       when `new`.`modified_utc` is `old`.`modified_utc`
+            --       begin
+            --        update `tasks`
+            --       set `modified_utc` = datetime('now')
+            --       where `ulid` = `new`.`ulid`
+            --       ;
+            --       end;"""
+            --    [ "PRAGMA foreign_keys=OFF;"
+            --    , """CREATE VIEW `tasks_view` as
+            --         select
+            --         `tasks`.`ulid` as `ulid`,
+            --         ifnull(`tasks`.`priority_adjustment`, 0.0)
+            --          + case   when waiting_utc is null then 0.0
+            --          when waiting_utc >= datetime('now') then 0.0
+            --          when waiting_utc <  datetime('now') then -10.0
+            --         end
+            --         as `priority`
+            --         from
+            --         `tasks`;"""
+            --    , """CREATE TRIGGER `set_modified_utc_after_update`
+            --         after update on `tasks`
+            --         when `new`.`modified_utc` is `old`.`modified_utc`
+            --         begin
+            --          update `tasks`
+            --         set `modified_utc` = datetime('now')
+            --         where `ulid` = `new`.`ulid`
+            --         ;
+            --         end;"""
+            --    ]
             ]
         ]
+
+
+testBuildStatements : String -> String -> List String -> Test
+testBuildStatements name content statements =
+    test name
+        (\_ ->
+            content
+                |> parseLines "file.sql"
+                |> buildStatements
+                |> List.map (\s -> s |> Nel.toList |> List.map .text |> List.map String.trim)
+                |> Expect.equal (statements |> List.map (\s -> s |> String.split "\n" |> List.map String.trim))
+        )

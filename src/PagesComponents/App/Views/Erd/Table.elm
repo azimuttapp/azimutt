@@ -23,7 +23,7 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Position as Position
 import Libs.String as S
-import Models.Project exposing (Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
+import Models.Project exposing (Check, Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
 import PagesComponents.App.Models exposing (Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)
@@ -168,7 +168,11 @@ viewHiddenColumn table column columnRelations =
 
 viewColumnIcon : Table -> Column -> List RelationFull -> List (Attribute Msg) -> Html Msg
 viewColumnIcon table column columnRelations attrs =
-    case ( ( column.name |> inPrimaryKey table, columnRelations |> List.filter (\r -> r.src.table.id == table.id && r.src.column.name == column.name) |> List.head ), ( column.name |> inUniques table, column.name |> inIndexes table ) ) of
+    case
+        ( ( column.name |> inPrimaryKey table, columnRelations |> List.filter (\r -> r.src.table.id == table.id && r.src.column.name == column.name) |> List.head )
+        , ( column.name |> inUniques table, column.name |> inIndexes table, column.name |> inChecks table )
+        )
+    of
         ( ( Just pk, _ ), _ ) ->
             div (class "icon" :: attrs) [ div [ title (formatPkTitle pk), bsToggle Tooltip ] [ viewIcon Icon.key ] ]
 
@@ -176,11 +180,14 @@ viewColumnIcon table column columnRelations attrs =
             -- TODO: know fk table state to not put onClick when it's already shown (so Update.elm#showTable on Shown state could issue an error)
             div (class "icon" :: onClick (ShowTable fk.ref.table.id) :: attrs ++ track events.showTableWithForeignKey) [ div [ title (formatFkTitle fk), bsToggle Tooltip ] [ viewIcon Icon.externalLinkAlt ] ]
 
-        ( _, ( u :: us, _ ) ) ->
+        ( _, ( u :: us, _, _ ) ) ->
             div (class "icon" :: attrs) [ div [ title (formatUniqueTitle (u :: us)), bsToggle Tooltip ] [ viewIcon Icon.fingerprint ] ]
 
-        ( _, ( _, i :: is ) ) ->
+        ( _, ( _, i :: is, _ ) ) ->
             div (class "icon" :: attrs) [ div [ title (formatIndexTitle (i :: is)), bsToggle Tooltip ] [ viewIcon Icon.sortAmountDownAlt ] ]
+
+        ( _, ( _, _, c :: cs ) ) ->
+            div (class "icon" :: attrs) [ div [ title (formatCheckTitle (c :: cs)), bsToggle Tooltip ] [ viewIcon Icon.check ] ]
 
         _ ->
             div ([ class "icon" ] ++ attrs) []
@@ -309,6 +316,16 @@ formatUniqueTitle uniques =
 formatIndexTitle : List Index -> String
 formatIndexTitle indexes =
     "Indexed by " ++ (indexes |> List.map .name |> String.join ", ")
+
+
+formatCheckTitle : List Check -> String
+formatCheckTitle checks =
+    case checks of
+        check :: [] ->
+            check.predicate
+
+        _ ->
+            "In checks " ++ (checks |> List.map .name |> String.join ", ")
 
 
 formatReference : RelationFull -> String

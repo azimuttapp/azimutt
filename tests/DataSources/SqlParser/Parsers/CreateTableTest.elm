@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.CreateTableTest exposing (..)
 
-import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn)
+import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn, parseCreateTableForeignKey)
 import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParse, testParseSql)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
@@ -12,6 +12,9 @@ suite =
         [ describe "parseCreateTable"
             [ testParse ( parseCreateTable, "basic" )
                 "CREATE TABLE aaa.bbb (ccc int);"
+                { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] }
+            , testParse ( parseCreateTable, "if not exists" )
+                "CREATE TABLE IF NOT EXISTS aaa.bbb (ccc int);"
                 { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] }
             , testParse ( parseCreateTable, "complex" )
                 "CREATE TABLE public.users (id bigint NOT NULL, name character varying(255), price numeric(8,2)) WITH (autovacuum_enabled='false');"
@@ -62,5 +65,13 @@ suite =
             , testParseSql ( parseCreateTableColumn, "with foreign key having only table" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES users"
                 { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( "users_fk", { schema = Nothing, table = "users", column = Nothing } ) }
+            , testParseSql ( parseCreateTableColumn, "with check" )
+                "state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable'))"
+                { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
+            ]
+        , describe "parseCreateTableForeignKey"
+            [ testParseSql ( parseCreateTableForeignKey, "sqlite" )
+                "foreign key(`ulid`) references `tasks`(`ulid`)"
+                { name = Nothing, src = "ulid", ref = { schema = Nothing, table = "tasks", column = Just "ulid" } }
             ]
         ]

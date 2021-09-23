@@ -1,8 +1,8 @@
-module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildStatements, parseLines, parseSchema, updateColumn, updateTable)
+module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildStatements, parseLines, parseSchema)
 
-import DataSources.SqlParser.Parsers.AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
+import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.Parsers.Comment exposing (SqlComment)
-import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
+import DataSources.SqlParser.Parsers.CreateTable as CreateTable exposing (ParsedColumn, ParsedTable)
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView)
 import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..))
 import DataSources.SqlParser.StatementParser exposing (Command(..), parseStatement)
@@ -68,7 +68,7 @@ type alias SqlIndex =
 
 
 type alias SqlCheck =
-    { name : SqlConstraintName, predicate : SqlPredicate }
+    { name : SqlConstraintName, columns : List SqlColumnName, predicate : SqlPredicate }
 
 
 defaultSchema : String
@@ -115,19 +115,19 @@ evolve ( statement, command ) tables =
             tables
                 |> Dict.get id
                 |> Maybe.map (\_ -> Err [ "View " ++ id ++ " already exists" ])
-                |> Maybe.withDefault (Ok (tables |> Dict.insert id (buildView statement view)))
+                |> Maybe.withDefault (Ok (tables |> Dict.insert id (buildView tables statement view)))
 
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = defaultPkName table constraintName, columns = pk } }) tables
 
-        AlterTable (AddTableConstraint schema table (ParsedForeignKey constraint fk)) ->
+        AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fk)) ->
             updateColumn statement (buildId schema table) fk.column (\c -> buildFk tables constraint fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
 
         AlterTable (AddTableConstraint schema table (ParsedUnique constraint unique)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ { name = constraint, columns = unique.columns, definition = unique.definition } ] }) tables
 
         AlterTable (AddTableConstraint schema table (ParsedCheck constraint check)) ->
-            updateTable statement (buildId schema table) (\t -> Ok { t | checks = t.checks ++ [ { name = constraint, predicate = check } ] }) tables
+            updateTable statement (buildId schema table) (\t -> Ok { t | checks = t.checks ++ [ { name = constraint, columns = check.columns, predicate = check.predicate } ] }) tables
 
         AlterTable (AlterColumn schema table (ColumnDefault column default)) ->
             updateColumn statement (buildId schema table) column (\c -> Ok { c | default = Just default }) tables
@@ -198,7 +198,7 @@ buildTable : SqlSchema -> SqlStatement -> ParsedTable -> Result (List SchemaErro
 buildTable tables source table =
     table.columns
         |> Nel.toList
-        |> List.map (buildColumn tables)
+        |> List.map (buildColumn tables table.foreignKeys)
         |> L.resultSeq
         |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "No valid column for table " ++ buildId table.schema table.table ])
         |> Result.map
@@ -212,16 +212,17 @@ buildTable tables source table =
                         |> M.orElse (table.columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> { name = pk, columns = Nel c.name [] })) |> List.head)
                 , uniques = table.uniques
                 , indexes = table.indexes
-                , checks = table.checks
+                , checks = table.checks ++ (table.columns |> Nel.toList |> List.filterMap (\c -> c.check |> Maybe.map (\p -> { name = "", columns = [ c.name ], predicate = p })))
                 , source = source
                 , comment = Nothing
                 }
             )
 
 
-buildColumn : SqlSchema -> ParsedColumn -> Result SchemaError SqlColumn
-buildColumn tables column =
+buildColumn : SqlSchema -> List CreateTable.ParsedForeignKey -> ParsedColumn -> Result SchemaError SqlColumn
+buildColumn tables tableFks column =
     column.foreignKey
+        |> M.orElse (tableFks |> List.filter (\fk -> fk.src == column.name) |> List.head |> Maybe.map (\fk -> ( fk.name |> Maybe.withDefault "", fk.ref )))
         |> Maybe.map (\( fk, ref ) -> buildFk tables fk ref.schema ref.table ref.column)
         |> M.resultSeq
         |> Result.map
@@ -280,11 +281,11 @@ withPkColumn tables schema table name =
                 |> Maybe.withDefault (Err ("Table " ++ buildId schema table ++ " does not exist (yet)"))
 
 
-buildView : SqlStatement -> ParsedView -> SqlTable
-buildView source view =
+buildView : SqlSchema -> SqlStatement -> ParsedView -> SqlTable
+buildView tables source view =
     { schema = view.schema |> withDefaultSchema
     , table = view.table
-    , columns = view.select.columns |> Nel.map buildViewColumn
+    , columns = view.select.columns |> Nel.map (buildViewColumn tables)
     , primaryKey = Nothing
     , uniques = []
     , indexes = []
@@ -294,17 +295,23 @@ buildView source view =
     }
 
 
-buildViewColumn : SelectColumn -> SqlColumn
-buildViewColumn column =
+buildViewColumn : SqlSchema -> SelectColumn -> SqlColumn
+buildViewColumn tables column =
     case column of
         BasicColumn c ->
-            { name = c.alias |> Maybe.withDefault c.column
-            , kind = "unknown"
-            , nullable = False
-            , default = Nothing
-            , foreignKey = Nothing
-            , comment = Nothing
-            }
+            c.table
+                -- FIXME should handle table alias (when table is renamed in select)
+                |> Maybe.andThen (\t -> tables |> Dict.get (buildId Nothing t))
+                |> Maybe.andThen (\t -> t.columns |> Nel.find (\col -> col.name == c.column))
+                |> Maybe.map (\col -> { col | name = c.alias |> Maybe.withDefault c.column })
+                |> Maybe.withDefault
+                    { name = c.alias |> Maybe.withDefault c.column
+                    , kind = "unknown"
+                    , nullable = False
+                    , default = Nothing
+                    , foreignKey = Nothing
+                    , comment = Just ("Built from: " ++ (c.table |> Maybe.map (\t -> t ++ ".") |> Maybe.withDefault "") ++ c.column)
+                    }
 
         ComplexColumn c ->
             { name = c.alias
@@ -312,7 +319,7 @@ buildViewColumn column =
             , nullable = False
             , default = Nothing
             , foreignKey = Nothing
-            , comment = Nothing
+            , comment = Just ("Built using: " ++ c.formula)
             }
 
 
@@ -343,8 +350,11 @@ buildStatements lines =
                 if (line.text |> String.trim |> String.toUpper) == "BEGIN" then
                     ( line :: currentStatementLines, statements, nestedBlock + 1 )
 
-                else if (line.text |> String.trim |> String.toUpper) == "END" || (line.text |> String.trim |> String.toUpper) == "END;" then
+                else if (line.text |> String.trim |> String.toUpper) == "END" then
                     ( line :: currentStatementLines, statements, nestedBlock - 1 )
+
+                else if (line.text |> String.trim |> String.toUpper) == "END;" then
+                    ( line :: [], addStatement currentStatementLines statements, nestedBlock - 1 )
 
                 else if (line.text |> String.endsWith ";") && nestedBlock == 0 then
                     ( line :: [], addStatement currentStatementLines statements, nestedBlock )

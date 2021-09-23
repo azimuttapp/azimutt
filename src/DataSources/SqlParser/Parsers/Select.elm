@@ -56,14 +56,14 @@ parseSelect select =
 
 parseSelectColumn : RawSql -> Result ParseError SelectColumn
 parseSelectColumn column =
-    case column |> R.matches "^(?:(?<table>[^ .]+)\\.)?(?<column>[^ :]+)(?:\\s+AS\\s+(?<alias>.+))?$" of
+    case column |> R.matches "^(?:(?<table>[^ .]+)\\.)?(?<column>[^ :]+)(?:\\s*AS\\s+(?<alias>.+))?$" of
         table :: (Just columnName) :: alias :: [] ->
             Ok (BasicColumn { table = table |> Maybe.map buildTableName, column = columnName |> buildColumnName, alias = alias |> Maybe.map buildColumnName })
 
         _ ->
             case column |> R.matches "^(?<formula>.+?)\\s+AS\\s+(?<alias>[^ ]+)$" of
                 (Just formula) :: (Just alias) :: [] ->
-                    Ok (ComplexColumn { formula = formula, alias = alias })
+                    Ok (ComplexColumn { formula = formula, alias = alias |> buildColumnName })
 
                 _ ->
                     Err ("Can't parse select column '" ++ column ++ "'")

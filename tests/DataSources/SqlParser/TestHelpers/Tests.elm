@@ -54,4 +54,5 @@ parsedColumn =
     , default = Nothing
     , primaryKey = Nothing
     , foreignKey = Nothing
+    , check = Nothing
     }

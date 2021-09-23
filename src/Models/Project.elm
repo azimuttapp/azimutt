@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationFull, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, decodeCanvasProps, decodeCheck, decodeColumn, decodeColumnName, decodeColumnRef, decodeComment, decodeIndex, decodeLayout, decodePrimaryKey, decodeProject, decodeProjectId, decodeProjectName, decodeProjectSettings, decodeProjectSource, decodeProjectSourceContent, decodeProjectSourceId, decodeProjectSourceName, decodeRelation, decodeSchema, decodeSource, decodeSourceLine, decodeTable, decodeTableId, decodeTableProps, decodeUnique, encodeCanvasProps, encodeCheck, encodeColumn, encodeColumnName, encodeColumnRef, encodeComment, encodeIndex, encodeLayout, encodePrimaryKey, encodeProject, encodeProjectId, encodeProjectName, encodeProjectSettings, encodeProjectSource, encodeProjectSourceContent, encodeProjectSourceId, encodeProjectSourceName, encodeRelation, encodeSchema, encodeSource, encodeSourceLine, encodeTable, encodeTableId, encodeTableProps, encodeUnique, extractPath, htmlIdAsTableId, htmlIdDecode, htmlIdEncode, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initTableProps, parseTableId, showColumnRef, showTableId, showTableName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationFull, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, decodeCanvasProps, decodeCheck, decodeColumn, decodeColumnName, decodeColumnRef, decodeComment, decodeIndex, decodeLayout, decodePrimaryKey, decodeProject, decodeProjectId, decodeProjectName, decodeProjectSettings, decodeProjectSource, decodeProjectSourceContent, decodeProjectSourceId, decodeProjectSourceName, decodeRelation, decodeSchema, decodeSource, decodeSourceLine, decodeTable, decodeTableId, decodeTableProps, decodeUnique, encodeCanvasProps, encodeCheck, encodeColumn, encodeColumnName, encodeColumnRef, encodeComment, encodeIndex, encodeLayout, encodePrimaryKey, encodeProject, encodeProjectId, encodeProjectName, encodeProjectSettings, encodeProjectSource, encodeProjectSourceContent, encodeProjectSourceId, encodeProjectSourceName, encodeRelation, encodeSchema, encodeSource, encodeSourceLine, encodeTable, encodeTableId, encodeTableProps, encodeUnique, extractPath, htmlIdAsTableId, htmlIdDecode, htmlIdEncode, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initTableProps, parseTableId, showColumnRef, showTableId, showTableName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
@@ -93,7 +93,7 @@ type alias Index =
 
 
 type alias Check =
-    { name : CheckName, predicate : String, sources : List Source }
+    { name : CheckName, columns : List ColumnName, predicate : String, sources : List Source }
 
 
 type alias Comment =
@@ -389,22 +389,27 @@ computeColor ( _, table ) =
 
 inPrimaryKey : Table -> ColumnName -> Maybe PrimaryKey
 inPrimaryKey table column =
-    table.primaryKey |> M.filter (\{ columns } -> columns |> hasColumn column)
+    table.primaryKey |> M.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
 
 
 inUniques : Table -> ColumnName -> List Unique
 inUniques table column =
-    table.uniques |> List.filter (\u -> u.columns |> hasColumn column)
+    table.uniques |> List.filter (\u -> u.columns |> Nel.toList |> hasColumn column)
 
 
 inIndexes : Table -> ColumnName -> List Index
 inIndexes table column =
-    table.indexes |> List.filter (\i -> i.columns |> hasColumn column)
+    table.indexes |> List.filter (\i -> i.columns |> Nel.toList |> hasColumn column)
 
 
-hasColumn : ColumnName -> Nel ColumnName -> Bool
+inChecks : Table -> ColumnName -> List Check
+inChecks table column =
+    table.checks |> List.filter (\i -> i.columns |> hasColumn column)
+
+
+hasColumn : ColumnName -> List ColumnName -> Bool
 hasColumn column columns =
-    columns |> Nel.any (\c -> c == column)
+    columns |> List.any (\c -> c == column)
 
 
 inOutRelation : List Relation -> ColumnName -> List Relation
@@ -703,6 +708,7 @@ encodeCheck : Check -> Value
 encodeCheck value =
     E.object
         [ ( "name", value.name |> encodeCheckName )
+        , ( "columns", value.columns |> E.withDefault (Encode.list encodeColumnName) [] )
         , ( "predicate", value.predicate |> Encode.string )
         , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
         ]
@@ -710,8 +716,9 @@ encodeCheck value =
 
 decodeCheck : Decode.Decoder Check
 decodeCheck =
-    Decode.map3 Check
+    Decode.map4 Check
         (Decode.field "name" decodeCheckName)
+        (D.defaultField "columns" (Decode.list decodeColumnName) [])
         (Decode.field "predicate" Decode.string)
         (D.defaultField "sources" (Decode.list decodeSource) [])
 
