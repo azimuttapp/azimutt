@@ -347,7 +347,7 @@ buildStatements lines =
             )
         |> List.foldr
             (\line ( currentStatementLines, statements, nestedBlock ) ->
-                if (line.text |> String.trim |> String.toUpper) == "BEGIN" || (line.text |> String.trim |> String.toUpper |> String.contains "CASE ") then
+                if (line.text |> String.trim |> String.toUpper) == "BEGIN" then
                     ( line :: currentStatementLines, statements, nestedBlock + 1 )
 
                 else if (line.text |> String.trim |> String.toUpper) == "END" then
