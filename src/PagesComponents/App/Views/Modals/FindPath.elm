@@ -58,7 +58,7 @@ viewSettings idPrefix settings =
                         , ariaDescribedBy (idPrefix ++ "-settings-ignored-columns-help")
                         , placeholder "ex: created_by, updated_by, owner..."
                         , value (settings.ignoredColumns |> String.join ", ")
-                        , onInput (\v -> FindPathMsg (SettingsUpdate { settings | ignoredColumns = v |> String.split "," |> List.map String.trim }))
+                        , onInput (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredColumns = v |> String.split "," |> List.map String.trim }))
                         ]
                         []
                     , div [ class "form-text", id (idPrefix ++ "-settings-ignored-columns-help") ] [ text "Some columns does not have meaningful links so ignore them for better results." ]
@@ -74,7 +74,7 @@ viewSettings idPrefix settings =
                         , ariaDescribedBy (idPrefix ++ "-settings-ignored-tables-help")
                         , placeholder "ex: users, accounts..."
                         , value (settings.ignoredTables |> List.map showTableId |> String.join ", ")
-                        , onInput (\v -> FindPathMsg (SettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map parseTableId }))
+                        , onInput (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map parseTableId }))
                         ]
                         []
                     , div [ class "form-text", id (idPrefix ++ "-settings-ignored-tables-help") ] [ text "Some tables are big hubs which leads to bad results and performance, ignore them." ]
@@ -92,7 +92,7 @@ viewSettings idPrefix settings =
                         , ariaDescribedBy (idPrefix ++ "-settings-max-path-length-help")
                         , placeholder "ex: 3"
                         , value (String.fromInt settings.maxPathLength)
-                        , onInput (\v -> String.toInt v |> Maybe.map (\l -> FindPathMsg (SettingsUpdate { settings | maxPathLength = l })) |> Maybe.withDefault Noop)
+                        , onInput (\v -> String.toInt v |> Maybe.map (\l -> FindPathMsg (FPSettingsUpdate { settings | maxPathLength = l })) |> Maybe.withDefault Noop)
                         ]
                         []
                     , div [ class "form-text", id (idPrefix ++ "-settings-max-path-length-help") ] [ text "Limit paths in length to limit complexity and performance." ]
@@ -105,8 +105,8 @@ viewSettings idPrefix settings =
 viewSearchForm : Dict TableId Table -> Maybe TableId -> Maybe TableId -> Html Msg
 viewSearchForm tables from to =
     div [ class "row mt-3" ]
-        [ div [ class "col" ] [ viewSelectCard "from" "From" "Starting table for the path" from (UpdateFrom >> FindPathMsg) tables ]
-        , div [ class "col" ] [ viewSelectCard "to" "To" "Table you want to go to" to (UpdateTo >> FindPathMsg) tables ]
+        [ div [ class "col" ] [ viewSelectCard "from" "From" "Starting table for the path" from (FPUpdateFrom >> FindPathMsg) tables ]
+        , div [ class "col" ] [ viewSelectCard "to" "To" "Table you want to go to" to (FPUpdateTo >> FindPathMsg) tables ]
         ]
 
 
@@ -241,13 +241,13 @@ viewFooter settings model =
                 [ button [ type_ "button", class "btn btn-primary", bsDismiss Modal ] [ text "Done" ] ]
 
             else
-                [ div [ class "me-auto" ] [ text "Results are out of sync with search 🤯" ], button [ type_ "button", class "btn btn-primary", onClick (FindPathMsg Search) ] [ text "Search" ] ]
+                [ div [ class "me-auto" ] [ text "Results are out of sync with search 🤯" ], button [ type_ "button", class "btn btn-primary", onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
 
         ( Just _, Just _, Searching ) ->
             [ button [ type_ "button", class "btn btn-primary", disabled True ] [ span [ class "spinner-border spinner-border-sm", role "status", ariaHidden True ] [], text " Searching..." ] ]
 
         ( Just _, Just _, Empty ) ->
-            [ button [ type_ "button", class "btn btn-primary", onClick (FindPathMsg Search) ] [ text "Search" ] ]
+            [ button [ type_ "button", class "btn btn-primary", onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
 
         _ ->
             [ button [ type_ "button", class "btn btn-primary", disabled True ] [ text "Search" ] ]

@@ -96,7 +96,7 @@ viewHeader zoom index table =
                             , li [] [ button [ type_ "button", class "dropdown-item", onClick (TableOrder table.id 0) ] [ text "Send to back" ] ]
                             ]
                         ]
-                    , li [] [ button [ type_ "button", class "dropdown-item", onClick (FindPathMsg (Init (Just table.id) Nothing)) ] [ text "Find path from this table" ] ]
+                    , li [] [ button [ type_ "button", class "dropdown-item", onClick (FindPathMsg (FPInit (Just table.id) Nothing)) ] [ text "Find path from this table" ] ]
                     ]
             )
         ]
@@ -128,7 +128,7 @@ viewColumn isHover virtualRelation columnRelations table column =
          , Pointer.onEnter (\_ -> HoverColumn (Just ref))
          , Pointer.onLeave (\_ -> HoverColumn Nothing)
          ]
-            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> Update ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
+            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> VRUpdate ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
         )
         [ viewColumnDropdown columnRelations ref (viewColumnIcon table column columnRelations)
         , viewColumnName table column

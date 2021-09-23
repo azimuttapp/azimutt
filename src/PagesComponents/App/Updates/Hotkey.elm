@@ -33,10 +33,10 @@ handleHotkey model hotkey =
             [ send SelectAllTables ]
 
         "find-path" ->
-            [ send (FindPathMsg (Init Nothing Nothing)) ]
+            [ send (FindPathMsg (FPInit Nothing Nothing)) ]
 
         "create-virtual-relation" ->
-            [ send (VirtualRelationMsg Create) ]
+            [ send (VirtualRelationMsg VRCreate) ]
 
         "save" ->
             model.project
@@ -44,7 +44,7 @@ handleHotkey model hotkey =
                 |> Maybe.withDefault [ toastWarning "No project to save" ]
 
         "cancel" ->
-            model.virtualRelation |> Maybe.map (\_ -> [ send (VirtualRelationMsg Cancel) ]) |> Maybe.withDefault []
+            model.virtualRelation |> Maybe.map (\_ -> [ send (VirtualRelationMsg VRCancel) ]) |> Maybe.withDefault []
 
         "help" ->
             [ showModal conf.ids.helpModal ]

@@ -20,7 +20,7 @@ import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSwitch, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
-import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
+import PagesComponents.App.Updates.Layout exposing (handleLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
@@ -211,29 +211,14 @@ update msg model =
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )
 
+        LayoutMsg m ->
+            handleLayout m model
+
         FindPathMsg m ->
             handleFindPath m model
 
         VirtualRelationMsg m ->
             ( updateVirtualRelation m model, Cmd.none )
-
-        NewLayout name ->
-            ( { model | newLayout = B.cond (String.length name == 0) Nothing (Just name) }, Cmd.none )
-
-        CreateLayout name ->
-            { model | newLayout = Nothing } |> setProjectWithCmd (createLayout name)
-
-        LoadLayout name ->
-            model |> setProjectWithCmd (loadLayout name)
-
-        UpdateLayout name ->
-            model |> setProjectWithCmd (updateLayout name)
-
-        DeleteLayout name ->
-            model |> setProjectWithCmd (deleteLayout name)
-
-        UnloadLayout ->
-            ( model |> setProject unloadLayout, Cmd.none )
 
         OpenConfirm confirm ->
             ( { model | confirm = confirm }, showModal conf.ids.confirm )
@@ -285,7 +270,7 @@ virtualRelationSubscription virtualRelation =
             []
 
         Just _ ->
-            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> Move >> VirtualRelationMsg) Mouse.eventDecoder) ]
+            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> VRMove >> VirtualRelationMsg) Mouse.eventDecoder) ]
 
 
 
