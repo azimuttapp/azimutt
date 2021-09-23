@@ -7,7 +7,7 @@ import Html.Events exposing (onClick, onInput)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal)
 import Libs.Html exposing (bText, extLink)
 import Models.Project exposing (LayoutName)
-import PagesComponents.App.Models exposing (Msg(..))
+import PagesComponents.App.Models exposing (LayoutMsg(..), Msg(..))
 import Url exposing (percentEncode)
 
 
@@ -17,7 +17,7 @@ viewCreateLayoutModal newLayout =
         "Save layout"
         [ div [ class "row g-3 align-items-center" ]
             [ div [ class "col-auto" ] [ label [ class "col-form-label", for "new-layout-name" ] [ text "Layout name" ] ]
-            , div [ class "col-auto" ] [ input [ type_ "text", class "form-control", id "new-layout-name", value (newLayout |> Maybe.withDefault ""), onInput NewLayout, autofocus True ] [] ]
+            , div [ class "col-auto" ] [ input [ type_ "text", class "form-control", id "new-layout-name", value (newLayout |> Maybe.withDefault ""), onInput (LNew >> LayoutMsg), autofocus True ] [] ]
             ]
         , div [ class "mt-3" ]
             [ text "Do you like Azimutt ? Consider "
@@ -28,7 +28,7 @@ viewCreateLayoutModal newLayout =
             ]
         ]
         [ button [ type_ "button", class "btn btn-secondary", bsDismiss Modal ] [ text "Cancel" ]
-        , button [ type_ "button", class "btn btn-primary", bsDismiss Modal, disabled (newLayout == Nothing), onClick (CreateLayout (newLayout |> Maybe.withDefault "")) ] [ text "Save layout" ]
+        , button [ type_ "button", class "btn btn-primary", bsDismiss Modal, disabled (newLayout == Nothing), onClick (LayoutMsg (LCreate (newLayout |> Maybe.withDefault ""))) ] [ text "Save layout" ]
         ]
 
 

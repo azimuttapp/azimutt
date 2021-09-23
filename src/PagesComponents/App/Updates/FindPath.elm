@@ -1,8 +1,51 @@
-module PagesComponents.App.Updates.FindPath exposing (computeFindPath)
+module PagesComponents.App.Updates.FindPath exposing (computeFindPath, handleFindPath)
 
+import Conf exposing (conf)
 import Dict exposing (Dict)
 import Libs.Nel as Nel
-import Models.Project exposing (FindPathPath, FindPathResult, FindPathSettings, FindPathStep, FindPathStepDir(..), Relation, Table, TableId)
+import Libs.Task exposing (sendAfter)
+import Models.Project exposing (FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), ProjectSettings, Relation, Table, TableId)
+import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..))
+import PagesComponents.App.Updates.Helpers exposing (setProject, setSettings)
+import Ports exposing (activateTooltipsAndPopovers, showModal, track)
+import Tracking exposing (events)
+
+
+type alias Model x y z =
+    { x
+        | findPath : Maybe FindPath
+        , project :
+            Maybe
+                { y
+                    | schema : { z | tables : Dict TableId Table, relations : List Relation }
+                    , settings : ProjectSettings
+                }
+    }
+
+
+handleFindPath : FindPathMsg -> Model x y z -> ( Model x y z, Cmd Msg )
+handleFindPath msg model =
+    case msg of
+        FPInit from to ->
+            ( { model | findPath = Just { from = from, to = to, result = Empty } }, Cmd.batch [ showModal conf.ids.findPathModal, track events.openFindPath ] )
+
+        FPUpdateFrom from ->
+            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | from = from }) }, Cmd.none )
+
+        FPUpdateTo to ->
+            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | to = to }) }, Cmd.none )
+
+        FPSearch ->
+            model.findPath
+                |> Maybe.andThen (\fp -> Maybe.map3 (\p from to -> ( p, from, to )) model.project fp.from fp.to)
+                |> Maybe.map (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, sendAfter 300 (FindPathMsg (FPCompute p.schema.tables p.schema.relations from to p.settings.findPath)) ))
+                |> Maybe.withDefault ( model, Cmd.none )
+
+        FPCompute tables relations from to settings ->
+            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ activateTooltipsAndPopovers, track (events.findPathResult result) ] ))
+
+        FPSettingsUpdate settings ->
+            ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )
 
 
 computeFindPath : Dict TableId Table -> List Relation -> TableId -> TableId -> FindPathSettings -> FindPathResult

@@ -9,24 +9,24 @@ import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
 import Libs.Position as Position
-import Libs.Task exposing (send, sendAfter)
 import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
 import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
-import PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
+import PagesComponents.App.Updates exposing (updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
-import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTables, setTime)
-import PagesComponents.App.Updates.Layout exposing (createLayout, deleteLayout, loadLayout, unloadLayout, updateLayout)
+import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
+import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSwitch, setTableInList, setTables, setTime)
+import PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
+import PagesComponents.App.Updates.Layout exposing (handleLayout)
 import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Containers as Containers
-import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackJsonError, trackPage)
+import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, showModal, toastError, track, trackJsonError, trackPage)
 import Request
 import Shared
 import Time
@@ -211,47 +211,14 @@ update msg model =
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )
 
-        FindPath from to ->
-            ( { model | findPath = Just { from = from, to = to, result = Empty } }, Cmd.batch [ showModal conf.ids.findPathModal, track events.openFindPath ] )
+        LayoutMsg m ->
+            handleLayout m model
 
-        FindPathFrom from ->
-            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | from = from }) }, Cmd.none )
-
-        FindPathTo to ->
-            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | to = to }) }, Cmd.none )
-
-        FindPathSearch ->
-            model.findPath
-                |> Maybe.andThen (\fp -> Maybe.map3 (\p from to -> ( p, from, to )) model.project fp.from fp.to)
-                |> Maybe.map (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, sendAfter 300 (FindPathCompute p.schema.tables p.schema.relations from to p.settings.findPath) ))
-                |> Maybe.withDefault ( model, Cmd.none )
-
-        FindPathCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ activateTooltipsAndPopovers, track (events.findPathResult result) ] ))
-
-        UpdateFindPathSettings settings ->
-            ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )
+        FindPathMsg m ->
+            handleFindPath m model
 
         VirtualRelationMsg m ->
             ( updateVirtualRelation m model, Cmd.none )
-
-        NewLayout name ->
-            ( { model | newLayout = B.cond (String.length name == 0) Nothing (Just name) }, Cmd.none )
-
-        CreateLayout name ->
-            { model | newLayout = Nothing } |> setProjectWithCmd (createLayout name)
-
-        LoadLayout name ->
-            model |> setProjectWithCmd (loadLayout name)
-
-        UpdateLayout name ->
-            model |> setProjectWithCmd (updateLayout name)
-
-        DeleteLayout name ->
-            model |> setProjectWithCmd (deleteLayout name)
-
-        UnloadLayout ->
-            ( model |> setProject unloadLayout, Cmd.none )
 
         OpenConfirm confirm ->
             ( { model | confirm = confirm }, showModal conf.ids.confirm )
@@ -259,44 +226,8 @@ update msg model =
         OnConfirm answer cmd ->
             ( { model | confirm = initConfirm }, B.cond answer cmd Cmd.none )
 
-        JsMessage (HotkeyUsed "focus-search") ->
-            ( model, click conf.ids.searchInput )
-
-        JsMessage (HotkeyUsed "remove") ->
-            ( model, removeElement model.hover )
-
-        JsMessage (HotkeyUsed "move-forward") ->
-            ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable 1 model.hover) |> Maybe.withDefault Cmd.none )
-
-        JsMessage (HotkeyUsed "move-backward") ->
-            ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable -1 model.hover) |> Maybe.withDefault Cmd.none )
-
-        JsMessage (HotkeyUsed "move-to-top") ->
-            ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable 1000 model.hover) |> Maybe.withDefault Cmd.none )
-
-        JsMessage (HotkeyUsed "move-to-back") ->
-            ( model, model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (moveTable -1000 model.hover) |> Maybe.withDefault Cmd.none )
-
-        JsMessage (HotkeyUsed "select-all") ->
-            ( model, send SelectAllTables )
-
-        JsMessage (HotkeyUsed "find-path") ->
-            ( model, send (FindPath Nothing Nothing) )
-
-        JsMessage (HotkeyUsed "create-virtual-relation") ->
-            ( model, send (VirtualRelationMsg Create) )
-
-        JsMessage (HotkeyUsed "save") ->
-            ( model, model.project |> Maybe.map (\p -> Cmd.batch [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ]) |> Maybe.withDefault (toastWarning "No project to save") )
-
-        JsMessage (HotkeyUsed "cancel") ->
-            ( model, model.virtualRelation |> Maybe.map (\_ -> send (VirtualRelationMsg Cancel)) |> Maybe.withDefault Cmd.none )
-
-        JsMessage (HotkeyUsed "help") ->
-            ( model, showModal conf.ids.helpModal )
-
         JsMessage (HotkeyUsed hotkey) ->
-            ( model, toastInfo ("Shortcut <b>" ++ hotkey ++ "</b> is not implemented yet :(") )
+            ( model, Cmd.batch (handleHotkey model hotkey) )
 
         JsMessage (Error err) ->
             ( model, Cmd.batch [ toastError ("Unable to decode JavaScript message:<br>" ++ decodeErrorToHtml err), trackJsonError "js-message" err ] )
@@ -339,7 +270,7 @@ virtualRelationSubscription virtualRelation =
             []
 
         Just _ ->
-            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> Move >> VirtualRelationMsg) Mouse.eventDecoder) ]
+            [ Browser.Events.onMouseMove (Decode.map (.pagePos >> Position.fromTuple >> VRMove >> VirtualRelationMsg) Mouse.eventDecoder) ]
 
 
 

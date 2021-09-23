@@ -24,7 +24,7 @@ import Libs.Nel as Nel
 import Libs.Position as Position
 import Libs.String as S
 import Models.Project exposing (Check, Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
-import PagesComponents.App.Models exposing (Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
+import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)
 
@@ -96,7 +96,7 @@ viewHeader zoom index table =
                             , li [] [ button [ type_ "button", class "dropdown-item", onClick (TableOrder table.id 0) ] [ text "Send to back" ] ]
                             ]
                         ]
-                    , li [] [ button [ type_ "button", class "dropdown-item", onClick (FindPath (Just table.id) Nothing) ] [ text "Find path from this table" ] ]
+                    , li [] [ button [ type_ "button", class "dropdown-item", onClick (FindPathMsg (FPInit (Just table.id) Nothing)) ] [ text "Find path from this table" ] ]
                     ]
             )
         ]
@@ -128,7 +128,7 @@ viewColumn isHover virtualRelation columnRelations table column =
          , Pointer.onEnter (\_ -> HoverColumn (Just ref))
          , Pointer.onLeave (\_ -> HoverColumn Nothing)
          ]
-            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> Update ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
+            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> VRUpdate ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
         )
         [ viewColumnDropdown columnRelations ref (viewColumnIcon table column columnRelations)
         , viewColumnName table column

@@ -16,10 +16,10 @@ type alias Model x y z =
 updateVirtualRelation : VirtualRelationMsg -> Model x y z -> Model x y z
 updateVirtualRelation msg model =
     case msg of
-        Create ->
+        VRCreate ->
             { model | virtualRelation = Just { src = Nothing, mouse = Position 0 0 } }
 
-        Update ref pos ->
+        VRUpdate ref pos ->
             case model.virtualRelation |> Maybe.map (\{ src } -> src) of
                 Nothing ->
                     model
@@ -30,10 +30,10 @@ updateVirtualRelation msg model =
                 Just (Just from) ->
                     { model | virtualRelation = Nothing } |> setProject (setSchema (setRelations (\relations -> relations ++ [ buildVirtualRelation from ref ])))
 
-        Move pos ->
+        VRMove pos ->
             { model | virtualRelation = model.virtualRelation |> Maybe.map (\vr -> { vr | mouse = pos }) }
 
-        Cancel ->
+        VRCancel ->
             { model | virtualRelation = Nothing }
 
 

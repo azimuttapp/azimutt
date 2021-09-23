@@ -15,7 +15,7 @@ import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project exposing (Column, Layout, LayoutName, Project, Schema, Table, TableId, showTableId)
-import PagesComponents.App.Models exposing (Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
+import PagesComponents.App.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
 import Tracking exposing (events)
 
 
@@ -47,9 +47,9 @@ viewNavbar search storedProjects project virtualRelation =
                                                     , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
                                                     ]
                                                 ]
-                                            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPath Nothing Nothing) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
+                                            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPathMsg (FPInit Nothing Nothing)) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
                                             , virtualRelation
-                                                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg Cancel) ] [ text "Cancel virtual relation" ] ])
+                                                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg VRCancel) ] [ text "Cancel virtual relation" ] ])
                                                 |> Maybe.withDefault
                                                     (li []
                                                         [ button
@@ -57,7 +57,7 @@ viewNavbar search storedProjects project virtualRelation =
                                                             , class "dropdown-item d-flex justify-content-between"
                                                             , title "A virtual relation is a relation which is not materialized by a foreign key"
                                                             , bsToggle Tooltip
-                                                            , onClick (VirtualRelationMsg Create)
+                                                            , onClick (VirtualRelationMsg VRCreate)
                                                             ]
                                                             [ text "Create a virtual relation", kbd [ class "ms-3" ] [ text "alt + v" ] ]
                                                         ]
@@ -128,8 +128,8 @@ viewTitle storedProjects project =
                                         [ project.layouts
                                             |> Dict.keys
                                             |> List.filter (\l -> l /= currentLayout)
-                                            |> List.map (\l -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LoadLayout l) ] [ text l ] ])
-                                        , [ li [] [ button [ type_ "button", class "dropdown-item", onClick UnloadLayout ] [ text ("Stop using " ++ currentLayout) ] ] ]
+                                            |> List.map (\l -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg (LLoad l)) ] [ text l ] ])
+                                        , [ li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg LUnload) ] [ text ("Stop using " ++ currentLayout) ] ] ]
                                         ]
                                     )
                                 ]
@@ -159,7 +159,7 @@ viewLayoutButton currentLayout layouts =
             ((currentLayout
                 |> Maybe.map
                     (\layout ->
-                        [ bsButton Secondary [ onClick (UpdateLayout layout) ] [ text ("Update '" ++ layout ++ "'") ]
+                        [ bsButton Secondary [ onClick (LayoutMsg (LUpdate layout)) ] [ text ("Update '" ++ layout ++ "'") ]
                         , bsButton Secondary [ class "dropdown-toggle dropdown-toggle-split", bsToggle Dropdown, ariaExpanded False ] [ span [ class "visually-hidden" ] [ text "Toggle Dropdown" ] ]
                         ]
                     )
@@ -168,7 +168,7 @@ viewLayoutButton currentLayout layouts =
                 ++ [ ul [ class "dropdown-menu dropdown-menu-end" ]
                         ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal conf.ids.newLayoutModal) [ viewIcon Icon.plus, text " Create new layout" ] ] ]
                             ++ L.prependOn currentLayout
-                                (\cur -> li [] [ button [ type_ "button", class "dropdown-item", onClick UnloadLayout ] [ viewIcon Icon.arrowLeft, text (" Stop using " ++ cur ++ " layout") ] ])
+                                (\cur -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg LUnload) ] [ viewIcon Icon.arrowLeft, text (" Stop using " ++ cur ++ " layout") ] ])
                                 (layouts
                                     |> Dict.toList
                                     |> List.sortBy (\( name, _ ) -> name)
@@ -176,13 +176,13 @@ viewLayoutButton currentLayout layouts =
                                         (\( name, l ) ->
                                             li []
                                                 [ button [ type_ "button", class "dropdown-item" ]
-                                                    [ span [ title "Load layout", bsToggle Tooltip, onClick (LoadLayout name) ] [ viewIcon Icon.upload ]
+                                                    [ span [ title "Load layout", bsToggle Tooltip, onClick (LayoutMsg (LLoad name)) ] [ viewIcon Icon.upload ]
                                                     , text " "
-                                                    , span [ title "Update layout with current one", bsToggle Tooltip, onClick (UpdateLayout name) ] [ viewIcon Icon.edit ]
+                                                    , span [ title "Update layout with current one", bsToggle Tooltip, onClick (LayoutMsg (LUpdate name)) ] [ viewIcon Icon.edit ]
                                                     , text " "
-                                                    , span [ title "Delete layout", bsToggle Tooltip, onClick (DeleteLayout name) ] [ viewIcon Icon.trashAlt ]
+                                                    , span [ title "Delete layout", bsToggle Tooltip, onClick (LayoutMsg (LDelete name)) ] [ viewIcon Icon.trashAlt ]
                                                     , text " "
-                                                    , span [ onClick (LoadLayout name) ] [ text (name ++ " (" ++ String.fromInt (List.length l.tables) ++ " tables)") ]
+                                                    , span [ onClick (LayoutMsg (LLoad name)) ] [ text (name ++ " (" ++ String.fromInt (List.length l.tables) ++ " tables)") ]
                                                     ]
                                                 ]
                                         )
