@@ -40,6 +40,9 @@ suite =
             , testParseSql ( parseSelectColumn, "with everything" )
                 "users.id AS my_id"
                 (BasicColumn { column | table = Just "users", column = "id", alias = Just "my_id" })
+            , testParseSql ( parseSelectColumn, "no space before as" )
+                "`tasks`.`metadata`as `metadata`"
+                (BasicColumn { column | table = Just "tasks", column = "metadata", alias = Just "metadata" })
             , testParseSql ( parseSelectColumn, "remove quotes" )
                 "users.\"id\""
                 (BasicColumn { column | table = Just "users", column = "id" })

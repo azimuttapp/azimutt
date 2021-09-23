@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn)
+module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn, parseCreateTableForeignKey)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (TableConstraint(..), parseAlterTableAddConstraint)
 import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit)
@@ -29,6 +29,7 @@ type alias ParsedColumn =
     , default : Maybe SqlColumnValue
     , primaryKey : Maybe SqlConstraintName
     , foreignKey : Maybe ( SqlConstraintName, SqlForeignKeyRef )
+    , check : Maybe SqlPredicate
     }
 
 
@@ -49,12 +50,12 @@ type alias ParsedIndex =
 
 
 type alias ParsedCheck =
-    { name : SqlConstraintName, predicate : SqlPredicate }
+    { name : SqlConstraintName, columns : List SqlColumnName, predicate : SqlPredicate }
 
 
 parseCreateTable : SqlStatement -> Result (List ParseError) ParsedTable
 parseCreateTable statement =
-    case statement |> buildSqlLine |> R.matches "^CREATE TABLE\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*\\((?<body>[^;]+?)\\)(?:\\s+WITH\\s+\\((?<options>.*?)\\))?(?:[^)]*)?;$" of
+    case statement |> buildSqlLine |> R.matches "^CREATE TABLE(?:\\s+IF NOT EXISTS)?\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*\\((?<body>[^;]+?)\\)(?:\\s+WITH\\s+\\((?<options>.*?)\\))?(?:[^)]*)?;$" of
         schema :: (Just table) :: (Just body) :: _ :: [] ->
             let
                 ( constraints, columns ) =
@@ -75,11 +76,11 @@ parseCreateTable statement =
                     }
                 )
                 (columns |> List.map parseCreateTableColumn |> L.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Create table can't have empty columns" ]))
-                (constraints |> List.filter (String.startsWith "PRIMARY KEY") |> List.map parseCreateTablePrimaryKey |> L.resultSeq)
-                (constraints |> List.filter (String.startsWith "FOREIGN KEY") |> List.map parseCreateTableForeignKey |> L.resultSeq)
-                (constraints |> List.filter (String.startsWith "UNIQUE KEY") |> List.map parseCreateTableUniqueKey |> L.resultSeq)
-                (constraints |> List.filter (String.startsWith "KEY") |> List.map parseCreateTableKey |> L.resultSeq)
-                (constraints |> List.filter (String.startsWith "CONSTRAINT") |> List.map (\c -> ("ADD " ++ c) |> parseAlterTableAddConstraint) |> L.resultSeq |> Result.mapError (\errs -> errs |> List.concatMap identity))
+                (constraints |> List.filter (String.toUpper >> String.startsWith "PRIMARY KEY") |> List.map parseCreateTablePrimaryKey |> L.resultSeq)
+                (constraints |> List.filter (String.toUpper >> String.startsWith "FOREIGN KEY") |> List.map parseCreateTableForeignKey |> L.resultSeq)
+                (constraints |> List.filter (String.toUpper >> String.startsWith "UNIQUE KEY") |> List.map parseCreateTableUniqueKey |> L.resultSeq)
+                (constraints |> List.filter (String.toUpper >> String.startsWith "KEY") |> List.map parseCreateTableKey |> L.resultSeq)
+                (constraints |> List.filter (String.toUpper >> String.startsWith "CONSTRAINT") |> List.map (\c -> ("ADD " ++ c) |> parseAlterTableAddConstraint) |> L.resultSeq |> Result.mapError (\errs -> errs |> List.concatMap identity))
 
         _ ->
             Err [ "Can't parse table: '" ++ buildRawSql statement ++ "'" ]
@@ -87,8 +88,8 @@ parseCreateTable statement =
 
 parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn sql =
-    case sql |> R.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?$" of
-        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybePrimary :: [] ->
+    case sql |> R.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?(?: CHECK\\((?<check>.*?)\\))?$" of
+        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybePrimary :: maybeCheck :: [] ->
             maybeConstraint
                 |> Maybe.map
                     (\constraint ->
@@ -106,7 +107,17 @@ parseCreateTableColumn sql =
                     )
                 |> M.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just "", Nothing, Nothing )))
                 |> Maybe.withDefault (Ok ( Nothing, Nothing, Nothing ))
-                |> Result.map (\( pk, fk, nullable2 ) -> { name = name |> buildColumnName, kind = kind, nullable = nullable == Nothing && nullable2 == Nothing, default = default1 |> M.orElse default2, primaryKey = pk, foreignKey = fk })
+                |> Result.map
+                    (\( pk, fk, nullable2 ) ->
+                        { name = name |> buildColumnName
+                        , kind = kind
+                        , nullable = nullable == Nothing && nullable2 == Nothing
+                        , default = default1 |> M.orElse default2
+                        , primaryKey = pk
+                        , foreignKey = fk
+                        , check = maybeCheck
+                        }
+                    )
 
         _ ->
             Err ("Can't parse column: '" ++ sql ++ "'")
@@ -223,8 +234,8 @@ uniqueKeyConstraints constraint =
 checkConstraints : TableConstraint -> Maybe ParsedCheck
 checkConstraints constraint =
     case constraint of
-        AlterTable.ParsedCheck name predicate ->
-            Just { name = name, predicate = predicate }
+        AlterTable.ParsedCheck name { columns, predicate } ->
+            Just { name = name, columns = columns, predicate = predicate }
 
         _ ->
             Nothing

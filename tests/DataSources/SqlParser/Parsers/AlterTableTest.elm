@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.AlterTableTest exposing (..)
 
-import DataSources.SqlParser.Parsers.AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..), parseAlterTable, parseAlterTableAddConstraintForeignKey)
+import DataSources.SqlParser.Parsers.AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..), parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
 import DataSources.SqlParser.TestHelpers.Tests exposing (testParse, testParseSql)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
@@ -33,7 +33,7 @@ suite =
                 (AddTableConstraint (Just "p") "t1" (ParsedUnique "name_unique" { columns = Nel "first_name" [ "last_name" ], definition = "(first_name, last_name)" }))
             , testParse ( parseAlterTable, "check" )
                 "ALTER TABLE p.t1 ADD CONSTRAINT t1_kind_not_null CHECK ((kind IS NOT NULL)) NOT VALID;"
-                (AddTableConstraint (Just "p") "t1" (ParsedCheck "t1_kind_not_null" "((kind IS NOT NULL)) NOT VALID"))
+                (AddTableConstraint (Just "p") "t1" (ParsedCheck "t1_kind_not_null" { columns = [], predicate = "((kind IS NOT NULL)) NOT VALID" }))
             , testParse ( parseAlterTable, "column default" )
                 "ALTER TABLE public.table1 ALTER COLUMN id SET DEFAULT 1;"
                 (AlterColumn (Just "public") "table1" (ColumnDefault "id" "1"))
@@ -52,6 +52,11 @@ suite =
             , testParse ( parseAlterTable, "primary key with add" )
                 "ALTER TABLE public.t2 ADD PRIMARY KEY (`id`);"
                 (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey Nothing (Nel "id" [])))
+            ]
+        , describe "parseAlterTableAddConstraint"
+            [ testParseSql ( parseAlterTableAddConstraint, "unique" )
+                "add constraint `no_duplicate_tags` unique (`task_ulid`, `tag`)"
+                (ParsedUnique "no_duplicate_tags" { columns = Nel "task_ulid" [ "tag" ], definition = "(`task_ulid`, `tag`)" })
             ]
         , describe "parseAlterTableAddConstraintForeignKey"
             [ testParseSql ( parseAlterTableAddConstraintForeignKey, "with on delete" )

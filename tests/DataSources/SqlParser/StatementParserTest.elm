@@ -2,7 +2,7 @@ module DataSources.SqlParser.StatementParserTest exposing (..)
 
 import DataSources.SqlParser.Parsers.AlterTable exposing (TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.StatementParser exposing (Command(..))
-import DataSources.SqlParser.TestHelpers.Tests exposing (testParseStatement)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParseStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -13,7 +13,7 @@ suite =
         [ describe "parseStatement"
             [ testParseStatement "parse create table"
                 "CREATE TABLE aaa.bbb (ccc int);"
-                (CreateTable { schema = Just "aaa", table = "bbb", columns = Nel { name = "ccc", kind = "int", nullable = True, default = Nothing, primaryKey = Nothing, foreignKey = Nothing } [], primaryKey = Nothing, foreignKeys = [], uniques = [], indexes = [], checks = [] })
+                (CreateTable { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] })
             , testParseStatement "parse alter table"
                 "ALTER TABLE ONLY public.t2 ADD CONSTRAINT t2_id_pkey PRIMARY KEY (id);"
                 (AlterTable (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey (Just "t2_id_pkey") (Nel "id" []))))

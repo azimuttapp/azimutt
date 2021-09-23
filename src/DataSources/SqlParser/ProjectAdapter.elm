@@ -78,9 +78,10 @@ buildIndex index =
 
 
 buildCheck : SqlCheck -> Check
-buildCheck index =
-    { name = index.name
-    , predicate = index.predicate
+buildCheck check =
+    { name = check.name
+    , columns = check.columns
+    , predicate = check.predicate
     , sources = [] -- FIXME
     }
 

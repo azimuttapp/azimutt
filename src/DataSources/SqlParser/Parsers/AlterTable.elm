@@ -33,7 +33,7 @@ type alias UniqueInner =
 
 
 type alias CheckInner =
-    SqlPredicate
+    { columns : List SqlColumnName, predicate : SqlPredicate }
 
 
 type ColumnUpdate
@@ -142,7 +142,7 @@ parseAlterTableAddConstraintUnique constraint =
     case constraint |> R.matches "^UNIQUE\\s+(?<definition>.+)$" of
         (Just definition) :: [] ->
             parseIndexDefinition definition
-                |> Result.andThen (\columns -> Nel.fromList columns |> Result.fromMaybe [ "Unique index can't have empty columns" ])
+                |> Result.andThen (\columns -> columns |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Unique index can't have empty columns" ])
                 |> Result.map (\columns -> { columns = columns, definition = definition })
 
         _ ->
@@ -153,7 +153,7 @@ parseAlterTableAddConstraintCheck : RawSql -> Result (List ParseError) CheckInne
 parseAlterTableAddConstraintCheck constraint =
     case constraint |> R.matches "^CHECK\\s+(?<predicate>.*)$" of
         (Just predicate) :: [] ->
-            Ok predicate
+            Ok { columns = [], predicate = predicate }
 
         _ ->
             Err [ "Can't parse check constraint: '" ++ constraint ++ "'" ]
