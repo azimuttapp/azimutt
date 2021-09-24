@@ -13,6 +13,7 @@ import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide
 import Components.Slices.Hero as Hero
+import Components.Slices.Navbar as Navbar
 import Css.Global as Global
 import ElmBook exposing (withChapterGroups, withComponentOptions, withThemeOptions)
 import ElmBook.Chapter exposing (chapter, render)
@@ -36,7 +37,7 @@ main =
             , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc ] )
             , ( "Molecules", [ Feature.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
-            , ( "Slices", [ Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc ] )
+            , ( "Slices", [ Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Navbar.doc ] )
             ]
 
 
