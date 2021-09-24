@@ -166,6 +166,7 @@ window.addEventListener('load', function() {
     }
 
     const hotkeys = {}
+    // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
     document.addEventListener('keydown', e => {
         Object.entries(hotkeys).forEach(([id, alternatives]) => {
             alternatives.forEach(hotkey => {
