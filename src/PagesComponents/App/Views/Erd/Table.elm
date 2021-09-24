@@ -322,7 +322,7 @@ formatCheckTitle : List Check -> String
 formatCheckTitle checks =
     case checks of
         check :: [] ->
-            check.predicate
+            "Check constraint: " ++ check.predicate
 
         _ ->
             "In checks " ++ (checks |> List.map .name |> String.join ", ")

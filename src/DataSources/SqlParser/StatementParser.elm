@@ -169,6 +169,12 @@ parseStatement statement =
      else if firstLine |> String.startsWith "GO " then
         Ok (Ignored statement)
 
+     else if firstLine |> String.startsWith "END" then
+        Ok (Ignored statement)
+
+     else if firstLine |> String.startsWith "$$" then
+        Ok (Ignored statement)
+
      else
         Err [ "Statement not handled: '" ++ buildRawSql statement ++ "'" ]
     )

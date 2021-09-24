@@ -347,24 +347,38 @@ buildStatements lines =
             )
         |> List.foldr
             (\line ( currentStatementLines, statements, nestedBlock ) ->
-                if (line.text |> String.trim |> String.toUpper) == "BEGIN" then
-                    ( line :: currentStatementLines, statements, nestedBlock + 1 )
+                case
+                    ( ( (line |> hasKeyword "BEGIN") || (line |> hasKeyword "CASE")
+                      , line |> hasKeyword "END"
+                      )
+                    , ( line.text |> String.endsWith ";"
+                      , nestedBlock
+                      )
+                    )
+                of
+                    ( ( True, _ ), ( False, _ ) ) ->
+                        ( line :: currentStatementLines, statements, max (nestedBlock - 1) 0 )
 
-                else if (line.text |> String.trim |> String.toUpper) == "END" then
-                    ( line :: currentStatementLines, statements, nestedBlock - 1 )
+                    ( ( _, True ), ( False, _ ) ) ->
+                        ( line :: currentStatementLines, statements, nestedBlock + 1 )
 
-                else if (line.text |> String.trim |> String.toUpper) == "END;" then
-                    ( line :: [], addStatement currentStatementLines statements, nestedBlock - 1 )
+                    ( ( _, True ), ( True, _ ) ) ->
+                        ( line :: [], addStatement currentStatementLines statements, nestedBlock + 1 )
 
-                else if (line.text |> String.endsWith ";") && nestedBlock == 0 then
-                    ( line :: [], addStatement currentStatementLines statements, nestedBlock )
+                    ( _, ( True, 0 ) ) ->
+                        ( line :: [], addStatement currentStatementLines statements, nestedBlock )
 
-                else
-                    ( line :: currentStatementLines, statements, nestedBlock )
+                    _ ->
+                        ( line :: currentStatementLines, statements, nestedBlock )
             )
             ( [], [], 0 )
         |> (\( cur, res, _ ) -> addStatement cur res)
         |> List.filter (\s -> not (statementIsEmpty s))
+
+
+hasKeyword : String -> SqlLine -> Bool
+hasKeyword keyword line =
+    (line.text |> R.contains ("[^A-Z_]" ++ keyword ++ "([^A-Z_]|$)")) && not (line.text |> R.contains ("'.*" ++ keyword ++ ".*'"))
 
 
 hasOnlyComment : SqlLine -> Bool

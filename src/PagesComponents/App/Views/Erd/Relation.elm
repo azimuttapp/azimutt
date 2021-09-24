@@ -50,7 +50,7 @@ viewVirtualRelation ( src, pos ) =
                 { x = pos.left, y = pos.top }
                 src.column.nullable
                 (Just props.color)
-                conf.zIndex.tables
+                (conf.zIndex.tables - 1)
                 "virtual relation"
 
         Nothing ->
