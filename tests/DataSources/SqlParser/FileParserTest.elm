@@ -47,53 +47,52 @@ suite =
                          EXECUTE 'SET log_min_duration_statement = ' || $1::text;
                      END
                      $_$;""" ]
+            , testBuildStatements "case blocks"
+                """PRAGMA foreign_keys=OFF;
 
-            --, testBuildStatements "case blocks"
-            --    """PRAGMA foreign_keys=OFF;
-            --
-            --       CREATE VIEW `tasks_view` as
-            --       select
-            --       `tasks`.`ulid` as `ulid`,
-            --       ifnull(`tasks`.`priority_adjustment`, 0.0)
-            --        + case   when waiting_utc is null then 0.0
-            --        when waiting_utc >= datetime('now') then 0.0
-            --        when waiting_utc <  datetime('now') then -10.0
-            --       end
-            --       as `priority`
-            --       from
-            --       `tasks`;
-            --
-            --       CREATE TRIGGER `set_modified_utc_after_update`
-            --       after update on `tasks`
-            --       when `new`.`modified_utc` is `old`.`modified_utc`
-            --       begin
-            --        update `tasks`
-            --       set `modified_utc` = datetime('now')
-            --       where `ulid` = `new`.`ulid`
-            --       ;
-            --       end;"""
-            --    [ "PRAGMA foreign_keys=OFF;"
-            --    , """CREATE VIEW `tasks_view` as
-            --         select
-            --         `tasks`.`ulid` as `ulid`,
-            --         ifnull(`tasks`.`priority_adjustment`, 0.0)
-            --          + case   when waiting_utc is null then 0.0
-            --          when waiting_utc >= datetime('now') then 0.0
-            --          when waiting_utc <  datetime('now') then -10.0
-            --         end
-            --         as `priority`
-            --         from
-            --         `tasks`;"""
-            --    , """CREATE TRIGGER `set_modified_utc_after_update`
-            --         after update on `tasks`
-            --         when `new`.`modified_utc` is `old`.`modified_utc`
-            --         begin
-            --          update `tasks`
-            --         set `modified_utc` = datetime('now')
-            --         where `ulid` = `new`.`ulid`
-            --         ;
-            --         end;"""
-            --    ]
+                   CREATE VIEW `tasks_view` as
+                   select
+                   `tasks`.`ulid` as `ulid`,
+                   ifnull(`tasks`.`priority_adjustment`, 0.0)
+                    + case   when waiting_utc is null then 0.0
+                    when waiting_utc >= datetime('now') then 0.0
+                    when waiting_utc <  datetime('now') then -10.0
+                   end
+                   as `priority`
+                   from
+                   `tasks`;
+
+                   CREATE TRIGGER `set_modified_utc_after_update`
+                   after update on `tasks`
+                   when `new`.`modified_utc` is `old`.`modified_utc`
+                   begin
+                    update `tasks`
+                   set `modified_utc` = datetime('now')
+                   where `ulid` = `new`.`ulid`
+                   ;
+                   end;"""
+                [ "PRAGMA foreign_keys=OFF;"
+                , """CREATE VIEW `tasks_view` as
+                     select
+                     `tasks`.`ulid` as `ulid`,
+                     ifnull(`tasks`.`priority_adjustment`, 0.0)
+                      + case   when waiting_utc is null then 0.0
+                      when waiting_utc >= datetime('now') then 0.0
+                      when waiting_utc <  datetime('now') then -10.0
+                     end
+                     as `priority`
+                     from
+                     `tasks`;"""
+                , """CREATE TRIGGER `set_modified_utc_after_update`
+                     after update on `tasks`
+                     when `new`.`modified_utc` is `old`.`modified_utc`
+                     begin
+                      update `tasks`
+                     set `modified_utc` = datetime('now')
+                     where `ulid` = `new`.`ulid`
+                     ;
+                     end;"""
+                ]
             ]
         ]
 
