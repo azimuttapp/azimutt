@@ -1,8 +1,7 @@
-module Components.Slices.Hero exposing (backgroundImageSlice, basicSlice, doc)
+module Components.Slices.Hero exposing (Model, backgroundImageSlice, basicSlice, doc)
 
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
-import Components.Organisms.Header exposing (headerSlice)
 import Css exposing (focus, hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
@@ -84,30 +83,31 @@ basicSlice =
         ]
 
 
-backgroundImageSlice : Html msg
-backgroundImageSlice =
-    div []
-        [ headerSlice "/logo.png"
-        , div [ css [ relative ] ]
-            [ div [ css [ absolute, inset_x_0, bottom_0, h_1over2 ] ] []
-            , div [ css [ max_w_7xl, mx_auto, lg [ px_8 ], sm [ px_6 ] ] ]
-                [ div [ css [ relative, shadow_xl, sm [ rounded_2xl, overflow_hidden ] ] ]
-                    [ div [ css [ absolute, inset_0 ] ]
-                        [ img [ src "/assets/images/background_hero.jpeg", alt "A compass on a map", css [ h_full, w_full, object_cover ] ] []
-                        , div [ css [ absolute, inset_0, bg_gradient_to_r, from_green_200, to_indigo_700, mix_blend_multiply ] ] []
+type alias Model =
+    {}
+
+
+backgroundImageSlice : Model -> Html msg
+backgroundImageSlice _ =
+    div [ css [ relative ] ]
+        [ div [ css [ absolute, inset_x_0, bottom_0, h_1over2 ] ] []
+        , div [ css [ max_w_7xl, mx_auto, lg [ px_8 ], sm [ px_6 ] ] ]
+            [ div [ css [ relative, shadow_xl, sm [ rounded_2xl, overflow_hidden ] ] ]
+                [ div [ css [ absolute, inset_0 ] ]
+                    [ img [ src "/assets/images/background_hero.jpeg", alt "A compass on a map", css [ h_full, w_full, object_cover ] ] []
+                    , div [ css [ absolute, inset_0, bg_gradient_to_r, from_green_200, to_indigo_700, mix_blend_multiply ] ] []
+                    ]
+                , div [ css [ relative, px_4, py_16, lg [ py_32, px_8 ], sm [ px_6, py_24 ] ] ]
+                    [ h1 [ css [ text_4xl, font_extrabold, tracking_tight, lg [ text_6xl ], sm [ text_5xl ] ] ]
+                        [ span [ css [ block, text_white ] ]
+                            [ text "Azimutt" ]
                         ]
-                    , div [ css [ relative, px_4, py_16, lg [ py_32, px_8 ], sm [ px_6, py_24 ] ] ]
-                        [ h1 [ css [ text_4xl, font_extrabold, tracking_tight, lg [ text_6xl ], sm [ text_5xl ] ] ]
-                            [ span [ css [ block, text_white ] ]
-                                [ text "Azimutt" ]
-                            ]
-                        , p [ css [ mt_6, max_w_lg, text_xl, text_indigo_100 ] ]
-                            [ text "Lost in your database schema ?", br [] [], text "You just found the right ", bText "Azimutt", text " 🎉" ]
-                        , div [ css [ mt_10 ] ]
-                            [ div [ css [ space_y_4, sm [ space_y_0, inline_grid, grid_cols_1, gap_5 ] ] ]
-                                [ a ([ href (Route.toHref Route.App), css [ flex, items_center, justify_center, px_4, py_3, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_indigo_700, bg_white, hover [ bg_indigo_50 ], sm [ px_8 ] ] ] ++ track (events.openAppCta "home-hero"))
-                                    [ text "Explore your schema" ]
-                                ]
+                    , p [ css [ mt_6, max_w_lg, text_xl, text_indigo_100 ] ]
+                        [ text "Lost in your database schema ?", br [] [], text "You just found the right ", bText "Azimutt", text " 🎉" ]
+                    , div [ css [ mt_10 ] ]
+                        [ div [ css [ space_y_4, sm [ space_y_0, inline_grid, grid_cols_1, gap_5 ] ] ]
+                            [ a ([ href (Route.toHref Route.App), css [ flex, items_center, justify_center, px_4, py_3, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_indigo_700, bg_white, hover [ bg_indigo_50 ], sm [ px_8 ] ] ] ++ track (events.openAppCta "home-hero"))
+                                [ text "Explore your schema" ]
                             ]
                         ]
                     ]
@@ -116,10 +116,15 @@ backgroundImageSlice =
         ]
 
 
+docModel : Model
+docModel =
+    {}
+
+
 doc : Chapter x
 doc =
     chapter "Hero"
         |> renderComponentList
             [ ( "basicSlice", basicSlice )
-            , ( "backgroundImageSlice", backgroundImageSlice )
+            , ( "backgroundImageSlice", backgroundImageSlice docModel )
             ]
