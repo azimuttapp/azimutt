@@ -61,8 +61,8 @@ window.addEventListener('load', function() {
         bootstrap.Offcanvas.getOrCreateInstance(getElementById(id)).hide()
     }
     function activateTooltipsAndPopovers() {
-        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => bootstrap.Tooltip.getOrCreateInstance(e))
-        document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => bootstrap.Popover.getOrCreateInstance(e))
+        bootstrap && document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(e => bootstrap.Tooltip.getOrCreateInstance(e))
+        bootstrap && document.querySelectorAll('[data-bs-toggle="popover"]').forEach(e => bootstrap.Popover.getOrCreateInstance(e))
     }
 
     let toastCpt = 0
@@ -260,7 +260,7 @@ window.addEventListener('load', function() {
         currentTooltip = e.target
     })
     window.addEventListener('click', () => {
-        currentTooltip && bootstrap.Tooltip.getOrCreateInstance(currentTooltip).hide()
+        currentTooltip && bootstrap && bootstrap.Tooltip.getOrCreateInstance(currentTooltip).hide()
     })
     // autofocus element in modal that require it (not done automatically)
     // cd https://getbootstrap.com/docs/5.0/components/modal/: "Due to how HTML5 defines its semantics, the autofocus HTML attribute has no effect in Bootstrap modals."
@@ -287,10 +287,10 @@ window.addEventListener('load', function() {
         }
     })
     window.addEventListener('focusin', e => {
-        if (e.target.id === 'search') { setTimeout(() => bootstrap.Dropdown.getOrCreateInstance(e.target).show(), 10) }
+        if (e.target.id === 'search') { bootstrap && setTimeout(() => bootstrap.Dropdown.getOrCreateInstance(e.target).show(), 10) }
     })
     window.addEventListener('focusout', e => {
-        if (e.target.id === 'search') { setTimeout(() => bootstrap.Dropdown.getOrCreateInstance(e.target).hide(), 10) }
+        if (e.target.id === 'search') { bootstrap && setTimeout(() => bootstrap.Dropdown.getOrCreateInstance(e.target).hide(), 10) }
     })
     // search input parent is the dropdown element, on mousedown it's blurred but we want that only on click
     window.addEventListener('mousedown', e => {

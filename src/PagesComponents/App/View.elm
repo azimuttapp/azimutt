@@ -2,6 +2,7 @@ module PagesComponents.App.View exposing (viewApp)
 
 import FontAwesome.Styles as Icon
 import Html exposing (Html, node, text)
+import Html.Attributes exposing (href, rel)
 import Html.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy7)
 import Libs.Maybe as M
 import PagesComponents.App.Models exposing (Model, Msg(..))
@@ -19,7 +20,10 @@ import PagesComponents.App.Views.Navbar exposing (viewNavbar)
 viewApp : Model -> List (Html Msg)
 viewApp model =
     List.concatMap identity
-        [ [ Icon.css, node "style" [] [ text "body { overflow: hidden; }" ] ]
+        [ [ Icon.css
+          , node "style" [] [ text "body { overflow: hidden; }" ]
+          , node "link" [ rel "stylesheet", href "/assets/bootstrap.min.css" ] []
+          ]
         , [ lazy4 viewNavbar model.search model.storedProjects model.project model.virtualRelation ]
         , [ lazy viewMenu (model.project |> Maybe.map .schema) ]
         , [ lazy7 viewErd model.hover model.cursorMode model.dragState model.virtualRelation model.selection model.domInfos (model.project |> Maybe.map .schema) ]

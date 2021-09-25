@@ -1,8 +1,11 @@
 module Pages.Blog.Slug_ exposing (Model, Msg, page)
 
 import Gen.Params.Blog.Slug_ exposing (Params)
+import Html.Styled as Styled
 import Libs.Task exposing (send)
 import Page
+import PagesComponents.Blog.Slug.Models as Models
+import PagesComponents.Blog.Slug.View exposing (viewArticle)
 import Request
 import Shared
 import View exposing (View)
@@ -23,7 +26,7 @@ page _ _ =
 
 
 type alias Model =
-    {}
+    Models.Model
 
 
 init : ( Model, Cmd Msg )
@@ -60,5 +63,7 @@ subscriptions _ =
 
 
 view : Model -> View Msg
-view _ =
-    View.placeholder "Blog.Slug_"
+view model =
+    { title = "Azimutt article"
+    , body = viewArticle model |> List.map Styled.toUnstyled
+    }
