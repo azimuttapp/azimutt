@@ -1,4 +1,4 @@
-module Components.Organisms.Header exposing (Brand, ExtLink, Img, LeftLinksModel, LeftLinksTheme, Link, RightLinksModel, RightLinksTheme, doc, leftLinks, leftLinksIndigo, leftLinksWhite, rightLinks, rightLinksIndigo, rightLinksWhite)
+module Components.Organisms.Header exposing (Brand, ExtLink, LeftLinksModel, LeftLinksTheme, RightLinksModel, RightLinksTheme, doc, leftLinks, leftLinksIndigo, leftLinksWhite, rightLinks, rightLinksIndigo, rightLinksWhite)
 
 import Css exposing (hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
@@ -7,6 +7,7 @@ import Html.Styled exposing (Html, a, div, header, img, nav, span, text)
 import Html.Styled.Attributes exposing (alt, css, href, src)
 import Libs.Html.Styled exposing (extLink)
 import Libs.Html.Styled.Attributes exposing (ariaLabel)
+import Libs.Models exposing (Image, Link)
 import Tailwind.Breakpoints exposing (lg, md, sm)
 import Tailwind.Utilities exposing (bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_500, border_none, border_transparent, flex, flex_1, flex_wrap, font_medium, h_10, h_8, hidden, inline_block, items_center, justify_between, justify_center, justify_start, max_w_7xl, ml_10, mx_auto, px_4, px_6, px_8, py_2, py_4, py_6, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, sr_only, text_base, text_gray_500, text_gray_900, text_indigo_50, text_indigo_600, text_white, w_0, w_auto, w_full)
 
@@ -18,15 +19,7 @@ type alias RightLinksModel msg =
 
 
 type alias Brand =
-    { img : Img, link : Link }
-
-
-type alias Img =
-    { src : String, alt : String }
-
-
-type alias Link =
-    { url : String, text : String }
+    { img : Image, link : Link }
 
 
 type alias ExtLink msg =
