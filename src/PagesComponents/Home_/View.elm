@@ -3,7 +3,6 @@ module PagesComponents.Home_.View exposing (viewHome)
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Feature as Feature
-import Components.Organisms.Footer as Footer
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
@@ -154,5 +153,5 @@ viewHome =
             ]
         }
     , Cta.slice
-    , Footer.slice
+    , Helpers.publicFooter
     ]

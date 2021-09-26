@@ -9,6 +9,7 @@ import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Feature as Feature
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
+import Components.Slices.Blog as Blog
 import Components.Slices.Content as Content
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
@@ -37,7 +38,7 @@ main =
             , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
             , ( "Molecules", [ Feature.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
-            , ( "Slices", [ Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc ] )
+            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc ] )
             ]
 
 

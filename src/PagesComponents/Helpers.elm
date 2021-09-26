@@ -1,6 +1,7 @@
-module PagesComponents.Helpers exposing (publicHeader, root)
+module PagesComponents.Helpers exposing (publicFooter, publicHeader, root)
 
 import Components.Atoms.Icon as Icon
+import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Conf exposing (constants)
 import Gen.Route as Route
@@ -34,3 +35,8 @@ publicHeader =
             , { url = constants.azimuttTwitter, content = [ Icon.twitter [], span [ css [ sr_only ] ] [ text "Twitter" ] ], external = True }
             ]
         }
+
+
+publicFooter : Html.Styled.Html msg
+publicFooter =
+    Footer.slice

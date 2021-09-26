@@ -3,7 +3,8 @@ module PagesComponents.Blog.Slug.View exposing (viewArticle)
 import Components.Atoms.Markdown exposing (markdown)
 import Components.Slices.Content as Content
 import Css.Global as Global
-import Html.Styled exposing (Html, li, text, ul)
+import Html.Styled exposing (Html, div, li, text, ul)
+import Html.Styled.Attributes exposing (style)
 import Libs.Http as H
 import Libs.Nel as Nel
 import PagesComponents.Blog.Slug.Models exposing (Model(..))
@@ -21,7 +22,7 @@ viewArticle model =
                 { section = "Loading"
                 , title = "Loading"
                 , introduction = Nothing
-                , content = [ text "Loading" ]
+                , content = [ div [ style "margin-top" "20rem", style "margin-bottom" "20rem", style "text-align" "center" ] [ text "Loading" ] ]
                 , dots = False
                 }
 
@@ -51,4 +52,5 @@ viewArticle model =
                 , content = [ markdown content.body ]
                 , dots = True
                 }
+    , Helpers.publicFooter
     ]
