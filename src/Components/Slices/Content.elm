@@ -5,6 +5,7 @@ import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, blockquote, div, figcaption, figure, h1, h2, img, li, p, span, strong, text, ul)
 import Html.Styled.Attributes exposing (alt, css, height, href, src, width)
+import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
 import Tailwind.Breakpoints exposing (lg, sm)
 import Tailwind.Utilities exposing (absolute, bg_white, block, font_extrabold, font_semibold, h_full, hidden, inset_y_0, leading_8, max_w_prose, mt_2, mt_6, mt_8, mx_auto, overflow_hidden, prose, prose_indigo, prose_lg, px_4, px_6, px_8, py_16, relative, rounded_lg, text_3xl, text_4xl, text_base, text_center, text_gray_500, text_gray_900, text_indigo_600, text_lg, text_xl, tracking_tight, tracking_wide, uppercase, w_full)
@@ -13,29 +14,34 @@ import Tailwind.Utilities exposing (absolute, bg_white, block, font_extrabold, f
 type alias CenteredModel msg =
     { section : String
     , title : String
-    , introduction : String
+    , introduction : Maybe String
     , content : List (Html msg)
+    , dots : Bool
     }
 
 
 centered : CenteredModel msg -> Html msg
 centered model =
     div [ css [ relative, py_16, bg_white, overflow_hidden ] ]
-        [ div [ css [ hidden, lg [ block, absolute, inset_y_0, h_full, w_full ] ] ]
-            [ div [ css [ relative, h_full, text_lg, max_w_prose, mx_auto ], ariaHidden True ]
-                [ Dots.dotsTopRight "74b3fd99-0a6f-4271-bef2-e80eeafdf357" 384
-                , Dots.dotsMiddleLeft "f210dbf6-a58d-4871-961e-36d5016a0f49" 384
-                , Dots.dotsBottomRight "d3eb07ae-5182-43e6-857d-35c643af9034" 384
+        [ B.cond model.dots
+            (div [ css [ hidden, lg [ block, absolute, inset_y_0, h_full, w_full ] ] ]
+                [ div [ css [ relative, h_full, text_lg, max_w_prose, mx_auto ], ariaHidden True ]
+                    [ Dots.dotsTopRight "74b3fd99-0a6f-4271-bef2-e80eeafdf357" 384
+                    , Dots.dotsMiddleLeft "f210dbf6-a58d-4871-961e-36d5016a0f49" 384
+                    , Dots.dotsBottomRight "d3eb07ae-5182-43e6-857d-35c643af9034" 384
+                    ]
                 ]
-            ]
+            )
+            (div [] [])
         , div [ css [ relative, px_4, sm [ px_6 ], lg [ px_8 ] ] ]
             [ div [ css [ text_lg, max_w_prose, mx_auto ] ]
-                [ h1 []
+                ([ h1 []
                     [ span [ css [ block, text_base, text_center, text_indigo_600, font_semibold, tracking_wide, uppercase ] ] [ text model.section ]
                     , span [ css [ mt_2, block, text_3xl, text_center, leading_8, font_extrabold, tracking_tight, text_gray_900, sm [ text_4xl ] ] ] [ text model.title ]
                     ]
-                , p [ css [ mt_8, text_xl, text_gray_500, leading_8 ] ] [ text model.introduction ]
-                ]
+                 ]
+                    ++ (model.introduction |> Maybe.map (\intro -> [ p [ css [ mt_8, text_xl, text_gray_500, leading_8 ] ] [ text intro ] ]) |> Maybe.withDefault [])
+                )
             , div [ css [ mt_6, prose, prose_indigo, prose_lg, text_gray_500, mx_auto ] ] model.content
             ]
         ]
@@ -49,7 +55,7 @@ doc =
               , centered
                     { section = "Introducing"
                     , title = "JavaScript for Beginners"
-                    , introduction = "Aliquet nec orci mattis amet quisque ullamcorper neque, nibh sem. At arcu, sit dui mi, nibh dui, diam eget aliquam. Quisque id at vitae feugiat egestas ac. Diam nulla orci at in viverra scelerisque eget. Eleifend egestas fringilla sapien."
+                    , introduction = Just "Aliquet nec orci mattis amet quisque ullamcorper neque, nibh sem. At arcu, sit dui mi, nibh dui, diam eget aliquam. Quisque id at vitae feugiat egestas ac. Diam nulla orci at in viverra scelerisque eget. Eleifend egestas fringilla sapien."
                     , content =
                         [ p []
                             [ text "Faucibus commodo massa rhoncus, volutpat. "
@@ -82,6 +88,7 @@ doc =
                             ]
                         , p [] [ text "Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit." ]
                         ]
+                    , dots = True
                     }
               )
             ]

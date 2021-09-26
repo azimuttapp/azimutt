@@ -1,4 +1,4 @@
-module Libs.Dict exposing (fromListMap, getOrElse)
+module Libs.Dict exposing (fromListMap, get, getOrElse)
 
 import Dict exposing (Dict)
 
@@ -11,6 +11,11 @@ fromListMap getKey list =
 getOrElse : comparable -> a -> Dict comparable a -> a
 getOrElse key default dict =
     dict |> Dict.get key |> Maybe.withDefault default
+
+
+get : String -> Dict String a -> Result String a
+get key dict =
+    dict |> Dict.get key |> Result.fromMaybe ("Missing key '" ++ key ++ "'")
 
 
 filterMap : (comparable -> a -> Maybe b) -> Dict comparable a -> Dict comparable b

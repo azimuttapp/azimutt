@@ -5,6 +5,7 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
+import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Feature as Feature
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
@@ -33,7 +34,7 @@ main =
         |> withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
             , ( "Molecules", [ Feature.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
             , ( "Slices", [ Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc ] )

@@ -1,4 +1,4 @@
-module Libs.Regex exposing (contains, matches)
+module Libs.Regex exposing (contains, matches, replace)
 
 import Regex exposing (Regex)
 
@@ -11,6 +11,11 @@ matches regex text =
 contains : String -> String -> Bool
 contains regex text =
     regex |> asRegex |> (\r -> Regex.contains r text)
+
+
+replace : String -> String -> String -> String
+replace fromRegex to text =
+    fromRegex |> asRegex |> (\r -> Regex.replace r (\_ -> to) text)
 
 
 asRegex : String -> Regex

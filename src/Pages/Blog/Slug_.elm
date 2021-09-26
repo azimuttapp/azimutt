@@ -2,9 +2,12 @@ module Pages.Blog.Slug_ exposing (Model, Msg, page)
 
 import Gen.Params.Blog.Slug_ exposing (Params)
 import Html.Styled as Styled
-import Libs.Task exposing (send)
+import Http
+import Libs.Regex as Rgx
+import Libs.Result as R
 import Page
-import PagesComponents.Blog.Slug.Models as Models
+import PagesComponents.Blog.Slug.Models as Models exposing (Model(..))
+import PagesComponents.Blog.Slug.Updates exposing (parseContent)
 import PagesComponents.Blog.Slug.View exposing (viewArticle)
 import Request
 import Shared
@@ -12,9 +15,9 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page _ _ =
+page _ req =
     Page.element
-        { init = init
+        { init = init req
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -29,9 +32,14 @@ type alias Model =
     Models.Model
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( {}, send ReplaceMe )
+init : Request.With Params -> ( Model, Cmd Msg )
+init req =
+    ( Loading, getContent req.params.slug )
+
+
+getContent : String -> Cmd Msg
+getContent slug =
+    Http.get { url = "/content/" ++ (slug |> Rgx.replace "[^a-zA-Z0-9_-]" "-") ++ ".md", expect = Http.expectString GotContent }
 
 
 
@@ -39,14 +47,17 @@ init =
 
 
 type Msg
-    = ReplaceMe
+    = GotContent (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update msg _ =
     case msg of
-        ReplaceMe ->
-            ( model, Cmd.none )
+        GotContent (Ok content) ->
+            ( content |> parseContent |> R.fold BadContent Loaded, Cmd.none )
+
+        GotContent (Err err) ->
+            ( BadSlug err, Cmd.none )
 
 
 

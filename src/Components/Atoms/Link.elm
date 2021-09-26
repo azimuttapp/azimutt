@@ -31,5 +31,5 @@ doc =
     in
     chapter "Link"
         |> renderComponentList
-            [ ( "button Link", link defaultProps )
+            [ ( "link", link defaultProps )
             ]
