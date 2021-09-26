@@ -4,7 +4,6 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Feature as Feature
 import Components.Organisms.Footer as Footer
-import Components.Organisms.Header as Header
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
@@ -16,24 +15,15 @@ import Html.Styled exposing (Html, b, br, div, span, text)
 import Html.Styled.Attributes exposing (css, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText, extLink)
-import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, sr_only, text_red_800, text_white)
+import PagesComponents.Helpers as Helpers
+import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800, text_white)
 import Tracking exposing (events)
 
 
 viewHome : List (Html msg)
 viewHome =
     [ Global.global globalStyles
-    , Header.rightLinksWhite
-        { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
-        , links =
-            [ { url = Route.toHref Route.Blog, content = [ text "Blog" ], external = False }
-            , { url = constants.azimuttGithub ++ "/discussions", content = [ text "Discussions" ], external = True }
-            , { url = constants.azimuttGithub ++ "/projects/1", content = [ text "Roadmap" ], external = True }
-            , { url = constants.azimuttGithub, content = [ text "Source code" ], external = True }
-            , { url = constants.azimuttGithub ++ "/issues", content = [ text "Bug reports" ], external = True }
-            , { url = constants.azimuttTwitter, content = [ Icon.twitter [], span [ css [ sr_only ] ] [ text "Twitter" ] ], external = True }
-            ]
-        }
+    , Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Azimutt"

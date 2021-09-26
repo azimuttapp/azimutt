@@ -25,7 +25,7 @@ import PagesComponents.App.Updates.Project exposing (createProjectFromFile, crea
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
-import PagesComponents.Containers as Containers
+import PagesComponents.Helpers as Helpers
 import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, showModal, toastError, track, trackJsonError, trackPage)
 import Request
 import Shared
@@ -280,5 +280,5 @@ virtualRelationSubscription virtualRelation =
 view : Model -> View Msg
 view model =
     { title = model.project |> Maybe.map (\p -> p.name ++ " - Azimutt") |> Maybe.withDefault "Azimutt - Explore your database schema"
-    , body = Containers.root (viewApp model)
+    , body = Helpers.root (viewApp model)
     }
