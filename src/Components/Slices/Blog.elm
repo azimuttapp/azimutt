@@ -6,7 +6,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, button, div, form, h2, input, label, p, text, time)
 import Html.Styled.Attributes exposing (attribute, css, datetime, for, href, id, name, placeholder, required, type_)
 import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (appearance_none, bg_indigo_600, bg_indigo_700, bg_white, block, border, border_gray_300, border_indigo_500, border_transparent, divide_gray_200, divide_y_2, flex, flex_col, flex_row, flex_shrink_0, font_extrabold, font_medium, font_semibold, gap_16, gap_5, grid, grid_cols_2, inline_flex, items_center, justify_center, justify_end, max_w_7xl, max_w_lg, max_w_xs, ml_3, mt_0, mt_2, mt_3, mt_4, mt_6, mx_auto, outline_none, pb_20, pb_28, placeholder_gray_500, pt_10, pt_16, pt_24, px_4, px_6, px_8, py_2, relative, ring_2, ring_indigo_500, ring_offset_2, rounded_md, shadow_sm, sr_only, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_white, text_xl, tracking_tight, w_auto, w_full)
+import Tailwind.Utilities exposing (appearance_none, bg_indigo_600, bg_indigo_700, bg_white, block, border, border_gray_300, border_indigo_500, border_transparent, divide_gray_200, divide_y_2, flex, flex_col, flex_row, flex_shrink_0, font_extrabold, font_medium, font_semibold, gap_16, gap_5, gap_x_5, gap_y_12, grid, grid_cols_2, inline_flex, items_center, justify_center, justify_end, max_w_7xl, max_w_lg, max_w_xs, ml_3, mt_0, mt_2, mt_3, mt_4, mt_6, mx_auto, outline_none, pb_20, pb_28, placeholder_gray_500, pt_10, pt_16, pt_24, px_4, px_6, px_8, py_2, relative, ring_2, ring_indigo_500, ring_offset_2, rounded_md, shadow_sm, sr_only, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_white, text_xl, tracking_tight, w_auto, w_full)
 
 
 type alias Model =
@@ -57,7 +57,7 @@ articleList model =
                            )
                     )
                 ]
-            , div [ css [ mt_6, pt_10, grid, gap_16 ] ] (model.articles |> List.map articleItem)
+            , div [ css [ mt_6, pt_10, grid, gap_16, lg [ grid_cols_2, gap_x_5, gap_y_12 ] ] ] (model.articles |> List.map articleItem)
             ]
         ]
 
