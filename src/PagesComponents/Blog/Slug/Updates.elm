@@ -1,5 +1,6 @@
 module PagesComponents.Blog.Slug.Updates exposing (parseContent, parseFrontMatter)
 
+import Conf exposing (constants)
 import Dict exposing (Dict)
 import Libs.Dict as D
 import Libs.Nel as Nel exposing (Nel)
@@ -73,4 +74,8 @@ parseFrontMatter frontMatter =
 
 extendMarkdown : String -> String -> String
 extendMarkdown slug md =
-    md |> String.replace "{{slug}}" slug
+    md
+        |> String.replace "{{slug}}" slug
+        |> String.replace "{{app_link}}" "/app"
+        |> String.replace "{{roadmap_link}}" (constants.azimuttGithub ++ "/projects/1")
+        |> String.replace "{{feedback_link}}" (constants.azimuttGithub ++ "/discussions")
