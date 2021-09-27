@@ -13,7 +13,7 @@ suite =
         [ describe "parseContent"
             [ test "basic"
                 (\_ ->
-                    parseContent "---\ncategory: test\ntitle: The title\nauthor: loic\n---\n\nMarkdown content\nYeah!!!\n"
+                    parseContent "slug" "---\ncategory: test\ntitle: The title\nauthor: loic\n---\n\nMarkdown content\nYeah!!!\n"
                         |> Expect.equal (Ok { category = Just "test", title = "The title", author = "loic", body = "Markdown content\nYeah!!!", tags = [], excerpt = "Markdown content\nYeah!!!" })
                 )
             ]

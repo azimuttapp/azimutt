@@ -39,7 +39,7 @@ init req =
 
 getContent : String -> Cmd Msg
 getContent slug =
-    Http.get { url = "/blog/" ++ (slug |> Rgx.replace "[^a-zA-Z0-9_-]" "-") ++ "/article.md", expect = Http.expectString GotContent }
+    Http.get { url = "/blog/" ++ (slug |> Rgx.replace "[^a-zA-Z0-9_-]" "-") ++ "/article.md", expect = Http.expectString (GotContent slug) }
 
 
 
@@ -47,16 +47,16 @@ getContent slug =
 
 
 type Msg
-    = GotContent (Result Http.Error String)
+    = GotContent String (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg _ =
     case msg of
-        GotContent (Ok content) ->
-            ( content |> parseContent |> R.fold BadContent Loaded, Cmd.none )
+        GotContent slug (Ok content) ->
+            ( content |> parseContent slug |> R.fold BadContent Loaded, Cmd.none )
 
-        GotContent (Err err) ->
+        GotContent _ (Err err) ->
             ( BadSlug err, Cmd.none )
 
 

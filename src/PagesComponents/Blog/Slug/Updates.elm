@@ -7,8 +7,8 @@ import Libs.Result as R
 import PagesComponents.Blog.Slug.Models exposing (Content, Model(..))
 
 
-parseContent : String -> Result (Nel String) Content
-parseContent content =
+parseContent : String -> String -> Result (Nel String) Content
+parseContent slug content =
     -- inspired from https://jekyllrb.com/docs/front-matter
     case content |> String.split "---\n" of
         "" :: frontMatter :: mdStart :: mdRest ->
@@ -21,7 +21,7 @@ parseContent content =
                                 { category = props |> Dict.get "category"
                                 , title = title
                                 , author = author
-                                , body = (mdStart :: mdRest) |> String.join "---\n" |> String.trim
+                                , body = (mdStart :: mdRest) |> String.join "---\n" |> String.trim |> extendMarkdown slug
                                 , tags = props |> Dict.get "tags" |> Maybe.map (\tags -> tags |> String.split "," |> List.map String.trim) |> Maybe.withDefault []
                                 , excerpt = (props |> Dict.get "excerpt" |> Maybe.withDefault (mdStart |> String.trim)) |> String.left 280 |> String.trim
                                 }
@@ -69,3 +69,8 @@ parseFrontMatter frontMatter =
             )
             ( [], [] )
         |> (\( errs, res ) -> Nel.fromList errs |> Maybe.map Err |> Maybe.withDefault (Ok (Dict.fromList res)))
+
+
+extendMarkdown : String -> String -> String
+extendMarkdown slug md =
+    md |> String.replace "{{slug}}" slug
