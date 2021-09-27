@@ -34,23 +34,8 @@ init : ( Model, Cmd Msg )
 init =
     ( { articles =
             [ { date = { label = "Oct 01, 2021", formatted = "20201-10-01" }
-              , link = Route.toHref (Route.Blog__Slug_ { slug = "2021-10-01-the-story-behind-azimutt" })
+              , link = Route.toHref (Route.Blog__Slug_ { slug = "the-story-behind-azimutt" })
               , title = "The story behind Azimutt"
-              , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
-              }
-            , { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
-              , link = Route.toHref (Route.Blog__Slug_ { slug = "sample" })
-              , title = "Boost your conversion rate (sample)"
-              , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
-              }
-            , { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
-              , link = Route.toHref (Route.Blog__Slug_ { slug = "sample" })
-              , title = "Boost your conversion rate (sample)"
-              , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
-              }
-            , { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
-              , link = Route.toHref (Route.Blog__Slug_ { slug = "sample" })
-              , title = "Boost your conversion rate (sample)"
               , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
               }
             ]

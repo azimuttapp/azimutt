@@ -309,6 +309,7 @@
     display: block;
     margin-top: -32px;
     font-size: .8888889em;
+    text-align: center;
 }
 
 .blog-article img + br + em {

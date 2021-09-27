@@ -9,7 +9,7 @@ excerpt:
 Since always, I'm convinced one of the biggest usage of software should be to help users make sense of the huge amount of information we have access to.
 Better understanding the world to act smarter, something like:
 
-![digital singularity](./2021-10-01-the-story-behind-azimutt/digital-singularity.jpg)
+![digital singularity](./the-story-behind-azimutt/digital-singularity.jpg)
 *Invoke AI to be smarter. Ok, not like this ^^*
 
 In fact, when I look into my past jobs, it was almost always the case:

@@ -1,4 +1,4 @@
-module Components.Slices.Blog exposing (Article, Model, Subscribe, articleList, doc)
+module Components.Slices.Blog exposing (Article, Model, Subscribe, article, articleList, doc)
 
 import Components.Slices.Newsletter as Newsletter
 import Css exposing (hover)
@@ -6,8 +6,8 @@ import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, div, form, h2, p, text, time)
 import Html.Styled.Attributes exposing (css, datetime, href)
-import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (bg_white, block, divide_gray_200, divide_y_2, font_extrabold, font_semibold, gap_16, gap_5, gap_x_5, gap_y_12, grid, grid_cols_2, items_center, max_w_7xl, max_w_lg, mt_2, mt_3, mt_4, mt_6, mx_auto, pb_20, pb_28, pt_10, pt_16, pt_24, px_4, px_6, px_8, relative, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_xl, tracking_tight)
+import Tailwind.Breakpoints exposing (lg, md, sm)
+import Tailwind.Utilities exposing (bg_white, block, divide_gray_200, divide_y_2, font_black, font_bold, font_extrabold, font_semibold, gap_16, gap_5, gap_x_5, gap_y_12, grid, grid_cols_2, items_center, leading_none, max_w_7xl, max_w_lg, mt_1, mt_10, mt_2, mt_3, mt_4, mt_6, mx_auto, pb_20, pb_28, pt_10, pt_16, pt_24, px_4, px_6, px_8, relative, text_2xl, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_xl, text_xs, tracking_tight, tracking_wide, uppercase)
 
 
 type alias Model =
@@ -61,8 +61,30 @@ articleItem model =
         ]
 
 
+article : Article -> Html msg
+article model =
+    div []
+        [ time [ css [ uppercase, text_xs, text_gray_500, font_bold ] ] [ text model.date.label ]
+        , h2 [ css [ mt_1, text_2xl, tracking_tight, font_extrabold, text_gray_900, md [ text_3xl ], sm [ leading_none ] ] ]
+            [ a [ href model.link ] [ text model.title ] ]
+        , div [ css [ mt_6 ] ]
+            [ p [] [ text model.excerpt ] ]
+        , div [ css [ mt_10 ] ]
+            [ a [ css [ text_indigo_600, uppercase, text_sm, tracking_wide, font_black ], href model.link ] [ text "Read full story →" ] ]
+        ]
+
+
 
 -- DOCUMENTATION
+
+
+articleDoc : Article
+articleDoc =
+    { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
+    , link = "#"
+    , title = "Boost your conversion rate"
+    , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
+    }
 
 
 modelDoc : Model
@@ -71,11 +93,7 @@ modelDoc =
     , headline = "Get weekly articles in your inbox on how to grow your business."
     , newsletter = Just Newsletter.formDoc
     , articles =
-        [ { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
-          , link = "#"
-          , title = "Boost your conversion rate"
-          , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
-          }
+        [ articleDoc
         , { date = { label = "Mar 10, 2020", formatted = "2020-03-10" }
           , link = "#"
           , title = "How to use search engine optimization to drive sales"
@@ -100,4 +118,5 @@ doc =
     chapter "Blog"
         |> renderComponentList
             [ ( "articleList", articleList modelDoc )
+            , ( "article", article articleDoc )
             ]

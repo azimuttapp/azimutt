@@ -8,8 +8,9 @@ import Conf exposing (constants, newsletterConf)
 import Gen.Route as Route
 import Html exposing (Html, div)
 import Html.Attributes exposing (class, id)
-import Html.Styled exposing (a, span, text)
-import Html.Styled.Attributes exposing (css, href, target)
+import Html.Styled exposing (span, text)
+import Html.Styled.Attributes exposing (css)
+import Libs.Html.Styled exposing (extLink)
 import Tailwind.Utilities exposing (font_medium, sr_only, underline)
 
 
@@ -46,9 +47,9 @@ newsletterSection =
         , description = "Stay in touch with Azimutt news, features, articles or offers, directly in your mail box. Once a week at most, no spam guarantee."
         , legalText =
             [ text "By subscribing, you agree with Revue’s "
-            , a [ href "https://www.getrevue.co/terms", target "_blank", css [ font_medium, underline ] ] [ text "Terms of Service" ]
+            , extLink "https://www.getrevue.co/terms" [ css [ font_medium, underline ] ] [ text "Terms of Service" ]
             , text " and "
-            , a [ href "https://www.getrevue.co/privacy", target "_blank", css [ font_medium, underline ] ] [ text "Privacy Policy" ]
+            , extLink "https://www.getrevue.co/privacy" [ css [ font_medium, underline ] ] [ text "Privacy Policy" ]
             , text "."
             ]
         }

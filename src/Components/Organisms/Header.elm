@@ -9,7 +9,7 @@ import Libs.Html.Styled exposing (extLink)
 import Libs.Html.Styled.Attributes exposing (ariaLabel)
 import Libs.Models exposing (Image, Link)
 import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_500, border_none, border_transparent, flex, flex_1, flex_wrap, font_medium, h_10, h_8, hidden, inline_block, items_center, justify_between, justify_center, justify_start, max_w_7xl, ml_10, mx_auto, px_4, px_6, px_8, py_2, py_4, py_6, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, sr_only, text_base, text_gray_500, text_gray_900, text_indigo_50, text_indigo_600, text_white, w_0, w_auto, w_full)
+import Tailwind.Utilities exposing (bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_500, border_none, border_transparent, flex, flex_1, flex_wrap, font_medium, h_10, h_8, hidden, inline_block, items_center, justify_between, justify_center, justify_start, max_w_7xl, ml_10, ml_3, mx_auto, px_4, px_6, px_8, py_2, py_4, py_6, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, sr_only, text_2xl, text_base, text_gray_500, text_gray_900, text_indigo_50, text_indigo_600, text_white, w_0, w_auto, w_full)
 
 
 type alias RightLinksModel msg =
@@ -44,11 +44,9 @@ rightLinks : RightLinksTheme -> RightLinksModel msg -> Html msg
 rightLinks theme model =
     header [ css [ theme.bg ] ]
         [ div [ css [ flex, justify_between, items_center, max_w_7xl, mx_auto, px_4, py_6, lg [ px_8 ], md [ justify_start, space_x_10 ], sm [ px_6 ] ] ]
-            [ div [ css [ flex, justify_start, lg [ w_0, flex_1 ] ] ]
-                [ a [ href model.brand.link.url ]
-                    [ span [ css [ sr_only ] ] [ text model.brand.link.text ]
-                    , img [ src model.brand.img.src, alt model.brand.img.alt, css [ h_8, w_auto, sm [ h_10 ] ] ] []
-                    ]
+            [ a [ href model.brand.link.url, css [ flex, justify_start, items_center, font_medium, lg [ w_0, flex_1 ] ] ]
+                [ img [ src model.brand.img.src, alt model.brand.img.alt, css [ h_8, w_auto, sm [ h_10 ] ] ] []
+                , span [ css [ ml_3, text_2xl ] ] [ text model.brand.link.text ]
                 ]
             , nav [ css [ hidden, space_x_10, md [ flex ] ] ]
                 (model.links

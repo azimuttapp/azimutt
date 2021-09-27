@@ -77,7 +77,7 @@ constants =
 
 newsletterConf : Newsletter.Form
 newsletterConf =
-    { method = "post", url = "https://www.getrevue.co/profile/azimuttapp/add_subscriber", placeholder = "Enter your email", cta = "Notify me" }
+    { method = "post", url = "https://www.getrevue.co/profile/azimuttapp/add_subscriber", placeholder = "Enter your email", cta = "Subscribe" }
 
 
 schemaSamples : Dict String ( Int, FileUrl )
