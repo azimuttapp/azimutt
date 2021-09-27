@@ -160,6 +160,10 @@ featureQuote quote =
         ]
 
 
+
+-- DOCUMENTATION
+
+
 dsModelFull : Model msg
 dsModelFull =
     { image = { src = "https://tailwindui.com/img/component-images/inbox-app-screenshot-2.jpg", alt = "Customer profile user interface" }

@@ -153,5 +153,6 @@ viewHome =
             ]
         }
     , Cta.slice
+    , Helpers.newsletterSection
     , Helpers.publicFooter
     ]

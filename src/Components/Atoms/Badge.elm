@@ -13,6 +13,10 @@ basic styles label =
     span [ css ([ inline_flex, items_center, px_2_dot_5, py_0_dot_5, rounded_full, text_xs, font_medium, bg_gray_100, text_gray_800 ] ++ styles) ] [ text label ]
 
 
+
+-- DOCUMENTATION
+
+
 doc : Chapter x
 doc =
     chapter "Badge"

@@ -1,15 +1,16 @@
-module PagesComponents.Helpers exposing (publicFooter, publicHeader, root)
+module PagesComponents.Helpers exposing (newsletterSection, publicFooter, publicHeader, root)
 
 import Components.Atoms.Icon as Icon
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
-import Conf exposing (constants)
+import Components.Slices.Newsletter as Newsletter
+import Conf exposing (constants, newsletterConf)
 import Gen.Route as Route
 import Html exposing (Html, div)
 import Html.Attributes exposing (class, id)
-import Html.Styled exposing (span, text)
-import Html.Styled.Attributes exposing (css)
-import Tailwind.Utilities exposing (sr_only)
+import Html.Styled exposing (a, span, text)
+import Html.Styled.Attributes exposing (css, href, target)
+import Tailwind.Utilities exposing (font_medium, sr_only, underline)
 
 
 root : List (Html msg) -> List (Html msg)
@@ -33,6 +34,22 @@ publicHeader =
             , { url = constants.azimuttGithub, content = [ text "Source code" ], external = True }
             , { url = constants.azimuttGithub ++ "/issues", content = [ text "Bug reports" ], external = True }
             , { url = constants.azimuttTwitter, content = [ Icon.twitter [], span [ css [ sr_only ] ] [ text "Twitter" ] ], external = True }
+            ]
+        }
+
+
+newsletterSection : Html.Styled.Html msg
+newsletterSection =
+    Newsletter.basicSlice
+        { form = { newsletterConf | cta = "Get onboard" }
+        , title = "Sign up for Azimutt newsletter"
+        , description = "Stay in touch with Azimutt news, features, articles or offers, directly in your mail box. Once a week at most, no spam guarantee."
+        , legalText =
+            [ text "By subscribing, you agree with Revue’s "
+            , a [ href "https://www.getrevue.co/terms", target "_blank", css [ font_medium, underline ] ] [ text "Terms of Service" ]
+            , text " and "
+            , a [ href "https://www.getrevue.co/privacy", target "_blank", css [ font_medium, underline ] ] [ text "Privacy Policy" ]
+            , text "."
             ]
         }
 

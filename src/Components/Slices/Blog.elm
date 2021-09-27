@@ -1,18 +1,19 @@
 module Components.Slices.Blog exposing (Article, Model, Subscribe, articleList, doc)
 
-import Css exposing (focus, hover)
+import Components.Slices.Newsletter as Newsletter
+import Css exposing (hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, button, div, form, h2, input, label, p, text, time)
-import Html.Styled.Attributes exposing (attribute, css, datetime, for, href, id, name, placeholder, required, type_)
+import Html.Styled exposing (Html, a, div, form, h2, p, text, time)
+import Html.Styled.Attributes exposing (css, datetime, href)
 import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (appearance_none, bg_indigo_600, bg_indigo_700, bg_white, block, border, border_gray_300, border_indigo_500, border_transparent, divide_gray_200, divide_y_2, flex, flex_col, flex_row, flex_shrink_0, font_extrabold, font_medium, font_semibold, gap_16, gap_5, gap_x_5, gap_y_12, grid, grid_cols_2, inline_flex, items_center, justify_center, justify_end, max_w_7xl, max_w_lg, max_w_xs, ml_3, mt_0, mt_2, mt_3, mt_4, mt_6, mx_auto, outline_none, pb_20, pb_28, placeholder_gray_500, pt_10, pt_16, pt_24, px_4, px_6, px_8, py_2, relative, ring_2, ring_indigo_500, ring_offset_2, rounded_md, shadow_sm, sr_only, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_white, text_xl, tracking_tight, w_auto, w_full)
+import Tailwind.Utilities exposing (bg_white, block, divide_gray_200, divide_y_2, font_extrabold, font_semibold, gap_16, gap_5, gap_x_5, gap_y_12, grid, grid_cols_2, items_center, max_w_7xl, max_w_lg, mt_2, mt_3, mt_4, mt_6, mx_auto, pb_20, pb_28, pt_10, pt_16, pt_24, px_4, px_6, px_8, relative, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_xl, tracking_tight)
 
 
 type alias Model =
     { title : String
     , headline : String
-    , subscribe : Maybe Subscribe
+    , newsletter : Maybe Newsletter.Form
     , articles : List Article
     }
 
@@ -38,23 +39,7 @@ articleList model =
                 , div [ css [ mt_3, lg [ grid, grid_cols_2, gap_5, items_center ], sm [ mt_4 ] ] ]
                     ([ p [ css [ text_xl, text_gray_500 ] ] [ text model.headline ]
                      ]
-                        ++ (model.subscribe
-                                |> Maybe.map
-                                    (\sub ->
-                                        [ form [ css [ mt_6, flex, flex_col, lg [ mt_0, justify_end ], sm [ flex_row ] ] ]
-                                            [ div []
-                                                [ label [ for "email-address", css [ sr_only ] ] [ text sub.placeholder ]
-                                                , input [ id "email-address", name "email-address", type_ "email", attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_4, py_2, border, border_gray_300, text_base, rounded_md, text_gray_900, bg_white, placeholder_gray_500, focus [ outline_none, ring_indigo_500, border_indigo_500 ], lg [ max_w_xs ] ], placeholder sub.placeholder ] []
-                                                ]
-                                            , div [ css [ mt_2, flex_shrink_0, w_full, flex, rounded_md, shadow_sm, sm [ mt_0, ml_3, w_auto, inline_flex ] ] ]
-                                                [ button [ type_ "button", css [ w_full, bg_indigo_600, px_4, py_2, border, border_transparent, rounded_md, flex, items_center, justify_center, text_base, font_medium, text_white, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ bg_indigo_700 ], sm [ w_auto, inline_flex ] ] ]
-                                                    [ text sub.cta ]
-                                                ]
-                                            ]
-                                        ]
-                                    )
-                                |> Maybe.withDefault []
-                           )
+                        ++ (model.newsletter |> Maybe.map (\form -> [ Newsletter.small form ]) |> Maybe.withDefault [])
                     )
                 ]
             , div [ css [ mt_6, pt_10, grid, gap_16, lg [ grid_cols_2, gap_x_5, gap_y_12 ] ] ] (model.articles |> List.map articleItem)
@@ -76,11 +61,15 @@ articleItem model =
         ]
 
 
+
+-- DOCUMENTATION
+
+
 modelDoc : Model
 modelDoc =
     { title = "Press"
     , headline = "Get weekly articles in your inbox on how to grow your business."
-    , subscribe = Just { placeholder = "Enter your email", cta = "Notify me" }
+    , newsletter = Just Newsletter.formDoc
     , articles =
         [ { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
           , link = "#"

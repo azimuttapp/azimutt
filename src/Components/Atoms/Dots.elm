@@ -43,6 +43,10 @@ dots patternId dotsWidth dotsHeight styles =
         ]
 
 
+
+-- DOCUMENTATION
+
+
 doc : Chapter x
 doc =
     chapter "Dots"

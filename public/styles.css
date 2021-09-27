@@ -300,6 +300,21 @@
     cursor: cell;
 }
 
+.blog-article img {
+    width: 100%;
+    border-radius: .5rem;
+}
+
+.blog-article img + em, .blog-article img + br + em {
+    display: block;
+    margin-top: -32px;
+    font-size: .8888889em;
+}
+
+.blog-article img + br + em {
+    margin-top: -64px;
+}
+
 /* Styles for Bootstrap */
 
 .btn-text {

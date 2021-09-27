@@ -47,6 +47,10 @@ centered model =
         ]
 
 
+
+-- DOCUMENTATION
+
+
 doc : Chapter x
 doc =
     chapter "Content"

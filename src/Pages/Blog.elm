@@ -1,6 +1,7 @@
 module Pages.Blog exposing (Model, Msg, page)
 
 import Gen.Params.Blog exposing (Params)
+import Gen.Route as Route
 import Html.Styled as Styled
 import Libs.Task exposing (send)
 import Page
@@ -31,7 +32,31 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, send ReplaceMe )
+    ( { articles =
+            [ { date = { label = "Oct 01, 2021", formatted = "20201-10-01" }
+              , link = Route.toHref (Route.Blog__Slug_ { slug = "2021-10-01-the-story-behind-azimutt" })
+              , title = "The story behind Azimutt"
+              , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
+              }
+            , { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
+              , link = Route.toHref (Route.Blog__Slug_ { slug = "sample" })
+              , title = "Boost your conversion rate (sample)"
+              , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
+              }
+            , { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
+              , link = Route.toHref (Route.Blog__Slug_ { slug = "sample" })
+              , title = "Boost your conversion rate (sample)"
+              , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
+              }
+            , { date = { label = "Mar 16, 2020", formatted = "2020-03-16" }
+              , link = Route.toHref (Route.Blog__Slug_ { slug = "sample" })
+              , title = "Boost your conversion rate (sample)"
+              , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
+              }
+            ]
+      }
+    , send ReplaceMe
+    )
 
 
 

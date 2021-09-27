@@ -22,13 +22,17 @@ link props =
         ]
 
 
+
+-- DOCUMENTATION
+
+
+defaultProps : LinkProps
+defaultProps =
+    { label = "Click me!", url = "#" }
+
+
 doc : Chapter x
 doc =
-    let
-        defaultProps : LinkProps
-        defaultProps =
-            { label = "Click me!", url = "#" }
-    in
     chapter "Link"
         |> renderComponentList
             [ ( "link", link defaultProps )

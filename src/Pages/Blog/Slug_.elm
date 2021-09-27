@@ -39,7 +39,7 @@ init req =
 
 getContent : String -> Cmd Msg
 getContent slug =
-    Http.get { url = "/content/" ++ (slug |> Rgx.replace "[^a-zA-Z0-9_-]" "-") ++ ".md", expect = Http.expectString GotContent }
+    Http.get { url = "/blog/" ++ (slug |> Rgx.replace "[^a-zA-Z0-9_-]" "-") ++ "/article.md", expect = Http.expectString GotContent }
 
 
 
