@@ -12,10 +12,11 @@ type Model
 
 
 type alias Content =
-    { category : Maybe String
-    , title : String
-    , author : String
-    , body : String
-    , tags : List String
+    { title : String
     , excerpt : String
+    , category : Maybe String
+    , tags : List String
+    , author : String
+    , published : String
+    , body : String
     }

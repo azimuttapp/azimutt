@@ -7,7 +7,7 @@ import Libs.Regex as Rgx
 import Libs.Result as R
 import Page
 import PagesComponents.Blog.Slug.Models as Models exposing (Model(..))
-import PagesComponents.Blog.Slug.Updates exposing (parseContent)
+import PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent)
 import PagesComponents.Blog.Slug.View exposing (viewArticle)
 import Request
 import Shared
@@ -17,7 +17,7 @@ import View exposing (View)
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page _ req =
     Page.element
-        { init = init req
+        { init = init (req.params.slug |> Rgx.replace "[^a-zA-Z0-9_-]" "-")
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -32,14 +32,9 @@ type alias Model =
     Models.Model
 
 
-init : Request.With Params -> ( Model, Cmd Msg )
-init req =
-    ( Loading, getContent req.params.slug )
-
-
-getContent : String -> Cmd Msg
-getContent slug =
-    Http.get { url = "/blog/" ++ (slug |> Rgx.replace "[^a-zA-Z0-9_-]" "-") ++ "/article.md", expect = Http.expectString (GotContent slug) }
+init : String -> ( Model, Cmd Msg )
+init slug =
+    ( Loading, slug |> getArticle GotArticle )
 
 
 
@@ -47,16 +42,16 @@ getContent slug =
 
 
 type Msg
-    = GotContent String (Result Http.Error String)
+    = GotArticle String (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg _ =
     case msg of
-        GotContent slug (Ok content) ->
+        GotArticle slug (Ok content) ->
             ( content |> parseContent slug |> R.fold BadContent Loaded, Cmd.none )
 
-        GotContent _ (Err err) ->
+        GotArticle _ (Err err) ->
             ( BadSlug err, Cmd.none )
 
 

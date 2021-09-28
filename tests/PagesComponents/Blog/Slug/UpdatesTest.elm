@@ -13,8 +13,8 @@ suite =
         [ describe "parseContent"
             [ test "basic"
                 (\_ ->
-                    parseContent "slug" "---\ncategory: test\ntitle: The title\nauthor: loic\n---\n\nMarkdown content\nYeah!!!\n"
-                        |> Expect.equal (Ok { category = Just "test", title = "The title", author = "loic", body = "Markdown content\nYeah!!!", tags = [], excerpt = "Markdown content\nYeah!!!" })
+                    parseContent "slug" "---\ntitle: The title\ncategory: test\nauthor: loic\npublished: 2021-10-01\n---\n\nMarkdown content\nYeah!!!\n"
+                        |> Expect.equal (Ok { title = "The title", excerpt = "Markdown content\nYeah!!!", category = Just "test", tags = [], author = "loic", published = "2021-10-01", body = "Markdown content\nYeah!!!" })
                 )
             ]
         , describe "parseFrontMatter"

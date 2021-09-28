@@ -19,7 +19,7 @@ viewBlog model =
     , Helpers.publicHeader
     , div [ css [ mt_24, max_w_prose, mx_auto, text_center ] ]
         [ h1 [ css [ text_4xl, font_black ] ]
-            [ text "Azimutt Blog" ]
+            [ text "Azimutt blog" ]
         , p [ css [ text_lg, mt_6 ] ]
             [ text "Hi! We are "
             , extLink "https://twitter.com/sbouaked" [ css [ text_indigo_600, Css.hover [ underline ] ] ] [ text "Samir" ]
@@ -30,7 +30,7 @@ viewBlog model =
         ]
     , div [ css [ mt_12 ] ] [ Newsletter.centered newsletterConf ]
     , hr [ css [ w_full, bg_gray_100, my_12 ], style "height" "1px" ] []
-    , div [ css [ mt_16, mb_24, max_w_prose, mx_auto ] ] (model.articles |> List.map Blog.article |> List.intersperse (hr [ css [ w_full, bg_gray_100, my_12 ], style "height" "1px" ] []))
+    , div [ css [ mt_16, mb_24, max_w_prose, mx_auto ] ] (model.articles |> List.map Tuple.second |> List.map Blog.article |> List.intersperse (hr [ css [ w_full, bg_gray_100, my_12 ], style "height" "1px" ] []))
 
     -- add it when out of initial page, Helpers.newsletterSection
     , Helpers.publicFooter

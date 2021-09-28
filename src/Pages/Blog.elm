@@ -1,11 +1,17 @@
 module Pages.Blog exposing (Model, Msg, page)
 
+import Components.Slices.Blog exposing (Article)
 import Gen.Params.Blog exposing (Params)
-import Gen.Route as Route
 import Html.Styled as Styled
-import Libs.Task exposing (send)
+import Http
+import Libs.Bool as B
+import Libs.Http exposing (errorToString)
+import Libs.Nel as Nel exposing (Nel)
+import Libs.Result as R
 import Page
 import PagesComponents.Blog.Models as Models
+import PagesComponents.Blog.Slug.Models exposing (Content)
+import PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent)
 import PagesComponents.Blog.View exposing (viewBlog)
 import Request
 import Shared
@@ -32,16 +38,12 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { articles =
-            [ { date = { label = "Oct 01, 2021", formatted = "20201-10-01" }
-              , link = Route.toHref (Route.Blog__Slug_ { slug = "the-story-behind-azimutt" })
-              , title = "The story behind Azimutt"
-              , excerpt = "I believe organizing information is at the heart of the software mission. I have been thinking about this for years and focused on understanding databases for 5 years now. Here is how it happened..."
-              }
-            ]
-      }
-    , send ReplaceMe
-    )
+    [ "the-story-behind-azimutt" ]
+        |> (\slugs ->
+                ( { articles = slugs |> List.map (\slug -> ( slug, buildInitArticle slug )) }
+                , Cmd.batch (slugs |> List.map (getArticle GotArticle))
+                )
+           )
 
 
 
@@ -49,14 +51,63 @@ init =
 
 
 type Msg
-    = ReplaceMe
+    = GotArticle String (Result Http.Error String)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReplaceMe ->
-            ( model, Cmd.none )
+        GotArticle slug (Ok body) ->
+            ( body
+                |> parseContent slug
+                |> R.fold (buildBadArticle slug) (buildArticle slug)
+                |> (\article -> updateArticle slug article model)
+            , Cmd.none
+            )
+
+        GotArticle slug (Err err) ->
+            ( model |> updateArticle slug (buildErrArticle slug err), Cmd.none )
+
+
+buildArticle : String -> Content -> Article
+buildArticle slug content =
+    { date = { label = content.published, formatted = "" }
+    , link = "/blog/" ++ slug
+    , title = content.title
+    , excerpt = content.excerpt
+    }
+
+
+buildInitArticle : String -> Article
+buildInitArticle slug =
+    { date = { label = "", formatted = "" }
+    , link = "#"
+    , title = "Loading " ++ slug
+    , excerpt = "Loading..."
+    }
+
+
+buildBadArticle : String -> Nel String -> Article
+buildBadArticle slug errors =
+    { date = { label = "", formatted = "" }
+    , link = "#"
+    , title = "Bad " ++ slug ++ " article"
+    , excerpt = "Errors: " ++ (errors |> Nel.toList |> String.join ", ")
+    }
+
+
+buildErrArticle : String -> Http.Error -> Article
+buildErrArticle slug error =
+    { date = { label = "", formatted = "" }
+    , link = "#"
+    , title = slug ++ " in error"
+    , excerpt = errorToString error
+    }
+
+
+updateArticle : String -> Article -> Model -> Model
+updateArticle slug article model =
+    { model | articles = model.articles |> List.map (\( s, art ) -> B.cond (s == slug) ( s, article ) ( s, art )) }
 
 
 

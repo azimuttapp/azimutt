@@ -1,11 +1,17 @@
-module PagesComponents.Blog.Slug.Updates exposing (parseContent, parseFrontMatter)
+module PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent, parseFrontMatter)
 
 import Conf exposing (constants)
 import Dict exposing (Dict)
+import Http
 import Libs.Dict as D
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as R
 import PagesComponents.Blog.Slug.Models exposing (Content, Model(..))
+
+
+getArticle : (String -> Result Http.Error String -> msg) -> String -> Cmd msg
+getArticle buildMsg slug =
+    Http.get { url = "/blog/" ++ slug ++ "/article.md", expect = Http.expectString (buildMsg slug) }
 
 
 parseContent : String -> String -> Result (Nel String) Content
@@ -17,18 +23,20 @@ parseContent slug content =
                 |> parseFrontMatter
                 |> Result.andThen
                     (\props ->
-                        R.ap
-                            (\title author ->
-                                { category = props |> Dict.get "category"
-                                , title = title
-                                , author = author
-                                , body = (mdStart :: mdRest) |> String.join "---\n" |> String.trim |> extendMarkdown slug
-                                , tags = props |> Dict.get "tags" |> Maybe.map (\tags -> tags |> String.split "," |> List.map String.trim) |> Maybe.withDefault []
+                        R.ap3
+                            (\title author published ->
+                                { title = title
                                 , excerpt = (props |> Dict.get "excerpt" |> Maybe.withDefault (mdStart |> String.trim)) |> String.left 280 |> String.trim
+                                , category = props |> Dict.get "category"
+                                , tags = props |> Dict.get "tags" |> Maybe.map (\tags -> tags |> String.split "," |> List.map String.trim) |> Maybe.withDefault []
+                                , author = author
+                                , published = published
+                                , body = (mdStart :: mdRest) |> String.join "---\n" |> String.trim |> extendMarkdown slug
                                 }
                             )
                             (props |> D.get "title")
                             (props |> D.get "author")
+                            (props |> D.get "published")
                     )
 
         _ :: _ :: _ :: _ ->
