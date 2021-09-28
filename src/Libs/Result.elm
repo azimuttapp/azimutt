@@ -1,4 +1,4 @@
-module Libs.Result exposing (ap, ap3, fold, map6)
+module Libs.Result exposing (ap, ap3, ap4, ap5, fold, map6)
 
 import Libs.Nel as Nel exposing (Nel)
 
@@ -25,34 +25,38 @@ bimap onError onSuccess result =
 
 ap : (a1 -> a2 -> b) -> Result e a1 -> Result e a2 -> Result (Nel e) b
 ap transform r1 r2 =
-    case ( r1, r2 ) of
-        ( Ok a1, Ok a2 ) ->
-            Ok (transform a1 a2)
-
-        ( Err e1, Ok _ ) ->
-            Err (Nel e1 [])
-
-        ( Ok _, Err e2 ) ->
-            Err (Nel e2 [])
-
-        ( Err e1, Err e2 ) ->
-            Err (Nel e1 [ e2 ])
+    apx (\a1 a2 -> transform a1 a2) r1 (r2 |> Result.mapError (\e -> Nel e []))
 
 
 ap3 : (a1 -> a2 -> a3 -> b) -> Result e a1 -> Result e a2 -> Result e a3 -> Result (Nel e) b
 ap3 transform r1 r2 r3 =
-    case ( r1, ap (\a2 a3 -> ( a2, a3 )) r2 r3 ) of
-        ( Ok a1, Ok ( a2, a3 ) ) ->
-            Ok (transform a1 a2 a3)
+    apx (\a1 ( a2, a3 ) -> transform a1 a2 a3) r1 (ap (\a2 a3 -> ( a2, a3 )) r2 r3)
+
+
+ap4 : (a1 -> a2 -> a3 -> a4 -> b) -> Result e a1 -> Result e a2 -> Result e a3 -> Result e a4 -> Result (Nel e) b
+ap4 transform r1 r2 r3 r4 =
+    apx (\a1 ( a2, a3, a4 ) -> transform a1 a2 a3 a4) r1 (ap3 (\a2 a3 a4 -> ( a2, a3, a4 )) r2 r3 r4)
+
+
+ap5 : (a1 -> a2 -> a3 -> a4 -> a5 -> b) -> Result e a1 -> Result e a2 -> Result e a3 -> Result e a4 -> Result e a5 -> Result (Nel e) b
+ap5 transform r1 r2 r3 r4 r5 =
+    apx (\a1 ( ( a2, a3 ), ( a4, a5 ) ) -> transform a1 a2 a3 a4 a5) r1 (ap4 (\a2 a3 a4 a5 -> ( ( a2, a3 ), ( a4, a5 ) )) r2 r3 r4 r5)
+
+
+apx : (a1 -> ax -> b) -> Result e a1 -> Result (Nel e) ax -> Result (Nel e) b
+apx transform r1 rx =
+    case ( r1, rx ) of
+        ( Ok a1, Ok ax ) ->
+            Ok (transform a1 ax)
 
         ( Err e1, Ok _ ) ->
             Err (Nel e1 [])
 
-        ( Ok _, Err l2 ) ->
-            Err l2
+        ( Ok _, Err ex ) ->
+            Err ex
 
-        ( Err e1, Err l2 ) ->
-            Err (Nel e1 (l2 |> Nel.toList))
+        ( Err e1, Err ex ) ->
+            Err (Nel e1 (ex |> Nel.toList))
 
 
 map6 : (a -> b -> c -> d -> e -> f -> value) -> Result x a -> Result x b -> Result x c -> Result x d -> Result x e -> Result x f -> Result x value
