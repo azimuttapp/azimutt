@@ -1,9 +1,6 @@
 module Pages.Blog.Slug_ exposing (Model, Msg, page)
 
 import Gen.Params.Blog.Slug_ exposing (Params)
-import Html exposing (div)
-import Html.Attributes exposing (class)
-import Html.Keyed as Keyed
 import Html.Styled as Styled
 import Http
 import Libs.Regex as Rgx
@@ -79,5 +76,5 @@ subscriptions _ =
 view : Model -> View Msg
 view model =
     { title = "Azimutt article"
-    , body = [ Keyed.node "div" [] [ ( "article", div [ class "article-key" ] (viewArticle model |> List.map Styled.toUnstyled) ) ] ]
+    , body = viewArticle model |> List.map Styled.toUnstyled
     }
