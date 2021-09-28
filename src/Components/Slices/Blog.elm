@@ -64,7 +64,7 @@ articleItem model =
 article : Article -> Html msg
 article model =
     div []
-        [ time [ css [ uppercase, text_xs, text_gray_500, font_bold ] ] [ text model.date.label ]
+        [ time [ datetime model.date.formatted, css [ uppercase, text_xs, text_gray_500, font_bold ] ] [ text model.date.label ]
         , h2 [ css [ mt_1, text_2xl, tracking_tight, font_extrabold, text_gray_900, md [ text_3xl ], sm [ leading_none ] ] ]
             [ a [ href model.link ] [ text model.title ] ]
         , div [ css [ mt_6 ] ]

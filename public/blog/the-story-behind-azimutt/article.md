@@ -1,10 +1,10 @@
 ---
 title: The story behind Azimutt
-author: Loïc Knuchel
-published: 2021-10-01
-category: azimutt
-tags: 
 excerpt: I believe organizing information is at the heart of the software mission. I have been thinking about this for years and focused on understanding databases for 5 years now. Here is how it happened...
+category: azimutt
+tags:
+author: loic
+published: 2021-10-01
 ---
 
 Since always, I'm convinced one of the biggest usage of software should be to help users make sense of the huge amount of information we have access to.

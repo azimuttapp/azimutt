@@ -27,17 +27,17 @@ type alias ExtLink msg =
 
 
 type alias RightLinksTheme =
-    { bg : Css.Style, links : List Css.Style }
+    { bg : Css.Style, text : List Css.Style }
 
 
 rightLinksWhite : RightLinksModel msg -> Html msg
 rightLinksWhite model =
-    rightLinks { bg = bg_white, links = [ text_gray_500, hover [ text_gray_900 ] ] } model
+    rightLinks { bg = bg_white, text = [ text_gray_500, hover [ text_gray_900 ] ] } model
 
 
 rightLinksIndigo : RightLinksModel msg -> Html msg
 rightLinksIndigo model =
-    rightLinks { bg = bg_indigo_600, links = [ text_white, hover [ text_indigo_50 ] ] } model
+    rightLinks { bg = bg_indigo_600, text = [ text_white, hover [ text_indigo_50 ] ] } model
 
 
 rightLinks : RightLinksTheme -> RightLinksModel msg -> Html msg
@@ -46,17 +46,17 @@ rightLinks theme model =
         [ div [ css [ flex, justify_between, items_center, max_w_7xl, mx_auto, px_4, py_6, lg [ px_8 ], md [ justify_start, space_x_10 ], sm [ px_6 ] ] ]
             [ a [ href model.brand.link.url, css [ flex, justify_start, items_center, font_medium, lg [ w_0, flex_1 ] ] ]
                 [ img [ src model.brand.img.src, alt model.brand.img.alt, css [ h_8, w_auto, sm [ h_10 ] ] ] []
-                , span [ css [ ml_3, text_2xl ] ] [ text model.brand.link.text ]
+                , span [ css ([ ml_3, text_2xl ] ++ theme.text) ] [ text model.brand.link.text ]
                 ]
             , nav [ css [ hidden, space_x_10, md [ flex ] ] ]
                 (model.links
                     |> List.map
                         (\l ->
                             if l.external then
-                                extLink l.url [ css ([ text_base, font_medium ] ++ theme.links) ] l.content
+                                extLink l.url [ css ([ text_base, font_medium ] ++ theme.text) ] l.content
 
                             else
-                                a [ href l.url, css ([ text_base, font_medium ] ++ theme.links) ] l.content
+                                a [ href l.url, css ([ text_base, font_medium ] ++ theme.text) ] l.content
                         )
                 )
             ]
@@ -152,7 +152,7 @@ doc =
         |> renderComponentList
             [ ( "rightLinksIndigo", rightLinksIndigo (rightLinksModel logoWhite) )
             , ( "rightLinksWhite", rightLinksWhite (rightLinksModel logoIndigo) )
-            , ( "rightLinks", rightLinks { bg = bg_white, links = [] } (rightLinksModel logoIndigo) )
+            , ( "rightLinks", rightLinks { bg = bg_white, text = [] } (rightLinksModel logoIndigo) )
             , ( "leftLinksIndigo", leftLinksIndigo (leftLinksModel logoWhite) )
             , ( "leftLinksWhite", leftLinksWhite (leftLinksModel logoIndigo) )
             , ( "leftLinks", leftLinks { bg = bg_white, links = [], secondary = [], primary = [] } (leftLinksModel logoIndigo) )
