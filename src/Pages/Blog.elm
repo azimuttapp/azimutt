@@ -2,6 +2,7 @@ module Pages.Blog exposing (Model, Msg, page)
 
 import Components.Slices.Blog exposing (Article)
 import Gen.Params.Blog exposing (Params)
+import Gen.Route as Route
 import Html.Styled as Styled
 import Http
 import Libs.Bool as B
@@ -72,7 +73,7 @@ update msg model =
 buildArticle : String -> Content -> Article
 buildArticle slug content =
     { date = { label = content.published, formatted = "" }
-    , link = "/blog/" ++ slug
+    , link = Route.toHref (Route.Blog__Slug_ { slug = slug })
     , title = content.title
     , excerpt = content.excerpt
     }

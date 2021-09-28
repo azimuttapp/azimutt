@@ -2,6 +2,7 @@ module PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent, par
 
 import Conf exposing (constants)
 import Dict exposing (Dict)
+import Gen.Route as Route
 import Http
 import Libs.Dict as D
 import Libs.Nel as Nel exposing (Nel)
@@ -11,7 +12,7 @@ import PagesComponents.Blog.Slug.Models exposing (Content, Model(..))
 
 getArticle : (String -> Result Http.Error String -> msg) -> String -> Cmd msg
 getArticle buildMsg slug =
-    Http.get { url = "/blog/" ++ slug ++ "/article.md", expect = Http.expectString (buildMsg slug) }
+    Http.get { url = Route.toHref (Route.Blog__Slug_ { slug = slug }) ++ "/article.md", expect = Http.expectString (buildMsg slug) }
 
 
 parseContent : String -> String -> Result (Nel String) Content
@@ -83,7 +84,7 @@ parseFrontMatter frontMatter =
 extendMarkdown : String -> String -> String
 extendMarkdown slug md =
     md
-        |> String.replace "{{slug}}" slug
-        |> String.replace "{{app_link}}" "/app"
+        |> String.replace "{{base_link}}" (Route.toHref (Route.Blog__Slug_ { slug = slug }))
+        |> String.replace "{{app_link}}" (Route.toHref Route.App)
         |> String.replace "{{roadmap_link}}" (constants.azimuttGithub ++ "/projects/1")
         |> String.replace "{{feedback_link}}" (constants.azimuttGithub ++ "/discussions")

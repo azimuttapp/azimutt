@@ -10,7 +10,7 @@ published: 2021-10-01
 Since always, I'm convinced one of the biggest usage of software should be to help users make sense of the huge amount of information we have access to.
 Better understanding the world to act smarter, something like:
 
-![digital singularity](./{{slug}}/digital-singularity.jpg)
+![digital singularity]({{base_link}}/digital-singularity.jpg)
 *Invoke AI to be smarter. Ok, not like this ^^*
 
 In fact, when I look into my past jobs, it was almost always the case:
