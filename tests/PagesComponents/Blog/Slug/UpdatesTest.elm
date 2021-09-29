@@ -2,6 +2,7 @@ module PagesComponents.Blog.Slug.UpdatesTest exposing (..)
 
 import Dict
 import Expect
+import Libs.DateTime as DateTime
 import Libs.Nel exposing (Nel)
 import PagesComponents.Blog.Slug.Updates exposing (parseContent, parseFrontMatter)
 import Test exposing (Test, describe, test)
@@ -14,7 +15,7 @@ suite =
             [ test "basic"
                 (\_ ->
                     parseContent "slug" "---\ntitle: The title\ncategory: test\nauthor: loic\npublished: 2021-10-01\n---\n\nMarkdown content\nYeah!!!\n"
-                        |> Expect.equal (Ok { title = "The title", excerpt = "Markdown content\nYeah!!!", category = Just "test", tags = [], author = "loic", published = "2021-10-01", body = "Markdown content\nYeah!!!" })
+                        |> Expect.equal (Ok { title = "The title", excerpt = "Markdown content\nYeah!!!", category = Just "test", tags = [], author = "loic", published = "2021-10-01" |> DateTime.unsafeParse, body = "Markdown content\nYeah!!!" })
                 )
             ]
         , describe "parseFrontMatter"

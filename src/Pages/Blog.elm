@@ -6,6 +6,7 @@ import Gen.Route as Route
 import Html.Styled as Styled
 import Http
 import Libs.Bool as B
+import Libs.DateTime as DateTime
 import Libs.Http exposing (errorToString)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as R
@@ -16,6 +17,7 @@ import PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent)
 import PagesComponents.Blog.View exposing (viewBlog)
 import Request
 import Shared
+import Time
 import View exposing (View)
 
 
@@ -70,9 +72,14 @@ update msg model =
             ( model |> updateArticle slug (buildErrArticle slug err), Cmd.none )
 
 
+defaultDate : Time.Posix
+defaultDate =
+    "2022-01-01" |> DateTime.unsafeParse
+
+
 buildArticle : String -> Content -> Article
 buildArticle slug content =
-    { date = { label = content.published, formatted = "" }
+    { date = content.published
     , link = Route.toHref (Route.Blog__Slug_ { slug = slug })
     , title = content.title
     , excerpt = content.excerpt
@@ -81,7 +88,7 @@ buildArticle slug content =
 
 buildInitArticle : String -> Article
 buildInitArticle slug =
-    { date = { label = "", formatted = "" }
+    { date = defaultDate
     , link = "#"
     , title = "Loading " ++ slug
     , excerpt = "Loading..."
@@ -90,7 +97,7 @@ buildInitArticle slug =
 
 buildBadArticle : String -> Nel String -> Article
 buildBadArticle slug errors =
-    { date = { label = "", formatted = "" }
+    { date = defaultDate
     , link = "#"
     , title = "Bad " ++ slug ++ " article"
     , excerpt = "Errors: " ++ (errors |> Nel.toList |> String.join ", ")
@@ -99,7 +106,7 @@ buildBadArticle slug errors =
 
 buildErrArticle : String -> Http.Error -> Article
 buildErrArticle slug error =
-    { date = { label = "", formatted = "" }
+    { date = defaultDate
     , link = "#"
     , title = slug ++ " in error"
     , excerpt = errorToString error

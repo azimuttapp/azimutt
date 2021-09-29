@@ -2,6 +2,7 @@ module PagesComponents.Blog.Slug.Models exposing (Content, Model(..))
 
 import Http
 import Libs.Nel exposing (Nel)
+import Time
 
 
 type Model
@@ -17,6 +18,6 @@ type alias Content =
     , category : Maybe String
     , tags : List String
     , author : String
-    , published : String
+    , published : Time.Posix
     , body : String
     }

@@ -4,6 +4,7 @@ import Conf exposing (constants)
 import Dict exposing (Dict)
 import Gen.Route as Route
 import Http
+import Libs.DateTime as DateTime
 import Libs.Dict as D
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as R
@@ -37,7 +38,7 @@ parseContent slug content =
                             )
                             (props |> D.get "title")
                             (props |> D.get "author")
-                            (props |> D.get "published")
+                            (props |> D.get "published" |> Result.andThen DateTime.parse)
                     )
 
         _ :: _ :: _ :: _ ->

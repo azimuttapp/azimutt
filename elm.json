@@ -26,6 +26,7 @@
             "mpizenberg/elm-file": "1.0.0",
             "mpizenberg/elm-pointer-events": "4.0.2",
             "rtfeldman/elm-css": "16.1.1",
+            "rtfeldman/elm-iso8601-date-strings": "1.1.4",
             "ryannhg/elm-spa": "6.0.0"
         },
         "indirect": {

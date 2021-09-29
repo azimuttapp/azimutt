@@ -55,4 +55,4 @@ columnRefAsHtmlId ref =
 
 formatDate : TimeInfo -> Time.Posix -> String
 formatDate info date =
-    DateTime.format "dd MMM yyyy" info.zone date
+    DateTime.formatTo "dd MMM yyyy" info.zone date
