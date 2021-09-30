@@ -8,7 +8,7 @@ import Libs.DateTime as DateTime
 import Libs.Dict as D
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as R
-import PagesComponents.Blog.Slug.Models exposing (Content, Model(..))
+import PagesComponents.Blog.Slug.Models exposing (Content, Model(..), authors)
 
 
 getArticle : (String -> Result Http.Error String -> msg) -> String -> Cmd msg
@@ -37,7 +37,7 @@ parseContent slug content =
                                 }
                             )
                             (props |> D.get "title")
-                            (props |> D.get "author")
+                            (props |> D.get "author" |> Result.andThen (\author -> authors |> Dict.get author |> Result.fromMaybe ("Can't find '" ++ author ++ "' author")))
                             (props |> D.get "published" |> Result.andThen DateTime.parse)
                     )
 
