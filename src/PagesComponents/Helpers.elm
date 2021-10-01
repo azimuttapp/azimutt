@@ -10,8 +10,7 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class, id)
 import Html.Styled exposing (span, text)
 import Html.Styled.Attributes exposing (css)
-import Libs.Html.Styled exposing (extLink)
-import Tailwind.Utilities exposing (font_medium, sr_only, underline)
+import Tailwind.Utilities exposing (sr_only)
 
 
 root : List (Html msg) -> List (Html msg)
@@ -45,13 +44,7 @@ newsletterSection =
         { form = { newsletterConf | cta = "Get onboard" }
         , title = "Sign up for Azimutt newsletter"
         , description = "Stay in touch with Azimutt news, features, articles or offers, directly in your mail box. Once a week at most, no spam guarantee."
-        , legalText =
-            [ text "By subscribing, you agree with Revue’s "
-            , extLink "https://www.getrevue.co/terms" [ css [ font_medium, underline ] ] [ text "Terms of Service" ]
-            , text " and "
-            , extLink "https://www.getrevue.co/privacy" [ css [ font_medium, underline ] ] [ text "Privacy Policy" ]
-            , text "."
-            ]
+        , legalText = []
         }
 
 
