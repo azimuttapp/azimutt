@@ -1,9 +1,10 @@
 ---
 title: A sample article
-author: Loïc Knuchel
+excerpt: This article is here to try out the parsing and rendering
 category: sample
 tags: azimutt, sql
-excerpt: This article is here to try out the parsing and rendering
+author: loic
+published: 2021-10-01
 ---
 
 This "article" is here *to try parsing and rendering* of articles with **markdown**.

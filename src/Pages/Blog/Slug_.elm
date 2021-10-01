@@ -70,6 +70,12 @@ subscriptions _ =
 
 view : Model -> View Msg
 view model =
-    { title = "Azimutt article"
+    { title =
+        case model of
+            Loaded article ->
+                article.title ++ " - Azimutt blog"
+
+            _ ->
+                "Azimutt blog - Explore your database schema"
     , body = viewArticle model |> List.map Styled.toUnstyled
     }

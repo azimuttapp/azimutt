@@ -133,6 +133,6 @@ subscriptions _ =
 
 view : Model -> View Msg
 view model =
-    { title = "Azimutt blog"
+    { title = "Azimutt blog - Explore your database schema"
     , body = viewBlog model |> List.map Styled.toUnstyled
     }
