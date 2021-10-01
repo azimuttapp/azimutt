@@ -1,5 +1,6 @@
-module Conf exposing (conf, constants, schemaSamples)
+module Conf exposing (conf, constants, newsletterConf, schemaSamples)
 
+import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models exposing (Color, FileUrl, HtmlId, ZoomLevel)
@@ -72,6 +73,11 @@ constants =
     { azimuttTwitter = "https://twitter.com/azimuttapp"
     , azimuttGithub = "https://github.com/azimuttapp/azimutt"
     }
+
+
+newsletterConf : Newsletter.Form
+newsletterConf =
+    { method = "post", url = "https://www.getrevue.co/profile/azimuttapp/add_subscriber", placeholder = "Enter your email", cta = "Subscribe" }
 
 
 schemaSamples : Dict String ( Int, FileUrl )

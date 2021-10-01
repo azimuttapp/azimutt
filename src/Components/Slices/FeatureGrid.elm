@@ -105,6 +105,10 @@ card model =
         ]
 
 
+
+-- DOCUMENTATION
+
+
 cardModel : CardModel msg
 cardModel =
     { header = "Deploy faster"

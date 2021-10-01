@@ -1,9 +1,14 @@
-module Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, track)
+module Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, role, track)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
 import Libs.Bool as B
 import Libs.Models exposing (Text, TrackEvent)
+
+
+role : String -> Attribute msg
+role text =
+    attribute "role" text
 
 
 ariaHidden : Bool -> Attribute msg

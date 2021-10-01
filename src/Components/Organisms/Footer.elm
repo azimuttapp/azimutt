@@ -32,6 +32,10 @@ slice =
         ]
 
 
+
+-- DOCUMENTATION
+
+
 doc : Chapter x
 doc =
     chapter "Footer"

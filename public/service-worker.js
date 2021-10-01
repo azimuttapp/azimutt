@@ -42,16 +42,33 @@ self.addEventListener('fetch', fetchEvent => {
     // console.log(`Fetch in V${version}.`, fetchEvent)
     const request = fetchEvent.request
     if (request.method === 'GET') {
-        fetchEvent.respondWith(getFromCache(request).catch(err => {
-            console.warn(err)
-            return fetch(request)
-        }))
-        fetchEvent.waitUntil(updateCache(request))
+        fetchAndUpdateCache(fetchEvent, request())
     }
 })
 
 function cacheAll(urls) {
     return caches.open(assetsCache).then(cache => cache.addAll(urls))
+}
+
+function fetchAndUpdateCache(fetchEvent, request) {
+    fetchEvent.respondWith(
+        caches.open(assetsCache).then(cache =>
+            fetch(request)
+                .then(response => {
+                    cache.put(request, response.clone())
+                    return response
+                })
+                .catch(err => cache.match(request).then(response => response || Promise.reject(err)))
+        )
+    )
+}
+
+function getFromCacheThenUpdateCache(fetchEvent, request) {
+    fetchEvent.respondWith(getFromCache(request).catch(err => {
+        console.warn(err)
+        return fetch(request)
+    }))
+    fetchEvent.waitUntil(updateCache(request))
 }
 
 function getFromCache(request) {
@@ -65,16 +82,5 @@ function updateCache(request) {
         caches.open(assetsCache).then(cache =>
             cache.put(request, response)
         )
-    )
-}
-
-function fetchAndUpdateCache(request) {
-    return caches.open(assetsCache).then(cache =>
-        fetch(request)
-            .then(response => {
-                cache.put(request, response.clone())
-                return response
-            })
-            .catch(err => cache.match(request).then(response => response || Promise.reject(err)))
     )
 }

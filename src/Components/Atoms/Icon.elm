@@ -169,6 +169,10 @@ solidIcon styles draw =
         ]
 
 
+
+-- DOCUMENTATION
+
+
 doc : Chapter x
 doc =
     chapter "Icon"

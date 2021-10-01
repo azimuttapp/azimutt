@@ -12,4 +12,7 @@ suite =
             [ test "basic" (\_ -> "a END)" |> R.contains "[^A-Z]END[^A-Z]" |> Expect.equal True)
             , test "basic 2" (\_ -> "a ENDe" |> R.contains "[^A-Z]END[^A-Z]" |> Expect.equal False)
             ]
+        , describe "replace"
+            [ test "basic" (\_ -> "hello/toi.csv" |> R.replace "[/.]" "-" |> Expect.equal "hello-toi-csv")
+            ]
         ]

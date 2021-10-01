@@ -1,11 +1,27 @@
-module Libs.DateTime exposing (format, human)
+module Libs.DateTime exposing (format, formatTo, human, parse, unsafeParse)
 
+import Iso8601
 import Libs.String as S
 import Time
 
 
-format : String -> Time.Zone -> Time.Posix -> String
-format pattern zone time =
+unsafeParse : String -> Time.Posix
+unsafeParse date =
+    date |> parse |> Result.withDefault (Time.millisToPosix 0)
+
+
+parse : String -> Result String Time.Posix
+parse date =
+    Iso8601.toTime date |> Result.mapError (\_ -> "'" ++ date ++ "' is not a valid iso date")
+
+
+format : String -> Time.Posix -> String
+format pattern time =
+    formatTo pattern Time.utc time
+
+
+formatTo : String -> Time.Zone -> Time.Posix -> String
+formatTo pattern zone time =
     let
         date : DateTime
         date =
@@ -17,7 +33,8 @@ format pattern zone time =
         |> String.replace "MMMMM" date.month.full
         |> String.replace "MMM" date.month.short
         |> String.replace "MM" (padLeft (String.fromInt date.month.num) 2 '0')
-        |> String.replace "dd" (String.fromInt date.day)
+        |> String.replace "dd" (padLeft (String.fromInt date.day) 2 '0')
+        |> String.replace "d" (String.fromInt date.day)
         |> String.replace "HH" (padLeft (String.fromInt date.hour) 2 '0')
         |> String.replace "mm" (padLeft (String.fromInt date.minute) 2 '0')
         |> String.replace "ss" (padLeft (String.fromInt date.second) 2 '0')

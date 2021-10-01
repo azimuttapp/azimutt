@@ -5,13 +5,17 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
+import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Feature as Feature
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
+import Components.Slices.Blog as Blog
+import Components.Slices.Content as Content
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide
 import Components.Slices.Hero as Hero
+import Components.Slices.Newsletter as Newsletter
 import Css.Global as Global
 import ElmBook exposing (withChapterGroups, withComponentOptions, withThemeOptions)
 import ElmBook.Chapter exposing (chapter, render)
@@ -32,10 +36,10 @@ main =
         |> withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
             , ( "Molecules", [ Feature.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
-            , ( "Slices", [ Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc ] )
+            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc ] )
             ]
 
 
