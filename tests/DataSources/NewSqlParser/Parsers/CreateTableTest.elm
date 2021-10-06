@@ -3,26 +3,132 @@ module DataSources.NewSqlParser.Parsers.CreateTableTest exposing (..)
 import DataSources.NewSqlParser.Parsers.CreateTable exposing (parseCreateTable)
 import DataSources.NewSqlParser.Utils.Types exposing (ParsedColumn, ParsedTable, SqlStatement)
 import Expect
+import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), chompIf, chompWhile, float, getChompedString, loop, map, oneOf, spaces, succeed, symbol)
 import Test exposing (Test, describe, only, test)
+
+
+type alias Table =
+    { name : String
+    , columns : List Column
+    }
+
+
+type alias Column =
+    { name : String
+    , type_ : String
+    }
+
+
+parse : String -> Result (List DeadEnd) Table
+parse sql =
+    Parser.run parser sql
+
+
+parser : Parser Table
+parser =
+    succeed Table
+        |. symbol "CREATE TABLE"
+        |. spaces
+        |= tableName
+        |. spaces
+        |. symbol "("
+        |. spaces
+        |= parseColumns
+
+
+tableName : Parser String
+tableName =
+    getChompedString <|
+        succeed ()
+            |. chompIf Char.isAlpha
+            |. chompWhile (\c -> c /= ' ' && c /= '(')
+
+
+columnName : Parser String
+columnName =
+    getChompedString <|
+        succeed ()
+            |. chompIf Char.isAlpha
+            |. chompWhile (\c -> c /= ' ' && c /= '(')
+
+
+columnType : Parser String
+columnType =
+    getChompedString <|
+        succeed ()
+            |. chompIf Char.isAlpha
+            |. chompWhile (\c -> c /= ' ' && c /= ',' && c /= '\n')
+
+
+parseColumns : Parser (List Column)
+parseColumns =
+    loop [] parseColumnsHelp
+
+
+parseColumnsHelp : List Column -> Parser (Step (List Column) (List Column))
+parseColumnsHelp revColumns =
+    succeed
+        (\column_ continues ->
+            if continues then
+                Loop (column_ :: revColumns)
+
+            else
+                Done (List.reverse (column_ :: revColumns))
+        )
+        |= parseColumn
+        |. spaces
+        |= oneOf
+            [ succeed True |. symbol ","
+            , succeed False |. symbol ")"
+            ]
+        |. spaces
+
+
+parseColumn : Parser Column
+parseColumn =
+    succeed Column
+        |= columnName
+        |. spaces
+        |= columnType
+
+
+statement =
+    """CREATE TABLE users (
+          id INT,
+          name VARCHAR
+        );"""
 
 
 suite : Test
 suite =
     describe "CreateTable"
         [ only
-            (testParse "basic"
-                """CREATE TABLE users (
+            (test "test"
+                (\_ ->
+                    statement
+                        |> parse
+                        |> Expect.equal
+                            (Ok
+                                (Table "users"
+                                    [ Column "id" "INT"
+                                    , Column "name" "VARCHAR"
+                                    ]
+                                )
+                            )
+                )
+            )
+        , testParse "basic"
+            """CREATE TABLE users (
                  id INT,
                  name VARCHAR
                );"""
-                { schema = Nothing
-                , table = "users"
-                , columns =
-                    [ { column | name = "id", kind = "INT" }
-                    , { column | name = "name", kind = "VARCHAR" }
-                    ]
-                }
-            )
+            { schema = Nothing
+            , table = "users"
+            , columns =
+                [ { column | name = "id", kind = "INT" }
+                , { column | name = "name", kind = "VARCHAR" }
+                ]
+            }
         , testParse "with schema, quotes, not null, primary key and default"
             """CREATE TABLE IF NOT EXISTS public.users(
                  `id` INT NOT NULL PRIMARY KEY,
