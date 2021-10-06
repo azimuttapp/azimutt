@@ -1,7 +1,7 @@
 module DataSources.NewSqlParser.Parsers.CreateTable exposing (createTableParser)
 
-import DataSources.NewSqlParser.Utils.Types exposing (ParseError, ParsedColumn, ParsedTable, SqlStatement)
-import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, getChompedString, sequence, spaces, succeed, symbol)
+import DataSources.NewSqlParser.Utils.Types exposing (ParsedColumn, ParsedTable)
+import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, getChompedString, oneOf, sequence, spaces, succeed, symbol)
 
 
 
@@ -14,12 +14,31 @@ import Parser exposing ((|.), (|=), Parser, Trailing(..), chompIf, chompWhile, g
 
 createTableParser : Parser ParsedTable
 createTableParser =
-    succeed (\tableName columns -> ParsedTable Nothing tableName columns)
+    succeed (\schemaName tableName columns -> ParsedTable schemaName tableName columns)
         |. symbol "CREATE TABLE"
         |. spaces
+        |. oneOf
+            [ symbol "IF NOT EXISTS"
+            , succeed ()
+            ]
+        |. spaces
+        |= oneOf
+            [ succeed Just
+                |= schemaNameParser
+                |. symbol "."
+            , succeed Nothing
+            ]
         |= tableNameParser
         |. spaces
-        |= parseColumns
+        |= columnsParser
+
+
+schemaNameParser : Parser String
+schemaNameParser =
+    getChompedString <|
+        succeed ()
+            |. chompIf Char.isAlpha
+            |. chompWhile (\c -> c /= '.')
 
 
 tableNameParser : Parser String
@@ -27,40 +46,80 @@ tableNameParser =
     getChompedString <|
         succeed ()
             |. chompIf Char.isAlpha
-            |. chompWhile (\c -> c /= ' ' && c /= '(')
+            |. chompWhile (\c -> notSpace c && c /= '(')
 
 
-parseColumns : Parser (List ParsedColumn)
-parseColumns =
+columnsParser : Parser (List ParsedColumn)
+columnsParser =
     sequence
         { start = "("
         , separator = ","
         , end = ")"
         , spaces = spaces
-        , item = parseColumn
-        , trailing = Forbidden -- demand a trailing semi-colon
+        , item = columnParser
+        , trailing = Forbidden
         }
 
 
-parseColumn : Parser ParsedColumn
-parseColumn =
-    succeed (\name kind -> ParsedColumn name kind True Nothing Nothing Nothing Nothing)
-        |= columnName
+columnParser : Parser ParsedColumn
+columnParser =
+    succeed (\name kind nullable primaryKey -> ParsedColumn name kind nullable Nothing primaryKey Nothing Nothing)
+        |= columnNameParser
         |. spaces
-        |= columnType
+        |= columnTypeParser
+        |. spaces
+        |= oneOf
+            [ succeed False
+                |. symbol "NOT NULL"
+            , succeed True
+            ]
+        |. spaces
+        |= oneOf
+            [ succeed (Just "")
+                |. symbol "PRIMARY KEY"
+            , succeed Nothing
+            ]
 
 
-columnName : Parser String
-columnName =
+columnNameParser : Parser String
+columnNameParser =
+    oneOf
+        [ quotedParser '`' '`'
+        , quotedParser '\'' '\''
+        , quotedParser '"' '"'
+        , quotedParser '[' ']'
+        , getChompedString <|
+            succeed ()
+                |. chompIf Char.isAlpha
+                |. chompWhile (\c -> notSpace c && c /= '(')
+        ]
+
+
+columnTypeParser : Parser String
+columnTypeParser =
     getChompedString <|
         succeed ()
             |. chompIf Char.isAlpha
-            |. chompWhile (\c -> c /= ' ' && c /= '(')
+            |. chompWhile notSpace
 
 
-columnType : Parser String
-columnType =
-    getChompedString <|
-        succeed ()
-            |. chompIf Char.isAlpha
-            |. chompWhile (\c -> c /= ' ' && c /= ',' && c /= '\n')
+quotedParser : Char -> Char -> Parser String
+quotedParser first last =
+    succeed identity
+        |. chompIf (\c -> c == first)
+        |= getChompedString
+            (succeed ()
+                |. chompIf (\c -> c /= last)
+                |. chompWhile (\c -> c /= last)
+            )
+        |. chompIf (\c -> c == last)
+
+
+isSpace : Char -> Bool
+isSpace c =
+    c == ' ' || c == '\n' || c == '\u{000D}'
+
+
+notSpace : Char -> Bool
+notSpace c =
+    not (isSpace c)
