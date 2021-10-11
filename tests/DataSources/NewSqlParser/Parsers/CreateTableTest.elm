@@ -1,7 +1,7 @@
 module DataSources.NewSqlParser.Parsers.CreateTableTest exposing (..)
 
-import DataSources.NewSqlParser.Parsers.CreateTable exposing (createTableParser)
-import DataSources.NewSqlParser.Utils.Types exposing (ParsedColumn, ParsedTable, SqlStatement)
+import DataSources.NewSqlParser.Dsl exposing (ParsedColumn, ParsedTable, SqlStatement)
+import DataSources.NewSqlParser.Parsers.CreateTable exposing (columnParser, columnsParser, createTableParser)
 import Expect
 import Parser
 import Test exposing (Test, describe, skip, test)
@@ -10,55 +10,37 @@ import Test exposing (Test, describe, skip, test)
 suite : Test
 suite =
     describe "CreateTable"
-        [ skip
-            (testParse "basic"
-                """CREATE TABLE users (
-                     id INT,
-                     name VARCHAR
-                   );"""
-                { schema = Nothing
-                , table = "users"
-                , columns =
-                    [ { column | name = "id", kind = "INT" }
-                    , { column | name = "name", kind = "VARCHAR" }
-                    ]
-                }
-            )
-        , skip
-            (testParse "WIP"
-                """CREATE TABLE IF NOT EXISTS public.users(
-                     `id` INT NOT NULL PRIMARY KEY,
-                     'name' VARCHAR
-                   );"""
-                { schema = Just "public"
-                , table = "users"
-                , columns =
-                    [ { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "" }
-                    , { column | name = "name", kind = "VARCHAR" }
-                    ]
-                }
-            )
-        , skip
-            (testParse "with schema, quotes, not null, primary key and default"
-                """CREATE TABLE IF NOT EXISTS public.users(
-                     `id` INT NOT NULL PRIMARY KEY,
-                     'name' character varying(255) DEFAULT 'no name'
-                   );"""
-                { schema = Just "public"
-                , table = "users"
-                , columns =
-                    [ { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "" }
-                    , { column | name = "name", kind = "character varying(255)", default = Just "'no name'" }
-                    ]
-                }
-            )
+        [ testParse "basic"
+            """CREATE TABLE users (
+                 id INT,
+                 name VARCHAR
+               );"""
+            { schema = Nothing
+            , table = "users"
+            , columns =
+                [ { column | name = "id", kind = "INT" }
+                , { column | name = "name", kind = "VARCHAR" }
+                ]
+            }
+        , testParse "with schema, quotes, not null, primary key and default"
+            """CREATE TABLE IF NOT EXISTS public.users(
+                 `id` INT NOT NULL PRIMARY KEY,
+                 'name' character varying(255) DEFAULT 'no name'
+               );"""
+            { schema = Just "public"
+            , table = "users"
+            , columns =
+                [ { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "" }
+                , { column | name = "name", kind = "character varying(255)", default = Just "no name" }
+                ]
+            }
         , skip
             (testParse "with constraints"
                 """CREATE TABLE [Users] (
-                     [id] int identity(1,1) NOT NULL CONSTRAINT users_pk PRIMARY KEY
-                     , "name" VARCHAR(255) check(LEN(name) > 4)
-                     , profile_id INT CONSTRAINT users_profile_fk REFERENCES public.profiles.id
-                   );"""
+                 [id] int identity(1,1) NOT NULL CONSTRAINT users_pk PRIMARY KEY
+                 , "name" VARCHAR(255) check(LEN(name) > 4)
+                 , profile_id INT CONSTRAINT users_profile_fk REFERENCES public.profiles.id
+               );"""
                 { schema = Nothing
                 , table = "Users"
                 , columns =
@@ -68,6 +50,17 @@ suite =
                     ]
                 }
             )
+        , describe "columnsParser"
+            [ test "single" (\_ -> "(id INT)" |> Parser.run columnsParser |> Expect.equal (Ok [ { column | name = "id", kind = "INT" } ]))
+            , test "multiple" (\_ -> "(id INT, name VARCHAR)" |> Parser.run columnsParser |> Expect.equal (Ok [ { column | name = "id", kind = "INT" }, { column | name = "name", kind = "VARCHAR" } ]))
+            ]
+        , describe "columnParser"
+            [ test "basic" (\_ -> "id INT" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT" }))
+            , test "not null" (\_ -> "id INT NOT NULL" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", nullable = False }))
+            , test "primary key" (\_ -> "id INT PRIMARY KEY" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", primaryKey = Just "" }))
+            , test "default" (\_ -> "id INT DEFAULT 1" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", default = Just "1" }))
+            , test "all" (\_ -> "id INT NOT NULL PRIMARY KEY DEFAULT 1" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "", default = Just "1" }))
+            ]
         ]
 
 

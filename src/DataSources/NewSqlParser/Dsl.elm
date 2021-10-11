@@ -1,4 +1,4 @@
-module DataSources.NewSqlParser.Utils.Types exposing (ForeignKeyRef, ParseError, ParsedColumn, ParsedTable, SqlStatement)
+module DataSources.NewSqlParser.Dsl exposing (ForeignKeyRef, ParseError, ParsedColumn, ParsedTable, SqlStatement)
 
 
 type alias SqlStatement =
