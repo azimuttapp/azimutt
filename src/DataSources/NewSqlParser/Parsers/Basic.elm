@@ -1,6 +1,6 @@
 module DataSources.NewSqlParser.Parsers.Basic exposing (columnNameParser, columnTypeParser, defaultValueParser, notNullParser, primaryKeyParser, schemaNameParser, tableNameParser, tableRefParser)
 
-import DataSources.NewSqlParser.Parsers.Helpers exposing (getWhile, notSpace, quotedParser)
+import Libs.Parser exposing (getWhile, identifier, notSpace, quotedParser)
 import Parser exposing ((|.), (|=), Parser, int, oneOf, spaces, succeed, symbol)
 
 
@@ -30,14 +30,14 @@ tableRefParser =
 
 schemaNameParser : Parser String
 schemaNameParser =
-    getWhile Char.isAlpha (\c -> c /= '.' && notSpace c && c /= '(')
+    identifier
 
 
 tableNameParser : Parser String
 tableNameParser =
     oneOf
         [ quotedParser '[' ']'
-        , getWhile Char.isAlpha (\c -> notSpace c && c /= '(')
+        , identifier
         ]
 
 
@@ -48,7 +48,7 @@ columnNameParser =
         , quotedParser '\'' '\''
         , quotedParser '"' '"'
         , quotedParser '[' ']'
-        , getWhile Char.isAlpha (\c -> notSpace c && c /= '(')
+        , identifier
         ]
 
 
@@ -60,7 +60,7 @@ columnTypeParser =
         , customColumnTypeParser "character varying" number
         , customColumnTypeParser "double precision" nothing
         , customColumnTypeParser "numeric" numbers
-        , getWhile Char.isAlpha (\c -> notSpace c && c /= ',' && c /= ')')
+        , identifier
         ]
 
 
@@ -128,13 +128,12 @@ defaultValueParser =
             |. spaces
             |= oneOf
                 [ quotedParser '\'' '\''
-                , getWhile Char.isAlphaNum notSpace
+                , identifier
                 ]
             |= oneOf
                 [ succeed (\t -> Just t)
                     |. symbol "::"
-                    |= getWhile Char.isAlpha
-                        notSpace
+                    |= getWhile Char.isAlpha notSpace
                 , succeed
                     Nothing
                 ]
