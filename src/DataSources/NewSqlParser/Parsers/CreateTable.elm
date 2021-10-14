@@ -15,7 +15,7 @@ import Parser exposing ((|.), (|=), Parser, Trailing(..), oneOf, sequence, space
 
 createTableParser : Parser ParsedTable
 createTableParser =
-    succeed (\( schemaName, tableName ) columns -> ParsedTable schemaName tableName columns)
+    succeed (\( schemaName, tableName ) columns -> ParsedTable schemaName tableName columns [])
         |. symbol "CREATE TABLE"
         |. spaces
         |. oneOf

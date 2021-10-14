@@ -1,4 +1,6 @@
-module DataSources.NewSqlParser.Dsl exposing (ForeignKeyRef, ParseError, ParsedColumn, ParsedTable, SqlStatement)
+module DataSources.NewSqlParser.Dsl exposing (ForeignKeyRef, ParseError, ParsedColumn, ParsedConstraint(..), ParsedTable, SqlStatement)
+
+import Libs.Nel exposing (Nel)
 
 
 type alias SqlStatement =
@@ -9,6 +11,7 @@ type alias ParsedTable =
     { schema : Maybe String
     , table : String
     , columns : List ParsedColumn
+    , constraints : List ParsedConstraint
     }
 
 
@@ -25,6 +28,14 @@ type alias ParsedColumn =
 
 type alias ForeignKeyRef =
     { schema : Maybe String, table : String, column : Maybe String }
+
+
+type ParsedConstraint
+    = PrimaryKey (Maybe String) (Nel String)
+    | ForeignKey (Maybe String) String ForeignKeyRef
+    | Unique String (Nel String)
+    | Index String (Nel String) String
+    | Check String (List String) String
 
 
 type alias ParseError =

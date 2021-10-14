@@ -1,8 +1,9 @@
 module DataSources.NewSqlParser.Parsers.CreateTableTest exposing (..)
 
-import DataSources.NewSqlParser.Dsl exposing (ParsedColumn, ParsedTable, SqlStatement)
+import DataSources.NewSqlParser.Dsl exposing (ParsedColumn, ParsedConstraint(..), ParsedTable, SqlStatement)
 import DataSources.NewSqlParser.Parsers.CreateTable exposing (columnParser, columnsParser, createTableParser)
 import Expect
+import Libs.Nel exposing (Nel)
 import Parser
 import Test exposing (Test, describe, skip, test)
 
@@ -21,6 +22,7 @@ suite =
                 [ { column | name = "id", kind = "INT" }
                 , { column | name = "name", kind = "VARCHAR" }
                 ]
+            , constraints = []
             }
         , testParse "with schema, quotes, not null, primary key and default"
             """CREATE TABLE IF NOT EXISTS public.users(
@@ -33,20 +35,31 @@ suite =
                 [ { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "" }
                 , { column | name = "name", kind = "character varying(255)", default = Just "no name" }
                 ]
+            , constraints = []
             }
         , skip
             (testParse "with constraints"
                 """CREATE TABLE [Users] (
                  [id] int identity(1,1) NOT NULL CONSTRAINT users_pk PRIMARY KEY
                  , "name" VARCHAR(255) check(LEN(name) > 4)
+                 , bio text default ''::character varying
                  , profile_id INT CONSTRAINT users_profile_fk REFERENCES public.profiles.id
+                 , foreign key(`profile_id`) references `profiles`(`id`)
+                 , constraint `no_duplicate_name` unique (`name`)
+                 , CONSTRAINT bio_not_null CHECK (bio IS NOT NULL)
                );"""
                 { schema = Nothing
                 , table = "Users"
                 , columns =
                     [ { column | name = "id", kind = "int identity(1,1)", nullable = False, primaryKey = Just "users_pk" }
                     , { column | name = "name", kind = "VARCHAR(255)", check = Just "LEN(name) > 4" }
+                    , { column | name = "bio", kind = "text" }
                     , { column | name = "profile_id", kind = "INT", foreignKey = Just ( "users_profile_fk", { schema = Just "public", table = "profiles", column = Just "id" } ) }
+                    ]
+                , constraints =
+                    [ ForeignKey Nothing "profile_id" { schema = Nothing, table = "profiles", column = Just "id" }
+                    , Unique "no_duplicate_name" (Nel "name" [])
+                    , Check "bio_not_null" [] "bio IS NOT NULL"
                     ]
                 }
             )
