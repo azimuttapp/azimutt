@@ -1,7 +1,7 @@
 module DataSources.NewSqlParser.Parsers.Basic exposing (checkParser, columnNameParser, columnTypeParser, constraintParser, defaultValueParser, foreignKeyParser, foreignKeyRefParser, notNullParser, primaryKeyParser, schemaNameParser, tableNameParser, tableRefParser)
 
 import DataSources.NewSqlParser.Dsl exposing (ColumnConstraint(..), ForeignKeyRef)
-import Libs.Parser exposing (identifier, quotedParser, quotedParserKeep, symbolInsensitive)
+import Libs.Parser exposing (exists, identifierOrQuoted, maybe, symbolInsensitive)
 import Parser exposing ((|.), (|=), Nestable(..), Parser, Trailing(..), backtrackable, getChompedString, int, multiComment, oneOf, sequence, spaces, succeed, symbol)
 
 
@@ -20,61 +20,48 @@ tableRefParser =
                 ( part1, Just part2 ) ->
                     ( Just part1, part2 )
         )
-        |= schemaNameParser
-        |= oneOf
-            [ succeed Just
+        |= identifierOrQuoted
+        |= maybe
+            (succeed identity
                 |. symbol "."
-                |= tableNameParser
-            , succeed Nothing
-            ]
+                |= identifierOrQuoted
+            )
 
 
 schemaNameParser : Parser String
 schemaNameParser =
-    oneOf
-        [ quotedParser '[' ']'
-        , identifier
-        ]
+    identifierOrQuoted
 
 
 tableNameParser : Parser String
 tableNameParser =
-    oneOf
-        [ quotedParser '[' ']'
-        , identifier
-        ]
+    identifierOrQuoted
 
 
 columnNameParser : Parser String
 columnNameParser =
-    oneOf
-        [ quotedParser '`' '`'
-        , quotedParser '\'' '\''
-        , quotedParser '"' '"'
-        , quotedParser '[' ']'
-        , identifier
-        ]
+    identifierOrQuoted
 
 
 columnTypeParser : Parser String
 columnTypeParser =
     -- cf https://www.postgresql.org/docs/current/datatype.html
     oneOf
-        [ customColumnTypeParser "bit varying" numbers
-        , customColumnTypeParser "character varying" (oneOf [ numbers, nothing ])
-        , customColumnTypeParser "double precision" nothing
-        , customColumnTypeParser "int identity" numbers
+        [ customColumnTypeParser "BIT VARYING" (maybe numbers |> Parser.map (Maybe.withDefault ""))
+        , customColumnTypeParser "CHARACTER VARYING" (maybe numbers |> Parser.map (Maybe.withDefault ""))
+        , customColumnTypeParser "DOUBLE PRECISION" nothing
+        , customColumnTypeParser "INT IDENTITY" (maybe numbers |> Parser.map (Maybe.withDefault ""))
         , succeed (\name nums -> name ++ nums)
-            |= identifier
+            |= identifierOrQuoted
             |. spaces
-            |= oneOf [ numbers, nothing ]
+            |= (maybe numbers |> Parser.map (Maybe.withDefault ""))
         ]
 
 
 customColumnTypeParser : String -> Parser String -> Parser String
 customColumnTypeParser name parser =
-    succeed (\value -> name ++ value)
-        |. symbol name
+    succeed (\kind value -> kind ++ value)
+        |= symbolInsensitive name
         |. spaces
         |= parser
 
@@ -100,42 +87,62 @@ nothing =
 
 notNullParser : Parser Bool
 notNullParser =
+    exists (symbolInsensitive "NOT NULL") |> Parser.map not
+
+
+defaultValueParser : Parser (Maybe String)
+defaultValueParser =
     oneOf
-        [ succeed False
-            |. symbol "NOT NULL"
-        , succeed True
+        [ succeed (\value kind -> Just (value ++ (kind |> Maybe.withDefault "")))
+            |. symbolInsensitive "DEFAULT"
+            |. spaces
+            |= (identifierOrQuoted |> getChompedString)
+            |= oneOf
+                [ succeed (\t -> Just ("::" ++ t))
+                    |. symbol "::"
+                    |= columnTypeParser
+                , succeed
+                    Nothing
+                ]
+        , succeed Nothing
         ]
 
 
 primaryKeyParser : Parser (Maybe String)
 primaryKeyParser =
+    maybe (succeed "" |. symbolInsensitive "PRIMARY KEY")
+
+
+checkParser : Parser (Maybe String)
+checkParser =
     oneOf
-        [ succeed (Just "")
-            |. symbol "PRIMARY KEY"
+        [ succeed (\str -> str |> String.dropLeft 1 |> String.dropRight 1 |> Just)
+            |. symbolInsensitive "CHECK"
+            |. spaces
+            |= (multiComment "(" ")" Nestable |> getChompedString)
         , succeed Nothing
         ]
 
 
 constraintParser : Parser (Maybe ( String, ColumnConstraint ))
 constraintParser =
-    oneOf
-        [ succeed (\name constraint -> Just ( name, constraint ))
-            |. symbol "CONSTRAINT"
+    maybe
+        (succeed (\name constraint -> ( name, constraint ))
+            |. symbolInsensitive "CONSTRAINT"
             |. spaces
-            |= identifier
+            |= identifierOrQuoted
             |. spaces
             |= oneOf
-                [ succeed ColumnPrimaryKey |. symbol "PRIMARY KEY"
+                [ succeed ColumnPrimaryKey |. symbolInsensitive "PRIMARY KEY"
                 , foreignKeyParser |> Parser.map ColumnForeignKey
                 ]
-        , succeed Nothing
-        ]
+        )
 
 
 foreignKeyParser : Parser ForeignKeyRef
 foreignKeyParser =
     succeed identity
-        |. symbol "REFERENCES"
+        |. symbolInsensitive "REFERENCES"
         |. spaces
         |= foreignKeyRefParser
 
@@ -145,49 +152,15 @@ foreignKeyRefParser =
     oneOf
         [ backtrackable <|
             succeed (\schema table column -> ForeignKeyRef (Just schema) table (Just column))
-                |= identifier
+                |= identifierOrQuoted
                 |. symbol "."
-                |= identifier
+                |= identifierOrQuoted
                 |. symbol "."
-                |= identifier
+                |= identifierOrQuoted
         , backtrackable <|
             succeed (\table column -> ForeignKeyRef Nothing table (Just column))
-                |= identifier
+                |= identifierOrQuoted
                 |. symbol "."
-                |= identifier
-        , succeed (\table -> ForeignKeyRef Nothing table Nothing) |= identifier
-        ]
-
-
-checkParser : Parser (Maybe String)
-checkParser =
-    oneOf
-        [ succeed (\str -> str |> String.dropLeft 1 |> String.dropRight 1 |> Just)
-            |. symbolInsensitive "CHECK"
-            |. spaces
-            |= (getChompedString <|
-                    multiComment "(" ")" Nestable
-               )
-        , succeed Nothing
-        ]
-
-
-defaultValueParser : Parser (Maybe String)
-defaultValueParser =
-    oneOf
-        [ succeed (\value kind -> Just (value ++ (kind |> Maybe.withDefault "")))
-            |. symbolInsensitive "DEFAULT"
-            |. spaces
-            |= oneOf
-                [ quotedParserKeep '\'' '\''
-                , identifier
-                ]
-            |= oneOf
-                [ succeed (\t -> Just ("::" ++ t))
-                    |. symbol "::"
-                    |= columnTypeParser
-                , succeed
-                    Nothing
-                ]
-        , succeed Nothing
+                |= identifierOrQuoted
+        , succeed (\table -> ForeignKeyRef Nothing table Nothing) |= identifierOrQuoted
         ]

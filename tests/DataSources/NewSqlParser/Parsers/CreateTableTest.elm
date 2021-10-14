@@ -89,7 +89,7 @@ suite =
             , test "not null" (\_ -> "id INT NOT NULL" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", nullable = False }))
             , test "primary key" (\_ -> "id INT PRIMARY KEY" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", primaryKey = Just "" }))
             , test "default" (\_ -> "id INT DEFAULT 1" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", default = Just "1" }))
-            , test "all" (\_ -> "id INT NOT NULL PRIMARY KEY DEFAULT 1" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "", default = Just "1" }))
+            , test "all" (\_ -> "id INT NOT NULL DEFAULT 1 PRIMARY KEY" |> Parser.run columnParser |> Expect.equal (Ok { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "", default = Just "1" }))
             ]
         ]
 
