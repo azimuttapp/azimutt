@@ -12,5 +12,6 @@ suite =
         [ describe "quotedParser"
             [ test "brackets" (\_ -> "[text]" |> Parser.run (quotedParser '[' ']') |> Expect.equal (Ok "text"))
             , test "backquotes" (\_ -> "`text`" |> Parser.run (quotedParser '`' '`') |> Expect.equal (Ok "text"))
+            , test "empty" (\_ -> "''" |> Parser.run (quotedParser '\'' '\'') |> Expect.equal (Ok ""))
             ]
         ]

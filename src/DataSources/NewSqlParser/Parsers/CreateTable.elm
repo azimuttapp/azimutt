@@ -1,7 +1,8 @@
 module DataSources.NewSqlParser.Parsers.CreateTable exposing (columnParser, columnsParser, createTableParser)
 
-import DataSources.NewSqlParser.Dsl exposing (ParsedColumn, ParsedTable)
-import DataSources.NewSqlParser.Parsers.Basic exposing (columnNameParser, columnTypeParser, defaultValueParser, notNullParser, primaryKeyParser, tableRefParser)
+import DataSources.NewSqlParser.Dsl exposing (ColumnConstraint(..), ParsedColumn, ParsedTable)
+import DataSources.NewSqlParser.Parsers.Basic exposing (checkParser, columnNameParser, columnTypeParser, constraintParser, defaultValueParser, notNullParser, primaryKeyParser, tableRefParser)
+import Libs.Maybe as M
 import Parser exposing ((|.), (|=), Parser, Trailing(..), oneOf, sequence, spaces, succeed, symbol)
 
 
@@ -42,13 +43,32 @@ columnsParser =
 
 columnParser : Parser ParsedColumn
 columnParser =
-    succeed (\name kind nullable primaryKey default -> ParsedColumn name kind nullable default primaryKey Nothing Nothing)
+    succeed
+        (\name kind nullable constraint primaryKey default check ->
+            let
+                ( pk, fk ) =
+                    case constraint of
+                        Just ( constraintName, ColumnPrimaryKey ) ->
+                            ( primaryKey |> M.orElse (Just constraintName), Nothing )
+
+                        Just ( constraintName, ColumnForeignKey ref ) ->
+                            ( primaryKey, Just ( constraintName, ref ) )
+
+                        Nothing ->
+                            ( primaryKey, Nothing )
+            in
+            ParsedColumn name kind nullable default pk fk check
+        )
         |= columnNameParser
         |. spaces
         |= columnTypeParser
         |. spaces
         |= notNullParser
         |. spaces
+        |= constraintParser
+        |. spaces
         |= primaryKeyParser
         |. spaces
         |= defaultValueParser
+        |. spaces
+        |= checkParser

@@ -1,6 +1,6 @@
-module Libs.Parser exposing (getWhile, identifier, isSpace, notSpace, quotedParser)
+module Libs.Parser exposing (getWhile, identifier, isSpace, notSpace, quotedParser, quotedParserKeep, symbolInsensitive)
 
-import Parser exposing ((|.), (|=), Parser, chompIf, chompWhile, getChompedString, succeed)
+import Parser exposing ((|.), (|=), Parser, chompIf, chompWhile, getChompedString, oneOf, succeed, symbol)
 
 
 
@@ -16,8 +16,27 @@ quotedParser : Char -> Char -> Parser String
 quotedParser first last =
     succeed identity
         |. chompIf (\c -> c == first)
-        |= getWhile (\c -> c /= last) (\c -> c /= last)
+        |= (getChompedString <|
+                succeed ()
+                    |. chompWhile (\c -> c /= last)
+           )
         |. chompIf (\c -> c == last)
+
+
+quotedParserKeep : Char -> Char -> Parser String
+quotedParserKeep first last =
+    succeed (\string -> String.fromChar first ++ string ++ String.fromChar last)
+        |. chompIf (\c -> c == first)
+        |= (getChompedString <|
+                succeed ()
+                    |. chompWhile (\c -> c /= last)
+           )
+        |. chompIf (\c -> c == last)
+
+
+symbolInsensitive : String -> Parser ()
+symbolInsensitive name =
+    oneOf [ symbol (name |> String.toUpper), symbol (name |> String.toLower) ]
 
 
 getWhile : (Char -> Bool) -> (Char -> Bool) -> Parser String

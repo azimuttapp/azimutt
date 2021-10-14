@@ -1,7 +1,8 @@
-module DataSources.NewSqlParser.Parsers.Basic exposing (columnNameParser, columnTypeParser, defaultValueParser, notNullParser, primaryKeyParser, schemaNameParser, tableNameParser, tableRefParser)
+module DataSources.NewSqlParser.Parsers.Basic exposing (checkParser, columnNameParser, columnTypeParser, constraintParser, defaultValueParser, foreignKeyParser, foreignKeyRefParser, notNullParser, primaryKeyParser, schemaNameParser, tableNameParser, tableRefParser)
 
-import Libs.Parser exposing (getWhile, identifier, notSpace, quotedParser)
-import Parser exposing ((|.), (|=), Parser, int, oneOf, spaces, succeed, symbol)
+import DataSources.NewSqlParser.Dsl exposing (ColumnConstraint(..), ForeignKeyRef)
+import Libs.Parser exposing (identifier, quotedParser, quotedParserKeep, symbolInsensitive)
+import Parser exposing ((|.), (|=), Nestable(..), Parser, Trailing(..), backtrackable, getChompedString, int, multiComment, oneOf, sequence, spaces, succeed, symbol)
 
 
 
@@ -30,7 +31,10 @@ tableRefParser =
 
 schemaNameParser : Parser String
 schemaNameParser =
-    identifier
+    oneOf
+        [ quotedParser '[' ']'
+        , identifier
+        ]
 
 
 tableNameParser : Parser String
@@ -56,11 +60,14 @@ columnTypeParser : Parser String
 columnTypeParser =
     -- cf https://www.postgresql.org/docs/current/datatype.html
     oneOf
-        [ customColumnTypeParser "bit varying" number
-        , customColumnTypeParser "character varying" number
+        [ customColumnTypeParser "bit varying" numbers
+        , customColumnTypeParser "character varying" (oneOf [ numbers, nothing ])
         , customColumnTypeParser "double precision" nothing
-        , customColumnTypeParser "numeric" numbers
-        , identifier
+        , customColumnTypeParser "int identity" numbers
+        , succeed (\name nums -> name ++ nums)
+            |= identifier
+            |. spaces
+            |= oneOf [ numbers, nothing ]
         ]
 
 
@@ -68,38 +75,27 @@ customColumnTypeParser : String -> Parser String -> Parser String
 customColumnTypeParser name parser =
     succeed (\value -> name ++ value)
         |. symbol name
+        |. spaces
         |= parser
+
+
+numbers : Parser String
+numbers =
+    Parser.map (\nums -> "(" ++ (nums |> List.map String.fromInt |> String.join ",") ++ ")")
+        (sequence
+            { start = "("
+            , separator = ","
+            , end = ")"
+            , spaces = spaces
+            , item = int
+            , trailing = Forbidden
+            }
+        )
 
 
 nothing : Parser String
 nothing =
     succeed ""
-
-
-number : Parser String
-number =
-    succeed (\size -> "(" ++ String.fromInt size ++ ")")
-        |. spaces
-        |. symbol "("
-        |. spaces
-        |= int
-        |. spaces
-        |. symbol ")"
-
-
-numbers : Parser String
-numbers =
-    succeed (\p s -> "(" ++ String.fromInt p ++ ", " ++ String.fromInt s ++ ")")
-        |. spaces
-        |. symbol "("
-        |. spaces
-        |= int
-        |. spaces
-        |. symbol ","
-        |. spaces
-        |= int
-        |. spaces
-        |. symbol ")"
 
 
 notNullParser : Parser Bool
@@ -120,20 +116,76 @@ primaryKeyParser =
         ]
 
 
+constraintParser : Parser (Maybe ( String, ColumnConstraint ))
+constraintParser =
+    oneOf
+        [ succeed (\name constraint -> Just ( name, constraint ))
+            |. symbol "CONSTRAINT"
+            |. spaces
+            |= identifier
+            |. spaces
+            |= oneOf
+                [ succeed ColumnPrimaryKey |. symbol "PRIMARY KEY"
+                , foreignKeyParser |> Parser.map ColumnForeignKey
+                ]
+        , succeed Nothing
+        ]
+
+
+foreignKeyParser : Parser ForeignKeyRef
+foreignKeyParser =
+    succeed identity
+        |. symbol "REFERENCES"
+        |. spaces
+        |= foreignKeyRefParser
+
+
+foreignKeyRefParser : Parser ForeignKeyRef
+foreignKeyRefParser =
+    oneOf
+        [ backtrackable <|
+            succeed (\schema table column -> ForeignKeyRef (Just schema) table (Just column))
+                |= identifier
+                |. symbol "."
+                |= identifier
+                |. symbol "."
+                |= identifier
+        , backtrackable <|
+            succeed (\table column -> ForeignKeyRef Nothing table (Just column))
+                |= identifier
+                |. symbol "."
+                |= identifier
+        , succeed (\table -> ForeignKeyRef Nothing table Nothing) |= identifier
+        ]
+
+
+checkParser : Parser (Maybe String)
+checkParser =
+    oneOf
+        [ succeed (\str -> str |> String.dropLeft 1 |> String.dropRight 1 |> Just)
+            |. symbolInsensitive "CHECK"
+            |. spaces
+            |= (getChompedString <|
+                    multiComment "(" ")" Nestable
+               )
+        , succeed Nothing
+        ]
+
+
 defaultValueParser : Parser (Maybe String)
 defaultValueParser =
     oneOf
-        [ succeed (\value kind -> Just (value ++ (kind |> Maybe.map (\k -> "::" ++ k) |> Maybe.withDefault "")))
-            |. symbol "DEFAULT"
+        [ succeed (\value kind -> Just (value ++ (kind |> Maybe.withDefault "")))
+            |. symbolInsensitive "DEFAULT"
             |. spaces
             |= oneOf
-                [ quotedParser '\'' '\''
+                [ quotedParserKeep '\'' '\''
                 , identifier
                 ]
             |= oneOf
-                [ succeed (\t -> Just t)
+                [ succeed (\t -> Just ("::" ++ t))
                     |. symbol "::"
-                    |= getWhile Char.isAlpha notSpace
+                    |= columnTypeParser
                 , succeed
                     Nothing
                 ]

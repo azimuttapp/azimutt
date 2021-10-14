@@ -33,7 +33,24 @@ suite =
             , table = "users"
             , columns =
                 [ { column | name = "id", kind = "INT", nullable = False, primaryKey = Just "" }
-                , { column | name = "name", kind = "character varying(255)", default = Just "no name" }
+                , { column | name = "name", kind = "character varying(255)", default = Just "'no name'" }
+                ]
+            , constraints = []
+            }
+        , testParse "WIP"
+            """CREATE TABLE [Users] (
+                 [id] int identity(1,1) NOT NULL CONSTRAINT users_pk PRIMARY KEY
+                 , "name" VARCHAR(255) check(LEN(name) > 4)
+                 , bio text default ''::character varying
+                 , profile_id INT CONSTRAINT users_profile_fk REFERENCES public.profiles.id
+               );"""
+            { schema = Nothing
+            , table = "Users"
+            , columns =
+                [ { column | name = "id", kind = "int identity(1,1)", nullable = False, primaryKey = Just "users_pk" }
+                , { column | name = "name", kind = "VARCHAR(255)", check = Just "LEN(name) > 4" }
+                , { column | name = "bio", kind = "text", default = Just "''::character varying" }
+                , { column | name = "profile_id", kind = "INT", foreignKey = Just ( "users_profile_fk", { schema = Just "public", table = "profiles", column = Just "id" } ) }
                 ]
             , constraints = []
             }
@@ -57,9 +74,9 @@ suite =
                     , { column | name = "profile_id", kind = "INT", foreignKey = Just ( "users_profile_fk", { schema = Just "public", table = "profiles", column = Just "id" } ) }
                     ]
                 , constraints =
-                    [ ForeignKey Nothing "profile_id" { schema = Nothing, table = "profiles", column = Just "id" }
-                    , Unique "no_duplicate_name" (Nel "name" [])
-                    , Check "bio_not_null" [] "bio IS NOT NULL"
+                    [ ForeignKey { name = Nothing, src = "profile_id", ref = { schema = Nothing, table = "profiles", column = Just "id" } }
+                    , Unique { name = "no_duplicate_name", columns = Nel "name" [] }
+                    , Check { name = "bio_not_null", columns = [], predicate = "bio IS NOT NULL" }
                     ]
                 }
             )
