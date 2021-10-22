@@ -52,6 +52,9 @@ suite =
             , testParse ( parseAlterTable, "primary key with add" )
                 "ALTER TABLE public.t2 ADD PRIMARY KEY (`id`);"
                 (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey Nothing (Nel "id" [])))
+            , testParse ( parseAlterTable, "if exists" )
+                "alter table if exists t1 \n       drop constraint if exists abc;"
+                (DropConstraint Nothing "t1" "abc")
             ]
         , describe "parseAlterTableAddConstraint"
             [ testParseSql ( parseAlterTableAddConstraint, "unique" )
@@ -62,5 +65,8 @@ suite =
             [ testParseSql ( parseAlterTableAddConstraintForeignKey, "with on delete" )
                 "FOREIGN KEY (supply_order_bill_id) REFERENCES public.supply_order_bills(id) ON DELETE SET NULL"
                 { column = "supply_order_bill_id", ref = { schema = Just "public", table = "supply_order_bills", column = Just "id" } }
+            , testParseSql ( parseAlterTableAddConstraintForeignKey, "with on delete not deferrable" )
+                """FOREIGN KEY ("postId") REFERENCES post_entity(id) ON DELETE CASCADE NOT DEFERRABLE"""
+                { column = "postId", ref = { schema = Nothing, table = "post_entity", column = Just "id" } }
             ]
         ]

@@ -73,7 +73,13 @@ parseStatement statement =
      else if firstLine |> String.startsWith "ALTER TYPE " then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "CREATE FUNCTION " then
+     else if firstLine |> String.startsWith "DROP TYPE " then
+        Ok (Ignored statement)
+
+     else if firstLine |> String.startsWith "COMMENT ON TYPE " then
+        Ok (Ignored statement)
+
+     else if (firstLine |> String.startsWith "CREATE FUNCTION ") || (firstLine |> String.startsWith "CREATE OR REPLACE FUNCTION ") then
         Ok (Ignored statement)
 
      else if firstLine |> String.startsWith "ALTER FUNCTION " then
@@ -130,10 +136,10 @@ parseStatement statement =
      else if firstLine |> String.startsWith "CREATE TRIGGER " then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "GRANT ALL ON " then
+     else if firstLine |> String.startsWith "GRANT " then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "REVOKE ALL ON " then
+     else if firstLine |> String.startsWith "REVOKE " then
         Ok (Ignored statement)
 
      else if firstLine |> String.startsWith "SELECT " then

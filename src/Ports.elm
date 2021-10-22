@@ -130,7 +130,7 @@ trackJsonError name error =
 
 trackErrorList : String -> List String -> Cmd msg
 trackErrorList name errors =
-    messageToJs (TrackError name (Encode.object [ ( "errors", errors |> Encode.list Encode.string ) ]))
+    Cmd.batch (errors |> List.map (\error -> messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))))
 
 
 type ElmMsg
