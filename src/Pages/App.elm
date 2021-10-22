@@ -15,7 +15,7 @@ import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
 import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (updateSizes)
-import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
+import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, resetCanvas, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSwitch, setTableInList, setTables, setTime)
@@ -26,7 +26,7 @@ import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hi
 import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Helpers as Helpers
-import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, showModal, toastError, track, trackJsonError, trackPage)
+import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, showModal, toastError, track, trackJsonError, trackPage)
 import Request
 import Shared
 import Time
@@ -198,6 +198,9 @@ update msg model =
 
         FitContent ->
             ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
+
+        ResetCanvas ->
+            ( model |> setProject resetCanvas, click conf.ids.searchInput )
 
         DragStart id pos ->
             model |> dragStart id pos

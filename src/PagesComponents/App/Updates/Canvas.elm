@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Canvas exposing (computeFit, fitCanvas, handleWheel, performZoom, zoomCanvas)
+module PagesComponents.App.Updates.Canvas exposing (computeFit, fitCanvas, handleWheel, performZoom, resetCanvas, zoomCanvas)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
@@ -9,8 +9,8 @@ import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (HtmlId, ZoomLevel)
 import Libs.Position as Position exposing (Position)
 import Libs.Size as Size exposing (Size)
-import Models.Project exposing (CanvasProps, Layout, TableProps, tablesArea, viewportArea, viewportSize)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setTables)
+import Models.Project exposing (CanvasProps, Layout, Project, TableProps, tablesArea, viewportArea, viewportSize)
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setSchema, setTables)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
@@ -143,3 +143,9 @@ computeZoom viewport padding content zoom =
             (zoom * min grow.width grow.height) |> clamp conf.zoom.min 1
     in
     newZoom
+
+
+resetCanvas : Project -> Project
+resetCanvas project =
+    { project | currentLayout = Nothing }
+        |> setSchema (setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = { position = { left = 0, top = 0 }, zoom = 1 } }))

@@ -79,6 +79,7 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
     | FitContent
+    | ResetCanvas
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position

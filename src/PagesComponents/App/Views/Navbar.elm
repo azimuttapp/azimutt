@@ -37,6 +37,7 @@ viewNavbar search storedProjects project virtualRelation =
                             |> Maybe.map
                                 (\p ->
                                     [ viewTitle storedProjects p
+                                    , viewResetButton p.currentLayout p.schema.layout
                                     , lazy2 viewLayoutButton p.currentLayout p.layouts
                                     , div [ class "dropdown mx-3" ]
                                         [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
@@ -147,6 +148,15 @@ intersperse a list =
 tablesInLayout : Project -> LayoutName -> Int
 tablesInLayout project layout =
     project.layouts |> Dict.get layout |> Maybe.map (\l -> l.tables |> List.length) |> Maybe.withDefault 0
+
+
+viewResetButton : Maybe LayoutName -> Layout -> Html Msg
+viewResetButton selectedLayout layout =
+    if selectedLayout /= Nothing || not ((layout.tables == []) && (layout.hiddenTables == []) && layout.canvas == { position = { left = 0, top = 0 }, zoom = 1 }) then
+        bsButton Secondary [ class "me-1", onClick ResetCanvas ] [ text "Reset layout" ]
+
+    else
+        div [] []
 
 
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
