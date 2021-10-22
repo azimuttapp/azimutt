@@ -11,6 +11,7 @@ type TableUpdate
     | AlterColumn (Maybe SqlSchemaName) SqlTableName ColumnUpdate
     | AddTableOwner (Maybe SqlSchemaName) SqlTableName SqlUser
     | AttachPartition (Maybe SqlSchemaName) SqlTableName
+    | DropConstraint (Maybe SqlSchemaName) SqlTableName SqlConstraintName
 
 
 type TableConstraint
@@ -47,7 +48,7 @@ type alias SqlUser =
 
 parseAlterTable : SqlStatement -> Result (List ParseError) TableUpdate
 parseAlterTable statement =
-    case statement |> buildSqlLine |> R.matches "^ALTER TABLE(?:\\s+ONLY)?\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+(?<command>.*);$" of
+    case statement |> buildSqlLine |> R.matches "^ALTER TABLE(?:\\s+ONLY)?(?:\\s+IF EXISTS)?\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+(?<command>.*);$" of
         schema :: (Just table) :: (Just command) :: [] ->
             -- FIXME manage multiple commands, ex: "ADD PRIMARY KEY (`id`), ADD KEY `IDX_ABC` (`user_id`), ADD KEY `IDX_DEF` (`event_id`)"
             -- TODO try to merge "ADD PRIMARY KEY" with "ADD CONSTRAINT" (make CONSTRAINT optional)
@@ -74,6 +75,9 @@ parseAlterTable statement =
 
             else if command |> String.toUpper |> String.startsWith "ATTACH PARTITION " then
                 Ok (AttachPartition schemaName tableName)
+
+            else if command |> String.toUpper |> String.startsWith "DROP CONSTRAINT " then
+                parseAlterTableDropConstraint command |> Result.map (DropConstraint schemaName tableName)
 
             else
                 Err [ "Command not handled: '" ++ command ++ "'" ]
@@ -126,7 +130,7 @@ parseAlterTableAddConstraintForeignKey constraint =
         triggers =
             "(?:\\s+ON UPDATE " ++ action ++ ")?(?:\\s+ON DELETE " ++ action ++ ")?"
     in
-    case constraint |> R.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ triggers ++ "$") of
+    case constraint |> R.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ triggers ++ "(?:\\s+NOT DEFERRABLE)?$") of
         (Just column) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
             Ok
                 { column = column |> buildColumnName
@@ -204,3 +208,13 @@ parseAlterTableOwnerTo command =
 
         _ ->
             Err [ "Can't parse alter column: '" ++ command ++ "'" ]
+
+
+parseAlterTableDropConstraint : RawSql -> Result (List ParseError) SqlConstraintName
+parseAlterTableDropConstraint command =
+    case command |> R.matches "^DROP CONSTRAINT(?:\\s+IF EXISTS)? (?<name>.+)$" of
+        (Just name) :: [] ->
+            Ok name
+
+        _ ->
+            Err [ "Can't parse drop constraint: '" ++ command ++ "'" ]

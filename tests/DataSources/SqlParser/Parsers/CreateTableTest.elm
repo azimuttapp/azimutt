@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.CreateTableTest exposing (..)
 
-import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn, parseCreateTableForeignKey)
+import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn, parseCreateTableForeignKey, parseCreateTableKey)
 import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParse, testParseSql)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
@@ -33,6 +33,9 @@ suite =
             , testParse ( parseCreateTable, "without schema, lowercase and no space before body" )
                 "create table migrations(version varchar not null);"
                 { parsedTable | table = "migrations", columns = Nel { parsedColumn | name = "version", kind = "varchar", nullable = False } [] }
+            , testParse ( parseCreateTable, "with db" )
+                "CREATE TABLE db.schema.table (column int);"
+                { parsedTable | schema = Just "schema", table = "table", columns = Nel { parsedColumn | name = "column", kind = "int" } [] }
             ]
         , describe "parseCreateTableColumn"
             [ testParseSql ( parseCreateTableColumn, "basic" )
@@ -68,10 +71,21 @@ suite =
             , testParseSql ( parseCreateTableColumn, "with check" )
                 "state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable'))"
                 { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
+            , testParseSql ( parseCreateTableColumn, "with collate" )
+                "id nvarchar(32) COLLATE Modern_Spanish_CI_AS NOT NULL"
+                { parsedColumn | name = "id", kind = "nvarchar(32)", nullable = False }
             ]
         , describe "parseCreateTableForeignKey"
             [ testParseSql ( parseCreateTableForeignKey, "sqlite" )
                 "foreign key(`ulid`) references `tasks`(`ulid`)"
                 { name = Nothing, src = "ulid", ref = { schema = Nothing, table = "tasks", column = Just "ulid" } }
+            ]
+        , describe "parseCreateTableKey"
+            [ testParseSql ( parseCreateTableKey, "using" )
+                "KEY `fk_user_id` (`user_id`) USING BTREE"
+                { name = "fk_user_id", columns = Nel "user_id" [], definition = "KEY `fk_user_id` (`user_id`) USING BTREE" }
+            , testParseSql ( parseCreateTableKey, "nested parenthesis" )
+                "KEY `ResourceId` (`ResourceId`(333))"
+                { name = "ResourceId", columns = Nel "ResourceId" [], definition = "KEY `ResourceId` (`ResourceId`(333))" }
             ]
         ]

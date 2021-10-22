@@ -141,6 +141,9 @@ evolve ( statement, command ) tables =
         AlterTable (AttachPartition _ _) ->
             Ok tables
 
+        AlterTable (DropConstraint _ _ _) ->
+            Ok tables
+
         CreateIndex index ->
             updateTable statement (buildId index.table.schema index.table.table) (\t -> Ok { t | indexes = t.indexes ++ [ { name = index.name, columns = index.columns, definition = index.definition } ] }) tables
 
