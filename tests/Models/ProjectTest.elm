@@ -83,7 +83,7 @@ project0 : Project
 project0 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 1102)) (time 1100) (time 1101)) []
+    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 1102)) True (time 1100) (time 1101)) []
     , schema = Schema Dict.empty [] (Layout (CanvasProps (Position 1 2) 0.75) [] [] (time 1200) (time 1201))
     , layouts = Dict.empty
     , currentLayout = Nothing
@@ -105,7 +105,7 @@ project1 : Project
 project1 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
+    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) False (time 1100) (time 1101)) []
     , schema =
         { tables = D.fromListMap .id [ Table ( "public", "users" ) "public" "users" (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
         , relations = []
@@ -123,7 +123,7 @@ project1 =
 project1Json : String
 project1Json =
     """{"id":"prj-0","name":"Project 0","""
-        ++ """"sources":[{"id":"src-1","name":"source 1","source":{"kind":"LocalFile","name":"structure.sql","size":10000,"lastModified":200},"createdAt":1100,"updatedAt":1101}],"""
+        ++ """"sources":[{"id":"src-1","name":"source 1","source":{"kind":"LocalFile","name":"structure.sql","size":10000,"lastModified":200},"enabled":false,"createdAt":1100,"updatedAt":1101}],"""
         ++ """"schema":{"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int"}]}],"relations":[],"""
         ++ """"layout":{"canvas":{"position":{"left":1,"top":2},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":3,"top":4},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
         ++ """"layouts":{"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203}},"""
@@ -134,7 +134,7 @@ project2 : Project
 project2 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
+    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) True (time 1100) (time 1101)) []
     , schema =
         { tables =
             D.fromListMap .id

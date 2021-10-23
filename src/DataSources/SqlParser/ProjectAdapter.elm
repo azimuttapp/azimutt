@@ -13,19 +13,19 @@ import Time
 
 buildProjectFromSql : List String -> Time.Posix -> ProjectId -> ProjectSource -> SqlSchema -> Maybe SampleName -> Project
 buildProjectFromSql takenNames now id source schema sample =
-    buildProject id (S.unique takenNames source.name) (Nel source []) (buildSchema now schema) sample now
+    buildProject id (S.unique takenNames source.name) (Nel source []) (buildSchema now source schema) sample now
 
 
-buildSchema : Time.Posix -> SqlSchema -> Schema
-buildSchema now schema =
-    { tables = schema |> Dict.values |> List.map buildTable |> D.fromListMap .id
-    , relations = schema |> Dict.values |> List.concatMap buildRelations
+buildSchema : Time.Posix -> ProjectSource -> SqlSchema -> Schema
+buildSchema now source schema =
+    { tables = schema |> Dict.values |> List.map (buildTable source) |> D.fromListMap .id
+    , relations = schema |> Dict.values |> List.concatMap (buildRelations source)
     , layout = Layout (CanvasProps (Position 0 0) 1) [] [] now now
     }
 
 
-buildTable : SqlTable -> Table
-buildTable table =
+buildTable : ProjectSource -> SqlTable -> Table
+buildTable source table =
     { id = ( table.schema, table.table )
     , schema = table.schema
     , name = table.table
@@ -35,7 +35,7 @@ buildTable table =
     , indexes = table.indexes |> List.map buildIndex
     , checks = table.checks |> List.map buildCheck
     , comment = table.comment |> Maybe.map buildComment
-    , sources = [] -- FIXME
+    , sources = [ { id = source.id, lines = table.source |> Nel.map (\l -> { no = l.line, text = l.text }) } ]
     }
 
 
@@ -93,8 +93,8 @@ buildComment comment =
     }
 
 
-buildRelations : SqlTable -> List Relation
-buildRelations table =
+buildRelations : ProjectSource -> SqlTable -> List Relation
+buildRelations source table =
     table.columns
         |> Nel.filterZip .foreignKey
         |> List.map
@@ -102,6 +102,6 @@ buildRelations table =
                 { name = fk.name
                 , src = ColumnRef ( table.schema, table.table ) c.name
                 , ref = ColumnRef ( fk.schema, fk.table ) fk.column
-                , sources = [] -- FIXME
+                , sources = [ { id = source.id, lines = Nel { no = 0, text = "TODO" } [] } ]
                 }
             )

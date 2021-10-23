@@ -35,7 +35,7 @@ addToProject now source content project =
     if path |> String.endsWith ".sql" then
         case
             parseSchema path content
-                |> Tuple.mapSecond (buildSchema now)
+                |> Tuple.mapSecond (buildSchema now source)
                 |> Tuple.mapSecond (\schema -> ( project |> addSource source schema now, events.addSource schema ))
         of
             ( errors, ( updatedProject, event ) ) ->

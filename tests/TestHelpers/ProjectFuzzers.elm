@@ -15,7 +15,7 @@ project =
 
 projectSource : Fuzzer ProjectSource
 projectSource =
-    Fuzz.map5 ProjectSource projectSourceId projectSourceName projectSourceContent posix posix
+    F.map6 ProjectSource projectSourceId projectSourceName projectSourceContent Fuzz.bool posix posix
 
 
 projectSourceContent : Fuzzer ProjectSourceContent

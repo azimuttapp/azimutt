@@ -162,7 +162,7 @@ window.addEventListener('load', function() {
         sendToElm({kind: 'GotSizes', sizes: sizes})
     })
     function observeSizes(ids) {
-        ids.forEach(id => resizeObserver.observe(getElementById(id)))
+        ids.flatMap(maybeElementById).forEach(elt => resizeObserver.observe(elt))
     }
 
     const hotkeys = {}

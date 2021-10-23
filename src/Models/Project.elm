@@ -37,10 +37,10 @@ type alias Project =
 
 
 type alias ProjectSource =
-    -- file the project depend on, they can be refreshed over time
     { id : ProjectSourceId
     , name : ProjectSourceName
     , source : ProjectSourceContent
+    , enabled : Bool
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
@@ -525,6 +525,7 @@ encodeProjectSource value =
         [ ( "id", value.id |> encodeProjectSourceId )
         , ( "name", value.name |> encodeProjectSourceName )
         , ( "source", value.source |> encodeProjectSourceContent )
+        , ( "enabled", value.enabled |> E.withDefault Encode.bool True )
         , ( "createdAt", value.createdAt |> encodePosix )
         , ( "updatedAt", value.updatedAt |> encodePosix )
         ]
@@ -532,10 +533,11 @@ encodeProjectSource value =
 
 decodeProjectSource : Decode.Decoder ProjectSource
 decodeProjectSource =
-    Decode.map5 ProjectSource
+    Decode.map6 ProjectSource
         (Decode.field "id" decodeProjectSourceId)
         (Decode.field "name" decodeProjectSourceName)
         (Decode.field "source" decodeProjectSourceContent)
+        (D.defaultField "enabled" Decode.bool True)
         (Decode.field "createdAt" decodePosix)
         (Decode.field "updatedAt" decodePosix)
 

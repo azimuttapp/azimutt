@@ -10,7 +10,7 @@ import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (FileContent, HtmlId, SizeChange, ZoomDelta)
 import Libs.Position exposing (Position)
 import Libs.Task as T
-import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, ProjectId, ProjectSource, Relation, SampleName, Table, TableId)
+import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, ProjectId, ProjectSource, ProjectSourceId, Relation, SampleName, Table, TableId)
 import Ports exposing (JsMsg)
 import Time
 
@@ -97,6 +97,7 @@ type SourceMsg
     | FileSelected (Maybe ProjectId) File
     | LoadSample SampleName
     | FileLoaded Time.Posix ProjectId ProjectSource FileContent (Maybe SampleName)
+    | ToggleSource ProjectSourceId
 
 
 type LayoutMsg

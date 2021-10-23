@@ -36,12 +36,12 @@ handlePortMsg msg model =
 
 localSource : Time.Posix -> ProjectSourceId -> File -> ProjectSource
 localSource now id file =
-    ProjectSource id (lastSegment file.name) (LocalFile file.name file.size file.lastModified) now now
+    ProjectSource id (lastSegment file.name) (LocalFile file.name file.size file.lastModified) True now now
 
 
 remoteSource : Time.Posix -> ProjectSourceId -> FileUrl -> FileContent -> ProjectSource
 remoteSource now id url content =
-    ProjectSource id (lastSegment url) (RemoteFile url (String.length content)) now now
+    ProjectSource id (lastSegment url) (RemoteFile url (String.length content)) True now now
 
 
 lastSegment : String -> String
