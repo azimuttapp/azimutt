@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackErrorList, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackErrorList, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -10,7 +10,7 @@ import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text, TrackEvent)
-import Models.Project exposing (Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, tableIdAsHtmlId)
+import Models.Project exposing (Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, encodeProjectId, tableIdAsHtmlId)
 import Time
 
 
@@ -74,14 +74,14 @@ dropProject project =
     messageToJs (DropProject project)
 
 
-readFile : File -> Cmd msg
-readFile file =
-    messageToJs (ReadFile file)
+readLocalFile : Maybe ProjectId -> File -> Cmd msg
+readLocalFile project file =
+    messageToJs (GetLocalFile project file)
 
 
-loadFile : FileUrl -> Maybe SampleName -> Cmd msg
-loadFile url sample =
-    messageToJs (LoadFile url sample)
+readRemoteFile : FileUrl -> Maybe SampleName -> Cmd msg
+readRemoteFile url sample =
+    messageToJs (GetRemoteFile url sample)
 
 
 observeSizes : List HtmlId -> Cmd msg
@@ -143,8 +143,8 @@ type ElmMsg
     | LoadProjects
     | SaveProject Project
     | DropProject Project
-    | ReadFile File
-    | LoadFile FileUrl (Maybe SampleName)
+    | GetLocalFile (Maybe ProjectId) File
+    | GetRemoteFile FileUrl (Maybe SampleName)
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | TrackPage String
@@ -153,11 +153,11 @@ type ElmMsg
 
 
 type JsMsg
-    = ProjectsLoaded ( List ( ProjectId, Decode.Error ), List Project )
-    | FileRead Time.Posix ProjectId ProjectSourceId File FileContent
-    | FileLoaded Time.Posix ProjectId ProjectSourceId FileUrl FileContent (Maybe SampleName)
-    | SizesChanged (List SizeChange)
-    | HotkeyUsed String
+    = GotSizes (List SizeChange)
+    | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
+    | GotLocalFile Time.Posix ProjectId ProjectSourceId File FileContent
+    | GotRemoteFile Time.Posix ProjectId ProjectSourceId FileUrl FileContent (Maybe SampleName)
+    | GotHotkey String
     | Error Decode.Error
 
 
@@ -213,11 +213,11 @@ elmEncoder elm =
         DropProject project ->
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> encodeProject ) ]
 
-        ReadFile file ->
-            Encode.object [ ( "kind", "ReadFile" |> Encode.string ), ( "file", file |> FileValue.encode ) ]
+        GetLocalFile project file ->
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe encodeProjectId ), ( "file", file |> FileValue.encode ) ]
 
-        LoadFile url sample ->
-            Encode.object [ ( "kind", "LoadFile" |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
+        GetRemoteFile url sample ->
+            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
@@ -245,27 +245,7 @@ jsDecoder =
     D.matchOn "kind"
         (\kind ->
             case kind of
-                "ProjectsLoaded" ->
-                    Decode.field "projects" projectsDecoder |> Decode.map ProjectsLoaded
-
-                "FileRead" ->
-                    Decode.map5 FileRead
-                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Decode.string)
-                        (Decode.field "file" FileValue.decoder)
-                        (Decode.field "content" Decode.string)
-
-                "FileLoaded" ->
-                    Decode.map6 FileLoaded
-                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Decode.string)
-                        (Decode.field "url" Decode.string)
-                        (Decode.field "content" Decode.string)
-                        (D.maybeField "sample" Decode.string)
-
-                "SizesChanged" ->
+                "GotSizes" ->
                     Decode.field "sizes"
                         (Decode.map3 SizeChange
                             (Decode.field "id" Decode.string)
@@ -273,10 +253,30 @@ jsDecoder =
                             (Decode.field "size" decodeSize)
                             |> Decode.list
                         )
-                        |> Decode.map SizesChanged
+                        |> Decode.map GotSizes
 
-                "HotkeyUsed" ->
-                    Decode.field "id" Decode.string |> Decode.map HotkeyUsed
+                "GotProjects" ->
+                    Decode.field "projects" projectsDecoder |> Decode.map GotProjects
+
+                "GotLocalFile" ->
+                    Decode.map5 GotLocalFile
+                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
+                        (Decode.field "projectId" Decode.string)
+                        (Decode.field "sourceId" Decode.string)
+                        (Decode.field "file" FileValue.decoder)
+                        (Decode.field "content" Decode.string)
+
+                "GotRemoteFile" ->
+                    Decode.map6 GotRemoteFile
+                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
+                        (Decode.field "projectId" Decode.string)
+                        (Decode.field "sourceId" Decode.string)
+                        (Decode.field "url" Decode.string)
+                        (Decode.field "content" Decode.string)
+                        (D.maybeField "sample" Decode.string)
+
+                "GotHotkey" ->
+                    Decode.field "id" Decode.string |> Decode.map GotHotkey
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")

@@ -36,8 +36,8 @@ window.addEventListener('load', function() {
                 case 'LoadProjects':  loadProjects(); break;
                 case 'SaveProject':   saveProject(msg.project); break;
                 case 'DropProject':   dropProject(msg.project); break;
-                case 'ReadFile':      readFile(msg.file); break;
-                case 'LoadFile':      loadFile(msg.url, msg.sample); break;
+                case 'GetLocalFile':  getLocalFile(msg.project, msg.file); break;
+                case 'GetRemoteFile': getRemoteFile(msg.url, msg.sample); break;
                 case 'ObserveSizes':  observeSizes(msg.ids); break;
                 case 'ListenKeys':    listenHotkeys(msg.keys); break;
                 case 'TrackPage':     analytics.then(a => a.trackPage(msg.name)); break;
@@ -109,7 +109,7 @@ window.addEventListener('load', function() {
         const values = Object.keys(localStorage)
             .filter(key => key.startsWith(projectPrefix))
             .map(key => [key.replace(projectPrefix, ''), JSON.parse(localStorage.getItem(key))])
-        sendToElm({kind: 'ProjectsLoaded', projects: values})
+        sendToElm({kind: 'GotProjects', projects: values})
     }
     function saveProject(project) {
         const key = projectPrefix + project.id
@@ -134,16 +134,16 @@ window.addEventListener('load', function() {
         localStorage.removeItem(projectPrefix + project.id)
     }
 
-    function readFile(file) {
+    function getLocalFile(maybeProjectId, file) {
         const reader = new FileReader()
-        reader.onload = e => sendToElm({kind: 'FileRead', now: Date.now(), projectId: randomUID(), sourceId: randomUID(), file, content: e.target.result})
+        reader.onload = e => sendToElm({kind: 'GotLocalFile', now: Date.now(), projectId: maybeProjectId || randomUID(), sourceId: randomUID(), file, content: e.target.result})
         reader.readAsText(file)
     }
 
-    function loadFile(url, sample) {
+    function getRemoteFile(url, sample) {
         fetch(url)
             .then(res => res.text())
-            .then(content => sendToElm({kind: 'FileLoaded', now: Date.now(), projectId: randomUID(), sourceId: randomUID(), url, content, sample}))
+            .then(content => sendToElm({kind: 'GotRemoteFile', now: Date.now(), projectId: randomUID(), sourceId: randomUID(), url, content, sample}))
             .catch(err => showToast({kind: 'error', message: err}))
     }
 
@@ -159,7 +159,7 @@ window.addEventListener('load', function() {
                 height: entry.contentRect.height
             }
         }))
-        sendToElm({kind: 'SizesChanged', sizes: sizes})
+        sendToElm({kind: 'GotSizes', sizes: sizes})
     })
     function observeSizes(ids) {
         ids.forEach(id => resizeObserver.observe(getElementById(id)))
@@ -182,7 +182,7 @@ window.addEventListener('load', function() {
                     if (hotkey.preventDefault) {
                         e.preventDefault()
                     }
-                    sendToElm({kind: 'HotkeyUsed', id: id})
+                    sendToElm({kind: 'GotHotkey', id: id})
                 }
             })
         })

@@ -1,4 +1,4 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, FindPathMsg(..), Hover, LayoutMsg(..), Model, Msg(..), Search, Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, FindPathMsg(..), Hover, LayoutMsg(..), Model, Msg(..), Search, SourceMsg(..), Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -7,10 +7,10 @@ import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (HtmlId, ZoomDelta)
+import Libs.Models exposing (FileContent, HtmlId, SizeChange, ZoomDelta)
 import Libs.Position exposing (Position)
 import Libs.Task as T
-import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, Relation, SampleName, Table, TableId)
+import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, ProjectId, ProjectSource, Relation, SampleName, Table, TableId)
 import Ports exposing (JsMsg)
 import Time
 
@@ -49,13 +49,10 @@ type alias DragState =
 type Msg
     = TimeChanged Time.Posix
     | ZoneChanged Time.Zone
+    | SizesChanged (List SizeChange)
     | ChangeProject
-    | FileDragOver File (List File)
-    | FileDragLeave
-    | FileDropped File (List File)
-    | FileSelected File
-    | LoadSample SampleName
-      -- | LoadFile FileUrl
+    | ProjectsLoaded (List Project)
+    | SourceMsg SourceMsg
     | DeleteProject Project
     | UseProject Project
     | ChangedSearch Search
@@ -91,6 +88,15 @@ type Msg
     | OnConfirm Bool (Cmd Msg)
     | JsMessage JsMsg
     | Noop
+
+
+type SourceMsg
+    = FileDragOver File (List File)
+    | FileDragLeave
+    | FileDropped (Maybe ProjectId) File (List File)
+    | FileSelected (Maybe ProjectId) File
+    | LoadSample SampleName
+    | FileLoaded Time.Posix ProjectId ProjectSource FileContent (Maybe SampleName)
 
 
 type LayoutMsg

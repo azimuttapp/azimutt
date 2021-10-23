@@ -1,4 +1,4 @@
-module PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewSchemaSwitchModal)
+module PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewFileLoader, viewSchemaSwitchModal)
 
 import Conf exposing (conf, constants, schemaSamples)
 import Dict
@@ -12,8 +12,8 @@ import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsTo
 import Libs.Html exposing (bText, codeText, divIf, extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledBy, role)
 import Libs.String as S
-import Models.Project exposing (Project)
-import PagesComponents.App.Models exposing (Msg(..), Switch, TimeInfo)
+import Models.Project exposing (Project, ProjectId)
+import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), Switch, TimeInfo)
 import PagesComponents.App.Views.Helpers exposing (formatDate, onClickConfirm)
 import Time
 
@@ -63,22 +63,28 @@ viewSavedProjects time storedProjects =
 viewFileUpload : Switch -> Html Msg
 viewFileUpload switch =
     div [ class "mt-3" ]
-        [ hiddenInputSingle "file-loader" [ ".sql,.json" ] FileSelected
-        , label
-            ([ for "file-loader", class "drop-zone" ]
-                ++ FileValue.onDrop
-                    { onOver = FileDragOver
-                    , onLeave = Just { id = "file-drop", msg = FileDragLeave }
-                    , onDrop = FileDropped
-                    }
-            )
-            [ if switch.loading then
-                span [ class "spinner-grow text-secondary", role "status" ] [ span [ class "visually-hidden" ] [ text "Loading..." ] ]
+        [ viewFileLoader "drop-zone"
+            Nothing
+            (if switch.loading then
+                div [ class "spinner-grow text-secondary", role "status" ] [ span [ class "visually-hidden" ] [ text "Loading..." ] ]
 
-              else
-                span [ class "title h5" ] [ text "Drop your schema here or click to browse" ]
-            ]
+             else
+                div [ class "title h5" ] [ text "Drop your schema here or click to browse" ]
+            )
         ]
+
+
+viewFileLoader : String -> Maybe ProjectId -> Html Msg -> Html Msg
+viewFileLoader labelClass project content =
+    label
+        ([ for "file-loader", role "button", class labelClass ]
+            ++ FileValue.onDrop
+                { onOver = \head tail -> SourceMsg (FileDragOver head tail)
+                , onLeave = Just { id = "file-drop", msg = SourceMsg FileDragLeave }
+                , onDrop = \head tail -> SourceMsg (FileDropped project head tail)
+                }
+        )
+        [ hiddenInputSingle "file-loader" [ ".sql,.json" ] (\file -> SourceMsg (FileSelected project file)), content ]
 
 
 viewSampleSchemas : Html Msg
@@ -91,7 +97,7 @@ viewSampleSchemas =
                 (schemaSamples
                     |> Dict.toList
                     |> List.sortBy (\( _, ( tables, _ ) ) -> tables)
-                    |> List.map (\( name, ( tables, _ ) ) -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LoadSample name) ] [ text (name ++ " (" ++ String.fromInt tables ++ " tables)") ] ])
+                    |> List.map (\( name, ( tables, _ ) ) -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample name)) ] [ text (name ++ " (" ++ String.fromInt tables ++ " tables)") ] ])
                 )
             ]
         ]
