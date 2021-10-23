@@ -2,7 +2,7 @@ module Tracking exposing (events)
 
 import Dict
 import Libs.Models exposing (TrackEvent)
-import Models.Project exposing (FindPathResult, Layout, Project)
+import Models.Project exposing (FindPathResult, Layout, Project, Schema)
 
 
 
@@ -25,6 +25,7 @@ events :
     , loadProject : Project -> TrackEvent
     , updateProject : Project -> TrackEvent
     , deleteProject : Project -> TrackEvent
+    , addSource : Schema -> TrackEvent
     , createLayout : Layout -> TrackEvent
     , loadLayout : Layout -> TrackEvent
     , updateLayout : Layout -> TrackEvent
@@ -46,6 +47,7 @@ events =
     , loadProject = projectEvent "load"
     , updateProject = projectEvent "update"
     , deleteProject = projectEvent "delete"
+    , addSource = sourceEvent "add"
     , createLayout = layoutEvent "create"
     , loadLayout = layoutEvent "load"
     , updateLayout = layoutEvent "update"
@@ -60,7 +62,19 @@ projectEvent eventName project =
     { name = eventName ++ (project.fromSample |> Maybe.map (\_ -> "-sample") |> Maybe.withDefault "") ++ "-project"
     , details =
         [ ( "table-count", project.schema.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", project.schema.relations |> List.length |> String.fromInt )
         , ( "layout-count", project.layouts |> Dict.size |> String.fromInt )
+        ]
+    , enabled = True
+    }
+
+
+sourceEvent : String -> Schema -> TrackEvent
+sourceEvent eventName schema =
+    { name = eventName ++ "-source"
+    , details =
+        [ ( "table-count", schema.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", schema.relations |> List.length |> String.fromInt )
         ]
     , enabled = True
     }

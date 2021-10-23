@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependIf, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependIf, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -72,6 +72,11 @@ findBy matcher value list =
 findIndexBy : (a -> b) -> b -> List a -> Maybe Int
 findIndexBy matcher value list =
     findIndex (\a -> matcher a == value) list
+
+
+filterNot : (a -> Bool) -> List a -> List a
+filterNot predicate list =
+    list |> List.filter (\a -> not (predicate a))
 
 
 memberBy : (a -> b) -> b -> List a -> Bool

@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, any, filter, filterMap, filterZip, find, fromList, indexedMap, length, map, prepend, sortBy, toList, unique, uniqueBy, zipWith)
+module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterZip, find, fromList, indexedMap, length, map, prepend, sortBy, toList, unique, uniqueBy, zipWith)
 
 -- Nel: NonEmptyList
 
@@ -12,6 +12,11 @@ type alias Nel a =
 prepend : a -> Nel a -> Nel a
 prepend a nel =
     Nel a (nel.head :: nel.tail)
+
+
+append : a -> Nel a -> Nel a
+append a { head, tail } =
+    Nel head (tail ++ [ a ])
 
 
 map : (a -> b) -> Nel a -> Nel b

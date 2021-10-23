@@ -1,4 +1,4 @@
-module DataSources.SqlParser.ProjectAdapter exposing (buildProjectFromSql)
+module DataSources.SqlParser.ProjectAdapter exposing (buildProjectFromSql, buildSchema)
 
 import DataSources.SqlParser.FileParser exposing (SqlCheck, SqlColumn, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlUnique)
 import Dict

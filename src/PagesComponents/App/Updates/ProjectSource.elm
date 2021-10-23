@@ -29,6 +29,6 @@ handleProjectSource msg model =
 
         FileLoaded now projectId source content sample ->
             model.project
-                |> M.filter (\p -> p.id == projectId)
-                |> Maybe.map (\_ -> model |> addToProject now projectId source content sample)
+                |> M.filter (\project -> project.id == projectId)
+                |> Maybe.map (\project -> project |> addToProject now source content |> Tuple.mapFirst (\p -> { model | project = Just p }))
                 |> Maybe.withDefault (model |> createProject now projectId source content sample)

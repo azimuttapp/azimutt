@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackErrorList, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -128,9 +128,9 @@ trackJsonError name error =
     messageToJs (TrackError name (Encode.object [ ( "message", errorToString error |> Encode.string ) ]))
 
 
-trackErrorList : String -> List String -> Cmd msg
-trackErrorList name errors =
-    Cmd.batch (errors |> List.map (\error -> messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))))
+trackError : String -> String -> Cmd msg
+trackError name error =
+    messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))
 
 
 type ElmMsg
