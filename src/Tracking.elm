@@ -12,6 +12,7 @@ import Models.Project exposing (FindPathResult, Layout, Project)
 events :
     { openAppCta : String -> TrackEvent
     , openMenu : TrackEvent
+    , openSettings : TrackEvent
     , openHelp : TrackEvent
     , openTableSettings : TrackEvent
     , showTableWithForeignKey : TrackEvent
@@ -33,6 +34,7 @@ events :
 events =
     { openAppCta = \source -> { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
     , openMenu = { name = "open-menu", details = [], enabled = True }
+    , openSettings = { name = "open-settings", details = [], enabled = True }
     , openHelp = { name = "open-help", details = [], enabled = True }
     , openTableSettings = { name = "open-table-settings", details = [], enabled = True }
     , showTableWithForeignKey = { name = "show-table-with-foreign-key", details = [], enabled = True }

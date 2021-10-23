@@ -17,6 +17,7 @@ conf :
         , navProjectDropdown : HtmlId
         , navLayoutDropdown : HtmlId
         , menu : HtmlId
+        , settings : HtmlId
         , erd : HtmlId
         , projectSwitchModal : HtmlId
         , findPathModal : HtmlId
@@ -38,6 +39,7 @@ conf =
         , navProjectDropdown = "navbar-project-dropdown"
         , navLayoutDropdown = "navbar-layout-dropdown"
         , menu = "menu"
+        , settings = "settings"
         , erd = "erd"
         , projectSwitchModal = "project-switch-modal"
         , findPathModal = "find-path-modal"

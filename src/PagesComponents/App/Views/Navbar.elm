@@ -39,34 +39,8 @@ viewNavbar search storedProjects project virtualRelation =
                                     [ viewTitle storedProjects p
                                     , viewResetButton p.currentLayout p.schema.layout
                                     , lazy2 viewLayoutButton p.currentLayout p.layouts
-                                    , div [ class "dropdown mx-3" ]
-                                        [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
-                                        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledBy conf.ids.navFeaturesDropdown ]
-                                            [ li []
-                                                [ div [ class "btn-group w-100" ]
-                                                    [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]
-                                                    , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
-                                                    ]
-                                                ]
-                                            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPathMsg (FPInit Nothing Nothing)) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
-                                            , virtualRelation
-                                                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg VRCancel) ] [ text "Cancel virtual relation" ] ])
-                                                |> Maybe.withDefault
-                                                    (li []
-                                                        [ button
-                                                            [ type_ "button"
-                                                            , class "dropdown-item d-flex justify-content-between"
-                                                            , title "A virtual relation is a relation which is not materialized by a foreign key"
-                                                            , bsToggle Tooltip
-                                                            , onClick (VirtualRelationMsg VRCreate)
-                                                            ]
-                                                            [ text "Create a virtual relation", kbd [ class "ms-3" ] [ text "alt + v" ] ]
-                                                        ]
-                                                    )
-                                            , li [] [ hr [ class "dropdown-divider" ] [] ]
-                                            , li [] [ button [ type_ "button", class "dropdown-item", onClick ChangeProject ] [ text "Move to project..." ] ]
-                                            ]
-                                        ]
+                                    , viewSpecialFeaturesButton virtualRelation
+                                    , viewSettingsButton
                                     ]
                                 )
                             |> Maybe.withDefault []
@@ -153,7 +127,7 @@ tablesInLayout project layout =
 viewResetButton : Maybe LayoutName -> Layout -> Html Msg
 viewResetButton selectedLayout layout =
     if selectedLayout /= Nothing || not ((layout.tables == []) && (layout.hiddenTables == []) && layout.canvas == { position = { left = 0, top = 0 }, zoom = 1 }) then
-        bsButton Secondary [ class "me-1", onClick ResetCanvas ] [ text "Reset layout" ]
+        bsButton Secondary [ class "me-2", onClick ResetCanvas ] [ text "Reset layout" ]
 
     else
         div [] []
@@ -162,10 +136,10 @@ viewResetButton selectedLayout layout =
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
 viewLayoutButton currentLayout layouts =
     if Dict.isEmpty layouts then
-        bsButton Secondary ([ title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
+        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
 
     else
-        div [ class "btn-group" ]
+        div [ class "btn-group me-2" ]
             ((currentLayout
                 |> Maybe.map
                     (\layout ->
@@ -200,6 +174,43 @@ viewLayoutButton currentLayout layouts =
                         )
                    ]
             )
+
+
+viewSpecialFeaturesButton : Maybe VirtualRelation -> Html Msg
+viewSpecialFeaturesButton virtualRelation =
+    div [ class "dropdown me-2" ]
+        [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
+        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledBy conf.ids.navFeaturesDropdown ]
+            [ li []
+                [ div [ class "btn-group w-100" ]
+                    [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]
+                    , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
+                    ]
+                ]
+            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPathMsg (FPInit Nothing Nothing)) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
+            , virtualRelation
+                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg VRCancel) ] [ text "Cancel virtual relation" ] ])
+                |> Maybe.withDefault
+                    (li []
+                        [ button
+                            [ type_ "button"
+                            , class "dropdown-item d-flex justify-content-between"
+                            , title "A virtual relation is a relation which is not materialized by a foreign key"
+                            , bsToggle Tooltip
+                            , onClick (VirtualRelationMsg VRCreate)
+                            ]
+                            [ text "Create a virtual relation", kbd [ class "ms-3" ] [ text "alt + v" ] ]
+                        ]
+                    )
+            , li [] [ hr [ class "dropdown-divider" ] [] ]
+            , li [] [ button [ type_ "button", class "dropdown-item", onClick ChangeProject ] [ text "Move to project..." ] ]
+            ]
+        ]
+
+
+viewSettingsButton : Html Msg
+viewSettingsButton =
+    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas conf.ids.settings ++ track events.openSettings) [ viewIcon Icon.cog ]
 
 
 type alias Suggestion =

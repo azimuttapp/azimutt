@@ -53,7 +53,7 @@ articleItem : Article -> Html msg
 articleItem model =
     div []
         [ p [ css [ text_sm, text_gray_500 ] ]
-            [ time [ datetime (model.date |> DateTime.format "yyyy-MM-dd") ] [ text (model.date |> DateTime.format "MMM dd, yyyy") ] ]
+            [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd") ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ] ]
         , a [ href model.link, css [ mt_2, block ] ]
             [ p [ css [ text_xl, font_semibold, text_gray_900 ] ] [ text model.title ]
             , p [ css [ mt_3, text_base, text_gray_500 ] ] [ text model.excerpt ]
@@ -66,7 +66,7 @@ articleItem model =
 article : Article -> Html msg
 article model =
     div []
-        [ time [ datetime (model.date |> DateTime.format "yyyy-MM-dd"), css [ uppercase, text_xs, text_gray_500, font_bold ] ] [ text (model.date |> DateTime.format "MMM dd, yyyy") ]
+        [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), css [ uppercase, text_xs, text_gray_500, font_bold ] ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
         , h2 [ css [ mt_1, text_2xl, tracking_tight, font_extrabold, text_gray_900, md [ text_3xl ], sm [ leading_none ] ] ]
             [ a [ href model.link ] [ text model.title ] ]
         , div [ css [ mt_6 ] ]

@@ -1,4 +1,4 @@
-module Libs.DateTime exposing (format, formatTo, human, parse, unsafeParse)
+module Libs.DateTime exposing (format, formatDatetime, formatUtc, human, parse, unsafeParse)
 
 import Iso8601
 import Libs.String as S
@@ -15,13 +15,18 @@ parse date =
     Iso8601.toTime date |> Result.mapError (\_ -> "'" ++ date ++ "' is not a valid iso date")
 
 
-format : String -> Time.Posix -> String
-format pattern time =
-    formatTo pattern Time.utc time
+formatDatetime : Time.Zone -> Time.Posix -> String
+formatDatetime zone time =
+    format "d MMM yyyy at HH:mm" zone time
 
 
-formatTo : String -> Time.Zone -> Time.Posix -> String
-formatTo pattern zone time =
+formatUtc : String -> Time.Posix -> String
+formatUtc pattern time =
+    format pattern Time.utc time
+
+
+format : String -> Time.Zone -> Time.Posix -> String
+format pattern zone time =
     let
         date : DateTime
         date =

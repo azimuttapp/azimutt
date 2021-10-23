@@ -15,6 +15,7 @@ import PagesComponents.App.Views.Modals.FindPath exposing (viewFindPathModal)
 import PagesComponents.App.Views.Modals.HelpInstructions exposing (viewHelpModal)
 import PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewSchemaSwitchModal)
 import PagesComponents.App.Views.Navbar exposing (viewNavbar)
+import PagesComponents.App.Views.Settings exposing (viewSettings)
 
 
 viewApp : Model -> List (Html Msg)
@@ -26,6 +27,7 @@ viewApp model =
           ]
         , [ lazy4 viewNavbar model.search model.storedProjects model.project model.virtualRelation ]
         , [ lazy viewMenu (model.project |> Maybe.map .schema) ]
+        , [ lazy2 viewSettings model.time model.project ]
         , [ lazy7 viewErd model.hover model.cursorMode model.dragState model.virtualRelation model.selection model.domInfos (model.project |> Maybe.map .schema) ]
         , [ lazy2 viewCommands model.cursorMode (model.project |> Maybe.map (\p -> p.schema.layout.canvas)) ]
         , [ lazy4 viewSchemaSwitchModal model.time model.switch (model.project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Choose your project:") model.storedProjects ]
