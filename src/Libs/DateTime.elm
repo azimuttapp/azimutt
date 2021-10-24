@@ -1,4 +1,4 @@
-module Libs.DateTime exposing (format, formatDatetime, formatUtc, human, parse, unsafeParse)
+module Libs.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, human, parse, unsafeParse)
 
 import Iso8601
 import Libs.String as S
@@ -18,6 +18,16 @@ parse date =
 formatDatetime : Time.Zone -> Time.Posix -> String
 formatDatetime zone time =
     format "d MMM yyyy at HH:mm" zone time
+
+
+formatDate : Time.Zone -> Time.Posix -> String
+formatDate zone time =
+    format "d MMM yyyy" zone time
+
+
+formatTime : Time.Zone -> Time.Posix -> String
+formatTime zone time =
+    format "HH:mm:ss" zone time
 
 
 formatUtc : String -> Time.Posix -> String

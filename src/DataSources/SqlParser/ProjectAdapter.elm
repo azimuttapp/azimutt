@@ -13,7 +13,7 @@ import Time
 
 buildProjectFromSql : List String -> Time.Posix -> ProjectId -> ProjectSource -> SqlSchema -> Maybe SampleName -> Project
 buildProjectFromSql takenNames now id source schema sample =
-    buildProject id (S.unique takenNames source.name) (Nel source []) (buildSchema now source schema) sample now
+    buildProject id (S.unique takenNames source.name) [ source ] (buildSchema now source schema) sample now
 
 
 buildSchema : Time.Posix -> ProjectSource -> SqlSchema -> Schema

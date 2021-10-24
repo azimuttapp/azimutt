@@ -7,7 +7,6 @@ import Html.Attributes exposing (href, rel)
 import Html.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy7)
 import Libs.Dict as D
 import Libs.Maybe as M
-import Libs.Nel as Nel
 import Models.Project exposing (Project, ProjectSourceId, Source)
 import PagesComponents.App.Models exposing (Model, Msg(..))
 import PagesComponents.App.Updates.Helpers exposing (setSchema)
@@ -53,7 +52,7 @@ filterSources project =
     let
         sources : Dict ProjectSourceId Bool
         sources =
-            project.sources |> Nel.toList |> List.map (\s -> ( s.id, s.enabled )) |> Dict.fromList
+            project.sources |> List.map (\s -> ( s.id, s.enabled )) |> Dict.fromList
     in
     project
         |> setSchema

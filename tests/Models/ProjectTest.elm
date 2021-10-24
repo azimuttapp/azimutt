@@ -83,7 +83,7 @@ project0 : Project
 project0 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 1102)) True (time 1100) (time 1101)) []
+    , sources = [ ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 1102)) True (time 1100) (time 1101) ]
     , schema = Schema Dict.empty [] (Layout (CanvasProps (Position 1 2) 0.75) [] [] (time 1200) (time 1201))
     , layouts = Dict.empty
     , currentLayout = Nothing
@@ -105,7 +105,7 @@ project1 : Project
 project1 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) False (time 1100) (time 1101)) []
+    , sources = [ ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) False (time 1100) (time 1101) ]
     , schema =
         { tables = D.fromListMap .id [ Table ( "public", "users" ) "public" "users" (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
         , relations = []
@@ -134,7 +134,7 @@ project2 : Project
 project2 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) True (time 1100) (time 1101)) []
+    , sources = [ ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) True (time 1100) (time 1101) ]
     , schema =
         { tables =
             D.fromListMap .id

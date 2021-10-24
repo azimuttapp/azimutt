@@ -10,7 +10,7 @@ import TestHelpers.Fuzzers exposing (color, dictSmall, identifier, intPos, intPo
 
 project : Fuzzer Project
 project =
-    F.map10 Project projectId projectName (nelSmall projectSource) schema (dictSmall layoutName layout) (Fuzz.maybe layoutName) projectSettings posix posix sampleName
+    F.map10 Project projectId projectName (listSmall projectSource) schema (dictSmall layoutName layout) (Fuzz.maybe layoutName) projectSettings posix posix sampleName
 
 
 projectSource : Fuzzer ProjectSource

@@ -25,7 +25,7 @@ import Url exposing (percentDecode, percentEncode)
 type alias Project =
     { id : ProjectId
     , name : ProjectName
-    , sources : Nel ProjectSource
+    , sources : List ProjectSource
     , schema : Schema
     , layouts : Dict LayoutName Layout
     , currentLayout : Maybe LayoutName
@@ -255,7 +255,7 @@ type alias SampleName =
     String
 
 
-buildProject : ProjectId -> ProjectName -> Nel ProjectSource -> Schema -> Maybe SampleName -> Time.Posix -> Project
+buildProject : ProjectId -> ProjectName -> List ProjectSource -> Schema -> Maybe SampleName -> Time.Posix -> Project
 buildProject id name sources schema sample now =
     { id = id
     , name = name
@@ -492,7 +492,7 @@ encodeProject value =
     E.object
         [ ( "id", value.id |> encodeProjectId )
         , ( "name", value.name |> encodeProjectName )
-        , ( "sources", value.sources |> E.nel encodeProjectSource )
+        , ( "sources", value.sources |> Encode.list encodeProjectSource )
         , ( "schema", value.schema |> encodeSchema )
         , ( "layouts", value.layouts |> Encode.dict layoutNameAsString encodeLayout )
         , ( "currentLayout", value.currentLayout |> E.maybe encodeLayoutName )
@@ -509,7 +509,7 @@ decodeProject =
     D.map10 Project
         (Decode.field "id" decodeProjectId)
         (Decode.field "name" decodeProjectName)
-        (Decode.field "sources" (D.nel decodeProjectSource))
+        (Decode.field "sources" (Decode.list decodeProjectSource))
         (Decode.field "schema" decodeSchema)
         (D.defaultField "layouts" (D.dict stringAsLayoutName decodeLayout) Dict.empty)
         (D.maybeField "currentLayout" decodeLayoutName)

@@ -3,16 +3,16 @@ module PagesComponents.App.Views.Settings exposing (viewSettings)
 import Conf exposing (conf)
 import FontAwesome.Icon exposing (Icon, viewIcon)
 import FontAwesome.Solid as Icon
-import Html exposing (Html, button, div, h5, h6, input, label, span, text)
+import Html exposing (Html, button, div, h5, h6, input, label, small, span, text)
 import Html.Attributes exposing (checked, class, id, tabindex, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll)
-import Libs.DateTime exposing (formatDatetime)
+import Libs.DateTime exposing (formatDate, formatTime)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
-import Libs.Nel as Nel
 import Models.Project exposing (Project, ProjectId, ProjectSource, ProjectSourceContent(..))
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), TimeInfo)
 import PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewFileLoader)
+import Time
 
 
 viewSettings : TimeInfo -> Maybe Project -> Html Msg
@@ -27,7 +27,7 @@ viewSettings time project =
                         ]
                     , div [ class "offcanvas-body" ]
                         [ h6 [] [ text "Project sources" ]
-                        , div [ class "list-group" ] ((p.sources |> Nel.toList |> List.map (viewProjectSource time)) ++ [ viewAddSource p.id ])
+                        , div [ class "list-group" ] ((p.sources |> List.map (viewProjectSource time)) ++ [ viewAddSource p.id ])
                         ]
                     ]
             )
@@ -38,14 +38,14 @@ viewProjectSource : TimeInfo -> ProjectSource -> Html Msg
 viewProjectSource time source =
     case source.source of
         LocalFile path _ modified ->
-            viewProjectSourceHtml Icon.fileUpload (path ++ " file, last modified on " ++ formatDatetime time.zone modified) source
+            viewProjectSourceHtml time Icon.fileUpload modified (path ++ " file") source
 
         RemoteFile url _ ->
-            viewProjectSourceHtml Icon.cloudDownloadAlt ("File from " ++ url ++ ", last updated on " ++ formatDatetime time.zone source.updatedAt) source
+            viewProjectSourceHtml time Icon.cloudDownloadAlt source.updatedAt ("File from " ++ url) source
 
 
-viewProjectSourceHtml : Icon -> String -> ProjectSource -> Html Msg
-viewProjectSourceHtml icon labelTitle source =
+viewProjectSourceHtml : TimeInfo -> Icon -> Time.Posix -> String -> ProjectSource -> Html Msg
+viewProjectSourceHtml time icon updatedAt labelTitle source =
     div [ class "list-group-item d-flex justify-content-between align-items-center" ]
         [ label [ title labelTitle ]
             [ input [ type_ "checkbox", class "form-check-input me-2", checked source.enabled, onClick (SourceMsg (ToggleSource source.id)) ] []
@@ -53,10 +53,14 @@ viewProjectSourceHtml icon labelTitle source =
             , text " "
             , text source.name
             ]
-        , span [] [ button [ type_ "button", class "link", title ("refresh " ++ source.name) ] [ viewIcon Icon.syncAlt ] ]
+        , span []
+            [ small [ class "text-muted", title ("at " ++ formatTime time.zone updatedAt) ] [ text (formatDate time.zone updatedAt) ]
+            , button [ type_ "button", class "link ms-2", title "remove this source" ] [ viewIcon Icon.trash ]
+            , button [ type_ "button", class "link ms-2", title "refresh this source" ] [ viewIcon Icon.syncAlt ]
+            ]
         ]
 
 
 viewAddSource : ProjectId -> Html Msg
 viewAddSource project =
-    viewFileLoader "list-group-item list-group-item-action" (Just project) (span [] [ viewIcon Icon.plus, text " ", text "Add source" ])
+    viewFileLoader "list-group-item list-group-item-action" (Just project) (small [] [ viewIcon Icon.plus, text " ", text "Add source" ])

@@ -8,7 +8,6 @@ import Json.Decode as Decode
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (FileContent, TrackEvent)
-import Libs.Nel as Nel
 import Libs.Result as R
 import Libs.String as S
 import Libs.Task as T
@@ -124,7 +123,7 @@ buildProject takenNames now projectId source content sample =
 addSource : ProjectSource -> Schema -> Time.Posix -> Project -> Project
 addSource source schema now project =
     { project
-        | sources = project.sources |> Nel.append source
+        | sources = project.sources ++ [ source ]
         , schema = mergeSchema project.schema schema
         , updatedAt = now
     }
