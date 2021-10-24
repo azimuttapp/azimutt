@@ -2,6 +2,15 @@ const version = 1
 const assetsCache = 'azimutt-static'
 const assets = [
     '/',
+    '/assets/images/avatar-loic-knuchel.jpg',
+    '/assets/images/avatar-oliver-searle-barnes.png',
+    '/assets/images/background_hero.jpeg',
+    '/assets/images/basic-schema.png',
+    '/assets/images/gospeak-find-path.png',
+    '/assets/images/gospeak-incoming-relation.jpg',
+    '/assets/images/gospeak-layouts.jpg',
+    '/assets/images/gospeak-schema-full.png',
+    '/assets/images/gospeak-schema-light.png',
     '/assets/bootstrap.bundle.min.js',
     '/assets/bootstrap.bundle.min.js.map',
     '/assets/bootstrap.min.css',
@@ -19,14 +28,12 @@ const assets = [
     '/favicon.ico',
     '/favicon-16x16.png',
     '/favicon-32x32.png',
-    '/index.html',
     '/logo.png',
     '/mstile-150x150.png',
     '/safari-pinned-tab.svg',
-    '/screenshot.png',
-    '/screenshot-complex.png',
     '/script.js',
     '/styles.css',
+    '/site.webmanifest',
 ]
 
 self.addEventListener('install', installEvent => {
@@ -42,7 +49,7 @@ self.addEventListener('fetch', fetchEvent => {
     // console.log(`Fetch in V${version}.`, fetchEvent)
     const request = fetchEvent.request
     if (request.method === 'GET') {
-        fetchAndUpdateCache(fetchEvent, request())
+        fetchAndUpdateCache(fetchEvent, request)
     }
 })
 
