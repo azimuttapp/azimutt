@@ -7,6 +7,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, div, form, h2, p, text, time)
 import Html.Styled.Attributes exposing (css, datetime, href)
 import Libs.DateTime as DateTime
+import Libs.Maybe as M
 import Tailwind.Breakpoints exposing (lg, md, sm)
 import Tailwind.Utilities exposing (bg_white, block, divide_gray_200, divide_y_2, font_black, font_bold, font_extrabold, font_semibold, gap_16, gap_5, gap_x_5, gap_y_12, grid, grid_cols_2, items_center, leading_none, max_w_7xl, max_w_lg, mt_1, mt_10, mt_2, mt_3, mt_4, mt_6, mx_auto, pb_20, pb_28, pt_10, pt_16, pt_24, px_4, px_6, px_8, relative, text_2xl, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_xl, text_xs, tracking_tight, tracking_wide, uppercase)
 import Time
@@ -41,7 +42,7 @@ articleList model =
                 , div [ css [ mt_3, lg [ grid, grid_cols_2, gap_5, items_center ], sm [ mt_4 ] ] ]
                     ([ p [ css [ text_xl, text_gray_500 ] ] [ text model.headline ]
                      ]
-                        ++ (model.newsletter |> Maybe.map (\form -> [ Newsletter.small form ]) |> Maybe.withDefault [])
+                        ++ (model.newsletter |> M.mapOrElse (\form -> [ Newsletter.small form ]) [])
                     )
                 ]
             , div [ css [ mt_6, pt_10, grid, gap_16, lg [ grid_cols_2, gap_x_5, gap_y_12 ] ] ] (model.articles |> List.map articleItem)

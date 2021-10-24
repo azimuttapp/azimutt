@@ -7,9 +7,8 @@ import Html.Attributes exposing (href, rel)
 import Html.Lazy exposing (lazy, lazy2, lazy3, lazy4, lazy7)
 import Libs.Dict as D
 import Libs.Maybe as M
-import Models.Project exposing (Project, ProjectSourceId, Source)
+import Models.Project exposing (Origin, Project, SourceId)
 import PagesComponents.App.Models exposing (Model, Msg(..))
-import PagesComponents.App.Updates.Helpers exposing (setSchema)
 import PagesComponents.App.Views.Command exposing (viewCommands)
 import PagesComponents.App.Views.Erd exposing (viewErd)
 import PagesComponents.App.Views.Menu exposing (viewMenu)
@@ -35,13 +34,13 @@ viewApp model =
           , node "link" [ rel "stylesheet", href "/assets/bootstrap.min.css" ] []
           ]
         , [ lazy4 viewNavbar model.search model.storedProjects project model.virtualRelation ]
-        , [ lazy viewMenu (project |> Maybe.map .schema) ]
+        , [ lazy viewMenu project ]
         , [ lazy2 viewSettings model.time project ]
-        , [ lazy7 viewErd model.hover model.cursorMode model.dragState model.virtualRelation model.selection model.domInfos (project |> Maybe.map .schema) ]
-        , [ lazy2 viewCommands model.cursorMode (project |> Maybe.map (\p -> p.schema.layout.canvas)) ]
-        , [ lazy4 viewSchemaSwitchModal model.time model.switch (project |> Maybe.map (\_ -> "Azimutt, easily explore your SQL schema!") |> Maybe.withDefault "Choose your project:") model.storedProjects ]
+        , [ lazy7 viewErd model.hover model.cursorMode model.dragState model.virtualRelation model.selection model.domInfos project ]
+        , [ lazy2 viewCommands model.cursorMode (project |> Maybe.map (.layout >> .canvas)) ]
+        , [ lazy4 viewSchemaSwitchModal model.time model.switch (project |> M.mapOrElse (\_ -> "Azimutt, easily explore your SQL schema!") "Choose your project:") model.storedProjects ]
         , [ lazy viewCreateLayoutModal model.newLayout ]
-        , Maybe.map2 (\p fp -> lazy3 viewFindPathModal p.schema.tables p.settings.findPath fp) project model.findPath |> M.toList
+        , Maybe.map2 (\p fp -> lazy3 viewFindPathModal p.tables p.settings.findPath fp) project model.findPath |> M.toList
         , [ viewHelpModal ]
         , [ lazy viewConfirm model.confirm ]
         ]
@@ -50,20 +49,16 @@ viewApp model =
 filterSources : Project -> Project
 filterSources project =
     let
-        sources : Dict ProjectSourceId Bool
+        sources : Dict SourceId Bool
         sources =
             project.sources |> List.map (\s -> ( s.id, s.enabled )) |> Dict.fromList
     in
-    project
-        |> setSchema
-            (\schema ->
-                { schema
-                    | tables = schema.tables |> Dict.filter (\_ -> hasEnabledSource sources)
-                    , relations = schema.relations |> List.filter (hasEnabledSource sources)
-                }
-            )
+    { project
+        | tables = project.tables |> Dict.filter (\_ -> hasEnabledSource sources)
+        , relations = project.relations |> List.filter (hasEnabledSource sources)
+    }
 
 
-hasEnabledSource : Dict ProjectSourceId Bool -> { item | sources : List Source } -> Bool
+hasEnabledSource : Dict SourceId Bool -> { item | origins : List Origin } -> Bool
 hasEnabledSource sources i =
-    i.sources == [] || (i.sources |> List.any (\s -> sources |> D.getOrElse s.id False))
+    i.origins == [] || (i.origins |> List.any (\s -> sources |> D.getOrElse s.id False))

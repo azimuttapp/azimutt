@@ -28,6 +28,6 @@ suite =
                 (ColumnComment { schema = Just "public", table = "table1", column = "col", comment = "A comment" })
             , testParseStatement "ignore GO"
                 "GO /****** Object:  Schema [api]    Script Date: 6-9-2021 13:53:38 ******/ CREATE SCHEMA [api] ;"
-                (Ignored (Nel { file = "", line = 0, text = "GO /****** Object:  Schema [api]    Script Date: 6-9-2021 13:53:38 ******/ CREATE SCHEMA [api] ;" } []))
+                (Ignored (Nel { line = 0, text = "GO /****** Object:  Schema [api]    Script Date: 6-9-2021 13:53:38 ******/ CREATE SCHEMA [api] ;" } []))
             ]
         ]

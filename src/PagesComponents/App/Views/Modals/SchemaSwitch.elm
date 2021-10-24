@@ -84,7 +84,7 @@ viewFileLoader labelClass project content =
                 , onDrop = \head tail -> SourceMsg (FileDropped project head tail)
                 }
         )
-        [ hiddenInputSingle "file-loader" [ ".sql,.json" ] (\file -> SourceMsg (FileSelected project file)), content ]
+        [ hiddenInputSingle "file-loader" [ ".sql" ] (\file -> SourceMsg (FileSelected project file)), content ]
 
 
 viewSampleSchemas : Html Msg

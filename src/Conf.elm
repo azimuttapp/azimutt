@@ -85,7 +85,7 @@ newsletterConf =
 schemaSamples : Dict String ( Int, FileUrl )
 schemaSamples =
     Dict.fromList
-        [ ( "basic schema", ( 4, "samples/basic.json" ) )
+        [ ( "basic schema", ( 4, "samples/basic.sql" ) )
         , ( "wordpress", ( 12, "samples/wordpress.sql" ) )
         , ( "gospeak.io", ( 26, "samples/gospeak.sql" ) )
         ]

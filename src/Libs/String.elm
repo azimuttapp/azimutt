@@ -1,6 +1,7 @@
 module Libs.String exposing (hashCode, plural, unique, wordSplit)
 
 import Bitwise
+import Libs.Maybe as M
 import Libs.Regex as R
 
 
@@ -27,7 +28,7 @@ unique takenIds id =
                 unique
                     takenIds
                     (prefix
-                        ++ (num |> Maybe.andThen String.toInt |> Maybe.map (\n -> n + 1) |> Maybe.withDefault 2 |> String.fromInt)
+                        ++ (num |> Maybe.andThen String.toInt |> M.mapOrElse (\n -> n + 1) 2 |> String.fromInt)
                         ++ (extension |> Maybe.withDefault "")
                     )
 

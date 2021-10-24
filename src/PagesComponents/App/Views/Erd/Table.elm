@@ -43,7 +43,7 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
         , id (tableIdAsHtmlId table.id)
         , placeAt props.position
         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
-        , domInfo |> Maybe.map (\i -> sizeAttr i.size) |> Maybe.withDefault (style "visibility" "hidden")
+        , domInfo |> M.mapOrElse (\i -> sizeAttr i.size) (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)
         , onDrag (tableIdAsHtmlId table.id)
@@ -128,7 +128,7 @@ viewColumn isHover virtualRelation columnRelations table column =
          , Pointer.onEnter (\_ -> HoverColumn (Just ref))
          , Pointer.onLeave (\_ -> HoverColumn Nothing)
          ]
-            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> VRUpdate ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
+            ++ (virtualRelation |> M.mapOrElse (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> VRUpdate ref >> VirtualRelationMsg) ]) [])
         )
         [ viewColumnDropdown columnRelations ref (viewColumnIcon table column columnRelations)
         , viewColumnName table column
@@ -256,8 +256,9 @@ viewColumnType column =
         value : Html msg
         value =
             column.default
-                |> Maybe.map (\default -> span [ class "value text-decoration-underline", title ("default value: " ++ default), bsToggle Tooltip ] [ text column.kind ])
-                |> Maybe.withDefault (span [ class "value" ] [ text column.kind ])
+                |> M.mapOrElse
+                    (\default -> span [ class "value text-decoration-underline", title ("default value: " ++ default), bsToggle Tooltip ] [ text column.kind ])
+                    (span [ class "value" ] [ text column.kind ])
 
         nullable : List (Html msg)
         nullable =

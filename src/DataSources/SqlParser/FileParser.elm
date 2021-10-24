@@ -1,4 +1,4 @@
-module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildStatements, parseLines, parseSchema)
+module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildLines, buildStatements, parseSchema, splitLines)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.Parsers.Comment exposing (SqlComment)
@@ -11,7 +11,7 @@ import DataSources.SqlParser.Utils.Types exposing (SqlColumnName, SqlColumnType,
 import Dict exposing (Dict)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (FileContent, FileName)
+import Libs.Models exposing (FileContent, FileLineContent)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as R
 
@@ -76,9 +76,15 @@ defaultSchema =
     "public"
 
 
-parseSchema : FileName -> FileContent -> ( List SchemaError, SqlSchema )
-parseSchema fileName fileContent =
-    parseLines fileName fileContent
+parseSchema : FileContent -> ( List SchemaError, ( List FileLineContent, SqlSchema ) )
+parseSchema fileContent =
+    let
+        lines : List FileLineContent
+        lines =
+            splitLines fileContent
+    in
+    lines
+        |> buildLines
         |> buildStatements
         |> List.foldl
             (\statement ( errs, schema ) ->
@@ -90,6 +96,7 @@ parseSchema fileName fileContent =
                         ( errs ++ e, schema )
             )
             ( [], Dict.empty )
+        |> (\( errs, schema ) -> ( errs, ( lines, schema ) ))
 
 
 evolve : ( SqlStatement, Command ) -> SqlSchema -> Result (List SchemaError) SqlSchema
@@ -103,8 +110,8 @@ evolve ( statement, command ) tables =
             in
             tables
                 |> Dict.get id
-                |> Maybe.map (\_ -> Err [ "Table " ++ id ++ " already exists" ])
-                |> Maybe.withDefault (buildTable tables statement table |> Result.map (\sqlTable -> tables |> Dict.insert id sqlTable))
+                |> M.mapOrElse (\_ -> Err [ "Table " ++ id ++ " already exists" ])
+                    (buildTable tables statement table |> Result.map (\sqlTable -> tables |> Dict.insert id sqlTable))
 
         CreateView view ->
             let
@@ -114,8 +121,8 @@ evolve ( statement, command ) tables =
             in
             tables
                 |> Dict.get id
-                |> Maybe.map (\_ -> Err [ "View " ++ id ++ " already exists" ])
-                |> Maybe.withDefault (Ok (tables |> Dict.insert id (buildView tables statement view)))
+                |> M.mapOrElse (\_ -> Err [ "View " ++ id ++ " already exists" ])
+                    (Ok (tables |> Dict.insert id (buildView tables statement view)))
 
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = defaultPkName table constraintName, columns = pk } }) tables
@@ -164,8 +171,8 @@ updateTable : SqlStatement -> SqlTableId -> (SqlTable -> Result (List SchemaErro
 updateTable statement id transform tables =
     tables
         |> Dict.get id
-        |> Maybe.map (\table -> transform table |> Result.map (\newTable -> tables |> Dict.update id (Maybe.map (\_ -> newTable))))
-        |> Maybe.withDefault (Err [ "Table " ++ id ++ " does not exist (in '" ++ buildRawSql statement ++ "')" ])
+        |> M.mapOrElse (\table -> transform table |> Result.map (\newTable -> tables |> Dict.update id (Maybe.map (\_ -> newTable))))
+            (Err [ "Table " ++ id ++ " does not exist (in '" ++ buildRawSql statement ++ "')" ])
 
 
 updateColumn : SqlStatement -> SqlTableId -> SqlColumnName -> (SqlColumn -> Result (List SchemaError) SqlColumn) -> SqlSchema -> Result (List SchemaError) SqlSchema
@@ -175,8 +182,8 @@ updateColumn statement id name transform tables =
         (\table ->
             table.columns
                 |> Nel.find (\column -> column.name == name)
-                |> Maybe.map (\column -> transform column |> Result.map (\newColumn -> updateTableColumn name (\_ -> newColumn) table))
-                |> Maybe.withDefault (Err [ "Column '" ++ name ++ "' does not exist in table " ++ id ++ " (in '" ++ buildRawSql statement ++ "')" ])
+                |> M.mapOrElse (\column -> transform column |> Result.map (\newColumn -> updateTableColumn name (\_ -> newColumn) table))
+                    (Err [ "Column '" ++ name ++ "' does not exist in table " ++ id ++ " (in '" ++ buildRawSql statement ++ "')" ])
         )
         tables
 
@@ -268,7 +275,7 @@ withPkColumn tables schema table name =
         Nothing ->
             tables
                 |> Dict.get (buildId schema table)
-                |> Maybe.map
+                |> M.mapOrElse
                     (\t ->
                         case t.primaryKey |> Maybe.map .columns of
                             Just cols ->
@@ -281,7 +288,7 @@ withPkColumn tables schema table name =
                             Nothing ->
                                 Err ("No primary key on table " ++ buildId schema table)
                     )
-                |> Maybe.withDefault (Err ("Table " ++ buildId schema table ++ " does not exist (yet)"))
+                    (Err ("Table " ++ buildId schema table ++ " does not exist (yet)"))
 
 
 buildView : SqlSchema -> SqlStatement -> ParsedView -> SqlTable
@@ -306,14 +313,13 @@ buildViewColumn tables column =
                 -- FIXME should handle table alias (when table is renamed in select)
                 |> Maybe.andThen (\t -> tables |> Dict.get (buildId Nothing t))
                 |> Maybe.andThen (\t -> t.columns |> Nel.find (\col -> col.name == c.column))
-                |> Maybe.map (\col -> { col | name = c.alias |> Maybe.withDefault c.column })
-                |> Maybe.withDefault
+                |> M.mapOrElse (\col -> { col | name = c.alias |> Maybe.withDefault c.column })
                     { name = c.alias |> Maybe.withDefault c.column
                     , kind = "unknown"
                     , nullable = False
                     , default = Nothing
                     , foreignKey = Nothing
-                    , comment = Just ("Built from: " ++ (c.table |> Maybe.map (\t -> t ++ ".") |> Maybe.withDefault "") ++ c.column)
+                    , comment = Just ("Built from: " ++ (c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
                     }
 
         ComplexColumn c ->
@@ -409,9 +415,13 @@ statementIsEmpty statement =
     statement.head.text == ";"
 
 
-parseLines : FileName -> FileContent -> List SqlLine
-parseLines fileName fileContent =
+buildLines : List String -> List SqlLine
+buildLines lines =
+    lines |> List.indexedMap (\i line -> { line = i, text = line })
+
+
+splitLines : FileContent -> List FileLineContent
+splitLines fileContent =
     fileContent
         |> String.replace "\u{000D}" "\n"
         |> String.split "\n"
-        |> List.indexedMap (\i line -> { file = fileName, line = i + 1, text = line })

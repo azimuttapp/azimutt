@@ -1,6 +1,6 @@
 module DataSources.SqlParser.FileParserTest exposing (..)
 
-import DataSources.SqlParser.FileParser exposing (buildStatements, parseLines)
+import DataSources.SqlParser.FileParser exposing (buildLines, buildStatements, splitLines)
 import Expect
 import Libs.Nel as Nel
 import Test exposing (Test, describe, test)
@@ -102,7 +102,8 @@ testBuildStatements name content statements =
     test name
         (\_ ->
             content
-                |> parseLines "file.sql"
+                |> splitLines
+                |> buildLines
                 |> buildStatements
                 |> List.map (\s -> s |> Nel.toList |> List.map .text |> List.map String.trim)
                 |> Expect.equal (statements |> List.map (\s -> s |> String.split "\n" |> List.map String.trim))

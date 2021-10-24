@@ -1,8 +1,9 @@
 module Tracking exposing (events)
 
 import Dict
+import Libs.Maybe as M
 import Libs.Models exposing (TrackEvent)
-import Models.Project exposing (FindPathResult, Layout, Project, Schema)
+import Models.Project exposing (FindPathResult, Layout, Project, Source)
 
 
 
@@ -25,7 +26,7 @@ events :
     , loadProject : Project -> TrackEvent
     , updateProject : Project -> TrackEvent
     , deleteProject : Project -> TrackEvent
-    , addSource : Schema -> TrackEvent
+    , addSource : Source -> TrackEvent
     , createLayout : Layout -> TrackEvent
     , loadLayout : Layout -> TrackEvent
     , updateLayout : Layout -> TrackEvent
@@ -59,22 +60,22 @@ events =
 
 projectEvent : String -> Project -> TrackEvent
 projectEvent eventName project =
-    { name = eventName ++ (project.fromSample |> Maybe.map (\_ -> "-sample") |> Maybe.withDefault "") ++ "-project"
+    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> M.toList) |> List.head |> M.mapOrElse (\_ -> "-sample") "") ++ "-project"
     , details =
-        [ ( "table-count", project.schema.tables |> Dict.size |> String.fromInt )
-        , ( "relation-count", project.schema.relations |> List.length |> String.fromInt )
+        [ ( "table-count", project.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", project.relations |> List.length |> String.fromInt )
         , ( "layout-count", project.layouts |> Dict.size |> String.fromInt )
         ]
     , enabled = True
     }
 
 
-sourceEvent : String -> Schema -> TrackEvent
-sourceEvent eventName schema =
+sourceEvent : String -> Source -> TrackEvent
+sourceEvent eventName source =
     { name = eventName ++ "-source"
     , details =
-        [ ( "table-count", schema.tables |> Dict.size |> String.fromInt )
-        , ( "relation-count", schema.relations |> List.length |> String.fromInt )
+        [ ( "table-count", source.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", source.relations |> List.length |> String.fromInt )
         ]
     , enabled = True
     }

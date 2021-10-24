@@ -28,9 +28,9 @@ asStatement sql =
     sql
         |> String.trim
         |> String.split "\n"
-        |> List.indexedMap (\i l -> { file = "", line = i, text = l })
+        |> List.indexedMap (\i l -> { line = i, text = l })
         |> Nel.fromList
-        |> Maybe.withDefault { head = { file = "", line = 0, text = sql |> String.trim }, tail = [] }
+        |> Maybe.withDefault { head = { line = 0, text = sql |> String.trim }, tail = [] }
 
 
 parsedTable : ParsedTable

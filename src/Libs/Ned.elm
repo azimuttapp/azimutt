@@ -1,4 +1,4 @@
-module Libs.Ned exposing (Ned, build, buildMap, fromDict, fromList, fromNel, fromNelMap, get, singleton, singletonMap, size, toDict, values)
+module Libs.Ned exposing (Ned, build, buildMap, fromDict, fromList, fromNel, fromNelMap, get, map, singleton, singletonMap, size, toDict, values)
 
 import Dict exposing (Dict)
 import Libs.Nel as Nel exposing (Nel)
@@ -10,6 +10,11 @@ import Libs.Nel as Nel exposing (Nel)
 
 type alias Ned k a =
     { head : ( k, a ), tail : Dict k a }
+
+
+map : (k -> a -> b) -> Ned k a -> Ned k b
+map f xs =
+    { head = xs.head |> (\( k, a ) -> ( k, f k a )), tail = xs.tail |> Dict.map f }
 
 
 get : comparable -> Ned comparable a -> Maybe a

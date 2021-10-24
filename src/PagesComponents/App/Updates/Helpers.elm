@@ -1,8 +1,9 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSchema, setSchemaWithCmd, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
 
 import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
+import Libs.Maybe as M
 import Libs.Models exposing (ZoomLevel)
 import Libs.Position exposing (Position)
 
@@ -24,17 +25,7 @@ setProject transform item =
 
 setProjectWithCmd : (p -> ( p, Cmd msg )) -> { item | project : Maybe p } -> ( { item | project : Maybe p }, Cmd msg )
 setProjectWithCmd transform item =
-    item.project |> Maybe.map (\p -> p |> transform |> Tuple.mapFirst (\project -> { item | project = Just project })) |> Maybe.withDefault ( item, Cmd.none )
-
-
-setSchema : (s -> s) -> { item | schema : s } -> { item | schema : s }
-setSchema transform item =
-    { item | schema = transform item.schema }
-
-
-setSchemaWithCmd : (s -> ( s, Cmd msg )) -> { item | schema : s } -> ( { item | schema : s }, Cmd msg )
-setSchemaWithCmd transform item =
-    transform item.schema |> Tuple.mapFirst (\s -> { item | schema = s })
+    item.project |> M.mapOrElse (\p -> p |> transform |> Tuple.mapFirst (\project -> { item | project = Just project })) ( item, Cmd.none )
 
 
 setRelations : (r -> r) -> { item | relations : r } -> { item | relations : r }
@@ -47,9 +38,9 @@ setLayout transform item =
     { item | layout = item.layout |> transform }
 
 
-setCurrentLayout : (l -> l) -> { m | project : Maybe { p | schema : { s | layout : l } } } -> { m | project : Maybe { p | schema : { s | layout : l } } }
+setCurrentLayout : (l -> l) -> { m | project : Maybe { p | layout : l } } -> { m | project : Maybe { p | layout : l } }
 setCurrentLayout transform item =
-    setProject (setSchema (setLayout transform)) item
+    setProject (setLayout transform) item
 
 
 setCanvas : (l -> l) -> { item | canvas : l } -> { item | canvas : l }

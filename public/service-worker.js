@@ -18,7 +18,7 @@ const assets = [
     '/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js',
     '/assets/uuidv4.min.js',
     '/dist/elm.js',
-    '/samples/basic.json',
+    '/samples/basic.sql',
     '/samples/gospeak.sql',
     '/samples/wordpress.sql',
     '/android-chrome-192x192.png',

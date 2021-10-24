@@ -13,7 +13,7 @@ object attrs =
 
 maybe : (a -> Value) -> Maybe a -> Value
 maybe encoder value =
-    value |> Maybe.map encoder |> Maybe.withDefault Encode.null
+    value |> M.mapOrElse encoder Encode.null
 
 
 withDefault : (a -> Value) -> a -> a -> Value

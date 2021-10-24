@@ -9,7 +9,8 @@ import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll)
 import Libs.DateTime exposing (formatDate, formatTime)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
-import Models.Project exposing (Project, ProjectId, ProjectSource, ProjectSourceContent(..))
+import Libs.Maybe as M
+import Models.Project exposing (Project, ProjectId, Source, SourceKind(..))
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), TimeInfo)
 import PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewFileLoader)
 import Time
@@ -18,7 +19,7 @@ import Time
 viewSettings : TimeInfo -> Maybe Project -> Html Msg
 viewSettings time project =
     project
-        |> Maybe.map
+        |> M.mapOrElse
             (\p ->
                 div [ id conf.ids.settings, class "offcanvas offcanvas-end", bsScroll True, bsBackdrop "false", ariaLabelledBy (conf.ids.settings ++ "-label"), tabindex -1 ]
                     [ div [ class "offcanvas-header" ]
@@ -27,25 +28,25 @@ viewSettings time project =
                         ]
                     , div [ class "offcanvas-body" ]
                         [ h6 [] [ text "Project sources" ]
-                        , div [ class "list-group" ] ((p.sources |> List.map (viewProjectSource time)) ++ [ viewAddSource p.id ])
+                        , div [ class "list-group" ] ((p.sources |> List.map (viewSource time)) ++ [ viewAddSource p.id ])
                         ]
                     ]
             )
-        |> Maybe.withDefault (div [] [])
+            (div [] [])
 
 
-viewProjectSource : TimeInfo -> ProjectSource -> Html Msg
-viewProjectSource time source =
-    case source.source of
+viewSource : TimeInfo -> Source -> Html Msg
+viewSource time source =
+    case source.kind of
         LocalFile path _ modified ->
-            viewProjectSourceHtml time Icon.fileUpload modified (path ++ " file") source
+            viewSourceHtml time Icon.fileUpload modified (path ++ " file") source
 
         RemoteFile url _ ->
-            viewProjectSourceHtml time Icon.cloudDownloadAlt source.updatedAt ("File from " ++ url) source
+            viewSourceHtml time Icon.cloudDownloadAlt source.updatedAt ("File from " ++ url) source
 
 
-viewProjectSourceHtml : TimeInfo -> Icon -> Time.Posix -> String -> ProjectSource -> Html Msg
-viewProjectSourceHtml time icon updatedAt labelTitle source =
+viewSourceHtml : TimeInfo -> Icon -> Time.Posix -> String -> Source -> Html Msg
+viewSourceHtml time icon updatedAt labelTitle source =
     div [ class "list-group-item d-flex justify-content-between align-items-center" ]
         [ label [ title labelTitle ]
             [ input [ type_ "checkbox", class "form-check-input me-2", checked source.enabled, onClick (SourceMsg (ToggleSource source.id)) ] []

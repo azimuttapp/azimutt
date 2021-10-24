@@ -1,7 +1,8 @@
-module Libs.Models exposing (Color, FileContent, FileName, FileUrl, HtmlId, Image, Link, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta, ZoomLevel)
+module Libs.Models exposing (Color, FileContent, FileLine, FileLineContent, FileLineIndex, FileModified, FileName, FileSize, FileUrl, HtmlId, Image, Link, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta, ZoomLevel)
 
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
+import Time
 
 
 type alias UID =
@@ -26,6 +27,26 @@ type alias FileUrl =
 
 type alias FileContent =
     String
+
+
+type alias FileSize =
+    Int
+
+
+type alias FileLineIndex =
+    Int
+
+
+type alias FileLineContent =
+    String
+
+
+type alias FileLine =
+    { index : FileLineIndex, content : FileLineContent }
+
+
+type alias FileModified =
+    Time.Posix
 
 
 type alias ZoomLevel =

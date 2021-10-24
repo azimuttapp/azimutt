@@ -8,6 +8,7 @@ import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
+import Libs.Maybe as M
 import Libs.Position as Position
 import Models.Project exposing (FindPathState(..))
 import Page
@@ -18,11 +19,11 @@ import PagesComponents.App.Updates exposing (updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, resetCanvas, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setTableInList, setTables, setTime)
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (handleLayout)
 import PagesComponents.App.Updates.PortMsg exposing (handlePortMsg)
 import PagesComponents.App.Updates.Project exposing (deleteProject, useProject)
-import PagesComponents.App.Updates.ProjectSource exposing (handleProjectSource)
+import PagesComponents.App.Updates.Source exposing (handleSource)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
@@ -103,7 +104,7 @@ update msg model =
             model |> updateSizes sizes
 
         SourceMsg m ->
-            model |> handleProjectSource m
+            model |> handleSource m
 
         ChangeProject ->
             ( model, Cmd.batch [ hideOffcanvas conf.ids.menu, showModal conf.ids.projectSwitchModal, loadProjects ] )
@@ -130,13 +131,13 @@ update msg model =
             ( model |> setCurrentLayout (hideTable id), Cmd.none )
 
         ShowTable id ->
-            model |> setProjectWithCmd (setSchemaWithCmd (showTable id))
+            model |> setProjectWithCmd (showTable id)
 
         TableOrder id index ->
             ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
 
         ShowTables ids ->
-            model |> setProjectWithCmd (setSchemaWithCmd (showTables ids))
+            model |> setProjectWithCmd (showTables ids)
 
         --HideTables ids ->
         --    ( model |> setCurrentLayout (hideTables ids), Cmd.none )
@@ -147,7 +148,7 @@ update msg model =
             ( model |> setCurrentLayout hideAllTables, Cmd.none )
 
         ShowAllTables ->
-            model |> setProjectWithCmd (setSchemaWithCmd showAllTables)
+            model |> setProjectWithCmd showAllTables
 
         HideColumn { table, column } ->
             ( model |> hoverNextColumn table column |> setCurrentLayout (hideColumn table column), Cmd.none )
@@ -156,13 +157,13 @@ update msg model =
             ( model |> setCurrentLayout (showColumn table column), activateTooltipsAndPopovers )
 
         SortColumns id kind ->
-            ( model |> setProject (setSchema (sortColumns id kind)), activateTooltipsAndPopovers )
+            ( model |> setProject (sortColumns id kind), activateTooltipsAndPopovers )
 
         HideColumns id kind ->
-            ( model |> setProject (setSchema (hideColumns id kind)), Cmd.none )
+            ( model |> setProject (hideColumns id kind), Cmd.none )
 
         ShowColumns id kind ->
-            ( model |> setProject (setSchema (showColumns id kind)), activateTooltipsAndPopovers )
+            ( model |> setProject (showColumns id kind), activateTooltipsAndPopovers )
 
         HoverTable t ->
             ( { model | hover = model.hover |> (\h -> { h | table = t }) }, Cmd.none )
@@ -201,7 +202,7 @@ update msg model =
             model |> handleFindPath m
 
         VirtualRelationMsg m ->
-            ( updateVirtualRelation m model, Cmd.none )
+            ( model |> updateVirtualRelation m, Cmd.none )
 
         OpenConfirm confirm ->
             ( { model | confirm = confirm }, showModal conf.ids.confirm )
@@ -259,6 +260,6 @@ virtualRelationSubscription virtualRelation =
 
 view : Model -> View Msg
 view model =
-    { title = model.project |> Maybe.map (\p -> p.name ++ " - Azimutt") |> Maybe.withDefault "Azimutt - Explore your database schema"
+    { title = model.project |> M.mapOrElse (\p -> p.name ++ " - Azimutt") "Azimutt - Explore your database schema"
     , body = Helpers.root (viewApp model)
     }

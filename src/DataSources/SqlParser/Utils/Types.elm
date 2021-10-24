@@ -1,10 +1,11 @@
 module DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName, SqlTableRef)
 
+import Libs.Models exposing (FileLineContent, FileLineIndex)
 import Libs.Nel exposing (Nel)
 
 
 type alias SqlLine =
-    { file : String, line : Int, text : String }
+    { line : FileLineIndex, text : FileLineContent }
 
 
 type alias SqlStatement =

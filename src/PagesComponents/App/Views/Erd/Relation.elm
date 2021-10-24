@@ -90,8 +90,8 @@ viewLine p1 p2 optional color =
             , y2 (String.fromFloat p2.y)
             , style
                 (color
-                    |> Maybe.map (\c -> "stroke: var(--tw-" ++ c ++ "); stroke-width: 3;")
-                    |> Maybe.withDefault "stroke: #A0AEC0; stroke-width: 2;"
+                    |> M.mapOrElse (\c -> "stroke: var(--tw-" ++ c ++ "); stroke-width: 3;")
+                        "stroke: #A0AEC0; stroke-width: 2;"
                 )
             ]
         )

@@ -116,12 +116,12 @@ filterMap predicate transform list =
 
 move : Int -> Int -> List a -> List a
 move from to list =
-    list |> get from |> Maybe.map (\v -> list |> removeAt from |> addAt v to) |> Maybe.withDefault list
+    list |> get from |> M.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
 
 
 moveBy : (a -> b) -> b -> Int -> List a -> List a
 moveBy matcher value position list =
-    list |> findIndexBy matcher value |> Maybe.map (\index -> list |> move index position) |> Maybe.withDefault list
+    list |> findIndexBy matcher value |> M.mapOrElse (\index -> list |> move index position) list
 
 
 removeAt : Int -> List a -> List a
@@ -234,7 +234,7 @@ uniqueBy matcher list =
 
 groupBy : (a -> comparable) -> List a -> Dict comparable (Nel a)
 groupBy key list =
-    List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> Maybe.map (Nel.prepend a) |> Maybe.withDefault (Nel a []) |> Just)) Dict.empty list
+    List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> M.mapOrElse (Nel.prepend a) (Nel a []) |> Just)) Dict.empty list
 
 
 resultCollect : List (Result e a) -> ( List e, List a )

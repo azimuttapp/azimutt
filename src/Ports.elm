@@ -10,7 +10,8 @@ import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text, TrackEvent)
-import Models.Project exposing (Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, encodeProjectId, tableIdAsHtmlId)
+import Models.Project exposing (Project, ProjectId, SampleName, SourceId, TableId, tableIdAsHtmlId)
+import Storage.Project as Project
 import Time
 
 
@@ -155,8 +156,8 @@ type ElmMsg
 type JsMsg
     = GotSizes (List SizeChange)
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
-    | GotLocalFile Time.Posix ProjectId ProjectSourceId File FileContent
-    | GotRemoteFile Time.Posix ProjectId ProjectSourceId FileUrl FileContent (Maybe SampleName)
+    | GotLocalFile Time.Posix ProjectId SourceId File FileContent
+    | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleName)
     | GotHotkey String
     | Error Decode.Error
 
@@ -208,13 +209,13 @@ elmEncoder elm =
             Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
 
         SaveProject project ->
-            Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> encodeProject ) ]
+            Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         DropProject project ->
-            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> encodeProject ) ]
+            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         GetLocalFile project file ->
-            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe encodeProjectId ), ( "file", file |> FileValue.encode ) ]
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe Project.encodeId ), ( "file", file |> FileValue.encode ) ]
 
         GetRemoteFile url sample ->
             Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
@@ -292,7 +293,7 @@ projectsDecoder =
                     |> List.map
                         (\( k, v ) ->
                             v
-                                |> Decode.decodeValue decodeProject
+                                |> Decode.decodeValue Project.decode
                                 |> Result.mapError (\e -> ( k, e ))
                         )
                     |> L.resultCollect

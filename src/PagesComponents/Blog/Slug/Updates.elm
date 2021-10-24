@@ -6,6 +6,7 @@ import Gen.Route as Route
 import Http
 import Libs.DateTime as DateTime
 import Libs.Dict as D
+import Libs.Maybe as M
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Result as R
 import PagesComponents.Blog.Slug.Models exposing (Content, Model(..), authors)
@@ -30,7 +31,7 @@ parseContent slug content =
                                 { title = title
                                 , excerpt = (props |> Dict.get "excerpt" |> Maybe.withDefault (mdStart |> String.trim)) |> String.left 280 |> String.trim
                                 , category = props |> Dict.get "category"
-                                , tags = props |> Dict.get "tags" |> Maybe.map (\tags -> tags |> String.split "," |> List.map String.trim) |> Maybe.withDefault []
+                                , tags = props |> Dict.get "tags" |> M.mapOrElse (\tags -> tags |> String.split "," |> List.map String.trim) []
                                 , author = author
                                 , published = published
                                 , body = (mdStart :: mdRest) |> String.join "---\n" |> String.trim |> extendMarkdown slug
@@ -79,7 +80,7 @@ parseFrontMatter frontMatter =
                             ( errs, ( key |> String.trim, value |> String.join ":" |> String.trim ) :: res )
             )
             ( [], [] )
-        |> (\( errs, res ) -> Nel.fromList errs |> Maybe.map Err |> Maybe.withDefault (Ok (Dict.fromList res)))
+        |> (\( errs, res ) -> Nel.fromList errs |> M.mapOrElse Err (Ok (Dict.fromList res)))
 
 
 extendMarkdown : String -> String -> String

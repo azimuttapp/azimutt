@@ -6,35 +6,35 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (ColumnName, ColumnRef, Layout, Schema, Table, TableId, inIndexes, inOutRelation, inPrimaryKey, inUniques, initTableProps, showTableId, withNullableInfo)
+import Models.Project exposing (ColumnName, ColumnRef, Layout, Project, Table, TableId, inIndexes, inOutRelation, inPrimaryKey, inUniques, initTableProps, showTableId, withNullableInfo)
 import PagesComponents.App.Models as Models exposing (Msg)
 import PagesComponents.App.Updates.Helpers exposing (setLayout)
 import Ports exposing (activateTooltipsAndPopovers, observeTableSize, observeTablesSize, toastError, toastInfo)
 
 
-showTable : TableId -> Schema -> ( Schema, Cmd Msg )
-showTable id schema =
-    case schema.tables |> Dict.get id of
+showTable : TableId -> Project -> ( Project, Cmd Msg )
+showTable id project =
+    case project.tables |> Dict.get id of
         Just table ->
-            if schema.layout.tables |> L.memberBy .id id then
-                ( schema, toastInfo ("Table <b>" ++ showTableId id ++ "</b> already shown") )
+            if project.layout.tables |> L.memberBy .id id then
+                ( project, toastInfo ("Table <b>" ++ showTableId id ++ "</b> already shown") )
 
             else
-                ( schema |> performShowTable id table, Cmd.batch [ observeTableSize id, activateTooltipsAndPopovers ] )
+                ( project |> performShowTable id table, Cmd.batch [ observeTableSize id, activateTooltipsAndPopovers ] )
 
         Nothing ->
-            ( schema, toastError ("Can't show table <b>" ++ showTableId id ++ "</b>: not found") )
+            ( project, toastError ("Can't show table <b>" ++ showTableId id ++ "</b>: not found") )
 
 
-showTables : List TableId -> Schema -> ( Schema, Cmd Msg )
-showTables ids schema =
+showTables : List TableId -> Project -> ( Project, Cmd Msg )
+showTables ids project =
     ids
-        |> L.zipWith (\id -> schema.tables |> Dict.get id)
+        |> L.zipWith (\id -> project.tables |> Dict.get id)
         |> List.foldr
             (\( id, maybeTable ) ( s, ( found, shown, notFound ) ) ->
                 case maybeTable of
                     Just table ->
-                        if schema.layout.tables |> L.memberBy .id id then
+                        if project.layout.tables |> L.memberBy .id id then
                             ( s, ( found, id :: shown, notFound ) )
 
                         else
@@ -43,7 +43,7 @@ showTables ids schema =
                     Nothing ->
                         ( s, ( found, shown, id :: notFound ) )
             )
-            ( schema, ( [], [], [] ) )
+            ( project, ( [], [], [] ) )
         |> (\( s, ( found, shown, notFound ) ) ->
                 ( s
                 , Cmd.batch
@@ -55,17 +55,17 @@ showTables ids schema =
            )
 
 
-showAllTables : Schema -> ( Schema, Cmd Msg )
-showAllTables schema =
-    ( schema
+showAllTables : Project -> ( Project, Cmd Msg )
+showAllTables project =
+    ( project
         |> setLayout
             (\l ->
                 { l
-                    | tables = schema.tables |> Dict.toList |> List.map (\( id, t ) -> l.tables |> L.findBy .id id |> M.orElse (l.hiddenTables |> L.findBy .id id) |> Maybe.withDefault (initTableProps t))
+                    | tables = project.tables |> Dict.toList |> List.map (\( id, t ) -> l.tables |> L.findBy .id id |> M.orElse (l.hiddenTables |> L.findBy .id id) |> Maybe.withDefault (initTableProps t))
                     , hiddenTables = []
                 }
             )
-    , Cmd.batch [ observeTablesSize (schema.tables |> Dict.keys |> List.filter (\id -> not (schema.layout.tables |> L.memberBy .id id))), activateTooltipsAndPopovers ]
+    , Cmd.batch [ observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))), activateTooltipsAndPopovers ]
     )
 
 
@@ -109,17 +109,17 @@ hoverNextColumn table column model =
         nextColumn : Maybe ColumnName
         nextColumn =
             model.project
-                |> Maybe.andThen (\p -> p.schema.layout.tables |> L.findBy .id table)
+                |> Maybe.andThen (\p -> p.layout.tables |> L.findBy .id table)
                 |> Maybe.andThen (\t -> t.columns |> L.dropUntil (\c -> c == column) |> List.drop 1 |> List.head)
     in
     { model | hover = model.hover |> (\h -> { h | column = nextColumn |> Maybe.map (ColumnRef table) }) }
 
 
-sortColumns : TableId -> String -> Schema -> Schema
-sortColumns id kind schema =
+sortColumns : TableId -> String -> Project -> Project
+sortColumns id kind project =
     updateColumns id
         (\table columns ->
-            schema.relations
+            project.relations
                 |> List.filter (\r -> r.src.table == id)
                 |> (\tableOutRelations ->
                         columns
@@ -129,7 +129,7 @@ sortColumns id kind schema =
                                         List.sortBy
                                             (\( name, col ) ->
                                                 col
-                                                    |> Maybe.map
+                                                    |> M.mapOrElse
                                                         (\c ->
                                                             if name |> inPrimaryKey table |> M.isJust then
                                                                 ( 0 + sortOffset c.nullable, name |> String.toLower )
@@ -146,25 +146,25 @@ sortColumns id kind schema =
                                                             else
                                                                 ( 4 + sortOffset c.nullable, name |> String.toLower )
                                                         )
-                                                    |> Maybe.withDefault ( 5, name |> String.toLower )
+                                                        ( 5, name |> String.toLower )
                                             )
 
                                     "name" ->
                                         List.sortBy (\( name, _ ) -> name |> String.toLower)
 
                                     "sql" ->
-                                        List.sortBy (\( _, col ) -> col |> Maybe.map .index |> Maybe.withDefault (table.columns |> Ned.size))
+                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse .index (table.columns |> Ned.size))
 
                                     "type" ->
-                                        List.sortBy (\( _, col ) -> col |> Maybe.map (\c -> c.kind |> String.toLower |> withNullableInfo c.nullable) |> Maybe.withDefault "~")
+                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse (\c -> c.kind |> String.toLower |> withNullableInfo c.nullable) "~")
 
                                     _ ->
-                                        List.sortBy (\( _, col ) -> col |> Maybe.map .index |> Maybe.withDefault (table.columns |> Ned.size))
+                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse .index (table.columns |> Ned.size))
                                )
                             |> List.map Tuple.first
                    )
         )
-        schema
+        project
 
 
 sortOffset : Bool -> Float
@@ -176,11 +176,11 @@ sortOffset b =
         0
 
 
-hideColumns : TableId -> String -> Schema -> Schema
-hideColumns id kind schema =
+hideColumns : TableId -> String -> Project -> Project
+hideColumns id kind project =
     updateColumns id
         (\table columns ->
-            schema.relations
+            project.relations
                 |> List.filter (\r -> r.src.table == id)
                 |> (\tableOutRelations ->
                         columns
@@ -206,11 +206,11 @@ hideColumns id kind schema =
                             |> List.map Tuple.first
                    )
         )
-        schema
+        project
 
 
-showColumns : TableId -> String -> Schema -> Schema
-showColumns id kind schema =
+showColumns : TableId -> String -> Project -> Project
+showColumns id kind project =
     updateColumns id
         (\table columns ->
             columns
@@ -229,17 +229,16 @@ showColumns id kind schema =
                         |> List.map .name
                    )
         )
-        schema
+        project
 
 
-updateColumns : TableId -> (Table -> List ColumnName -> List ColumnName) -> Schema -> Schema
-updateColumns id update schema =
-    schema.tables
+updateColumns : TableId -> (Table -> List ColumnName -> List ColumnName) -> Project -> Project
+updateColumns id update project =
+    project.tables
         |> Dict.get id
-        |> Maybe.map (\table -> schema |> setLayout (\l -> { l | tables = l.tables |> L.updateBy .id id (\t -> { t | columns = t.columns |> update table }) }))
-        |> Maybe.withDefault schema
+        |> M.mapOrElse (\table -> project |> setLayout (\l -> { l | tables = l.tables |> L.updateBy .id id (\t -> { t | columns = t.columns |> update table }) })) project
 
 
-performShowTable : TableId -> Table -> Schema -> Schema
-performShowTable id table schema =
-    schema |> setLayout (\l -> { l | tables = ((l.hiddenTables |> L.findBy .id id |> Maybe.withDefault (initTableProps table)) :: l.tables) |> L.uniqueBy .id })
+performShowTable : TableId -> Table -> Project -> Project
+performShowTable id table project =
+    project |> setLayout (\l -> { l | tables = ((l.hiddenTables |> L.findBy .id id |> Maybe.withDefault (initTableProps table)) :: l.tables) |> L.uniqueBy .id })

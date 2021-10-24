@@ -2,47 +2,60 @@ module PagesComponents.App.Updates.Project exposing (addToProject, createProject
 
 import Conf exposing (conf)
 import DataSources.SqlParser.FileParser exposing (parseSchema)
-import DataSources.SqlParser.ProjectAdapter exposing (buildProjectFromSql, buildSchema)
+import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 import Dict
-import Json.Decode as Decode
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (FileContent, TrackEvent)
-import Libs.Result as R
 import Libs.String as S
 import Libs.Task as T
-import Models.Project exposing (Project, ProjectId, ProjectName, ProjectSource, ProjectSourceContent(..), Relation, SampleName, Schema, Table, decodeProject, extractPath)
+import Models.Project exposing (Project, ProjectId, ProjectName, SourceInfo, SourceKind(..), addSource, extractPath, initProject)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml)
 import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
-import Time
 import Tracking exposing (events)
 
 
-createProject : Time.Posix -> ProjectId -> ProjectSource -> FileContent -> Maybe SampleName -> Model -> ( Model, Cmd Msg )
-createProject now projectId source content sample model =
-    buildProject (model.storedProjects |> List.map .name) now projectId source content sample |> loadProject events.createProject model
+createProject : ProjectId -> SourceInfo -> FileContent -> Model -> ( Model, Cmd Msg )
+createProject projectId sourceInfo content model =
+    let
+        takenNames : List ProjectName
+        takenNames =
+            model.storedProjects |> List.map .name
+
+        path : String
+        path =
+            extractPath sourceInfo.kind
+    in
+    (if path |> String.endsWith ".sql" then
+        parseSchema content
+            |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
+            |> Tuple.mapSecond (\source -> Just (initProject projectId (S.unique takenNames source.name) source))
+
+     else
+        ( [ "Invalid file (" ++ path ++ "), expected a .sql one" ], Nothing )
+    )
+        |> loadProject events.createProject model
 
 
-addToProject : Time.Posix -> ProjectSource -> FileContent -> Project -> ( Project, Cmd Msg )
-addToProject now source content project =
+addToProject : SourceInfo -> FileContent -> Project -> ( Project, Cmd Msg )
+addToProject sourceInfo content project =
     let
         path : String
         path =
-            extractPath source.source
+            extractPath sourceInfo.kind
     in
     if path |> String.endsWith ".sql" then
         case
-            parseSchema path content
-                |> Tuple.mapSecond (buildSchema now source)
-                |> Tuple.mapSecond (\schema -> ( project |> addSource source schema now, events.addSource schema ))
+            parseSchema content
+                |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
+                |> Tuple.mapSecond (\source -> ( project |> addSource source, events.addSource source ))
         of
             ( errors, ( updatedProject, event ) ) ->
                 ( updatedProject
                 , Cmd.batch
                     ((errors |> List.map toastError)
                         ++ (errors |> List.map (trackError "parse-schema"))
-                        ++ [ toastInfo ("<b>" ++ source.name ++ "</b> loaded.")
+                        ++ [ toastInfo ("<b>" ++ sourceInfo.name ++ "</b> loaded.")
                            , hideOffcanvas conf.ids.settings
                            , saveProject updatedProject
                            , track event
@@ -76,12 +89,12 @@ loadProject projectEvent model ( errors, project ) =
         ((errors |> List.map toastError)
             ++ (errors |> List.map (trackError "parse-project"))
             ++ (project
-                    |> Maybe.map
+                    |> M.mapOrElse
                         (\p ->
-                            (if not (p.schema.layout.tables |> List.isEmpty) then
-                                observeTablesSize (p.schema.layout.tables |> List.map .id)
+                            (if not (p.layout.tables |> List.isEmpty) then
+                                observeTablesSize (p.layout.tables |> List.map .id)
 
-                             else if Dict.size p.schema.tables < 10 then
+                             else if Dict.size p.tables < 10 then
                                 T.send ShowAllTables
 
                              else
@@ -94,61 +107,7 @@ loadProject projectEvent model ( errors, project ) =
                                    , track (projectEvent p)
                                    ]
                         )
-                    |> Maybe.withDefault []
+                        []
                )
         )
     )
-
-
-buildProject : List ProjectName -> Time.Posix -> ProjectId -> ProjectSource -> FileContent -> Maybe SampleName -> ( Errors, Maybe Project )
-buildProject takenNames now projectId source content sample =
-    let
-        path : String
-        path =
-            extractPath source.source
-    in
-    if path |> String.endsWith ".sql" then
-        parseSchema path content |> Tuple.mapSecond (\s -> Just (buildProjectFromSql takenNames now projectId source s sample))
-
-    else if path |> String.endsWith ".json" then
-        Decode.decodeString decodeProject content
-            |> R.fold
-                (\e -> ( [ "⚠️ Error in <b>" ++ path ++ "</b> ⚠️<br>" ++ decodeErrorToHtml e ], Nothing ))
-                (\p -> ( [], Just { p | id = projectId, name = S.unique takenNames p.name, createdAt = now, updatedAt = now, fromSample = sample } ))
-
-    else
-        ( [ "Invalid file (" ++ path ++ "), expected .sql or .json one" ], Nothing )
-
-
-addSource : ProjectSource -> Schema -> Time.Posix -> Project -> Project
-addSource source schema now project =
-    { project
-        | sources = project.sources ++ [ source ]
-        , schema = mergeSchema project.schema schema
-        , updatedAt = now
-    }
-
-
-mergeSchema : Schema -> Schema -> Schema
-mergeSchema s1 s2 =
-    { s1
-        | tables = Dict.merge Dict.insert (\id t1 t2 acc -> Dict.insert id (mergeTable t1 t2) acc) Dict.insert s1.tables s2.tables Dict.empty
-        , relations =
-            (s1.relations |> List.map (\r1 -> s2.relations |> L.find (sameRelation r1) |> Maybe.map (mergeRelation r1) |> Maybe.withDefault r1))
-                ++ (s2.relations |> L.filterNot (\r2 -> s1.relations |> List.any (sameRelation r2)))
-    }
-
-
-mergeTable : Table -> Table -> Table
-mergeTable t1 t2 =
-    { t1 | sources = t1.sources ++ t2.sources }
-
-
-sameRelation : Relation -> Relation -> Bool
-sameRelation r1 r2 =
-    r1.name == r2.name
-
-
-mergeRelation : Relation -> Relation -> Relation
-mergeRelation r1 r2 =
-    { r1 | sources = r1.sources ++ r2.sources }

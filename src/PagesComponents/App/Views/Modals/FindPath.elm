@@ -92,7 +92,7 @@ viewSettings idPrefix settings =
                         , ariaDescribedBy (idPrefix ++ "-settings-max-path-length-help")
                         , placeholder "ex: 3"
                         , value (String.fromInt settings.maxPathLength)
-                        , onInput (\v -> String.toInt v |> Maybe.map (\l -> FindPathMsg (FPSettingsUpdate { settings | maxPathLength = l })) |> Maybe.withDefault Noop)
+                        , onInput (\v -> String.toInt v |> M.mapOrElse (\l -> FindPathMsg (FPSettingsUpdate { settings | maxPathLength = l })) Noop)
                         ]
                         []
                     , div [ class "form-text", id (idPrefix ++ "-settings-max-path-length-help") ] [ text "Limit paths in length to limit complexity and performance." ]

@@ -1,9 +1,9 @@
-module Libs.Json.Formats exposing (decodeColor, decodePosition, decodePosix, decodeSize, decodeZoomLevel, encodeColor, encodePosition, encodePosix, encodeSize, encodeZoomLevel)
+module Libs.Json.Formats exposing (decodeColor, decodeFileLineIndex, decodeFileModified, decodeFileName, decodeFileSize, decodeFileUrl, decodePosition, decodePosix, decodeSize, decodeZoomLevel, encodeColor, encodeFileLineIndex, encodeFileModified, encodeFileName, encodeFileSize, encodeFileUrl, encodePosition, encodePosix, encodeSize, encodeZoomLevel)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Encode as E
-import Libs.Models exposing (Color, ZoomLevel)
+import Libs.Models exposing (Color, FileLineIndex, FileModified, FileName, FileSize, FileUrl, ZoomLevel)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Time
@@ -37,6 +37,56 @@ decodeSize =
     Decode.map2 Size
         (Decode.field "width" Decode.float)
         (Decode.field "height" Decode.float)
+
+
+encodeFileName : FileName -> Value
+encodeFileName value =
+    Encode.string value
+
+
+decodeFileName : Decode.Decoder FileName
+decodeFileName =
+    Decode.string
+
+
+encodeFileUrl : FileUrl -> Value
+encodeFileUrl value =
+    Encode.string value
+
+
+decodeFileUrl : Decode.Decoder FileUrl
+decodeFileUrl =
+    Decode.string
+
+
+encodeFileSize : FileSize -> Value
+encodeFileSize value =
+    Encode.int value
+
+
+decodeFileSize : Decode.Decoder FileSize
+decodeFileSize =
+    Decode.int
+
+
+encodeFileLineIndex : FileLineIndex -> Value
+encodeFileLineIndex value =
+    Encode.int value
+
+
+decodeFileLineIndex : Decode.Decoder FileLineIndex
+decodeFileLineIndex =
+    Decode.int
+
+
+encodeFileModified : FileModified -> Value
+encodeFileModified value =
+    encodePosix value
+
+
+decodeFileModified : Decode.Decoder FileModified
+decodeFileModified =
+    decodePosix
 
 
 encodeZoomLevel : ZoomLevel -> Value

@@ -31,11 +31,11 @@ initializeTableOnFirstSize model change =
         |> Maybe.andThen
             (\p ->
                 Maybe.map3 (\t props canvasInfos -> ( t, props, canvasInfos ))
-                    (p.schema.tables |> Dict.get (htmlIdAsTableId change.id))
-                    (p.schema.layout.tables |> L.findBy .id (htmlIdAsTableId change.id))
+                    (p.tables |> Dict.get (htmlIdAsTableId change.id))
+                    (p.layout.tables |> L.findBy .id (htmlIdAsTableId change.id))
                     (model.domInfos |> Dict.get conf.ids.erd)
                     |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.domInfos |> Dict.member change.id))
-                    |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (viewportArea canvasInfos.size p.schema.layout.canvas))
+                    |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (viewportArea canvasInfos.size p.layout.canvas))
             )
 
 

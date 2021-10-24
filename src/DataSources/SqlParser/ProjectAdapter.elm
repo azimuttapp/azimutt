@@ -1,31 +1,32 @@
-module DataSources.SqlParser.ProjectAdapter exposing (buildProjectFromSql, buildSchema)
+module DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 
+import Array
 import DataSources.SqlParser.FileParser exposing (SqlCheck, SqlColumn, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlUnique)
 import Dict
 import Libs.Dict as D
+import Libs.Models exposing (FileLineContent)
 import Libs.Ned as Ned
-import Libs.Nel as Nel exposing (Nel)
-import Libs.Position exposing (Position)
-import Libs.String as S
-import Models.Project exposing (CanvasProps, Check, Column, ColumnRef, Comment, Index, Layout, PrimaryKey, Project, ProjectId, ProjectSource, ProjectSourceContent(..), Relation, SampleName, Schema, Table, Unique, buildProject)
-import Time
+import Libs.Nel as Nel
+import Models.Project exposing (Check, Column, ColumnRef, Comment, Index, PrimaryKey, Relation, Source, SourceId, SourceInfo, SourceKind(..), Table, Unique)
 
 
-buildProjectFromSql : List String -> Time.Posix -> ProjectId -> ProjectSource -> SqlSchema -> Maybe SampleName -> Project
-buildProjectFromSql takenNames now id source schema sample =
-    buildProject id (S.unique takenNames source.name) [ source ] (buildSchema now source schema) sample now
-
-
-buildSchema : Time.Posix -> ProjectSource -> SqlSchema -> Schema
-buildSchema now source schema =
-    { tables = schema |> Dict.values |> List.map (buildTable source) |> D.fromListMap .id
-    , relations = schema |> Dict.values |> List.concatMap (buildRelations source)
-    , layout = Layout (CanvasProps (Position 0 0) 1) [] [] now now
+buildSourceFromSql : SourceInfo -> List FileLineContent -> SqlSchema -> Source
+buildSourceFromSql sourceInfo lines schema =
+    { id = sourceInfo.id
+    , name = sourceInfo.name
+    , kind = sourceInfo.kind
+    , content = Array.fromList lines
+    , tables = schema |> Dict.values |> List.map (buildTable sourceInfo.id) |> D.fromListMap .id
+    , relations = schema |> Dict.values |> List.concatMap (buildRelations sourceInfo.id)
+    , enabled = sourceInfo.enabled
+    , fromSample = sourceInfo.fromSample
+    , createdAt = sourceInfo.createdAt
+    , updatedAt = sourceInfo.updatedAt
     }
 
 
-buildTable : ProjectSource -> SqlTable -> Table
-buildTable source table =
+buildTable : SourceId -> SqlTable -> Table
+buildTable sourceId table =
     { id = ( table.schema, table.table )
     , schema = table.schema
     , name = table.table
@@ -35,7 +36,7 @@ buildTable source table =
     , indexes = table.indexes |> List.map buildIndex
     , checks = table.checks |> List.map buildCheck
     , comment = table.comment |> Maybe.map buildComment
-    , sources = [ { id = source.id, lines = table.source |> Nel.map (\l -> { no = l.line, text = l.text }) } ]
+    , origins = [ { id = sourceId, lines = table.source |> Nel.map .line |> Nel.toList } ]
     }
 
 
@@ -47,7 +48,7 @@ buildColumn index column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment |> Maybe.map buildComment
-    , sources = [] -- FIXME
+    , origins = [] -- FIXME
     }
 
 
@@ -55,7 +56,7 @@ buildPrimaryKey : SqlPrimaryKey -> PrimaryKey
 buildPrimaryKey pk =
     { name = pk.name
     , columns = pk.columns
-    , sources = [] -- FIXME
+    , origins = [] -- FIXME
     }
 
 
@@ -64,7 +65,7 @@ buildUnique unique =
     { name = unique.name
     , columns = unique.columns
     , definition = unique.definition
-    , sources = [] -- FIXME
+    , origins = [] -- FIXME
     }
 
 
@@ -73,7 +74,7 @@ buildIndex index =
     { name = index.name
     , columns = index.columns
     , definition = index.definition
-    , sources = [] -- FIXME
+    , origins = [] -- FIXME
     }
 
 
@@ -82,19 +83,19 @@ buildCheck check =
     { name = check.name
     , columns = check.columns
     , predicate = check.predicate
-    , sources = [] -- FIXME
+    , origins = [] -- FIXME
     }
 
 
 buildComment : String -> Comment
 buildComment comment =
     { text = comment
-    , sources = [] -- FIXME
+    , origins = [] -- FIXME
     }
 
 
-buildRelations : ProjectSource -> SqlTable -> List Relation
-buildRelations source table =
+buildRelations : SourceId -> SqlTable -> List Relation
+buildRelations sourceId table =
     table.columns
         |> Nel.filterZip .foreignKey
         |> List.map
@@ -102,6 +103,6 @@ buildRelations source table =
                 { name = fk.name
                 , src = ColumnRef ( table.schema, table.table ) c.name
                 , ref = ColumnRef ( fk.schema, fk.table ) fk.column
-                , sources = [ { id = source.id, lines = Nel { no = 0, text = "TODO" } [] } ]
+                , origins = [ { id = sourceId, lines = [] } ]
                 }
             )

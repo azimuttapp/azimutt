@@ -6,11 +6,12 @@ import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
+import Libs.Maybe as M
 import Libs.Models exposing (HtmlId, ZoomLevel)
 import Libs.Position as Position exposing (Position)
 import Libs.Size as Size exposing (Size)
 import Models.Project exposing (CanvasProps, Layout, Project, TableProps, tablesArea, viewportArea, viewportSize)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setSchema, setTables)
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setTables)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
@@ -24,13 +25,13 @@ handleWheel event canvas =
 
 zoomCanvas : Dict HtmlId DomInfo -> Float -> CanvasProps -> CanvasProps
 zoomCanvas domInfos delta canvas =
-    viewportSize domInfos |> Maybe.map (\size -> canvas |> performZoom delta (viewportArea size canvas |> Area.center)) |> Maybe.withDefault canvas
+    viewportSize domInfos |> M.mapOrElse (\size -> canvas |> performZoom delta (viewportArea size canvas |> Area.center)) canvas
 
 
 fitCanvas : Dict HtmlId DomInfo -> Layout -> Layout
 fitCanvas domInfos layout =
     viewportSize domInfos
-        |> Maybe.map
+        |> M.mapOrElse
             (\size ->
                 let
                     viewport : Area
@@ -56,7 +57,7 @@ fitCanvas domInfos layout =
                     |> setCanvas (\c -> { c | position = Position 0 0, zoom = newZoom })
                     |> setTables (\tables -> tables |> List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
             )
-        |> Maybe.withDefault layout
+            layout
 
 
 performMove : Float -> Float -> CanvasProps -> CanvasProps
@@ -147,5 +148,5 @@ computeZoom viewport padding content zoom =
 
 resetCanvas : Project -> Project
 resetCanvas project =
-    { project | currentLayout = Nothing }
-        |> setSchema (setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = { position = { left = 0, top = 0 }, zoom = 1 } }))
+    { project | usedLayout = Nothing }
+        |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = { position = { left = 0, top = 0 }, zoom = 1 } })

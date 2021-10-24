@@ -4,7 +4,7 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as F
-import Libs.Models exposing (Color, ZoomLevel)
+import Libs.Models exposing (Color, FileLineIndex, FileModified, FileName, FileSize, FileUrl, ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Position exposing (Position)
@@ -24,6 +24,31 @@ size =
     Fuzz.map2 Size
         (Fuzz.floatRange 0 10000)
         (Fuzz.floatRange 0 10000)
+
+
+fileName : Fuzzer FileName
+fileName =
+    stringSmall
+
+
+fileUrl : Fuzzer FileUrl
+fileUrl =
+    stringSmall
+
+
+fileSize : Fuzzer FileSize
+fileSize =
+    intPos
+
+
+fileLineIndex : Fuzzer FileLineIndex
+fileLineIndex =
+    intPos
+
+
+fileModified : Fuzzer FileModified
+fileModified =
+    posix
 
 
 zoomLevel : Fuzzer ZoomLevel

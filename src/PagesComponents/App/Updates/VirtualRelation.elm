@@ -3,17 +3,17 @@ module PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelati
 import Libs.Position exposing (Position)
 import Models.Project exposing (ColumnRef, Relation)
 import PagesComponents.App.Models exposing (Model, VirtualRelation, VirtualRelationMsg(..))
-import PagesComponents.App.Updates.Helpers exposing (setProject, setRelations, setSchema)
+import PagesComponents.App.Updates.Helpers exposing (setProject, setRelations)
 
 
-type alias Model x y z =
+type alias Model x y =
     { x
         | virtualRelation : Maybe VirtualRelation
-        , project : Maybe { y | schema : { z | relations : List Relation } }
+        , project : Maybe { y | relations : List Relation }
     }
 
 
-updateVirtualRelation : VirtualRelationMsg -> Model x y z -> Model x y z
+updateVirtualRelation : VirtualRelationMsg -> Model x y -> Model x y
 updateVirtualRelation msg model =
     case msg of
         VRCreate ->
@@ -28,7 +28,7 @@ updateVirtualRelation msg model =
                     { model | virtualRelation = Just { src = Just ref, mouse = pos } }
 
                 Just (Just from) ->
-                    { model | virtualRelation = Nothing } |> setProject (setSchema (setRelations (\relations -> relations ++ [ buildVirtualRelation from ref ])))
+                    { model | virtualRelation = Nothing } |> setProject (setRelations (\relations -> relations ++ [ buildVirtualRelation from ref ]))
 
         VRMove pos ->
             { model | virtualRelation = model.virtualRelation |> Maybe.map (\vr -> { vr | mouse = pos }) }
@@ -39,4 +39,4 @@ updateVirtualRelation msg model =
 
 buildVirtualRelation : ColumnRef -> ColumnRef -> Relation
 buildVirtualRelation from to =
-    { name = "virtual relation", src = from, ref = to, sources = [] }
+    { name = "virtual relation", src = from, ref = to, origins = [] }

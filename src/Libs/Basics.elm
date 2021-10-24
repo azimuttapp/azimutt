@@ -2,6 +2,7 @@ module Libs.Basics exposing (convertBase, fromDec, toDec, toHex, toOct)
 
 import Array exposing (Array)
 import Dict exposing (Dict)
+import Libs.Maybe as M
 import Libs.Nel as Nel exposing (Nel)
 
 
@@ -115,18 +116,18 @@ fromDecInner base dict suffix value =
             |> (\index ->
                     dict
                         |> Dict.get index
-                        |> Maybe.map
+                        |> M.mapOrElse
                             (\c ->
                                 fromDecInner base
                                     dict
                                     (String.fromChar c ++ suffix)
                                     ((value - index) // base)
                             )
-                        |> Maybe.withDefault suffix
+                            suffix
                )
 
     else if suffix == "" then
-        dict |> Dict.get 0 |> Maybe.map String.fromChar |> Maybe.withDefault suffix
+        dict |> Dict.get 0 |> M.mapOrElse String.fromChar suffix
 
     else
         suffix

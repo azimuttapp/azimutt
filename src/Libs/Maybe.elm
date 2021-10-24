@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (andThenZip, contains, exist, filter, filterNot, isJust, orElse, resultSeq, toList, zip, zip3)
+module Libs.Maybe exposing (andThenZip, contains, exist, filter, filterNot, isJust, mapOrElse, orElse, resultSeq, toList, zip, zip3)
 
 import Libs.Bool as B
 
@@ -13,6 +13,11 @@ orElse other item =
             res
 
 
+mapOrElse : (a -> b) -> b -> Maybe a -> b
+mapOrElse f default maybe =
+    maybe |> Maybe.map f |> Maybe.withDefault default
+
+
 filter : (a -> Bool) -> Maybe a -> Maybe a
 filter predicate maybe =
     maybe |> Maybe.andThen (\a -> B.cond (predicate a) maybe Nothing)
@@ -25,12 +30,12 @@ filterNot predicate maybe =
 
 exist : (a -> Bool) -> Maybe a -> Bool
 exist predicate maybe =
-    maybe |> Maybe.map predicate |> Maybe.withDefault False
+    maybe |> mapOrElse predicate False
 
 
 contains : a -> Maybe a -> Bool
 contains v maybe =
-    maybe |> Maybe.map (\a -> a == v) |> Maybe.withDefault False
+    maybe |> mapOrElse (\a -> a == v) False
 
 
 isNothing : Maybe a -> Bool
