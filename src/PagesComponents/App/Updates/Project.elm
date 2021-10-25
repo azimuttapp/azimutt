@@ -9,7 +9,8 @@ import Libs.Maybe as M
 import Libs.Models exposing (FileContent, TrackEvent)
 import Libs.String as S
 import Libs.Task as T
-import Models.Project as Project exposing (Project, ProjectId, ProjectName, SourceInfo, SourceKind(..), extractPath)
+import Models.Project as Project exposing (Project, ProjectId, ProjectName, SourceInfo)
+import Models.Project.SourceKind as SourceKind
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
 import PagesComponents.App.Updates.Helpers exposing (setSources)
 import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
@@ -25,7 +26,7 @@ createProject projectId sourceInfo content model =
 
         path : String
         path =
-            extractPath sourceInfo.kind
+            sourceInfo.kind |> SourceKind.path
     in
     (if path |> String.endsWith ".sql" then
         parseSchema content
@@ -43,7 +44,7 @@ addToProject sourceInfo content project =
     let
         path : String
         path =
-            extractPath sourceInfo.kind
+            sourceInfo.kind |> SourceKind.path
     in
     if path |> String.endsWith ".sql" then
         case

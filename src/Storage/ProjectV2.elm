@@ -9,8 +9,12 @@ import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodeColor, decodeFileLineIndex, decodeFileModified, decodeFileName, decodeFileSize, decodeFileUrl, decodePosition, decodePosix, decodeZoomLevel, encodeColor, encodeFileLineIndex, encodeFileModified, encodeFileName, encodeFileSize, encodeFileUrl, encodePosition, encodePosix, encodeZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceKind(..), SourceLine, SourceName, Table, TableProps, Unique, UniqueName, defaultLayout, defaultTime, initProjectSettings, layoutNameAsString, stringAsLayoutName)
+import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, defaultLayout, defaultTime, initProjectSettings)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 
@@ -29,7 +33,7 @@ encodeProject value =
         , ( "sources", value.sources |> Encode.list encodeSource )
         , ( "layout", value.layout |> encodeLayout )
         , ( "usedLayout", value.usedLayout |> E.maybe encodeLayoutName )
-        , ( "layouts", value.layouts |> Encode.dict layoutNameAsString encodeLayout )
+        , ( "layouts", value.layouts |> Encode.dict LayoutName.toString encodeLayout )
         , ( "settings", value.settings |> E.withDefaultDeep encodeProjectSettings initProjectSettings )
         , ( "createdAt", value.createdAt |> encodePosix )
         , ( "updatedAt", value.updatedAt |> encodePosix )
@@ -45,7 +49,7 @@ decodeProject =
         (Decode.field "sources" (Decode.list decodeSource))
         (D.defaultField "layout" decodeLayout defaultLayout)
         (D.maybeField "usedLayout" decodeLayoutName)
-        (D.defaultField "layouts" (D.dict stringAsLayoutName decodeLayout) Dict.empty)
+        (D.defaultField "layouts" (D.dict LayoutName.fromString decodeLayout) Dict.empty)
         (D.defaultFieldDeep "settings" decodeProjectSettings initProjectSettings)
         (D.defaultField "createdAt" decodePosix defaultTime)
         (D.defaultField "updatedAt" decodePosix defaultTime)
@@ -449,12 +453,12 @@ decodeSourceLine =
 
 encodeTableId : TableId -> Value
 encodeTableId value =
-    Encode.string (TableId.asString value)
+    Encode.string (TableId.toString value)
 
 
 decodeTableId : Decode.Decoder TableId
 decodeTableId =
-    Decode.string |> Decode.map TableId.parseString
+    Decode.string |> Decode.map TableId.fromString
 
 
 encodeSchemaName : SchemaName -> Value

@@ -13,6 +13,7 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Position exposing (Position)
 import Models.Project as ProjectV2
+import Models.Project.SourceKind as SourceKindV2
 import Time
 
 
@@ -269,10 +270,10 @@ upgradeProjectSource tables relations fromSample source =
     , kind =
         case source.source of
             LocalFile name size modified ->
-                ProjectV2.LocalFile name size modified
+                SourceKindV2.LocalFile name size modified
 
             RemoteFile url size ->
-                ProjectV2.RemoteFile url size
+                SourceKindV2.RemoteFile url size
     , content =
         let
             sources : Dict Int String

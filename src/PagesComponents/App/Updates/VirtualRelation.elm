@@ -1,7 +1,8 @@
 module PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 
 import Libs.Position exposing (Position)
-import Models.Project exposing (ColumnRef, Relation)
+import Models.Project exposing (Relation)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import PagesComponents.App.Models exposing (Model, VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Updates.Helpers exposing (setProject, setRelations)
 

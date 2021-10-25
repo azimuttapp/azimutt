@@ -7,8 +7,12 @@ import Libs.Dict as D
 import Libs.Fuzz as F exposing (listN)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceKind(..), SourceLine, SourceName, Table, TableProps, Unique, UniqueName)
+import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceLine, SourceName, Table, TableProps, Unique, UniqueName)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, zoomLevel)

@@ -9,7 +9,8 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task as T
-import Models.Project exposing (ColumnName, ColumnRef)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId
 import PagesComponents.App.Models exposing (DragId, Msg(..), TimeInfo)
 import Time
@@ -51,7 +52,7 @@ withColumnName column table =
 
 columnRefAsHtmlId : ColumnRef -> HtmlId
 columnRefAsHtmlId ref =
-    TableId.asHtmlId ref.table |> withColumnName ref.column
+    TableId.toHtmlId ref.table |> withColumnName ref.column
 
 
 formatDate : TimeInfo -> Time.Posix -> String

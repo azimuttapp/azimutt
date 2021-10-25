@@ -4,7 +4,8 @@ import Dict
 import Libs.Bool as B
 import Libs.Dict as D
 import Libs.Maybe as M
-import Models.Project exposing (LayoutName, Project, initLayout)
+import Models.Project exposing (Project, initLayout)
+import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Model, Msg)
 import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import Ports exposing (activateTooltipsAndPopovers, observeTablesSize, saveProject, track)

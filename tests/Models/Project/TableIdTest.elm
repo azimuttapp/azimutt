@@ -19,12 +19,12 @@ suite : Test
 suite =
     describe "Models.Project.TableId"
         [ describe "asHtmlId"
-            [ test "round-trip" (\_ -> tableId |> TableId.asHtmlId |> TableId.parseHtmlId |> Expect.equal tableId)
-            , test "serialize" (\_ -> tableId |> TableId.asHtmlId |> Expect.equal "table-public-users")
+            [ test "round-trip" (\_ -> tableId |> TableId.toHtmlId |> TableId.fromHtmlId |> Expect.equal tableId)
+            , test "serialize" (\_ -> tableId |> TableId.toHtmlId |> Expect.equal "table-public-users")
             ]
         , describe "asString"
-            [ test "round-trip" (\_ -> tableId |> TableId.asString |> TableId.parseString |> Expect.equal tableId)
-            , test "serialize" (\_ -> tableId |> TableId.asString |> Expect.equal "public.users")
+            [ test "round-trip" (\_ -> tableId |> TableId.toString |> TableId.fromString |> Expect.equal tableId)
+            , test "serialize" (\_ -> tableId |> TableId.toString |> Expect.equal "public.users")
             ]
         , describe "show"
             [ test "round-trip" (\_ -> tableId2 |> TableId.show |> TableId.parse |> Expect.equal tableId2)

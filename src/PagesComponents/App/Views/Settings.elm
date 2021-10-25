@@ -10,7 +10,8 @@ import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll)
 import Libs.DateTime exposing (formatDate, formatTime)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
 import Libs.Maybe as M
-import Models.Project exposing (Project, ProjectId, Source, SourceKind(..))
+import Models.Project exposing (Project, ProjectId, Source)
+import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), TimeInfo)
 import PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewFileLoader)
 import Time

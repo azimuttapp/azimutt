@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationFull, RelationName, SampleName, Source, SourceId, SourceInfo, SourceKind(..), SourceLine, SourceName, Table, TableProps, Unique, UniqueName, build, computeRelations, computeTables, create, defaultLayout, defaultTime, extractPath, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, layoutNameAsString, showColumnRef, stringAsLayoutName, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationFull, RelationName, SampleName, Source, SourceId, SourceInfo, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, build, computeRelations, computeTables, create, defaultLayout, defaultTime, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, tablesArea, viewportArea, viewportSize, withNullableInfo)
 
 import Array exposing (Array)
 import Conf exposing (conf)
@@ -7,14 +7,18 @@ import Libs.Area as Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color, FileLineIndex, FileModified, FileName, FileSize, FileUrl, UID, ZoomLevel)
+import Libs.Models exposing (Color, FileLineIndex, UID, ZoomLevel)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.String as S
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.SourceKind exposing (SourceKind)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Time
@@ -58,11 +62,6 @@ type alias SourceInfo =
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
-
-
-type SourceKind
-    = LocalFile FileName FileSize FileModified
-    | RemoteFile FileUrl FileSize
 
 
 type alias Table =
@@ -112,10 +111,6 @@ type alias Comment =
 
 type alias Relation =
     { name : RelationName, src : ColumnRef, ref : ColumnRef, origins : List Origin }
-
-
-type alias ColumnRef =
-    { table : TableId, column : ColumnName }
 
 
 type alias RelationFull =
@@ -209,10 +204,6 @@ type alias SourceLine =
     String
 
 
-type alias ColumnName =
-    String
-
-
 type alias ColumnIndex =
     Int
 
@@ -242,10 +233,6 @@ type alias CheckName =
 
 
 type alias RelationName =
-    String
-
-
-type alias LayoutName =
     String
 
 
@@ -310,31 +297,6 @@ mergeRelation r1 r2 =
     { r1 | origins = r1.origins ++ r2.origins }
 
 
-layoutNameAsString : LayoutName -> String
-layoutNameAsString name =
-    name
-
-
-stringAsLayoutName : String -> LayoutName
-stringAsLayoutName name =
-    name
-
-
-showColumnRef : ColumnRef -> String
-showColumnRef ref =
-    TableId.show ref.table ++ "." ++ ref.column
-
-
-extractPath : SourceKind -> String
-extractPath sourceContent =
-    case sourceContent of
-        LocalFile path _ _ ->
-            path
-
-        RemoteFile url _ ->
-            url
-
-
 inPrimaryKey : Table -> ColumnName -> Maybe PrimaryKey
 inPrimaryKey table column =
     table.primaryKey |> M.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
@@ -389,7 +351,7 @@ tablesArea domInfos tables =
     let
         positions : List ( TableProps, Size )
         positions =
-            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.asHtmlId t.id) |> M.mapOrElse .size (Size 0 0))
+            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> M.mapOrElse .size (Size 0 0))
 
         left : Float
         left =

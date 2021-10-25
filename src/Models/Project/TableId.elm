@@ -1,4 +1,4 @@
-module Models.Project.TableId exposing (TableId, asHtmlId, asString, parse, parseHtmlId, parseString, show)
+module Models.Project.TableId exposing (TableId, fromHtmlId, fromString, parse, show, toHtmlId, toString)
 
 import Conf exposing (conf)
 import Libs.Models.HtmlId as HtmlId exposing (HtmlId)
@@ -11,13 +11,13 @@ type alias TableId =
     ( SchemaName, TableName )
 
 
-asHtmlId : TableId -> HtmlId
-asHtmlId ( schema, table ) =
+toHtmlId : TableId -> HtmlId
+toHtmlId ( schema, table ) =
     "table-" ++ schema ++ "-" ++ (table |> HtmlId.encode)
 
 
-parseHtmlId : HtmlId -> TableId
-parseHtmlId id =
+fromHtmlId : HtmlId -> TableId
+fromHtmlId id =
     case String.split "-" id of
         "table" :: schema :: table :: [] ->
             ( schema, table |> HtmlId.decode )
@@ -26,13 +26,13 @@ parseHtmlId id =
             ( conf.default.schema, id )
 
 
-asString : TableId -> String
-asString ( schema, table ) =
+toString : TableId -> String
+toString ( schema, table ) =
     schema ++ "." ++ table
 
 
-parseString : String -> TableId
-parseString id =
+fromString : String -> TableId
+fromString id =
     case String.split "." id of
         schema :: table :: [] ->
             ( schema, table )

@@ -12,7 +12,8 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
-import Models.Project exposing (ColumnRef, FindPath, FindPathPath, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Table, showColumnRef)
+import Models.Project exposing (FindPath, FindPathPath, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Table)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Msg(..))
 
@@ -127,7 +128,7 @@ viewSelectInput ref selectedValue buildMsg tables =
     select
         [ class "form-select"
         , id (conf.ids.findPathModal ++ "-" ++ ref)
-        , onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.parseString |> buildMsg)
+        , onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg)
         ]
         (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
             :: (tables
@@ -135,7 +136,7 @@ viewSelectInput ref selectedValue buildMsg tables =
                     |> List.map
                         (\t ->
                             option
-                                [ value (TableId.asString t.id)
+                                [ value (TableId.toString t.id)
                                 , selected (selectedValue |> M.contains t.id)
                                 ]
                                 [ text (TableId.show t.id) ]
@@ -212,7 +213,7 @@ viewPathStep s =
 
 viewPathStepDetails : String -> ColumnRef -> ColumnRef -> List (Html msg)
 viewPathStepDetails dir from to =
-    [ text " > ", abbr [ title (showColumnRef from ++ " " ++ dir ++ " " ++ showColumnRef to), bsToggle Tooltip ] [ text (TableId.show to.table) ] ]
+    [ text " > ", abbr [ title (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to), bsToggle Tooltip ] [ text (TableId.show to.table) ] ]
 
 
 buildQuery : TableId -> FindPathPath -> String
@@ -225,10 +226,10 @@ buildQuery table joins =
                     (\s ->
                         case s.direction of
                             Right ->
-                                "\n  JOIN " ++ TableId.show s.relation.ref.table ++ " ON " ++ showColumnRef s.relation.ref ++ " = " ++ showColumnRef s.relation.src
+                                "\n  JOIN " ++ TableId.show s.relation.ref.table ++ " ON " ++ ColumnRef.show s.relation.ref ++ " = " ++ ColumnRef.show s.relation.src
 
                             Left ->
-                                "\n  JOIN " ++ TableId.show s.relation.src.table ++ " ON " ++ showColumnRef s.relation.src ++ " = " ++ showColumnRef s.relation.ref
+                                "\n  JOIN " ++ TableId.show s.relation.src.table ++ " ON " ++ ColumnRef.show s.relation.src ++ " = " ++ ColumnRef.show s.relation.ref
                     )
                 |> String.join ""
            )

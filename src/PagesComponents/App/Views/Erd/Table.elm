@@ -23,7 +23,9 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Position as Position
 import Libs.String as S
-import Models.Project exposing (Check, Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, withNullableInfo)
+import Models.Project exposing (Check, Column, Comment, Index, PrimaryKey, RelationFull, Table, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, withNullableInfo)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
@@ -41,17 +43,17 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
         [ class "erd-table"
         , class props.color
         , classList [ ( "selected", props.selected ) ]
-        , id (TableId.asHtmlId table.id)
+        , id (TableId.toHtmlId table.id)
         , placeAt props.position
         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
         , domInfo |> M.mapOrElse (\i -> sizeAttr i.size) (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)
-        , onDrag (TableId.asHtmlId table.id)
+        , onDrag (TableId.toHtmlId table.id)
         ]
         [ lazy3 viewHeader zoom index table
         , lazy5 viewColumns hover virtualRelation table tableRelations props.columns
-        , lazy4 viewHiddenColumns (TableId.asHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns
+        , lazy4 viewHiddenColumns (TableId.toHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns
         ]
 
 
@@ -59,7 +61,7 @@ viewHeader : ZoomLevel -> Int -> Table -> Html Msg
 viewHeader zoom index table =
     div [ class "header", style "display" "flex", style "align-items" "center" ]
         [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (TableId.show ( table.schema, table.name )) ] ])
-        , bsDropdown (TableId.asHtmlId table.id ++ "-settings-dropdown")
+        , bsDropdown (TableId.toHtmlId table.id ++ "-settings-dropdown")
             []
             (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])
             (\attrs ->
@@ -199,7 +201,7 @@ viewColumnDropdown columnRelations ref element =
     case
         columnRelations
             |> List.filter (\relation -> relation.src.table.id /= ref.table)
-            |> L.groupBy (\relation -> relation.src.table.id |> TableId.asString)
+            |> L.groupBy (\relation -> relation.src.table.id |> TableId.toString)
             |> Dict.values
             |> List.concatMap (\tableRelations -> [ tableRelations.head ])
             |> List.map

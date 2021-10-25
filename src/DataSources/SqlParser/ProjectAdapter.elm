@@ -7,7 +7,8 @@ import Libs.Dict as D
 import Libs.Models exposing (FileLineContent)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (Check, Column, ColumnRef, Comment, Index, PrimaryKey, Relation, Source, SourceId, SourceInfo, SourceKind(..), Table, Unique)
+import Models.Project exposing (Check, Column, Comment, Index, PrimaryKey, Relation, Source, SourceId, SourceInfo, Table, Unique)
+import Models.Project.ColumnRef exposing (ColumnRef)
 
 
 buildSourceFromSql : SourceInfo -> List FileLineContent -> SqlSchema -> Source

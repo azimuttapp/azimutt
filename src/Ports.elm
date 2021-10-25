@@ -99,12 +99,12 @@ observeSize id =
 
 observeTableSize : TableId -> Cmd msg
 observeTableSize id =
-    observeSizes [ TableId.asHtmlId id ]
+    observeSizes [ TableId.toHtmlId id ]
 
 
 observeTablesSize : List TableId -> Cmd msg
 observeTablesSize ids =
-    observeSizes (List.map TableId.asHtmlId ids)
+    observeSizes (List.map TableId.toHtmlId ids)
 
 
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg

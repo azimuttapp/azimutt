@@ -64,7 +64,7 @@ dragAction dragState model =
             let
                 tableId : TableId
                 tableId =
-                    TableId.parseHtmlId id
+                    TableId.fromHtmlId id
 
                 selected : Bool
                 selected =
@@ -100,7 +100,7 @@ computeSelectedArea domInfos canvas dragState =
 tableArea : TableProps -> Dict HtmlId DomInfo -> Area
 tableArea table domInfos =
     domInfos
-        |> Dict.get (TableId.asHtmlId table.id)
+        |> Dict.get (TableId.toHtmlId table.id)
         |> M.mapOrElse (\domInfo -> { position = table.position, size = domInfo.size })
             { position = Position 0 0, size = Size 0 0 }
 

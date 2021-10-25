@@ -77,7 +77,7 @@ viewTableList tables layout =
                                 (groupedTables
                                     |> Nel.map
                                         (\t ->
-                                            ( TableId.asString t.id
+                                            ( TableId.toString t.id
                                             , div [ class "list-group-item d-flex", title (TableId.show t.id) ]
                                                 [ div [ class "text-truncate me-auto" ] [ text (TableId.show t.id) ]
                                                 , cond (layout.tables |> L.memberBy .id t.id)
