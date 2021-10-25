@@ -8,8 +8,10 @@ import Html.Attributes exposing (checked, class, id, tabindex, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll)
 import Libs.DateTime exposing (formatDate, formatTime)
+import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
 import Libs.Maybe as M
+import Libs.Task exposing (send)
 import Models.Project exposing (Project, ProjectId, Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), TimeInfo)
@@ -57,7 +59,13 @@ viewSourceHtml time icon updatedAt labelTitle source =
             ]
         , span []
             [ small [ class "text-muted", title ("at " ++ formatTime time.zone updatedAt) ] [ text (formatDate time.zone updatedAt) ]
-            , button [ type_ "button", class "link ms-2", title "remove this source" ] [ viewIcon Icon.trash ]
+            , button
+                [ type_ "button"
+                , class "link ms-2"
+                , title "remove this source"
+                , onClick (OpenConfirm { content = span [] [ text "Delete ", bText source.name, text " source?" ], cmd = send (SourceMsg (DeleteSource source.id)) })
+                ]
+                [ viewIcon Icon.trash ]
             , button [ type_ "button", class "link ms-2", title "refresh this source" ] [ viewIcon Icon.syncAlt ]
             ]
         ]

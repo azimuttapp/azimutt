@@ -38,3 +38,6 @@ handleSource msg model =
             ( model |> setProject (setSources (List.map (\s -> B.cond (s.id == sourceId) { s | enabled = not s.enabled } s)))
             , observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
             )
+
+        DeleteSource sourceId ->
+            ( model |> setProject (setSources (List.filter (\s -> s.id /= sourceId))), Cmd.none )

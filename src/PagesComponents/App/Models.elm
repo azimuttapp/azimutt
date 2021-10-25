@@ -102,6 +102,7 @@ type SourceMsg
     | LoadSample SampleName
     | FileLoaded ProjectId SourceInfo FileContent
     | ToggleSource SourceId
+    | DeleteSource SourceId
 
 
 type LayoutMsg
