@@ -12,11 +12,13 @@ import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (onWheel)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (HtmlId, ZoomLevel)
+import Libs.Models exposing (ZoomLevel)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
-import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Project, Relation, RelationFull, Table, TableId, TableProps, tableIdAsHtmlId, tableIdAsString, viewportSize)
+import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Project, Relation, RelationFull, Table, TableProps, viewportSize)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Helpers exposing (pagePosToCanvasPos)
 import PagesComponents.App.Models exposing (CursorMode(..), DragState, Hover, Msg(..), VirtualRelation)
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
@@ -89,8 +91,8 @@ viewTables hover virtualRelation domInfos zoom layoutTables shownRelations table
         (layoutTables
             |> List.reverse
             |> L.filterZip (\t -> tables |> Dict.get t.id)
-            |> List.map (\( p, t ) -> ( ( t, p ), ( shownRelations |> List.filter (\r -> r.src.table.id == t.id || r.ref.table.id == t.id), domInfos |> Dict.get (tableIdAsHtmlId p.id) ) ))
-            |> List.indexedMap (\i ( ( table, props ), ( rels, domInfo ) ) -> ( tableIdAsString table.id, lazy8 viewTable hover virtualRelation zoom i table props rels domInfo ))
+            |> List.map (\( p, t ) -> ( ( t, p ), ( shownRelations |> List.filter (\r -> r.src.table.id == t.id || r.ref.table.id == t.id), domInfos |> Dict.get (TableId.asHtmlId p.id) ) ))
+            |> List.indexedMap (\i ( ( table, props ), ( rels, domInfo ) ) -> ( TableId.asString table.id, lazy8 viewTable hover virtualRelation zoom i table props rels domInfo ))
         )
 
 
@@ -122,7 +124,7 @@ buildColumnRefFull tables layoutTables layoutTablesSize domInfos ref =
                 , props =
                     M.zip
                         (layoutTables |> Dict.get ref.table)
-                        (domInfos |> Dict.get (tableIdAsHtmlId ref.table))
+                        (domInfos |> Dict.get (TableId.asHtmlId ref.table))
                         |> Maybe.map (\( ( t, i ), d ) -> ( t, layoutTablesSize - 1 - i, d.size ))
                 }
             )

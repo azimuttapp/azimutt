@@ -15,7 +15,8 @@ import Libs.Maybe as M
 import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project exposing (Column, Layout, LayoutName, Project, Table, TableId, showTableId)
+import Models.Project exposing (Column, Layout, LayoutName, Project, Table)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
 import Tracking exposing (events)
 
@@ -224,7 +225,7 @@ buildSuggestions tables layout search =
 asSuggestions : Layout -> Search -> Table -> List Suggestion
 asSuggestions layout search table =
     { priority = 0 - matchStrength table layout search
-    , content = viewIcon Icon.angleRight :: text " " :: highlightMatch search (showTableId table.id)
+    , content = viewIcon Icon.angleRight :: text " " :: highlightMatch search (TableId.show table.id)
     , msg = ShowTable table.id
     }
         :: (table.columns |> Ned.values |> Nel.filterMap (columnSuggestion search table))
@@ -235,7 +236,7 @@ columnSuggestion search table column =
     if column.name == search then
         Just
             { priority = 0 - 0.5
-            , content = viewIcon Icon.angleDoubleRight :: [ text (" " ++ showTableId table.id ++ "."), b [] [ text column.name ] ]
+            , content = viewIcon Icon.angleDoubleRight :: [ text (" " ++ TableId.show table.id ++ "."), b [] [ text column.name ] ]
             , msg = ShowTable table.id
             }
 

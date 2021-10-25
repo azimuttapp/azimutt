@@ -6,7 +6,7 @@ import Libs.Delta exposing (Delta)
 import Libs.Maybe as M
 import Libs.Models exposing (ZoomLevel)
 import Libs.Position exposing (Position)
-import Models.Project exposing (Project, Source, computeProjectRelations, computeProjectTables)
+import Models.Project as Project exposing (Project, Source)
 
 
 setTime : (t -> t) -> { item | time : t } -> { item | time : t }
@@ -35,8 +35,8 @@ setSources transform project =
         |> (\sources ->
                 { project
                     | sources = sources
-                    , tables = sources |> computeProjectTables
-                    , relations = sources |> computeProjectRelations
+                    , tables = sources |> Project.computeTables
+                    , relations = sources |> Project.computeRelations
                 }
            )
 

@@ -7,10 +7,12 @@ import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (FileContent, HtmlId, SizeChange, ZoomDelta)
+import Libs.Models exposing (FileContent, SizeChange, ZoomDelta)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position exposing (Position)
 import Libs.Task as T
-import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, ProjectId, Relation, SampleName, SourceId, SourceInfo, Table, TableId)
+import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, ProjectId, Relation, SampleName, SourceId, SourceInfo, Table)
+import Models.Project.TableId exposing (TableId)
 import Ports exposing (JsMsg)
 import Time
 

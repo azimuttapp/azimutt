@@ -9,7 +9,10 @@ import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodeColor, decodeFileLineIndex, decodeFileModified, decodeFileName, decodeFileSize, decodeFileUrl, decodePosition, decodePosix, decodeZoomLevel, encodeColor, encodeFileLineIndex, encodeFileModified, encodeFileName, encodeFileSize, encodeFileUrl, encodePosition, encodePosix, encodeZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, SchemaName, Source, SourceId, SourceKind(..), SourceLine, SourceName, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, defaultLayout, defaultTime, initProjectSettings, layoutNameAsString, stringAsLayoutName, stringAsTableId, tableIdAsString)
+import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceKind(..), SourceLine, SourceName, Table, TableProps, Unique, UniqueName, defaultLayout, defaultTime, initProjectSettings, layoutNameAsString, stringAsLayoutName)
+import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableName exposing (TableName)
 
 
 currentVersion : Int
@@ -36,7 +39,7 @@ encodeProject value =
 
 decodeProject : Decode.Decoder Project
 decodeProject =
-    D.map9 buildProject
+    D.map9 Project.build
         (Decode.field "id" decodeProjectId)
         (Decode.field "name" decodeProjectName)
         (Decode.field "sources" (Decode.list decodeSource))
@@ -446,12 +449,12 @@ decodeSourceLine =
 
 encodeTableId : TableId -> Value
 encodeTableId value =
-    Encode.string (tableIdAsString value)
+    Encode.string (TableId.asString value)
 
 
 decodeTableId : Decode.Decoder TableId
 decodeTableId =
-    Decode.string |> Decode.map stringAsTableId
+    Decode.string |> Decode.map TableId.parseString
 
 
 encodeSchemaName : SchemaName -> Value

@@ -7,10 +7,11 @@ import Libs.Delta as Delta
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (HtmlId)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
-import Models.Project exposing (CanvasProps, Project, TableId, TableProps, htmlIdAsTableId, tableIdAsHtmlId)
+import Models.Project exposing (CanvasProps, Project, TableProps)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (CursorMode(..), DragId, DragState, Msg)
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
 import Ports exposing (toastInfo)
@@ -63,7 +64,7 @@ dragAction dragState model =
             let
                 tableId : TableId
                 tableId =
-                    htmlIdAsTableId id
+                    TableId.parseHtmlId id
 
                 selected : Bool
                 selected =
@@ -99,7 +100,7 @@ computeSelectedArea domInfos canvas dragState =
 tableArea : TableProps -> Dict HtmlId DomInfo -> Area
 tableArea table domInfos =
     domInfos
-        |> Dict.get (tableIdAsHtmlId table.id)
+        |> Dict.get (TableId.asHtmlId table.id)
         |> M.mapOrElse (\domInfo -> { position = table.position, size = domInfo.size })
             { position = Position 0 0, size = Size 0 0 }
 

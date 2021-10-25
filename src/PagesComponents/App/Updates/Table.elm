@@ -6,7 +6,8 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (ColumnName, ColumnRef, Layout, Project, Table, TableId, inIndexes, inOutRelation, inPrimaryKey, inUniques, initTableProps, showTableId, withNullableInfo)
+import Models.Project exposing (ColumnName, ColumnRef, Layout, Project, Table, inIndexes, inOutRelation, inPrimaryKey, inUniques, initTableProps, withNullableInfo)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models as Models exposing (Msg)
 import PagesComponents.App.Updates.Helpers exposing (setLayout)
 import Ports exposing (activateTooltipsAndPopovers, observeTableSize, observeTablesSize, toastError, toastInfo)
@@ -17,13 +18,13 @@ showTable id project =
     case project.tables |> Dict.get id of
         Just table ->
             if project.layout.tables |> L.memberBy .id id then
-                ( project, toastInfo ("Table <b>" ++ showTableId id ++ "</b> already shown") )
+                ( project, toastInfo ("Table <b>" ++ TableId.show id ++ "</b> already shown") )
 
             else
                 ( project |> performShowTable id table, Cmd.batch [ observeTableSize id, activateTooltipsAndPopovers ] )
 
         Nothing ->
-            ( project, toastError ("Can't show table <b>" ++ showTableId id ++ "</b>: not found") )
+            ( project, toastError ("Can't show table <b>" ++ TableId.show id ++ "</b>: not found") )
 
 
 showTables : List TableId -> Project -> ( Project, Cmd Msg )
@@ -48,8 +49,8 @@ showTables ids project =
                 ( s
                 , Cmd.batch
                     (cond (found |> List.isEmpty) [] [ observeTablesSize found, activateTooltipsAndPopovers ]
-                        ++ cond (shown |> List.isEmpty) [] [ toastInfo ("Tables " ++ (shown |> List.map showTableId |> String.join ", ") ++ " are ealready shown") ]
-                        ++ cond (notFound |> List.isEmpty) [] [ toastInfo ("Can't show tables " ++ (notFound |> List.map showTableId |> String.join ", ") ++ ": can't found them") ]
+                        ++ cond (shown |> List.isEmpty) [] [ toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are ealready shown") ]
+                        ++ cond (notFound |> List.isEmpty) [] [ toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them") ]
                     )
                 )
            )

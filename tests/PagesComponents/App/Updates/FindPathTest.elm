@@ -5,7 +5,9 @@ import Expect
 import Libs.Dict as D
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project exposing (Column, ColumnName, ColumnRef, FindPathSettings, FindPathStep, FindPathStepDir(..), Relation, Table, TableId, TableName)
+import Models.Project exposing (Column, ColumnName, ColumnRef, FindPathSettings, FindPathStep, FindPathStepDir(..), Relation, Table)
+import Models.Project.TableId exposing (TableId)
+import Models.Project.TableName exposing (TableName)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
 import Test exposing (Test, describe, test)
 

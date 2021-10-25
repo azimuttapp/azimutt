@@ -9,7 +9,8 @@ import Libs.Models exposing (SizeChange)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task exposing (send)
-import Models.Project exposing (Layout, TableProps, htmlIdAsTableId, viewportArea)
+import Models.Project exposing (Layout, TableProps, viewportArea)
+import Models.Project.TableId as TableId
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
 import PagesComponents.App.Models exposing (CursorMode(..), Hover, Model, Msg(..))
 import Ports exposing (toastInfo)
@@ -31,8 +32,8 @@ initializeTableOnFirstSize model change =
         |> Maybe.andThen
             (\p ->
                 Maybe.map3 (\t props canvasInfos -> ( t, props, canvasInfos ))
-                    (p.tables |> Dict.get (htmlIdAsTableId change.id))
-                    (p.layout.tables |> L.findBy .id (htmlIdAsTableId change.id))
+                    (p.tables |> Dict.get (TableId.parseHtmlId change.id))
+                    (p.layout.tables |> L.findBy .id (TableId.parseHtmlId change.id))
                     (model.domInfos |> Dict.get conf.ids.erd)
                     |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.domInfos |> Dict.member change.id))
                     |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (viewportArea canvasInfos.size p.layout.canvas))

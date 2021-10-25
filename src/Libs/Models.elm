@@ -1,15 +1,12 @@
-module Libs.Models exposing (Color, FileContent, FileLine, FileLineContent, FileLineIndex, FileModified, FileName, FileSize, FileUrl, HtmlId, Image, Link, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta, ZoomLevel)
+module Libs.Models exposing (Color, FileContent, FileLine, FileLineContent, FileLineIndex, FileModified, FileName, FileSize, FileUrl, Image, Link, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta, ZoomLevel)
 
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
 import Time
 
 
 type alias UID =
-    String
-
-
-type alias HtmlId =
     String
 
 

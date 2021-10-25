@@ -9,8 +9,10 @@ import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
-import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text, TrackEvent)
-import Models.Project exposing (Project, ProjectId, SampleName, SourceId, TableId, tableIdAsHtmlId)
+import Libs.Models exposing (FileContent, FileUrl, SizeChange, Text, TrackEvent)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Models.Project exposing (Project, ProjectId, SampleName, SourceId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Storage.Project as Project
 import Time
 
@@ -97,12 +99,12 @@ observeSize id =
 
 observeTableSize : TableId -> Cmd msg
 observeTableSize id =
-    observeSizes [ tableIdAsHtmlId id ]
+    observeSizes [ TableId.asHtmlId id ]
 
 
 observeTablesSize : List TableId -> Cmd msg
 observeTablesSize ids =
-    observeSizes (List.map tableIdAsHtmlId ids)
+    observeSizes (List.map TableId.asHtmlId ids)
 
 
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg

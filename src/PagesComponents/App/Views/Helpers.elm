@@ -5,11 +5,12 @@ import Html.Attributes exposing (attribute, style)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse as Mouse
 import Libs.DateTime as DateTime
-import Libs.Models exposing (HtmlId)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.Task as T
-import Models.Project exposing (ColumnName, ColumnRef, tableIdAsHtmlId)
+import Models.Project exposing (ColumnName, ColumnRef)
+import Models.Project.TableId as TableId
 import PagesComponents.App.Models exposing (DragId, Msg(..), TimeInfo)
 import Time
 
@@ -50,7 +51,7 @@ withColumnName column table =
 
 columnRefAsHtmlId : ColumnRef -> HtmlId
 columnRefAsHtmlId ref =
-    tableIdAsHtmlId ref.table |> withColumnName ref.column
+    TableId.asHtmlId ref.table |> withColumnName ref.column
 
 
 formatDate : TimeInfo -> Time.Posix -> String

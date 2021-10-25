@@ -7,7 +7,8 @@ import Libs.Dict as D
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Libs.Position exposing (Position)
-import Models.Project exposing (CanvasProps, Column, ColumnRef, Comment, FindPathSettings, Index, Layout, Origin, PrimaryKey, Project, Relation, Source, SourceKind(..), Table, TableId, TableProps, Unique, initProjectSettings)
+import Models.Project exposing (CanvasProps, Column, ColumnRef, Comment, FindPathSettings, Index, Layout, Origin, PrimaryKey, Project, Relation, Source, SourceKind(..), Table, TableProps, Unique, initProjectSettings)
+import Models.Project.TableId exposing (TableId)
 import Storage.ProjectV2 exposing (..)
 import Test exposing (Test, describe)
 import TestHelpers.JsonTest exposing (jsonFuzz, jsonTest)

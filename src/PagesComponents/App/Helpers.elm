@@ -4,7 +4,7 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Maybe as M
-import Libs.Models exposing (HtmlId)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Models.Project exposing (CanvasProps)
 

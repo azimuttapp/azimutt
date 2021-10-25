@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationFull, RelationName, SampleName, SchemaName, Source, SourceId, SourceInfo, SourceKind(..), SourceLine, SourceName, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, computeProjectRelations, computeProjectTables, defaultLayout, defaultTime, extractPath, htmlIdAsTableId, htmlIdDecode, htmlIdEncode, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProject, initProjectSettings, initTableProps, layoutNameAsString, parseTableId, showColumnRef, showTableId, showTableName, stringAsLayoutName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationFull, RelationName, SampleName, Source, SourceId, SourceInfo, SourceKind(..), SourceLine, SourceName, Table, TableProps, Unique, UniqueName, build, computeRelations, computeTables, create, defaultLayout, defaultTime, extractPath, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, layoutNameAsString, showColumnRef, stringAsLayoutName, tablesArea, viewportArea, viewportSize, withNullableInfo)
 
 import Array exposing (Array)
 import Conf exposing (conf)
@@ -7,14 +7,17 @@ import Libs.Area as Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color, FileLineIndex, FileModified, FileName, FileSize, FileUrl, HtmlId, UID, ZoomLevel)
+import Libs.Models exposing (Color, FileLineIndex, FileModified, FileName, FileSize, FileUrl, UID, ZoomLevel)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.String as S
+import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableName exposing (TableName)
 import Time
-import Url exposing (percentDecode, percentEncode)
 
 
 type alias Project =
@@ -206,18 +209,6 @@ type alias SourceLine =
     String
 
 
-type alias TableId =
-    ( SchemaName, TableName )
-
-
-type alias SchemaName =
-    String
-
-
-type alias TableName =
-    String
-
-
 type alias ColumnName =
     String
 
@@ -262,18 +253,18 @@ type alias SampleName =
     String
 
 
-initProject : ProjectId -> ProjectName -> Source -> Project
-initProject id name source =
-    buildProject id name [ source ] (initLayout source.createdAt) Nothing Dict.empty initProjectSettings source.createdAt source.updatedAt
+create : ProjectId -> ProjectName -> Source -> Project
+create id name source =
+    build id name [ source ] (initLayout source.createdAt) Nothing Dict.empty initProjectSettings source.createdAt source.updatedAt
 
 
-buildProject : ProjectId -> ProjectName -> List Source -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
-buildProject id name sources layout usedLayout layouts settings createdAt updatedAt =
+build : ProjectId -> ProjectName -> List Source -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
+build id name sources layout usedLayout layouts settings createdAt updatedAt =
     { id = id
     , name = name
     , sources = sources
-    , tables = sources |> computeProjectTables
-    , relations = sources |> computeProjectRelations
+    , tables = sources |> computeTables
+    , relations = sources |> computeRelations
     , layout = layout
     , usedLayout = usedLayout
     , layouts = layouts
@@ -283,13 +274,13 @@ buildProject id name sources layout usedLayout layouts settings createdAt update
     }
 
 
-computeProjectTables : List Source -> Dict TableId Table
-computeProjectTables sources =
+computeTables : List Source -> Dict TableId Table
+computeTables sources =
     sources |> List.filter .enabled |> List.map .tables |> List.foldr mergeTables Dict.empty
 
 
-computeProjectRelations : List Source -> List Relation
-computeProjectRelations sources =
+computeRelations : List Source -> List Relation
+computeRelations sources =
     sources |> List.filter .enabled |> List.map .relations |> List.foldr mergeRelations []
 
 
@@ -319,46 +310,6 @@ mergeRelation r1 r2 =
     { r1 | origins = r1.origins ++ r2.origins }
 
 
-htmlIdEncode : String -> HtmlId
-htmlIdEncode text =
-    text |> percentEncode
-
-
-htmlIdDecode : String -> HtmlId
-htmlIdDecode text =
-    text |> percentDecode |> Maybe.withDefault text
-
-
-tableIdAsHtmlId : TableId -> HtmlId
-tableIdAsHtmlId ( schema, table ) =
-    "table-" ++ schema ++ "-" ++ (table |> htmlIdEncode)
-
-
-htmlIdAsTableId : HtmlId -> TableId
-htmlIdAsTableId id =
-    case String.split "-" id of
-        "table" :: schema :: table :: [] ->
-            ( schema, table |> htmlIdDecode )
-
-        _ ->
-            ( conf.default.schema, id )
-
-
-tableIdAsString : TableId -> String
-tableIdAsString ( schema, table ) =
-    schema ++ "." ++ table
-
-
-stringAsTableId : String -> TableId
-stringAsTableId id =
-    case String.split "." id of
-        schema :: table :: [] ->
-            ( schema, table )
-
-        _ ->
-            ( conf.default.schema, id )
-
-
 layoutNameAsString : LayoutName -> String
 layoutNameAsString name =
     name
@@ -369,36 +320,9 @@ stringAsLayoutName name =
     name
 
 
-showTableName : SchemaName -> TableName -> String
-showTableName schema table =
-    if schema == conf.default.schema then
-        table
-
-    else
-        schema ++ "." ++ table
-
-
-showTableId : TableId -> String
-showTableId ( schema, table ) =
-    showTableName schema table
-
-
-parseTableId : String -> TableId
-parseTableId tableId =
-    case tableId |> String.split "." of
-        table :: [] ->
-            ( conf.default.schema, table )
-
-        schema :: table :: [] ->
-            ( schema, table )
-
-        _ ->
-            ( conf.default.schema, tableId )
-
-
 showColumnRef : ColumnRef -> String
 showColumnRef ref =
-    showTableId ref.table ++ "." ++ ref.column
+    TableId.show ref.table ++ "." ++ ref.column
 
 
 extractPath : SourceKind -> String
@@ -465,7 +389,7 @@ tablesArea domInfos tables =
     let
         positions : List ( TableProps, Size )
         positions =
-            tables |> L.zipWith (\t -> domInfos |> Dict.get (tableIdAsHtmlId t.id) |> M.mapOrElse .size (Size 0 0))
+            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.asHtmlId t.id) |> M.mapOrElse .size (Size 0 0))
 
         left : Float
         left =

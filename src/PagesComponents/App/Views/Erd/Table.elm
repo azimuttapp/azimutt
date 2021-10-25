@@ -23,7 +23,8 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Position as Position
 import Libs.String as S
-import Models.Project exposing (Check, Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
+import Models.Project exposing (Check, Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, withNullableInfo)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)
@@ -40,25 +41,25 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
         [ class "erd-table"
         , class props.color
         , classList [ ( "selected", props.selected ) ]
-        , id (tableIdAsHtmlId table.id)
+        , id (TableId.asHtmlId table.id)
         , placeAt props.position
         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
         , domInfo |> M.mapOrElse (\i -> sizeAttr i.size) (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)
-        , onDrag (tableIdAsHtmlId table.id)
+        , onDrag (TableId.asHtmlId table.id)
         ]
         [ lazy3 viewHeader zoom index table
         , lazy5 viewColumns hover virtualRelation table tableRelations props.columns
-        , lazy4 viewHiddenColumns (tableIdAsHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns
+        , lazy4 viewHiddenColumns (TableId.asHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns
         ]
 
 
 viewHeader : ZoomLevel -> Int -> Table -> Html Msg
 viewHeader zoom index table =
     div [ class "header", style "display" "flex", style "align-items" "center" ]
-        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (showTableName table.schema table.name) ] ])
-        , bsDropdown (tableIdAsHtmlId table.id ++ "-settings-dropdown")
+        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (TableId.show ( table.schema, table.name )) ] ])
+        , bsDropdown (TableId.asHtmlId table.id ++ "-settings-dropdown")
             []
             (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])
             (\attrs ->
@@ -198,7 +199,7 @@ viewColumnDropdown columnRelations ref element =
     case
         columnRelations
             |> List.filter (\relation -> relation.src.table.id /= ref.table)
-            |> L.groupBy (\relation -> relation.src.table.id |> tableIdAsString)
+            |> L.groupBy (\relation -> relation.src.table.id |> TableId.asString)
             |> Dict.values
             |> List.concatMap (\tableRelations -> [ tableRelations.head ])
             |> List.map
@@ -207,7 +208,7 @@ viewColumnDropdown columnRelations ref element =
                         [ button ([ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ] ++ track events.showTableWithIncomingRelationsDropdown)
                             [ viewIcon Icon.externalLinkAlt
                             , text " "
-                            , b [] [ text (showTableId relation.src.table.id) ]
+                            , b [] [ text (TableId.show relation.src.table.id) ]
                             , text ("" |> withColumnName relation.src.column.name |> withNullableInfo relation.src.column.nullable)
                             ]
                         ]
@@ -331,4 +332,4 @@ formatCheckTitle checks =
 
 formatReference : RelationFull -> String
 formatReference rel =
-    showTableName (rel.ref.table.id |> Tuple.first) (rel.ref.table.id |> Tuple.second) |> withColumnName rel.ref.column.name
+    TableId.show rel.ref.table.id |> withColumnName rel.ref.column.name

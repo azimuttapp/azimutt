@@ -6,7 +6,8 @@ import Libs.Maybe as M
 import Libs.Models exposing (Color)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
-import Models.Project exposing (Column, ColumnRefFull, RelationFull, RelationName, Table, TableProps, showTableId)
+import Models.Project exposing (Column, ColumnRefFull, RelationFull, RelationName, Table, TableProps)
+import Models.Project.TableId as TableId
 import PagesComponents.App.Models exposing (Hover, Msg)
 import PagesComponents.App.Views.Helpers exposing (withColumnName)
 import Svg exposing (Svg, line, svg, text)
@@ -171,4 +172,4 @@ formatText name src ref =
 
 formatRef : Table -> Column -> String
 formatRef table column =
-    showTableId table.id |> withColumnName column.name
+    TableId.show table.id |> withColumnName column.name

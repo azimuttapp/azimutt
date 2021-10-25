@@ -5,7 +5,8 @@ import Dict exposing (Dict)
 import Libs.Maybe as M
 import Libs.Nel as Nel
 import Libs.Task exposing (sendAfter)
-import Models.Project exposing (FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), ProjectSettings, Relation, Table, TableId)
+import Models.Project exposing (FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), ProjectSettings, Relation, Table)
+import Models.Project.TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..))
 import PagesComponents.App.Updates.Helpers exposing (setProject, setSettings)
 import Ports exposing (activateTooltipsAndPopovers, showModal, track)

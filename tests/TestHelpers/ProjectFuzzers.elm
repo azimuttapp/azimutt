@@ -7,13 +7,16 @@ import Libs.Dict as D
 import Libs.Fuzz as F exposing (listN)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, SchemaName, Source, SourceId, SourceKind(..), SourceLine, SourceName, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject)
+import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceKind(..), SourceLine, SourceName, Table, TableProps, Unique, UniqueName)
+import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.TableId exposing (TableId)
+import Models.Project.TableName exposing (TableName)
 import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, zoomLevel)
 
 
 project : Fuzzer Project
 project =
-    F.map9 buildProject projectId projectName (listSmall source) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings posix posix
+    F.map9 Project.build projectId projectName (listSmall source) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings posix posix
 
 
 source : Fuzzer Source

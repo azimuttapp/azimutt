@@ -14,10 +14,12 @@ import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll, bsT
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.HtmlId as HtmlId
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S exposing (plural)
-import Models.Project exposing (Layout, Project, Table, TableId, htmlIdEncode, showTableId, tableIdAsString)
+import Models.Project exposing (Layout, Project, Table)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (Msg(..))
 
 
@@ -66,18 +68,18 @@ viewTableList tables layout =
                 |> List.concatMap
                     (\( groupTitle, groupedTables ) ->
                         [ ( groupTitle
-                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> htmlIdEncode) ++ "-table-list"))
+                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> HtmlId.encode) ++ "-table-list"))
                                 [ text (groupTitle ++ " (" ++ plural (Nel.length groupedTables) "" "1 table" "tables" ++ ")") ]
                           )
                         , ( groupTitle ++ "-collapse"
                           , Keyed.node "div"
-                                [ class "collapse show", id ((groupTitle |> htmlIdEncode) ++ "-table-list") ]
+                                [ class "collapse show", id ((groupTitle |> HtmlId.encode) ++ "-table-list") ]
                                 (groupedTables
                                     |> Nel.map
                                         (\t ->
-                                            ( tableIdAsString t.id
-                                            , div [ class "list-group-item d-flex", title (showTableId t.id) ]
-                                                [ div [ class "text-truncate me-auto" ] [ text (showTableId t.id) ]
+                                            ( TableId.asString t.id
+                                            , div [ class "list-group-item d-flex", title (TableId.show t.id) ]
+                                                [ div [ class "text-truncate me-auto" ] [ text (TableId.show t.id) ]
                                                 , cond (layout.tables |> L.memberBy .id t.id)
                                                     (button [ type_ "button", class "link text-muted", onClick (HideTable t.id) ] [ viewIcon Icon.eyeSlash ])
                                                     (button [ type_ "button", class "link text-muted", onClick (ShowTable t.id) ] [ viewIcon Icon.eye ])
