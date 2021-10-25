@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependIf, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependIf, prependOn, replaceOrAppend, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -179,6 +179,32 @@ appendOn maybe transform list =
 
         Nothing ->
             list
+
+
+replaceOrAppend : (a -> comparable) -> a -> List a -> List a
+replaceOrAppend id item list =
+    case
+        list
+            |> List.foldr
+                (\a ( acc, it ) ->
+                    case it of
+                        Just i ->
+                            if id a == id i then
+                                ( i :: acc, Nothing )
+
+                            else
+                                ( a :: acc, it )
+
+                        Nothing ->
+                            ( a :: acc, it )
+                )
+                ( [], Just item )
+    of
+        ( acc, Just a ) ->
+            acc ++ [ a ]
+
+        ( acc, Nothing ) ->
+            acc
 
 
 zipWith : (a -> b) -> List a -> List ( a, b )

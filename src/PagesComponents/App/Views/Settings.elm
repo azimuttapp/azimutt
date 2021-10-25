@@ -31,25 +31,33 @@ viewSettings time project =
                         ]
                     , div [ class "offcanvas-body" ]
                         [ h6 [] [ text "Project sources" ]
-                        , div [ class "list-group" ] ((p.sources |> List.map (viewSource time)) ++ [ viewAddSource p.id ])
+                        , div [ class "list-group" ] ((p.sources |> List.map (viewSource p.id time)) ++ [ viewAddSource p.id ])
                         ]
                     ]
             )
             (div [] [])
 
 
-viewSource : TimeInfo -> Source -> Html Msg
-viewSource time source =
+viewSource : ProjectId -> TimeInfo -> Source -> Html Msg
+viewSource project time source =
     case source.kind of
         LocalFile path _ modified ->
-            viewSourceHtml time Icon.fileUpload modified (path ++ " file") source
+            viewSourceHtml time Icon.fileUpload modified (path ++ " file") source (viewFileLoader "" (Just project) (Just source.id))
 
         RemoteFile url _ ->
-            viewSourceHtml time Icon.cloudDownloadAlt source.updatedAt ("File from " ++ url) source
+            let
+                msg : Msg
+                msg =
+                    OpenConfirm
+                        { content = span [] [ text "Refresh ", bText source.name, text " source with ", bText url, text "?" ]
+                        , cmd = send (SourceMsg (LoadRemoteFile (Just project) (Just source.id) url))
+                        }
+            in
+            viewSourceHtml time Icon.cloudDownloadAlt source.updatedAt ("File from " ++ url) source (\html -> button [ type_ "button", class "link", onClick msg ] [ html ])
 
 
-viewSourceHtml : TimeInfo -> Icon -> Time.Posix -> String -> Source -> Html Msg
-viewSourceHtml time icon updatedAt labelTitle source =
+viewSourceHtml : TimeInfo -> Icon -> Time.Posix -> String -> Source -> (Html Msg -> Html Msg) -> Html Msg
+viewSourceHtml time icon updatedAt labelTitle source refreshButton =
     div [ class "list-group-item d-flex justify-content-between align-items-center" ]
         [ label [ title labelTitle ]
             [ input [ type_ "checkbox", class "form-check-input me-2", checked source.enabled, onClick (SourceMsg (ToggleSource source.id)) ] []
@@ -66,11 +74,11 @@ viewSourceHtml time icon updatedAt labelTitle source =
                 , onClick (OpenConfirm { content = span [] [ text "Delete ", bText source.name, text " source?" ], cmd = send (SourceMsg (DeleteSource source.id)) })
                 ]
                 [ viewIcon Icon.trash ]
-            , button [ type_ "button", class "link ms-2", title "refresh this source" ] [ viewIcon Icon.syncAlt ]
+            , span [ class "ms-2", title "refresh this source" ] [ refreshButton (viewIcon Icon.syncAlt) ]
             ]
         ]
 
 
 viewAddSource : ProjectId -> Html Msg
 viewAddSource project =
-    viewFileLoader "list-group-item list-group-item-action" (Just project) (small [] [ viewIcon Icon.plus, text " ", text "Add source" ])
+    viewFileLoader "list-group-item list-group-item-action" (Just project) Nothing (small [] [ viewIcon Icon.plus, text " ", text "Add source" ])

@@ -19,13 +19,17 @@ suite =
         , describe "move"
             [ test "move an item from a position to an other" (\_ -> [ 1, 2, 3, 4, 5 ] |> L.move 0 2 |> Expect.equal [ 2, 3, 1, 4, 5 ])
             ]
-        , describe "uniqueBy"
-            [ test "get unique values" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" }, { id = 1, name = "c" } ] |> L.uniqueBy .id |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "b" } ])
+        , describe "replaceOrAppend"
+            [ test "replace a value" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" } ] |> L.replaceOrAppend .id { id = 2, name = "bb" } |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "bb" } ])
+            , test "append a value" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" } ] |> L.replaceOrAppend .id { id = 3, name = "c" } |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "b" }, { id = 3, name = "c" } ])
             ]
         , describe "dropWhile"
             [ test "drop items while its true" (\_ -> [ 1, 2, 3, 4, 5 ] |> L.dropWhile (\i -> i < 3) |> Expect.equal [ 3, 4, 5 ])
             ]
         , describe "dropUntil"
             [ test "drop items while its false" (\_ -> [ 1, 2, 3, 4, 5 ] |> L.dropUntil (\i -> i == 3) |> Expect.equal [ 3, 4, 5 ])
+            ]
+        , describe "uniqueBy"
+            [ test "get unique values" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" }, { id = 1, name = "c" } ] |> L.uniqueBy .id |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "b" } ])
             ]
         ]

@@ -1,9 +1,10 @@
-module PagesComponents.App.Updates.Project exposing (addToProject, createProject, deleteProject, useProject)
+module PagesComponents.App.Updates.Project exposing (createProject, deleteProject, updateProject, useProject)
 
 import Conf exposing (conf)
 import DataSources.SqlParser.FileParser exposing (parseSchema)
 import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 import Dict
+import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (FileContent, TrackEvent)
@@ -39,8 +40,8 @@ createProject projectId sourceInfo content model =
         |> loadProject events.createProject model
 
 
-addToProject : SourceInfo -> FileContent -> Project -> ( Project, Cmd Msg )
-addToProject sourceInfo content project =
+updateProject : SourceInfo -> FileContent -> Project -> ( Project, Cmd Msg )
+updateProject sourceInfo content project =
     let
         path : String
         path =
@@ -50,7 +51,14 @@ addToProject sourceInfo content project =
         case
             parseSchema content
                 |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
-                |> Tuple.mapSecond (\source -> ( project |> setSources (\sources -> sources ++ [ source ]), events.addSource source ))
+                |> Tuple.mapSecond
+                    (\source ->
+                        if project.sources |> List.any (\s -> s.id == source.id) then
+                            ( project |> setSources (List.map (\s -> B.cond (s.id == source.id) source s)), events.refreshSource source )
+
+                        else
+                            ( project |> setSources (\sources -> sources ++ [ source ]), events.addSource source )
+                    )
         of
             ( errors, ( updatedProject, event ) ) ->
                 ( updatedProject

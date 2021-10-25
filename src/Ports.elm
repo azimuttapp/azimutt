@@ -14,6 +14,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project exposing (Project, ProjectId, SampleName, SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Storage.Project as Project
+import Storage.Source as Source
 import Time
 
 
@@ -77,14 +78,14 @@ dropProject project =
     messageToJs (DropProject project)
 
 
-readLocalFile : Maybe ProjectId -> File -> Cmd msg
-readLocalFile project file =
-    messageToJs (GetLocalFile project file)
+readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> Cmd msg
+readLocalFile project source file =
+    messageToJs (GetLocalFile project source file)
 
 
-readRemoteFile : FileUrl -> Maybe SampleName -> Cmd msg
-readRemoteFile url sample =
-    messageToJs (GetRemoteFile url sample)
+readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleName -> Cmd msg
+readRemoteFile project source url sample =
+    messageToJs (GetRemoteFile project source url sample)
 
 
 observeSizes : List HtmlId -> Cmd msg
@@ -146,8 +147,8 @@ type ElmMsg
     | LoadProjects
     | SaveProject Project
     | DropProject Project
-    | GetLocalFile (Maybe ProjectId) File
-    | GetRemoteFile FileUrl (Maybe SampleName)
+    | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
+    | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleName)
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | TrackPage String
@@ -216,11 +217,11 @@ elmEncoder elm =
         DropProject project ->
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
-        GetLocalFile project file ->
-            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe Project.encodeId ), ( "file", file |> FileValue.encode ) ]
+        GetLocalFile project source file ->
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe Project.encodeId ), ( "source", source |> E.maybe Source.encodeId ), ( "file", file |> FileValue.encode ) ]
 
-        GetRemoteFile url sample ->
-            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
+        GetRemoteFile project source url sample ->
+            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> E.maybe Project.encodeId ), ( "source", source |> E.maybe Source.encodeId ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]

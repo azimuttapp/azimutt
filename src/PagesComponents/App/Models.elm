@@ -7,7 +7,7 @@ import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (FileContent, SizeChange, ZoomDelta)
+import Libs.Models exposing (FileContent, FileUrl, SizeChange, ZoomDelta)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position exposing (Position)
 import Libs.Task as T
@@ -97,8 +97,8 @@ type Msg
 type SourceMsg
     = FileDragOver File (List File)
     | FileDragLeave
-    | FileDropped (Maybe ProjectId) File (List File)
-    | FileSelected (Maybe ProjectId) File
+    | LoadLocalFile (Maybe ProjectId) (Maybe SourceId) File
+    | LoadRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl
     | LoadSample SampleName
     | FileLoaded ProjectId SourceInfo FileContent
     | ToggleSource SourceId

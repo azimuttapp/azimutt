@@ -6,7 +6,7 @@ import Libs.Bool as B
 import Libs.Maybe as M
 import PagesComponents.App.Models exposing (Model, Msg(..), SourceMsg(..))
 import PagesComponents.App.Updates.Helpers exposing (setProject, setSources, setSwitch)
-import PagesComponents.App.Updates.Project exposing (addToProject, createProject)
+import PagesComponents.App.Updates.Project exposing (createProject, updateProject)
 import Ports exposing (observeTablesSize, readLocalFile, readRemoteFile, toastError)
 
 
@@ -19,19 +19,20 @@ handleSource msg model =
         FileDragLeave ->
             ( model, Cmd.none )
 
-        FileDropped project file _ ->
-            ( model |> setSwitch (\s -> { s | loading = True }), readLocalFile project file )
+        LoadLocalFile project source file ->
+            ( model |> setSwitch (\s -> { s | loading = True }), readLocalFile project source file )
 
-        FileSelected project file ->
-            ( model |> setSwitch (\s -> { s | loading = True }), readLocalFile project file )
+        LoadRemoteFile project source url ->
+            ( model, readRemoteFile project source url Nothing )
 
         LoadSample name ->
-            ( model, schemaSamples |> Dict.get name |> M.mapOrElse (\( _, url ) -> readRemoteFile url (Just name)) (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
+            ( model, schemaSamples |> Dict.get name |> M.mapOrElse (\( _, url ) -> readRemoteFile Nothing Nothing url (Just name)) (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
 
         FileLoaded projectId sourceInfo content ->
             model.project
                 |> M.filter (\project -> project.id == projectId)
-                |> M.mapOrElse (\project -> project |> addToProject sourceInfo content |> Tuple.mapFirst (\p -> { model | project = Just p }))
+                |> M.mapOrElse
+                    (\project -> project |> updateProject sourceInfo content |> Tuple.mapFirst (\p -> { model | project = Just p }))
                     (model |> createProject projectId sourceInfo content)
 
         ToggleSource sourceId ->

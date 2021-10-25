@@ -36,8 +36,8 @@ window.addEventListener('load', function() {
                 case 'LoadProjects':  loadProjects(); break;
                 case 'SaveProject':   saveProject(msg.project); break;
                 case 'DropProject':   dropProject(msg.project); break;
-                case 'GetLocalFile':  getLocalFile(msg.project, msg.file); break;
-                case 'GetRemoteFile': getRemoteFile(msg.url, msg.sample); break;
+                case 'GetLocalFile':  getLocalFile(msg.project, msg.source, msg.file); break;
+                case 'GetRemoteFile': getRemoteFile(msg.project, msg.source, msg.url, msg.sample); break;
                 case 'ObserveSizes':  observeSizes(msg.ids); break;
                 case 'ListenKeys':    listenHotkeys(msg.keys); break;
                 case 'TrackPage':     analytics.then(a => a.trackPage(msg.name)); break;
@@ -134,16 +134,30 @@ window.addEventListener('load', function() {
         localStorage.removeItem(projectPrefix + project.id)
     }
 
-    function getLocalFile(maybeProjectId, file) {
+    function getLocalFile(maybeProjectId, maybeSourceId, file) {
         const reader = new FileReader()
-        reader.onload = e => sendToElm({kind: 'GotLocalFile', now: Date.now(), projectId: maybeProjectId || randomUID(), sourceId: randomUID(), file, content: e.target.result})
+        reader.onload = e => sendToElm({
+            kind: 'GotLocalFile',
+            now: Date.now(),
+            projectId: maybeProjectId || randomUID(),
+            sourceId: maybeSourceId || randomUID(),
+            file, content: e.target.result
+        })
         reader.readAsText(file)
     }
 
-    function getRemoteFile(url, sample) {
+    function getRemoteFile(maybeProjectId, maybeSourceId, url, sample) {
         fetch(url)
             .then(res => res.text())
-            .then(content => sendToElm({kind: 'GotRemoteFile', now: Date.now(), projectId: randomUID(), sourceId: randomUID(), url, content, sample}))
+            .then(content => sendToElm({
+                kind: 'GotRemoteFile',
+                now: Date.now(),
+                projectId: maybeProjectId || randomUID(),
+                sourceId: maybeSourceId || randomUID(),
+                url,
+                content,
+                sample
+            }))
             .catch(err => showToast({kind: 'error', message: err}))
     }
 

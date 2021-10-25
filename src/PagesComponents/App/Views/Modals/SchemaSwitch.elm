@@ -12,7 +12,7 @@ import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsTo
 import Libs.Html exposing (bText, codeText, divIf, extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledBy, role)
 import Libs.String as S
-import Models.Project exposing (Project, ProjectId)
+import Models.Project exposing (Project, ProjectId, SourceId)
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), Switch, TimeInfo)
 import PagesComponents.App.Views.Helpers exposing (formatDate, onClickConfirm)
 import Time
@@ -65,6 +65,7 @@ viewFileUpload switch =
     div [ class "mt-3" ]
         [ viewFileLoader "drop-zone"
             Nothing
+            Nothing
             (if switch.loading then
                 div [ class "spinner-grow text-secondary", role "status" ] [ span [ class "visually-hidden" ] [ text "Loading..." ] ]
 
@@ -74,17 +75,17 @@ viewFileUpload switch =
         ]
 
 
-viewFileLoader : String -> Maybe ProjectId -> Html Msg -> Html Msg
-viewFileLoader labelClass project content =
+viewFileLoader : String -> Maybe ProjectId -> Maybe SourceId -> Html Msg -> Html Msg
+viewFileLoader labelClass project source content =
     label
         ([ for "file-loader", role "button", class labelClass ]
             ++ FileValue.onDrop
                 { onOver = \head tail -> SourceMsg (FileDragOver head tail)
                 , onLeave = Just { id = "file-drop", msg = SourceMsg FileDragLeave }
-                , onDrop = \head tail -> SourceMsg (FileDropped project head tail)
+                , onDrop = \head _ -> SourceMsg (LoadLocalFile project source head)
                 }
         )
-        [ hiddenInputSingle "file-loader" [ ".sql" ] (\file -> SourceMsg (FileSelected project file)), content ]
+        [ hiddenInputSingle "file-loader" [ ".sql" ] (\file -> SourceMsg (LoadLocalFile project source file)), content ]
 
 
 viewSampleSchemas : Html Msg

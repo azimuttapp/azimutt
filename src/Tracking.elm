@@ -27,6 +27,7 @@ events :
     , updateProject : Project -> TrackEvent
     , deleteProject : Project -> TrackEvent
     , addSource : Source -> TrackEvent
+    , refreshSource : Source -> TrackEvent
     , createLayout : Layout -> TrackEvent
     , loadLayout : Layout -> TrackEvent
     , updateLayout : Layout -> TrackEvent
@@ -49,6 +50,7 @@ events =
     , updateProject = projectEvent "update"
     , deleteProject = projectEvent "delete"
     , addSource = sourceEvent "add"
+    , refreshSource = sourceEvent "refresh"
     , createLayout = layoutEvent "create"
     , loadLayout = layoutEvent "load"
     , updateLayout = layoutEvent "update"
