@@ -129,8 +129,12 @@ parseAlterTableAddConstraintForeignKey constraint =
         triggers : String
         triggers =
             "(?:\\s+ON UPDATE " ++ action ++ ")?(?:\\s+ON DELETE " ++ action ++ ")?"
+
+        deferrable : String
+        deferrable =
+            "(?:(?:\\s+NOT)?\\s+DEFERRABLE)?"
     in
-    case constraint |> R.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ triggers ++ "(?:\\s+NOT DEFERRABLE)?$") of
+    case constraint |> R.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ triggers ++ deferrable ++ "$") of
         (Just column) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
             Ok
                 { column = column |> buildColumnName

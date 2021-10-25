@@ -68,5 +68,8 @@ suite =
             , testParseSql ( parseAlterTableAddConstraintForeignKey, "with on delete not deferrable" )
                 """FOREIGN KEY ("postId") REFERENCES post_entity(id) ON DELETE CASCADE NOT DEFERRABLE"""
                 { column = "postId", ref = { schema = Nothing, table = "post_entity", column = Just "id" } }
+            , testParseSql ( parseAlterTableAddConstraintForeignKey, "with on update on delete and deferrable" )
+                """FOREIGN KEY (postId) REFERENCES public.post(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE"""
+                { column = "postId", ref = { schema = Just "public", table = "post", column = Just "id" } }
             ]
         ]
