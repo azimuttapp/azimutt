@@ -7,6 +7,7 @@ import Json.Decode as Decode
 import Libs.Dict as D
 import Libs.Json.Decode as D
 import Libs.Json.Formats exposing (decodeColor, decodePosition, decodePosix, decodeZoomLevel)
+import Libs.Maybe as M
 import Libs.Models exposing (Color, UID, ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
@@ -280,9 +281,9 @@ upgradeProjectSource tables relations fromSample source =
 
             max : Int
             max =
-                sources |> Dict.keys |> List.maximum |> Maybe.map (\i -> i + 1) |> Maybe.withDefault 0
+                sources |> Dict.keys |> List.maximum |> M.mapOrElse (\i -> i + 1) 0
         in
-        List.repeat max "" |> List.indexedMap (\i a -> sources |> Dict.get i |> Maybe.withDefault a) |> Array.fromList
+        List.repeat max "" |> List.indexedMap (\i a -> sources |> D.getOrElse i a) |> Array.fromList
     , tables = tables |> Dict.map (\_ -> upgradeTable)
     , relations = relations |> List.map upgradeRelation
     , enabled = True

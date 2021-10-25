@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationFull, RelationName, SampleName, SchemaName, Source, SourceId, SourceInfo, SourceKind(..), SourceLine, SourceName, Table, TableId, TableName, TableProps, Unique, UniqueName, addSource, buildProject, defaultLayout, defaultTime, extractPath, htmlIdAsTableId, htmlIdDecode, htmlIdEncode, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProject, initProjectSettings, initTableProps, layoutNameAsString, mergeRelations, mergeTables, parseTableId, showColumnRef, showTableId, showTableName, stringAsLayoutName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationFull, RelationName, SampleName, SchemaName, Source, SourceId, SourceInfo, SourceKind(..), SourceLine, SourceName, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, computeProjectRelations, computeProjectTables, defaultLayout, defaultTime, extractPath, htmlIdAsTableId, htmlIdDecode, htmlIdEncode, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProject, initProjectSettings, initTableProps, layoutNameAsString, parseTableId, showColumnRef, showTableId, showTableName, stringAsLayoutName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
 
 import Array exposing (Array)
 import Conf exposing (conf)
@@ -272,8 +272,8 @@ buildProject id name sources layout usedLayout layouts settings createdAt update
     { id = id
     , name = name
     , sources = sources
-    , tables = sources |> List.filter .enabled |> List.map .tables |> List.foldr mergeTables Dict.empty
-    , relations = sources |> List.filter .enabled |> List.map .relations |> List.foldr mergeRelations []
+    , tables = sources |> computeProjectTables
+    , relations = sources |> computeProjectRelations
     , layout = layout
     , usedLayout = usedLayout
     , layouts = layouts
@@ -283,14 +283,14 @@ buildProject id name sources layout usedLayout layouts settings createdAt update
     }
 
 
-addSource : Source -> Project -> Project
-addSource source project =
-    { project
-        | sources = project.sources ++ [ source ]
-        , tables = mergeTables project.tables source.tables
-        , relations = mergeRelations project.relations source.relations
-        , updatedAt = source.updatedAt
-    }
+computeProjectTables : List Source -> Dict TableId Table
+computeProjectTables sources =
+    sources |> List.filter .enabled |> List.map .tables |> List.foldr mergeTables Dict.empty
+
+
+computeProjectRelations : List Source -> List Relation
+computeProjectRelations sources =
+    sources |> List.filter .enabled |> List.map .relations |> List.foldr mergeRelations []
 
 
 mergeTables : Dict TableId Table -> Dict TableId Table -> Dict TableId Table

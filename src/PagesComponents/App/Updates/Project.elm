@@ -9,8 +9,9 @@ import Libs.Maybe as M
 import Libs.Models exposing (FileContent, TrackEvent)
 import Libs.String as S
 import Libs.Task as T
-import Models.Project exposing (Project, ProjectId, ProjectName, SourceInfo, SourceKind(..), addSource, extractPath, initProject)
+import Models.Project exposing (Project, ProjectId, ProjectName, SourceInfo, SourceKind(..), extractPath, initProject)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
+import PagesComponents.App.Updates.Helpers exposing (setSources)
 import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
 import Tracking exposing (events)
 
@@ -48,7 +49,7 @@ addToProject sourceInfo content project =
         case
             parseSchema content
                 |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
-                |> Tuple.mapSecond (\source -> ( project |> addSource source, events.addSource source ))
+                |> Tuple.mapSecond (\source -> ( project |> setSources (\sources -> sources ++ [ source ]), events.addSource source ))
         of
             ( errors, ( updatedProject, event ) ) ->
                 ( updatedProject

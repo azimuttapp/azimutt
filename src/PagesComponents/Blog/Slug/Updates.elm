@@ -29,7 +29,7 @@ parseContent slug content =
                         R.ap3
                             (\title author published ->
                                 { title = title
-                                , excerpt = (props |> Dict.get "excerpt" |> Maybe.withDefault (mdStart |> String.trim)) |> String.left 280 |> String.trim
+                                , excerpt = (props |> D.getOrElse "excerpt" (mdStart |> String.trim)) |> String.left 280 |> String.trim
                                 , category = props |> Dict.get "category"
                                 , tags = props |> Dict.get "tags" |> M.mapOrElse (\tags -> tags |> String.split "," |> List.map String.trim) []
                                 , author = author

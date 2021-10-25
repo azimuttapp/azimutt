@@ -2,6 +2,7 @@ module PagesComponents.App.Updates.Layout exposing (handleLayout)
 
 import Dict
 import Libs.Bool as B
+import Libs.Dict as D
 import Libs.Maybe as M
 import Models.Project exposing (LayoutName, Project, initLayout)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Model, Msg)
@@ -78,4 +79,4 @@ deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 deleteLayout name project =
     { project | usedLayout = B.cond (project.usedLayout == Just name) Nothing (Just name) }
         |> setLayouts (Dict.update name (\_ -> Nothing))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.deleteLayout (project.layouts |> Dict.get name |> Maybe.withDefault (initLayout (Time.millisToPosix 0)))) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.deleteLayout (project.layouts |> D.getOrElse name (initLayout (Time.millisToPosix 0)))) ] ))
