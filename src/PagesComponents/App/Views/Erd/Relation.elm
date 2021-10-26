@@ -6,7 +6,8 @@ import Libs.Maybe as M
 import Libs.Models exposing (Color)
 import Libs.Position exposing (Position)
 import Libs.Size exposing (Size)
-import Models.Project exposing (Column, ColumnRefFull, RelationFull, RelationName, Table, TableProps)
+import Models.Project exposing (Column, ColumnRefFull, RelationFull, Table, TableProps)
+import Models.Project.RelationName exposing (RelationName)
 import Models.Project.TableId as TableId
 import PagesComponents.App.Models exposing (Hover, Msg)
 import PagesComponents.App.Views.Helpers exposing (withColumnName)

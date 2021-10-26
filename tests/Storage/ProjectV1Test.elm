@@ -7,7 +7,7 @@ import Libs.Dict as D
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Libs.Position exposing (Position)
-import Storage.ProjectV1 exposing (CanvasProps, Column, ColumnRef, Comment, FindPathSettings, Index, Layout, PrimaryKey, Project, ProjectSource, ProjectSourceContent(..), Relation, Schema, Source, SourceLine, Table, TableProps, Unique, decodeProject, defaultProjectSettings, upgrade)
+import Storage.ProjectV1 exposing (CanvasPropsV1, ColumnRefV1, ColumnV1, CommentV1, FindPathSettingsV1, IndexV1, LayoutV1, PrimaryKeyV1, ProjectSourceContentV1(..), ProjectSourceV1, ProjectV1, RelationV1, SchemaV1, SourceLineV1, SourceV1, TablePropsV1, TableV1, UniqueV1, decodeProject, defaultProjectSettings, upgrade)
 import Storage.ProjectV2Test as ProjectV2Test
 import Test exposing (Test, describe, test)
 import Time
@@ -27,12 +27,12 @@ suite =
         ]
 
 
-project0 : Project
+project0 : ProjectV1
 project0 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 1102)) (time 1100) (time 1101)) []
-    , schema = Schema Dict.empty [] (Layout (CanvasProps (Position 1 2) 0.75) [] [] (time 1200) (time 1201))
+    , sources = Nel (ProjectSourceV1 "src-1" "source 1" (LocalFileV1 "structure.sql" 10000 (time 1102)) (time 1100) (time 1101)) []
+    , schema = SchemaV1 Dict.empty [] (LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [] [] (time 1200) (time 1201))
     , layouts = Dict.empty
     , currentLayout = Nothing
     , settings = defaultProjectSettings
@@ -49,19 +49,19 @@ project0Json =
         ++ """"schema":{"tables":[],"relations":[],"layout":{"canvas":{"position":{"left":1,"top":2},"zoom":0.75},"tables":[],"createdAt":1200,"updatedAt":1201}},"layouts":{},"createdAt":1000,"updatedAt":1001,"version":1}"""
 
 
-project1 : Project
+project1 : ProjectV1
 project1 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
+    , sources = Nel (ProjectSourceV1 "src-1" "source 1" (LocalFileV1 "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
     , schema =
-        { tables = D.fromListMap .id [ Table ( "public", "users" ) "public" "users" (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
+        { tables = D.fromListMap .id [ TableV1 ( "public", "users" ) "public" "users" (Ned.singletonMap .name (ColumnV1 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
         , relations = []
-        , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
+        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
         }
-    , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) ) ]
+    , layouts = Dict.fromList [ ( "empty", LayoutV1 (CanvasPropsV1 (Position 0 0) 0.5) [] [] (time 1202) (time 1203) ) ]
     , currentLayout = Nothing
-    , settings = { findPath = FindPathSettings 4 [] [] }
+    , settings = { findPath = FindPathSettingsV1 4 [] [] }
     , createdAt = time 1000
     , updatedAt = time 1001
     , fromSample = Just "basic"
@@ -78,11 +78,11 @@ project1Json =
         ++ """"settings":{"findPath":{"maxPathLength":4}},"createdAt":1000,"updatedAt":1001,"fromSample":"basic","version":1}"""
 
 
-project2 : Project
+project2 : ProjectV1
 project2 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = Nel (ProjectSource "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
+    , sources = Nel (ProjectSourceV1 "src-1" "source 1" (LocalFileV1 "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
     , schema =
         { tables =
             D.fromListMap .id
@@ -91,53 +91,53 @@ project2 =
                   , name = "users"
                   , columns =
                         Ned.buildMap .name
-                            (Column 0 "id" "int" False Nothing Nothing [])
-                            [ Column 1 "name" "varchar" True Nothing Nothing [] ]
-                  , primaryKey = Just (PrimaryKey "users_pk" (Nel "id" []) [])
+                            (ColumnV1 0 "id" "int" False Nothing Nothing [])
+                            [ ColumnV1 1 "name" "varchar" True Nothing Nothing [] ]
+                  , primaryKey = Just (PrimaryKeyV1 "users_pk" (Nel "id" []) [])
                   , uniques = []
                   , indexes = []
                   , checks = []
                   , comment = Nothing
-                  , sources = [ Source "src-1" (Nel (SourceLine 10 "CREATE TABLE users") [ SourceLine 11 "  (id int NOT NULL, name varchar);" ]) ]
+                  , sources = [ SourceV1 "src-1" (Nel (SourceLineV1 10 "CREATE TABLE users") [ SourceLineV1 11 "  (id int NOT NULL, name varchar);" ]) ]
                   }
                 , { id = ( "public", "creds" )
                   , schema = "public"
                   , name = "creds"
                   , columns =
                         Ned.buildMap .name
-                            (Column 0 "user_id" "int" False Nothing Nothing [ Source "src-1" (Nel (SourceLine 14 "  user_id int NOT NULL,") []) ])
-                            [ Column 1 "login" "varchar" False Nothing Nothing [ Source "src-1" (Nel (SourceLine 15 "  login varchar NOT NULL,") []) ]
-                            , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) [ Source "src-1" (Nel (SourceLine 16 "  pass varchar NOT NULL,") []) ]
-                            , Column 3 "role" "varchar" True (Just "guest") Nothing [ Source "src-1" (Nel (SourceLine 17 "  role varchar") []) ]
+                            (ColumnV1 0 "user_id" "int" False Nothing Nothing [ SourceV1 "src-1" (Nel (SourceLineV1 14 "  user_id int NOT NULL,") []) ])
+                            [ ColumnV1 1 "login" "varchar" False Nothing Nothing [ SourceV1 "src-1" (Nel (SourceLineV1 15 "  login varchar NOT NULL,") []) ]
+                            , ColumnV1 2 "pass" "varchar" False Nothing (Just (CommentV1 "Encrypted field" [])) [ SourceV1 "src-1" (Nel (SourceLineV1 16 "  pass varchar NOT NULL,") []) ]
+                            , ColumnV1 3 "role" "varchar" True (Just "guest") Nothing [ SourceV1 "src-1" (Nel (SourceLineV1 17 "  role varchar") []) ]
                             ]
                   , primaryKey = Nothing
-                  , uniques = [ Unique "unique_login" (Nel "login" []) "(login)" [] ]
-                  , indexes = [ Index "role_idx" (Nel "role" []) "(role)" [] ]
+                  , uniques = [ UniqueV1 "unique_login" (Nel "login" []) "(login)" [] ]
+                  , indexes = [ IndexV1 "role_idx" (Nel "role" []) "(role)" [] ]
                   , checks = []
-                  , comment = Just (Comment "To allow users to login" [])
+                  , comment = Just (CommentV1 "To allow users to login" [])
                   , sources =
-                        [ Source "src-1"
-                            (Nel (SourceLine 13 "CREATE TABLE creds (")
-                                [ SourceLine 14 "  user_id int NOT NULL,"
-                                , SourceLine 15 "  login varchar NOT NULL,"
-                                , SourceLine 16 "  pass varchar NOT NULL,"
-                                , SourceLine 17 "  role varchar"
-                                , SourceLine 18 ");"
+                        [ SourceV1 "src-1"
+                            (Nel (SourceLineV1 13 "CREATE TABLE creds (")
+                                [ SourceLineV1 14 "  user_id int NOT NULL,"
+                                , SourceLineV1 15 "  login varchar NOT NULL,"
+                                , SourceLineV1 16 "  pass varchar NOT NULL,"
+                                , SourceLineV1 17 "  role varchar"
+                                , SourceLineV1 18 ");"
                                 ]
                             )
                         ]
                   }
                 ]
-        , relations = [ Relation "creds_user_id" (ColumnRef ( "public", "creds" ) "user_id") (ColumnRef ( "public", "users" ) "id") [] ]
-        , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
+        , relations = [ RelationV1 "creds_user_id" (ColumnRefV1 ( "public", "creds" ) "user_id") (ColumnRefV1 ( "public", "users" ) "id") [] ]
+        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
         }
     , layouts =
         Dict.fromList
-            [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) "red" [ "id", "name" ] True ] [] (time 1202) (time 1203) )
+            [ ( "empty", LayoutV1 (CanvasPropsV1 (Position 0 0) 0.5) [] [] (time 1202) (time 1203) )
+            , ( "users", LayoutV1 (CanvasPropsV1 (Position 12 32) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 102) "red" [ "id", "name" ] True ] [] (time 1202) (time 1203) )
             ]
     , currentLayout = Just "users"
-    , settings = { findPath = FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ] }
+    , settings = { findPath = FindPathSettingsV1 4 [ ( "public", "users" ) ] [ "created_by" ] }
     , createdAt = time 1000
     , updatedAt = time 1001
     , fromSample = Nothing

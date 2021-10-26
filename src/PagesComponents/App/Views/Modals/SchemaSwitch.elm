@@ -12,7 +12,8 @@ import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsTo
 import Libs.Html exposing (bText, codeText, divIf, extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledBy, role)
 import Libs.String as S
-import Models.Project exposing (Project, ProjectId, SourceId)
+import Models.Project exposing (Project, ProjectId)
+import Models.Project.SourceId exposing (SourceId)
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), Switch, TimeInfo)
 import PagesComponents.App.Views.Helpers exposing (formatDate, onClickConfirm)
 import Time

@@ -9,11 +9,15 @@ import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodeColor, decodeFileLineIndex, decodeFileModified, decodeFileName, decodeFileSize, decodeFileUrl, decodePosition, decodePosix, decodeZoomLevel, encodeColor, encodeFileLineIndex, encodeFileModified, encodeFileName, encodeFileSize, encodeFileUrl, encodePosition, encodePosix, encodeZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, defaultLayout, defaultTime, initProjectSettings)
+import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, SampleName, Source, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, defaultLayout, defaultTime, initProjectSettings)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
+import Models.Project.Origin exposing (Origin)
+import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.RelationName exposing (RelationName)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
@@ -279,7 +283,7 @@ encodeRelation value =
 
 decodeRelation : Decode.Decoder Relation
 decodeRelation =
-    Decode.map4 Relation
+    Decode.map4 Relation.build
         (Decode.field "name" decodeRelationName)
         (Decode.field "src" decodeColumnRef)
         (Decode.field "ref" decodeColumnRef)

@@ -1,7 +1,7 @@
 module Storage.Source exposing (encodeId)
 
 import Json.Encode exposing (Value)
-import Models.Project exposing (SourceId)
+import Models.Project.SourceId exposing (SourceId)
 import Storage.ProjectV2 as ProjectV2
 
 

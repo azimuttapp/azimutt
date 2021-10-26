@@ -7,11 +7,15 @@ import Libs.Dict as D
 import Libs.Fuzz as F exposing (listN)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationName, SampleName, Source, SourceId, SourceLine, SourceName, Table, TableProps, Unique, UniqueName)
+import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, SampleName, Source, SourceLine, SourceName, Table, TableProps, Unique, UniqueName)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Origin exposing (Origin)
+import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.RelationName exposing (RelationName)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
@@ -89,7 +93,7 @@ comment =
 
 relation : Fuzzer Relation
 relation =
-    Fuzz.map4 Relation relationName columnRef columnRef (listN 1 origin)
+    Fuzz.map4 Relation.build relationName columnRef columnRef (listN 1 origin)
 
 
 columnRef : Fuzzer ColumnRef

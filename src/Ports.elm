@@ -11,7 +11,8 @@ import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, SizeChange, Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Models.Project exposing (Project, ProjectId, SampleName, SourceId)
+import Models.Project exposing (Project, ProjectId, SampleName)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Storage.Project as Project
 import Storage.Source as Source

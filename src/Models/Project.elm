@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, Origin, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, Relation, RelationFull, RelationName, SampleName, Source, SourceId, SourceInfo, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, build, computeRelations, computeTables, create, defaultLayout, defaultTime, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, RelationFull, SampleName, Source, SourceInfo, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, build, computeRelations, computeTables, create, defaultLayout, defaultTime, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, tablesArea, viewportArea, viewportSize, withNullableInfo)
 
 import Array exposing (Array)
 import Conf exposing (conf)
@@ -7,7 +7,7 @@ import Libs.Area as Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color, FileLineIndex, UID, ZoomLevel)
+import Libs.Models exposing (Color, UID, ZoomLevel)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
@@ -17,7 +17,11 @@ import Libs.String as S
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Origin exposing (Origin)
+import Models.Project.Relation exposing (Relation)
+import Models.Project.RelationName exposing (RelationName)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
@@ -109,20 +113,12 @@ type alias Comment =
     { text : String, origins : List Origin }
 
 
-type alias Relation =
-    { name : RelationName, src : ColumnRef, ref : ColumnRef, origins : List Origin }
-
-
 type alias RelationFull =
     { name : RelationName, src : ColumnRefFull, ref : ColumnRefFull, origins : List Origin }
 
 
 type alias ColumnRefFull =
     { ref : ColumnRef, table : Table, column : Column, props : Maybe ( TableProps, Int, Size ) }
-
-
-type alias Origin =
-    { id : SourceId, lines : List FileLineIndex }
 
 
 type alias Layout =
@@ -192,10 +188,6 @@ type alias ProjectName =
     String
 
 
-type alias SourceId =
-    UID
-
-
 type alias SourceName =
     String
 
@@ -229,10 +221,6 @@ type alias IndexName =
 
 
 type alias CheckName =
-    String
-
-
-type alias RelationName =
     String
 
 

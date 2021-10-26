@@ -11,9 +11,11 @@ import Libs.Models exposing (FileContent, FileUrl, SizeChange, ZoomDelta)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position exposing (Position)
 import Libs.Task as T
-import Models.Project exposing (FindPath, FindPathSettings, Project, ProjectId, Relation, SampleName, SourceId, SourceInfo, Table)
+import Models.Project exposing (FindPath, FindPathSettings, Project, ProjectId, SampleName, SourceInfo, Table)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Relation exposing (Relation)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.TableId exposing (TableId)
 import Ports exposing (JsMsg)
 import Time
