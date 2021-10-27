@@ -3,7 +3,10 @@ module Tracking exposing (events)
 import Dict
 import Libs.Maybe as M
 import Libs.Models exposing (TrackEvent)
-import Models.Project exposing (FindPathResult, Layout, Project, Source)
+import Models.Project exposing (Project)
+import Models.Project.FindPathResult exposing (FindPathResult)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.Source exposing (Source)
 
 
 

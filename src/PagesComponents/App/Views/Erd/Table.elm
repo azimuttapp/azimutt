@@ -23,10 +23,19 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Position as Position
 import Libs.String as S
-import Models.Project exposing (Check, Column, Comment, Index, PrimaryKey, RelationFull, Table, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, withNullableInfo)
+import Models.Project exposing (inChecks, inIndexes, inPrimaryKey, inUniques, withNullableInfo)
+import Models.Project.Check exposing (Check)
+import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.Index exposing (Index)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableProps exposing (TableProps)
+import Models.Project.Unique exposing (Unique)
+import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)

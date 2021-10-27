@@ -12,8 +12,14 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
-import Models.Project exposing (FindPath, FindPathPath, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Table)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathPath exposing (FindPathPath)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.FindPathState exposing (FindPathState(..))
+import Models.Project.FindPathStep exposing (FindPathStep)
+import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Msg(..))
 

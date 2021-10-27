@@ -11,7 +11,9 @@ import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, SizeChange, Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Models.Project exposing (Project, ProjectId, SampleName)
+import Models.Project exposing (Project)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.SampleName exposing (SampleName)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Storage.Project as Project
@@ -267,7 +269,7 @@ jsDecoder =
                     Decode.map5 GotLocalFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Decode.string)
+                        (Decode.field "sourceId" Source.decodeId)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
 
@@ -275,7 +277,7 @@ jsDecoder =
                     Decode.map6 GotRemoteFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Decode.string)
+                        (Decode.field "sourceId" Source.decodeId)
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
                         (D.maybeField "sample" Decode.string)

@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSources, setSwitch, setTableInList, setTableList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
 
 import Json.Decode as Decode
 import Libs.Bool as B
@@ -6,7 +6,6 @@ import Libs.Delta exposing (Delta)
 import Libs.Maybe as M
 import Libs.Models exposing (ZoomLevel)
 import Libs.Position exposing (Position)
-import Models.Project as Project exposing (Project, Source)
 
 
 setTime : (t -> t) -> { item | time : t } -> { item | time : t }
@@ -27,18 +26,6 @@ setProject transform item =
 setProjectWithCmd : (p -> ( p, Cmd msg )) -> { item | project : Maybe p } -> ( { item | project : Maybe p }, Cmd msg )
 setProjectWithCmd transform item =
     item.project |> M.mapOrElse (\p -> p |> transform |> Tuple.mapFirst (\project -> { item | project = Just project })) ( item, Cmd.none )
-
-
-setSources : (List Source -> List Source) -> Project -> Project
-setSources transform project =
-    transform project.sources
-        |> (\sources ->
-                { project
-                    | sources = sources
-                    , tables = sources |> Project.computeTables
-                    , relations = sources |> Project.computeRelations
-                }
-           )
 
 
 setRelations : (r -> r) -> { item | relations : r } -> { item | relations : r }

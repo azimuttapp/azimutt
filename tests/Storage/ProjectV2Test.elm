@@ -7,12 +7,24 @@ import Libs.Dict as D
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Libs.Position exposing (Position)
-import Models.Project exposing (CanvasProps, Column, Comment, FindPathSettings, Index, Layout, PrimaryKey, Project, Source, Table, TableProps, Unique, initProjectSettings)
+import Models.Project exposing (Project, initProjectSettings)
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Index exposing (Index)
+import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.Project.TableProps exposing (TableProps)
+import Models.Project.Unique exposing (Unique)
 import Storage.ProjectV2 exposing (..)
 import Test exposing (Test, describe)
 import TestHelpers.JsonTest exposing (jsonFuzz, jsonTest)
@@ -49,11 +61,16 @@ suite =
         ]
 
 
+src1 : SourceId
+src1 =
+    SourceId.new "src-1"
+
+
 project0 : Project
 project0 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = [ Source "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (LocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
     , tables = Dict.empty
     , relations = []
     , layout = Layout (CanvasProps (Position 1 2) 0.75) [] [] (time 1200) (time 1201)
@@ -81,7 +98,7 @@ project1 : Project
 project1 =
     { id = "prj-0"
     , name = "Project 0"
-    , sources = [ Source "src-1" "source 1" (LocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (LocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
     , tables = tables1
     , relations = []
     , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
@@ -117,31 +134,31 @@ tables2 =
           , indexes = []
           , checks = []
           , comment = Nothing
-          , origins = [ Origin "src-1" [ 10, 11 ] ]
+          , origins = [ Origin src1 [ 10, 11 ] ]
           }
         , { id = ( "public", "creds" )
           , schema = "public"
           , name = "creds"
           , columns =
                 Ned.buildMap .name
-                    (Column 0 "user_id" "int" False Nothing Nothing [ Origin "src-1" [ 14 ] ])
-                    [ Column 1 "login" "varchar" False Nothing Nothing [ Origin "src-1" [ 15 ] ]
-                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) [ Origin "src-1" [ 16 ] ]
-                    , Column 3 "role" "varchar" True (Just "guest") Nothing [ Origin "src-1" [ 17 ] ]
+                    (Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ])
+                    [ Column 1 "login" "varchar" False Nothing Nothing [ Origin src1 [ 15 ] ]
+                    , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) [ Origin src1 [ 16 ] ]
+                    , Column 3 "role" "varchar" True (Just "guest") Nothing [ Origin src1 [ 17 ] ]
                     ]
           , primaryKey = Nothing
           , uniques = [ Unique "unique_login" (Nel "login" []) "(login)" [] ]
           , indexes = [ Index "role_idx" (Nel "role" []) "(role)" [] ]
           , checks = []
           , comment = Just (Comment "To allow users to login" [])
-          , origins = [ Origin "src-1" [ 13, 14, 15, 16, 17, 18 ] ]
+          , origins = [ Origin src1 [ 13, 14, 15, 16, 17, 18 ] ]
           }
         ]
 
 
 relations2 : List Relation
 relations2 =
-    [ Relation.build "creds_user_id" (ColumnRef ( "public", "creds" ) "user_id") (ColumnRef ( "public", "users" ) "id") [] ]
+    [ Relation.new "creds_user_id" (ColumnRef ( "public", "creds" ) "user_id") (ColumnRef ( "public", "users" ) "id") [] ]
 
 
 project2 : Project
@@ -149,7 +166,7 @@ project2 =
     { id = "prj-0"
     , name = "Project 0"
     , sources =
-        [ Source "src-1"
+        [ Source src1
             "source 1"
             (LocalFile "structure.sql" 10000 (time 200))
             (Array.fromList

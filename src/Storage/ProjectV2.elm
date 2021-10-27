@@ -9,18 +9,42 @@ import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodeColor, decodeFileLineIndex, decodeFileModified, decodeFileName, decodeFileSize, decodeFileUrl, decodePosition, decodePosix, decodeZoomLevel, encodeColor, encodeFileLineIndex, encodeFileModified, encodeFileName, encodeFileSize, encodeFileUrl, encodePosition, encodePosix, encodeZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, SampleName, Source, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, defaultLayout, defaultTime, initProjectSettings)
+import Models.Project as Project exposing (Project, defaultLayout, defaultTime, initProjectSettings)
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.Check exposing (Check)
+import Models.Project.CheckName exposing (CheckName)
+import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.ColumnValue exposing (ColumnValue)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Index exposing (Index)
+import Models.Project.IndexName exposing (IndexName)
+import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
+import Models.Project.SampleName exposing (SampleName)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.SourceLine exposing (SourceLine)
+import Models.Project.SourceName exposing (SourceName)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
+import Models.Project.TableProps exposing (TableProps)
+import Models.Project.Unique exposing (Unique)
+import Models.Project.UniqueName exposing (UniqueName)
 
 
 currentVersion : Int
@@ -47,7 +71,7 @@ encodeProject value =
 
 decodeProject : Decode.Decoder Project
 decodeProject =
-    D.map9 Project.build
+    D.map9 Project.new
         (Decode.field "id" decodeProjectId)
         (Decode.field "name" decodeProjectName)
         (Decode.field "sources" (Decode.list decodeSource))
@@ -108,6 +132,9 @@ encodeSourceKind value =
                 , ( "size", size |> encodeFileSize )
                 ]
 
+        UserDefined ->
+            E.object [ ( "kind", "UserDefined" |> Encode.string ) ]
+
 
 decodeSourceKind : Decode.Decoder SourceKind
 decodeSourceKind =
@@ -124,6 +151,9 @@ decodeSourceKind =
                     Decode.map2 RemoteFile
                         (Decode.field "url" decodeFileUrl)
                         (Decode.field "size" decodeFileSize)
+
+                "UserDefined" ->
+                    Decode.succeed UserDefined
 
                 other ->
                     Decode.fail ("Not supported kind of SourceKind '" ++ other ++ "'")
@@ -283,7 +313,7 @@ encodeRelation value =
 
 decodeRelation : Decode.Decoder Relation
 decodeRelation =
-    Decode.map4 Relation.build
+    Decode.map4 Relation.new
         (Decode.field "name" decodeRelationName)
         (Decode.field "src" decodeColumnRef)
         (Decode.field "ref" decodeColumnRef)
@@ -427,12 +457,12 @@ decodeProjectName =
 
 encodeSourceId : SourceId -> Value
 encodeSourceId value =
-    Encode.string value
+    value |> SourceId.toString |> Encode.string
 
 
 decodeSourceId : Decode.Decoder SourceId
 decodeSourceId =
-    Decode.string
+    Decode.string |> Decode.map SourceId.new
 
 
 encodeSourceName : SourceName -> Value

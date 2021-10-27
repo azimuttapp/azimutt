@@ -10,7 +10,6 @@ import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Position as Position
-import Models.Project exposing (FindPathState(..))
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
@@ -202,7 +201,7 @@ update msg model =
             model |> handleFindPath m
 
         VirtualRelationMsg m ->
-            ( model |> updateVirtualRelation m, Cmd.none )
+            model |> updateVirtualRelation m
 
         OpenConfirm confirm ->
             ( { model | confirm = confirm }, showModal conf.ids.confirm )

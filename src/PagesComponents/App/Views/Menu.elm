@@ -18,7 +18,9 @@ import Libs.Models.HtmlId as HtmlId
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S exposing (plural)
-import Models.Project exposing (Layout, Project, Table)
+import Models.Project exposing (Project)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (Msg(..))
 

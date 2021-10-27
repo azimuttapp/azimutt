@@ -9,7 +9,7 @@ import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, role)
 import Libs.Maybe as M
-import Models.Project exposing (CanvasProps)
+import Models.Project.CanvasProps exposing (CanvasProps)
 import PagesComponents.App.Models exposing (CursorMode(..), Msg(..))
 
 

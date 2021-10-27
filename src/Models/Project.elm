@@ -1,30 +1,36 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, RelationFull, SampleName, Source, SourceInfo, SourceLine, SourceName, Table, TableProps, Unique, UniqueName, build, computeRelations, computeTables, create, defaultLayout, defaultTime, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (Project, addSource, create, defaultLayout, defaultTime, deleteSource, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, new, setSources, tablesArea, updateSource, viewportArea, viewportSize, withNullableInfo)
 
-import Array exposing (Array)
 import Conf exposing (conf)
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color, UID, ZoomLevel)
+import Libs.Models exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Ned as Ned exposing (Ned)
-import Libs.Nel as Nel exposing (Nel)
+import Libs.Ned as Ned
+import Libs.Nel as Nel
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
 import Libs.String as S
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Index exposing (Index)
+import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
-import Models.Project.RelationName exposing (RelationName)
-import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.SourceKind exposing (SourceKind)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableName exposing (TableName)
+import Models.Project.TableProps exposing (TableProps)
+import Models.Project.Unique exposing (Unique)
 import Time
 
 
@@ -32,8 +38,8 @@ type alias Project =
     { id : ProjectId
     , name : ProjectName
     , sources : List Source
-    , tables : Dict TableId Table
-    , relations : List Relation
+    , tables : Dict TableId Table -- computed from sources, do not update directly (see new & setSources functions)
+    , relations : List Relation -- computed from sources, do not update directly (see new & setSources functions)
     , layout : Layout
     , usedLayout : Maybe LayoutName
     , layouts : Dict LayoutName Layout
@@ -43,198 +49,8 @@ type alias Project =
     }
 
 
-type alias Source =
-    { id : SourceId
-    , name : SourceName
-    , kind : SourceKind
-    , content : Array SourceLine
-    , tables : Dict TableId Table
-    , relations : List Relation
-    , enabled : Bool
-    , fromSample : Maybe SampleName
-    , createdAt : Time.Posix
-    , updatedAt : Time.Posix
-    }
-
-
-type alias SourceInfo =
-    { id : SourceId
-    , name : SourceName
-    , kind : SourceKind
-    , enabled : Bool
-    , fromSample : Maybe SampleName
-    , createdAt : Time.Posix
-    , updatedAt : Time.Posix
-    }
-
-
-type alias Table =
-    { id : TableId
-    , schema : SchemaName
-    , name : TableName
-    , columns : Ned ColumnName Column
-    , primaryKey : Maybe PrimaryKey
-    , uniques : List Unique
-    , indexes : List Index
-    , checks : List Check
-    , comment : Maybe Comment
-    , origins : List Origin
-    }
-
-
-type alias Column =
-    { index : ColumnIndex
-    , name : ColumnName
-    , kind : ColumnType
-    , nullable : Bool
-    , default : Maybe ColumnValue
-    , comment : Maybe Comment
-    , origins : List Origin
-    }
-
-
-type alias PrimaryKey =
-    { name : PrimaryKeyName, columns : Nel ColumnName, origins : List Origin }
-
-
-type alias Unique =
-    { name : UniqueName, columns : Nel ColumnName, definition : String, origins : List Origin }
-
-
-type alias Index =
-    { name : IndexName, columns : Nel ColumnName, definition : String, origins : List Origin }
-
-
-type alias Check =
-    { name : CheckName, columns : List ColumnName, predicate : String, origins : List Origin }
-
-
-type alias Comment =
-    { text : String, origins : List Origin }
-
-
-type alias RelationFull =
-    { name : RelationName, src : ColumnRefFull, ref : ColumnRefFull, origins : List Origin }
-
-
-type alias ColumnRefFull =
-    { ref : ColumnRef, table : Table, column : Column, props : Maybe ( TableProps, Int, Size ) }
-
-
-type alias Layout =
-    { canvas : CanvasProps
-    , tables : List TableProps
-    , hiddenTables : List TableProps
-    , createdAt : Time.Posix
-    , updatedAt : Time.Posix
-    }
-
-
-type alias CanvasProps =
-    { position : Position, zoom : ZoomLevel }
-
-
-type alias TableProps =
-    { id : TableId, position : Position, color : Color, columns : List ColumnName, selected : Bool }
-
-
-type alias ProjectSettings =
-    { findPath : FindPathSettings }
-
-
-type alias FindPath =
-    { from : Maybe TableId
-    , to : Maybe TableId
-    , result : FindPathState
-    }
-
-
-type FindPathState
-    = Empty
-    | Searching
-    | Found FindPathResult
-
-
-type alias FindPathResult =
-    { from : TableId
-    , to : TableId
-    , paths : List FindPathPath
-    , settings : FindPathSettings
-    }
-
-
-type alias FindPathPath =
-    Nel FindPathStep
-
-
-type alias FindPathStep =
-    { relation : Relation, direction : FindPathStepDir }
-
-
-type FindPathStepDir
-    = Right
-    | Left
-
-
-type alias FindPathSettings =
-    { maxPathLength : Int, ignoredTables : List TableId, ignoredColumns : List ColumnName }
-
-
-type alias ProjectId =
-    UID
-
-
-type alias ProjectName =
-    String
-
-
-type alias SourceName =
-    String
-
-
-type alias SourceLine =
-    String
-
-
-type alias ColumnIndex =
-    Int
-
-
-type alias ColumnType =
-    String
-
-
-type alias ColumnValue =
-    String
-
-
-type alias PrimaryKeyName =
-    String
-
-
-type alias UniqueName =
-    String
-
-
-type alias IndexName =
-    String
-
-
-type alias CheckName =
-    String
-
-
-type alias SampleName =
-    String
-
-
-create : ProjectId -> ProjectName -> Source -> Project
-create id name source =
-    build id name [ source ] (initLayout source.createdAt) Nothing Dict.empty initProjectSettings source.createdAt source.updatedAt
-
-
-build : ProjectId -> ProjectName -> List Source -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
-build id name sources layout usedLayout layouts settings createdAt updatedAt =
+new : ProjectId -> ProjectName -> List Source -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
+new id name sources layout usedLayout layouts settings createdAt updatedAt =
     { id = id
     , name = name
     , sources = sources
@@ -247,6 +63,48 @@ build id name sources layout usedLayout layouts settings createdAt updatedAt =
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
+
+
+create : ProjectId -> ProjectName -> Source -> Project
+create id name source =
+    new id name [ source ] (initLayout source.createdAt) Nothing Dict.empty initProjectSettings source.createdAt source.updatedAt
+
+
+setSources : (List Source -> List Source) -> Project -> Project
+setSources transform project =
+    transform project.sources
+        |> (\sources ->
+                { project
+                    | sources = sources
+                    , tables = sources |> computeTables
+                    , relations = sources |> computeRelations
+                }
+           )
+
+
+updateSource : SourceId -> (Source -> Source) -> Project -> Project
+updateSource id transform project =
+    setSources
+        (List.map
+            (\source ->
+                if source.id == id then
+                    transform source
+
+                else
+                    source
+            )
+        )
+        project
+
+
+addSource : Source -> Project -> Project
+addSource source project =
+    setSources (\sources -> sources ++ [ source ]) project
+
+
+deleteSource : SourceId -> Project -> Project
+deleteSource id project =
+    setSources (List.filter (\s -> s.id /= id)) project
 
 
 computeTables : List Source -> Dict TableId Table

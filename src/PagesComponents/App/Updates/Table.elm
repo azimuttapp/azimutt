@@ -6,9 +6,11 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (Layout, Project, Table, inIndexes, inOutRelation, inPrimaryKey, inUniques, initTableProps, withNullableInfo)
+import Models.Project exposing (Project, inIndexes, inOutRelation, inPrimaryKey, inUniques, initTableProps, withNullableInfo)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models as Models exposing (Msg)
 import PagesComponents.App.Updates.Helpers exposing (setLayout)

@@ -6,6 +6,7 @@ import Libs.Models exposing (FileModified, FileName, FileSize, FileUrl)
 type SourceKind
     = LocalFile FileName FileSize FileModified
     | RemoteFile FileUrl FileSize
+    | UserDefined
 
 
 path : SourceKind -> String
@@ -16,3 +17,6 @@ path sourceContent =
 
         RemoteFile url _ ->
             url
+
+        UserDefined ->
+            ""

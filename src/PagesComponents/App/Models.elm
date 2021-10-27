@@ -11,12 +11,19 @@ import Libs.Models exposing (FileContent, FileUrl, SizeChange, ZoomDelta)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position exposing (Position)
 import Libs.Task as T
-import Models.Project exposing (FindPath, FindPathSettings, Project, ProjectId, SampleName, SourceInfo, Table)
+import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.SampleName exposing (SampleName)
+import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.SourceInfo exposing (SourceInfo)
 import Ports exposing (JsMsg)
 import Time
 
@@ -103,8 +110,8 @@ type SourceMsg
     | LoadRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl
     | LoadSample SampleName
     | FileLoaded ProjectId SourceInfo FileContent
-    | ToggleSource SourceId
-    | DeleteSource SourceId
+    | ToggleSource Source
+    | DeleteSource Source
 
 
 type LayoutMsg

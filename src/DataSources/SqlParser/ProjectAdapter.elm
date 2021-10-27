@@ -7,10 +7,18 @@ import Libs.Dict as D
 import Libs.Models exposing (FileLineContent)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (Check, Column, Comment, Index, PrimaryKey, Source, SourceInfo, Table, Unique)
+import Models.Project.Check exposing (Check)
+import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.Index exposing (Index)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Table exposing (Table)
+import Models.Project.Unique exposing (Unique)
+import Models.SourceInfo exposing (SourceInfo)
 
 
 buildSourceFromSql : SourceInfo -> List FileLineContent -> SqlSchema -> Source
@@ -103,5 +111,5 @@ buildRelations sourceId table =
         |> Nel.filterZip .foreignKey
         |> List.map
             (\( c, fk ) ->
-                Relation.build fk.name (ColumnRef ( table.schema, table.table ) c.name) (ColumnRef ( fk.schema, fk.table ) fk.column) [ { id = sourceId, lines = [] } ]
+                Relation.new fk.name (ColumnRef ( table.schema, table.table ) c.name) (ColumnRef ( fk.schema, fk.table ) fk.column) [ { id = sourceId, lines = [] } ]
             )

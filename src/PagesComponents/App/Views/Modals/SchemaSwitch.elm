@@ -12,8 +12,9 @@ import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsTo
 import Libs.Html exposing (bText, codeText, divIf, extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledBy, role)
 import Libs.String as S
-import Models.Project exposing (Project, ProjectId)
-import Models.Project.SourceId exposing (SourceId)
+import Models.Project exposing (Project)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), Switch, TimeInfo)
 import PagesComponents.App.Views.Helpers exposing (formatDate, onClickConfirm)
 import Time
@@ -78,15 +79,20 @@ viewFileUpload switch =
 
 viewFileLoader : String -> Maybe ProjectId -> Maybe SourceId -> Html Msg -> Html Msg
 viewFileLoader labelClass project source content =
+    let
+        id : String
+        id =
+            "file-loader-" ++ (source |> Maybe.map SourceId.toString |> Maybe.withDefault "new")
+    in
     label
-        ([ for "file-loader", role "button", class labelClass ]
+        ([ for id, role "button", class labelClass ]
             ++ FileValue.onDrop
                 { onOver = \head tail -> SourceMsg (FileDragOver head tail)
                 , onLeave = Just { id = "file-drop", msg = SourceMsg FileDragLeave }
                 , onDrop = \head _ -> SourceMsg (LoadLocalFile project source head)
                 }
         )
-        [ hiddenInputSingle "file-loader" [ ".sql" ] (\file -> SourceMsg (LoadLocalFile project source file)), content ]
+        [ hiddenInputSingle id [ ".sql" ] (\file -> SourceMsg (LoadLocalFile project source file)), content ]
 
 
 viewSampleSchemas : Html Msg

@@ -4,10 +4,11 @@ import Conf exposing (schemaSamples)
 import Dict
 import Libs.Bool as B
 import Libs.Maybe as M
+import Models.Project as Project
 import PagesComponents.App.Models exposing (Model, Msg(..), SourceMsg(..))
-import PagesComponents.App.Updates.Helpers exposing (setProject, setSources, setSwitch)
+import PagesComponents.App.Updates.Helpers exposing (setProject, setSwitch)
 import PagesComponents.App.Updates.Project exposing (createProject, updateProject)
-import Ports exposing (observeTablesSize, readLocalFile, readRemoteFile, toastError)
+import Ports exposing (observeTablesSize, readLocalFile, readRemoteFile, toastError, toastInfo)
 
 
 handleSource : SourceMsg -> Model -> ( Model, Cmd Msg )
@@ -35,10 +36,13 @@ handleSource msg model =
                     (\project -> project |> updateProject sourceInfo content |> Tuple.mapFirst (\p -> { model | project = Just p }))
                     (model |> createProject projectId sourceInfo content)
 
-        ToggleSource sourceId ->
-            ( model |> setProject (setSources (List.map (\s -> B.cond (s.id == sourceId) { s | enabled = not s.enabled } s)))
-            , observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
+        ToggleSource source ->
+            ( model |> setProject (Project.updateSource source.id (\s -> { s | enabled = not s.enabled }))
+            , Cmd.batch
+                [ observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
+                , toastInfo ("Source <b>" ++ source.name ++ "</b> set to " ++ B.cond source.enabled "hidden" "visible" ++ ".")
+                ]
             )
 
-        DeleteSource sourceId ->
-            ( model |> setProject (setSources (List.filter (\s -> s.id /= sourceId))), Cmd.none )
+        DeleteSource source ->
+            ( model |> setProject (Project.deleteSource source.id), toastInfo ("Source <b>" ++ source.name ++ "</b> has been deleted from project.") )

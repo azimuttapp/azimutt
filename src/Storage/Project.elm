@@ -1,7 +1,8 @@
 module Storage.Project exposing (decode, encode, encodeId)
 
 import Json.Decode as Decode exposing (Value)
-import Models.Project exposing (Project, ProjectId)
+import Models.Project exposing (Project)
+import Models.Project.ProjectId exposing (ProjectId)
 import Storage.ProjectV1 as ProjectV1
 import Storage.ProjectV2 as ProjectV2
 

@@ -4,16 +4,17 @@ import Conf exposing (conf)
 import DataSources.SqlParser.FileParser exposing (parseSchema)
 import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 import Dict
-import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (FileContent, TrackEvent)
 import Libs.String as S
 import Libs.Task as T
-import Models.Project as Project exposing (Project, ProjectId, ProjectName, SourceInfo)
+import Models.Project as Project exposing (Project)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SourceKind as SourceKind
+import Models.SourceInfo exposing (SourceInfo)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
-import PagesComponents.App.Updates.Helpers exposing (setSources)
 import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
 import Tracking exposing (events)
 
@@ -48,30 +49,39 @@ updateProject sourceInfo content project =
             sourceInfo.kind |> SourceKind.path
     in
     if path |> String.endsWith ".sql" then
-        case
-            parseSchema content
-                |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
-                |> Tuple.mapSecond
-                    (\source ->
-                        if project.sources |> List.any (\s -> s.id == source.id) then
-                            ( project |> setSources (List.map (\s -> B.cond (s.id == source.id) source s)), events.refreshSource source )
-
-                        else
-                            ( project |> setSources (\sources -> sources ++ [ source ]), events.addSource source )
-                    )
-        of
-            ( errors, ( updatedProject, event ) ) ->
-                ( updatedProject
-                , Cmd.batch
-                    ((errors |> List.map toastError)
-                        ++ (errors |> List.map (trackError "parse-schema"))
-                        ++ [ toastInfo ("<b>" ++ sourceInfo.name ++ "</b> loaded.")
-                           , hideOffcanvas conf.ids.settings
-                           , saveProject updatedProject
-                           , track event
-                           ]
-                    )
+        (parseSchema content
+            |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
+            |> Tuple.mapSecond
+                (\newSource ->
+                    project.sources
+                        |> L.find (\s -> s.id == newSource.id)
+                        |> Maybe.map
+                            (\oldSource ->
+                                ( project |> Project.updateSource newSource.id (\_ -> newSource)
+                                , events.refreshSource newSource
+                                , "Source <b>" ++ oldSource.name ++ "</b> updated with <b>" ++ newSource.name ++ "</b>."
+                                )
+                            )
+                        |> Maybe.withDefault
+                            ( project |> Project.addSource newSource
+                            , events.addSource newSource
+                            , "Source <b>" ++ newSource.name ++ "</b> added to project."
+                            )
                 )
+        )
+            |> (\( errors, ( updatedProject, event, message ) ) ->
+                    ( updatedProject
+                    , Cmd.batch
+                        ((errors |> List.map toastError)
+                            ++ (errors |> List.map (trackError "parse-schema"))
+                            ++ [ toastInfo message
+                               , hideOffcanvas conf.ids.settings
+                               , saveProject updatedProject
+                               , track event
+                               ]
+                        )
+                    )
+               )
 
     else
         ( project, toastError ("Invalid file (" ++ path ++ "), expected .sql") )

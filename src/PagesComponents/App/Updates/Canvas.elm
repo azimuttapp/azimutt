@@ -11,7 +11,10 @@ import Libs.Models exposing (ZoomLevel)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Position as Position exposing (Position)
 import Libs.Size as Size exposing (Size)
-import Models.Project exposing (CanvasProps, Layout, Project, TableProps, tablesArea, viewportArea, viewportSize)
+import Models.Project exposing (Project, tablesArea, viewportArea, viewportSize)
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setTables)
 
 

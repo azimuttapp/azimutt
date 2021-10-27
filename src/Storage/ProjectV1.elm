@@ -12,10 +12,19 @@ import Libs.Models exposing (Color, UID, ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Position exposing (Position)
-import Models.Project exposing (Check, Column, Comment, Index, PrimaryKey, Project, Source, Table, Unique)
+import Models.Project exposing (Project)
+import Models.Project.Check exposing (Check)
+import Models.Project.Column exposing (Column)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.Index exposing (Index)
 import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.Table exposing (Table)
+import Models.Project.Unique exposing (Unique)
 import Time
 
 
@@ -267,7 +276,7 @@ upgrade project =
 
 upgradeProjectSource : Dict TableIdV1 TableV1 -> List RelationV1 -> Maybe SampleNameV1 -> ProjectSourceV1 -> Source
 upgradeProjectSource tables relations fromSample source =
-    { id = source.id
+    { id = SourceId.new source.id
     , name = source.name
     , kind =
         case source.source of
@@ -350,12 +359,12 @@ upgradeComment comment =
 
 upgradeRelation : RelationV1 -> Relation
 upgradeRelation relation =
-    Relation.build relation.name relation.src relation.ref (relation.sources |> List.map upgradeSource)
+    Relation.new relation.name relation.src relation.ref (relation.sources |> List.map upgradeSource)
 
 
 upgradeSource : SourceV1 -> Origin
 upgradeSource source =
-    { id = source.id, lines = source.lines |> Nel.toList |> List.map .no }
+    { id = SourceId.new source.id, lines = source.lines |> Nel.toList |> List.map .no }
 
 
 

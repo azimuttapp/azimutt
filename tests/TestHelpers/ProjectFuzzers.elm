@@ -7,24 +7,49 @@ import Libs.Dict as D
 import Libs.Fuzz as F exposing (listN)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project as Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, SampleName, Source, SourceLine, SourceName, Table, TableProps, Unique, UniqueName)
+import Models.Project as Project exposing (Project)
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.Check exposing (Check)
+import Models.Project.CheckName exposing (CheckName)
+import Models.Project.Column exposing (Column)
+import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.ColumnValue exposing (ColumnValue)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Index exposing (Index)
+import Models.Project.IndexName exposing (IndexName)
+import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
+import Models.Project.SampleName exposing (SampleName)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.SourceLine exposing (SourceLine)
+import Models.Project.SourceName exposing (SourceName)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
+import Models.Project.TableProps exposing (TableProps)
+import Models.Project.Unique exposing (Unique)
+import Models.Project.UniqueName exposing (UniqueName)
 import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, zoomLevel)
 
 
 project : Fuzzer Project
 project =
-    F.map9 Project.build projectId projectName (listSmall source) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings posix posix
+    F.map9 Project.new projectId projectName (listSmall source) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings posix posix
 
 
 source : Fuzzer Source
@@ -93,7 +118,7 @@ comment =
 
 relation : Fuzzer Relation
 relation =
-    Fuzz.map4 Relation.build relationName columnRef columnRef (listN 1 origin)
+    Fuzz.map4 Relation.new relationName columnRef columnRef (listN 1 origin)
 
 
 columnRef : Fuzzer ColumnRef
@@ -143,7 +168,7 @@ projectName =
 
 sourceId : Fuzzer SourceId
 sourceId =
-    identifier
+    identifier |> Fuzz.map SourceId.new
 
 
 sourceName : Fuzzer SourceName

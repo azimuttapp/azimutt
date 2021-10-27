@@ -15,8 +15,11 @@ import Libs.Maybe as M
 import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project exposing (Column, Layout, Project, Table)
+import Models.Project exposing (Project)
+import Models.Project.Column exposing (Column)
+import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
 import Tracking exposing (events)

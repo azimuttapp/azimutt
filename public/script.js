@@ -378,7 +378,7 @@ window.addEventListener('load', function() {
     }
 
     function randomUID() {
-        return uuidv4() // TODO replace with https://github.com/ai/nanoid
+        return uuidv4()
     }
 
     function loadScript(url) {
