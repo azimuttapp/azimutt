@@ -1,17 +1,22 @@
-module Models.Project.Table exposing (Table)
+module Models.Project.Table exposing (Table, decode, encode)
 
-import Libs.Ned exposing (Ned)
-import Models.Project.Check exposing (Check)
-import Models.Project.Column exposing (Column)
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
+import Libs.Json.Decode as D
+import Libs.Json.Encode as E
+import Libs.Ned as Ned exposing (Ned)
+import Libs.Nel as Nel
+import Models.Project.Check as Check exposing (Check)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.Comment exposing (Comment)
-import Models.Project.Index exposing (Index)
-import Models.Project.Origin exposing (Origin)
-import Models.Project.PrimaryKey exposing (PrimaryKey)
-import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Comment as Comment exposing (Comment)
+import Models.Project.Index as Index exposing (Index)
+import Models.Project.Origin as Origin exposing (Origin)
+import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
+import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableName exposing (TableName)
-import Models.Project.Unique exposing (Unique)
+import Models.Project.TableName as TableName exposing (TableName)
+import Models.Project.Unique as Unique exposing (Unique)
 
 
 type alias Table =
@@ -26,3 +31,32 @@ type alias Table =
     , comment : Maybe Comment
     , origins : List Origin
     }
+
+
+encode : Table -> Value
+encode value =
+    E.object
+        [ ( "schema", value.schema |> SchemaName.encode )
+        , ( "table", value.name |> TableName.encode )
+        , ( "columns", value.columns |> Ned.values |> Nel.sortBy .index |> E.nel Column.encode )
+        , ( "primaryKey", value.primaryKey |> E.maybe PrimaryKey.encode )
+        , ( "uniques", value.uniques |> E.withDefault (Encode.list Unique.encode) [] )
+        , ( "indexes", value.indexes |> E.withDefault (Encode.list Index.encode) [] )
+        , ( "checks", value.checks |> E.withDefault (Encode.list Check.encode) [] )
+        , ( "comment", value.comment |> E.maybe Comment.encode )
+        , ( "origins", value.origins |> E.withDefault (Encode.list Origin.encode) [] )
+        ]
+
+
+decode : Decode.Decoder Table
+decode =
+    D.map9 (\s t c p u i ch co so -> Table ( s, t ) s t c p u i ch co so)
+        (Decode.field "schema" SchemaName.decode)
+        (Decode.field "table" TableName.decode)
+        (Decode.field "columns" (D.nel Column.decode |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
+        (D.maybeField "primaryKey" PrimaryKey.decode)
+        (D.defaultField "uniques" (Decode.list Unique.decode) [])
+        (D.defaultField "indexes" (Decode.list Index.decode) [])
+        (D.defaultField "checks" (Decode.list Check.decode) [])
+        (D.maybeField "comment" Comment.decode)
+        (D.defaultField "origins" (Decode.list Origin.decode) [])

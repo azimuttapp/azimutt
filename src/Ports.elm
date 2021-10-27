@@ -11,14 +11,12 @@ import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, SizeChange, Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Models.Project exposing (Project)
-import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project as Project exposing (Project)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.SampleName exposing (SampleName)
-import Models.Project.SourceId exposing (SourceId)
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
-import Storage.Project as Project
-import Storage.Source as Source
 import Time
 
 
@@ -229,13 +227,13 @@ elmEncoder elm =
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         GetLocalFile project source file ->
-            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe Project.encodeId ), ( "source", source |> E.maybe Source.encodeId ), ( "file", file |> FileValue.encode ) ]
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe ProjectId.encode ), ( "source", source |> E.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
 
         GetRemoteFile project source url sample ->
-            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> E.maybe Project.encodeId ), ( "source", source |> E.maybe Source.encodeId ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
+            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> E.maybe ProjectId.encode ), ( "source", source |> E.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
 
         GetSourceId src ref ->
-            Encode.object [ ( "kind", "GetSourceId" |> Encode.string ), ( "src", src |> Source.encodeColumnRef ), ( "ref", ref |> Source.encodeColumnRef ) ]
+            Encode.object [ ( "kind", "GetSourceId" |> Encode.string ), ( "src", src |> ColumnRef.encode ), ( "ref", ref |> ColumnRef.encode ) ]
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
@@ -280,7 +278,7 @@ jsDecoder =
                     Decode.map5 GotLocalFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Source.decodeId)
+                        (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
 
@@ -288,7 +286,7 @@ jsDecoder =
                     Decode.map6 GotRemoteFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Source.decodeId)
+                        (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
                         (D.maybeField "sample" Decode.string)
@@ -296,9 +294,9 @@ jsDecoder =
                 "GotSourceId" ->
                     Decode.map4 GotSourceId
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "sourceId" Source.decodeId)
-                        (Decode.field "src" Source.decodeColumnRef)
-                        (Decode.field "ref" Source.decodeColumnRef)
+                        (Decode.field "sourceId" SourceId.decode)
+                        (Decode.field "src" ColumnRef.decode)
+                        (Decode.field "ref" ColumnRef.decode)
 
                 "GotHotkey" ->
                     Decode.field "id" Decode.string |> Decode.map GotHotkey

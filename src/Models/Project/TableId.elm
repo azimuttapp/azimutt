@@ -1,6 +1,8 @@
-module Models.Project.TableId exposing (TableId, fromHtmlId, fromString, parse, show, toHtmlId, toString)
+module Models.Project.TableId exposing (TableId, decode, encode, fromHtmlId, fromString, parse, show, toHtmlId, toString)
 
 import Conf exposing (conf)
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 import Libs.Models.HtmlId as HtmlId exposing (HtmlId)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableName exposing (TableName)
@@ -61,3 +63,13 @@ parse tableId =
 
         _ ->
             ( conf.default.schema, tableId )
+
+
+encode : TableId -> Value
+encode value =
+    Encode.string (toString value)
+
+
+decode : Decode.Decoder TableId
+decode =
+    Decode.string |> Decode.map fromString

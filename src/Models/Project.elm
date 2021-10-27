@@ -1,9 +1,14 @@
-module Models.Project exposing (Project, addSource, create, defaultLayout, defaultTime, deleteSource, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, new, setSources, tablesArea, updateSource, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (Project, addSource, create, decode, defaultLayout, defaultTime, deleteSource, encode, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, new, setSources, tablesArea, updateSource, viewportArea, viewportSize, withNullableInfo)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 import Libs.Area as Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
+import Libs.Json.Decode as D
+import Libs.Json.Encode as E
+import Libs.Json.Formats exposing (decodePosix, encodePosix)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (Color)
@@ -18,14 +23,14 @@ import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Index exposing (Index)
-import Models.Project.Layout exposing (Layout)
-import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Layout as Layout exposing (Layout)
+import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
-import Models.Project.ProjectId exposing (ProjectId)
-import Models.Project.ProjectName exposing (ProjectName)
-import Models.Project.ProjectSettings exposing (ProjectSettings)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
+import Models.Project.ProjectName as ProjectName exposing (ProjectName)
+import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
-import Models.Project.Source exposing (Source)
+import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -256,3 +261,39 @@ defaultTime =
 defaultLayout : Layout
 defaultLayout =
     initLayout defaultTime
+
+
+currentVersion : Int
+currentVersion =
+    -- compatibility version for Project JSON, when you have breaking change, increment it and handle needed migrations
+    2
+
+
+encode : Project -> Value
+encode value =
+    E.object
+        [ ( "id", value.id |> ProjectId.encode )
+        , ( "name", value.name |> ProjectName.encode )
+        , ( "sources", value.sources |> Encode.list Source.encode )
+        , ( "layout", value.layout |> Layout.encode )
+        , ( "usedLayout", value.usedLayout |> E.maybe LayoutName.encode )
+        , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
+        , ( "settings", value.settings |> E.withDefaultDeep ProjectSettings.encode initProjectSettings )
+        , ( "createdAt", value.createdAt |> encodePosix )
+        , ( "updatedAt", value.updatedAt |> encodePosix )
+        , ( "version", currentVersion |> Encode.int )
+        ]
+
+
+decode : Decode.Decoder Project
+decode =
+    D.map9 new
+        (Decode.field "id" ProjectId.decode)
+        (Decode.field "name" ProjectName.decode)
+        (Decode.field "sources" (Decode.list Source.decode))
+        (D.defaultField "layout" Layout.decode defaultLayout)
+        (D.maybeField "usedLayout" LayoutName.decode)
+        (D.defaultField "layouts" (D.dict LayoutName.fromString Layout.decode) Dict.empty)
+        (D.defaultFieldDeep "settings" ProjectSettings.decode initProjectSettings)
+        (D.defaultField "createdAt" decodePosix defaultTime)
+        (D.defaultField "updatedAt" decodePosix defaultTime)

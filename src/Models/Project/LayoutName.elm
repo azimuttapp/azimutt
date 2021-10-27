@@ -1,4 +1,7 @@
-module Models.Project.LayoutName exposing (LayoutName, fromString, toString)
+module Models.Project.LayoutName exposing (LayoutName, decode, encode, fromString, toString)
+
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
 
 
 type alias LayoutName =
@@ -14,3 +17,13 @@ toString name =
 fromString : String -> LayoutName
 fromString name =
     name
+
+
+encode : LayoutName -> Value
+encode value =
+    Encode.string value
+
+
+decode : Decode.Decoder LayoutName
+decode =
+    Decode.string

@@ -7,25 +7,26 @@ import Libs.Dict as D
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Libs.Position exposing (Position)
-import Models.Project exposing (Project, initProjectSettings)
-import Models.Project.CanvasProps exposing (CanvasProps)
-import Models.Project.Column exposing (Column)
-import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.Comment exposing (Comment)
+import Models.Project as Project exposing (Project, initProjectSettings)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.Check as Check
+import Models.Project.Column as Column exposing (Column)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.Comment as Comment exposing (Comment)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
-import Models.Project.Index exposing (Index)
-import Models.Project.Layout exposing (Layout)
-import Models.Project.Origin exposing (Origin)
-import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.Index as Index exposing (Index)
+import Models.Project.Layout as Layout exposing (Layout)
+import Models.Project.Origin as Origin exposing (Origin)
+import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
+import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableProps exposing (TableProps)
-import Models.Project.Unique exposing (Unique)
-import Storage.ProjectV2 exposing (..)
+import Models.Project.TableProps as TableProps exposing (TableProps)
+import Models.Project.Unique as Unique exposing (Unique)
 import Test exposing (Test, describe)
 import TestHelpers.JsonTest exposing (jsonFuzz, jsonTest)
 import TestHelpers.ProjectFuzzers as ProjectFuzzers
@@ -36,27 +37,27 @@ suite : Test
 suite =
     describe "Storage.Project"
         [ describe "json"
-            [ jsonTest "project0" project0 project0Json encodeProject decodeProject
-            , jsonTest "project1" project1 project1Json encodeProject decodeProject
-            , jsonTest "project2" project2 project2Json encodeProject decodeProject
+            [ jsonTest "project0" project0 project0Json Project.encode Project.decode
+            , jsonTest "project1" project1 project1Json Project.encode Project.decode
+            , jsonTest "project2" project2 project2Json Project.encode Project.decode
 
-            -- , jsonFuzz "Project" ProjectFuzzers.project encodeProject decodeProject -- This test failed because it threw an exception: "RangeError: Maximum call stack size exceeded"
-            -- , jsonFuzz "Source" ProjectFuzzers.source encodeSource decodeSource
-            -- , jsonFuzz "SourceKind" ProjectFuzzers.sourceKind encodeSourceKind decodeSourceKind
-            , jsonFuzz "Table" ProjectFuzzers.table encodeTable decodeTable
-            , jsonFuzz "Column" (ProjectFuzzers.column 0) encodeColumn (decodeColumn |> Decode.map (\c -> c 0))
-            , jsonFuzz "PrimaryKey" ProjectFuzzers.primaryKey encodePrimaryKey decodePrimaryKey
-            , jsonFuzz "Unique" ProjectFuzzers.unique encodeUnique decodeUnique
-            , jsonFuzz "Index" ProjectFuzzers.index encodeIndex decodeIndex
-            , jsonFuzz "Check" ProjectFuzzers.check encodeCheck decodeCheck
-            , jsonFuzz "Comment" ProjectFuzzers.comment encodeComment decodeComment
-            , jsonFuzz "Relation" ProjectFuzzers.relation encodeRelation decodeRelation
-            , jsonFuzz "ColumnRef" ProjectFuzzers.columnRef encodeColumnRef decodeColumnRef
-            , jsonFuzz "Source" ProjectFuzzers.origin encodeOrigin decodeOrigin
-            , jsonFuzz "Layout" ProjectFuzzers.layout encodeLayout decodeLayout
-            , jsonFuzz "CanvasProps" ProjectFuzzers.canvasProps encodeCanvasProps decodeCanvasProps
-            , jsonFuzz "TableProps" ProjectFuzzers.tableProps encodeTableProps decodeTableProps
-            , jsonFuzz "ProjectSettings" ProjectFuzzers.projectSettings (encodeProjectSettings initProjectSettings) (decodeProjectSettings initProjectSettings)
+            -- , jsonFuzz "Project" ProjectFuzzers.project Project.encode Project.decode -- This test failed because it threw an exception: "RangeError: Maximum call stack size exceeded"
+            -- , jsonFuzz "Source" ProjectFuzzers.source Source.encode Source.decode
+            -- , jsonFuzz "SourceKind" ProjectFuzzers.sourceKind SourceKind.encode SourceKind.decode
+            , jsonFuzz "Table" ProjectFuzzers.table Table.encode Table.decode
+            , jsonFuzz "Column" (ProjectFuzzers.column 0) Column.encode (Column.decode |> Decode.map (\c -> c 0))
+            , jsonFuzz "PrimaryKey" ProjectFuzzers.primaryKey PrimaryKey.encode PrimaryKey.decode
+            , jsonFuzz "Unique" ProjectFuzzers.unique Unique.encode Unique.decode
+            , jsonFuzz "Index" ProjectFuzzers.index Index.encode Index.decode
+            , jsonFuzz "Check" ProjectFuzzers.check Check.encode Check.decode
+            , jsonFuzz "Comment" ProjectFuzzers.comment Comment.encode Comment.decode
+            , jsonFuzz "Relation" ProjectFuzzers.relation Relation.encode Relation.decode
+            , jsonFuzz "ColumnRef" ProjectFuzzers.columnRef ColumnRef.encode ColumnRef.decode
+            , jsonFuzz "Source" ProjectFuzzers.origin Origin.encode Origin.decode
+            , jsonFuzz "Layout" ProjectFuzzers.layout Layout.encode Layout.decode
+            , jsonFuzz "CanvasProps" ProjectFuzzers.canvasProps CanvasProps.encode CanvasProps.decode
+            , jsonFuzz "TableProps" ProjectFuzzers.tableProps TableProps.encode TableProps.decode
+            , jsonFuzz "ProjectSettings" ProjectFuzzers.projectSettings (ProjectSettings.encode initProjectSettings) (ProjectSettings.decode initProjectSettings)
             ]
         ]
 
