@@ -111,6 +111,7 @@ type SourceMsg
     | LoadSample SampleName
     | FileLoaded ProjectId SourceInfo FileContent
     | ToggleSource Source
+    | CreateSource Source String
     | DeleteSource Source
 
 

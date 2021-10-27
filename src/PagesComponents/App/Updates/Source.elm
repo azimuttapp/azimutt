@@ -44,5 +44,8 @@ handleSource msg model =
                 ]
             )
 
+        CreateSource source message ->
+            ( model |> setProject (Project.addSource source), toastInfo message )
+
         DeleteSource source ->
             ( model |> setProject (Project.deleteSource source.id), toastInfo ("Source <b>" ++ source.name ++ "</b> has been deleted from project.") )

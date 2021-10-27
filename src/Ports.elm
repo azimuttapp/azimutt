@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -12,6 +12,7 @@ import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl, SizeChange, Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project exposing (Project)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SampleName exposing (SampleName)
 import Models.Project.SourceId exposing (SourceId)
@@ -91,6 +92,11 @@ readRemoteFile project source url sample =
     messageToJs (GetRemoteFile project source url sample)
 
 
+getSourceId : ColumnRef -> ColumnRef -> Cmd msg
+getSourceId src ref =
+    messageToJs (GetSourceId src ref)
+
+
 observeSizes : List HtmlId -> Cmd msg
 observeSizes ids =
     messageToJs (ObserveSizes ids)
@@ -152,6 +158,7 @@ type ElmMsg
     | DropProject Project
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleName)
+    | GetSourceId ColumnRef ColumnRef
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | TrackPage String
@@ -164,6 +171,7 @@ type JsMsg
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleName)
+    | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
     | Error Decode.Error
 
@@ -226,6 +234,9 @@ elmEncoder elm =
         GetRemoteFile project source url sample ->
             Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> E.maybe Project.encodeId ), ( "source", source |> E.maybe Source.encodeId ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
 
+        GetSourceId src ref ->
+            Encode.object [ ( "kind", "GetSourceId" |> Encode.string ), ( "src", src |> Source.encodeColumnRef ), ( "ref", ref |> Source.encodeColumnRef ) ]
+
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -281,6 +292,13 @@ jsDecoder =
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
                         (D.maybeField "sample" Decode.string)
+
+                "GotSourceId" ->
+                    Decode.map4 GotSourceId
+                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
+                        (Decode.field "sourceId" Source.decodeId)
+                        (Decode.field "src" Source.decodeColumnRef)
+                        (Decode.field "ref" Source.decodeColumnRef)
 
                 "GotHotkey" ->
                     Decode.field "id" Decode.string |> Decode.map GotHotkey

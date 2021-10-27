@@ -38,6 +38,7 @@ window.addEventListener('load', function() {
                 case 'DropProject':   dropProject(msg.project); break;
                 case 'GetLocalFile':  getLocalFile(msg.project, msg.source, msg.file); break;
                 case 'GetRemoteFile': getRemoteFile(msg.project, msg.source, msg.url, msg.sample); break;
+                case 'GetSourceId':   getSourceId(msg.src, msg.ref); break;
                 case 'ObserveSizes':  observeSizes(msg.ids); break;
                 case 'ListenKeys':    listenHotkeys(msg.keys); break;
                 case 'TrackPage':     analytics.then(a => a.trackPage(msg.name)); break;
@@ -159,6 +160,10 @@ window.addEventListener('load', function() {
                 sample
             }))
             .catch(err => showToast({kind: 'error', message: err}))
+    }
+
+    function getSourceId(src, ref) {
+        sendToElm({kind: 'GotSourceId', now: Date.now(), sourceId: randomUID(), src, ref})
     }
 
     const resizeObserver = new ResizeObserver(entries => {

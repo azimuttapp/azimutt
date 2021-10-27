@@ -1,9 +1,13 @@
 module PagesComponents.App.Updates.PortMsg exposing (handlePortMsg)
 
+import Array
+import Dict
 import FileValue exposing (File)
 import Libs.List as L
 import Libs.Models exposing (FileContent, FileUrl)
 import Libs.Task exposing (send)
+import Models.Project.Relation as Relation
+import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.SourceInfo exposing (SourceInfo)
 import PagesComponents.App.Models exposing (Model, Msg(..), SourceMsg(..))
@@ -26,6 +30,9 @@ handlePortMsg msg model =
 
         GotRemoteFile now projectId sourceId url content sample ->
             send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content))
+
+        GotSourceId now sourceId src ref ->
+            send (SourceMsg (CreateSource (Source sourceId "User" UserDefined Array.empty Dict.empty [ Relation.virtual src ref sourceId ] True Nothing now now) "Relation added to newly create <b>User</b> source."))
 
         GotHotkey hotkey ->
             Cmd.batch (handleHotkey model hotkey)
