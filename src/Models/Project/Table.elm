@@ -1,9 +1,10 @@
-module Models.Project.Table exposing (Table, decode, encode)
+module Models.Project.Table exposing (Table, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
+import Libs.Maybe as M
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
 import Models.Project.Check as Check exposing (Check)
@@ -31,6 +32,31 @@ type alias Table =
     , comment : Maybe Comment
     , origins : List Origin
     }
+
+
+inPrimaryKey : Table -> ColumnName -> Maybe PrimaryKey
+inPrimaryKey table column =
+    table.primaryKey |> M.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
+
+
+inUniques : Table -> ColumnName -> List Unique
+inUniques table column =
+    table.uniques |> List.filter (\u -> u.columns |> Nel.toList |> hasColumn column)
+
+
+inIndexes : Table -> ColumnName -> List Index
+inIndexes table column =
+    table.indexes |> List.filter (\i -> i.columns |> Nel.toList |> hasColumn column)
+
+
+inChecks : Table -> ColumnName -> List Check
+inChecks table column =
+    table.checks |> List.filter (\i -> i.columns |> hasColumn column)
+
+
+hasColumn : ColumnName -> List ColumnName -> Bool
+hasColumn column columns =
+    columns |> List.any (\c -> c == column)
 
 
 encode : Table -> Value

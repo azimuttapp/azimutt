@@ -7,7 +7,7 @@ import Libs.Dict as D
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Libs.Position exposing (Position)
-import Models.Project as Project exposing (Project, initProjectSettings)
+import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Check as Check
 import Models.Project.Column as Column exposing (Column)
@@ -57,7 +57,7 @@ suite =
             , jsonFuzz "Layout" ProjectFuzzers.layout Layout.encode Layout.decode
             , jsonFuzz "CanvasProps" ProjectFuzzers.canvasProps CanvasProps.encode CanvasProps.decode
             , jsonFuzz "TableProps" ProjectFuzzers.tableProps TableProps.encode TableProps.decode
-            , jsonFuzz "ProjectSettings" ProjectFuzzers.projectSettings (ProjectSettings.encode initProjectSettings) (ProjectSettings.decode initProjectSettings)
+            , jsonFuzz "ProjectSettings" ProjectFuzzers.projectSettings (ProjectSettings.encode ProjectSettings.init) (ProjectSettings.decode ProjectSettings.init)
             ]
         ]
 
@@ -77,7 +77,7 @@ project0 =
     , layout = Layout (CanvasProps (Position 1 2) 0.75) [] [] (time 1200) (time 1201)
     , usedLayout = Nothing
     , layouts = Dict.empty
-    , settings = initProjectSettings
+    , settings = ProjectSettings.init
     , createdAt = time 1000
     , updatedAt = time 1001
     }

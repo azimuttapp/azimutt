@@ -1,9 +1,10 @@
-module Models.Project.Relation exposing (Relation, decode, encode, new, virtual)
+module Models.Project.Relation exposing (Relation, decode, encode, inOutRelation, new, virtual)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.RelationId as RelationId exposing (RelationId)
@@ -23,6 +24,11 @@ new name src ref origins =
 virtual : ColumnRef -> ColumnRef -> SourceId -> Relation
 virtual src ref source =
     new "virtual relation" src ref [ Origin source [] ]
+
+
+inOutRelation : List Relation -> ColumnName -> List Relation
+inOutRelation tableOutRelations column =
+    tableOutRelations |> List.filter (\r -> r.src.column == column)
 
 
 encode : Relation -> Value

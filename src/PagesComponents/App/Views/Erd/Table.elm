@@ -23,15 +23,14 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Position as Position
 import Libs.String as S
-import Models.Project exposing (inChecks, inIndexes, inPrimaryKey, inUniques, withNullableInfo)
 import Models.Project.Check exposing (Check)
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.Index exposing (Index)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
@@ -181,8 +180,8 @@ viewHiddenColumn table column columnRelations =
 viewColumnIcon : Table -> Column -> List RelationFull -> List (Attribute Msg) -> Html Msg
 viewColumnIcon table column columnRelations attrs =
     case
-        ( ( column.name |> inPrimaryKey table, columnRelations |> List.filter (\r -> r.src.table.id == table.id && r.src.column.name == column.name) |> List.head )
-        , ( column.name |> inUniques table, column.name |> inIndexes table, column.name |> inChecks table )
+        ( ( column.name |> Table.inPrimaryKey table, columnRelations |> List.filter (\r -> r.src.table.id == table.id && r.src.column.name == column.name) |> List.head )
+        , ( column.name |> Table.inUniques table, column.name |> Table.inIndexes table, column.name |> Table.inChecks table )
         )
     of
         ( ( Just pk, _ ), _ ) ->
@@ -220,7 +219,7 @@ viewColumnDropdown columnRelations ref element =
                             [ viewIcon Icon.externalLinkAlt
                             , text " "
                             , b [] [ text (TableId.show relation.src.table.id) ]
-                            , text ("" |> withColumnName relation.src.column.name |> withNullableInfo relation.src.column.nullable)
+                            , text ("" |> withColumnName relation.src.column.name |> Column.withNullableInfo relation.src.column.nullable)
                             ]
                         ]
                 )
@@ -251,7 +250,7 @@ viewColumnName table column =
     let
         className : String
         className =
-            case column.name |> inPrimaryKey table of
+            case column.name |> Table.inPrimaryKey table of
                 Just _ ->
                     "name bold"
 

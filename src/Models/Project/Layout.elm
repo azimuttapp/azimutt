@@ -1,10 +1,11 @@
-module Models.Project.Layout exposing (Layout, decode, encode)
+module Models.Project.Layout exposing (Layout, decode, encode, init)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodePosix, encodePosix)
+import Libs.Position exposing (Position)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Time
@@ -17,6 +18,11 @@ type alias Layout =
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
+
+
+init : Time.Posix -> Layout
+init now =
+    { canvas = CanvasProps (Position 0 0) 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 encode : Layout -> Value

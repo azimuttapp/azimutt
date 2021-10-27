@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, addSource, create, decode, defaultLayout, defaultTime, deleteSource, encode, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initProjectSettings, initTableProps, new, setSources, tablesArea, updateSource, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (Project, addSource, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
@@ -11,21 +11,12 @@ import Libs.Json.Encode as E
 import Libs.Json.Formats exposing (decodePosix, encodePosix)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Libs.Position as Position exposing (Position)
 import Libs.Size exposing (Size)
-import Libs.String as S
 import Models.Project.CanvasProps exposing (CanvasProps)
-import Models.Project.Check exposing (Check)
-import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.FindPathSettings exposing (FindPathSettings)
-import Models.Project.Index exposing (Index)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
-import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
@@ -35,7 +26,6 @@ import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
-import Models.Project.Unique exposing (Unique)
 import Time
 
 
@@ -72,7 +62,7 @@ new id name sources layout usedLayout layouts settings createdAt updatedAt =
 
 create : ProjectId -> ProjectName -> Source -> Project
 create id name source =
-    new id name [ source ] (initLayout source.createdAt) Nothing Dict.empty initProjectSettings source.createdAt source.updatedAt
+    new id name [ source ] (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init source.createdAt source.updatedAt
 
 
 setSources : (List Source -> List Source) -> Project -> Project
@@ -148,45 +138,6 @@ mergeRelation r1 r2 =
     { r1 | origins = r1.origins ++ r2.origins }
 
 
-inPrimaryKey : Table -> ColumnName -> Maybe PrimaryKey
-inPrimaryKey table column =
-    table.primaryKey |> M.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
-
-
-inUniques : Table -> ColumnName -> List Unique
-inUniques table column =
-    table.uniques |> List.filter (\u -> u.columns |> Nel.toList |> hasColumn column)
-
-
-inIndexes : Table -> ColumnName -> List Index
-inIndexes table column =
-    table.indexes |> List.filter (\i -> i.columns |> Nel.toList |> hasColumn column)
-
-
-inChecks : Table -> ColumnName -> List Check
-inChecks table column =
-    table.checks |> List.filter (\i -> i.columns |> hasColumn column)
-
-
-hasColumn : ColumnName -> List ColumnName -> Bool
-hasColumn column columns =
-    columns |> List.any (\c -> c == column)
-
-
-inOutRelation : List Relation -> ColumnName -> List Relation
-inOutRelation tableOutRelations column =
-    tableOutRelations |> List.filter (\r -> r.src.column == column)
-
-
-withNullableInfo : Bool -> String -> String
-withNullableInfo nullable text =
-    if nullable then
-        text ++ "?"
-
-    else
-        text
-
-
 viewportSize : Dict HtmlId DomInfo -> Maybe Size
 viewportSize domInfos =
     domInfos |> Dict.get conf.ids.erd |> Maybe.map .size
@@ -223,46 +174,6 @@ tablesArea domInfos tables =
     Area (Position left top) (Size (right - left) (bottom - top))
 
 
-initLayout : Time.Posix -> Layout
-initLayout now =
-    { canvas = CanvasProps (Position 0 0) 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
-
-
-initTableProps : Table -> TableProps
-initTableProps table =
-    { id = table.id
-    , position = Position 0 0
-    , color = computeColor table.id
-    , selected = False
-    , columns = table.columns |> Ned.values |> Nel.toList |> List.sortBy .index |> List.map .name
-    }
-
-
-computeColor : TableId -> Color
-computeColor ( _, table ) =
-    S.wordSplit table
-        |> List.head
-        |> Maybe.map S.hashCode
-        |> Maybe.map (modBy (List.length conf.colors))
-        |> Maybe.andThen (\index -> conf.colors |> L.get index)
-        |> Maybe.withDefault conf.default.color
-
-
-initProjectSettings : { findPath : FindPathSettings }
-initProjectSettings =
-    { findPath = FindPathSettings 3 [] [] }
-
-
-defaultTime : Time.Posix
-defaultTime =
-    Time.millisToPosix 0
-
-
-defaultLayout : Layout
-defaultLayout =
-    initLayout defaultTime
-
-
 currentVersion : Int
 currentVersion =
     -- compatibility version for Project JSON, when you have breaking change, increment it and handle needed migrations
@@ -278,7 +189,7 @@ encode value =
         , ( "layout", value.layout |> Layout.encode )
         , ( "usedLayout", value.usedLayout |> E.maybe LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
-        , ( "settings", value.settings |> E.withDefaultDeep ProjectSettings.encode initProjectSettings )
+        , ( "settings", value.settings |> E.withDefaultDeep ProjectSettings.encode ProjectSettings.init )
         , ( "createdAt", value.createdAt |> encodePosix )
         , ( "updatedAt", value.updatedAt |> encodePosix )
         , ( "version", currentVersion |> Encode.int )
@@ -291,9 +202,9 @@ decode =
         (Decode.field "id" ProjectId.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.field "sources" (Decode.list Source.decode))
-        (D.defaultField "layout" Layout.decode defaultLayout)
+        (D.defaultField "layout" Layout.decode (Layout.init (Time.millisToPosix 0)))
         (D.maybeField "usedLayout" LayoutName.decode)
         (D.defaultField "layouts" (D.dict LayoutName.fromString Layout.decode) Dict.empty)
-        (D.defaultFieldDeep "settings" ProjectSettings.decode initProjectSettings)
-        (D.defaultField "createdAt" decodePosix defaultTime)
-        (D.defaultField "updatedAt" decodePosix defaultTime)
+        (D.defaultFieldDeep "settings" ProjectSettings.decode ProjectSettings.init)
+        (D.defaultField "createdAt" decodePosix (Time.millisToPosix 0))
+        (D.defaultField "updatedAt" decodePosix (Time.millisToPosix 0))

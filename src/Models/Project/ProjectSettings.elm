@@ -1,4 +1,4 @@
-module Models.Project.ProjectSettings exposing (ProjectSettings, decode, encode)
+module Models.Project.ProjectSettings exposing (ProjectSettings, decode, encode, init)
 
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
@@ -9,6 +9,11 @@ import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSet
 
 type alias ProjectSettings =
     { findPath : FindPathSettings }
+
+
+init : ProjectSettings
+init =
+    { findPath = FindPathSettings 3 [] [] }
 
 
 encode : ProjectSettings -> ProjectSettings -> Value

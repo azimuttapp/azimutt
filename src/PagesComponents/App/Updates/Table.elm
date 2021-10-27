@@ -6,12 +6,15 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (Project, inIndexes, inOutRelation, inPrimaryKey, inUniques, initTableProps, withNullableInfo)
+import Models.Project exposing (Project)
+import Models.Project.Column as Column
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Layout exposing (Layout)
-import Models.Project.Table exposing (Table)
+import Models.Project.Relation as Relation
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableProps as TableProps
 import PagesComponents.App.Models as Models exposing (Msg)
 import PagesComponents.App.Updates.Helpers exposing (setLayout)
 import Ports exposing (activateTooltipsAndPopovers, observeTableSize, observeTablesSize, toastError, toastInfo)
@@ -66,7 +69,7 @@ showAllTables project =
         |> setLayout
             (\l ->
                 { l
-                    | tables = project.tables |> Dict.toList |> List.map (\( id, t ) -> l.tables |> L.findBy .id id |> M.orElse (l.hiddenTables |> L.findBy .id id) |> Maybe.withDefault (initTableProps t))
+                    | tables = project.tables |> Dict.toList |> List.map (\( id, t ) -> l.tables |> L.findBy .id id |> M.orElse (l.hiddenTables |> L.findBy .id id) |> Maybe.withDefault (TableProps.init t))
                     , hiddenTables = []
                 }
             )
@@ -136,16 +139,16 @@ sortColumns id kind project =
                                                 col
                                                     |> M.mapOrElse
                                                         (\c ->
-                                                            if name |> inPrimaryKey table |> M.isJust then
+                                                            if name |> Table.inPrimaryKey table |> M.isJust then
                                                                 ( 0 + sortOffset c.nullable, name |> String.toLower )
 
-                                                            else if name |> inOutRelation tableOutRelations |> L.nonEmpty then
+                                                            else if name |> Relation.inOutRelation tableOutRelations |> L.nonEmpty then
                                                                 ( 1 + sortOffset c.nullable, name |> String.toLower )
 
-                                                            else if name |> inUniques table |> L.nonEmpty then
+                                                            else if name |> Table.inUniques table |> L.nonEmpty then
                                                                 ( 2 + sortOffset c.nullable, name |> String.toLower )
 
-                                                            else if name |> inIndexes table |> L.nonEmpty then
+                                                            else if name |> Table.inIndexes table |> L.nonEmpty then
                                                                 ( 3 + sortOffset c.nullable, name |> String.toLower )
 
                                                             else
@@ -161,7 +164,7 @@ sortColumns id kind project =
                                         List.sortBy (\( _, col ) -> col |> M.mapOrElse .index (table.columns |> Ned.size))
 
                                     "type" ->
-                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse (\c -> c.kind |> String.toLower |> withNullableInfo c.nullable) "~")
+                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse (\c -> c.kind |> String.toLower |> Column.withNullableInfo c.nullable) "~")
 
                                     _ ->
                                         List.sortBy (\( _, col ) -> col |> M.mapOrElse .index (table.columns |> Ned.size))
@@ -194,10 +197,10 @@ hideColumns id kind project =
                                 (\( name, col ) ->
                                     case ( kind, col ) of
                                         ( "regular", Just _ ) ->
-                                            (name |> inPrimaryKey table |> M.isJust)
-                                                || (name |> inOutRelation tableOutRelations |> L.nonEmpty)
-                                                || (name |> inUniques table |> L.nonEmpty)
-                                                || (name |> inIndexes table |> L.nonEmpty)
+                                            (name |> Table.inPrimaryKey table |> M.isJust)
+                                                || (name |> Relation.inOutRelation tableOutRelations |> L.nonEmpty)
+                                                || (name |> Table.inUniques table |> L.nonEmpty)
+                                                || (name |> Table.inIndexes table |> L.nonEmpty)
 
                                         ( "nullable", Just c ) ->
                                             not c.nullable
@@ -246,4 +249,4 @@ updateColumns id update project =
 
 performShowTable : TableId -> Table -> Project -> Project
 performShowTable id table project =
-    project |> setLayout (\l -> { l | tables = ((l.hiddenTables |> L.findBy .id id |> Maybe.withDefault (initTableProps table)) :: l.tables) |> L.uniqueBy .id })
+    project |> setLayout (\l -> { l | tables = ((l.hiddenTables |> L.findBy .id id |> Maybe.withDefault (TableProps.init table)) :: l.tables) |> L.uniqueBy .id })
