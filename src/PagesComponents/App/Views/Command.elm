@@ -8,14 +8,15 @@ import Html.Attributes exposing (class, classList, id, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, role)
-import Models.Project exposing (CanvasProps)
+import Libs.Maybe as M
+import Models.Project.CanvasProps exposing (CanvasProps)
 import PagesComponents.App.Models exposing (CursorMode(..), Msg(..))
 
 
 viewCommands : CursorMode -> Maybe CanvasProps -> Html Msg
 viewCommands cursorMode canvas =
     canvas
-        |> Maybe.map
+        |> M.mapOrElse
             (\c ->
                 div [ class "commands btn-toolbar", role "toolbar", ariaLabel "Diagram commands" ]
                     [ div [ class "btn-group me-2", role "group" ]
@@ -44,4 +45,4 @@ viewCommands cursorMode canvas =
                         ]
                     ]
             )
-        |> Maybe.withDefault (div [] [])
+            (div [] [])

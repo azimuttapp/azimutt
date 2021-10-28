@@ -12,11 +12,20 @@ import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (onWheel)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (HtmlId, ZoomLevel)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
-import Models.Project exposing (CanvasProps, ColumnRef, ColumnRefFull, Relation, RelationFull, Schema, Table, TableId, TableProps, tableIdAsHtmlId, tableIdAsString, viewportSize)
+import Models.ColumnRefFull exposing (ColumnRefFull)
+import Models.Project exposing (Project, viewportSize)
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Relation exposing (Relation)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableProps exposing (TableProps)
+import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Helpers exposing (pagePosToCanvasPos)
 import PagesComponents.App.Models exposing (CursorMode(..), DragState, Hover, Msg(..), VirtualRelation)
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
@@ -24,8 +33,8 @@ import PagesComponents.App.Views.Erd.Table exposing (viewTable)
 import PagesComponents.App.Views.Helpers exposing (onDrag, placeAt, size, sizeAttr)
 
 
-viewErd : Hover -> CursorMode -> Maybe DragState -> Maybe VirtualRelation -> Maybe Area -> Dict HtmlId DomInfo -> Maybe Schema -> Html Msg
-viewErd hover cursorMode dragState virtualRelation selection domInfos schema =
+viewErd : Hover -> CursorMode -> Maybe DragState -> Maybe VirtualRelation -> Maybe Area -> Dict HtmlId DomInfo -> Maybe Project -> Html Msg
+viewErd hover cursorMode dragState virtualRelation selection domInfos project =
     div
         [ class "erd"
         , classList
@@ -38,17 +47,17 @@ viewErd hover cursorMode dragState virtualRelation selection domInfos schema =
         , onWheel OnWheel
         , onDrag conf.ids.erd
         ]
-        [ div [ class "canvas", placeAndZoom (schema |> Maybe.map (\s -> s.layout.canvas) |> Maybe.withDefault (CanvasProps (Position 0 0) 1)) ]
-            (schema |> Maybe.map (\s -> viewErdContent hover virtualRelation selection domInfos s.layout.canvas s.layout.tables s.tables s.relations) |> Maybe.withDefault [])
+        [ div [ class "canvas", placeAndZoom (project |> M.mapOrElse (.layout >> .canvas) (CanvasProps (Position 0 0) 1)) ]
+            (project |> M.mapOrElse (\p -> viewErdContent hover virtualRelation selection domInfos p) [])
         ]
 
 
-viewErdContent : Hover -> Maybe VirtualRelation -> Maybe Area -> Dict HtmlId DomInfo -> CanvasProps -> List TableProps -> Dict TableId Table -> List Relation -> List (Html Msg)
-viewErdContent hover virtualRelation selection domInfos canvas layoutTables tables relations =
+viewErdContent : Hover -> Maybe VirtualRelation -> Maybe Area -> Dict HtmlId DomInfo -> Project -> List (Html Msg)
+viewErdContent hover virtualRelation selection domInfos project =
     let
         layoutTablesDict : Dict TableId ( TableProps, Int )
         layoutTablesDict =
-            layoutTables |> L.zipWithIndex |> D.fromListMap (\( t, _ ) -> t.id)
+            project.layout.tables |> L.zipWithIndex |> D.fromListMap (\( t, _ ) -> t.id)
 
         layoutTablesDictSize : Int
         layoutTablesDictSize =
@@ -56,9 +65,9 @@ viewErdContent hover virtualRelation selection domInfos canvas layoutTables tabl
 
         shownRelations : List RelationFull
         shownRelations =
-            relations
+            project.relations
                 |> List.filter (\r -> Dict.member r.src.table layoutTablesDict || Dict.member r.ref.table layoutTablesDict)
-                |> List.filterMap (buildRelationFull tables layoutTablesDict layoutTablesDictSize domInfos)
+                |> List.filterMap (buildRelationFull project.tables layoutTablesDict layoutTablesDictSize domInfos)
 
         virtualRelationShown : Maybe ( ColumnRefFull, Position )
         virtualRelationShown =
@@ -66,14 +75,14 @@ viewErdContent hover virtualRelation selection domInfos canvas layoutTables tabl
                 |> Maybe.andThen
                     (\vr ->
                         vr.src
-                            |> Maybe.andThen (buildColumnRefFull tables layoutTablesDict layoutTablesDictSize domInfos)
-                            |> Maybe.map (\ref -> ( ref, vr.mouse |> pagePosToCanvasPos domInfos canvas ))
+                            |> Maybe.andThen (buildColumnRefFull project.tables layoutTablesDict layoutTablesDictSize domInfos)
+                            |> Maybe.map (\ref -> ( ref, vr.mouse |> pagePosToCanvasPos domInfos project.layout.canvas ))
                     )
     in
-    [ lazy7 viewTables hover virtualRelation domInfos canvas.zoom layoutTables shownRelations tables
+    [ lazy7 viewTables hover virtualRelation domInfos project.layout.canvas.zoom project.layout.tables shownRelations project.tables
     , lazy2 viewRelations hover shownRelations
-    , selection |> Maybe.map viewSelectSquare |> Maybe.withDefault (div [] [])
-    , virtualRelationShown |> Maybe.map viewVirtualRelation |> Maybe.withDefault (div [] [])
+    , selection |> M.mapOrElse viewSelectSquare (div [] [])
+    , virtualRelationShown |> M.mapOrElse viewVirtualRelation (div [] [])
     ]
 
 
@@ -89,8 +98,8 @@ viewTables hover virtualRelation domInfos zoom layoutTables shownRelations table
         (layoutTables
             |> List.reverse
             |> L.filterZip (\t -> tables |> Dict.get t.id)
-            |> List.map (\( p, t ) -> ( ( t, p ), ( shownRelations |> List.filter (\r -> r.src.table.id == t.id || r.ref.table.id == t.id), domInfos |> Dict.get (tableIdAsHtmlId p.id) ) ))
-            |> List.indexedMap (\i ( ( table, props ), ( rels, domInfo ) ) -> ( tableIdAsString table.id, lazy8 viewTable hover virtualRelation zoom i table props rels domInfo ))
+            |> List.map (\( p, t ) -> ( ( t, p ), ( shownRelations |> List.filter (\r -> r.src.table.id == t.id || r.ref.table.id == t.id), domInfos |> Dict.get (TableId.toHtmlId p.id) ) ))
+            |> List.indexedMap (\i ( ( table, props ), ( rels, domInfo ) ) -> ( TableId.toString table.id, lazy8 viewTable hover virtualRelation zoom i table props rels domInfo ))
         )
 
 
@@ -106,7 +115,7 @@ placeAndZoom props =
 
 buildRelationFull : Dict TableId Table -> Dict TableId ( TableProps, Int ) -> Int -> Dict HtmlId DomInfo -> Relation -> Maybe RelationFull
 buildRelationFull tables layoutTables layoutTablesSize domInfos rel =
-    Maybe.map2 (\src ref -> { name = rel.name, src = src, ref = ref, sources = rel.sources })
+    Maybe.map2 (\src ref -> { name = rel.name, src = src, ref = ref, origins = rel.origins })
         (buildColumnRefFull tables layoutTables layoutTablesSize domInfos rel.src)
         (buildColumnRefFull tables layoutTables layoutTablesSize domInfos rel.ref)
 
@@ -122,7 +131,7 @@ buildColumnRefFull tables layoutTables layoutTablesSize domInfos ref =
                 , props =
                     M.zip
                         (layoutTables |> Dict.get ref.table)
-                        (domInfos |> Dict.get (tableIdAsHtmlId ref.table))
+                        (domInfos |> Dict.get (TableId.toHtmlId ref.table))
                         |> Maybe.map (\( ( t, i ), d ) -> ( t, layoutTablesSize - 1 - i, d.size ))
                 }
             )

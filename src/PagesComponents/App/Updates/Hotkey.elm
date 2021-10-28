@@ -1,6 +1,7 @@
 module PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
 
 import Conf exposing (conf)
+import Libs.Maybe as M
 import Libs.Task exposing (send)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..), VirtualRelationMsg(..))
 import PagesComponents.App.Updates exposing (moveTable, removeElement)
@@ -18,16 +19,16 @@ handleHotkey model hotkey =
             [ removeElement model.hover ]
 
         "move-forward" ->
-            model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (\l -> [ moveTable 1 model.hover l ]) |> Maybe.withDefault []
+            model.project |> Maybe.map .layout |> M.mapOrElse (\l -> [ moveTable 1 model.hover l ]) []
 
         "move-backward" ->
-            model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (\l -> [ moveTable -1 model.hover l ]) |> Maybe.withDefault []
+            model.project |> Maybe.map .layout |> M.mapOrElse (\l -> [ moveTable -1 model.hover l ]) []
 
         "move-to-top" ->
-            model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (\l -> [ moveTable 1000 model.hover l ]) |> Maybe.withDefault []
+            model.project |> Maybe.map .layout |> M.mapOrElse (\l -> [ moveTable 1000 model.hover l ]) []
 
         "move-to-back" ->
-            model.project |> Maybe.map (\p -> p.schema.layout) |> Maybe.map (\l -> [ moveTable -1000 model.hover l ]) |> Maybe.withDefault []
+            model.project |> Maybe.map .layout |> M.mapOrElse (\l -> [ moveTable -1000 model.hover l ]) []
 
         "select-all" ->
             [ send SelectAllTables ]
@@ -40,11 +41,11 @@ handleHotkey model hotkey =
 
         "save" ->
             model.project
-                |> Maybe.map (\p -> [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ])
-                |> Maybe.withDefault [ toastWarning "No project to save" ]
+                |> M.mapOrElse (\p -> [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ])
+                    [ toastWarning "No project to save" ]
 
         "cancel" ->
-            model.virtualRelation |> Maybe.map (\_ -> [ send (VirtualRelationMsg VRCancel) ]) |> Maybe.withDefault []
+            model.virtualRelation |> M.mapOrElse (\_ -> [ send (VirtualRelationMsg VRCancel) ]) []
 
         "help" ->
             [ showModal conf.ids.helpModal ]

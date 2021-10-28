@@ -7,6 +7,7 @@ import Html.Styled exposing (Html, a, blockquote, div, figcaption, figure, h1, h
 import Html.Styled.Attributes exposing (alt, css, height, href, src, width)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
+import Libs.Maybe as M
 import Tailwind.Breakpoints exposing (lg, sm)
 import Tailwind.Utilities exposing (absolute, bg_white, block, font_extrabold, font_semibold, h_full, hidden, inset_y_0, leading_8, max_w_prose, mt_2, mt_6, mt_8, mx_auto, overflow_hidden, prose, prose_indigo, prose_lg, px_4, px_6, px_8, py_16, relative, rounded_lg, text_3xl, text_4xl, text_base, text_center, text_gray_500, text_gray_900, text_indigo_600, text_lg, text_xl, tracking_tight, tracking_wide, uppercase, w_full)
 
@@ -40,7 +41,7 @@ centered model =
                     , span [ css [ mt_2, block, text_3xl, text_center, leading_8, font_extrabold, tracking_tight, text_gray_900, sm [ text_4xl ] ] ] [ text model.title ]
                     ]
                  ]
-                    ++ (model.introduction |> Maybe.map (\intro -> [ p [ css [ mt_8, text_xl, text_gray_500, leading_8 ] ] [ text intro ] ]) |> Maybe.withDefault [])
+                    ++ (model.introduction |> M.mapOrElse (\intro -> [ p [ css [ mt_8, text_xl, text_gray_500, leading_8 ] ] [ text intro ] ]) [])
                 )
             , div [ css [ mt_6, prose, prose_indigo, prose_lg, text_gray_500, mx_auto ] ] model.content
             ]

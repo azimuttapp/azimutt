@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackErrorList, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -7,10 +7,18 @@ import Json.Encode as Encode
 import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
-import Libs.Json.Formats exposing (decodePosition, decodeSize)
 import Libs.List as L
-import Libs.Models exposing (FileContent, FileUrl, HtmlId, SizeChange, Text, TrackEvent)
-import Models.Project exposing (Project, ProjectId, ProjectSourceId, SampleName, TableId, decodeProject, encodeProject, tableIdAsHtmlId)
+import Libs.Models exposing (FileContent, SizeChange, Text, TrackEvent)
+import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position as Position
+import Libs.Models.Size as Size
+import Models.Project as Project exposing (Project)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
+import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.TableId as TableId exposing (TableId)
 import Time
 
 
@@ -74,14 +82,19 @@ dropProject project =
     messageToJs (DropProject project)
 
 
-readFile : File -> Cmd msg
-readFile file =
-    messageToJs (ReadFile file)
+readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> Cmd msg
+readLocalFile project source file =
+    messageToJs (GetLocalFile project source file)
 
 
-loadFile : FileUrl -> Maybe SampleName -> Cmd msg
-loadFile url sample =
-    messageToJs (LoadFile url sample)
+readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleName -> Cmd msg
+readRemoteFile project source url sample =
+    messageToJs (GetRemoteFile project source url sample)
+
+
+getSourceId : ColumnRef -> ColumnRef -> Cmd msg
+getSourceId src ref =
+    messageToJs (GetSourceId src ref)
 
 
 observeSizes : List HtmlId -> Cmd msg
@@ -96,12 +109,12 @@ observeSize id =
 
 observeTableSize : TableId -> Cmd msg
 observeTableSize id =
-    observeSizes [ tableIdAsHtmlId id ]
+    observeSizes [ TableId.toHtmlId id ]
 
 
 observeTablesSize : List TableId -> Cmd msg
 observeTablesSize ids =
-    observeSizes (List.map tableIdAsHtmlId ids)
+    observeSizes (List.map TableId.toHtmlId ids)
 
 
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg
@@ -128,9 +141,9 @@ trackJsonError name error =
     messageToJs (TrackError name (Encode.object [ ( "message", errorToString error |> Encode.string ) ]))
 
 
-trackErrorList : String -> List String -> Cmd msg
-trackErrorList name errors =
-    Cmd.batch (errors |> List.map (\error -> messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))))
+trackError : String -> String -> Cmd msg
+trackError name error =
+    messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))
 
 
 type ElmMsg
@@ -143,8 +156,9 @@ type ElmMsg
     | LoadProjects
     | SaveProject Project
     | DropProject Project
-    | ReadFile File
-    | LoadFile FileUrl (Maybe SampleName)
+    | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
+    | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleName)
+    | GetSourceId ColumnRef ColumnRef
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | TrackPage String
@@ -153,11 +167,12 @@ type ElmMsg
 
 
 type JsMsg
-    = ProjectsLoaded ( List ( ProjectId, Decode.Error ), List Project )
-    | FileRead Time.Posix ProjectId ProjectSourceId File FileContent
-    | FileLoaded Time.Posix ProjectId ProjectSourceId FileUrl FileContent (Maybe SampleName)
-    | SizesChanged (List SizeChange)
-    | HotkeyUsed String
+    = GotSizes (List SizeChange)
+    | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
+    | GotLocalFile Time.Posix ProjectId SourceId File FileContent
+    | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleName)
+    | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
+    | GotHotkey String
     | Error Decode.Error
 
 
@@ -208,16 +223,19 @@ elmEncoder elm =
             Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
 
         SaveProject project ->
-            Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> encodeProject ) ]
+            Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         DropProject project ->
-            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> encodeProject ) ]
+            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
-        ReadFile file ->
-            Encode.object [ ( "kind", "ReadFile" |> Encode.string ), ( "file", file |> FileValue.encode ) ]
+        GetLocalFile project source file ->
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe ProjectId.encode ), ( "source", source |> E.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
 
-        LoadFile url sample ->
-            Encode.object [ ( "kind", "LoadFile" |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
+        GetRemoteFile project source url sample ->
+            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> E.maybe ProjectId.encode ), ( "source", source |> E.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
+
+        GetSourceId src ref ->
+            Encode.object [ ( "kind", "GetSourceId" |> Encode.string ), ( "src", src |> ColumnRef.encode ), ( "ref", ref |> ColumnRef.encode ) ]
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
@@ -245,38 +263,45 @@ jsDecoder =
     D.matchOn "kind"
         (\kind ->
             case kind of
-                "ProjectsLoaded" ->
-                    Decode.field "projects" projectsDecoder |> Decode.map ProjectsLoaded
+                "GotSizes" ->
+                    Decode.field "sizes"
+                        (Decode.map3 SizeChange
+                            (Decode.field "id" Decode.string)
+                            (Decode.field "position" Position.decode)
+                            (Decode.field "size" Size.decode)
+                            |> Decode.list
+                        )
+                        |> Decode.map GotSizes
 
-                "FileRead" ->
-                    Decode.map5 FileRead
+                "GotProjects" ->
+                    Decode.field "projects" projectsDecoder |> Decode.map GotProjects
+
+                "GotLocalFile" ->
+                    Decode.map5 GotLocalFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Decode.string)
+                        (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
 
-                "FileLoaded" ->
-                    Decode.map6 FileLoaded
+                "GotRemoteFile" ->
+                    Decode.map6 GotRemoteFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
-                        (Decode.field "sourceId" Decode.string)
+                        (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
                         (D.maybeField "sample" Decode.string)
 
-                "SizesChanged" ->
-                    Decode.field "sizes"
-                        (Decode.map3 SizeChange
-                            (Decode.field "id" Decode.string)
-                            (Decode.field "position" decodePosition)
-                            (Decode.field "size" decodeSize)
-                            |> Decode.list
-                        )
-                        |> Decode.map SizesChanged
+                "GotSourceId" ->
+                    Decode.map4 GotSourceId
+                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
+                        (Decode.field "sourceId" SourceId.decode)
+                        (Decode.field "src" ColumnRef.decode)
+                        (Decode.field "ref" ColumnRef.decode)
 
-                "HotkeyUsed" ->
-                    Decode.field "id" Decode.string |> Decode.map HotkeyUsed
+                "GotHotkey" ->
+                    Decode.field "id" Decode.string |> Decode.map GotHotkey
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")
@@ -292,7 +317,7 @@ projectsDecoder =
                     |> List.map
                         (\( k, v ) ->
                             v
-                                |> Decode.decodeValue decodeProject
+                                |> Decode.decodeValue Project.decode
                                 |> Result.mapError (\e -> ( k, e ))
                         )
                     |> L.resultCollect

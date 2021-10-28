@@ -3,7 +3,8 @@ module Libs.Html.Attributes exposing (ariaControls, ariaDescribedBy, ariaExpande
 import Html exposing (Attribute)
 import Html.Attributes exposing (attribute)
 import Libs.Bool as B
-import Libs.Models exposing (HtmlId, Text, TrackEvent)
+import Libs.Models exposing (Text, TrackEvent)
+import Libs.Models.HtmlId exposing (HtmlId)
 
 
 role : String -> Attribute msg

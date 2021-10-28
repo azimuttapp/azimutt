@@ -18,12 +18,23 @@ import Libs.Html exposing (divIf)
 import Libs.Html.Attributes exposing (track)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (ZoomLevel)
+import Libs.Models.Position as Position
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.Position as Position
 import Libs.String as S
-import Models.Project exposing (Check, Column, ColumnName, ColumnRef, Comment, Index, PrimaryKey, RelationFull, Table, TableId, TableProps, Unique, inChecks, inIndexes, inPrimaryKey, inUniques, showTableId, showTableName, tableIdAsHtmlId, tableIdAsString, withNullableInfo)
+import Models.Project.Check exposing (Check)
+import Models.Project.Column as Column exposing (Column)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.Index exposing (Index)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.Table as Table exposing (Table)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableProps exposing (TableProps)
+import Models.Project.Unique exposing (Unique)
+import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
 import Tracking exposing (events)
@@ -40,25 +51,25 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
         [ class "erd-table"
         , class props.color
         , classList [ ( "selected", props.selected ) ]
-        , id (tableIdAsHtmlId table.id)
+        , id (TableId.toHtmlId table.id)
         , placeAt props.position
         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
-        , domInfo |> Maybe.map (\i -> sizeAttr i.size) |> Maybe.withDefault (style "visibility" "hidden")
+        , domInfo |> M.mapOrElse (\i -> sizeAttr i.size) (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)
-        , onDrag (tableIdAsHtmlId table.id)
+        , onDrag (TableId.toHtmlId table.id)
         ]
         [ lazy3 viewHeader zoom index table
         , lazy5 viewColumns hover virtualRelation table tableRelations props.columns
-        , lazy4 viewHiddenColumns (tableIdAsHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns
+        , lazy4 viewHiddenColumns (TableId.toHtmlId table.id ++ "-hidden-columns-collapse") table tableRelations hiddenColumns
         ]
 
 
 viewHeader : ZoomLevel -> Int -> Table -> Html Msg
 viewHeader zoom index table =
     div [ class "header", style "display" "flex", style "align-items" "center" ]
-        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (showTableName table.schema table.name) ] ])
-        , bsDropdown (tableIdAsHtmlId table.id ++ "-settings-dropdown")
+        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (TableId.show ( table.schema, table.name )) ] ])
+        , bsDropdown (TableId.toHtmlId table.id ++ "-settings-dropdown")
             []
             (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])
             (\attrs ->
@@ -128,7 +139,7 @@ viewColumn isHover virtualRelation columnRelations table column =
          , Pointer.onEnter (\_ -> HoverColumn (Just ref))
          , Pointer.onLeave (\_ -> HoverColumn Nothing)
          ]
-            ++ (virtualRelation |> Maybe.map (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> VRUpdate ref >> VirtualRelationMsg) ]) |> Maybe.withDefault [])
+            ++ (virtualRelation |> M.mapOrElse (\_ -> [ Mouse.onUp (.pagePos >> Position.fromTuple >> VRUpdate ref >> VirtualRelationMsg) ]) [])
         )
         [ viewColumnDropdown columnRelations ref (viewColumnIcon table column columnRelations)
         , viewColumnName table column
@@ -169,8 +180,8 @@ viewHiddenColumn table column columnRelations =
 viewColumnIcon : Table -> Column -> List RelationFull -> List (Attribute Msg) -> Html Msg
 viewColumnIcon table column columnRelations attrs =
     case
-        ( ( column.name |> inPrimaryKey table, columnRelations |> List.filter (\r -> r.src.table.id == table.id && r.src.column.name == column.name) |> List.head )
-        , ( column.name |> inUniques table, column.name |> inIndexes table, column.name |> inChecks table )
+        ( ( column.name |> Table.inPrimaryKey table, columnRelations |> List.filter (\r -> r.src.table.id == table.id && r.src.column.name == column.name) |> List.head )
+        , ( column.name |> Table.inUniques table, column.name |> Table.inIndexes table, column.name |> Table.inChecks table )
         )
     of
         ( ( Just pk, _ ), _ ) ->
@@ -198,17 +209,17 @@ viewColumnDropdown columnRelations ref element =
     case
         columnRelations
             |> List.filter (\relation -> relation.src.table.id /= ref.table)
-            |> L.groupBy (\relation -> relation.src.table.id |> tableIdAsString)
+            |> L.groupBy (\relation -> relation.src.table.id |> TableId.toString)
             |> Dict.values
-            |> List.concatMap (\tableRelations -> [ tableRelations.head ])
+            |> List.concatMap (\tableRelations -> tableRelations |> List.head |> M.toList)
             |> List.map
                 (\relation ->
                     li []
                         [ button ([ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ] ++ track events.showTableWithIncomingRelationsDropdown)
                             [ viewIcon Icon.externalLinkAlt
                             , text " "
-                            , b [] [ text (showTableId relation.src.table.id) ]
-                            , text ("" |> withColumnName relation.src.column.name |> withNullableInfo relation.src.column.nullable)
+                            , b [] [ text (TableId.show relation.src.table.id) ]
+                            , text ("" |> withColumnName relation.src.column.name |> Column.withNullableInfo relation.src.column.nullable)
                             ]
                         ]
                 )
@@ -239,7 +250,7 @@ viewColumnName table column =
     let
         className : String
         className =
-            case column.name |> inPrimaryKey table of
+            case column.name |> Table.inPrimaryKey table of
                 Just _ ->
                     "name bold"
 
@@ -256,8 +267,9 @@ viewColumnType column =
         value : Html msg
         value =
             column.default
-                |> Maybe.map (\default -> span [ class "value text-decoration-underline", title ("default value: " ++ default), bsToggle Tooltip ] [ text column.kind ])
-                |> Maybe.withDefault (span [ class "value" ] [ text column.kind ])
+                |> M.mapOrElse
+                    (\default -> span [ class "value text-decoration-underline", title ("default value: " ++ default), bsToggle Tooltip ] [ text column.kind ])
+                    (span [ class "value" ] [ text column.kind ])
 
         nullable : List (Html msg)
         nullable =
@@ -330,4 +342,4 @@ formatCheckTitle checks =
 
 formatReference : RelationFull -> String
 formatReference rel =
-    showTableName (rel.ref.table.id |> Tuple.first) (rel.ref.table.id |> Tuple.second) |> withColumnName rel.ref.column.name
+    TableId.show rel.ref.table.id |> withColumnName rel.ref.column.name

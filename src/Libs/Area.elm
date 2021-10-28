@@ -1,7 +1,7 @@
 module Libs.Area exposing (Area, center, div, inside, move, mult, normalize, overlap)
 
-import Libs.Position as Position exposing (Position)
-import Libs.Size as Size exposing (Size)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size as Size exposing (Size)
 
 
 type alias Area =

@@ -1,8 +1,12 @@
 module Tracking exposing (events)
 
 import Dict
+import Libs.Maybe as M
 import Libs.Models exposing (TrackEvent)
-import Models.Project exposing (FindPathResult, Layout, Project)
+import Models.Project exposing (Project)
+import Models.Project.FindPathResult exposing (FindPathResult)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.Source exposing (Source)
 
 
 
@@ -12,6 +16,7 @@ import Models.Project exposing (FindPathResult, Layout, Project)
 events :
     { openAppCta : String -> TrackEvent
     , openMenu : TrackEvent
+    , openSettings : TrackEvent
     , openHelp : TrackEvent
     , openTableSettings : TrackEvent
     , showTableWithForeignKey : TrackEvent
@@ -24,6 +29,8 @@ events :
     , loadProject : Project -> TrackEvent
     , updateProject : Project -> TrackEvent
     , deleteProject : Project -> TrackEvent
+    , addSource : Source -> TrackEvent
+    , refreshSource : Source -> TrackEvent
     , createLayout : Layout -> TrackEvent
     , loadLayout : Layout -> TrackEvent
     , updateLayout : Layout -> TrackEvent
@@ -33,6 +40,7 @@ events :
 events =
     { openAppCta = \source -> { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
     , openMenu = { name = "open-menu", details = [], enabled = True }
+    , openSettings = { name = "open-settings", details = [], enabled = True }
     , openHelp = { name = "open-help", details = [], enabled = True }
     , openTableSettings = { name = "open-table-settings", details = [], enabled = True }
     , showTableWithForeignKey = { name = "show-table-with-foreign-key", details = [], enabled = True }
@@ -44,6 +52,8 @@ events =
     , loadProject = projectEvent "load"
     , updateProject = projectEvent "update"
     , deleteProject = projectEvent "delete"
+    , addSource = sourceEvent "add"
+    , refreshSource = sourceEvent "refresh"
     , createLayout = layoutEvent "create"
     , loadLayout = layoutEvent "load"
     , updateLayout = layoutEvent "update"
@@ -55,10 +65,22 @@ events =
 
 projectEvent : String -> Project -> TrackEvent
 projectEvent eventName project =
-    { name = eventName ++ (project.fromSample |> Maybe.map (\_ -> "-sample") |> Maybe.withDefault "") ++ "-project"
+    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> M.toList) |> List.head |> M.mapOrElse (\_ -> "-sample") "") ++ "-project"
     , details =
-        [ ( "table-count", project.schema.tables |> Dict.size |> String.fromInt )
+        [ ( "table-count", project.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", project.relations |> List.length |> String.fromInt )
         , ( "layout-count", project.layouts |> Dict.size |> String.fromInt )
+        ]
+    , enabled = True
+    }
+
+
+sourceEvent : String -> Source -> TrackEvent
+sourceEvent eventName source =
+    { name = eventName ++ "-source"
+    , details =
+        [ ( "table-count", source.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", source.relations |> List.length |> String.fromInt )
         ]
     , enabled = True
     }

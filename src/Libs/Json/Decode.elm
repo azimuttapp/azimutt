@@ -1,7 +1,8 @@
-module Libs.Json.Decode exposing (defaultField, defaultFieldDeep, dict, map10, map9, matchOn, maybeField, maybeWithDefault, ned, nel, tuple)
+module Libs.Json.Decode exposing (defaultField, defaultFieldDeep, dict, map10, map11, map12, map9, matchOn, maybeField, maybeWithDefault, ned, nel, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
+import Libs.Maybe as M
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 
@@ -20,12 +21,12 @@ dict buildKey decoder =
 
 nel : Decode.Decoder a -> Decode.Decoder (Nel a)
 nel decoder =
-    Decode.list decoder |> Decode.andThen (\l -> l |> Nel.fromList |> Maybe.map Decode.succeed |> Maybe.withDefault (Decode.fail "Non empty list can't be empty"))
+    Decode.list decoder |> Decode.andThen (\l -> l |> Nel.fromList |> M.mapOrElse Decode.succeed (Decode.fail "Non empty list can't be empty"))
 
 
 ned : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Ned comparable a)
 ned buildKey decoder =
-    dict buildKey decoder |> Decode.andThen (\d -> d |> Ned.fromDict |> Maybe.map Decode.succeed |> Maybe.withDefault (Decode.fail "Non empty dict can't be empty"))
+    dict buildKey decoder |> Decode.andThen (\d -> d |> Ned.fromDict |> M.mapOrElse Decode.succeed (Decode.fail "Non empty dict can't be empty"))
 
 
 maybeField : String -> Decoder a -> Decoder (Maybe a)

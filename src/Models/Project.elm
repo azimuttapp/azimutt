@@ -1,4 +1,4 @@
-module Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnRefFull, ColumnType, ColumnValue, Comment, FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationFull, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName, buildProject, decodeCanvasProps, decodeCheck, decodeColumn, decodeColumnName, decodeColumnRef, decodeComment, decodeIndex, decodeLayout, decodePrimaryKey, decodeProject, decodeProjectId, decodeProjectName, decodeProjectSettings, decodeProjectSource, decodeProjectSourceContent, decodeProjectSourceId, decodeProjectSourceName, decodeRelation, decodeSchema, decodeSource, decodeSourceLine, decodeTable, decodeTableId, decodeTableProps, decodeUnique, encodeCanvasProps, encodeCheck, encodeColumn, encodeColumnName, encodeColumnRef, encodeComment, encodeIndex, encodeLayout, encodePrimaryKey, encodeProject, encodeProjectId, encodeProjectName, encodeProjectSettings, encodeProjectSource, encodeProjectSourceContent, encodeProjectSourceId, encodeProjectSourceName, encodeRelation, encodeSchema, encodeSource, encodeSourceLine, encodeTable, encodeTableId, encodeTableProps, encodeUnique, extractPath, htmlIdAsTableId, htmlIdDecode, htmlIdEncode, inChecks, inIndexes, inOutRelation, inPrimaryKey, inUniques, initLayout, initTableProps, parseTableId, showColumnRef, showTableId, showTableName, stringAsTableId, tableIdAsHtmlId, tableIdAsString, tablesArea, viewportArea, viewportSize, withNullableInfo)
+module Models.Project exposing (Project, addSource, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
@@ -9,421 +9,108 @@ import Libs.Dict as D
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
-import Libs.Json.Formats exposing (decodeColor, decodePosition, decodePosix, decodeZoomLevel, encodeColor, encodePosition, encodePosix, encodeZoomLevel)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color, HtmlId, UID, ZoomLevel)
-import Libs.Ned as Ned exposing (Ned)
-import Libs.Nel as Nel exposing (Nel)
-import Libs.Position as Position exposing (Position)
-import Libs.Size exposing (Size)
-import Libs.String as S
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size exposing (Size)
+import Libs.Time as Time
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.Layout as Layout exposing (Layout)
+import Models.Project.LayoutName as LayoutName exposing (LayoutName)
+import Models.Project.ProjectId as ProjectId exposing (ProjectId)
+import Models.Project.ProjectName as ProjectName exposing (ProjectName)
+import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
+import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Source as Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Table as Table exposing (Table)
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableProps exposing (TableProps)
 import Time
-import Url exposing (percentDecode, percentEncode)
 
 
 type alias Project =
     { id : ProjectId
     , name : ProjectName
-    , sources : Nel ProjectSource
-    , schema : Schema
+    , sources : List Source
+    , tables : Dict TableId Table -- computed from sources, do not update directly (see new & setSources functions)
+    , relations : List Relation -- computed from sources, do not update directly (see new & setSources functions)
+    , layout : Layout
+    , usedLayout : Maybe LayoutName
     , layouts : Dict LayoutName Layout
-    , currentLayout : Maybe LayoutName
     , settings : ProjectSettings
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
-    , fromSample : Maybe SampleName
     }
 
 
-type alias ProjectSource =
-    -- file the project depend on, they can be refreshed over time
-    { id : ProjectSourceId
-    , name : ProjectSourceName
-    , source : ProjectSourceContent
-    , createdAt : Time.Posix
-    , updatedAt : Time.Posix
-    }
-
-
-type ProjectSourceContent
-    = LocalFile String Int Time.Posix
-    | RemoteFile String Int
-
-
-type alias Schema =
-    { tables : Dict TableId Table, relations : List Relation, layout : Layout }
-
-
-type alias Table =
-    { id : TableId
-    , schema : SchemaName
-    , name : TableName
-    , columns : Ned ColumnName Column
-    , primaryKey : Maybe PrimaryKey
-    , uniques : List Unique
-    , indexes : List Index
-    , checks : List Check
-    , comment : Maybe Comment
-    , sources : List Source
-    }
-
-
-type alias Column =
-    { index : ColumnIndex
-    , name : ColumnName
-    , kind : ColumnType
-    , nullable : Bool
-    , default : Maybe ColumnValue
-    , comment : Maybe Comment
-    , sources : List Source
-    }
-
-
-type alias PrimaryKey =
-    { name : PrimaryKeyName, columns : Nel ColumnName, sources : List Source }
-
-
-type alias Unique =
-    { name : UniqueName, columns : Nel ColumnName, definition : String, sources : List Source }
-
-
-type alias Index =
-    { name : IndexName, columns : Nel ColumnName, definition : String, sources : List Source }
-
-
-type alias Check =
-    { name : CheckName, columns : List ColumnName, predicate : String, sources : List Source }
-
-
-type alias Comment =
-    { text : String, sources : List Source }
-
-
-type alias Relation =
-    { name : RelationName, src : ColumnRef, ref : ColumnRef, sources : List Source }
-
-
-type alias ColumnRef =
-    { table : TableId, column : ColumnName }
-
-
-type alias RelationFull =
-    { name : RelationName, src : ColumnRefFull, ref : ColumnRefFull, sources : List Source }
-
-
-type alias ColumnRefFull =
-    { ref : ColumnRef, table : Table, column : Column, props : Maybe ( TableProps, Int, Size ) }
-
-
-type alias Source =
-    { id : ProjectSourceId, lines : Nel SourceLine }
-
-
-type alias SourceLine =
-    { no : Int, text : String }
-
-
-type alias Layout =
-    { canvas : CanvasProps
-    , tables : List TableProps
-    , hiddenTables : List TableProps
-    , createdAt : Time.Posix
-    , updatedAt : Time.Posix
-    }
-
-
-type alias CanvasProps =
-    { position : Position, zoom : ZoomLevel }
-
-
-type alias TableProps =
-    { id : TableId, position : Position, color : Color, columns : List ColumnName, selected : Bool }
-
-
-type alias ProjectSettings =
-    { findPath : FindPathSettings }
-
-
-type alias FindPath =
-    { from : Maybe TableId
-    , to : Maybe TableId
-    , result : FindPathState
-    }
-
-
-type FindPathState
-    = Empty
-    | Searching
-    | Found FindPathResult
-
-
-type alias FindPathResult =
-    { from : TableId
-    , to : TableId
-    , paths : List FindPathPath
-    , settings : FindPathSettings
-    }
-
-
-type alias FindPathPath =
-    Nel FindPathStep
-
-
-type alias FindPathStep =
-    { relation : Relation, direction : FindPathStepDir }
-
-
-type FindPathStepDir
-    = Right
-    | Left
-
-
-type alias FindPathSettings =
-    { maxPathLength : Int, ignoredTables : List TableId, ignoredColumns : List ColumnName }
-
-
-type alias ProjectId =
-    UID
-
-
-type alias ProjectName =
-    String
-
-
-type alias ProjectSourceId =
-    UID
-
-
-type alias ProjectSourceName =
-    String
-
-
-type alias TableId =
-    ( SchemaName, TableName )
-
-
-type alias SchemaName =
-    String
-
-
-type alias TableName =
-    String
-
-
-type alias ColumnName =
-    String
-
-
-type alias ColumnIndex =
-    Int
-
-
-type alias ColumnType =
-    String
-
-
-type alias ColumnValue =
-    String
-
-
-type alias PrimaryKeyName =
-    String
-
-
-type alias UniqueName =
-    String
-
-
-type alias IndexName =
-    String
-
-
-type alias CheckName =
-    String
-
-
-type alias RelationName =
-    String
-
-
-type alias LayoutName =
-    String
-
-
-type alias SampleName =
-    String
-
-
-buildProject : ProjectId -> ProjectName -> Nel ProjectSource -> Schema -> Maybe SampleName -> Time.Posix -> Project
-buildProject id name sources schema sample now =
+new : ProjectId -> ProjectName -> List Source -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
+new id name sources layout usedLayout layouts settings createdAt updatedAt =
     { id = id
     , name = name
     , sources = sources
-    , schema = schema
-    , layouts = Dict.empty
-    , currentLayout = Nothing
-    , settings = defaultProjectSettings
-    , createdAt = now
-    , updatedAt = now
-    , fromSample = sample
+    , tables = sources |> computeTables
+    , relations = sources |> computeRelations
+    , layout = layout
+    , usedLayout = usedLayout
+    , layouts = layouts
+    , settings = settings
+    , createdAt = createdAt
+    , updatedAt = updatedAt
     }
 
 
-htmlIdEncode : String -> HtmlId
-htmlIdEncode text =
-    text |> percentEncode
+create : ProjectId -> ProjectName -> Source -> Project
+create id name source =
+    new id name [ source ] (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init source.createdAt source.updatedAt
 
 
-htmlIdDecode : String -> HtmlId
-htmlIdDecode text =
-    text |> percentDecode |> Maybe.withDefault text
+setSources : (List Source -> List Source) -> Project -> Project
+setSources transform project =
+    transform project.sources
+        |> (\sources ->
+                { project
+                    | sources = sources
+                    , tables = sources |> computeTables
+                    , relations = sources |> computeRelations
+                }
+           )
 
 
-tableIdAsHtmlId : TableId -> HtmlId
-tableIdAsHtmlId ( schema, table ) =
-    "table-" ++ schema ++ "-" ++ (table |> htmlIdEncode)
+updateSource : SourceId -> (Source -> Source) -> Project -> Project
+updateSource id transform project =
+    setSources
+        (List.map
+            (\source ->
+                if source.id == id then
+                    transform source
+
+                else
+                    source
+            )
+        )
+        project
 
 
-htmlIdAsTableId : HtmlId -> TableId
-htmlIdAsTableId id =
-    case String.split "-" id of
-        "table" :: schema :: table :: [] ->
-            ( schema, table |> htmlIdDecode )
-
-        _ ->
-            ( conf.default.schema, id )
+addSource : Source -> Project -> Project
+addSource source project =
+    setSources (\sources -> sources ++ [ source ]) project
 
 
-tableIdAsString : TableId -> String
-tableIdAsString ( schema, table ) =
-    schema ++ "." ++ table
+deleteSource : SourceId -> Project -> Project
+deleteSource id project =
+    setSources (List.filter (\s -> s.id /= id)) project
 
 
-stringAsTableId : String -> TableId
-stringAsTableId id =
-    case String.split "." id of
-        schema :: table :: [] ->
-            ( schema, table )
-
-        _ ->
-            ( conf.default.schema, id )
+computeTables : List Source -> Dict TableId Table
+computeTables sources =
+    sources |> List.filter .enabled |> List.map .tables |> List.foldr (D.merge Table.merge) Dict.empty
 
 
-layoutNameAsString : LayoutName -> String
-layoutNameAsString name =
-    name
-
-
-stringAsLayoutName : String -> LayoutName
-stringAsLayoutName name =
-    name
-
-
-showTableName : SchemaName -> TableName -> String
-showTableName schema table =
-    if schema == conf.default.schema then
-        table
-
-    else
-        schema ++ "." ++ table
-
-
-showTableId : TableId -> String
-showTableId ( schema, table ) =
-    showTableName schema table
-
-
-parseTableId : String -> TableId
-parseTableId tableId =
-    case tableId |> String.split "." of
-        table :: [] ->
-            ( conf.default.schema, table )
-
-        schema :: table :: [] ->
-            ( schema, table )
-
-        _ ->
-            ( conf.default.schema, tableId )
-
-
-showColumnRef : ColumnRef -> String
-showColumnRef ref =
-    showTableId ref.table ++ "." ++ ref.column
-
-
-extractPath : ProjectSourceContent -> String
-extractPath sourceContent =
-    case sourceContent of
-        LocalFile path _ _ ->
-            path
-
-        RemoteFile url _ ->
-            url
-
-
-initLayout : Time.Posix -> Layout
-initLayout now =
-    { canvas = CanvasProps (Position 0 0) 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
-
-
-initTableProps : Table -> TableProps
-initTableProps table =
-    { id = table.id
-    , position = Position 0 0
-    , color = computeColor table.id
-    , selected = False
-    , columns = table.columns |> Ned.values |> Nel.toList |> List.sortBy .index |> List.map .name
-    }
-
-
-computeColor : TableId -> Color
-computeColor ( _, table ) =
-    S.wordSplit table
-        |> List.head
-        |> Maybe.map S.hashCode
-        |> Maybe.map (modBy (List.length conf.colors))
-        |> Maybe.andThen (\index -> conf.colors |> L.get index)
-        |> Maybe.withDefault conf.default.color
-
-
-inPrimaryKey : Table -> ColumnName -> Maybe PrimaryKey
-inPrimaryKey table column =
-    table.primaryKey |> M.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
-
-
-inUniques : Table -> ColumnName -> List Unique
-inUniques table column =
-    table.uniques |> List.filter (\u -> u.columns |> Nel.toList |> hasColumn column)
-
-
-inIndexes : Table -> ColumnName -> List Index
-inIndexes table column =
-    table.indexes |> List.filter (\i -> i.columns |> Nel.toList |> hasColumn column)
-
-
-inChecks : Table -> ColumnName -> List Check
-inChecks table column =
-    table.checks |> List.filter (\i -> i.columns |> hasColumn column)
-
-
-hasColumn : ColumnName -> List ColumnName -> Bool
-hasColumn column columns =
-    columns |> List.any (\c -> c == column)
-
-
-inOutRelation : List Relation -> ColumnName -> List Relation
-inOutRelation tableOutRelations column =
-    tableOutRelations |> List.filter (\r -> r.src.column == column)
-
-
-withNullableInfo : Bool -> String -> String
-withNullableInfo nullable text =
-    if nullable then
-        text ++ "?"
-
-    else
-        text
+computeRelations : List Source -> List Relation
+computeRelations sources =
+    sources |> List.filter .enabled |> List.map .relations |> List.foldr (L.merge .id Relation.merge) []
 
 
 viewportSize : Dict HtmlId DomInfo -> Maybe Size
@@ -441,7 +128,7 @@ tablesArea domInfos tables =
     let
         positions : List ( TableProps, Size )
         positions =
-            tables |> L.zipWith (\t -> domInfos |> Dict.get (tableIdAsHtmlId t.id) |> Maybe.map .size |> Maybe.withDefault (Size 0 0))
+            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> M.mapOrElse .size (Size 0 0))
 
         left : Float
         left =
@@ -462,591 +149,37 @@ tablesArea domInfos tables =
     Area (Position left top) (Size (right - left) (bottom - top))
 
 
-defaultTime : Time.Posix
-defaultTime =
-    Time.millisToPosix 0
-
-
-defaultLayout : Layout
-defaultLayout =
-    initLayout defaultTime
-
-
-defaultProjectSettings : { findPath : FindPathSettings }
-defaultProjectSettings =
-    { findPath = FindPathSettings 3 [] [] }
-
-
-
--- JSON
-
-
 currentVersion : Int
 currentVersion =
     -- compatibility version for Project JSON, when you have breaking change, increment it and handle needed migrations
-    1
+    2
 
 
-encodeProject : Project -> Value
-encodeProject value =
+encode : Project -> Value
+encode value =
     E.object
-        [ ( "id", value.id |> encodeProjectId )
-        , ( "name", value.name |> encodeProjectName )
-        , ( "sources", value.sources |> E.nel encodeProjectSource )
-        , ( "schema", value.schema |> encodeSchema )
-        , ( "layouts", value.layouts |> Encode.dict layoutNameAsString encodeLayout )
-        , ( "currentLayout", value.currentLayout |> E.maybe encodeLayoutName )
-        , ( "settings", value.settings |> E.withDefaultDeep encodeProjectSettings defaultProjectSettings )
-        , ( "createdAt", value.createdAt |> encodePosix )
-        , ( "updatedAt", value.updatedAt |> encodePosix )
-        , ( "fromSample", value.fromSample |> E.maybe Encode.string )
+        [ ( "id", value.id |> ProjectId.encode )
+        , ( "name", value.name |> ProjectName.encode )
+        , ( "sources", value.sources |> Encode.list Source.encode )
+        , ( "layout", value.layout |> Layout.encode )
+        , ( "usedLayout", value.usedLayout |> E.maybe LayoutName.encode )
+        , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
+        , ( "settings", value.settings |> E.withDefaultDeep ProjectSettings.encode ProjectSettings.init )
+        , ( "createdAt", value.createdAt |> Time.encode )
+        , ( "updatedAt", value.updatedAt |> Time.encode )
         , ( "version", currentVersion |> Encode.int )
         ]
 
 
-decodeProject : Decode.Decoder Project
-decodeProject =
-    D.map10 Project
-        (Decode.field "id" decodeProjectId)
-        (Decode.field "name" decodeProjectName)
-        (Decode.field "sources" (D.nel decodeProjectSource))
-        (Decode.field "schema" decodeSchema)
-        (D.defaultField "layouts" (D.dict stringAsLayoutName decodeLayout) Dict.empty)
-        (D.maybeField "currentLayout" decodeLayoutName)
-        (D.defaultFieldDeep "settings" decodeProjectSettings defaultProjectSettings)
-        (D.defaultField "createdAt" decodePosix defaultTime)
-        (D.defaultField "updatedAt" decodePosix defaultTime)
-        (D.maybeField "fromSample" decodeSampleName)
-
-
-encodeProjectSource : ProjectSource -> Value
-encodeProjectSource value =
-    E.object
-        [ ( "id", value.id |> encodeProjectSourceId )
-        , ( "name", value.name |> encodeProjectSourceName )
-        , ( "source", value.source |> encodeProjectSourceContent )
-        , ( "createdAt", value.createdAt |> encodePosix )
-        , ( "updatedAt", value.updatedAt |> encodePosix )
-        ]
-
-
-decodeProjectSource : Decode.Decoder ProjectSource
-decodeProjectSource =
-    Decode.map5 ProjectSource
-        (Decode.field "id" decodeProjectSourceId)
-        (Decode.field "name" decodeProjectSourceName)
-        (Decode.field "source" decodeProjectSourceContent)
-        (Decode.field "createdAt" decodePosix)
-        (Decode.field "updatedAt" decodePosix)
-
-
-encodeProjectSourceContent : ProjectSourceContent -> Value
-encodeProjectSourceContent value =
-    case value of
-        LocalFile name size lastModified ->
-            E.object
-                [ ( "kind", "LocalFile" |> Encode.string )
-                , ( "name", name |> Encode.string )
-                , ( "size", size |> Encode.int )
-                , ( "lastModified", lastModified |> encodePosix )
-                ]
-
-        RemoteFile name size ->
-            E.object
-                [ ( "kind", "RemoteFile" |> Encode.string )
-                , ( "name", name |> Encode.string )
-                , ( "size", size |> Encode.int )
-                ]
-
-
-decodeProjectSourceContent : Decode.Decoder ProjectSourceContent
-decodeProjectSourceContent =
-    D.matchOn "kind"
-        (\kind ->
-            case kind of
-                "LocalFile" ->
-                    Decode.map3 LocalFile
-                        (Decode.field "name" Decode.string)
-                        (Decode.field "size" Decode.int)
-                        (Decode.field "lastModified" decodePosix)
-
-                "RemoteFile" ->
-                    Decode.map2 RemoteFile
-                        (Decode.field "name" Decode.string)
-                        (Decode.field "size" Decode.int)
-
-                other ->
-                    Decode.fail ("Not supported kind of ProjectSourceContent '" ++ other ++ "'")
-        )
-
-
-encodeSchema : Schema -> Value
-encodeSchema value =
-    E.object
-        [ ( "tables", value.tables |> Dict.values |> Encode.list encodeTable )
-        , ( "relations", value.relations |> Encode.list encodeRelation )
-        , ( "layout", value.layout |> encodeLayout )
-        ]
-
-
-decodeSchema : Decode.Decoder Schema
-decodeSchema =
-    Decode.map3 Schema
-        (Decode.field "tables" (Decode.list decodeTable) |> Decode.map (D.fromListMap .id))
-        (Decode.field "relations" (Decode.list decodeRelation))
-        (D.defaultField "layout" decodeLayout defaultLayout)
-
-
-encodeTable : Table -> Value
-encodeTable value =
-    E.object
-        [ ( "schema", value.schema |> encodeSchemaName )
-        , ( "table", value.name |> encodeTableName )
-        , ( "columns", value.columns |> Ned.values |> Nel.sortBy .index |> E.nel encodeColumn )
-        , ( "primaryKey", value.primaryKey |> E.maybe encodePrimaryKey )
-        , ( "uniques", value.uniques |> E.withDefault (Encode.list encodeUnique) [] )
-        , ( "indexes", value.indexes |> E.withDefault (Encode.list encodeIndex) [] )
-        , ( "checks", value.checks |> E.withDefault (Encode.list encodeCheck) [] )
-        , ( "comment", value.comment |> E.maybe encodeComment )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodeTable : Decode.Decoder Table
-decodeTable =
-    D.map9 (\s t c p u i ch co so -> Table ( s, t ) s t c p u i ch co so)
-        (Decode.field "schema" decodeSchemaName)
-        (Decode.field "table" decodeTableName)
-        (Decode.field "columns" (D.nel decodeColumn |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
-        (D.maybeField "primaryKey" decodePrimaryKey)
-        (D.defaultField "uniques" (Decode.list decodeUnique) [])
-        (D.defaultField "indexes" (Decode.list decodeIndex) [])
-        (D.defaultField "checks" (Decode.list decodeCheck) [])
-        (D.maybeField "comment" decodeComment)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodeColumn : Column -> Value
-encodeColumn value =
-    E.object
-        [ ( "name", value.name |> encodeColumnName )
-        , ( "type", value.kind |> encodeColumnType )
-        , ( "nullable", value.nullable |> E.withDefault Encode.bool False )
-        , ( "default", value.default |> E.maybe encodeColumnValue )
-        , ( "comment", value.comment |> E.maybe encodeComment )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodeColumn : Decode.Decoder (Int -> Column)
-decodeColumn =
-    Decode.map6 (\n t nu d c s -> \i -> Column i n t nu d c s)
-        (Decode.field "name" decodeColumnName)
-        (Decode.field "type" decodeColumnType)
-        (D.defaultField "nullable" Decode.bool False)
-        (D.maybeField "default" decodeColumnValue)
-        (D.maybeField "comment" decodeComment)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodePrimaryKey : PrimaryKey -> Value
-encodePrimaryKey value =
-    E.object
-        [ ( "name", value.name |> encodePrimaryKeyName )
-        , ( "columns", value.columns |> E.nel encodeColumnName )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodePrimaryKey : Decode.Decoder PrimaryKey
-decodePrimaryKey =
-    Decode.map3 PrimaryKey
-        (Decode.field "name" decodePrimaryKeyName)
-        (Decode.field "columns" (D.nel decodeColumnName))
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodeUnique : Unique -> Value
-encodeUnique value =
-    E.object
-        [ ( "name", value.name |> encodeUniqueName )
-        , ( "columns", value.columns |> E.nel encodeColumnName )
-        , ( "definition", value.definition |> Encode.string )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodeUnique : Decode.Decoder Unique
-decodeUnique =
-    Decode.map4 Unique
-        (Decode.field "name" decodeUniqueName)
-        (Decode.field "columns" (D.nel decodeColumnName))
-        (Decode.field "definition" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodeIndex : Index -> Value
-encodeIndex value =
-    E.object
-        [ ( "name", value.name |> encodeIndexName )
-        , ( "columns", value.columns |> E.nel encodeColumnName )
-        , ( "definition", value.definition |> Encode.string )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodeIndex : Decode.Decoder Index
-decodeIndex =
-    Decode.map4 Index
-        (Decode.field "name" decodeIndexName)
-        (Decode.field "columns" (D.nel decodeColumnName))
-        (Decode.field "definition" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodeCheck : Check -> Value
-encodeCheck value =
-    E.object
-        [ ( "name", value.name |> encodeCheckName )
-        , ( "columns", value.columns |> E.withDefault (Encode.list encodeColumnName) [] )
-        , ( "predicate", value.predicate |> Encode.string )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodeCheck : Decode.Decoder Check
-decodeCheck =
-    Decode.map4 Check
-        (Decode.field "name" decodeCheckName)
-        (D.defaultField "columns" (Decode.list decodeColumnName) [])
-        (Decode.field "predicate" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodeComment : Comment -> Value
-encodeComment value =
-    E.object
-        [ ( "text", value.text |> Encode.string )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodeComment : Decode.Decoder Comment
-decodeComment =
-    Decode.map2 Comment
-        (Decode.field "text" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodeRelation : Relation -> Value
-encodeRelation value =
-    E.object
-        [ ( "name", value.name |> encodeRelationName )
-        , ( "src", value.src |> encodeColumnRef )
-        , ( "ref", value.ref |> encodeColumnRef )
-        , ( "sources", value.sources |> E.withDefault (Encode.list encodeSource) [] )
-        ]
-
-
-decodeRelation : Decode.Decoder Relation
-decodeRelation =
-    Decode.map4 Relation
-        (Decode.field "name" decodeRelationName)
-        (Decode.field "src" decodeColumnRef)
-        (Decode.field "ref" decodeColumnRef)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
-
-
-encodeColumnRef : ColumnRef -> Value
-encodeColumnRef value =
-    E.object
-        [ ( "table", value.table |> encodeTableId )
-        , ( "column", value.column |> encodeColumnName )
-        ]
-
-
-decodeColumnRef : Decode.Decoder ColumnRef
-decodeColumnRef =
-    Decode.map2 ColumnRef
-        (Decode.field "table" decodeTableId)
-        (Decode.field "column" decodeColumnName)
-
-
-encodeSource : Source -> Value
-encodeSource value =
-    E.object
-        [ ( "id", value.id |> encodeProjectSourceId )
-        , ( "lines", value.lines |> E.nel encodeSourceLine )
-        ]
-
-
-decodeSource : Decode.Decoder Source
-decodeSource =
-    Decode.map2 Source
-        (Decode.field "id" decodeProjectSourceId)
-        (Decode.field "lines" (D.nel decodeSourceLine))
-
-
-encodeSourceLine : SourceLine -> Value
-encodeSourceLine value =
-    E.object
-        [ ( "no", value.no |> Encode.int )
-        , ( "text", value.text |> Encode.string )
-        ]
-
-
-decodeSourceLine : Decode.Decoder SourceLine
-decodeSourceLine =
-    Decode.map2 SourceLine
-        (Decode.field "no" Decode.int)
-        (Decode.field "text" Decode.string)
-
-
-encodeLayout : Layout -> Value
-encodeLayout value =
-    E.object
-        [ ( "canvas", value.canvas |> encodeCanvasProps )
-        , ( "tables", value.tables |> Encode.list encodeTableProps )
-        , ( "hiddenTables", value.hiddenTables |> E.withDefault (Encode.list encodeTableProps) [] )
-        , ( "createdAt", value.createdAt |> encodePosix )
-        , ( "updatedAt", value.updatedAt |> encodePosix )
-        ]
-
-
-decodeLayout : Decode.Decoder Layout
-decodeLayout =
-    Decode.map5 Layout
-        (Decode.field "canvas" decodeCanvasProps)
-        (Decode.field "tables" (Decode.list decodeTableProps))
-        (D.defaultField "hiddenTables" (Decode.list decodeTableProps) [])
-        (Decode.field "createdAt" decodePosix)
-        (Decode.field "updatedAt" decodePosix)
-
-
-encodeCanvasProps : CanvasProps -> Value
-encodeCanvasProps value =
-    E.object
-        [ ( "position", value.position |> encodePosition )
-        , ( "zoom", value.zoom |> encodeZoomLevel )
-        ]
-
-
-decodeCanvasProps : Decode.Decoder CanvasProps
-decodeCanvasProps =
-    Decode.map2 CanvasProps
-        (Decode.field "position" decodePosition)
-        (Decode.field "zoom" decodeZoomLevel)
-
-
-encodeTableProps : TableProps -> Value
-encodeTableProps value =
-    E.object
-        [ ( "id", value.id |> encodeTableId )
-        , ( "position", value.position |> encodePosition )
-        , ( "color", value.color |> encodeColor )
-        , ( "columns", value.columns |> E.withDefault (Encode.list encodeColumnName) [] )
-        , ( "selected", value.selected |> E.withDefault Encode.bool False )
-        ]
-
-
-decodeTableProps : Decode.Decoder TableProps
-decodeTableProps =
-    Decode.map5 TableProps
-        (Decode.field "id" decodeTableId)
-        (Decode.field "position" decodePosition)
-        (Decode.field "color" decodeColor)
-        (D.defaultField "columns" (Decode.list decodeColumnName) [])
-        (D.defaultField "selected" Decode.bool False)
-
-
-encodeProjectSettings : ProjectSettings -> ProjectSettings -> Value
-encodeProjectSettings default value =
-    E.object [ ( "findPath", value.findPath |> E.withDefaultDeep encodeFindPathSettings default.findPath ) ]
-
-
-decodeProjectSettings : ProjectSettings -> Decode.Decoder ProjectSettings
-decodeProjectSettings default =
-    Decode.map ProjectSettings
-        (D.defaultFieldDeep "findPath" decodeFindPathSettings default.findPath)
-
-
-encodeFindPathSettings : FindPathSettings -> FindPathSettings -> Value
-encodeFindPathSettings default value =
-    E.object
-        [ ( "maxPathLength", value.maxPathLength |> E.withDefault Encode.int default.maxPathLength )
-        , ( "ignoredTables", value.ignoredTables |> E.withDefault (Encode.list encodeTableId) default.ignoredTables )
-        , ( "ignoredColumns", value.ignoredColumns |> E.withDefault (Encode.list encodeColumnName) default.ignoredColumns )
-        ]
-
-
-decodeFindPathSettings : FindPathSettings -> Decode.Decoder FindPathSettings
-decodeFindPathSettings default =
-    Decode.map3 FindPathSettings
-        (D.defaultField "maxPathLength" Decode.int default.maxPathLength)
-        (D.defaultField "ignoredTables" (Decode.list decodeTableId) default.ignoredTables)
-        (D.defaultField "ignoredColumns" (Decode.list decodeColumnName) default.ignoredColumns)
-
-
-encodeProjectId : ProjectId -> Value
-encodeProjectId value =
-    Encode.string value
-
-
-decodeProjectId : Decode.Decoder ProjectId
-decodeProjectId =
-    Decode.string
-
-
-encodeProjectName : ProjectName -> Value
-encodeProjectName value =
-    Encode.string value
-
-
-decodeProjectName : Decode.Decoder ProjectName
-decodeProjectName =
-    Decode.string
-
-
-encodeProjectSourceId : ProjectSourceId -> Value
-encodeProjectSourceId value =
-    Encode.string value
-
-
-decodeProjectSourceId : Decode.Decoder ProjectSourceId
-decodeProjectSourceId =
-    Decode.string
-
-
-encodeProjectSourceName : ProjectSourceName -> Value
-encodeProjectSourceName value =
-    Encode.string value
-
-
-decodeProjectSourceName : Decode.Decoder ProjectSourceName
-decodeProjectSourceName =
-    Decode.string
-
-
-encodeTableId : TableId -> Value
-encodeTableId value =
-    Encode.string (tableIdAsString value)
-
-
-decodeTableId : Decode.Decoder TableId
-decodeTableId =
-    Decode.string |> Decode.map stringAsTableId
-
-
-encodeSchemaName : SchemaName -> Value
-encodeSchemaName value =
-    Encode.string value
-
-
-decodeSchemaName : Decode.Decoder SchemaName
-decodeSchemaName =
-    Decode.string
-
-
-encodeTableName : TableName -> Value
-encodeTableName value =
-    Encode.string value
-
-
-decodeTableName : Decode.Decoder TableName
-decodeTableName =
-    Decode.string
-
-
-encodeColumnName : ColumnName -> Value
-encodeColumnName value =
-    Encode.string value
-
-
-decodeColumnName : Decode.Decoder ColumnName
-decodeColumnName =
-    Decode.string
-
-
-encodeColumnType : ColumnType -> Value
-encodeColumnType value =
-    Encode.string value
-
-
-decodeColumnType : Decode.Decoder ColumnType
-decodeColumnType =
-    Decode.string
-
-
-encodeColumnValue : ColumnValue -> Value
-encodeColumnValue value =
-    Encode.string value
-
-
-decodeColumnValue : Decode.Decoder ColumnValue
-decodeColumnValue =
-    Decode.string
-
-
-encodePrimaryKeyName : PrimaryKeyName -> Value
-encodePrimaryKeyName value =
-    Encode.string value
-
-
-decodePrimaryKeyName : Decode.Decoder PrimaryKeyName
-decodePrimaryKeyName =
-    Decode.string
-
-
-encodeUniqueName : UniqueName -> Value
-encodeUniqueName value =
-    Encode.string value
-
-
-decodeUniqueName : Decode.Decoder UniqueName
-decodeUniqueName =
-    Decode.string
-
-
-encodeIndexName : IndexName -> Value
-encodeIndexName value =
-    Encode.string value
-
-
-decodeIndexName : Decode.Decoder IndexName
-decodeIndexName =
-    Decode.string
-
-
-encodeCheckName : CheckName -> Value
-encodeCheckName value =
-    Encode.string value
-
-
-decodeCheckName : Decode.Decoder CheckName
-decodeCheckName =
-    Decode.string
-
-
-encodeRelationName : RelationName -> Value
-encodeRelationName value =
-    Encode.string value
-
-
-decodeRelationName : Decode.Decoder RelationName
-decodeRelationName =
-    Decode.string
-
-
-encodeLayoutName : LayoutName -> Value
-encodeLayoutName value =
-    Encode.string value
-
-
-decodeLayoutName : Decode.Decoder LayoutName
-decodeLayoutName =
-    Decode.string
-
-
-decodeSampleName : Decode.Decoder SampleName
-decodeSampleName =
-    Decode.string
+decode : Decode.Decoder Project
+decode =
+    D.map9 new
+        (Decode.field "id" ProjectId.decode)
+        (Decode.field "name" ProjectName.decode)
+        (Decode.field "sources" (Decode.list Source.decode))
+        (D.defaultField "layout" Layout.decode (Layout.init (Time.millisToPosix 0)))
+        (D.maybeField "usedLayout" LayoutName.decode)
+        (D.defaultField "layouts" (D.dict LayoutName.fromString Layout.decode) Dict.empty)
+        (D.defaultFieldDeep "settings" ProjectSettings.decode ProjectSettings.init)
+        (D.defaultField "createdAt" Time.decode (Time.millisToPosix 0))
+        (D.defaultField "updatedAt" Time.decode (Time.millisToPosix 0))

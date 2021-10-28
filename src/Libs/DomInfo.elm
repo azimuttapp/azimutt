@@ -1,7 +1,7 @@
 module Libs.DomInfo exposing (DomInfo)
 
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
 
 
 type alias DomInfo =

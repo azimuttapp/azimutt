@@ -1,31 +1,75 @@
 module TestHelpers.ProjectFuzzers exposing (..)
 
+import Array exposing (Array)
+import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
-import Libs.Fuzz as F exposing (listN, nelN)
+import Libs.Dict as D
+import Libs.Fuzz as F exposing (listN)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Models.Project exposing (CanvasProps, Check, CheckName, Column, ColumnIndex, ColumnName, ColumnRef, ColumnType, ColumnValue, Comment, FindPathSettings, Index, IndexName, Layout, LayoutName, PrimaryKey, PrimaryKeyName, Project, ProjectId, ProjectName, ProjectSettings, ProjectSource, ProjectSourceContent(..), ProjectSourceId, ProjectSourceName, Relation, RelationName, SampleName, Schema, SchemaName, Source, SourceLine, Table, TableId, TableName, TableProps, Unique, UniqueName)
-import TestHelpers.Fuzzers exposing (color, dictSmall, identifier, intPos, intPosSmall, listSmall, nelSmall, position, posix, text, zoomLevel)
+import Models.Project as Project exposing (Project)
+import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.Check exposing (Check)
+import Models.Project.CheckName exposing (CheckName)
+import Models.Project.Column exposing (Column)
+import Models.Project.ColumnIndex exposing (ColumnIndex)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.ColumnValue exposing (ColumnValue)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.Index exposing (Index)
+import Models.Project.IndexName exposing (IndexName)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.ProjectSettings exposing (ProjectSettings)
+import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.RelationName exposing (RelationName)
+import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.SourceLine exposing (SourceLine)
+import Models.Project.SourceName exposing (SourceName)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId exposing (TableId)
+import Models.Project.TableName exposing (TableName)
+import Models.Project.TableProps exposing (TableProps)
+import Models.Project.Unique exposing (Unique)
+import Models.Project.UniqueName exposing (UniqueName)
+import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, zoomLevel)
 
 
 project : Fuzzer Project
 project =
-    F.map10 Project projectId projectName (nelSmall projectSource) schema (dictSmall layoutName layout) (Fuzz.maybe layoutName) projectSettings posix posix sampleName
+    F.map9 Project.new projectId projectName (listSmall source) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings posix posix
 
 
-projectSource : Fuzzer ProjectSource
-projectSource =
-    Fuzz.map5 ProjectSource projectSourceId projectSourceName projectSourceContent posix posix
+source : Fuzzer Source
+source =
+    F.map10 Source sourceId sourceName sourceKind sourceLines tables (listSmall relation) Fuzz.bool sampleName posix posix
 
 
-projectSourceContent : Fuzzer ProjectSourceContent
-projectSourceContent =
-    Fuzz.oneOf [ Fuzz.map3 LocalFile identifier intPos posix ]
+sourceKind : Fuzzer SourceKind
+sourceKind =
+    Fuzz.oneOf [ Fuzz.map3 LocalFile fileName fileSize fileModified, Fuzz.map2 RemoteFile fileUrl fileSize ]
 
 
-schema : Fuzzer Schema
-schema =
-    Fuzz.map3 Schema (dictSmall tableId table) (listSmall relation) layout
+sourceLines : Fuzzer (Array SourceLine)
+sourceLines =
+    listSmall stringSmall |> Fuzz.map Array.fromList
+
+
+tables : Fuzzer (Dict TableId Table)
+tables =
+    listSmall table |> Fuzz.map (D.fromListMap .id)
 
 
 table : Fuzzer Table
@@ -39,42 +83,42 @@ table =
         (listSmall index)
         (listSmall check)
         (Fuzz.maybe comment)
-        (listN 1 source)
+        (listN 1 origin)
 
 
 column : ColumnIndex -> Fuzzer Column
 column i =
-    F.map6 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (listN 1 source)
+    F.map6 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (listN 1 origin)
 
 
 primaryKey : Fuzzer PrimaryKey
 primaryKey =
-    Fuzz.map3 PrimaryKey primaryKeyName (nelSmall columnName) (listN 1 source)
+    Fuzz.map3 PrimaryKey primaryKeyName (nelSmall columnName) (listN 1 origin)
 
 
 unique : Fuzzer Unique
 unique =
-    Fuzz.map4 Unique uniqueName (nelSmall columnName) text (listN 1 source)
+    Fuzz.map4 Unique uniqueName (nelSmall columnName) text (listN 1 origin)
 
 
 index : Fuzzer Index
 index =
-    Fuzz.map4 Index indexName (nelSmall columnName) text (listN 1 source)
+    Fuzz.map4 Index indexName (nelSmall columnName) text (listN 1 origin)
 
 
 check : Fuzzer Check
 check =
-    Fuzz.map4 Check checkName (listSmall columnName) text (listN 1 source)
+    Fuzz.map4 Check checkName (listSmall columnName) text (listN 1 origin)
 
 
 comment : Fuzzer Comment
 comment =
-    Fuzz.map2 Comment text (listN 1 source)
+    Fuzz.map2 Comment text (listN 1 origin)
 
 
 relation : Fuzzer Relation
 relation =
-    Fuzz.map4 Relation relationName columnRef columnRef (listN 1 source)
+    Fuzz.map4 Relation.new relationName columnRef columnRef (listN 1 origin)
 
 
 columnRef : Fuzzer ColumnRef
@@ -82,14 +126,9 @@ columnRef =
     Fuzz.map2 ColumnRef tableId columnName
 
 
-source : Fuzzer Source
-source =
-    Fuzz.map2 Source projectSourceId (nelN 1 sourceLine)
-
-
-sourceLine : Fuzzer SourceLine
-sourceLine =
-    Fuzz.map2 SourceLine intPos text
+origin : Fuzzer Origin
+origin =
+    Fuzz.map2 Origin sourceId (listSmall fileLineIndex)
 
 
 layout : Fuzzer Layout
@@ -127,13 +166,13 @@ projectName =
     identifier
 
 
-projectSourceId : Fuzzer ProjectSourceId
-projectSourceId =
-    identifier
+sourceId : Fuzzer SourceId
+sourceId =
+    identifier |> Fuzz.map SourceId.new
 
 
-projectSourceName : Fuzzer ProjectSourceName
-projectSourceName =
+sourceName : Fuzzer SourceName
+sourceName =
     identifier
 
 

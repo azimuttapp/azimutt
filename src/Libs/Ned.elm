@@ -1,4 +1,4 @@
-module Libs.Ned exposing (Ned, build, buildMap, fromDict, fromList, fromNel, fromNelMap, get, singleton, singletonMap, size, toDict, values)
+module Libs.Ned exposing (Ned, build, buildMap, fromDict, fromList, fromNel, fromNelMap, get, map, merge, singleton, singletonMap, size, toDict, values)
 
 import Dict exposing (Dict)
 import Libs.Nel as Nel exposing (Nel)
@@ -10,6 +10,11 @@ import Libs.Nel as Nel exposing (Nel)
 
 type alias Ned k a =
     { head : ( k, a ), tail : Dict k a }
+
+
+map : (k -> a -> b) -> Ned k a -> Ned k b
+map f xs =
+    { head = xs.head |> (\( k, a ) -> ( k, f k a )), tail = xs.tail |> Dict.map f }
 
 
 get : comparable -> Ned comparable a -> Maybe a
@@ -49,6 +54,11 @@ build head tail =
 buildMap : (a -> comparable) -> a -> List a -> Ned comparable a
 buildMap getKey head tail =
     build ( getKey head, head ) (List.map (\item -> ( getKey item, item )) tail)
+
+
+merge : (a -> a -> a) -> Ned comparable a -> Ned comparable a -> Ned comparable a
+merge mergeValue d1 d2 =
+    Dict.merge Dict.insert (\k a1 a2 acc -> Dict.insert k (mergeValue a1 a2) acc) Dict.insert (d1 |> toDict) (d2 |> toDict) Dict.empty |> fromDict |> Maybe.withDefault d1
 
 
 fromNel : Nel ( comparable, a ) -> Ned comparable a

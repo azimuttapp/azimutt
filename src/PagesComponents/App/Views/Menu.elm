@@ -13,38 +13,41 @@ import Libs.Bool exposing (cond)
 import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll, bsToggleCollapse)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
 import Libs.List as L
+import Libs.Maybe as M
+import Libs.Models.HtmlId as HtmlId
 import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Libs.String as S exposing (plural)
-import Models.Project exposing (Layout, Schema, Table, TableId, htmlIdEncode, showTableId, tableIdAsString)
+import Models.Project exposing (Project)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (Msg(..))
 
 
-viewMenu : Maybe Schema -> Html Msg
-viewMenu schema =
+viewMenu : Maybe Project -> Html Msg
+viewMenu project =
     div [ id conf.ids.menu, class "offcanvas offcanvas-start", bsScroll True, bsBackdrop "false", ariaLabelledBy (conf.ids.menu ++ "-label"), tabindex -1 ]
         [ div [ class "offcanvas-header" ]
-            [ h5 [ class "offcanvas-title", id (conf.ids.menu ++ "-label") ] [ text (schema |> Maybe.map (\_ -> "Table list") |> Maybe.withDefault "Menu") ]
+            [ h5 [ class "offcanvas-title", id (conf.ids.menu ++ "-label") ] [ text (project |> M.mapOrElse (\_ -> "Table list") "Menu") ]
             , button [ type_ "button", class "btn-close text-reset", bsDismiss Offcanvas, ariaLabel "Close" ] []
             ]
         , div [ class "offcanvas-body" ]
-            (schema
-                |> Maybe.map
-                    (\s ->
+            (project
+                |> M.mapOrElse
+                    (\p ->
                         [ div []
                             [ text
-                                ((s.tables |> Dict.size |> String.fromInt)
+                                ((p.tables |> Dict.size |> String.fromInt)
                                     ++ " tables, "
-                                    ++ (s.tables |> Dict.foldl (\_ t c -> c + Ned.size t.columns) 0 |> String.fromInt)
+                                    ++ (p.tables |> Dict.foldl (\_ t c -> c + Ned.size t.columns) 0 |> String.fromInt)
                                     ++ " columns, "
-                                    ++ (s.relations |> List.length |> String.fromInt)
+                                    ++ (p.relations |> List.length |> String.fromInt)
                                     ++ " relations"
                                 )
                             ]
-                        , lazy2 viewTableList s.tables s.layout
+                        , lazy2 viewTableList p.tables p.layout
                         ]
                     )
-                |> Maybe.withDefault
                     [ text "You should load a project!"
                     , br [] []
                     , button [ type_ "button", class "btn btn-primary my-3", onClick ChangeProject ] [ text "Load a project" ]
@@ -66,25 +69,24 @@ viewTableList tables layout =
                 |> List.concatMap
                     (\( groupTitle, groupedTables ) ->
                         [ ( groupTitle
-                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> htmlIdEncode) ++ "-table-list"))
-                                [ text (groupTitle ++ " (" ++ plural (Nel.length groupedTables) "" "1 table" "tables" ++ ")") ]
+                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> HtmlId.encode) ++ "-table-list"))
+                                [ text (groupTitle ++ " (" ++ plural (List.length groupedTables) "" "1 table" "tables" ++ ")") ]
                           )
                         , ( groupTitle ++ "-collapse"
                           , Keyed.node "div"
-                                [ class "collapse show", id ((groupTitle |> htmlIdEncode) ++ "-table-list") ]
+                                [ class "collapse show", id ((groupTitle |> HtmlId.encode) ++ "-table-list") ]
                                 (groupedTables
-                                    |> Nel.map
+                                    |> List.map
                                         (\t ->
-                                            ( tableIdAsString t.id
-                                            , div [ class "list-group-item d-flex", title (showTableId t.id) ]
-                                                [ div [ class "text-truncate me-auto" ] [ text (showTableId t.id) ]
+                                            ( TableId.toString t.id
+                                            , div [ class "list-group-item d-flex", title (TableId.show t.id) ]
+                                                [ div [ class "text-truncate me-auto" ] [ text (TableId.show t.id) ]
                                                 , cond (layout.tables |> L.memberBy .id t.id)
                                                     (button [ type_ "button", class "link text-muted", onClick (HideTable t.id) ] [ viewIcon Icon.eyeSlash ])
                                                     (button [ type_ "button", class "link text-muted", onClick (ShowTable t.id) ] [ viewIcon Icon.eye ])
                                                 ]
                                             )
                                         )
-                                    |> Nel.toList
                                 )
                           )
                         ]

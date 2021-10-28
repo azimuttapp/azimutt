@@ -60,7 +60,8 @@
     z-index: calc(var(--modal-backdrop-z-index) - 1);
 }
 
-#menu {
+.offcanvas.offcanvas-start, .offcanvas.offcanvas-end, .offcanvas.offcanvas-top {
+    /* to not be under the #navbar */
     top: var(--navbar-height);
 }
 
@@ -272,7 +273,6 @@
     min-height: 150px;
     padding: 54px;
     display: block;
-    cursor: pointer;
     text-align: center;
 }
 

@@ -3,10 +3,16 @@ module PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtua
 import Conf exposing (conf)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color)
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
-import Models.Project exposing (Column, ColumnRefFull, RelationFull, RelationName, Table, TableProps, showTableId)
+import Libs.Models.Color exposing (Color)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
+import Models.ColumnRefFull exposing (ColumnRefFull)
+import Models.Project.Column exposing (Column)
+import Models.Project.RelationName exposing (RelationName)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId
+import Models.Project.TableProps exposing (TableProps)
+import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (Hover, Msg)
 import PagesComponents.App.Views.Helpers exposing (withColumnName)
 import Svg exposing (Svg, line, svg, text)
@@ -90,8 +96,8 @@ viewLine p1 p2 optional color =
             , y2 (String.fromFloat p2.y)
             , style
                 (color
-                    |> Maybe.map (\c -> "stroke: var(--tw-" ++ c ++ "); stroke-width: 3;")
-                    |> Maybe.withDefault "stroke: #A0AEC0; stroke-width: 2;"
+                    |> M.mapOrElse (\c -> "stroke: var(--tw-" ++ c ++ "); stroke-width: 3;")
+                        "stroke: #A0AEC0; stroke-width: 2;"
                 )
             ]
         )
@@ -171,4 +177,4 @@ formatText name src ref =
 
 formatRef : Table -> Column -> String
 formatRef table column =
-    showTableId table.id |> withColumnName column.name
+    TableId.show table.id |> withColumnName column.name

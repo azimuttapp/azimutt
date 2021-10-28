@@ -20,7 +20,7 @@ root children =
 
 viewToasts : Html msg
 viewToasts =
-    div [ id "toast-container", class "toast-container position-fixed bottom-0 end-0 p-3" ] []
+    div [ id "toast-container", class "toast-container position-fixed bottom-0 start-0 p-2" ] []
 
 
 publicHeader : Html.Styled.Html msg

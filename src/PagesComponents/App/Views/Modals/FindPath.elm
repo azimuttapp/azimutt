@@ -10,9 +10,17 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaControls, ariaDescribedBy, ariaExpanded, ariaHidden, ariaLabel, ariaLabelledBy, role)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (HtmlId)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
-import Models.Project exposing (ColumnRef, FindPath, FindPathPath, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), Table, TableId, parseTableId, showColumnRef, showTableId, stringAsTableId, tableIdAsString)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathPath exposing (FindPathPath)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.FindPathState exposing (FindPathState(..))
+import Models.Project.FindPathStep exposing (FindPathStep)
+import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Msg(..))
 
 
@@ -73,8 +81,8 @@ viewSettings idPrefix settings =
                         , id (idPrefix ++ "-settings-ignored-tables")
                         , ariaDescribedBy (idPrefix ++ "-settings-ignored-tables-help")
                         , placeholder "ex: users, accounts..."
-                        , value (settings.ignoredTables |> List.map showTableId |> String.join ", ")
-                        , onInput (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map parseTableId }))
+                        , value (settings.ignoredTables |> List.map TableId.show |> String.join ", ")
+                        , onInput (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map TableId.parse }))
                         ]
                         []
                     , div [ class "form-text", id (idPrefix ++ "-settings-ignored-tables-help") ] [ text "Some tables are big hubs which leads to bad results and performance, ignore them." ]
@@ -92,7 +100,7 @@ viewSettings idPrefix settings =
                         , ariaDescribedBy (idPrefix ++ "-settings-max-path-length-help")
                         , placeholder "ex: 3"
                         , value (String.fromInt settings.maxPathLength)
-                        , onInput (\v -> String.toInt v |> Maybe.map (\l -> FindPathMsg (FPSettingsUpdate { settings | maxPathLength = l })) |> Maybe.withDefault Noop)
+                        , onInput (\v -> String.toInt v |> M.mapOrElse (\l -> FindPathMsg (FPSettingsUpdate { settings | maxPathLength = l })) Noop)
                         ]
                         []
                     , div [ class "form-text", id (idPrefix ++ "-settings-max-path-length-help") ] [ text "Limit paths in length to limit complexity and performance." ]
@@ -126,7 +134,7 @@ viewSelectInput ref selectedValue buildMsg tables =
     select
         [ class "form-select"
         , id (conf.ids.findPathModal ++ "-" ++ ref)
-        , onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map stringAsTableId |> buildMsg)
+        , onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg)
         ]
         (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
             :: (tables
@@ -134,10 +142,10 @@ viewSelectInput ref selectedValue buildMsg tables =
                     |> List.map
                         (\t ->
                             option
-                                [ value (tableIdAsString t.id)
+                                [ value (TableId.toString t.id)
                                 , selected (selectedValue |> M.contains t.id)
                                 ]
-                                [ text (showTableId t.id) ]
+                                [ text (TableId.show t.id) ]
                         )
                )
         )
@@ -153,9 +161,9 @@ viewPaths idPrefix model =
             else
                 [ div [ class "mt-3" ]
                     ([ text ("Found " ++ String.fromInt (List.length result.paths) ++ " paths between tables ")
-                     , b [] [ text (showTableId from) ]
+                     , b [] [ text (TableId.show from) ]
                      , text " and "
-                     , b [] [ text (showTableId to) ]
+                     , b [] [ text (TableId.show to) ]
                      , text ":"
                      , br [] []
                      ]
@@ -189,7 +197,7 @@ viewPath accordionId from i path =
     div [ class "accordion-item" ]
         [ h2 [ class "accordion-header", id headerId ]
             [ button [ type_ "button", class "accordion-button collapsed", ariaControls collapseId, bsTarget collapseId, bsToggle Collapse, ariaExpanded False ]
-                [ span [] (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (showTableId from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep)) ]
+                [ span [] (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep)) ]
             ]
         , div [ class "accordion-collapse collapse", id collapseId, bsParent accordionId, ariaLabelledBy headerId ]
             [ div [ class "accordion-body" ]
@@ -211,23 +219,23 @@ viewPathStep s =
 
 viewPathStepDetails : String -> ColumnRef -> ColumnRef -> List (Html msg)
 viewPathStepDetails dir from to =
-    [ text " > ", abbr [ title (showColumnRef from ++ " " ++ dir ++ " " ++ showColumnRef to), bsToggle Tooltip ] [ text (showTableId to.table) ] ]
+    [ text " > ", abbr [ title (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to), bsToggle Tooltip ] [ text (TableId.show to.table) ] ]
 
 
 buildQuery : TableId -> FindPathPath -> String
 buildQuery table joins =
     "SELECT *"
-        ++ ("\nFROM " ++ showTableId table)
+        ++ ("\nFROM " ++ TableId.show table)
         ++ (joins
                 |> Nel.toList
                 |> List.map
                     (\s ->
                         case s.direction of
                             Right ->
-                                "\n  JOIN " ++ showTableId s.relation.ref.table ++ " ON " ++ showColumnRef s.relation.ref ++ " = " ++ showColumnRef s.relation.src
+                                "\n  JOIN " ++ TableId.show s.relation.ref.table ++ " ON " ++ ColumnRef.show s.relation.ref ++ " = " ++ ColumnRef.show s.relation.src
 
                             Left ->
-                                "\n  JOIN " ++ showTableId s.relation.src.table ++ " ON " ++ showColumnRef s.relation.src ++ " = " ++ showColumnRef s.relation.ref
+                                "\n  JOIN " ++ TableId.show s.relation.src.table ++ " ON " ++ ColumnRef.show s.relation.src ++ " = " ++ ColumnRef.show s.relation.ref
                     )
                 |> String.join ""
            )

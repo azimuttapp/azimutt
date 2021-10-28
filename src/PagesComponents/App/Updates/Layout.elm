@@ -2,9 +2,13 @@ module PagesComponents.App.Updates.Layout exposing (handleLayout)
 
 import Dict
 import Libs.Bool as B
-import Models.Project exposing (LayoutName, Project, initLayout)
+import Libs.Dict as D
+import Libs.Maybe as M
+import Models.Project exposing (Project)
+import Models.Project.Layout as Layout
+import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Model, Msg)
-import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd, setSchema)
+import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import Ports exposing (activateTooltipsAndPopovers, observeTablesSize, saveProject, track)
 import Time
 import Tracking exposing (events)
@@ -42,39 +46,39 @@ handleLayout msg model =
 createLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 createLayout name project =
     -- TODO check that layout name does not already exist
-    { project | currentLayout = Just name }
-        |> setLayouts (Dict.update name (\_ -> Just project.schema.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.createLayout project.schema.layout) ] ))
+    { project | usedLayout = Just name }
+        |> setLayouts (Dict.update name (\_ -> Just project.layout))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.createLayout project.layout) ] ))
 
 
 loadLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 loadLayout name project =
     project.layouts
         |> Dict.get name
-        |> Maybe.map
+        |> M.mapOrElse
             (\layout ->
-                ( { project | currentLayout = Just name } |> setSchema (setLayout (\_ -> layout))
+                ( { project | usedLayout = Just name } |> setLayout (\_ -> layout)
                 , Cmd.batch [ layout.tables |> List.map .id |> observeTablesSize, activateTooltipsAndPopovers, track (events.loadLayout layout) ]
                 )
             )
-        |> Maybe.withDefault ( project, Cmd.none )
+            ( project, Cmd.none )
 
 
 unloadLayout : Project -> Project
 unloadLayout project =
-    { project | currentLayout = Nothing }
+    { project | usedLayout = Nothing }
 
 
 updateLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 updateLayout name project =
     -- TODO check that layout name already exist
-    { project | currentLayout = Just name }
-        |> setLayouts (Dict.update name (\_ -> Just project.schema.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.updateLayout project.schema.layout) ] ))
+    { project | usedLayout = Just name }
+        |> setLayouts (Dict.update name (\_ -> Just project.layout))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.updateLayout project.layout) ] ))
 
 
 deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 deleteLayout name project =
-    { project | currentLayout = B.cond (project.currentLayout == Just name) Nothing (Just name) }
+    { project | usedLayout = B.cond (project.usedLayout == Just name) Nothing (Just name) }
         |> setLayouts (Dict.update name (\_ -> Nothing))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.deleteLayout (project.layouts |> Dict.get name |> Maybe.withDefault (initLayout (Time.millisToPosix 0)))) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.deleteLayout (project.layouts |> D.getOrElse name (Layout.init (Time.millisToPosix 0)))) ] ))

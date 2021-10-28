@@ -1,4 +1,4 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, FindPathMsg(..), Hover, LayoutMsg(..), Model, Msg(..), Search, Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, FindPathMsg(..), Hover, LayoutMsg(..), Model, Msg(..), Search, SourceMsg(..), Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -7,10 +7,24 @@ import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (HtmlId, ZoomDelta)
-import Libs.Position exposing (Position)
+import Libs.Models exposing (FileContent, SizeChange, ZoomDelta)
+import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position exposing (Position)
 import Libs.Task as T
-import Models.Project exposing (ColumnRef, FindPath, FindPathSettings, LayoutName, Project, Relation, SampleName, Table, TableId)
+import Models.Project exposing (Project)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.Relation exposing (Relation)
+import Models.Project.SampleName exposing (SampleName)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId exposing (TableId)
+import Models.SourceInfo exposing (SourceInfo)
 import Ports exposing (JsMsg)
 import Time
 
@@ -49,13 +63,10 @@ type alias DragState =
 type Msg
     = TimeChanged Time.Posix
     | ZoneChanged Time.Zone
+    | SizesChanged (List SizeChange)
     | ChangeProject
-    | FileDragOver File (List File)
-    | FileDragLeave
-    | FileDropped File (List File)
-    | FileSelected File
-    | LoadSample SampleName
-      -- | LoadFile FileUrl
+    | ProjectsLoaded (List Project)
+    | SourceMsg SourceMsg
     | DeleteProject Project
     | UseProject Project
     | ChangedSearch Search
@@ -91,6 +102,18 @@ type Msg
     | OnConfirm Bool (Cmd Msg)
     | JsMessage JsMsg
     | Noop
+
+
+type SourceMsg
+    = FileDragOver File (List File)
+    | FileDragLeave
+    | LoadLocalFile (Maybe ProjectId) (Maybe SourceId) File
+    | LoadRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl
+    | LoadSample SampleName
+    | FileLoaded ProjectId SourceInfo FileContent
+    | ToggleSource Source
+    | CreateSource Source String
+    | DeleteSource Source
 
 
 type LayoutMsg

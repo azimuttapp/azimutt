@@ -2,28 +2,40 @@ module PagesComponents.App.Updates.FindPath exposing (computeFindPath, handleFin
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
+import Libs.Maybe as M
 import Libs.Nel as Nel
 import Libs.Task exposing (sendAfter)
-import Models.Project exposing (FindPath, FindPathPath, FindPathResult, FindPathSettings, FindPathState(..), FindPathStep, FindPathStepDir(..), ProjectSettings, Relation, Table, TableId)
+import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathPath exposing (FindPathPath)
+import Models.Project.FindPathResult exposing (FindPathResult)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.FindPathState exposing (FindPathState(..))
+import Models.Project.FindPathStep exposing (FindPathStep)
+import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
+import Models.Project.ProjectSettings exposing (ProjectSettings)
+import Models.Project.Relation exposing (Relation)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..))
 import PagesComponents.App.Updates.Helpers exposing (setProject, setSettings)
 import Ports exposing (activateTooltipsAndPopovers, showModal, track)
 import Tracking exposing (events)
 
 
-type alias Model x y z =
+type alias Model x y =
     { x
         | findPath : Maybe FindPath
         , project :
             Maybe
                 { y
-                    | schema : { z | tables : Dict TableId Table, relations : List Relation }
+                    | tables : Dict TableId Table
+                    , relations : List Relation
                     , settings : ProjectSettings
                 }
     }
 
 
-handleFindPath : FindPathMsg -> Model x y z -> ( Model x y z, Cmd Msg )
+handleFindPath : FindPathMsg -> Model x y -> ( Model x y, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPInit from to ->
@@ -38,8 +50,8 @@ handleFindPath msg model =
         FPSearch ->
             model.findPath
                 |> Maybe.andThen (\fp -> Maybe.map3 (\p from to -> ( p, from, to )) model.project fp.from fp.to)
-                |> Maybe.map (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, sendAfter 300 (FindPathMsg (FPCompute p.schema.tables p.schema.relations from to p.settings.findPath)) ))
-                |> Maybe.withDefault ( model, Cmd.none )
+                |> M.mapOrElse (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
+                    ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
             computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ activateTooltipsAndPopovers, track (events.findPathResult result) ] ))
@@ -73,10 +85,10 @@ buildPaths tables relations settings tableId isDone curPath =
     -- FIXME improve algo complexity
     tables
         |> Dict.get tableId
-        |> Maybe.map
+        |> M.mapOrElse
             (\table ->
                 if isDone table then
-                    curPath |> Nel.fromList |> Maybe.map (\p -> [ p ]) |> Maybe.withDefault []
+                    curPath |> Nel.fromList |> M.mapOrElse (\p -> [ p ]) []
 
                 else
                     relations
@@ -97,4 +109,4 @@ buildPaths tables relations settings tableId isDone curPath =
                                             )
                            )
             )
-        |> Maybe.withDefault []
+            []

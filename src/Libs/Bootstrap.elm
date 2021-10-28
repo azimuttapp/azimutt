@@ -4,7 +4,8 @@ import Html exposing (Attribute, Html, button, div, h5, text)
 import Html.Attributes exposing (attribute, class, href, id, tabindex, type_)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, ariaHidden, ariaLabel, ariaLabelledBy, role)
-import Libs.Models exposing (HtmlId, Text)
+import Libs.Models exposing (Text)
+import Libs.Models.HtmlId exposing (HtmlId)
 
 
 type BsColor

@@ -11,10 +11,16 @@ import Html.Lazy exposing (lazy2)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsToggle, bsToggleCollapse, bsToggleDropdown, bsToggleModal, bsToggleOffcanvas)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaLabel, ariaLabelledBy, track)
 import Libs.List as L
+import Libs.Maybe as M
 import Libs.Models exposing (Text)
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project exposing (Column, Layout, LayoutName, Project, Schema, Table, TableId, showTableId)
+import Models.Project exposing (Project)
+import Models.Project.Column exposing (Column)
+import Models.Project.Layout exposing (Layout)
+import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
 import Tracking exposing (events)
 
@@ -28,70 +34,43 @@ viewNavbar search storedProjects project virtualRelation =
                 [ span [ class "navbar-toggler-icon" ] []
                 ]
             , div [ class "collapse navbar-collapse", id "navbar-content" ]
-                ([ lazy2 viewSearchBar (project |> Maybe.map .schema) search
+                ([ lazy2 viewSearchBar project search
                  , ul [ class "navbar-nav" ]
                     [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal conf.ids.helpModal ++ track events.openHelp) [ text "?" ] ]
                     ]
                  ]
                     ++ (project
-                            |> Maybe.map
+                            |> M.mapOrElse
                                 (\p ->
                                     [ viewTitle storedProjects p
-                                    , viewResetButton p.currentLayout p.schema.layout
-                                    , lazy2 viewLayoutButton p.currentLayout p.layouts
-                                    , div [ class "dropdown mx-3" ]
-                                        [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
-                                        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledBy conf.ids.navFeaturesDropdown ]
-                                            [ li []
-                                                [ div [ class "btn-group w-100" ]
-                                                    [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]
-                                                    , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
-                                                    ]
-                                                ]
-                                            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPathMsg (FPInit Nothing Nothing)) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
-                                            , virtualRelation
-                                                |> Maybe.map (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg VRCancel) ] [ text "Cancel virtual relation" ] ])
-                                                |> Maybe.withDefault
-                                                    (li []
-                                                        [ button
-                                                            [ type_ "button"
-                                                            , class "dropdown-item d-flex justify-content-between"
-                                                            , title "A virtual relation is a relation which is not materialized by a foreign key"
-                                                            , bsToggle Tooltip
-                                                            , onClick (VirtualRelationMsg VRCreate)
-                                                            ]
-                                                            [ text "Create a virtual relation", kbd [ class "ms-3" ] [ text "alt + v" ] ]
-                                                        ]
-                                                    )
-                                            , li [] [ hr [ class "dropdown-divider" ] [] ]
-                                            , li [] [ button [ type_ "button", class "dropdown-item", onClick ChangeProject ] [ text "Move to project..." ] ]
-                                            ]
-                                        ]
+                                    , viewResetButton p.usedLayout p.layout
+                                    , lazy2 viewLayoutButton p.usedLayout p.layouts
+                                    , viewSpecialFeaturesButton virtualRelation
+                                    , viewSettingsButton
                                     ]
                                 )
-                            |> Maybe.withDefault []
+                                []
                        )
                 )
             ]
         ]
 
 
-viewSearchBar : Maybe Schema -> Search -> Html Msg
-viewSearchBar schema search =
-    schema
-        |> Maybe.map
-            (\s ->
+viewSearchBar : Maybe Project -> Search -> Html Msg
+viewSearchBar project search =
+    project
+        |> M.mapOrElse
+            (\p ->
                 form [ class "d-flex" ]
                     [ div [ class "dropdown" ]
                         [ input ([ type_ "text", class "form-control", value search, placeholder "Search", ariaLabel "Search", autocomplete False, onInput ChangedSearch, attribute "data-bs-auto-close" "false" ] ++ bsToggleDropdown conf.ids.searchInput) []
                         , ul [ class "dropdown-menu" ]
-                            (buildSuggestions s.tables s.layout search
+                            (buildSuggestions p.tables p.layout search
                                 |> List.map (\suggestion -> li [] [ button [ type_ "button", class "dropdown-item", onClick suggestion.msg ] suggestion.content ])
                             )
                         ]
                     ]
             )
-        |> Maybe.withDefault
             (form [ class "d-flex" ]
                 [ div []
                     [ input [ type_ "text", class "form-control", value search, placeholder "Search", ariaLabel "Search", autocomplete False, onInput ChangedSearch, attribute "data-bs-auto-close" "false", id conf.ids.searchInput ] []
@@ -107,7 +86,7 @@ viewTitle storedProjects project =
         [ ol [ class "breadcrumb my-auto" ]
             ([ li [ class "breadcrumb-item" ]
                 [ div [ class "dropdown d-inline-block" ]
-                    [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navProjectDropdown, title (String.fromInt (Dict.size project.schema.tables) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text project.name ]
+                    [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navProjectDropdown, title (String.fromInt (Dict.size project.tables) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text project.name ]
                     , ul [ class "dropdown-menu", ariaLabelledBy conf.ids.navProjectDropdown ]
                         (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
                             [ storedProjects
@@ -119,18 +98,18 @@ viewTitle storedProjects project =
                     ]
                 ]
              ]
-                |> L.appendOn project.currentLayout
-                    (\currentLayout ->
+                |> L.appendOn project.usedLayout
+                    (\usedLayout ->
                         li [ class "breadcrumb-item" ]
                             [ div [ class "dropdown d-inline-block" ]
-                                [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navLayoutDropdown, title (String.fromInt (tablesInLayout project currentLayout) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text currentLayout ]
+                                [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navLayoutDropdown, title (String.fromInt (tablesInLayout project usedLayout) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text usedLayout ]
                                 , ul [ class "dropdown-menu", ariaLabelledBy conf.ids.navLayoutDropdown ]
                                     (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
                                         [ project.layouts
                                             |> Dict.keys
-                                            |> List.filter (\l -> l /= currentLayout)
+                                            |> List.filter (\l -> l /= usedLayout)
                                             |> List.map (\l -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg (LLoad l)) ] [ text l ] ])
-                                        , [ li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg LUnload) ] [ text ("Stop using " ++ currentLayout) ] ] ]
+                                        , [ li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg LUnload) ] [ text ("Stop using " ++ usedLayout) ] ] ]
                                         ]
                                     )
                                 ]
@@ -147,37 +126,37 @@ intersperse a list =
 
 tablesInLayout : Project -> LayoutName -> Int
 tablesInLayout project layout =
-    project.layouts |> Dict.get layout |> Maybe.map (\l -> l.tables |> List.length) |> Maybe.withDefault 0
+    project.layouts |> Dict.get layout |> M.mapOrElse (\l -> l.tables |> List.length) 0
 
 
 viewResetButton : Maybe LayoutName -> Layout -> Html Msg
 viewResetButton selectedLayout layout =
     if selectedLayout /= Nothing || not ((layout.tables == []) && (layout.hiddenTables == []) && layout.canvas == { position = { left = 0, top = 0 }, zoom = 1 }) then
-        bsButton Secondary [ class "me-1", onClick ResetCanvas ] [ text "Reset layout" ]
+        bsButton Secondary [ class "me-2", onClick ResetCanvas ] [ text "Reset layout" ]
 
     else
         div [] []
 
 
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
-viewLayoutButton currentLayout layouts =
+viewLayoutButton usedLayout layouts =
     if Dict.isEmpty layouts then
-        bsButton Secondary ([ title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
+        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
 
     else
-        div [ class "btn-group" ]
-            ((currentLayout
-                |> Maybe.map
+        div [ class "btn-group me-2" ]
+            ((usedLayout
+                |> M.mapOrElse
                     (\layout ->
                         [ bsButton Secondary [ onClick (LayoutMsg (LUpdate layout)) ] [ text ("Update '" ++ layout ++ "'") ]
                         , bsButton Secondary [ class "dropdown-toggle dropdown-toggle-split", bsToggle Dropdown, ariaExpanded False ] [ span [ class "visually-hidden" ] [ text "Toggle Dropdown" ] ]
                         ]
                     )
-                |> Maybe.withDefault [ bsButton Secondary [ class "dropdown-toggle", bsToggle Dropdown, ariaExpanded False ] [ text "Layouts" ] ]
+                    [ bsButton Secondary [ class "dropdown-toggle", bsToggle Dropdown, ariaExpanded False ] [ text "Layouts" ] ]
              )
                 ++ [ ul [ class "dropdown-menu dropdown-menu-end" ]
                         ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal conf.ids.newLayoutModal) [ viewIcon Icon.plus, text " Create new layout" ] ] ]
-                            ++ L.prependOn currentLayout
+                            ++ L.prependOn usedLayout
                                 (\cur -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg LUnload) ] [ viewIcon Icon.arrowLeft, text (" Stop using " ++ cur ++ " layout") ] ])
                                 (layouts
                                     |> Dict.toList
@@ -202,6 +181,42 @@ viewLayoutButton currentLayout layouts =
             )
 
 
+viewSpecialFeaturesButton : Maybe VirtualRelation -> Html Msg
+viewSpecialFeaturesButton virtualRelation =
+    div [ class "dropdown me-2" ]
+        [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
+        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledBy conf.ids.navFeaturesDropdown ]
+            [ li []
+                [ div [ class "btn-group w-100" ]
+                    [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]
+                    , button [ type_ "button", class "dropdown-item", onClick HideAllTables ] [ text "Hide all tables" ]
+                    ]
+                ]
+            , li [] [ button [ type_ "button", class "dropdown-item d-flex justify-content-between", onClick (FindPathMsg (FPInit Nothing Nothing)) ] [ text "Find path between tables", kbd [ class "ms-3" ] [ text "alt + p" ] ] ]
+            , virtualRelation
+                |> M.mapOrElse (\_ -> li [] [ button [ type_ "button", class "dropdown-item", onClick (VirtualRelationMsg VRCancel) ] [ text "Cancel virtual relation" ] ])
+                    (li []
+                        [ button
+                            [ type_ "button"
+                            , class "dropdown-item d-flex justify-content-between"
+                            , title "A virtual relation is a relation which is not materialized by a foreign key"
+                            , bsToggle Tooltip
+                            , onClick (VirtualRelationMsg VRCreate)
+                            ]
+                            [ text "Create a virtual relation", kbd [ class "ms-3" ] [ text "alt + v" ] ]
+                        ]
+                    )
+            , li [] [ hr [ class "dropdown-divider" ] [] ]
+            , li [] [ button [ type_ "button", class "dropdown-item", onClick ChangeProject ] [ text "Move to project..." ] ]
+            ]
+        ]
+
+
+viewSettingsButton : Html Msg
+viewSettingsButton =
+    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas conf.ids.settings ++ track events.openSettings) [ viewIcon Icon.cog ]
+
+
 type alias Suggestion =
     { priority : Float, content : List (Html Msg), msg : Msg }
 
@@ -214,7 +229,7 @@ buildSuggestions tables layout search =
 asSuggestions : Layout -> Search -> Table -> List Suggestion
 asSuggestions layout search table =
     { priority = 0 - matchStrength table layout search
-    , content = viewIcon Icon.angleRight :: text " " :: highlightMatch search (showTableId table.id)
+    , content = viewIcon Icon.angleRight :: text " " :: highlightMatch search (TableId.show table.id)
     , msg = ShowTable table.id
     }
         :: (table.columns |> Ned.values |> Nel.filterMap (columnSuggestion search table))
@@ -225,7 +240,7 @@ columnSuggestion search table column =
     if column.name == search then
         Just
             { priority = 0 - 0.5
-            , content = viewIcon Icon.angleDoubleRight :: [ text (" " ++ showTableId table.id ++ "."), b [] [ text column.name ] ]
+            , content = viewIcon Icon.angleDoubleRight :: [ text (" " ++ TableId.show table.id ++ "."), b [] [ text column.name ] ]
             , msg = ShowTable table.id
             }
 

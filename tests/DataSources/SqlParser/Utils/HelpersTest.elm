@@ -6,11 +6,6 @@ import Expect
 import Test exposing (Test, describe, test)
 
 
-fileName : String
-fileName =
-    "file.sql"
-
-
 suite : Test
 suite =
     describe "Helpers"
@@ -22,8 +17,8 @@ suite =
         , describe "buildRawSql"
             [ test "basic"
                 (\_ ->
-                    { head = { file = fileName, line = 11, text = "ALTER TABLE ONLY public.users" }
-                    , tail = [ { file = fileName, line = 12, text = "  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);" } ]
+                    { head = { line = 11, text = "ALTER TABLE ONLY public.users" }
+                    , tail = [ { line = 12, text = "  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);" } ]
                     }
                         |> buildRawSql
                         |> Expect.equal "ALTER TABLE ONLY public.users\n  ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"

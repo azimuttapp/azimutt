@@ -6,7 +6,7 @@ import Html.Attributes exposing (autofocus, class, disabled, for, id, type_, val
 import Html.Events exposing (onClick, onInput)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal)
 import Libs.Html exposing (bText, extLink)
-import Models.Project exposing (LayoutName)
+import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Msg(..))
 import Url exposing (percentEncode)
 

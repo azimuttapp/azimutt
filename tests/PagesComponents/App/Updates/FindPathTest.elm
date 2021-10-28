@@ -5,7 +5,16 @@ import Expect
 import Libs.Dict as D
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
-import Models.Project exposing (Column, ColumnName, ColumnRef, FindPathSettings, FindPathStep, FindPathStepDir(..), Relation, Table, TableId, TableName)
+import Models.Project.Column exposing (Column)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.FindPathStep exposing (FindPathStep)
+import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
+import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId exposing (TableId)
+import Models.Project.TableName exposing (TableName)
 import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
 import Test exposing (Test, describe, test)
 
@@ -102,7 +111,7 @@ buildColumn name =
 
 buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> Relation
 buildRelation ( fromTable, fromCol ) ( toTable, toCol ) =
-    Relation "" (ColumnRef (tableId fromTable) fromCol) (ColumnRef (tableId toTable) toCol) []
+    Relation.new "" (ColumnRef (tableId fromTable) fromCol) (ColumnRef (tableId toTable) toCol) []
 
 
 settings : FindPathSettings

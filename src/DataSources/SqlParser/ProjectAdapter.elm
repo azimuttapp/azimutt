@@ -1,107 +1,122 @@
-module DataSources.SqlParser.ProjectAdapter exposing (buildProjectFromSql)
+module DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 
-import DataSources.SqlParser.FileParser exposing (SqlCheck, SqlColumn, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlUnique)
+import Array
+import DataSources.SqlParser.FileParser exposing (SqlCheck, SqlColumn, SqlComment, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlUnique)
+import DataSources.SqlParser.Utils.Types exposing (SqlStatement)
 import Dict
 import Libs.Dict as D
+import Libs.Models exposing (FileLineContent)
 import Libs.Ned as Ned
-import Libs.Nel as Nel exposing (Nel)
-import Libs.Position exposing (Position)
-import Libs.String as S
-import Models.Project exposing (CanvasProps, Check, Column, ColumnRef, Comment, Index, Layout, PrimaryKey, Project, ProjectId, ProjectSource, ProjectSourceContent(..), Relation, SampleName, Schema, Table, Unique, buildProject)
-import Time
+import Libs.Nel as Nel
+import Models.Project.Check exposing (Check)
+import Models.Project.Column exposing (Column)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.Index exposing (Index)
+import Models.Project.Origin exposing (Origin)
+import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Table exposing (Table)
+import Models.Project.Unique exposing (Unique)
+import Models.SourceInfo exposing (SourceInfo)
 
 
-buildProjectFromSql : List String -> Time.Posix -> ProjectId -> ProjectSource -> SqlSchema -> Maybe SampleName -> Project
-buildProjectFromSql takenNames now id source schema sample =
-    buildProject id (S.unique takenNames source.name) (Nel source []) (buildSchema now schema) sample now
-
-
-buildSchema : Time.Posix -> SqlSchema -> Schema
-buildSchema now schema =
-    { tables = schema |> Dict.values |> List.map buildTable |> D.fromListMap .id
-    , relations = schema |> Dict.values |> List.concatMap buildRelations
-    , layout = Layout (CanvasProps (Position 0 0) 1) [] [] now now
+buildSourceFromSql : SourceInfo -> List FileLineContent -> SqlSchema -> Source
+buildSourceFromSql sourceInfo lines schema =
+    { id = sourceInfo.id
+    , name = sourceInfo.name
+    , kind = sourceInfo.kind
+    , content = Array.fromList lines
+    , tables = schema |> Dict.values |> List.map (buildTable sourceInfo.id) |> D.fromListMap .id
+    , relations = schema |> Dict.values |> List.concatMap (buildRelations sourceInfo.id)
+    , enabled = sourceInfo.enabled
+    , fromSample = sourceInfo.fromSample
+    , createdAt = sourceInfo.createdAt
+    , updatedAt = sourceInfo.updatedAt
     }
 
 
-buildTable : SqlTable -> Table
-buildTable table =
+buildTable : SourceId -> SqlTable -> Table
+buildTable source table =
     { id = ( table.schema, table.table )
     , schema = table.schema
     , name = table.table
-    , columns = table.columns |> Nel.indexedMap buildColumn |> Ned.fromNelMap .name
-    , primaryKey = table.primaryKey |> Maybe.map buildPrimaryKey
-    , uniques = table.uniques |> List.map buildUnique
-    , indexes = table.indexes |> List.map buildIndex
-    , checks = table.checks |> List.map buildCheck
-    , comment = table.comment |> Maybe.map buildComment
-    , sources = [] -- FIXME
+    , columns = table.columns |> Nel.indexedMap (buildColumn source) |> Ned.fromNelMap .name
+    , primaryKey = table.primaryKey |> Maybe.map (buildPrimaryKey source)
+    , uniques = table.uniques |> List.map (buildUnique source)
+    , indexes = table.indexes |> List.map (buildIndex source)
+    , checks = table.checks |> List.map (buildCheck source)
+    , comment = table.comment |> Maybe.map (buildComment source)
+    , origins = [ buildOrigin source table ]
     }
 
 
-buildColumn : Int -> SqlColumn -> Column
-buildColumn index column =
+buildColumn : SourceId -> Int -> SqlColumn -> Column
+buildColumn source index column =
     { index = index
     , name = column.name
     , kind = column.kind
     , nullable = column.nullable
     , default = column.default
-    , comment = column.comment |> Maybe.map buildComment
-    , sources = [] -- FIXME
+    , comment = column.comment |> Maybe.map (buildComment source)
+    , origins = [ { id = source, lines = [] } ]
     }
 
 
-buildPrimaryKey : SqlPrimaryKey -> PrimaryKey
-buildPrimaryKey pk =
+buildPrimaryKey : SourceId -> SqlPrimaryKey -> PrimaryKey
+buildPrimaryKey source pk =
     { name = pk.name
     , columns = pk.columns
-    , sources = [] -- FIXME
+    , origins = [ buildOrigin source pk ]
     }
 
 
-buildUnique : SqlUnique -> Unique
-buildUnique unique =
+buildUnique : SourceId -> SqlUnique -> Unique
+buildUnique source unique =
     { name = unique.name
     , columns = unique.columns
     , definition = unique.definition
-    , sources = [] -- FIXME
+    , origins = [ buildOrigin source unique ]
     }
 
 
-buildIndex : SqlIndex -> Index
-buildIndex index =
+buildIndex : SourceId -> SqlIndex -> Index
+buildIndex source index =
     { name = index.name
     , columns = index.columns
     , definition = index.definition
-    , sources = [] -- FIXME
+    , origins = [ buildOrigin source index ]
     }
 
 
-buildCheck : SqlCheck -> Check
-buildCheck check =
+buildCheck : SourceId -> SqlCheck -> Check
+buildCheck source check =
     { name = check.name
     , columns = check.columns
     , predicate = check.predicate
-    , sources = [] -- FIXME
+    , origins = [ buildOrigin source check ]
     }
 
 
-buildComment : String -> Comment
-buildComment comment =
-    { text = comment
-    , sources = [] -- FIXME
+buildComment : SourceId -> SqlComment -> Comment
+buildComment source comment =
+    { text = comment.text
+    , origins = [ buildOrigin source comment ]
     }
 
 
-buildRelations : SqlTable -> List Relation
-buildRelations table =
+buildRelations : SourceId -> SqlTable -> List Relation
+buildRelations source table =
     table.columns
         |> Nel.filterZip .foreignKey
         |> List.map
             (\( c, fk ) ->
-                { name = fk.name
-                , src = ColumnRef ( table.schema, table.table ) c.name
-                , ref = ColumnRef ( fk.schema, fk.table ) fk.column
-                , sources = [] -- FIXME
-                }
+                Relation.new fk.name (ColumnRef ( table.schema, table.table ) c.name) (ColumnRef ( fk.schema, fk.table ) fk.column) [ buildOrigin source fk ]
             )
+
+
+buildOrigin : SourceId -> { item | source : SqlStatement } -> Origin
+buildOrigin source item =
+    { id = source, lines = item.source |> Nel.map .line |> Nel.toList }

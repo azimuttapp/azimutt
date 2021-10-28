@@ -1,34 +1,90 @@
-module PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
+module PagesComponents.App.Updates.Project exposing (createProject, deleteProject, updateProject, useProject)
 
 import Conf exposing (conf)
 import DataSources.SqlParser.FileParser exposing (parseSchema)
-import DataSources.SqlParser.ProjectAdapter exposing (buildProjectFromSql)
+import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 import Dict
-import FileValue exposing (File)
-import Json.Decode as Decode
-import Libs.Bool exposing (cond)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (FileContent, FileUrl, TrackEvent)
-import Libs.Result as R
+import Libs.Models exposing (FileContent, TrackEvent)
 import Libs.String as S
 import Libs.Task as T
-import Models.Project exposing (Project, ProjectId, ProjectName, ProjectSource, ProjectSourceContent(..), ProjectSourceId, SampleName, decodeProject, extractPath)
+import Models.Project as Project exposing (Project)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.SourceKind as SourceKind
+import Models.SourceInfo exposing (SourceInfo)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml)
-import Ports exposing (activateTooltipsAndPopovers, click, hideModal, observeTablesSize, saveProject, toastError, toastInfo, track, trackErrorList)
-import Time
+import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
 import Tracking exposing (events)
 
 
-createProjectFromFile : Time.Posix -> ProjectId -> ProjectSourceId -> File -> FileContent -> Model -> ( Model, Cmd Msg )
-createProjectFromFile now projectId sourceId file content model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (localSource now sourceId file) content Nothing |> loadProject events.createProject model
+createProject : ProjectId -> SourceInfo -> FileContent -> Model -> ( Model, Cmd Msg )
+createProject projectId sourceInfo content model =
+    let
+        takenNames : List ProjectName
+        takenNames =
+            model.storedProjects |> List.map .name
+
+        path : String
+        path =
+            sourceInfo.kind |> SourceKind.path
+    in
+    (if path |> String.endsWith ".sql" then
+        parseSchema content
+            |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
+            |> Tuple.mapSecond (\source -> Just (Project.create projectId (S.unique takenNames source.name) source))
+
+     else
+        ( [ "Invalid file (" ++ path ++ "), expected a .sql one" ], Nothing )
+    )
+        |> loadProject events.createProject model
 
 
-createProjectFromUrl : Time.Posix -> ProjectId -> ProjectSourceId -> FileUrl -> FileContent -> Maybe SampleName -> Model -> ( Model, Cmd Msg )
-createProjectFromUrl now projectId sourceId path content sample model =
-    buildProject (model.storedProjects |> List.map .name) now projectId (remoteSource now sourceId path content) content sample |> loadProject events.createProject model
+updateProject : SourceInfo -> FileContent -> Project -> ( Project, Cmd Msg )
+updateProject sourceInfo content project =
+    let
+        path : String
+        path =
+            sourceInfo.kind |> SourceKind.path
+    in
+    if path |> String.endsWith ".sql" then
+        (parseSchema content
+            |> Tuple.mapSecond (\( lines, schema ) -> buildSourceFromSql sourceInfo lines schema)
+            |> Tuple.mapSecond
+                (\newSource ->
+                    project.sources
+                        |> L.find (\s -> s.id == newSource.id)
+                        |> Maybe.map
+                            (\oldSource ->
+                                ( project |> Project.updateSource newSource.id (\_ -> newSource)
+                                , events.refreshSource newSource
+                                , "Source <b>" ++ oldSource.name ++ "</b> updated with <b>" ++ newSource.name ++ "</b>."
+                                )
+                            )
+                        |> Maybe.withDefault
+                            ( project |> Project.addSource newSource
+                            , events.addSource newSource
+                            , "Source <b>" ++ newSource.name ++ "</b> added to project."
+                            )
+                )
+        )
+            |> (\( errors, ( updatedProject, event, message ) ) ->
+                    ( updatedProject
+                    , Cmd.batch
+                        ((errors |> List.map toastError)
+                            ++ (errors |> List.map (trackError "parse-schema"))
+                            ++ [ toastInfo message
+                               , hideOffcanvas conf.ids.settings
+                               , saveProject updatedProject
+                               , track event
+                               ]
+                        )
+                    )
+               )
+
+    else
+        ( project, toastError ("Invalid file (" ++ path ++ "), expected .sql") )
 
 
 useProject : Project -> Model -> ( Model, Cmd Msg )
@@ -36,8 +92,13 @@ useProject project model =
     ( [], Just project ) |> loadProject events.loadProject model
 
 
+deleteProject : Project -> Model -> ( Model, Cmd Msg )
+deleteProject project model =
+    ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, track (events.deleteProject project) ] )
+
+
 loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
-loadProject projectEvent model ( errs, project ) =
+loadProject projectEvent model ( errors, project ) =
     ( { model
         | switch = initSwitch
         , storedProjects = model.storedProjects |> L.appendOn (project |> M.filter (\p -> model.storedProjects |> List.all (\s -> s.name /= p.name))) identity
@@ -45,15 +106,15 @@ loadProject projectEvent model ( errs, project ) =
         , domInfos = model.domInfos |> Dict.filter (\id _ -> not (id |> String.startsWith "table-"))
       }
     , Cmd.batch
-        ((errs |> List.map toastError)
-            ++ cond (List.isEmpty errs) [] [ trackErrorList "parse-project" errs ]
+        ((errors |> List.map toastError)
+            ++ (errors |> List.map (trackError "parse-project"))
             ++ (project
-                    |> Maybe.map
+                    |> M.mapOrElse
                         (\p ->
-                            (if not (p.schema.layout.tables |> List.isEmpty) then
-                                observeTablesSize (p.schema.layout.tables |> List.map .id)
+                            (if not (p.layout.tables |> List.isEmpty) then
+                                observeTablesSize (p.layout.tables |> List.map .id)
 
-                             else if Dict.size p.schema.tables < 10 then
+                             else if Dict.size p.tables < 10 then
                                 T.send ShowAllTables
 
                              else
@@ -66,42 +127,7 @@ loadProject projectEvent model ( errs, project ) =
                                    , track (projectEvent p)
                                    ]
                         )
-                    |> Maybe.withDefault []
+                        []
                )
         )
     )
-
-
-buildProject : List ProjectName -> Time.Posix -> ProjectId -> ProjectSource -> FileContent -> Maybe SampleName -> ( Errors, Maybe Project )
-buildProject takenNames now projectId source content sample =
-    let
-        path : String
-        path =
-            extractPath source.source
-    in
-    if path |> String.endsWith ".sql" then
-        parseSchema path content |> Tuple.mapSecond (\s -> Just (buildProjectFromSql takenNames now projectId source s sample))
-
-    else if path |> String.endsWith ".json" then
-        Decode.decodeString decodeProject content
-            |> R.fold
-                (\e -> ( [ "⚠️ Error in <b>" ++ path ++ "</b> ⚠️<br>" ++ decodeErrorToHtml e ], Nothing ))
-                (\p -> ( [], Just { p | id = projectId, name = S.unique takenNames p.name, createdAt = now, updatedAt = now, fromSample = sample } ))
-
-    else
-        ( [ "Invalid file (" ++ path ++ "), expected .sql or .json one" ], Nothing )
-
-
-localSource : Time.Posix -> ProjectSourceId -> File -> ProjectSource
-localSource now id file =
-    ProjectSource id (lastSegment file.name) (LocalFile file.name file.size file.lastModified) now now
-
-
-remoteSource : Time.Posix -> ProjectSourceId -> FileUrl -> FileContent -> ProjectSource
-remoteSource now id url content =
-    ProjectSource id (lastSegment url) (RemoteFile url (String.length content)) now now
-
-
-lastSegment : String -> String
-lastSegment path =
-    path |> String.split "/" |> List.filter (\p -> not (p == "")) |> L.last |> Maybe.withDefault path

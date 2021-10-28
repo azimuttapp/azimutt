@@ -3,7 +3,10 @@ module Conf exposing (conf, constants, newsletterConf, schemaSamples)
 import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
-import Libs.Models exposing (Color, FileUrl, HtmlId, ZoomLevel)
+import Libs.Models.Color exposing (Color)
+import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
 conf :
@@ -17,6 +20,7 @@ conf :
         , navProjectDropdown : HtmlId
         , navLayoutDropdown : HtmlId
         , menu : HtmlId
+        , settings : HtmlId
         , erd : HtmlId
         , projectSwitchModal : HtmlId
         , findPathModal : HtmlId
@@ -38,6 +42,7 @@ conf =
         , navProjectDropdown = "navbar-project-dropdown"
         , navLayoutDropdown = "navbar-layout-dropdown"
         , menu = "menu"
+        , settings = "settings"
         , erd = "erd"
         , projectSwitchModal = "project-switch-modal"
         , findPathModal = "find-path-modal"
@@ -83,7 +88,7 @@ newsletterConf =
 schemaSamples : Dict String ( Int, FileUrl )
 schemaSamples =
     Dict.fromList
-        [ ( "basic schema", ( 4, "samples/basic.json" ) )
+        [ ( "basic schema", ( 4, "samples/basic.sql" ) )
         , ( "wordpress", ( 12, "samples/wordpress.sql" ) )
         , ( "gospeak.io", ( 26, "samples/gospeak.sql" ) )
         ]

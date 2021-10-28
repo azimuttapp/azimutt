@@ -1,9 +1,8 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, move, moveBy, nonEmpty, prependIf, prependOn, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, replaceOrAppend, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
 import Libs.Maybe as M
-import Libs.Nel as Nel exposing (Nel)
 import Random
 import Set
 
@@ -74,6 +73,11 @@ findIndexBy matcher value list =
     findIndex (\a -> matcher a == value) list
 
 
+filterNot : (a -> Bool) -> List a -> List a
+filterNot predicate list =
+    list |> List.filter (\a -> not (predicate a))
+
+
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> M.isJust
@@ -111,12 +115,12 @@ filterMap predicate transform list =
 
 move : Int -> Int -> List a -> List a
 move from to list =
-    list |> get from |> Maybe.map (\v -> list |> removeAt from |> addAt v to) |> Maybe.withDefault list
+    list |> get from |> M.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
 
 
 moveBy : (a -> b) -> b -> Int -> List a -> List a
 moveBy matcher value position list =
-    list |> findIndexBy matcher value |> Maybe.map (\index -> list |> move index position) |> Maybe.withDefault list
+    list |> findIndexBy matcher value |> M.mapOrElse (\index -> list |> move index position) list
 
 
 removeAt : Int -> List a -> List a
@@ -176,6 +180,32 @@ appendOn maybe transform list =
             list
 
 
+replaceOrAppend : (a -> comparable) -> a -> List a -> List a
+replaceOrAppend id item list =
+    case
+        list
+            |> List.foldr
+                (\a ( acc, it ) ->
+                    case it of
+                        Just i ->
+                            if id a == id i then
+                                ( i :: acc, Nothing )
+
+                            else
+                                ( a :: acc, it )
+
+                        Nothing ->
+                            ( a :: acc, it )
+                )
+                ( [], Just item )
+    of
+        ( acc, Just a ) ->
+            acc ++ [ a ]
+
+        ( acc, Nothing ) ->
+            acc
+
+
 zipWith : (a -> b) -> List a -> List ( a, b )
 zipWith transform list =
     list |> List.map (\a -> ( a, transform a ))
@@ -227,9 +257,15 @@ uniqueBy matcher list =
         |> List.reverse
 
 
-groupBy : (a -> comparable) -> List a -> Dict comparable (Nel a)
+groupBy : (a -> comparable) -> List a -> Dict comparable (List a)
 groupBy key list =
-    List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> Maybe.map (Nel.prepend a) |> Maybe.withDefault (Nel a []) |> Just)) Dict.empty list
+    List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> M.mapOrElse (\x -> a :: x) [ a ] |> Just)) Dict.empty list
+
+
+merge : (a -> comparable) -> (a -> a -> a) -> List a -> List a -> List a
+merge getKey mergeValue l1 l2 =
+    (l1 |> List.map (\a1 -> l2 |> find (\a2 -> getKey a1 == getKey a2) |> M.mapOrElse (mergeValue a1) a1))
+        ++ (l2 |> filterNot (\a2 -> l1 |> List.any (\a1 -> getKey a1 == getKey a2)))
 
 
 resultCollect : List (Result e a) -> ( List e, List a )

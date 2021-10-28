@@ -1,36 +1,36 @@
 module Pages.App exposing (Model, Msg, page)
 
 import Browser.Events
-import Conf exposing (conf, schemaSamples)
+import Conf exposing (conf)
 import Dict
 import Gen.Params.App exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
-import Libs.Position as Position
-import Models.Project exposing (FindPathState(..))
+import Libs.Maybe as M
+import Libs.Models.Position as Position
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)
-import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+import PagesComponents.App.Models as Models exposing (CursorMode(..), DragState, Model, Msg(..), SourceMsg(..), VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 import PagesComponents.App.Updates exposing (updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, resetCanvas, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
-import PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setSchema, setSchemaWithCmd, setSwitch, setTableInList, setTables, setTime)
-import PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
+import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (handleLayout)
-import PagesComponents.App.Updates.Project exposing (createProjectFromFile, createProjectFromUrl, useProject)
+import PagesComponents.App.Updates.PortMsg exposing (handlePortMsg)
+import PagesComponents.App.Updates.Project exposing (deleteProject, useProject)
+import PagesComponents.App.Updates.Source exposing (handleSource)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Helpers as Helpers
-import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, hideOffcanvas, listenHotkeys, loadFile, loadProjects, observeSize, onJsMessage, readFile, showModal, toastError, track, trackJsonError, trackPage)
+import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, hideOffcanvas, listenHotkeys, loadProjects, observeSize, onJsMessage, showModal, trackPage)
 import Request
 import Shared
 import Time
-import Tracking exposing (events)
 import View exposing (View)
 
 
@@ -93,49 +93,29 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         -- each case should be one line or call a function in Update file
-        JsMessage (SizesChanged sizes) ->
-            updateSizes sizes model
-
         TimeChanged time ->
             ( model |> setTime (\t -> { t | now = time }), Cmd.none )
 
         ZoneChanged zone ->
             ( model |> setTime (\t -> { t | zone = zone }), Cmd.none )
 
+        SizesChanged sizes ->
+            model |> updateSizes sizes
+
+        SourceMsg m ->
+            model |> handleSource m
+
         ChangeProject ->
             ( model, Cmd.batch [ hideOffcanvas conf.ids.menu, showModal conf.ids.projectSwitchModal, loadProjects ] )
 
-        JsMessage (ProjectsLoaded ( errors, projects )) ->
-            ( { model | storedProjects = projects }, Cmd.batch (errors |> List.concatMap (\( name, err ) -> [ toastError ("Unable to read project <b>" ++ name ++ "</b>:<br>" ++ decodeErrorToHtml err), trackJsonError "decode-project" err ])) )
-
-        FileDragOver _ _ ->
-            ( model, Cmd.none )
-
-        FileDragLeave ->
-            ( model, Cmd.none )
-
-        FileDropped file _ ->
-            ( model |> setSwitch (\s -> { s | loading = True }), readFile file )
-
-        FileSelected file ->
-            ( model |> setSwitch (\s -> { s | loading = True }), readFile file )
-
-        JsMessage (FileRead now projectId sourceId file content) ->
-            model |> createProjectFromFile now projectId sourceId file content
-
-        LoadSample name ->
-            ( model, schemaSamples |> Dict.get name |> Maybe.map (\( _, url ) -> loadFile url (Just name)) |> Maybe.withDefault (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
-
-        -- LoadFile url ->
-        --     ( model, loadFile url Nothing )
-        JsMessage (FileLoaded now projectId sourceId url content sample) ->
-            model |> createProjectFromUrl now projectId sourceId url content sample
-
-        DeleteProject project ->
-            ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, track (events.deleteProject project) ] )
+        ProjectsLoaded projects ->
+            ( { model | storedProjects = projects }, Cmd.none )
 
         UseProject project ->
             model |> useProject project
+
+        DeleteProject project ->
+            model |> deleteProject project
 
         ChangedSearch search ->
             ( { model | search = search }, Cmd.none )
@@ -150,13 +130,13 @@ update msg model =
             ( model |> setCurrentLayout (hideTable id), Cmd.none )
 
         ShowTable id ->
-            model |> setProjectWithCmd (setSchemaWithCmd (showTable id))
+            model |> setProjectWithCmd (showTable id)
 
         TableOrder id index ->
             ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
 
         ShowTables ids ->
-            model |> setProjectWithCmd (setSchemaWithCmd (showTables ids))
+            model |> setProjectWithCmd (showTables ids)
 
         --HideTables ids ->
         --    ( model |> setCurrentLayout (hideTables ids), Cmd.none )
@@ -167,7 +147,7 @@ update msg model =
             ( model |> setCurrentLayout hideAllTables, Cmd.none )
 
         ShowAllTables ->
-            model |> setProjectWithCmd (setSchemaWithCmd showAllTables)
+            model |> setProjectWithCmd showAllTables
 
         HideColumn { table, column } ->
             ( model |> hoverNextColumn table column |> setCurrentLayout (hideColumn table column), Cmd.none )
@@ -176,13 +156,13 @@ update msg model =
             ( model |> setCurrentLayout (showColumn table column), activateTooltipsAndPopovers )
 
         SortColumns id kind ->
-            ( model |> setProject (setSchema (sortColumns id kind)), activateTooltipsAndPopovers )
+            ( model |> setProject (sortColumns id kind), activateTooltipsAndPopovers )
 
         HideColumns id kind ->
-            ( model |> setProject (setSchema (hideColumns id kind)), Cmd.none )
+            ( model |> setProject (hideColumns id kind), Cmd.none )
 
         ShowColumns id kind ->
-            ( model |> setProject (setSchema (showColumns id kind)), activateTooltipsAndPopovers )
+            ( model |> setProject (showColumns id kind), activateTooltipsAndPopovers )
 
         HoverTable t ->
             ( { model | hover = model.hover |> (\h -> { h | table = t }) }, Cmd.none )
@@ -215,13 +195,13 @@ update msg model =
             ( { model | cursorMode = mode }, Cmd.none )
 
         LayoutMsg m ->
-            handleLayout m model
+            model |> handleLayout m
 
         FindPathMsg m ->
-            handleFindPath m model
+            model |> handleFindPath m
 
         VirtualRelationMsg m ->
-            ( updateVirtualRelation m model, Cmd.none )
+            model |> updateVirtualRelation m
 
         OpenConfirm confirm ->
             ( { model | confirm = confirm }, showModal conf.ids.confirm )
@@ -229,11 +209,8 @@ update msg model =
         OnConfirm answer cmd ->
             ( { model | confirm = initConfirm }, B.cond answer cmd Cmd.none )
 
-        JsMessage (HotkeyUsed hotkey) ->
-            ( model, Cmd.batch (handleHotkey model hotkey) )
-
-        JsMessage (Error err) ->
-            ( model, Cmd.batch [ toastError ("Unable to decode JavaScript message:<br>" ++ decodeErrorToHtml err), trackJsonError "js-message" err ] )
+        JsMessage m ->
+            ( model, model |> handlePortMsg m )
 
         Noop ->
             ( model, Cmd.none )
@@ -282,6 +259,6 @@ virtualRelationSubscription virtualRelation =
 
 view : Model -> View Msg
 view model =
-    { title = model.project |> Maybe.map (\p -> p.name ++ " - Azimutt") |> Maybe.withDefault "Azimutt - Explore your database schema"
+    { title = model.project |> M.mapOrElse (\p -> p.name ++ " - Azimutt") "Azimutt - Explore your database schema"
     , body = Helpers.root (viewApp model)
     }
