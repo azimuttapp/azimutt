@@ -19,6 +19,7 @@ import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.SampleName exposing (SampleName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
+import Storage.ProjectV2 exposing (decodeProject)
 import Time
 
 
@@ -317,7 +318,7 @@ projectsDecoder =
                     |> List.map
                         (\( k, v ) ->
                             v
-                                |> Decode.decodeValue Project.decode
+                                |> Decode.decodeValue decodeProject
                                 |> Result.mapError (\e -> ( k, e ))
                         )
                     |> L.resultCollect
