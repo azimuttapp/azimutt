@@ -4,7 +4,8 @@ import Array
 import Dict
 import FileValue exposing (File)
 import Libs.List as L
-import Libs.Models exposing (FileContent, FileUrl)
+import Libs.Models exposing (FileContent)
+import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Task exposing (send)
 import Models.Project.Relation as Relation
 import Models.Project.Source exposing (Source)

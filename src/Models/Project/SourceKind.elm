@@ -4,8 +4,10 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
-import Libs.Json.Formats exposing (decodeFileModified, decodeFileName, decodeFileSize, decodeFileUrl, encodeFileModified, encodeFileName, encodeFileSize, encodeFileUrl)
-import Libs.Models exposing (FileModified, FileName, FileSize, FileUrl)
+import Libs.Models.FileModified as FileModified exposing (FileModified)
+import Libs.Models.FileName as FileName exposing (FileName)
+import Libs.Models.FileSize as FileSize exposing (FileSize)
+import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 
 
 type SourceKind
@@ -33,16 +35,16 @@ encode value =
         LocalFile name size modified ->
             E.object
                 [ ( "kind", "LocalFile" |> Encode.string )
-                , ( "name", name |> encodeFileName )
-                , ( "size", size |> encodeFileSize )
-                , ( "modified", modified |> encodeFileModified )
+                , ( "name", name |> FileName.encode )
+                , ( "size", size |> FileSize.encode )
+                , ( "modified", modified |> FileModified.encode )
                 ]
 
         RemoteFile name size ->
             E.object
                 [ ( "kind", "RemoteFile" |> Encode.string )
-                , ( "url", name |> encodeFileUrl )
-                , ( "size", size |> encodeFileSize )
+                , ( "url", name |> FileUrl.encode )
+                , ( "size", size |> FileSize.encode )
                 ]
 
         UserDefined ->
@@ -56,14 +58,14 @@ decode =
             case kind of
                 "LocalFile" ->
                     Decode.map3 LocalFile
-                        (Decode.field "name" decodeFileName)
-                        (Decode.field "size" decodeFileSize)
-                        (Decode.field "modified" decodeFileModified)
+                        (Decode.field "name" FileName.decode)
+                        (Decode.field "size" FileSize.decode)
+                        (Decode.field "modified" FileModified.decode)
 
                 "RemoteFile" ->
                     Decode.map2 RemoteFile
-                        (Decode.field "url" decodeFileUrl)
-                        (Decode.field "size" decodeFileSize)
+                        (Decode.field "url" FileUrl.decode)
+                        (Decode.field "size" FileSize.decode)
 
                 "UserDefined" ->
                     Decode.succeed UserDefined

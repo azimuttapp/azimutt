@@ -8,8 +8,8 @@ import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Position as Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size exposing (Size)
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)

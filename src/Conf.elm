@@ -3,8 +3,10 @@ module Conf exposing (conf, constants, newsletterConf, schemaSamples)
 import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
-import Libs.Models exposing (Color, FileUrl, ZoomLevel)
+import Libs.Models.Color exposing (Color)
+import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
 conf :

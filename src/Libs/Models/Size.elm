@@ -1,4 +1,8 @@
-module Libs.Size exposing (Size, div, fromTuple, mult, ratio, sub, toTuple)
+module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, sub, toTuple)
+
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
+import Libs.Json.Encode as E
 
 
 type alias Size =
@@ -33,3 +37,18 @@ sub amount size =
 ratio : Size -> Size -> Size
 ratio a b =
     Size (b.width / a.width) (b.height / a.height)
+
+
+encode : Size -> Value
+encode value =
+    E.object
+        [ ( "width", value.width |> Encode.float )
+        , ( "height", value.height |> Encode.float )
+        ]
+
+
+decode : Decode.Decoder Size
+decode =
+    Decode.map2 Size
+        (Decode.field "width" Decode.float)
+        (Decode.field "height" Decode.float)

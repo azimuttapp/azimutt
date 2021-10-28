@@ -4,9 +4,9 @@ import Array
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Dict as D
+import Libs.Models.Position exposing (Position)
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
-import Libs.Position exposing (Position)
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Check as Check

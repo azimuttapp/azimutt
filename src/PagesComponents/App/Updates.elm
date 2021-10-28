@@ -6,8 +6,8 @@ import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (SizeChange)
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
 import Libs.Task exposing (send)
 import Models.Project exposing (viewportArea)
 import Models.Project.Layout exposing (Layout)

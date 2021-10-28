@@ -4,8 +4,8 @@ import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
 import Libs.Maybe as M
-import Libs.Models exposing (ZoomLevel)
-import Libs.Position exposing (Position)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
 setTime : (t -> t) -> { item | time : t } -> { item | time : t }

@@ -7,7 +7,7 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Dict as D
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
-import Libs.Json.Formats exposing (decodePosix, encodePosix)
+import Libs.Time as Time
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleName as SampleName exposing (SampleName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -44,8 +44,8 @@ encode value =
         , ( "relations", value.relations |> Encode.list Relation.encode )
         , ( "enabled", value.enabled |> E.withDefault Encode.bool True )
         , ( "fromSample", value.fromSample |> E.maybe SampleName.encode )
-        , ( "createdAt", value.createdAt |> encodePosix )
-        , ( "updatedAt", value.updatedAt |> encodePosix )
+        , ( "createdAt", value.createdAt |> Time.encode )
+        , ( "updatedAt", value.updatedAt |> Time.encode )
         ]
 
 
@@ -60,5 +60,5 @@ decode =
         (Decode.field "relations" (Decode.list Relation.decode))
         (D.defaultField "enabled" Decode.bool True)
         (D.maybeField "fromSample" SampleName.decode)
-        (Decode.field "createdAt" decodePosix)
-        (Decode.field "updatedAt" decodePosix)
+        (Decode.field "createdAt" Time.decode)
+        (Decode.field "updatedAt" Time.decode)

@@ -6,12 +6,14 @@ import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Dict as D
 import Libs.Json.Decode as D
-import Libs.Json.Formats exposing (decodeColor, decodePosition, decodePosix, decodeZoomLevel)
 import Libs.Maybe as M
-import Libs.Models exposing (Color, UID, ZoomLevel)
+import Libs.Models exposing (UID)
+import Libs.Models.Color as Color exposing (Color)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
-import Libs.Position exposing (Position)
+import Libs.Time as Time
 import Models.Project exposing (Project)
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
@@ -381,8 +383,8 @@ decodeProject =
         (D.defaultField "layouts" (D.dict stringAsLayoutName decodeLayout) Dict.empty)
         (D.maybeField "currentLayout" Decode.string)
         (D.defaultFieldDeep "settings" decodeProjectSettings defaultProjectSettings)
-        (D.defaultField "createdAt" decodePosix defaultTime)
-        (D.defaultField "updatedAt" decodePosix defaultTime)
+        (D.defaultField "createdAt" Time.decode defaultTime)
+        (D.defaultField "updatedAt" Time.decode defaultTime)
         (D.maybeField "fromSample" Decode.string)
 
 
@@ -392,8 +394,8 @@ decodeProjectSource =
         (Decode.field "id" Decode.string)
         (Decode.field "name" Decode.string)
         (Decode.field "source" decodeProjectSourceContent)
-        (Decode.field "createdAt" decodePosix)
-        (Decode.field "updatedAt" decodePosix)
+        (Decode.field "createdAt" Time.decode)
+        (Decode.field "updatedAt" Time.decode)
 
 
 decodeProjectSourceContent : Decode.Decoder ProjectSourceContentV1
@@ -405,7 +407,7 @@ decodeProjectSourceContent =
                     Decode.map3 LocalFileV1
                         (Decode.field "name" Decode.string)
                         (Decode.field "size" Decode.int)
-                        (Decode.field "lastModified" decodePosix)
+                        (Decode.field "lastModified" Time.decode)
 
                 "RemoteFile" ->
                     Decode.map2 RemoteFileV1
@@ -528,23 +530,23 @@ decodeLayout =
         (Decode.field "canvas" decodeCanvasProps)
         (Decode.field "tables" (Decode.list decodeTableProps))
         (D.defaultField "hiddenTables" (Decode.list decodeTableProps) [])
-        (Decode.field "createdAt" decodePosix)
-        (Decode.field "updatedAt" decodePosix)
+        (Decode.field "createdAt" Time.decode)
+        (Decode.field "updatedAt" Time.decode)
 
 
 decodeCanvasProps : Decode.Decoder CanvasPropsV1
 decodeCanvasProps =
     Decode.map2 CanvasPropsV1
-        (Decode.field "position" decodePosition)
-        (Decode.field "zoom" decodeZoomLevel)
+        (Decode.field "position" Position.decode)
+        (Decode.field "zoom" ZoomLevel.decode)
 
 
 decodeTableProps : Decode.Decoder TablePropsV1
 decodeTableProps =
     Decode.map5 TablePropsV1
         (Decode.field "id" decodeTableId)
-        (Decode.field "position" decodePosition)
-        (Decode.field "color" decodeColor)
+        (Decode.field "position" Position.decode)
+        (Decode.field "color" Color.decode)
         (D.defaultField "columns" (Decode.list Decode.string) [])
         (D.defaultField "selected" Decode.bool False)
 

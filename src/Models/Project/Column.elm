@@ -1,9 +1,10 @@
-module Models.Project.Column exposing (Column, decode, encode, withNullableInfo)
+module Models.Project.Column exposing (Column, decode, encode, merge, withNullableInfo)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
+import Libs.Maybe as M
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
@@ -30,6 +31,16 @@ withNullableInfo nullable text =
 
     else
         text
+
+
+merge : Column -> Column -> Column
+merge c1 c2 =
+    { c1
+        | nullable = c1.nullable && c2.nullable
+        , default = M.merge ColumnValue.merge c1.default c2.default
+        , comment = M.merge Comment.merge c1.comment c2.comment
+        , origins = c1.origins ++ c2.origins
+    }
 
 
 encode : Column -> Value

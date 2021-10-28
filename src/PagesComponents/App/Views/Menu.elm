@@ -16,7 +16,6 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId as HtmlId
 import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Libs.String as S exposing (plural)
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
@@ -71,13 +70,13 @@ viewTableList tables layout =
                     (\( groupTitle, groupedTables ) ->
                         [ ( groupTitle
                           , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> HtmlId.encode) ++ "-table-list"))
-                                [ text (groupTitle ++ " (" ++ plural (Nel.length groupedTables) "" "1 table" "tables" ++ ")") ]
+                                [ text (groupTitle ++ " (" ++ plural (List.length groupedTables) "" "1 table" "tables" ++ ")") ]
                           )
                         , ( groupTitle ++ "-collapse"
                           , Keyed.node "div"
                                 [ class "collapse show", id ((groupTitle |> HtmlId.encode) ++ "-table-list") ]
                                 (groupedTables
-                                    |> Nel.map
+                                    |> List.map
                                         (\t ->
                                             ( TableId.toString t.id
                                             , div [ class "list-group-item d-flex", title (TableId.show t.id) ]
@@ -88,7 +87,6 @@ viewTableList tables layout =
                                                 ]
                                             )
                                         )
-                                    |> Nel.toList
                                 )
                           )
                         ]

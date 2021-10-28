@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn, parseCreateTableForeignKey, parseCreateTableKey)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (TableConstraint(..), parseAlterTableAddConstraint)
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, defaultPkName)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.List as L
 import Libs.Maybe as M
@@ -58,6 +58,14 @@ parseCreateTable statement =
     case statement |> buildSqlLine |> R.matches "^CREATE TABLE(?:\\s+IF NOT EXISTS)?\\s+(?:(?<db>[^ .]+)\\.)?(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s*\\((?<body>[^;]+?)\\)(?:\\s+WITH\\s+\\((?<options>.*?)\\))?(?:[^)]*)?;$" of
         db :: schema :: (Just table) :: (Just body) :: _ :: [] ->
             let
+                schemaName : Maybe SqlSchemaName
+                schemaName =
+                    schema |> M.orElse db |> Maybe.map buildSchemaName
+
+                tableName : SqlTableName
+                tableName =
+                    table |> buildTableName
+
                 ( constraints, columns ) =
                     commaSplit body
                         |> List.map String.trim
@@ -65,8 +73,8 @@ parseCreateTable statement =
             in
             R.map6
                 (\cols pk fks uniques indexes parsedConstraints ->
-                    { schema = schema |> M.orElse db |> Maybe.map buildSchemaName
-                    , table = table |> buildTableName
+                    { schema = schemaName
+                    , table = tableName
                     , columns = cols
                     , primaryKey = (pk ++ (parsedConstraints |> List.filterMap primaryKeyConstraints)) |> List.head
                     , foreignKeys = fks ++ (parsedConstraints |> List.filterMap foreignKeyConstraints)
@@ -75,7 +83,7 @@ parseCreateTable statement =
                     , checks = parsedConstraints |> List.filterMap checkConstraints
                     }
                 )
-                (columns |> List.map parseCreateTableColumn |> L.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Create table can't have empty columns" ]))
+                (columns |> List.map (parseCreateTableColumn tableName) |> L.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Create table can't have empty columns" ]))
                 (constraints |> List.filter (String.toUpper >> String.startsWith "PRIMARY KEY") |> List.map parseCreateTablePrimaryKey |> L.resultSeq)
                 (constraints |> List.filter (String.toUpper >> String.startsWith "FOREIGN KEY") |> List.map parseCreateTableForeignKey |> L.resultSeq)
                 (constraints |> List.filter (String.toUpper >> String.startsWith "UNIQUE KEY") |> List.map parseCreateTableUniqueKey |> L.resultSeq)
@@ -86,32 +94,32 @@ parseCreateTable statement =
             Err [ "Can't parse table: '" ++ buildRawSql statement ++ "'" ]
 
 
-parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
-parseCreateTableColumn sql =
+parseCreateTableColumn : SqlTableName -> RawSql -> Result ParseError ParsedColumn
+parseCreateTableColumn table sql =
     case sql |> R.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?(?: CHECK\\((?<check>.*?)\\))?$" of
         (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybePrimary :: maybeCheck :: [] ->
             maybeConstraint
                 |> Maybe.map
                     (\constraint ->
                         if constraint |> String.toUpper |> String.contains "PRIMARY KEY" then
-                            parseCreateTableColumnPrimaryKey constraint |> Result.map (\pk -> ( Just pk, Nothing, Nothing ))
+                            parseCreateTableColumnPrimaryKey constraint |> Result.map (\pk -> ( Just pk, Nothing, True ))
 
                         else if constraint |> String.toUpper |> String.contains "REFERENCES" then
-                            parseCreateTableColumnForeignKey constraint |> Result.map (\fk -> ( Nothing, Just fk, Nothing ))
+                            parseCreateTableColumnForeignKey constraint |> Result.map (\fk -> ( Nothing, Just fk, True ))
 
                         else if constraint |> String.toUpper |> String.contains "NOT NULL" then
-                            Ok ( Nothing, Nothing, Just "" )
+                            Ok ( Nothing, Nothing, False )
 
                         else
                             Err ("Constraint not handled: '" ++ constraint ++ "' in create table")
                     )
-                |> M.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just "", Nothing, Nothing )))
-                |> Maybe.withDefault (Ok ( Nothing, Nothing, Nothing ))
+                |> M.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just (defaultPkName table), Nothing, True )))
+                |> Maybe.withDefault (Ok ( Nothing, Nothing, True ))
                 |> Result.map
                     (\( pk, fk, nullable2 ) ->
                         { name = name |> buildColumnName
                         , kind = kind
-                        , nullable = nullable == Nothing && nullable2 == Nothing
+                        , nullable = nullable == Nothing && nullable2
                         , default = default1 |> M.orElse default2
                         , primaryKey = pk
                         , foreignKey = fk

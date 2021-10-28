@@ -1,6 +1,6 @@
 module Models.ColumnRefFull exposing (ColumnRefFull)
 
-import Libs.Size exposing (Size)
+import Libs.Models.Size exposing (Size)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Table exposing (Table)

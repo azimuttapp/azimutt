@@ -5,25 +5,26 @@ import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Area as Area exposing (Area)
+import Libs.Dict as D
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
-import Libs.Json.Formats exposing (decodePosix, encodePosix)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Position as Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size exposing (Size)
+import Libs.Time as Time
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation exposing (Relation)
+import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import Time
@@ -104,38 +105,12 @@ deleteSource id project =
 
 computeTables : List Source -> Dict TableId Table
 computeTables sources =
-    sources |> List.filter .enabled |> List.map .tables |> List.foldr mergeTables Dict.empty
+    sources |> List.filter .enabled |> List.map .tables |> List.foldr (D.merge Table.merge) Dict.empty
 
 
 computeRelations : List Source -> List Relation
 computeRelations sources =
-    sources |> List.filter .enabled |> List.map .relations |> List.foldr mergeRelations []
-
-
-mergeTables : Dict TableId Table -> Dict TableId Table -> Dict TableId Table
-mergeTables tables1 tables2 =
-    Dict.merge Dict.insert (\id t1 t2 acc -> Dict.insert id (mergeTable t1 t2) acc) Dict.insert tables1 tables2 Dict.empty
-
-
-mergeTable : Table -> Table -> Table
-mergeTable t1 t2 =
-    { t1 | origins = t1.origins ++ t2.origins }
-
-
-mergeRelations : List Relation -> List Relation -> List Relation
-mergeRelations relations1 relations2 =
-    (relations1 |> List.map (\r1 -> relations2 |> L.find (sameRelation r1) |> M.mapOrElse (mergeRelation r1) r1))
-        ++ (relations2 |> L.filterNot (\r2 -> relations1 |> List.any (sameRelation r2)))
-
-
-sameRelation : Relation -> Relation -> Bool
-sameRelation r1 r2 =
-    r1.name == r2.name
-
-
-mergeRelation : Relation -> Relation -> Relation
-mergeRelation r1 r2 =
-    { r1 | origins = r1.origins ++ r2.origins }
+    sources |> List.filter .enabled |> List.map .relations |> List.foldr (L.merge .id Relation.merge) []
 
 
 viewportSize : Dict HtmlId DomInfo -> Maybe Size
@@ -190,8 +165,8 @@ encode value =
         , ( "usedLayout", value.usedLayout |> E.maybe LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> E.withDefaultDeep ProjectSettings.encode ProjectSettings.init )
-        , ( "createdAt", value.createdAt |> encodePosix )
-        , ( "updatedAt", value.updatedAt |> encodePosix )
+        , ( "createdAt", value.createdAt |> Time.encode )
+        , ( "updatedAt", value.updatedAt |> Time.encode )
         , ( "version", currentVersion |> Encode.int )
         ]
 
@@ -206,5 +181,5 @@ decode =
         (D.maybeField "usedLayout" LayoutName.decode)
         (D.defaultField "layouts" (D.dict LayoutName.fromString Layout.decode) Dict.empty)
         (D.defaultFieldDeep "settings" ProjectSettings.decode ProjectSettings.init)
-        (D.defaultField "createdAt" decodePosix (Time.millisToPosix 0))
-        (D.defaultField "updatedAt" decodePosix (Time.millisToPosix 0))
+        (D.defaultField "createdAt" Time.decode (Time.millisToPosix 0))
+        (D.defaultField "updatedAt" Time.decode (Time.millisToPosix 0))

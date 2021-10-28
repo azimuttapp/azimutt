@@ -12,11 +12,11 @@ import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (onWheel)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (ZoomLevel)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project exposing (Project, viewportSize)
 import Models.Project.CanvasProps exposing (CanvasProps)

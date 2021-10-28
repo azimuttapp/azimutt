@@ -1,9 +1,9 @@
-module Libs.Models exposing (Color, FileContent, FileLine, FileLineContent, FileLineIndex, FileModified, FileName, FileSize, FileUrl, Image, Link, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta, ZoomLevel)
+module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta)
 
+import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
-import Time
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
 
 
 type alias UID =
@@ -14,24 +14,8 @@ type alias Text =
     String
 
 
-type alias FileName =
-    String
-
-
-type alias FileUrl =
-    String
-
-
 type alias FileContent =
     String
-
-
-type alias FileSize =
-    Int
-
-
-type alias FileLineIndex =
-    Int
 
 
 type alias FileLineContent =
@@ -42,24 +26,12 @@ type alias FileLine =
     { index : FileLineIndex, content : FileLineContent }
 
 
-type alias FileModified =
-    Time.Posix
-
-
-type alias ZoomLevel =
-    Float
-
-
 type alias ZoomDelta =
     Float
 
 
 type alias SizeChange =
     { id : HtmlId, position : Position, size : Size }
-
-
-type alias Color =
-    String
 
 
 type alias Millis =

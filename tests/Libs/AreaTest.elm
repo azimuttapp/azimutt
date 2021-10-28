@@ -2,8 +2,8 @@ module Libs.AreaTest exposing (..)
 
 import Expect
 import Libs.Area exposing (Area, mult, overlap)
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
 import Test exposing (Test, describe, test)
 
 

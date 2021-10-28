@@ -6,8 +6,8 @@ import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse as Mouse
 import Libs.DateTime as DateTime
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Position as Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size exposing (Size)
 import Libs.Task as T
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)

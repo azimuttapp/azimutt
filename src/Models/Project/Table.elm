@@ -1,9 +1,10 @@
-module Models.Project.Table exposing (Table, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques)
+module Models.Project.Table exposing (Table, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
+import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
@@ -57,6 +58,19 @@ inChecks table column =
 hasColumn : ColumnName -> List ColumnName -> Bool
 hasColumn column columns =
     columns |> List.any (\c -> c == column)
+
+
+merge : Table -> Table -> Table
+merge t1 t2 =
+    { t1
+        | columns = Ned.merge Column.merge t1.columns t2.columns
+        , primaryKey = M.merge PrimaryKey.merge t1.primaryKey t2.primaryKey
+        , uniques = L.merge .name Unique.merge t1.uniques t2.uniques
+        , indexes = L.merge .name Index.merge t1.indexes t2.indexes
+        , checks = L.merge .name Check.merge t1.checks t2.checks
+        , comment = M.merge Comment.merge t1.comment t2.comment
+        , origins = t1.origins ++ t2.origins
+    }
 
 
 encode : Table -> Value

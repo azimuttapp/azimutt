@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (andThenZip, contains, exist, filter, filterNot, isJust, mapOrElse, orElse, resultSeq, toList, zip, zip3)
+module Libs.Maybe exposing (andThenZip, contains, exist, filter, filterNot, isJust, mapOrElse, merge, orElse, resultSeq, toList, zip, zip3)
 
 import Libs.Bool as B
 
@@ -71,6 +71,11 @@ fold empty transform maybe =
 
         Nothing ->
             empty
+
+
+merge : (a -> a -> a) -> Maybe a -> Maybe a -> Maybe a
+merge mergeValue m1 m2 =
+    m1 |> Maybe.map (\a1 -> m2 |> mapOrElse (mergeValue a1) a1) |> orElse m2
 
 
 add : (a -> Maybe b) -> Maybe a -> Maybe ( a, b )

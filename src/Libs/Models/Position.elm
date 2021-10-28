@@ -1,4 +1,8 @@
-module Libs.Position exposing (Position, add, diff, div, fromTuple, mult, negate, sub, toTuple)
+module Libs.Models.Position exposing (Position, add, decode, diff, div, encode, fromTuple, mult, negate, sub, toTuple)
+
+import Json.Decode as Decode
+import Json.Encode as Encode exposing (Value)
+import Libs.Json.Encode as E
 
 
 type alias Position =
@@ -43,3 +47,18 @@ negate pos =
 diff : Position -> Position -> ( Float, Float )
 diff to from =
     ( from.left - to.left, from.top - to.top )
+
+
+encode : Position -> Value
+encode value =
+    E.object
+        [ ( "left", value.left |> Encode.float )
+        , ( "top", value.top |> Encode.float )
+        ]
+
+
+decode : Decode.Decoder Position
+decode =
+    Decode.map2 Position
+        (Decode.field "left" Decode.float)
+        (Decode.field "top" Decode.float)

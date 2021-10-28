@@ -1,7 +1,7 @@
 module PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
 
 import Libs.List as L
-import Libs.Position exposing (Position)
+import Libs.Models.Position exposing (Position)
 import Models.Project as Project exposing (Project)
 import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))

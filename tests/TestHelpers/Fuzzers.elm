@@ -4,11 +4,17 @@ import Conf exposing (conf)
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as F
-import Libs.Models exposing (Color, FileLineIndex, FileModified, FileName, FileSize, FileUrl, ZoomLevel)
+import Libs.Models.Color exposing (Color)
+import Libs.Models.FileLineIndex exposing (FileLineIndex)
+import Libs.Models.FileModified exposing (FileModified)
+import Libs.Models.FileName exposing (FileName)
+import Libs.Models.FileSize exposing (FileSize)
+import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
 import Time
 
 

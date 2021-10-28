@@ -5,7 +5,7 @@ import Dict exposing (Dict)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Position as Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 import Models.Project.CanvasProps exposing (CanvasProps)
 
 

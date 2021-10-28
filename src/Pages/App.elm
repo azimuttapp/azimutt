@@ -9,7 +9,7 @@ import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Position as Position
+import Libs.Models.Position as Position
 import Page
 import PagesComponents.App.Commands.GetTime exposing (getTime)
 import PagesComponents.App.Commands.GetZone exposing (getZone)

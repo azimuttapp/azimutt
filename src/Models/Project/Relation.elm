@@ -1,4 +1,4 @@
-module Models.Project.Relation exposing (Relation, decode, encode, inOutRelation, new, virtual)
+module Models.Project.Relation exposing (Relation, decode, encode, inOutRelation, merge, new, virtual)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -29,6 +29,11 @@ virtual src ref source =
 inOutRelation : List Relation -> ColumnName -> List Relation
 inOutRelation tableOutRelations column =
     tableOutRelations |> List.filter (\r -> r.src.column == column)
+
+
+merge : Relation -> Relation -> Relation
+merge r1 r2 =
+    { r1 | origins = r1.origins ++ r2.origins }
 
 
 encode : Relation -> Value

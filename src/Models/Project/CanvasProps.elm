@@ -3,9 +3,8 @@ module Models.Project.CanvasProps exposing (CanvasProps, decode, encode)
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Libs.Json.Encode as E
-import Libs.Json.Formats exposing (decodePosition, decodeZoomLevel, encodePosition, encodeZoomLevel)
-import Libs.Models exposing (ZoomLevel)
-import Libs.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 
 
 type alias CanvasProps =
@@ -15,13 +14,13 @@ type alias CanvasProps =
 encode : CanvasProps -> Value
 encode value =
     E.object
-        [ ( "position", value.position |> encodePosition )
-        , ( "zoom", value.zoom |> encodeZoomLevel )
+        [ ( "position", value.position |> Position.encode )
+        , ( "zoom", value.zoom |> ZoomLevel.encode )
         ]
 
 
 decode : Decode.Decoder CanvasProps
 decode =
     Decode.map2 CanvasProps
-        (Decode.field "position" decodePosition)
-        (Decode.field "zoom" decodeZoomLevel)
+        (Decode.field "position" Position.decode)
+        (Decode.field "zoom" ZoomLevel.decode)

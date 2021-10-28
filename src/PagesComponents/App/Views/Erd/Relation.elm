@@ -3,9 +3,9 @@ module PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtua
 import Conf exposing (conf)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (Color)
-import Libs.Position exposing (Position)
-import Libs.Size exposing (Size)
+import Libs.Models.Color exposing (Color)
+import Libs.Models.Position exposing (Position)
+import Libs.Models.Size exposing (Size)
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project.Column exposing (Column)
 import Models.Project.RelationName exposing (RelationName)

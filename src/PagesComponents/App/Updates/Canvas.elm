@@ -7,10 +7,10 @@ import Libs.Bool as B
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Maybe as M
-import Libs.Models exposing (ZoomLevel)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Position as Position exposing (Position)
-import Libs.Size as Size exposing (Size)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size as Size exposing (Size)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project exposing (Project, tablesArea, viewportArea, viewportSize)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)

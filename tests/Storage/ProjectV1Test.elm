@@ -4,9 +4,9 @@ import Dict
 import Expect
 import Json.Decode as Decode
 import Libs.Dict as D
+import Libs.Models.Position exposing (Position)
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
-import Libs.Position exposing (Position)
 import Storage.ProjectV1 exposing (CanvasPropsV1, ColumnRefV1, ColumnV1, CommentV1, FindPathSettingsV1, IndexV1, LayoutV1, PrimaryKeyV1, ProjectSourceContentV1(..), ProjectSourceV1, ProjectV1, RelationV1, SchemaV1, SourceLineV1, SourceV1, TablePropsV1, TableV1, UniqueV1, decodeProject, defaultProjectSettings, upgrade)
 import Storage.ProjectV2Test as ProjectV2Test
 import Test exposing (Test, describe, test)

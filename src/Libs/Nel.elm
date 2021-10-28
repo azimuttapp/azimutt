@@ -1,7 +1,8 @@
-module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterZip, find, fromList, indexedMap, length, map, prepend, sortBy, toList, unique, uniqueBy, zipWith)
+module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterZip, find, fromList, indexedMap, length, map, merge, prepend, sortBy, toList, unique, uniqueBy, zipWith)
 
 -- Nel: NonEmptyList
 
+import Libs.List as L
 import Set
 
 
@@ -110,6 +111,11 @@ listZipWith : (a -> b) -> List a -> List ( a, b )
 listZipWith transform list =
     -- from Libs.List to avoid circular dependency :(
     list |> List.map (\a -> ( a, transform a ))
+
+
+merge : (a -> comparable) -> (a -> a -> a) -> Nel a -> Nel a -> Nel a
+merge getKey mergeValue l1 l2 =
+    L.merge getKey mergeValue (l1 |> toList) (l2 |> toList) |> fromList |> Maybe.withDefault l1
 
 
 toList : Nel a -> List a

@@ -1,12 +1,11 @@
-module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildLines, buildStatements, parseSchema, splitLines)
+module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlComment, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildLines, buildStatements, parseSchema, splitLines)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
-import DataSources.SqlParser.Parsers.Comment exposing (SqlComment)
-import DataSources.SqlParser.Parsers.CreateTable as CreateTable exposing (ParsedColumn, ParsedTable)
+import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView)
 import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..))
 import DataSources.SqlParser.StatementParser exposing (Command(..), parseStatement)
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, defaultCheckName, defaultFkName, defaultPkName)
 import DataSources.SqlParser.Utils.Types exposing (SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Dict exposing (Dict)
 import Libs.List as L
@@ -48,27 +47,32 @@ type alias SqlColumn =
     , default : Maybe SqlColumnValue
     , foreignKey : Maybe SqlForeignKey
     , comment : Maybe SqlComment
+    , source : SqlStatement
     }
 
 
 type alias SqlPrimaryKey =
-    { name : SqlConstraintName, columns : Nel SqlColumnName }
+    { name : SqlConstraintName, columns : Nel SqlColumnName, source : SqlStatement }
 
 
 type alias SqlForeignKey =
-    { name : SqlConstraintName, schema : SqlSchemaName, table : SqlTableName, column : SqlColumnName }
+    { name : SqlConstraintName, schema : SqlSchemaName, table : SqlTableName, column : SqlColumnName, source : SqlStatement }
 
 
 type alias SqlUnique =
-    { name : SqlConstraintName, columns : Nel SqlColumnName, definition : String }
+    { name : SqlConstraintName, columns : Nel SqlColumnName, definition : String, source : SqlStatement }
 
 
 type alias SqlIndex =
-    { name : SqlConstraintName, columns : Nel SqlColumnName, definition : String }
+    { name : SqlConstraintName, columns : Nel SqlColumnName, definition : String, source : SqlStatement }
 
 
 type alias SqlCheck =
-    { name : SqlConstraintName, columns : List SqlColumnName, predicate : SqlPredicate }
+    { name : SqlConstraintName, columns : List SqlColumnName, predicate : SqlPredicate, source : SqlStatement }
+
+
+type alias SqlComment =
+    { text : String, source : SqlStatement }
 
 
 defaultSchema : String
@@ -125,16 +129,16 @@ evolve ( statement, command ) tables =
                     (Ok (tables |> Dict.insert id (buildView tables statement view)))
 
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
-            updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just { name = defaultPkName table constraintName, columns = pk } }) tables
+            updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just (SqlPrimaryKey (constraintName |> Maybe.withDefault (defaultPkName table)) pk statement) }) tables
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fk)) ->
-            updateColumn statement (buildId schema table) fk.column (\c -> buildFk tables constraint fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
+            updateColumn statement (buildId schema table) fk.column (\c -> buildFk tables statement constraint fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
 
         AlterTable (AddTableConstraint schema table (ParsedUnique constraint unique)) ->
-            updateTable statement (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ { name = constraint, columns = unique.columns, definition = unique.definition } ] }) tables
+            updateTable statement (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ SqlUnique constraint unique.columns unique.definition statement ] }) tables
 
         AlterTable (AddTableConstraint schema table (ParsedCheck constraint check)) ->
-            updateTable statement (buildId schema table) (\t -> Ok { t | checks = t.checks ++ [ { name = constraint, columns = check.columns, predicate = check.predicate } ] }) tables
+            updateTable statement (buildId schema table) (\t -> Ok { t | checks = t.checks ++ [ SqlCheck constraint check.columns check.predicate statement ] }) tables
 
         AlterTable (AlterColumn schema table (ColumnDefault column default)) ->
             updateColumn statement (buildId schema table) column (\c -> Ok { c | default = Just default }) tables
@@ -152,16 +156,16 @@ evolve ( statement, command ) tables =
             Ok tables
 
         CreateIndex index ->
-            updateTable statement (buildId index.table.schema index.table.table) (\t -> Ok { t | indexes = t.indexes ++ [ { name = index.name, columns = index.columns, definition = index.definition } ] }) tables
+            updateTable statement (buildId index.table.schema index.table.table) (\t -> Ok { t | indexes = t.indexes ++ [ SqlIndex index.name index.columns index.definition statement ] }) tables
 
         CreateUnique unique ->
-            updateTable statement (buildId unique.table.schema unique.table.table) (\t -> Ok { t | uniques = t.uniques ++ [ { name = unique.name, columns = unique.columns, definition = unique.definition } ] }) tables
+            updateTable statement (buildId unique.table.schema unique.table.table) (\t -> Ok { t | uniques = t.uniques ++ [ SqlUnique unique.name unique.columns unique.definition statement ] }) tables
 
         TableComment comment ->
-            updateTable statement (buildId comment.schema comment.table) (\table -> Ok { table | comment = Just comment.comment }) tables
+            updateTable statement (buildId comment.schema comment.table) (\table -> Ok { table | comment = Just (SqlComment comment.comment.text statement) }) tables
 
         ColumnComment comment ->
-            updateColumn statement (buildId comment.schema comment.table) comment.column (\column -> Ok { column | comment = Just comment.comment }) tables
+            updateColumn statement (buildId comment.schema comment.table) comment.column (\column -> Ok { column | comment = Just (SqlComment comment.comment.text statement) }) tables
 
         Ignored _ ->
             Ok tables
@@ -205,10 +209,10 @@ updateTableColumn column transform table =
 
 
 buildTable : SqlSchema -> SqlStatement -> ParsedTable -> Result (List SchemaError) SqlTable
-buildTable tables source table =
+buildTable tables statement table =
     table.columns
         |> Nel.toList
-        |> List.map (buildColumn tables table.foreignKeys)
+        |> List.map (buildColumn tables statement table)
         |> L.resultSeq
         |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "No valid column for table " ++ buildId table.schema table.table ])
         |> Result.map
@@ -218,22 +222,24 @@ buildTable tables source table =
                 , columns = columns
                 , primaryKey =
                     table.primaryKey
-                        |> Maybe.map (\pk -> { name = defaultPkName table.table pk.name, columns = pk.columns })
-                        |> M.orElse (table.columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> { name = pk, columns = Nel c.name [] })) |> List.head)
-                , uniques = table.uniques
-                , indexes = table.indexes
-                , checks = table.checks ++ (table.columns |> Nel.toList |> List.filterMap (\c -> c.check |> Maybe.map (\p -> { name = "", columns = [ c.name ], predicate = p })))
-                , source = source
+                        |> Maybe.map (\pk -> SqlPrimaryKey (pk.name |> Maybe.withDefault (defaultPkName table.table)) pk.columns statement)
+                        |> M.orElse (table.columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> SqlPrimaryKey pk (Nel c.name []) statement)) |> List.head)
+                , uniques = table.uniques |> List.map (\i -> SqlUnique i.name i.columns i.definition statement)
+                , indexes = table.indexes |> List.map (\i -> SqlIndex i.name i.columns i.definition statement)
+                , checks =
+                    (table.checks |> List.map (\i -> SqlCheck i.name i.columns i.predicate statement))
+                        ++ (table.columns |> Nel.toList |> List.filterMap (\c -> c.check |> Maybe.map (\p -> SqlCheck (defaultCheckName table.table c.name) [ c.name ] p statement)))
+                , source = statement
                 , comment = Nothing
                 }
             )
 
 
-buildColumn : SqlSchema -> List CreateTable.ParsedForeignKey -> ParsedColumn -> Result SchemaError SqlColumn
-buildColumn tables tableFks column =
+buildColumn : SqlSchema -> SqlStatement -> ParsedTable -> ParsedColumn -> Result SchemaError SqlColumn
+buildColumn tables statement table column =
     column.foreignKey
-        |> M.orElse (tableFks |> List.filter (\fk -> fk.src == column.name) |> List.head |> Maybe.map (\fk -> ( fk.name |> Maybe.withDefault "", fk.ref )))
-        |> Maybe.map (\( fk, ref ) -> buildFk tables fk ref.schema ref.table ref.column)
+        |> M.orElse (table.foreignKeys |> List.filter (\fk -> fk.src == column.name) |> List.head |> Maybe.map (\fk -> ( fk.name |> Maybe.withDefault (defaultFkName table.table column.name), fk.ref )))
+        |> Maybe.map (\( fk, ref ) -> buildFk tables statement fk ref.schema ref.table ref.column)
         |> M.resultSeq
         |> Result.map
             (\fk ->
@@ -243,12 +249,13 @@ buildColumn tables tableFks column =
                 , default = column.default
                 , foreignKey = fk
                 , comment = Nothing
+                , source = statement
                 }
             )
 
 
-buildFk : SqlSchema -> SqlConstraintName -> Maybe SqlSchemaName -> SqlTableName -> Maybe SqlColumnName -> Result SchemaError SqlForeignKey
-buildFk tables constraint schema table column =
+buildFk : SqlSchema -> SqlStatement -> SqlConstraintName -> Maybe SqlSchemaName -> SqlTableName -> Maybe SqlColumnName -> Result SchemaError SqlForeignKey
+buildFk tables statement constraint schema table column =
     column
         |> withPkColumn tables schema table
         |> Result.map
@@ -257,13 +264,9 @@ buildFk tables constraint schema table column =
                 , schema = schema |> withDefaultSchema
                 , table = table
                 , column = col
+                , source = statement
                 }
             )
-
-
-defaultPkName : SqlTableName -> Maybe SqlConstraintName -> SqlConstraintName
-defaultPkName table name =
-    name |> Maybe.withDefault (table ++ "_pk")
 
 
 withPkColumn : SqlSchema -> Maybe SqlSchemaName -> SqlTableName -> Maybe SqlColumnName -> Result SchemaError SqlColumnName
@@ -292,21 +295,21 @@ withPkColumn tables schema table name =
 
 
 buildView : SqlSchema -> SqlStatement -> ParsedView -> SqlTable
-buildView tables source view =
+buildView tables statement view =
     { schema = view.schema |> withDefaultSchema
     , table = view.table
-    , columns = view.select.columns |> Nel.map (buildViewColumn tables)
+    , columns = view.select.columns |> Nel.map (buildViewColumn tables statement)
     , primaryKey = Nothing
     , uniques = []
     , indexes = []
     , checks = []
-    , source = source
+    , source = statement
     , comment = Nothing
     }
 
 
-buildViewColumn : SqlSchema -> SelectColumn -> SqlColumn
-buildViewColumn tables column =
+buildViewColumn : SqlSchema -> SqlStatement -> SelectColumn -> SqlColumn
+buildViewColumn tables statement column =
     case column of
         BasicColumn c ->
             c.table
@@ -317,18 +320,20 @@ buildViewColumn tables column =
                     { name = c.alias |> Maybe.withDefault c.column
                     , kind = "unknown"
                     , nullable = False
-                    , default = Nothing
+                    , default = Just ("Built from: " ++ (c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
                     , foreignKey = Nothing
-                    , comment = Just ("Built from: " ++ (c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
+                    , comment = Nothing
+                    , source = statement
                     }
 
         ComplexColumn c ->
             { name = c.alias
             , kind = "unknown"
             , nullable = False
-            , default = Nothing
+            , default = Just ("Built using: " ++ c.formula)
             , foreignKey = Nothing
-            , comment = Just ("Built using: " ++ c.formula)
+            , comment = Nothing
+            , source = statement
             }
 
 

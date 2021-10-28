@@ -18,10 +18,10 @@ import Libs.Html exposing (divIf)
 import Libs.Html.Attributes exposing (track)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models exposing (ZoomLevel)
+import Libs.Models.Position as Position
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.Position as Position
 import Libs.String as S
 import Models.Project.Check exposing (Check)
 import Models.Project.Column as Column exposing (Column)
@@ -211,7 +211,7 @@ viewColumnDropdown columnRelations ref element =
             |> List.filter (\relation -> relation.src.table.id /= ref.table)
             |> L.groupBy (\relation -> relation.src.table.id |> TableId.toString)
             |> Dict.values
-            |> List.concatMap (\tableRelations -> [ tableRelations.head ])
+            |> List.concatMap (\tableRelations -> tableRelations |> List.head |> M.toList)
             |> List.map
                 (\relation ->
                     li []
