@@ -270,7 +270,7 @@ upgrade project =
     , layout = project.schema.layout
     , usedLayout = project.currentLayout
     , layouts = project.layouts
-    , settings = project.settings
+    , settings = { findPath = project.settings.findPath, hiddenSchemas = [], shouldDisplayViews = True }
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }
@@ -312,6 +312,7 @@ upgradeTable table =
     { id = table.id
     , schema = table.schema
     , name = table.name
+    , view = False
     , columns = table.columns |> Ned.map (\_ -> upgradeColumn)
     , primaryKey = table.primaryKey |> Maybe.map upgradePrimaryKey
     , uniques = table.uniques |> List.map upgradeUnique

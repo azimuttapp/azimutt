@@ -18,7 +18,7 @@ import Models.Project.Index as Index exposing (Index)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
-import Models.Project.ProjectSettings as ProjectSettings
+import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -92,7 +92,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    D.fromListMap .id [ Table ( "public", "users" ) "public" "users" (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
+    D.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
 
 
 project1 : Project
@@ -105,7 +105,7 @@ project1 =
     , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
     , usedLayout = Nothing
     , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) ) ]
-    , settings = { findPath = FindPathSettings 4 [] [] }
+    , settings = ProjectSettings (FindPathSettings 4 [] []) [] True
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -126,6 +126,7 @@ tables2 =
         [ { id = ( "public", "users" )
           , schema = "public"
           , name = "users"
+          , view = False
           , columns =
                 Ned.buildMap .name
                     (Column 0 "id" "int" False Nothing Nothing [])
@@ -140,6 +141,7 @@ tables2 =
         , { id = ( "public", "creds" )
           , schema = "public"
           , name = "creds"
+          , view = False
           , columns =
                 Ned.buildMap .name
                     (Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ])
@@ -208,7 +210,7 @@ project2 =
             [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) )
             , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) "red" [ "id", "name" ] True ] [] (time 1202) (time 1203) )
             ]
-    , settings = { findPath = FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ] }
+    , settings = ProjectSettings (FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ]) [] True
     , createdAt = time 1000
     , updatedAt = time 1001
     }

@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, addSource, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
+module Models.Project exposing (Project, addSource, compute, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
 import Conf exposing (conf)
 import Dict exposing (Dict)
@@ -34,8 +34,8 @@ type alias Project =
     { id : ProjectId
     , name : ProjectName
     , sources : List Source
-    , tables : Dict TableId Table -- computed from sources, do not update directly (see new & setSources functions)
-    , relations : List Relation -- computed from sources, do not update directly (see new & setSources functions)
+    , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
+    , relations : List Relation -- computed from sources, do not update directly (see compute function)
     , layout : Layout
     , usedLayout : Maybe LayoutName
     , layouts : Dict LayoutName Layout
@@ -50,8 +50,8 @@ new id name sources layout usedLayout layouts settings createdAt updatedAt =
     { id = id
     , name = name
     , sources = sources
-    , tables = sources |> computeTables
-    , relations = sources |> computeRelations
+    , tables = Dict.empty
+    , relations = []
     , layout = layout
     , usedLayout = usedLayout
     , layouts = layouts
@@ -59,6 +59,7 @@ new id name sources layout usedLayout layouts settings createdAt updatedAt =
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
+        |> compute
 
 
 create : ProjectId -> ProjectName -> Source -> Project
@@ -68,14 +69,7 @@ create id name source =
 
 setSources : (List Source -> List Source) -> Project -> Project
 setSources transform project =
-    transform project.sources
-        |> (\sources ->
-                { project
-                    | sources = sources
-                    , tables = sources |> computeTables
-                    , relations = sources |> computeRelations
-                }
-           )
+    transform project.sources |> (\sources -> { project | sources = sources } |> compute)
 
 
 updateSource : SourceId -> (Source -> Source) -> Project -> Project
@@ -103,9 +97,34 @@ deleteSource id project =
     setSources (List.filter (\s -> s.id /= id)) project
 
 
-computeTables : List Source -> Dict TableId Table
-computeTables sources =
-    sources |> List.filter .enabled |> List.map .tables |> List.foldr (D.merge Table.merge) Dict.empty
+compute : Project -> Project
+compute project =
+    { project
+        | tables = project.sources |> computeTables project.settings
+        , relations = project.sources |> computeRelations
+    }
+
+
+computeTables : ProjectSettings -> List Source -> Dict TableId Table
+computeTables settings sources =
+    sources
+        |> List.filter .enabled
+        |> List.map (\s -> s.tables |> Dict.filter (\_ -> shouldDisplayTable settings))
+        |> List.foldr (D.merge Table.merge) Dict.empty
+
+
+shouldDisplayTable : ProjectSettings -> Table -> Bool
+shouldDisplayTable settings table =
+    let
+        isSchemaHidden : Bool
+        isSchemaHidden =
+            settings.hiddenSchemas |> List.member table.schema
+
+        isViewHidden : Bool
+        isViewHidden =
+            table.view && not settings.shouldDisplayViews
+    in
+    not isSchemaHidden && not isViewHidden
 
 
 computeRelations : List Source -> List Relation

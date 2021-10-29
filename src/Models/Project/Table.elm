@@ -25,6 +25,7 @@ type alias Table =
     { id : TableId
     , schema : SchemaName
     , name : TableName
+    , view : Bool
     , columns : Ned ColumnName Column
     , primaryKey : Maybe PrimaryKey
     , uniques : List Unique
@@ -78,6 +79,7 @@ encode value =
     E.object
         [ ( "schema", value.schema |> SchemaName.encode )
         , ( "table", value.name |> TableName.encode )
+        , ( "view", value.view |> E.withDefault Encode.bool False )
         , ( "columns", value.columns |> Ned.values |> Nel.sortBy .index |> E.nel Column.encode )
         , ( "primaryKey", value.primaryKey |> E.maybe PrimaryKey.encode )
         , ( "uniques", value.uniques |> E.withDefault (Encode.list Unique.encode) [] )
@@ -90,9 +92,10 @@ encode value =
 
 decode : Decode.Decoder Table
 decode =
-    D.map9 (\s t c p u i ch co so -> Table ( s, t ) s t c p u i ch co so)
+    D.map10 (\s t v c p u i ch co so -> Table ( s, t ) s t v c p u i ch co so)
         (Decode.field "schema" SchemaName.decode)
         (Decode.field "table" TableName.decode)
+        (D.defaultField "view" Decode.bool False)
         (Decode.field "columns" (D.nel Column.decode |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
         (D.maybeField "primaryKey" PrimaryKey.decode)
         (D.defaultField "uniques" (Decode.list Unique.decode) [])

@@ -30,6 +30,7 @@ type alias SqlTableId =
 type alias SqlTable =
     { schema : SqlSchemaName
     , table : SqlTableName
+    , view : Bool
     , columns : Nel SqlColumn
     , primaryKey : Maybe SqlPrimaryKey
     , uniques : List SqlUnique
@@ -219,6 +220,7 @@ buildTable tables statement table =
             (\columns ->
                 { schema = table.schema |> withDefaultSchema
                 , table = table.table
+                , view = False
                 , columns = columns
                 , primaryKey =
                     table.primaryKey
@@ -298,6 +300,7 @@ buildView : SqlSchema -> SqlStatement -> ParsedView -> SqlTable
 buildView tables statement view =
     { schema = view.schema |> withDefaultSchema
     , table = view.table
+    , view = True
     , columns = view.select.columns |> Nel.map (buildViewColumn tables statement)
     , primaryKey = Nothing
     , uniques = []
@@ -316,11 +319,17 @@ buildViewColumn tables statement column =
                 -- FIXME should handle table alias (when table is renamed in select)
                 |> Maybe.andThen (\t -> tables |> Dict.get (buildId Nothing t))
                 |> Maybe.andThen (\t -> t.columns |> Nel.find (\col -> col.name == c.column))
-                |> M.mapOrElse (\col -> { col | name = c.alias |> Maybe.withDefault c.column })
+                |> M.mapOrElse
+                    (\col ->
+                        { col
+                            | name = c.alias |> Maybe.withDefault c.column
+                            , default = Just ((c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
+                        }
+                    )
                     { name = c.alias |> Maybe.withDefault c.column
                     , kind = "unknown"
                     , nullable = False
-                    , default = Just ("Built from: " ++ (c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
+                    , default = Just ((c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
                     , foreignKey = Nothing
                     , comment = Nothing
                     , source = statement
@@ -330,7 +339,7 @@ buildViewColumn tables statement column =
             { name = c.alias
             , kind = "unknown"
             , nullable = False
-            , default = Just ("Built using: " ++ c.formula)
+            , default = Just c.formula
             , foreignKey = Nothing
             , comment = Nothing
             , source = statement

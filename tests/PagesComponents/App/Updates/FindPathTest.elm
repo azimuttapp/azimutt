@@ -101,7 +101,7 @@ tableId name =
 
 buildTable : TableName -> List String -> Table
 buildTable name columnNames =
-    Table (tableId name) "public" name (columnNames |> Nel.fromList |> Maybe.withDefault (Nel "id" []) |> Nel.map buildColumn |> Ned.fromNelMap .name) Nothing [] [] [] Nothing []
+    Table (tableId name) "public" name False (columnNames |> Nel.fromList |> Maybe.withDefault (Nel "id" []) |> Nel.map buildColumn |> Ned.fromNelMap .name) Nothing [] [] [] Nothing []
 
 
 buildColumn : ColumnName -> Column

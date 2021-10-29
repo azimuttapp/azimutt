@@ -1,4 +1,4 @@
-module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, FindPathMsg(..), Hover, LayoutMsg(..), Model, Msg(..), Search, SourceMsg(..), Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
+module PagesComponents.App.Models exposing (Confirm, CursorMode(..), DragId, DragState, Error, Errors, FindPathMsg(..), Hover, LayoutMsg(..), Model, Msg(..), Search, SettingsMsg(..), SourceMsg(..), Switch, TimeInfo, VirtualRelation, VirtualRelationMsg(..), initConfirm, initHover, initSwitch, initTimeInfo)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -20,6 +20,7 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
@@ -98,10 +99,16 @@ type Msg
     | FindPathMsg FindPathMsg
     | VirtualRelationMsg VirtualRelationMsg
     | LayoutMsg LayoutMsg
+    | SettingsMsg SettingsMsg
     | OpenConfirm Confirm
     | OnConfirm Bool (Cmd Msg)
     | JsMessage JsMsg
     | Noop
+
+
+type SettingsMsg
+    = ToggleSchema SchemaName
+    | ToggleDisplayViews
 
 
 type SourceMsg

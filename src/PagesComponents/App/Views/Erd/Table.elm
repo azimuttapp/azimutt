@@ -12,6 +12,7 @@ import Html.Events.Extra.Mouse as Mouse
 import Html.Events.Extra.Pointer as Pointer
 import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy3, lazy4, lazy5)
+import Libs.Bool as B
 import Libs.Bootstrap exposing (Toggle(..), bsDropdown, bsToggle, bsToggleCollapse)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html exposing (divIf)
@@ -50,7 +51,7 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
     div
         [ class "erd-table"
         , class props.color
-        , classList [ ( "selected", props.selected ) ]
+        , classList [ ( "view", table.view ), ( "selected", props.selected ) ]
         , id (TableId.toHtmlId table.id)
         , placeAt props.position
         , style "z-index" (String.fromInt (conf.zIndex.tables + index))
@@ -68,7 +69,8 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
 viewHeader : ZoomLevel -> Int -> Table -> Html Msg
 viewHeader zoom index table =
     div [ class "header", style "display" "flex", style "align-items" "center" ]
-        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ] (L.appendOn table.comment viewComment [ span (tableNameSize zoom) [ text (TableId.show ( table.schema, table.name )) ] ])
+        [ div [ style "flex-grow" "1", Pointer.onUp (\e -> SelectTable table.id e.pointer.keys.ctrl) ]
+            (L.appendOn table.comment viewComment [ span (B.cond table.view [ title "This is a view" ] [] ++ tableNameSize zoom) [ text (TableId.show table.id) ] ])
         , bsDropdown (TableId.toHtmlId table.id ++ "-settings-dropdown")
             []
             (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])

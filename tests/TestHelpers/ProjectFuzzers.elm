@@ -74,9 +74,10 @@ tables =
 
 table : Fuzzer Table
 table =
-    F.map9 (\s t c p u i ch co so -> Table ( s, t ) s t c p u i ch co so)
+    F.map10 (\s t v c p u i ch co so -> Table ( s, t ) s t v c p u i ch co so)
         schemaName
         tableName
+        Fuzz.bool
         (nelSmall (column 0) |> Fuzz.map (Nel.uniqueBy .name >> Nel.indexedMap (\i c -> { c | index = i }) >> Ned.fromNelMap .name))
         (Fuzz.maybe primaryKey)
         (listSmall unique)
@@ -148,7 +149,7 @@ tableProps =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    Fuzz.map ProjectSettings findPathSettings
+    Fuzz.map3 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool
 
 
 findPathSettings : Fuzzer FindPathSettings
