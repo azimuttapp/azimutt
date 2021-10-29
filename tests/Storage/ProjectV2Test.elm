@@ -92,7 +92,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    D.fromListMap .id [ Table ( "public", "users" ) "public" "users" (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
+    D.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
 
 
 project1 : Project
@@ -126,6 +126,7 @@ tables2 =
         [ { id = ( "public", "users" )
           , schema = "public"
           , name = "users"
+          , view = False
           , columns =
                 Ned.buildMap .name
                     (Column 0 "id" "int" False Nothing Nothing [])
@@ -140,6 +141,7 @@ tables2 =
         , { id = ( "public", "creds" )
           , schema = "public"
           , name = "creds"
+          , view = False
           , columns =
                 Ned.buildMap .name
                     (Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ])

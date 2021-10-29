@@ -312,6 +312,7 @@ upgradeTable table =
     { id = table.id
     , schema = table.schema
     , name = table.name
+    , view = False
     , columns = table.columns |> Ned.map (\_ -> upgradeColumn)
     , primaryKey = table.primaryKey |> Maybe.map upgradePrimaryKey
     , uniques = table.uniques |> List.map upgradeUnique

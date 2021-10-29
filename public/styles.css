@@ -156,6 +156,13 @@
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
+.erd-table.view .header {
+    font-style: italic;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    /* background: repeating-linear-gradient(45deg, #F8FAFC, #F8FAFC 10px, #EDF2F7 10px, #EDF2F7 20px); */
+}
+
 .erd-table .header {
     background-color: #F8FAFC;
     border-top: 8px solid #B8C2CC;

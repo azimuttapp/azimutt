@@ -43,6 +43,7 @@ buildTable source table =
     { id = ( table.schema, table.table )
     , schema = table.schema
     , name = table.table
+    , view = table.view
     , columns = table.columns |> Nel.indexedMap (buildColumn source) |> Ned.fromNelMap .name
     , primaryKey = table.primaryKey |> Maybe.map (buildPrimaryKey source)
     , uniques = table.uniques |> List.map (buildUnique source)
