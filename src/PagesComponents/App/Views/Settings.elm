@@ -7,17 +7,20 @@ import FontAwesome.Solid as Icon
 import Html exposing (Html, br, button, div, h5, h6, input, label, small, span, text)
 import Html.Attributes exposing (checked, class, id, tabindex, title, type_)
 import Html.Events exposing (onClick)
-import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll)
+import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll, bsToggle)
 import Libs.DateTime exposing (formatDate, formatTime)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
+import Libs.List as L
 import Libs.Maybe as M
 import Libs.Task exposing (send)
 import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectSettings exposing (ProjectSettings)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
-import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), TimeInfo)
+import PagesComponents.App.Models exposing (Msg(..), SettingsMsg(..), SourceMsg(..), TimeInfo)
 import PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewFileLoader)
 import Time
 
@@ -32,13 +35,17 @@ viewSettings time project =
                         [ h5 [ class "offcanvas-title", id (conf.ids.settings ++ "-label") ] [ text "Settings" ]
                         , button [ type_ "button", class "btn-close text-reset", bsDismiss Offcanvas, ariaLabel "Close" ] []
                         ]
-                    , div [ class "offcanvas-body" ]
-                        [ h6 [] [ text "Project sources" ]
-                        , div [ class "list-group" ] ((p.sources |> List.map (viewSource p.id time)) ++ [ viewAddSource p.id ])
-                        ]
+                    , div [ class "offcanvas-body" ] (viewSourcesSection time p ++ viewSchemasSection p ++ viewDisplaySettingsSection p.settings)
                     ]
             )
             (div [] [])
+
+
+viewSourcesSection : TimeInfo -> Project -> List (Html Msg)
+viewSourcesSection time project =
+    [ h6 [] [ text "Project sources" ]
+    , div [ class "list-group" ] ((project.sources |> List.map (viewSource project.id time)) ++ [ viewAddSource project.id ])
+    ]
 
 
 viewSource : ProjectId -> TimeInfo -> Source -> Html Msg
@@ -89,3 +96,39 @@ viewSourceHtml time icon updatedAt labelTitle source refreshButton =
 viewAddSource : ProjectId -> Html Msg
 viewAddSource project =
     viewFileLoader "list-group-item list-group-item-action" (Just project) Nothing (small [] [ viewIcon Icon.plus, text " ", text "Add source" ])
+
+
+viewSchemasSection : Project -> List (Html Msg)
+viewSchemasSection project =
+    let
+        schemas : List SchemaName
+        schemas =
+            project.sources |> List.concatMap (.tables >> Dict.values) |> List.map .schema |> L.unique |> List.sort
+    in
+    if List.length schemas > 1 then
+        [ h6 [ class "mt-3" ] [ text "Project schemas" ]
+        , div [ class "list-group" ] (schemas |> List.map (viewSchema project.settings.hiddenSchemas))
+        ]
+
+    else
+        []
+
+
+viewSchema : List SchemaName -> SchemaName -> Html Msg
+viewSchema hiddenSchemas schema =
+    div [ class "list-group-item" ]
+        [ label []
+            [ input [ type_ "checkbox", class "form-check-input me-2", checked (hiddenSchemas |> List.member schema |> not), onClick (SettingsMsg (ToggleSchema schema)) ] []
+            , text (" " ++ schema)
+            ]
+        ]
+
+
+viewDisplaySettingsSection : ProjectSettings -> List (Html Msg)
+viewDisplaySettingsSection settings =
+    [ h6 [ class "mt-3" ] [ text "Display options" ]
+    , label [ title "Uncheck this if you don't want to see SQL views in Azimutt", bsToggle Tooltip ]
+        [ input [ type_ "checkbox", class "form-check-input me-2", checked settings.shouldDisplayViews, onClick (SettingsMsg ToggleDisplayViews) ] []
+        , text " Display views"
+        ]
+    ]

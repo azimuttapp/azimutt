@@ -149,7 +149,7 @@ tableProps =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    Fuzz.map ProjectSettings findPathSettings
+    Fuzz.map3 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool
 
 
 findPathSettings : Fuzzer FindPathSettings

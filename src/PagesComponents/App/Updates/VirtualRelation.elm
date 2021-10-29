@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
+module PagesComponents.App.Updates.VirtualRelation exposing (handleVirtualRelation)
 
 import Libs.List as L
 import Libs.Models.Position exposing (Position)
@@ -17,8 +17,8 @@ type alias Model x =
     }
 
 
-updateVirtualRelation : VirtualRelationMsg -> Model x -> ( Model x, Cmd Msg )
-updateVirtualRelation msg model =
+handleVirtualRelation : VirtualRelationMsg -> Model x -> ( Model x, Cmd Msg )
+handleVirtualRelation msg model =
     case msg of
         VRCreate ->
             ( { model | virtualRelation = Just { src = Nothing, mouse = Position 0 0 } }, Cmd.none )

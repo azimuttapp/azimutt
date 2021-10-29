@@ -270,7 +270,7 @@ upgrade project =
     , layout = project.schema.layout
     , usedLayout = project.currentLayout
     , layouts = project.layouts
-    , settings = project.settings
+    , settings = { findPath = project.settings.findPath, hiddenSchemas = [], shouldDisplayViews = True }
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }

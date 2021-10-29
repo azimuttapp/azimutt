@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, replaceOrAppend, resultCollect, resultSeq, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -266,6 +266,15 @@ merge : (a -> comparable) -> (a -> a -> a) -> List a -> List a -> List a
 merge getKey mergeValue l1 l2 =
     (l1 |> List.map (\a1 -> l2 |> find (\a2 -> getKey a1 == getKey a2) |> M.mapOrElse (mergeValue a1) a1))
         ++ (l2 |> filterNot (\a2 -> l1 |> List.any (\a1 -> getKey a1 == getKey a2)))
+
+
+toggle : comparable -> List comparable -> List comparable
+toggle item list =
+    if list |> List.member item then
+        list |> List.filter (\i -> i /= item)
+
+    else
+        list ++ [ item ]
 
 
 resultCollect : List (Result e a) -> ( List e, List a )

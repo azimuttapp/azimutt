@@ -22,9 +22,10 @@ import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout
 import PagesComponents.App.Updates.Layout exposing (handleLayout)
 import PagesComponents.App.Updates.PortMsg exposing (handlePortMsg)
 import PagesComponents.App.Updates.Project exposing (deleteProject, useProject)
+import PagesComponents.App.Updates.Settings exposing (handleSettings)
 import PagesComponents.App.Updates.Source exposing (handleSource)
 import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
-import PagesComponents.App.Updates.VirtualRelation exposing (updateVirtualRelation)
+import PagesComponents.App.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Helpers as Helpers
 import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, hideOffcanvas, listenHotkeys, loadProjects, observeSize, onJsMessage, showModal, trackPage)
@@ -201,7 +202,10 @@ update msg model =
             model |> handleFindPath m
 
         VirtualRelationMsg m ->
-            model |> updateVirtualRelation m
+            model |> handleVirtualRelation m
+
+        SettingsMsg m ->
+            model |> handleSettings m
 
         OpenConfirm confirm ->
             ( { model | confirm = confirm }, showModal conf.ids.confirm )

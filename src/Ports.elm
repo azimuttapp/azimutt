@@ -98,11 +98,6 @@ getSourceId src ref =
     messageToJs (GetSourceId src ref)
 
 
-observeSizes : List HtmlId -> Cmd msg
-observeSizes ids =
-    messageToJs (ObserveSizes ids)
-
-
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -116,6 +111,11 @@ observeTableSize id =
 observeTablesSize : List TableId -> Cmd msg
 observeTablesSize ids =
     observeSizes (List.map TableId.toHtmlId ids)
+
+
+observeSizes : List HtmlId -> Cmd msg
+observeSizes ids =
+    messageToJs (ObserveSizes ids)
 
 
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg
