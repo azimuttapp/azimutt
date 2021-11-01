@@ -26,7 +26,8 @@ import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableProps exposing (TableProps)
+import Models.Project.TableProps as TableProps exposing (TableProps)
+import PagesComponents.App.Updates.Helpers exposing (setTables)
 import Time
 
 
@@ -99,9 +100,26 @@ deleteSource id project =
 
 compute : Project -> Project
 compute project =
+    let
+        tables : Dict TableId Table
+        tables =
+            project.sources |> computeTables project.settings
+
+        relations : List Relation
+        relations =
+            project.sources |> computeRelations
+    in
     { project
-        | tables = project.sources |> computeTables project.settings
-        , relations = project.sources |> computeRelations
+        | tables = tables
+        , relations = relations
+        , layout =
+            project.layout
+                |> setTables
+                    (\props ->
+                        props
+                            |> L.filterZip (\p -> tables |> Dict.get p.id)
+                            |> List.map (\( p, t ) -> { p | columns = p.columns |> TableProps.computeColumns project.settings relations t })
+                    )
     }
 
 
@@ -118,13 +136,17 @@ shouldDisplayTable settings table =
     let
         isSchemaHidden : Bool
         isSchemaHidden =
-            settings.hiddenSchemas |> List.member table.schema
+            settings.removedSchemas |> List.member table.schema
 
-        isViewHidden : Bool
-        isViewHidden =
-            table.view && not settings.shouldDisplayViews
+        isViewRemoved : Bool
+        isViewRemoved =
+            table.view && settings.removeViews
+
+        isTableRemoved : Bool
+        isTableRemoved =
+            table |> ProjectSettings.isTableRemoved settings
     in
-    not isSchemaHidden && not isViewHidden
+    not isSchemaHidden && not isViewRemoved && not isTableRemoved
 
 
 computeRelations : List Source -> List Relation

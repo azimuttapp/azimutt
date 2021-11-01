@@ -13,10 +13,19 @@ handleSettings : SettingsMsg -> Model -> ( Model, Cmd Msg )
 handleSettings msg model =
     case msg of
         ToggleSchema schema ->
-            model |> updateSettingsAndComputeProject (\s -> { s | hiddenSchemas = s.hiddenSchemas |> L.toggle schema })
+            model |> updateSettingsAndComputeProject (\s -> { s | removedSchemas = s.removedSchemas |> L.toggle schema })
 
-        ToggleDisplayViews ->
-            model |> updateSettingsAndComputeProject (\s -> { s | shouldDisplayViews = not s.shouldDisplayViews })
+        ToggleRemoveViews ->
+            model |> updateSettingsAndComputeProject (\s -> { s | removeViews = not s.removeViews })
+
+        UpdateRemovedTables values ->
+            model |> updateSettingsAndComputeProject (\s -> { s | removedTables = values })
+
+        UpdateHiddenColumns values ->
+            model |> updateSettingsAndComputeProject (\s -> { s | hiddenColumns = values })
+
+        UpdateColumnOrder order ->
+            model |> updateSettingsAndComputeProject (\s -> { s | columnOrder = order })
 
 
 updateSettingsAndComputeProject : (ProjectSettings -> ProjectSettings) -> Model -> ( Model, Cmd Msg )
