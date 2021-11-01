@@ -82,7 +82,7 @@ viewFileLoader labelClass project source content =
     let
         id : String
         id =
-            "file-loader-" ++ (source |> Maybe.map SourceId.toString |> Maybe.withDefault "new")
+            "file-loader-" ++ (project |> Maybe.withDefault "new") ++ "-" ++ (source |> Maybe.map SourceId.toString |> Maybe.withDefault "new")
     in
     label
         ([ for id, role "button", class labelClass ]
