@@ -26,8 +26,7 @@ import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableProps as TableProps exposing (TableProps)
-import PagesComponents.App.Updates.Helpers exposing (setTables)
+import Models.Project.TableProps exposing (TableProps)
 import Time
 
 
@@ -100,26 +99,9 @@ deleteSource id project =
 
 compute : Project -> Project
 compute project =
-    let
-        tables : Dict TableId Table
-        tables =
-            project.sources |> computeTables project.settings
-
-        relations : List Relation
-        relations =
-            project.sources |> computeRelations
-    in
     { project
-        | tables = tables
-        , relations = relations
-        , layout =
-            project.layout
-                |> setTables
-                    (\props ->
-                        props
-                            |> L.filterZip (\p -> tables |> Dict.get p.id)
-                            |> List.map (\( p, t ) -> { p | columns = p.columns |> TableProps.computeColumns project.settings relations t })
-                    )
+        | tables = project.sources |> computeTables project.settings
+        , relations = project.sources |> computeRelations
     }
 
 
@@ -144,7 +126,7 @@ shouldDisplayTable settings table =
 
         isTableRemoved : Bool
         isTableRemoved =
-            table |> ProjectSettings.isTableRemoved settings
+            table |> ProjectSettings.isTableRemoved settings.removedTables
     in
     not isSchemaHidden && not isViewRemoved && not isTableRemoved
 

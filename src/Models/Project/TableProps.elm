@@ -1,4 +1,4 @@
-module Models.Project.TableProps exposing (TableProps, computeColumns, decode, encode, init)
+module Models.Project.TableProps exposing (TableProps, decode, encode, init)
 
 import Conf exposing (conf)
 import Json.Decode as Decode
@@ -34,22 +34,12 @@ init settings relations table =
     }
 
 
-computeColor : TableId -> Color
-computeColor ( _, table ) =
-    S.wordSplit table
-        |> List.head
-        |> Maybe.map S.hashCode
-        |> Maybe.map (modBy (List.length conf.colors))
-        |> Maybe.andThen (\index -> conf.colors |> L.get index)
-        |> Maybe.withDefault conf.default.color
-
-
 computeColumns : ProjectSettings -> List Relation -> Table -> List ColumnName -> List ColumnName
 computeColumns settings relations table columns =
     let
         isColumnHidden : Column -> Bool
         isColumnHidden =
-            settings |> ProjectSettings.isColumnHidden
+            settings.hiddenColumns |> ProjectSettings.isColumnHidden
 
         tableRelations : List Relation
         tableRelations =
@@ -60,6 +50,16 @@ computeColumns settings relations table columns =
         |> L.filterNot isColumnHidden
         |> ColumnOrder.sortBy settings.columnOrder table tableRelations
         |> List.map .name
+
+
+computeColor : TableId -> Color
+computeColor ( _, table ) =
+    S.wordSplit table
+        |> List.head
+        |> Maybe.map S.hashCode
+        |> Maybe.map (modBy (List.length conf.colors))
+        |> Maybe.andThen (\index -> conf.colors |> L.get index)
+        |> Maybe.withDefault conf.default.color
 
 
 encode : TableProps -> Value

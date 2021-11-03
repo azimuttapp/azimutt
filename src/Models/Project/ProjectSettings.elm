@@ -34,24 +34,24 @@ init =
     }
 
 
-isTableRemoved : ProjectSettings -> (Table -> Bool)
-isTableRemoved settings =
+isTableRemoved : String -> (Table -> Bool)
+isTableRemoved removedTables =
     let
-        removedTables : List String
-        removedTables =
-            settings.removedTables |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
+        values : List String
+        values =
+            removedTables |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
     in
-    \t -> removedTables |> List.any (\n -> t.name == n || R.contains ("^" ++ n ++ "$") t.name)
+    \t -> values |> List.any (\n -> t.name == n || R.contains ("^" ++ n ++ "$") t.name)
 
 
-isColumnHidden : ProjectSettings -> (Column -> Bool)
-isColumnHidden settings =
+isColumnHidden : String -> (Column -> Bool)
+isColumnHidden hiddenColumns =
     let
-        hiddenColumns : List String
-        hiddenColumns =
-            settings.hiddenColumns |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
+        values : List String
+        values =
+            hiddenColumns |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
     in
-    \c -> hiddenColumns |> List.any (\n -> c.name == n || R.contains ("^" ++ n ++ "$") c.name)
+    \c -> values |> List.any (\n -> c.name == n || R.contains ("^" ++ n ++ "$") c.name)
 
 
 encode : ProjectSettings -> ProjectSettings -> Value
