@@ -24,6 +24,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S
+import Models.ColumnOrder as ColumnOrder
 import Models.Project.Check exposing (Check)
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -79,12 +80,7 @@ viewHeader zoom index table =
                     [ li [] [ button [ type_ "button", class "dropdown-item", onClick (HideTable table.id) ] [ text "Hide table" ] ]
                     , li []
                         [ button [ type_ "button", class "dropdown-item" ] [ text "Sort columns »" ]
-                        , ul [ class "dropdown-menu dropdown-submenu" ]
-                            [ li [] [ button [ type_ "button", class "dropdown-item", onClick (SortColumns table.id "property"), title "Primary key, then foreign key, then unique indexes, then indexes, then others" ] [ text "By property" ] ]
-                            , li [] [ button [ type_ "button", class "dropdown-item", onClick (SortColumns table.id "name") ] [ text "By name" ] ]
-                            , li [] [ button [ type_ "button", class "dropdown-item", onClick (SortColumns table.id "sql") ] [ text "By SQL order" ] ]
-                            , li [] [ button [ type_ "button", class "dropdown-item", onClick (SortColumns table.id "type") ] [ text "By type" ] ]
-                            ]
+                        , ul [ class "dropdown-menu dropdown-submenu" ] (ColumnOrder.all |> List.map (\o -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SortColumns table.id o) ] [ text (ColumnOrder.show o) ] ]))
                         ]
                     , li []
                         [ button [ type_ "button", class "dropdown-item" ] [ text "Hide columns »" ]

@@ -14,6 +14,7 @@ import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Time as Time
+import Models.ColumnOrder exposing (ColumnOrder(..))
 import Models.Project exposing (Project)
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
@@ -21,6 +22,7 @@ import Models.Project.Comment exposing (Comment)
 import Models.Project.Index exposing (Index)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
@@ -270,7 +272,7 @@ upgrade project =
     , layout = project.schema.layout
     , usedLayout = project.currentLayout
     , layouts = project.layouts
-    , settings = { findPath = project.settings.findPath, hiddenSchemas = [], shouldDisplayViews = True }
+    , settings = ProjectSettings project.settings.findPath [] False "" "" SqlOrder
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }

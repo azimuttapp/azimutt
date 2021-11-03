@@ -7,6 +7,7 @@ import Libs.Dict as D
 import Libs.Fuzz as F exposing (listN)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
+import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
@@ -149,7 +150,7 @@ tableProps =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    Fuzz.map3 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool
+    F.map6 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool stringSmall stringSmall columnOrder
 
 
 findPathSettings : Fuzzer FindPathSettings
@@ -205,6 +206,11 @@ columnType =
 columnValue : Fuzzer ColumnValue
 columnValue =
     Fuzz.oneOf ([ "1", "false", "''::public.hstore", "default value: 'fr'::character varying" ] |> List.map Fuzz.constant)
+
+
+columnOrder : Fuzzer ColumnOrder
+columnOrder =
+    Fuzz.oneOf (ColumnOrder.all |> List.map Fuzz.constant)
 
 
 primaryKeyName : Fuzzer PrimaryKeyName

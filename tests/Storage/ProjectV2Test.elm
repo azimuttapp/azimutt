@@ -7,6 +7,7 @@ import Libs.Dict as D
 import Libs.Models.Position exposing (Position)
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
+import Models.ColumnOrder exposing (ColumnOrder(..))
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Check as Check
@@ -105,7 +106,7 @@ project1 =
     , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
     , usedLayout = Nothing
     , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) ) ]
-    , settings = ProjectSettings (FindPathSettings 4 [] []) [] True
+    , settings = ProjectSettings (FindPathSettings 4 [] []) [] False "" "" SqlOrder
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -210,7 +211,7 @@ project2 =
             [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) )
             , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) "red" [ "id", "name" ] True ] [] (time 1202) (time 1203) )
             ]
-    , settings = ProjectSettings (FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ]) [] True
+    , settings = ProjectSettings (FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ]) [] False "" "" SqlOrder
     , createdAt = time 1000
     , updatedAt = time 1001
     }

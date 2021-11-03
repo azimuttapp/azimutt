@@ -1,40 +1,77 @@
-module Models.Project.ProjectSettings exposing (ProjectSettings, decode, encode, init)
+module Models.Project.ProjectSettings exposing (ProjectSettings, decode, encode, init, isColumnHidden, isTableRemoved)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
+import Libs.List as L
+import Libs.Regex as R
+import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.Project.Column exposing (Column)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
+import Models.Project.Table exposing (Table)
 
 
 type alias ProjectSettings =
     { findPath : FindPathSettings
-    , hiddenSchemas : List SchemaName
-    , shouldDisplayViews : Bool
+    , removedSchemas : List SchemaName
+    , removeViews : Bool
+    , removedTables : String
+    , hiddenColumns : String
+    , columnOrder : ColumnOrder
     }
 
 
 init : ProjectSettings
 init =
     { findPath = FindPathSettings 3 [] []
-    , hiddenSchemas = []
-    , shouldDisplayViews = True
+    , removedSchemas = []
+    , removeViews = False
+    , removedTables = ""
+    , hiddenColumns = ""
+    , columnOrder = ColumnOrder.SqlOrder
     }
+
+
+isTableRemoved : String -> (Table -> Bool)
+isTableRemoved removedTables =
+    let
+        values : List String
+        values =
+            removedTables |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
+    in
+    \t -> values |> List.any (\n -> t.name == n || R.contains ("^" ++ n ++ "$") t.name)
+
+
+isColumnHidden : String -> (Column -> Bool)
+isColumnHidden hiddenColumns =
+    let
+        values : List String
+        values =
+            hiddenColumns |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
+    in
+    \c -> values |> List.any (\n -> c.name == n || R.contains ("^" ++ n ++ "$") c.name)
 
 
 encode : ProjectSettings -> ProjectSettings -> Value
 encode default value =
     E.object
         [ ( "findPath", value.findPath |> E.withDefaultDeep FindPathSettings.encode default.findPath )
-        , ( "hiddenSchemas", value.hiddenSchemas |> E.withDefault (Encode.list SchemaName.encode) default.hiddenSchemas )
-        , ( "shouldDisplayViews", value.shouldDisplayViews |> E.withDefault Encode.bool default.shouldDisplayViews )
+        , ( "removedSchemas", value.removedSchemas |> E.withDefault (Encode.list SchemaName.encode) default.removedSchemas )
+        , ( "removeViews", value.removeViews |> E.withDefault Encode.bool default.removeViews )
+        , ( "removedTables", value.removedTables |> E.withDefault Encode.string default.removedTables )
+        , ( "hiddenColumns", value.hiddenColumns |> E.withDefault Encode.string default.hiddenColumns )
+        , ( "columnOrder", value.columnOrder |> E.withDefault ColumnOrder.encode default.columnOrder )
         ]
 
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
-    Decode.map3 ProjectSettings
+    Decode.map6 ProjectSettings
         (D.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
-        (D.defaultField "hiddenSchemas" (Decode.list SchemaName.decode) default.hiddenSchemas)
-        (D.defaultField "shouldDisplayViews" Decode.bool default.shouldDisplayViews)
+        (D.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
+        (D.defaultField "removeViews" Decode.bool default.removeViews)
+        (D.defaultField "removedTables" Decode.string default.removedTables)
+        (D.defaultField "hiddenColumns" Decode.string default.hiddenColumns)
+        (D.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)

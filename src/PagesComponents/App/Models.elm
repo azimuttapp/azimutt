@@ -12,6 +12,7 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Task as T
+import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPath exposing (FindPath)
@@ -83,7 +84,7 @@ type Msg
     | ShowAllTables
     | HideColumn ColumnRef
     | ShowColumn ColumnRef
-    | SortColumns TableId String
+    | SortColumns TableId ColumnOrder
     | HideColumns TableId String
     | ShowColumns TableId String
     | HoverTable (Maybe TableId)
@@ -108,7 +109,10 @@ type Msg
 
 type SettingsMsg
     = ToggleSchema SchemaName
-    | ToggleDisplayViews
+    | ToggleRemoveViews
+    | UpdateRemovedTables String
+    | UpdateHiddenColumns String
+    | UpdateColumnOrder ColumnOrder
 
 
 type SourceMsg

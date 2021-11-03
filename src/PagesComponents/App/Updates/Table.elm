@@ -6,15 +6,15 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned
 import Libs.Nel as Nel
+import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
-import Models.Project.Column as Column
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Relation as Relation
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableProps as TableProps
+import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.App.Models as Models exposing (Msg)
 import PagesComponents.App.Updates.Helpers exposing (setLayout)
 import Ports exposing (activateTooltipsAndPopovers, observeTableSize, observeTablesSize, toastError, toastInfo)
@@ -28,7 +28,7 @@ showTable id project =
                 ( project, toastInfo ("Table <b>" ++ TableId.show id ++ "</b> already shown") )
 
             else
-                ( project |> performShowTable id table, Cmd.batch [ observeTableSize id, activateTooltipsAndPopovers ] )
+                ( project |> performShowTable table, Cmd.batch [ observeTableSize id, activateTooltipsAndPopovers ] )
 
         Nothing ->
             ( project, toastError ("Can't show table <b>" ++ TableId.show id ++ "</b>: not found") )
@@ -39,21 +39,21 @@ showTables ids project =
     ids
         |> L.zipWith (\id -> project.tables |> Dict.get id)
         |> List.foldr
-            (\( id, maybeTable ) ( s, ( found, shown, notFound ) ) ->
+            (\( id, maybeTable ) ( p, ( found, shown, notFound ) ) ->
                 case maybeTable of
                     Just table ->
                         if project.layout.tables |> L.memberBy .id id then
-                            ( s, ( found, id :: shown, notFound ) )
+                            ( p, ( found, id :: shown, notFound ) )
 
                         else
-                            ( s |> performShowTable id table, ( id :: found, shown, notFound ) )
+                            ( p |> performShowTable table, ( id :: found, shown, notFound ) )
 
                     Nothing ->
-                        ( s, ( found, shown, id :: notFound ) )
+                        ( p, ( found, shown, id :: notFound ) )
             )
             ( project, ( [], [], [] ) )
-        |> (\( s, ( found, shown, notFound ) ) ->
-                ( s
+        |> (\( p, ( found, shown, notFound ) ) ->
+                ( p
                 , Cmd.batch
                     (cond (found |> List.isEmpty) [] [ observeTablesSize found, activateTooltipsAndPopovers ]
                         ++ cond (shown |> List.isEmpty) [] [ toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are ealready shown") ]
@@ -65,14 +65,7 @@ showTables ids project =
 
 showAllTables : Project -> ( Project, Cmd Msg )
 showAllTables project =
-    ( project
-        |> setLayout
-            (\l ->
-                { l
-                    | tables = project.tables |> Dict.toList |> List.map (\( id, t ) -> l.tables |> L.findBy .id id |> M.orElse (l.hiddenTables |> L.findBy .id id) |> Maybe.withDefault (TableProps.init t))
-                    , hiddenTables = []
-                }
-            )
+    ( project |> setLayout (\layout -> { layout | tables = project.tables |> Dict.values |> List.map (getTableProps project layout), hiddenTables = [] })
     , Cmd.batch [ observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))), activateTooltipsAndPopovers ]
     )
 
@@ -123,65 +116,16 @@ hoverNextColumn table column model =
     { model | hover = model.hover |> (\h -> { h | column = nextColumn |> Maybe.map (ColumnRef table) }) }
 
 
-sortColumns : TableId -> String -> Project -> Project
+sortColumns : TableId -> ColumnOrder -> Project -> Project
 sortColumns id kind project =
     updateColumns id
         (\table columns ->
-            project.relations
-                |> List.filter (\r -> r.src.table == id)
-                |> (\tableOutRelations ->
-                        columns
-                            |> L.zipWith (\name -> table.columns |> Ned.get name)
-                            |> (case kind of
-                                    "property" ->
-                                        List.sortBy
-                                            (\( name, col ) ->
-                                                col
-                                                    |> M.mapOrElse
-                                                        (\c ->
-                                                            if name |> Table.inPrimaryKey table |> M.isJust then
-                                                                ( 0 + sortOffset c.nullable, name |> String.toLower )
-
-                                                            else if name |> Relation.inOutRelation tableOutRelations |> L.nonEmpty then
-                                                                ( 1 + sortOffset c.nullable, name |> String.toLower )
-
-                                                            else if name |> Table.inUniques table |> L.nonEmpty then
-                                                                ( 2 + sortOffset c.nullable, name |> String.toLower )
-
-                                                            else if name |> Table.inIndexes table |> L.nonEmpty then
-                                                                ( 3 + sortOffset c.nullable, name |> String.toLower )
-
-                                                            else
-                                                                ( 4 + sortOffset c.nullable, name |> String.toLower )
-                                                        )
-                                                        ( 5, name |> String.toLower )
-                                            )
-
-                                    "name" ->
-                                        List.sortBy (\( name, _ ) -> name |> String.toLower)
-
-                                    "sql" ->
-                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse .index (table.columns |> Ned.size))
-
-                                    "type" ->
-                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse (\c -> c.kind |> String.toLower |> Column.withNullableInfo c.nullable) "~")
-
-                                    _ ->
-                                        List.sortBy (\( _, col ) -> col |> M.mapOrElse .index (table.columns |> Ned.size))
-                               )
-                            |> List.map Tuple.first
-                   )
+            columns
+                |> List.filterMap (\name -> table.columns |> Ned.get name)
+                |> ColumnOrder.sortBy kind table project.relations
+                |> List.map .name
         )
         project
-
-
-sortOffset : Bool -> Float
-sortOffset b =
-    if b then
-        0.5
-
-    else
-        0
 
 
 hideColumns : TableId -> String -> Project -> Project
@@ -247,6 +191,20 @@ updateColumns id update project =
         |> M.mapOrElse (\table -> project |> setLayout (\l -> { l | tables = l.tables |> L.updateBy .id id (\t -> { t | columns = t.columns |> update table }) })) project
 
 
-performShowTable : TableId -> Table -> Project -> Project
-performShowTable id table project =
-    project |> setLayout (\l -> { l | tables = ((l.hiddenTables |> L.findBy .id id |> Maybe.withDefault (TableProps.init table)) :: l.tables) |> L.uniqueBy .id })
+performShowTable : Table -> Project -> Project
+performShowTable table project =
+    project
+        |> setLayout
+            (\layout ->
+                { layout
+                    | tables = (getTableProps project layout table :: layout.tables) |> L.uniqueBy .id
+                    , hiddenTables = layout.hiddenTables |> L.removeBy .id table.id
+                }
+            )
+
+
+getTableProps : Project -> Layout -> Table -> TableProps
+getTableProps project layout table =
+    (layout.tables |> L.findBy .id table.id)
+        |> M.orElse (layout.hiddenTables |> L.findBy .id table.id)
+        |> Maybe.withDefault (TableProps.init project.settings project.relations table)

@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -126,6 +126,16 @@ moveBy matcher value position list =
 removeAt : Int -> List a -> List a
 removeAt index list =
     list |> List.indexedMap (\i a -> ( i, a )) |> List.filter (\( i, _ ) -> not (i == index)) |> List.map (\( _, a ) -> a)
+
+
+remove : comparable -> List comparable -> List comparable
+remove item list =
+    list |> List.filter (\i -> i /= item)
+
+
+removeBy : (a -> comparable) -> comparable -> List a -> List a
+removeBy getKey item list =
+    list |> List.filter (\i -> getKey i /= item)
 
 
 addAt : a -> Int -> List a -> List a
