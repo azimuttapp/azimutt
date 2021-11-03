@@ -39,21 +39,21 @@ showTables ids project =
     ids
         |> L.zipWith (\id -> project.tables |> Dict.get id)
         |> List.foldr
-            (\( id, maybeTable ) ( prj, ( found, shown, notFound ) ) ->
+            (\( id, maybeTable ) ( p, ( found, shown, notFound ) ) ->
                 case maybeTable of
                     Just table ->
                         if project.layout.tables |> L.memberBy .id id then
-                            ( prj, ( found, id :: shown, notFound ) )
+                            ( p, ( found, id :: shown, notFound ) )
 
                         else
-                            ( prj |> performShowTable table, ( id :: found, shown, notFound ) )
+                            ( p |> performShowTable table, ( id :: found, shown, notFound ) )
 
                     Nothing ->
-                        ( prj, ( found, shown, id :: notFound ) )
+                        ( p, ( found, shown, id :: notFound ) )
             )
             ( project, ( [], [], [] ) )
-        |> (\( prj, ( found, shown, notFound ) ) ->
-                ( prj
+        |> (\( p, ( found, shown, notFound ) ) ->
+                ( p
                 , Cmd.batch
                     (cond (found |> List.isEmpty) [] [ observeTablesSize found, activateTooltipsAndPopovers ]
                         ++ cond (shown |> List.isEmpty) [] [ toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are ealready shown") ]

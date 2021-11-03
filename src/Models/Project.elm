@@ -116,8 +116,8 @@ computeTables settings sources =
 shouldDisplayTable : ProjectSettings -> Table -> Bool
 shouldDisplayTable settings table =
     let
-        isSchemaHidden : Bool
-        isSchemaHidden =
+        isSchemaRemoved : Bool
+        isSchemaRemoved =
             settings.removedSchemas |> List.member table.schema
 
         isViewRemoved : Bool
@@ -128,7 +128,7 @@ shouldDisplayTable settings table =
         isTableRemoved =
             table |> ProjectSettings.isTableRemoved settings.removedTables
     in
-    not isSchemaHidden && not isViewRemoved && not isTableRemoved
+    not isSchemaRemoved && not isViewRemoved && not isTableRemoved
 
 
 computeRelations : List Source -> List Relation
