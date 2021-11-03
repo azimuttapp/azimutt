@@ -1,4 +1,4 @@
-module PagesComponents.Helpers exposing (newsletterSection, publicFooter, publicHeader, root)
+module PagesComponents.Helpers exposing (newsletterSection, publicFooter, publicHeader, root, rootStyled)
 
 import Components.Atoms.Icon as Icon
 import Components.Organisms.Footer as Footer
@@ -21,6 +21,16 @@ root children =
 viewToasts : Html msg
 viewToasts =
     div [ id "toast-container", class "toast-container position-fixed bottom-0 start-0 p-2" ] []
+
+
+rootStyled : List (Html.Styled.Html msg) -> List (Html.Styled.Html msg)
+rootStyled children =
+    children ++ [ viewToastsStyled ]
+
+
+viewToastsStyled : Html.Styled.Html msg
+viewToastsStyled =
+    Html.Styled.div [ Html.Styled.Attributes.id "toast-container", Html.Styled.Attributes.class "toast-container position-fixed bottom-0 start-0 p-2" ] []
 
 
 publicHeader : Html.Styled.Html msg
