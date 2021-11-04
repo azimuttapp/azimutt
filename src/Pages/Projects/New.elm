@@ -1,8 +1,10 @@
 module Pages.Projects.New exposing (Model, Msg, page)
 
 import Gen.Params.Projects.New exposing (Params)
+import Html.Styled as Styled
 import Libs.Task exposing (send)
 import Page
+import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Request
 import Shared
 import View exposing (View)
@@ -61,4 +63,6 @@ subscriptions _ =
 
 view : Model -> View Msg
 view _ =
-    View.placeholder "Projects.New"
+    { title = "Azimutt - Explore your database schema"
+    , body = viewNewProject |> List.map Styled.toUnstyled
+    }
