@@ -2,8 +2,8 @@ module Pages.Projects exposing (Model, Msg, page)
 
 import Gen.Params.Projects exposing (Params)
 import Html.Styled as Styled
-import Libs.Task exposing (send)
 import Page
+import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
 import Request
 import Shared
@@ -21,11 +21,11 @@ page _ _ =
 
 
 type alias Model =
-    {}
+    Models.Model
 
 
-type Msg
-    = ReplaceMe
+type alias Msg =
+    Models.Msg
 
 
 
@@ -34,7 +34,12 @@ type Msg
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, send ReplaceMe )
+    ( { activeMenu = Just "Dashboard"
+      , profileDropdownOpen = False
+      , mobileMenuOpen = False
+      }
+    , Cmd.none
+    )
 
 
 
@@ -44,8 +49,14 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReplaceMe ->
-            ( model, Cmd.none )
+        SelectMenu menu ->
+            ( { model | activeMenu = menu }, Cmd.none )
+
+        ToggleProfileDropdown ->
+            ( { model | profileDropdownOpen = not model.profileDropdownOpen }, Cmd.none )
+
+        ToggleMobileMenu ->
+            ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
 
 
@@ -62,7 +73,7 @@ subscriptions _ =
 
 
 view : Model -> View Msg
-view _ =
+view model =
     { title = "Azimutt - Explore your database schema"
-    , body = viewProjects |> List.map Styled.toUnstyled
+    , body = viewProjects model |> List.map Styled.toUnstyled
     }
