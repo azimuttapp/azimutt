@@ -19,27 +19,27 @@ coloredSlice =
             , p [ css [ mt_4, max_w_3xl, text_lg, text_purple_200 ] ]
                 [ text "Your new weapons to dig into your schema:" ]
             , div [ css [ mt_12, grid, grid_cols_1, gap_x_6, gap_y_12, text_white, lg [ mt_16, grid_cols_3, gap_x_8, gap_y_16 ], sm [ grid_cols_2 ] ] ]
-                [ item (Icon.inbox [])
+                [ item (Icon.inbox 6 [])
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
                               Seeing only what you need is vital to understand how it works. This is true for tables but also for columns and relations!""" ]
-                , item (Icon.documentSearch [])
+                , item (Icon.documentSearch 6 [])
                     "Search"
                     [ text """Search is awesome, don't know where to start? Just type a few words and you will have related tables and columns ranked by relevance.
                               Looking at table and column names, but also comments, keys or relations.""" ]
-                , item (Icon.photograph [])
+                , item (Icon.photograph 6 [])
                     "Layouts"
                     [ text """Your database is probably supporting many use cases, why not save them and move from one to an other ?
                               Layouts are here for that: select tables and columns related to a feature and save them as a layout. So you can easily switch between them.""" ]
-                , item (Icon.link [])
+                , item (Icon.link 6 [])
                     "Relation exploration"
                     [ text """Start from a table and look at its relations to display more.
                               Outgoing, of course (foreign keys), but incoming ones also (foreign keys from other tables)!""" ]
-                , item (Icon.link [])
+                , item (Icon.link 6 [])
                     "Relation search"
                     [ text """Did you ever ask how to join two tables ?
                               Azimutt can help showing all the possible paths between two tables. But also between a table and a column!""" ]
-                , item (Icon.link [])
+                , item (Icon.link 6 [])
                     "Lorem Ipsum"
                     [ text "You came this far ??? Awesome! You seem quite interested and ready to dig in ^^", br [] [], text """
                             The best you can do now is to """, a [ href (Route.toHref Route.App), class "link" ] [ text "try it out" ], text " right away :D" ]
@@ -115,12 +115,12 @@ cardModel =
     , title = "Everything you need to deploy your app"
     , description = "Phasellus lorem quam molestie id quisque diam aenean nulla in. Accumsan in quis quis nunc, ullamcorper malesuada. Eleifend condimentum id viverra nulla."
     , cards =
-        [ { icon = Icon.cloudUpload [ text_white ], title = "Push to Deploy", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
-        , { icon = Icon.lockClosed [ text_white ], title = "SSL Certificates", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
-        , { icon = Icon.refresh [ text_white ], title = "Simple Queues", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
-        , { icon = Icon.shieldCheck [ text_white ], title = "Advanced Security", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
-        , { icon = Icon.cog [ text_white ], title = "Powerful API", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
-        , { icon = Icon.server [ text_white ], title = "Database Backups", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
+        [ { icon = Icon.cloudUpload 6 [ text_white ], title = "Push to Deploy", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
+        , { icon = Icon.lockClosed 6 [ text_white ], title = "SSL Certificates", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
+        , { icon = Icon.refresh 6 [ text_white ], title = "Simple Queues", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
+        , { icon = Icon.shieldCheck 6 [ text_white ], title = "Advanced Security", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
+        , { icon = Icon.cog 6 [ text_white ], title = "Powerful API", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
+        , { icon = Icon.server 6 [ text_white ], title = "Database Backups", description = [ text "Ac tincidunt sapien vehicula erat auctor pellentesque rhoncus. Et magna sit morbi lobortis." ] }
         ]
     }
 

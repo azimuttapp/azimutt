@@ -19,12 +19,12 @@ slice =
             [ extLink constants.azimuttTwitter
                 [ css [ text_gray_400, hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "Twitter" ]
-                , Icon.twitter []
+                , Icon.twitter 6 []
                 ]
             , extLink constants.azimuttGithub
                 [ css [ text_gray_400, hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "GitHub" ]
-                , Icon.github []
+                , Icon.github 6 []
                 ]
             ]
         , p [ css [ mt_8, text_base, text_gray_400, md [ mt_0, order_1 ] ] ]

@@ -16,7 +16,7 @@ checked : CheckedModel -> Html msg
 checked model =
     div [ css [ relative ] ]
         (List.filterMap identity
-            [ Just (dt [] [ Icon.check [ absolute, text_green_500 ], p [ css [ ml_9, text_lg, leading_6, font_medium, text_gray_900 ] ] [ text model.title ] ])
+            [ Just (dt [] [ Icon.check 6 [ absolute, text_green_500 ], p [ css [ ml_9, text_lg, leading_6, font_medium, text_gray_900 ] ] [ text model.title ] ])
             , model.description |> Maybe.map (\desc -> dd [ css [ mt_2, ml_9, text_base, text_gray_500 ] ] [ text desc ])
             ]
         )

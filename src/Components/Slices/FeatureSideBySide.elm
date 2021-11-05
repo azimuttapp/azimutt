@@ -169,7 +169,7 @@ dsModelFull : Model msg
 dsModelFull =
     { image = { src = "https://tailwindui.com/img/component-images/inbox-app-screenshot-2.jpg", alt = "Customer profile user interface" }
     , imagePosition = Right
-    , icon = Just (Icon.sparkles [ text_white ])
+    , icon = Just (Icon.sparkles 6 [ text_white ])
     , description =
         { title = "Better understand your customers"
         , content = [ text "Semper curabitur ullamcorper posuere nunc sed. Ornare iaculis bibendum malesuada faucibus lacinia porttitor. Pulvinar laoreet sagittis viverra duis. In venenatis sem arcu pretium pharetra at. Lectus viverra dui tellus ornare pharetra." ]

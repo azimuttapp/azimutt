@@ -55,7 +55,7 @@ viewHome =
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-light.png", alt = "Gospeak.io minimal schema by Azimutt" }
         { image = { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
         , imagePosition = Left
-        , icon = Just (Icon.sparkles [ text_white ])
+        , icon = Just (Icon.sparkles 6 [ text_white ])
         , description =
             { title = "See what you need"
             , content =
@@ -78,7 +78,7 @@ viewHome =
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-incoming-relation.jpg", alt = "Gospeak.io incoming relations by Azimutt" }
         , imagePosition = Right
-        , icon = Just (Icon.lightBulb [ text_white ]) -- arrows-expand / light-bulb / lightning-bolt
+        , icon = Just (Icon.lightBulb 6 [ text_white ]) -- arrows-expand / light-bulb / lightning-bolt
         , description =
             { title = "Follow your mind"
             , content =
@@ -98,7 +98,7 @@ viewHome =
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-layouts.jpg", alt = "Gospeak.io layouts by Azimutt" }
         , imagePosition = Left
-        , icon = Just (Icon.colorSwatch [ text_white ]) -- chat-alt-2 / collection / color-swatch
+        , icon = Just (Icon.colorSwatch 6 [ text_white ]) -- chat-alt-2 / collection / color-swatch
         , description =
             { title = "Context switch like a pro"
             , content =
@@ -114,7 +114,7 @@ viewHome =
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-find-path.png", alt = "Gospeak.io find path with Azimutt" }
         , imagePosition = Right
-        , icon = Just (Icon.beaker [ text_white ])
+        , icon = Just (Icon.beaker 6 [ text_white ])
         , description =
             { title = "Relax"
             , content =
@@ -140,9 +140,9 @@ viewHome =
         , title = "What more can you want ?"
         , description = "If you are still not convinced, here are my last words. Azimutt is awesome, built with awesome technology and supports your awesome use cases. See below..."
         , cards =
-            [ { icon = Icon.arrowCircleDown [ text_white ], title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at your fingertips. Whatever happens." ] }
-            , { icon = Icon.shieldCheck [ text_white ], title = "Everything is local", description = [ text "Don't worry about privacy, everything stays on your computer, this is your data! #localStorage" ] }
-            , { icon = Icon.github [ text_white ]
+            [ { icon = Icon.arrowCircleDown 6 [ text_white ], title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at your fingertips. Whatever happens." ] }
+            , { icon = Icon.shieldCheck 6 [ text_white ], title = "Everything is local", description = [ text "Don't worry about privacy, everything stays on your computer, this is your data! #localStorage" ] }
+            , { icon = Icon.github 6 [ text_white ]
               , title = "Fully open source"
               , description =
                     [ text "Want to have a look? Everything is on "
