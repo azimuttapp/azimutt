@@ -20,6 +20,7 @@ type alias Content =
     { title : String
     , brand : Brand
     , navigation : Navigation
+    , search : Search
     , profileDropdown : ProfileDropdown
     , mobileMenu : MobileMenu
     }
@@ -31,6 +32,10 @@ type alias Brand =
 
 type alias Navigation =
     { links : List Link }
+
+
+type alias Search =
+    { id : HtmlId }
 
 
 type alias ProfileDropdown =
@@ -70,6 +75,7 @@ page =
             , { url = "#", text = "Reports" }
             ]
         }
+    , search = { id = "search" }
     , profileDropdown =
         { id = "user-menu-button"
         , links =
@@ -96,25 +102,7 @@ viewProjects model =
     [ Global.global globalStyles
     , div [ css [ min_h_full ] ]
         [ div [ css [ bg_indigo_600, pb_32 ] ]
-            [ nav [ css [ bg_indigo_600, border_b, border_indigo_300, border_opacity_25, lg [ border_none ] ] ]
-                [ div [ css [ max_w_7xl, mx_auto, px_2, lg [ px_8 ], sm [ px_4 ] ] ]
-                    [ div [ css [ relative, h_16, flex, items_center, justify_between, lg [ border_b, border_indigo_400, border_opacity_25 ] ] ]
-                        [ div [ css [ px_2, flex, items_center, lg [ px_0 ] ] ]
-                            [ div [ css [ flex_shrink_0 ] ] [ viewBrand page.brand ]
-                            , div [ css [ hidden, lg [ block, ml_10 ] ] ] [ viewNavLinks page.navigation model.activeMenu ]
-                            ]
-                        , viewSearch "search"
-                        , viewMobileMenuButton model.mobileMenuOpen
-                        , div [ css [ hidden, lg [ block, ml_4 ] ] ]
-                            [ div [ css [ flex, items_center ] ]
-                                [ viewNotificationsButton
-                                , viewProfileDropdown page.profileDropdown model.profileDropdownOpen
-                                ]
-                            ]
-                        ]
-                    ]
-                , viewMobileMenu model.activeMenu model.mobileMenuOpen
-                ]
+            [ viewNavigation model
             , viewHeader page.title
             ]
         , main_ [ css [ neg_mt_32 ] ]
@@ -124,6 +112,29 @@ viewProjects model =
             ]
         ]
     ]
+
+
+viewNavigation : Model -> Html Msg
+viewNavigation model =
+    nav [ css [ bg_indigo_600, border_b, border_indigo_300, border_opacity_25, lg [ border_none ] ] ]
+        [ div [ css [ max_w_7xl, mx_auto, px_2, lg [ px_8 ], sm [ px_4 ] ] ]
+            [ div [ css [ relative, h_16, flex, items_center, justify_between, lg [ border_b, border_indigo_400, border_opacity_25 ] ] ]
+                [ div [ css [ px_2, flex, items_center, lg [ px_0 ] ] ]
+                    [ div [ css [ flex_shrink_0 ] ] [ viewBrand page.brand ]
+                    , div [ css [ hidden, lg [ block, ml_10 ] ] ] [ viewNavLinks page.navigation model.activeMenu ]
+                    ]
+                , viewSearch page.search
+                , viewMobileMenuButton page.mobileMenu model.mobileMenuOpen
+                , div [ css [ hidden, lg [ block, ml_4 ] ] ]
+                    [ div [ css [ flex, items_center ] ]
+                        [ viewNotificationsButton
+                        , viewProfileDropdown page.profileDropdown model.profileDropdownOpen
+                        ]
+                    ]
+                ]
+            ]
+        , viewMobileMenu page.navigation page.profileDropdown page.mobileMenu model.activeMenu model.mobileMenuOpen
+        ]
 
 
 viewBrand : Brand -> Html msg
@@ -150,14 +161,14 @@ viewLink styles active link =
         a [ href link.url, onClick (SelectMenu (Just link.text)), css ([ text_white, rounded_md, py_2, px_3, font_medium, hover [ bg_indigo_500, bg_opacity_75 ] ] ++ styles) ] [ text link.text ]
 
 
-viewSearch : HtmlId -> Html msg
-viewSearch inputId =
+viewSearch : Search -> Html msg
+viewSearch search =
     div [ css [ flex_1, px_2, flex, justify_center, lg [ ml_6, justify_end ] ] ]
         [ div [ css [ max_w_lg, w_full, lg [ max_w_xs ] ] ]
-            [ label [ for inputId, css [ sr_only ] ] [ text "Search" ]
+            [ label [ for search.id, css [ sr_only ] ] [ text "Search" ]
             , div [ css [ relative, text_gray_400, focusWithin [ text_gray_600 ] ] ]
                 [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.search 5 [] ]
-                , input [ type_ "search", name "search", id inputId, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white, border_white ], sm [ text_sm ] ] ] []
+                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white, border_white ], sm [ text_sm ] ] ] []
                 ]
             ]
         ]
@@ -194,10 +205,10 @@ viewProfileDropdown dropdown isOpen =
         ]
 
 
-viewMobileMenuButton : Bool -> Html Msg
-viewMobileMenuButton isOpen =
+viewMobileMenuButton : MobileMenu -> Bool -> Html Msg
+viewMobileMenuButton mobileMenu isOpen =
     div [ css [ flex, lg [ hidden ] ] ]
-        [ button [ type_ "button", onClick ToggleMobileMenu, css [ bg_indigo_600, p_2, rounded_md, inline_flex, items_center, justify_center, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white, bg_indigo_500, bg_opacity_75 ] ], ariaControls page.mobileMenu.id, ariaExpanded isOpen ]
+        [ button [ type_ "button", onClick ToggleMobileMenu, css [ bg_indigo_600, p_2, rounded_md, inline_flex, items_center, justify_center, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white, bg_indigo_500, bg_opacity_75 ] ], ariaControls mobileMenu.id, ariaExpanded isOpen ]
             [ span [ css [ sr_only ] ] [ text "Open main menu" ]
             , Icon.menu 6 [ B.cond isOpen hidden block ]
             , Icon.cross 6 [ B.cond isOpen block hidden ]
@@ -205,8 +216,8 @@ viewMobileMenuButton isOpen =
         ]
 
 
-viewMobileMenu : Maybe String -> Bool -> Html Msg
-viewMobileMenu activeMenu isOpen =
+viewMobileMenu : Navigation -> ProfileDropdown -> MobileMenu -> Maybe String -> Bool -> Html Msg
+viewMobileMenu navigation profileDropdown mobileMenu activeMenu isOpen =
     let
         open : List Style
         open =
@@ -216,8 +227,8 @@ viewMobileMenu activeMenu isOpen =
             else
                 [ hidden ]
     in
-    div [ css ([ lg [ hidden ] ] ++ open), id page.mobileMenu.id ]
-        [ viewMobileNavLinks page.navigation activeMenu
+    div [ css ([ lg [ hidden ] ] ++ open), id mobileMenu.id ]
+        [ viewMobileNavLinks navigation activeMenu
         , div [ css [ pt_4, pb_3, border_t, border_indigo_700 ] ]
             [ div [ css [ px_5, flex, items_center ] ]
                 [ div [ css [ flex_shrink_0 ] ]
@@ -233,7 +244,7 @@ viewMobileMenu activeMenu isOpen =
                     ]
                 ]
             , div [ css [ mt_3, px_2, space_y_1 ] ]
-                (page.profileDropdown.links |> List.map (\link -> a [ href link.url, css [ block, rounded_md, py_2, px_3, text_base, font_medium, text_white, hover [ bg_indigo_500, bg_opacity_75 ] ] ] [ text link.text ]))
+                (profileDropdown.links |> List.map (\link -> a [ href link.url, css [ block, rounded_md, py_2, px_3, text_base, font_medium, text_white, hover [ bg_indigo_500, bg_opacity_75 ] ] ] [ text link.text ]))
             ]
         ]
 
