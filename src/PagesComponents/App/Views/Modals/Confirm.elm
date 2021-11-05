@@ -5,13 +5,13 @@ import Html exposing (Html, button, div, h5, text)
 import Html.Attributes exposing (autofocus, class, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsKeyboard)
-import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, ariaLabelledBy)
+import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, ariaLabelledby)
 import PagesComponents.App.Models exposing (Confirm, Msg(..))
 
 
 viewConfirm : Confirm -> Html Msg
 viewConfirm confirm =
-    div [ id conf.ids.confirm, class "modal fade", tabindex -1, bsBackdrop "static", bsKeyboard False, ariaLabelledBy (conf.ids.confirm ++ "-label"), ariaHidden True ]
+    div [ id conf.ids.confirm, class "modal fade", tabindex -1, bsBackdrop "static", bsKeyboard False, ariaLabelledby (conf.ids.confirm ++ "-label"), ariaHidden True ]
         [ div [ class "modal-dialog modal-dialog-centered" ]
             [ div [ class "modal-content" ]
                 [ div [ class "modal-header" ]

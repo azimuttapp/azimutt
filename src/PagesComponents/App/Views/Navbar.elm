@@ -9,7 +9,7 @@ import Html.Attributes exposing (alt, attribute, autocomplete, class, height, id
 import Html.Events exposing (onClick, onInput)
 import Html.Lazy exposing (lazy2)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsToggle, bsToggleCollapse, bsToggleDropdown, bsToggleModal, bsToggleOffcanvas)
-import Libs.Html.Attributes exposing (ariaExpanded, ariaLabel, ariaLabelledBy, track)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaLabel, ariaLabelledby, track)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (Text)
@@ -87,7 +87,7 @@ viewTitle storedProjects project =
             ([ li [ class "breadcrumb-item" ]
                 [ div [ class "dropdown d-inline-block" ]
                     [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navProjectDropdown, title (String.fromInt (Dict.size project.tables) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text project.name ]
-                    , ul [ class "dropdown-menu", ariaLabelledBy conf.ids.navProjectDropdown ]
+                    , ul [ class "dropdown-menu", ariaLabelledby conf.ids.navProjectDropdown ]
                         (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
                             [ storedProjects
                                 |> List.filter (\p -> p.name /= project.name)
@@ -103,7 +103,7 @@ viewTitle storedProjects project =
                         li [ class "breadcrumb-item" ]
                             [ div [ class "dropdown d-inline-block" ]
                                 [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navLayoutDropdown, title (String.fromInt (tablesInLayout project usedLayout) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text usedLayout ]
-                                , ul [ class "dropdown-menu", ariaLabelledBy conf.ids.navLayoutDropdown ]
+                                , ul [ class "dropdown-menu", ariaLabelledby conf.ids.navLayoutDropdown ]
                                     (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
                                         [ project.layouts
                                             |> Dict.keys
@@ -185,7 +185,7 @@ viewSpecialFeaturesButton : Maybe VirtualRelation -> Html Msg
 viewSpecialFeaturesButton virtualRelation =
     div [ class "dropdown me-2" ]
         [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
-        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledBy conf.ids.navFeaturesDropdown ]
+        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledby conf.ids.navFeaturesDropdown ]
             [ li []
                 [ div [ class "btn-group w-100" ]
                     [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]

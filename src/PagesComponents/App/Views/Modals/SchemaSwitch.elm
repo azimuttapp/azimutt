@@ -10,7 +10,7 @@ import Html.Attributes exposing (class, for, id, style, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsToggle, bsToggleCollapse)
 import Libs.Html exposing (bText, codeText, divIf, extLink)
-import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledBy, role)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledby, role)
 import Libs.String as S
 import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -101,7 +101,7 @@ viewSampleSchemas =
         [ text "Or just try out with "
         , div [ class "dropdown", style "display" "inline-block" ]
             [ button [ type_ "button", class "link link-primary", id "schema-samples", bsToggle Dropdown, ariaExpanded False ] [ text "an example" ]
-            , ul [ class "dropdown-menu", ariaLabelledBy "schema-samples" ]
+            , ul [ class "dropdown-menu", ariaLabelledby "schema-samples" ]
                 (schemaSamples
                     |> Dict.toList
                     |> List.sortBy (\( _, ( tables, _ ) ) -> tables)

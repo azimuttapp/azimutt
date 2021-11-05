@@ -11,7 +11,7 @@ import Html.Keyed as Keyed
 import Html.Lazy exposing (lazy2)
 import Libs.Bool exposing (cond)
 import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll, bsToggleCollapse)
-import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy)
+import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledby)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId as HtmlId
@@ -26,7 +26,7 @@ import PagesComponents.App.Models exposing (Msg(..))
 
 viewMenu : Maybe Project -> Html Msg
 viewMenu project =
-    div [ id conf.ids.menu, class "offcanvas offcanvas-start", bsScroll True, bsBackdrop "false", ariaLabelledBy (conf.ids.menu ++ "-label"), tabindex -1 ]
+    div [ id conf.ids.menu, class "offcanvas offcanvas-start", bsScroll True, bsBackdrop "false", ariaLabelledby (conf.ids.menu ++ "-label"), tabindex -1 ]
         [ div [ class "offcanvas-header" ]
             [ h5 [ class "offcanvas-title", id (conf.ids.menu ++ "-label") ] [ text (project |> M.mapOrElse (\_ -> "Table list") "Menu") ]
             , button [ type_ "button", class "btn-close text-reset", bsDismiss Offcanvas, ariaLabel "Close" ] []

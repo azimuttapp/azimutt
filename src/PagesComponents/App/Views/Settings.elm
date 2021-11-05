@@ -10,7 +10,7 @@ import Html.Events exposing (onClick, onInput)
 import Libs.Bootstrap exposing (Toggle(..), bsBackdrop, bsDismiss, bsScroll, bsToggle)
 import Libs.DateTime exposing (formatDate, formatTime)
 import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (ariaDescribedBy, ariaLabel, ariaLabelledBy)
+import Libs.Html.Attributes exposing (ariaDescribedby, ariaLabel, ariaLabelledby)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Task exposing (send)
@@ -31,7 +31,7 @@ viewSettings time project =
     project
         |> M.mapOrElse
             (\p ->
-                div [ id conf.ids.settings, class "offcanvas offcanvas-end", bsScroll True, bsBackdrop "false", ariaLabelledBy (conf.ids.settings ++ "-label"), tabindex -1 ]
+                div [ id conf.ids.settings, class "offcanvas offcanvas-end", bsScroll True, bsBackdrop "false", ariaLabelledby (conf.ids.settings ++ "-label"), tabindex -1 ]
                     [ div [ class "offcanvas-header" ]
                         [ h5 [ class "offcanvas-title", id (conf.ids.settings ++ "-label") ] [ text "Settings" ]
                         , button [ type_ "button", class "btn-close text-reset", bsDismiss Offcanvas, ariaLabel "Close" ] []
@@ -141,7 +141,7 @@ viewDisplaySettingsSection settings =
                 [ type_ "text"
                 , class "form-control"
                 , id "settings-removed-tables"
-                , ariaDescribedBy "settings-removed-tables-help"
+                , ariaDescribedby "settings-removed-tables-help"
                 , placeholder "Add technical tables, ex: flyway_schema_history..."
                 , value settings.removedTables
                 , onInput (\v -> SettingsMsg (UpdateRemovedTables v))
@@ -155,7 +155,7 @@ viewDisplaySettingsSection settings =
                 [ type_ "text"
                 , class "form-control"
                 , id "settings-hidden-columns"
-                , ariaDescribedBy "settings-hidden-columns-help"
+                , ariaDescribedby "settings-hidden-columns-help"
                 , placeholder "Add technical columns, ex: created_at..."
                 , value settings.hiddenColumns
                 , onInput (\v -> SettingsMsg (UpdateHiddenColumns v))
@@ -165,7 +165,7 @@ viewDisplaySettingsSection settings =
             ]
         , div [ class "mt-3" ]
             [ label [ class "form-label", for "settings-columns-order" ] [ text "Columns order:" ]
-            , select [ class "form-select", id "settings-columns-order", ariaDescribedBy "settings-columns-order-help", onInput (\v -> v |> ColumnOrder.fromString |> UpdateColumnOrder |> SettingsMsg) ]
+            , select [ class "form-select", id "settings-columns-order", ariaDescribedby "settings-columns-order-help", onInput (\v -> v |> ColumnOrder.fromString |> UpdateColumnOrder |> SettingsMsg) ]
                 (ColumnOrder.all |> List.map (\o -> option [ value (ColumnOrder.toString o), selected (o == settings.columnOrder) ] [ text (ColumnOrder.show o) ]))
             , div [ class "form-text", id "settings-columns-order-help" ] [ text "Select the default column order when a table is shown." ]
             ]

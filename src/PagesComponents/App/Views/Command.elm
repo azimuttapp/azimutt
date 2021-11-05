@@ -7,7 +7,7 @@ import Html exposing (Html, button, div, li, text, ul)
 import Html.Attributes exposing (class, classList, id, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
-import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledBy, role)
+import Libs.Html.Attributes exposing (ariaLabel, ariaLabelledby, role)
 import Libs.Maybe as M
 import Models.Project.CanvasProps exposing (CanvasProps)
 import PagesComponents.App.Models exposing (CursorMode(..), Msg(..))
@@ -31,7 +31,7 @@ viewCommands cursorMode canvas =
                         , div [ class "btn-group", role "group" ]
                             [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", id "canvas-zoom", bsToggle Dropdown ]
                                 [ text (String.fromInt (round (c.zoom * 100)) ++ " %") ]
-                            , ul [ class "dropdown-menu", ariaLabelledBy "canvas-zoom" ]
+                            , ul [ class "dropdown-menu", ariaLabelledby "canvas-zoom" ]
                                 [ li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (conf.zoom.min - c.zoom)) ] [ text (String.fromFloat (conf.zoom.min * 100) ++ " %") ] ]
                                 , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (0.25 - c.zoom)) ] [ text "25 %" ] ]
                                 , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (0.5 - c.zoom)) ] [ text "50 %" ] ]

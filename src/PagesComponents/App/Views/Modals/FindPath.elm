@@ -7,7 +7,7 @@ import Html.Attributes as Attributes exposing (class, disabled, for, id, placeho
 import Html.Events exposing (onClick, onInput)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal, bsParent, bsTarget, bsToggle, bsToggleCollapse)
 import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (ariaControls, ariaDescribedBy, ariaExpanded, ariaHidden, ariaLabel, ariaLabelledBy, role)
+import Libs.Html.Attributes exposing (ariaControls, ariaDescribedby, ariaExpanded, ariaHidden, ariaLabel, ariaLabelledby, role)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -63,7 +63,7 @@ viewSettings idPrefix settings =
                         [ type_ "text"
                         , class "form-control"
                         , id (idPrefix ++ "-settings-ignored-columns")
-                        , ariaDescribedBy (idPrefix ++ "-settings-ignored-columns-help")
+                        , ariaDescribedby (idPrefix ++ "-settings-ignored-columns-help")
                         , placeholder "ex: created_by, updated_by, owner..."
                         , value (settings.ignoredColumns |> String.join ", ")
                         , onInput (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredColumns = v |> String.split "," |> List.map String.trim }))
@@ -79,7 +79,7 @@ viewSettings idPrefix settings =
                         [ type_ "text"
                         , class "form-control"
                         , id (idPrefix ++ "-settings-ignored-tables")
-                        , ariaDescribedBy (idPrefix ++ "-settings-ignored-tables-help")
+                        , ariaDescribedby (idPrefix ++ "-settings-ignored-tables-help")
                         , placeholder "ex: users, accounts..."
                         , value (settings.ignoredTables |> List.map TableId.show |> String.join ", ")
                         , onInput (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map TableId.parse }))
@@ -97,7 +97,7 @@ viewSettings idPrefix settings =
                         , Attributes.max "100"
                         , class "form-control"
                         , id (idPrefix ++ "-settings-max-path-length")
-                        , ariaDescribedBy (idPrefix ++ "-settings-max-path-length-help")
+                        , ariaDescribedby (idPrefix ++ "-settings-max-path-length-help")
                         , placeholder "ex: 3"
                         , value (String.fromInt settings.maxPathLength)
                         , onInput (\v -> String.toInt v |> M.mapOrElse (\l -> FindPathMsg (FPSettingsUpdate { settings | maxPathLength = l })) Noop)
@@ -199,7 +199,7 @@ viewPath accordionId from i path =
             [ button [ type_ "button", class "accordion-button collapsed", ariaControls collapseId, bsTarget collapseId, bsToggle Collapse, ariaExpanded False ]
                 [ span [] (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep)) ]
             ]
-        , div [ class "accordion-collapse collapse", id collapseId, bsParent accordionId, ariaLabelledBy headerId ]
+        , div [ class "accordion-collapse collapse", id collapseId, bsParent accordionId, ariaLabelledby headerId ]
             [ div [ class "accordion-body" ]
                 [ code [] [ pre [ class "mb-0" ] [ text (buildQuery from path) ] ]
                 ]

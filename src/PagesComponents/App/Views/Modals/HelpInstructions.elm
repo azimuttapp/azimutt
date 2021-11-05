@@ -5,7 +5,7 @@ import Html exposing (Html, button, div, h2, kbd, p, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Libs.Bootstrap exposing (Toggle(..), bsDismiss, bsModal, bsParent, bsTarget, bsToggle)
 import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, ariaLabelledBy)
+import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, ariaLabelledby)
 
 
 viewHelpModal : Html msg
@@ -174,7 +174,7 @@ sectionToAccordionItem section =
         [ h2 [ class "accordion-header", id (sectionId ++ "-heading") ]
             [ button [ class "accordion-button collapsed", type_ "button", bsToggle Collapse, bsTarget (sectionId ++ "-collapse"), ariaExpanded False, ariaControls (sectionId ++ "-collapse") ] [ text section.title ]
             ]
-        , div [ id (sectionId ++ "-collapse"), class "accordion-collapse collapse", bsParent (conf.ids.helpModal ++ "-accordion"), ariaLabelledBy (sectionId ++ "-heading") ]
+        , div [ id (sectionId ++ "-collapse"), class "accordion-collapse collapse", bsParent (conf.ids.helpModal ++ "-accordion"), ariaLabelledby (sectionId ++ "-heading") ]
             [ div [ class "accordion-body" ] section.body
             ]
         ]

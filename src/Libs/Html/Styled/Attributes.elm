@@ -1,14 +1,39 @@
-module Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, role, track)
+module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaOrientation, role, track)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
 import Libs.Bool as B
 import Libs.Models exposing (Text, TrackEvent)
+import Libs.Models.HtmlId exposing (HtmlId)
 
 
-role : String -> Attribute msg
-role text =
-    attribute "role" text
+
+-- sorted alphabetically
+
+
+ariaControls : Text -> Attribute msg
+ariaControls text =
+    attribute "aria-controls" text
+
+
+ariaCurrent : Text -> Attribute msg
+ariaCurrent text =
+    attribute "aria-current" text
+
+
+ariaDescribedby : HtmlId -> Attribute msg
+ariaDescribedby targetId =
+    attribute "aria-describedby" targetId
+
+
+ariaExpanded : Bool -> Attribute msg
+ariaExpanded value =
+    attribute "aria-expanded" (B.toString value)
+
+
+ariaHaspopup : Bool -> Attribute msg
+ariaHaspopup value =
+    attribute "aria-haspopup" (B.toString value)
 
 
 ariaHidden : Bool -> Attribute msg
@@ -21,9 +46,19 @@ ariaLabel text =
     attribute "aria-label" text
 
 
-ariaExpanded : Bool -> Attribute msg
-ariaExpanded value =
-    attribute "aria-expanded" (B.toString value)
+ariaLabelledby : Text -> Attribute msg
+ariaLabelledby text =
+    attribute "aria-labelledby" text
+
+
+ariaOrientation : Text -> Attribute msg
+ariaOrientation text =
+    attribute "aria-orientation" text
+
+
+role : String -> Attribute msg
+role text =
+    attribute "role" text
 
 
 track : TrackEvent -> List (Attribute msg)

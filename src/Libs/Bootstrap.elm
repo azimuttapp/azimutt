@@ -3,7 +3,7 @@ module Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsBackdrop, bsButton, b
 import Html exposing (Attribute, Html, button, div, h5, text)
 import Html.Attributes exposing (attribute, class, href, id, tabindex, type_)
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, ariaHidden, ariaLabel, ariaLabelledBy, role)
+import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, ariaHidden, ariaLabel, ariaLabelledby, role)
 import Libs.Models exposing (Text)
 import Libs.Models.HtmlId exposing (HtmlId)
 
@@ -115,7 +115,7 @@ bsDropdown dropdownId contentAttrs toggleElement dropdownContent =
     -- TODO find a nice way to give the "dropdown-menu-end" option
     div [ class "dropdown" ]
         [ toggleElement (bsToggleDropdown dropdownId)
-        , dropdownContent ([ class "dropdown-menu", ariaLabelledBy dropdownId ] ++ contentAttrs)
+        , dropdownContent ([ class "dropdown-menu", ariaLabelledby dropdownId ] ++ contentAttrs)
         ]
 
 
@@ -132,7 +132,7 @@ bsButtonGroup label buttons =
 
 bsModal : HtmlId -> Text -> List (Html msg) -> List (Html msg) -> Html msg
 bsModal modalId title body footer =
-    div [ id modalId, class "modal fade", tabindex -1, ariaLabelledBy (modalId ++ "-label"), ariaHidden True ]
+    div [ id modalId, class "modal fade", tabindex -1, ariaLabelledby (modalId ++ "-label"), ariaHidden True ]
         [ div [ class "modal-dialog modal-lg modal-dialog-scrollable" ]
             [ div [ class "modal-content" ]
                 [ div [ class "modal-header" ]
