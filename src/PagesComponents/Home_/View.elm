@@ -25,8 +25,8 @@ viewHome =
     , Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
-        , title = "Azimutt"
-        , content = [ text "Lost in your database schema ?", br [] [], text "You just found the right ", bText "Azimutt", text " 🎉" ]
+        , title = "Explore your database SQL schema"
+        , content = [ bText "Did you ever find yourself lost in your database?", br [] [], bText "Discover how Azimutt will help you understand it." ]
         , cta = { url = Route.toHref Route.App, text = "Explore your schema", track = Just (events.openAppCta "home-hero") }
         }
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
