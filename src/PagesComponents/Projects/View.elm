@@ -13,7 +13,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind.Utilities exposing (focusWithin)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_4, border_b, border_dashed, border_gray_200, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_shrink_0, font_bold, font_medium, globalStyles, h_10, h_16, h_8, h_screen, hidden, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, min_h_full, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_2, mt_3, mx_auto, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, pb_12, pb_3, pb_32, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_2, py_6, relative, right_0, ring_1, ring_2, ring_black, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, scale_100, scale_95, shadow, shadow_lg, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_gray_400, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_sm, text_white, transform, transition, w_10, w_48, w_8, w_full)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_4, border_b, border_dashed, border_gray_200, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_shrink_0, font_bold, font_medium, globalStyles, h_10, h_16, h_8, h_full, h_screen, hidden, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_2, mt_3, mx_auto, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, pb_12, pb_3, pb_32, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_2, py_6, relative, right_0, ring_1, ring_2, ring_black, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, scale_100, scale_95, shadow, shadow_lg, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_gray_400, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_sm, text_white, transform, transition, w_10, w_48, w_8, w_full)
 
 
 type alias Content =
@@ -100,15 +100,14 @@ user =
 viewProjects : Model -> List (Html Msg)
 viewProjects model =
     [ Global.global globalStyles
-    , div [ css [ min_h_full ] ]
-        [ div [ css [ bg_indigo_600, pb_32 ] ]
-            [ viewNavigation model
-            , viewHeader page.title
-            ]
-        , main_ [ css [ neg_mt_32 ] ]
-            [ div [ css [ max_w_7xl, mx_auto, pb_12, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
-                [ div [ css [ bg_white, rounded_lg, shadow, px_5, py_6, sm [ px_6 ] ] ] [ viewContent ]
-                ]
+    , Global.global [ Global.selector "html" [ h_full, bg_gray_100 ], Global.selector "body" [ h_full ] ]
+    , div [ css [ bg_indigo_600, pb_32 ] ]
+        [ viewNavigation model
+        , viewHeader page.title
+        ]
+    , div [ css [ neg_mt_32 ] ]
+        [ main_ [ css [ max_w_7xl, mx_auto, pb_12, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
+            [ div [ css [ bg_white, rounded_lg, shadow, px_5, py_6, sm [ px_6 ] ] ] [ viewContent ]
             ]
         ]
     ]
