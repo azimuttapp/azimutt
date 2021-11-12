@@ -1,4 +1,4 @@
-module Libs.String exposing (hashCode, plural, unique, wordSplit)
+module Libs.String exposing (hashCode, plural, pluralize, unique, wordSplit)
 
 import Bitwise
 import Libs.Maybe as M
@@ -39,8 +39,8 @@ unique takenIds id =
         id
 
 
-plural : Int -> String -> String -> String -> String
-plural count none one many =
+plural : String -> String -> String -> Int -> String
+plural none one many count =
     if count == 0 then
         none
 
@@ -49,3 +49,9 @@ plural count none one many =
 
     else
         String.fromInt count ++ " " ++ many
+
+
+pluralize : String -> Int -> String
+pluralize word =
+    -- trivial pluralize that works only for "regular" words, use `plural` for more flexibility
+    plural ("0 " ++ word) ("1 " ++ word) (word ++ "s")

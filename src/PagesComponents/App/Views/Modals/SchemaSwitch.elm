@@ -47,7 +47,7 @@ viewSavedProjects time storedProjects =
                                 [ h5 [ class "card-title" ] [ text prj.name ]
                                 , p [ class "card-text" ]
                                     [ small [ class "text-muted" ]
-                                        [ text (S.plural (Dict.size prj.layouts) "No saved layout" "1 saved layout" "saved layouts")
+                                        [ text (prj.layouts |> Dict.size |> S.plural "No saved layout" "1 saved layout" "saved layouts")
                                         , br [] []
                                         , text ("Updated on " ++ formatDate time.zone prj.createdAt)
                                         ]

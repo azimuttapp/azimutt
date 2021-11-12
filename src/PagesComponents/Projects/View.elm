@@ -13,6 +13,7 @@ import Libs.DateTime exposing (formatDate)
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.String as S
 import Libs.Tailwind.Utilities exposing (focusWithin)
 import Models.Project exposing (Project)
 import PagesComponents.App.Models exposing (TimeInfo)
@@ -280,7 +281,7 @@ viewProjectCard time project =
         [ div [ css [ p_6 ] ]
             [ h3 [ css [ text_lg, font_medium ] ] [ text project.name ]
             , ul [ css [ mt_1, text_gray_500, text_sm ] ]
-                [ li [] [ text ((project.tables |> Dict.size |> String.fromInt) ++ " tables, " ++ (project.layouts |> Dict.size |> String.fromInt) ++ " layouts") ]
+                [ li [] [ text ((project.tables |> Dict.size |> S.pluralize "table") ++ ", " ++ (project.layouts |> Dict.size |> S.pluralize "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate time.zone project.createdAt) ]
                 ]
             ]

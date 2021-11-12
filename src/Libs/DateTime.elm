@@ -93,7 +93,7 @@ human now date =
 
 humanText : Int -> Int -> String -> String -> String
 humanText diff unit one many =
-    S.plural (abs (round (toFloat diff / toFloat unit))) one one many |> humanDirection diff
+    toFloat diff / toFloat unit |> round |> abs |> S.plural one one many |> humanDirection diff
 
 
 humanDirection : Int -> String -> String

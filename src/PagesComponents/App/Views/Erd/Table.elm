@@ -155,7 +155,7 @@ viewHiddenColumns collapseId table tableRelations hiddenColumns =
     divIf (List.length hiddenColumns > 0)
         [ class "hidden-columns" ]
         [ button ([ class "toggle", type_ "button" ] ++ bsToggleCollapse collapseId)
-            [ text (S.plural (hiddenColumns |> List.length) "No hidden column" "1 hidden column" "hidden columns")
+            [ text (hiddenColumns |> List.length |> S.plural "No hidden column" "1 hidden column" "hidden columns")
             ]
         , Keyed.node "div"
             [ class "collapse", id collapseId ]
