@@ -32,7 +32,7 @@ viewProject =
                 , div [ css [ hidden, sm [ ml_6, flex, items_center ] ] ]
                     [ button [ type_ "button", css [ bg_white, p_1, rounded_full, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ text_gray_500 ] ] ]
                         [ span [ css [ sr_only ] ] [ text "View notifications" ]
-                        , Icon.bell 6 []
+                        , Icon.bell []
                         ]
                     , {- Profile dropdown -}
                       div [ css [ ml_3, relative ] ]
@@ -63,8 +63,8 @@ viewProject =
                     [ {- Mobile menu button -}
                       button [ type_ "button", css [ bg_white, inline_flex, items_center, justify_center, p_2, rounded_md, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ text_gray_500, bg_gray_100 ] ], ariaControls "mobile-menu", ariaExpanded False ]
                         [ span [ css [ sr_only ] ] [ text "Open main menu" ]
-                        , {- Menu open: "hidden", Menu closed: "block" -} Icon.menu 6 [ block ]
-                        , {- Menu open: "block", Menu closed: "hidden" -} Icon.cross 6 [ hidden ]
+                        , {- Menu open: "hidden", Menu closed: "block" -} Icon.menu [ block ]
+                        , {- Menu open: "block", Menu closed: "hidden" -} Icon.x [ hidden ]
                         ]
                     ]
                 ]
@@ -88,7 +88,7 @@ viewProject =
                         ]
                     , button [ type_ "button", css [ ml_auto, bg_white, flex_shrink_0, p_1, rounded_full, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ text_gray_500 ] ] ]
                         [ span [ css [ sr_only ] ] [ text "View notifications" ]
-                        , Icon.bell 6 []
+                        , Icon.bell []
                         ]
                     ]
                 , div [ css [ mt_3, space_y_1 ] ]

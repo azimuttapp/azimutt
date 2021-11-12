@@ -3,10 +3,13 @@ module Pages.Projects exposing (Model, Msg, page)
 import Gen.Params.Projects exposing (Params)
 import Html.Styled as Styled
 import Page
-import PagesComponents.Projects.Models as Models exposing (Msg(..))
+import PagesComponents.Projects.Models as Models exposing (Msg(..), StoredProjects(..))
+import PagesComponents.Projects.Updates.PortMsg exposing (handlePortMsg)
 import PagesComponents.Projects.View exposing (viewProjects)
+import Ports exposing (loadProjects, onJsMessage)
 import Request
 import Shared
+import Time
 import View exposing (View)
 
 
@@ -37,8 +40,10 @@ init =
     ( { activeMenu = Just "Dashboard"
       , profileDropdownOpen = False
       , mobileMenuOpen = False
+      , storedProjects = Loading
+      , time = { zone = Time.utc, now = Time.millisToPosix 0 }
       }
-    , Cmd.none
+    , Cmd.batch [ loadProjects ]
     )
 
 
@@ -58,6 +63,12 @@ update msg model =
         ToggleMobileMenu ->
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
+        ProjectsLoaded projects ->
+            ( { model | storedProjects = Loaded projects }, Cmd.none )
+
+        JsMessage m ->
+            ( model, model |> handlePortMsg m )
+
 
 
 -- SUBSCRIPTIONS
@@ -65,7 +76,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Sub.batch [ onJsMessage JsMessage ]
 
 
 

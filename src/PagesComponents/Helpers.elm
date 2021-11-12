@@ -43,7 +43,7 @@ publicHeader =
             , { url = constants.azimuttGithub ++ "/projects/1", content = [ text "Roadmap" ], external = True }
             , { url = constants.azimuttGithub, content = [ text "Source code" ], external = True }
             , { url = constants.azimuttGithub ++ "/issues", content = [ text "Bug reports" ], external = True }
-            , { url = constants.azimuttTwitter, content = [ Icon.twitter 6 [], span [ css [ sr_only ] ] [ text "Twitter" ] ], external = True }
+            , { url = constants.azimuttTwitter, content = [ Icon.twitter [], span [ css [ sr_only ] ] [ text "Twitter" ] ], external = True }
             ]
         }
 

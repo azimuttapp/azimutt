@@ -3,17 +3,21 @@ module PagesComponents.Projects.View exposing (viewProjects)
 import Components.Atoms.Icon as Icon
 import Css exposing (Style, focus, hover)
 import Css.Global as Global
-import Html.Styled exposing (Html, a, button, div, h1, header, img, input, label, main_, nav, span, text)
-import Html.Styled.Attributes exposing (alt, css, for, href, id, name, placeholder, src, tabindex, type_)
+import Dict
+import Html.Styled exposing (Html, a, button, div, h1, h3, header, img, input, label, li, main_, nav, span, text, ul)
+import Html.Styled.Attributes exposing (alt, css, for, href, id, name, placeholder, src, tabindex, title, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
+import Libs.DateTime exposing (formatDate)
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind.Utilities exposing (focusWithin)
-import PagesComponents.Projects.Models exposing (Model, Msg(..))
-import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_4, border_b, border_dashed, border_gray_200, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_shrink_0, font_bold, font_medium, globalStyles, h_10, h_16, h_8, h_full, h_screen, hidden, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_2, mt_3, mx_auto, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, pb_12, pb_3, pb_32, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_2, py_6, relative, right_0, ring_1, ring_2, ring_black, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, scale_100, scale_95, shadow, shadow_lg, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_gray_400, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_sm, text_white, transform, transition, w_10, w_48, w_8, w_full)
+import Models.Project exposing (Project)
+import PagesComponents.App.Models exposing (TimeInfo)
+import PagesComponents.Projects.Models exposing (Model, Msg(..), StoredProjects(..))
+import Tailwind.Breakpoints exposing (lg, md, sm)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_gray_200, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_16, h_8, h_full, h_screen, hidden, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mx_auto, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, p_6, pb_12, pb_3, pb_32, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_2, py_4, py_6, relative, right_0, ring_1, ring_2, ring_black, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, scale_100, scale_95, shadow, shadow_lg, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_lg, text_sm, text_white, transform, transition, w_10, w_48, w_8, w_full)
 
 
 type alias Content =
@@ -107,7 +111,7 @@ viewProjects model =
         ]
     , div [ css [ neg_mt_32 ] ]
         [ main_ [ css [ max_w_7xl, mx_auto, pb_12, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
-            [ div [ css [ bg_white, rounded_lg, shadow, px_5, py_6, sm [ px_6 ] ] ] [ viewContent ]
+            [ div [ css [ bg_white, rounded_lg, shadow, px_5, py_6, sm [ px_6 ] ] ] [ viewContent model ]
             ]
         ]
     ]
@@ -166,7 +170,7 @@ viewSearch search =
         [ div [ css [ max_w_lg, w_full, lg [ max_w_xs ] ] ]
             [ label [ for search.id, css [ sr_only ] ] [ text "Search" ]
             , div [ css [ relative, text_gray_400, focusWithin [ text_gray_600 ] ] ]
-                [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.search 5 [] ]
+                [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.searchSolid [] ]
                 , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white, border_white ], sm [ text_sm ] ] ] []
                 ]
             ]
@@ -177,7 +181,7 @@ viewNotificationsButton : Html msg
 viewNotificationsButton =
     button [ type_ "button", css [ bg_indigo_600, flex_shrink_0, rounded_full, p_1, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white ] ] ]
         [ span [ css [ sr_only ] ] [ text "View notifications" ]
-        , Icon.bell 6 []
+        , Icon.bell []
         ]
 
 
@@ -209,8 +213,8 @@ viewMobileMenuButton mobileMenu isOpen =
     div [ css [ flex, lg [ hidden ] ] ]
         [ button [ type_ "button", onClick ToggleMobileMenu, css [ bg_indigo_600, p_2, rounded_md, inline_flex, items_center, justify_center, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white, bg_indigo_500, bg_opacity_75 ] ], ariaControls mobileMenu.id, ariaExpanded isOpen ]
             [ span [ css [ sr_only ] ] [ text "Open main menu" ]
-            , Icon.menu 6 [ B.cond isOpen hidden block ]
-            , Icon.cross 6 [ B.cond isOpen block hidden ]
+            , Icon.menu [ B.cond isOpen hidden block ]
+            , Icon.x [ B.cond isOpen block hidden ]
             ]
         ]
 
@@ -239,7 +243,7 @@ viewMobileMenu navigation profileDropdown mobileMenu activeMenu isOpen =
                     ]
                 , button [ type_ "button", css [ ml_auto, bg_indigo_600, flex_shrink_0, rounded_full, p_1, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white ] ] ]
                     [ span [ css [ sr_only ] ] [ text "View notifications" ]
-                    , Icon.bell 6 []
+                    , Icon.bell []
                     ]
                 ]
             , div [ css [ mt_3, px_2, space_y_1 ] ]
@@ -257,6 +261,32 @@ viewHeader title =
         ]
 
 
-viewContent : Html msg
-viewContent =
-    div [ css [ h_screen, border_4, border_dashed, border_gray_200, rounded_lg ] ] []
+viewContent : Model -> Html msg
+viewContent model =
+    div [ css [ h_screen ] ]
+        [ case model.storedProjects of
+            Loading ->
+                div [] [ text "Loading..." ]
+
+            Loaded projects ->
+                ul [ role "list", css [ grid, grid_cols_1, gap_6, lg [ grid_cols_4 ], md [ grid_cols_3 ], sm [ grid_cols_2 ] ] ] (projects |> List.map (viewProjectCard model.time))
+        ]
+
+
+viewProjectCard : TimeInfo -> Project -> Html msg
+viewProjectCard time project =
+    li [ css [ col_span_1, flex, flex_col, border, border_gray_200, rounded_lg, divide_y, divide_gray_200, hover [ shadow_lg ] ] ]
+        [ div [ css [ p_6 ] ]
+            [ h3 [ css [ text_lg, font_medium ] ] [ text project.name ]
+            , ul [ css [ mt_1, text_gray_500, text_sm ] ]
+                [ li [] [ text ((project.tables |> Dict.size |> String.fromInt) ++ " tables, " ++ (project.layouts |> Dict.size |> String.fromInt) ++ " layouts") ]
+                , li [] [ text ("Edited on " ++ formatDate time.zone project.createdAt) ]
+                ]
+            ]
+        , div [ css [ flex, divide_x, divide_gray_200 ] ]
+            [ button [ type_ "button", title "Delete this project", css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
+                [ Icon.trash [ text_gray_400 ] ]
+            , a [ href "#", css [ flex_grow, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, hover [ text_gray_500 ] ] ]
+                [ Icon.arrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]
+            ]
+        ]

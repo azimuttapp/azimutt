@@ -9,6 +9,7 @@ import Html exposing (Html, br, button, div, h5, label, li, p, small, span, text
 import Html.Attributes exposing (class, for, id, style, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsToggle, bsToggleCollapse)
+import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText, codeText, divIf, extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledby, role)
 import Libs.String as S
@@ -16,7 +17,7 @@ import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), Switch, TimeInfo)
-import PagesComponents.App.Views.Helpers exposing (formatDate, onClickConfirm)
+import PagesComponents.App.Views.Helpers exposing (onClickConfirm)
 import Time
 
 
@@ -48,7 +49,7 @@ viewSavedProjects time storedProjects =
                                     [ small [ class "text-muted" ]
                                         [ text (S.plural (Dict.size prj.layouts) "No saved layout" "1 saved layout" "saved layouts")
                                         , br [] []
-                                        , text ("Updated on " ++ formatDate time prj.createdAt)
+                                        , text ("Updated on " ++ formatDate time.zone prj.createdAt)
                                         ]
                                     ]
                                 ]
