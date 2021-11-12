@@ -1,6 +1,5 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
 
-import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
 import Libs.Maybe as M
@@ -76,11 +75,6 @@ setPosition delta zoom item =
 setSettings : (s -> s) -> { item | settings : s } -> { item | settings : s }
 setSettings transform item =
     { item | settings = item.settings |> transform }
-
-
-decodeErrorToHtml : Decode.Error -> String
-decodeErrorToHtml error =
-    "<pre>" ++ Decode.errorToString error ++ "</pre>"
 
 
 

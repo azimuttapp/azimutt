@@ -4,7 +4,8 @@ window.addEventListener('load', function() {
     const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics'))
     const analytics = initAnalytics(isProd && !skipAnalytics)
     const errorTracking = initErrorTracking(isProd)
-    const app = Elm.Main.init()
+    const flags = {now: Date.now()}
+    const app = Elm.Main.init({flags})
 
 
     /* PWA service worker */
