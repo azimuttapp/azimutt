@@ -134,6 +134,7 @@ window.addEventListener('load', function() {
     }
     function dropProject(project) {
         localStorage.removeItem(projectPrefix + project.id)
+        loadProjects()
     }
 
     function getLocalFile(maybeProjectId, maybeSourceId, file) {

@@ -6,7 +6,7 @@ import Css.Global as Global
 import Dict
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, h1, h3, header, img, input, label, li, main_, nav, span, text, ul)
-import Html.Styled.Attributes exposing (alt, css, for, href, id, name, placeholder, src, tabindex, title, type_)
+import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, tabindex, title, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.DateTime exposing (formatDate)
@@ -19,7 +19,7 @@ import Models.Project exposing (Project)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
 import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, h_screen, hidden, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mx_auto, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_12, p_2, p_6, pb_12, pb_3, pb_32, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_2, py_4, py_6, relative, right_0, ring_1, ring_2, ring_black, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, scale_100, scale_95, shadow, shadow_lg, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_lg, text_sm, text_white, transform, transition, w_10, w_12, w_48, w_8, w_full)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, hidden, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_2, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mx_auto, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_12, p_2, p_6, p_8, pb_12, pb_3, pb_32, pb_4, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, pt_6, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_2, py_4, relative, right_0, ring_1, ring_2, ring_black, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, scale_100, scale_95, shadow, shadow_lg, shadow_sm, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_lg, text_sm, text_white, transform, transition, w_10, w_12, w_48, w_8, w_full)
 import Time
 
 
@@ -71,7 +71,7 @@ type alias User =
 
 page : Content
 page =
-    { title = "My projects"
+    { title = "Dashboard"
     , brand = { logo = { src = "https://tailwindui.com/img/logos/workflow-mark-indigo-300.svg", alt = "Workflow" }, url = "#" }
     , navigation =
         { links =
@@ -114,7 +114,7 @@ viewProjects shared model =
         ]
     , div [ css [ neg_mt_32 ] ]
         [ main_ [ css [ max_w_7xl, mx_auto, pb_12, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
-            [ div [ css [ bg_white, rounded_lg, shadow, px_5, py_6, sm [ px_6 ] ] ] [ viewContent shared ]
+            [ div [ css [ bg_white, rounded_lg, shadow, p_8, sm [ p_6 ] ] ] [ viewContent shared ]
             ]
         ]
     ]
@@ -123,7 +123,7 @@ viewProjects shared model =
 viewNavigation : Model -> Html Msg
 viewNavigation model =
     nav [ css [ bg_indigo_600, border_b, border_indigo_300, border_opacity_25, lg [ border_none ] ] ]
-        [ div [ css [ max_w_7xl, mx_auto, px_2, lg [ px_8 ], sm [ px_4 ] ] ]
+        [ div [ css [ max_w_7xl, mx_auto, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
             [ div [ css [ relative, h_16, flex, items_center, justify_between, lg [ border_b, border_indigo_400, border_opacity_25 ] ] ]
                 [ div [ css [ px_2, flex, items_center, lg [ px_0 ] ] ]
                     [ div [ css [ flex_shrink_0 ] ] [ viewBrand page.brand ]
@@ -145,7 +145,7 @@ viewNavigation model =
 
 viewBrand : Brand -> Html msg
 viewBrand brand =
-    a [ href brand.url ] [ img [ css [ block, h_8, w_8 ], src brand.logo.src, alt brand.logo.alt ] [] ]
+    a [ href brand.url ] [ img [ css [ block, h_8, w_8 ], src brand.logo.src, alt brand.logo.alt, width 32, height 32 ] [] ]
 
 
 viewNavLinks : Navigation -> Maybe String -> Html Msg
@@ -203,7 +203,7 @@ viewProfileDropdown dropdown isOpen =
         [ div []
             [ button [ type_ "button", id dropdown.id, onClick ToggleProfileDropdown, css [ bg_indigo_600, rounded_full, flex, text_sm, text_white, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ] ], ariaExpanded isOpen, ariaHaspopup True ]
                 [ span [ css [ sr_only ] ] [ text "Open user menu" ]
-                , img [ css [ rounded_full, h_8, w_8 ], src user.avatar, alt "Your avatar" ] []
+                , img [ css [ rounded_full, h_8, w_8 ], src user.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]
             ]
         , div [ css ([ origin_top_right, absolute, right_0, mt_2, w_48, rounded_md, shadow_lg, py_1, bg_white, ring_1, ring_black, ring_opacity_5, focus [ outline_none ] ] ++ open), role "menu", ariaOrientation "vertical", ariaLabelledby dropdown.id, tabindex -1 ]
@@ -238,7 +238,7 @@ viewMobileMenu navigation profileDropdown mobileMenu activeMenu isOpen =
         , div [ css [ pt_4, pb_3, border_t, border_indigo_700 ] ]
             [ div [ css [ px_5, flex, items_center ] ]
                 [ div [ css [ flex_shrink_0 ] ]
-                    [ img [ css [ rounded_full, h_10, w_10 ], src user.avatar, alt "Your avatar" ] []
+                    [ img [ css [ rounded_full, h_10, w_10 ], src user.avatar, alt "Your avatar", width 40, height 40 ] []
                     ]
                 , div [ css [ ml_3 ] ]
                     [ div [ css [ text_base, font_medium, text_white ] ] [ text (user.firstName ++ " " ++ user.lastName) ]
@@ -266,13 +266,21 @@ viewHeader title =
 
 viewContent : Shared.Model -> Html Msg
 viewContent shared =
-    div [ css [ h_screen ] ]
-        [ case shared.projects of
+    div []
+        [ h3 [ css [ text_lg, font_medium, pb_4 ] ] [ text "My projects" ]
+        , case shared.projects of
             Loading ->
                 div [] [ text "Loading..." ]
 
             Loaded projects ->
                 ul [ role "list", css [ grid, grid_cols_1, gap_6, lg [ grid_cols_4 ], md [ grid_cols_3 ], sm [ grid_cols_2 ] ] ] ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject ])
+        , h3 [ css [ text_lg, font_medium, pt_6, pb_4 ] ] [ text "Other" ]
+        , div []
+            [ button [ type_ "button", css [ px_4, py_2, rounded_md, shadow_sm, text_sm, font_medium, text_white, bg_indigo_600, hover [ bg_indigo_700 ], focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ] ] ]
+                [ text "Show modal" ]
+            , button [ type_ "button", css [ ml_2, px_4, py_2, rounded_md, shadow_sm, text_sm, font_medium, text_white, bg_indigo_600, hover [ bg_indigo_700 ], focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ] ] ]
+                [ text "Show toast" ]
+            ]
         ]
 
 
@@ -287,7 +295,7 @@ viewProjectCard zone project =
                 ]
             ]
         , div [ css [ flex, divide_x, divide_gray_200 ] ]
-            [ button [ type_ "button", title "Delete this project", css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
+            [ button [ type_ "button", title "Delete this project", onClick (DeleteProject project), css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
                 [ Icon.trash [ text_gray_400 ] ]
             , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ flex_grow, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, hover [ text_gray_500 ] ] ]
                 [ Icon.arrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]

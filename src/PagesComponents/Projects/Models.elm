@@ -1,6 +1,6 @@
 module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
-import Ports exposing (JsMsg)
+import Models.Project exposing (Project)
 
 
 type alias Model =
@@ -14,4 +14,4 @@ type Msg
     = SelectMenu (Maybe String)
     | ToggleProfileDropdown
     | ToggleMobileMenu
-    | JsMessage JsMsg
+    | DeleteProject Project

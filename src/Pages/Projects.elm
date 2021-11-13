@@ -4,11 +4,11 @@ import Gen.Params.Projects exposing (Params)
 import Html.Styled as Styled
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
-import PagesComponents.Projects.Updates.PortMsg exposing (handlePortMsg)
 import PagesComponents.Projects.View exposing (viewProjects)
-import Ports exposing (loadProjects, onJsMessage)
+import Ports
 import Request
 import Shared
+import Tracking
 import View exposing (View)
 
 
@@ -40,7 +40,7 @@ init =
       , profileDropdownOpen = False
       , mobileMenuOpen = False
       }
-    , Cmd.batch [ loadProjects ]
+    , Cmd.batch [ Ports.loadProjects ]
     )
 
 
@@ -60,8 +60,8 @@ update msg model =
         ToggleMobileMenu ->
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
-        JsMessage m ->
-            ( model, model |> handlePortMsg m )
+        DeleteProject project ->
+            ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Tracking.events.deleteProject project) ] )
 
 
 
@@ -70,7 +70,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch [ onJsMessage JsMessage ]
+    Sub.none
 
 
 
