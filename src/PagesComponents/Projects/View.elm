@@ -1,25 +1,26 @@
 module PagesComponents.Projects.View exposing (viewProjects)
 
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css exposing (Style, focus, hover)
 import Css.Global as Global
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, button, div, h1, h3, header, img, input, label, li, main_, nav, span, text, ul)
+import Html.Styled exposing (Html, a, button, div, h1, h3, header, img, input, label, li, main_, nav, p, span, text, ul)
 import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, tabindex, title, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.DateTime exposing (formatDate)
-import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
+import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabelledby, ariaOrientation, role)
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.String as S
 import Libs.Tailwind.Utilities exposing (focusWithin)
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
 import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, hidden, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_2, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mx_auto, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_12, p_2, p_6, p_8, pb_12, pb_3, pb_32, pb_4, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, pt_6, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_2, py_4, relative, right_0, ring_1, ring_2, ring_black, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, scale_100, scale_95, shadow, shadow_lg, shadow_sm, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_lg, text_sm, text_white, transform, transition, w_10, w_12, w_48, w_8, w_full)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_gray_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, flow_root, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, hidden, inline_flex, inset_0, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_2, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mt_4, mt_6, mx_auto, neg_m_2, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, p_6, p_8, pb_12, pb_3, pb_32, pb_4, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, pt_6, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_12, py_2, py_4, py_6, relative, right_0, ring_1, ring_2, ring_black, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, rounded_xl, scale_100, scale_95, shadow, shadow_lg, shadow_sm, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_indigo_500, text_indigo_600, text_lg, text_sm, text_white, transform, transition, w_10, w_12, w_16, w_48, w_8, w_full)
 import Time
 
 
@@ -173,7 +174,7 @@ viewSearch search =
         [ div [ css [ max_w_lg, w_full, lg [ max_w_xs ] ] ]
             [ label [ for search.id, css [ sr_only ] ] [ text "Search" ]
             , div [ css [ relative, text_gray_400, focusWithin [ text_gray_600 ] ] ]
-                [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.searchSolid [] ]
+                [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.view SearchSolid [] ]
                 , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white, border_white ], sm [ text_sm ] ] ] []
                 ]
             ]
@@ -184,7 +185,7 @@ viewNotificationsButton : Html msg
 viewNotificationsButton =
     button [ type_ "button", css [ bg_indigo_600, flex_shrink_0, rounded_full, p_1, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white ] ] ]
         [ span [ css [ sr_only ] ] [ text "View notifications" ]
-        , Icon.bell []
+        , Icon.view Bell []
         ]
 
 
@@ -216,8 +217,8 @@ viewMobileMenuButton mobileMenu isOpen =
     div [ css [ flex, lg [ hidden ] ] ]
         [ button [ type_ "button", onClick ToggleMobileMenu, css [ bg_indigo_600, p_2, rounded_md, inline_flex, items_center, justify_center, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white, bg_indigo_500, bg_opacity_75 ] ], ariaControls mobileMenu.id, ariaExpanded isOpen ]
             [ span [ css [ sr_only ] ] [ text "Open main menu" ]
-            , Icon.menu [ B.cond isOpen hidden block ]
-            , Icon.x [ B.cond isOpen block hidden ]
+            , Icon.view Menu [ B.cond isOpen hidden block ]
+            , Icon.view X [ B.cond isOpen block hidden ]
             ]
         ]
 
@@ -246,7 +247,7 @@ viewMobileMenu navigation profileDropdown mobileMenu activeMenu isOpen =
                     ]
                 , button [ type_ "button", css [ ml_auto, bg_indigo_600, flex_shrink_0, rounded_full, p_1, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white ] ] ]
                     [ span [ css [ sr_only ] ] [ text "View notifications" ]
-                    , Icon.bell []
+                    , Icon.view Bell []
                     ]
                 ]
             , div [ css [ mt_3, px_2, space_y_1 ] ]
@@ -267,19 +268,70 @@ viewHeader title =
 viewContent : Shared.Model -> Html Msg
 viewContent shared =
     div []
-        [ h3 [ css [ text_lg, font_medium, pb_4 ] ] [ text "My projects" ]
-        , case shared.projects of
-            Loading ->
-                div [] [ text "Loading..." ]
-
-            Loaded projects ->
-                ul [ role "list", css [ grid, grid_cols_1, gap_6, lg [ grid_cols_4 ], md [ grid_cols_3 ], sm [ grid_cols_2 ] ] ] ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject ])
+        [ viewProjectList shared
         , h3 [ css [ text_lg, font_medium, pt_6, pb_4 ] ] [ text "Other" ]
         , div []
             [ button [ type_ "button", css [ px_4, py_2, rounded_md, shadow_sm, text_sm, font_medium, text_white, bg_indigo_600, hover [ bg_indigo_700 ], focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ] ] ]
                 [ text "Show modal" ]
             , button [ type_ "button", css [ ml_2, px_4, py_2, rounded_md, shadow_sm, text_sm, font_medium, text_white, bg_indigo_600, hover [ bg_indigo_700 ], focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ] ] ]
                 [ text "Show toast" ]
+            ]
+        ]
+
+
+viewProjectList : Shared.Model -> Html Msg
+viewProjectList shared =
+    div []
+        [ h3 [ css [ text_lg, font_medium ] ] [ text "Projects" ]
+        , case shared.projects of
+            Loading ->
+                div [ css [ mt_6 ] ] [ text "Loading..." ]
+
+            Loaded [] ->
+                viewNoProjects
+
+            Loaded projects ->
+                ul [ role "list", css [ mt_6, grid, grid_cols_1, gap_6, lg [ grid_cols_4 ], md [ grid_cols_3 ], sm [ grid_cols_2 ] ] ] ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject ])
+        ]
+
+
+viewNoProjects : Html msg
+viewNoProjects =
+    div []
+        [ p [ css [ mt_1, text_sm, text_gray_500 ] ]
+            [ text "You haven’t created a project yet. Get started by selecting a template or start from an empty project." ]
+        , ul [ role "list", css [ mt_6, border_t, border_b, border_gray_200, py_6, grid, grid_cols_1, gap_6, sm [ grid_cols_2 ] ] ]
+            [ viewSampleProject "#" Pink ViewList "Create a List" "Another to-do system you’ll try but eventually give up on."
+            , viewSampleProject "#" Yellow Calendar "Create a Calendar" "Stay on top of your deadlines, or don’t — it’s up to you."
+            , viewSampleProject "#" Green Photograph "Create a Gallery" "Great for mood boards and inspiration."
+            , viewSampleProject "#" Blue ViewBoards "Create a Board" "Track tasks in different stages of your project."
+            , viewSampleProject "#" Indigo Table "Create a Spreadsheet" "Lots of numbers and things — good for nerds."
+            , viewSampleProject "#" Purple Clock "Create a Timeline" "Get a birds-eye-view of your procrastination."
+            ]
+        , div [ css [ mt_4, flex ] ]
+            [ a [ href "#", css [ text_sm, font_medium, text_indigo_600, hover [ text_indigo_500 ] ] ]
+                [ text "Or start from an empty project"
+                , span [ ariaHidden True ] [ text "→" ]
+                ]
+            ]
+        ]
+
+
+viewSampleProject : String -> TwColor -> Icon -> String -> String -> Html msg
+viewSampleProject url color icon title description =
+    li [ css [ flow_root ] ]
+        [ div [ css [ relative, neg_m_2, p_2, flex, items_center, space_x_4, rounded_xl, focusWithin [ ring_2, ring_indigo_500 ], hover [ bg_gray_50 ] ] ]
+            [ div [ css [ flex_shrink_0, flex, items_center, justify_center, h_16, w_16, rounded_lg, TwColor.render Bg color L500 ] ] [ Icon.view icon [ text_white ] ]
+            , div []
+                [ h3 [ css [ text_sm, font_medium, text_gray_900 ] ]
+                    [ a [ href url, css [ focus [ outline_none ] ] ]
+                        [ span [ css [ absolute, inset_0 ], ariaHidden True ] []
+                        , text title
+                        , span [ ariaHidden True ] [ text "→" ]
+                        ]
+                    ]
+                , p [ css [ mt_1, text_sm, text_gray_500 ] ] [ text description ]
+                ]
             ]
         ]
 
@@ -296,9 +348,9 @@ viewProjectCard zone project =
             ]
         , div [ css [ flex, divide_x, divide_gray_200 ] ]
             [ button [ type_ "button", title "Delete this project", onClick (DeleteProject project), css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
-                [ Icon.trash [ text_gray_400 ] ]
+                [ Icon.view Trash [ text_gray_400 ] ]
             , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ flex_grow, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, hover [ text_gray_500 ] ] ]
-                [ Icon.arrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]
+                [ Icon.view ArrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]
             ]
         ]
 
@@ -306,8 +358,8 @@ viewProjectCard zone project =
 viewNewProject : Html Msg
 viewNewProject =
     li [ css [ col_span_1 ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, p_12, text_center, text_gray_200, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ border_gray_400, text_gray_400 ] ] ]
-            [ Icon.documentAdd [ mx_auto, h_12, w_12 ]
+        [ a [ href (Route.toHref Route.Projects__New), css [ relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, py_12, text_center, text_gray_200, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ border_gray_400, text_gray_400 ] ] ]
+            [ Icon.view DocumentAdd [ mx_auto, h_12, w_12 ]
             , span [ css [ mt_2, block, text_sm, font_medium ] ] [ text "Create a new project" ]
             ]
         ]

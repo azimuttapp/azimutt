@@ -1,7 +1,7 @@
 module Components.Slices.Hero exposing (Model, backgroundImageSlice, basicSlice, doc)
 
 import Components.Atoms.Dots as Dots
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css exposing (focus, hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
@@ -37,7 +37,7 @@ basicSlice =
                                 , div [ css [ neg_mr_2, flex, items_center, md [ hidden ] ] ]
                                     [ button [ type_ "button", css [ bg_gray_50, rounded_md, p_2, inline_flex, items_center, justify_center, text_gray_400, focus [ outline_none, ring_2, ring_inset, ring_indigo_500 ], hover [ text_gray_500, bg_gray_100 ] ], ariaExpanded False ]
                                         [ span [ css [ sr_only ] ] [ text "Open main menu" ]
-                                        , Icon.menu []
+                                        , Icon.view Menu []
                                         ]
                                     ]
                                 ]
@@ -54,7 +54,7 @@ basicSlice =
                                 [ button [ type_ "button", css [ bg_white, rounded_md, p_2, inline_flex, items_center, justify_center, text_gray_400, focus [ outline_none, ring_2, ring_inset, ring_indigo_500 ], hover [ text_gray_500, bg_gray_100 ] ] ]
                                     [ span [ css [ sr_only ] ]
                                         [ text "Close menu" ]
-                                    , Icon.x []
+                                    , Icon.view X []
                                     ]
                                 ]
                             ]

@@ -1,6 +1,6 @@
 module Components.Slices.FeatureSideBySide exposing (Description, Model, Position(..), Quote, doc, imageSlice, imageSwapSlice)
 
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css exposing (Style, hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
@@ -17,7 +17,7 @@ import Tailwind.Utilities exposing (absolute, bg_gradient_to_r, border, border_g
 type alias Model msg =
     { image : Image
     , imagePosition : Position
-    , icon : Maybe (Html msg)
+    , icon : Maybe Icon
     , description : Description msg
     , cta : Maybe TrackedLink
     , quote : Maybe Quote
@@ -115,9 +115,9 @@ details position model =
         )
 
 
-featureIcon : Html msg -> Html msg
+featureIcon : Icon -> Html msg
 featureIcon icon =
-    span [ css [ h_12, w_12, rounded_md, flex, items_center, justify_center, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ icon ]
+    span [ css [ h_12, w_12, rounded_md, flex, items_center, justify_center, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ Icon.view icon [ text_white ] ]
 
 
 featureDescription : Description msg -> Html msg
@@ -169,7 +169,7 @@ dsModelFull : Model msg
 dsModelFull =
     { image = { src = "https://tailwindui.com/img/component-images/inbox-app-screenshot-2.jpg", alt = "Customer profile user interface" }
     , imagePosition = Right
-    , icon = Just (Icon.sparkles [ text_white ])
+    , icon = Just Sparkles
     , description =
         { title = "Better understand your customers"
         , content = [ text "Semper curabitur ullamcorper posuere nunc sed. Ornare iaculis bibendum malesuada faucibus lacinia porttitor. Pulvinar laoreet sagittis viverra duis. In venenatis sem arcu pretium pharetra at. Lectus viverra dui tellus ornare pharetra." ]

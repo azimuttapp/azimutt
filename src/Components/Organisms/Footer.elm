@@ -1,6 +1,6 @@
 module Components.Organisms.Footer exposing (doc, slice)
 
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf exposing (constants)
 import Css exposing (hover)
 import ElmBook.Chapter exposing (chapter, renderComponentList)
@@ -19,12 +19,12 @@ slice =
             [ extLink constants.azimuttTwitter
                 [ css [ text_gray_400, hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "Twitter" ]
-                , Icon.twitter []
+                , Icon.view Twitter []
                 ]
             , extLink constants.azimuttGithub
                 [ css [ text_gray_400, hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "GitHub" ]
-                , Icon.github []
+                , Icon.view Github []
                 ]
             ]
         , p [ css [ mt_8, text_base, text_gray_400, md [ mt_0, order_1 ] ] ]

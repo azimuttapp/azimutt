@@ -1,8 +1,9 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css exposing (focus, hover)
 import Css.Global as Global
+import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, img, main_, nav, span, text)
 import Html.Styled.Attributes exposing (alt, css, height, href, id, src, tabindex, type_, width)
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
@@ -18,7 +19,7 @@ viewProject =
         [ div [ css [ mx_auto, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
             [ div [ css [ flex, justify_between, h_16 ] ]
                 [ div [ css [ flex ] ]
-                    [ div [ css [ flex_shrink_0, flex, items_center ] ]
+                    [ a [ href (Route.toHref Route.Projects), css [ flex_shrink_0, flex, items_center ] ]
                         [ img [ css [ block, h_8, w_auto, lg [ hidden ] ], src "https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg", alt "Workflow", width 35, height 32 ] []
                         , img [ css [ hidden, h_8, w_auto, lg [ block ] ], src "https://tailwindui.com/img/logos/workflow-logo-indigo-600-mark-gray-800-text.svg", alt "Workflow", width 143, height 32 ] []
                         ]
@@ -32,7 +33,7 @@ viewProject =
                 , div [ css [ hidden, sm [ ml_6, flex, items_center ] ] ]
                     [ button [ type_ "button", css [ bg_white, p_1, rounded_full, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ text_gray_500 ] ] ]
                         [ span [ css [ sr_only ] ] [ text "View notifications" ]
-                        , Icon.bell []
+                        , Icon.view Bell []
                         ]
                     , {- Profile dropdown -}
                       div [ css [ ml_3, relative ] ]
@@ -63,8 +64,8 @@ viewProject =
                     [ {- Mobile menu button -}
                       button [ type_ "button", css [ bg_white, inline_flex, items_center, justify_center, p_2, rounded_md, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ text_gray_500, bg_gray_100 ] ], ariaControls "mobile-menu", ariaExpanded False ]
                         [ span [ css [ sr_only ] ] [ text "Open main menu" ]
-                        , {- Menu open: "hidden", Menu closed: "block" -} Icon.menu [ block ]
-                        , {- Menu open: "block", Menu closed: "hidden" -} Icon.x [ hidden ]
+                        , {- Menu open: "hidden", Menu closed: "block" -} Icon.view Menu [ block ]
+                        , {- Menu open: "block", Menu closed: "hidden" -} Icon.view X [ hidden ]
                         ]
                     ]
                 ]
@@ -88,7 +89,7 @@ viewProject =
                         ]
                     , button [ type_ "button", css [ ml_auto, bg_white, flex_shrink_0, p_1, rounded_full, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ text_gray_500 ] ] ]
                         [ span [ css [ sr_only ] ] [ text "View notifications" ]
-                        , Icon.bell []
+                        , Icon.view Bell []
                         ]
                     ]
                 , div [ css [ mt_3, space_y_1 ] ]

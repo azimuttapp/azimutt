@@ -1,6 +1,6 @@
 module PagesComponents.Helpers exposing (newsletterSection, publicFooter, publicHeader, root, rootStyled)
 
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Slices.Newsletter as Newsletter
@@ -43,7 +43,7 @@ publicHeader =
             , { url = constants.azimuttGithub ++ "/projects/1", content = [ text "Roadmap" ], external = True }
             , { url = constants.azimuttGithub, content = [ text "Source code" ], external = True }
             , { url = constants.azimuttGithub ++ "/issues", content = [ text "Bug reports" ], external = True }
-            , { url = constants.azimuttTwitter, content = [ Icon.twitter [], span [ css [ sr_only ] ] [ text "Twitter" ] ], external = True }
+            , { url = constants.azimuttTwitter, content = [ Icon.view Twitter [], span [ css [ sr_only ] ] [ text "Twitter" ] ], external = True }
             ]
         }
 
