@@ -5,11 +5,12 @@ import Css exposing (Style, focus, hover)
 import Css.Global as Global
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, button, div, h1, h3, header, img, input, label, li, main_, nav, p, span, text, ul)
+import Html.Styled exposing (Html, a, br, button, div, h1, h3, header, img, input, label, li, main_, nav, p, span, text, ul)
 import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, tabindex, title, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.DateTime exposing (formatDate)
+import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabelledby, ariaOrientation, role)
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -20,7 +21,7 @@ import Models.Project exposing (Project)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
 import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_gray_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, flow_root, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, hidden, inline_flex, inset_0, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_2, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mt_4, mt_6, mx_auto, neg_m_2, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, p_6, p_8, pb_12, pb_3, pb_32, pb_4, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, pt_6, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_12, py_2, py_4, py_6, relative, right_0, ring_1, ring_2, ring_black, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, rounded_xl, scale_100, scale_95, shadow, shadow_lg, shadow_sm, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_indigo_500, text_indigo_600, text_lg, text_sm, text_white, transform, transition, w_10, w_12, w_16, w_48, w_8, w_full)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_gray_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, flow_root, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, hidden, inline_flex, inset_0, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_2, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mt_6, mx_auto, neg_m_2, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, p_6, p_8, pb_12, pb_3, pb_32, pb_4, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, pt_6, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_12, py_2, py_4, relative, right_0, ring_1, ring_2, ring_black, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, rounded_xl, scale_100, scale_95, shadow, shadow_lg, shadow_sm, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_indigo_600, text_lg, text_sm, text_white, transform, transition, w_10, w_12, w_16, w_48, w_8, w_full)
 import Time
 
 
@@ -73,7 +74,7 @@ type alias User =
 page : Content
 page =
     { title = "Dashboard"
-    , brand = { logo = { src = "https://tailwindui.com/img/logos/workflow-mark-indigo-300.svg", alt = "Workflow" }, url = "#" }
+    , brand = { url = Route.toHref Route.Home_, logo = { src = "https://tailwindui.com/img/logos/workflow-mark-indigo-300.svg", alt = "Workflow" } }
     , navigation =
         { links =
             [ { url = "#", text = "Dashboard" }
@@ -299,25 +300,32 @@ viewNoProjects : Html msg
 viewNoProjects =
     div []
         [ p [ css [ mt_1, text_sm, text_gray_500 ] ]
-            [ text "You haven’t created a project yet. Get started by selecting a template or start from an empty project." ]
-        , ul [ role "list", css [ mt_6, border_t, border_b, border_gray_200, py_6, grid, grid_cols_1, gap_6, sm [ grid_cols_2 ] ] ]
-            [ viewSampleProject "#" Pink ViewList "Create a List" "Another to-do system you’ll try but eventually give up on."
-            , viewSampleProject "#" Yellow Calendar "Create a Calendar" "Stay on top of your deadlines, or don’t — it’s up to you."
-            , viewSampleProject "#" Green Photograph "Create a Gallery" "Great for mood boards and inspiration."
-            , viewSampleProject "#" Blue ViewBoards "Create a Board" "Track tasks in different stages of your project."
-            , viewSampleProject "#" Indigo Table "Create a Spreadsheet" "Lots of numbers and things — good for nerds."
-            , viewSampleProject "#" Purple Clock "Create a Timeline" "Get a birds-eye-view of your procrastination."
+            [ text "You haven’t created any project yet. Import your own or select a sample one." ]
+        , viewFirstProject
+        , div [ css [ mt_6, text_sm, font_medium, text_indigo_600 ] ]
+            [ text "Or start from an sample project"
+            , span [ ariaHidden True ] [ text " →" ]
             ]
-        , div [ css [ mt_4, flex ] ]
-            [ a [ href "#", css [ text_sm, font_medium, text_indigo_600, hover [ text_indigo_500 ] ] ]
-                [ text "Or start from an empty project"
-                , span [ ariaHidden True ] [ text "→" ]
-                ]
+        , ul [ role "list", css [ mt_6, grid, grid_cols_1, gap_6, sm [ grid_cols_2 ] ] ]
+            [ viewSampleProject "#" Pink ViewList "Basic" [ text "Simple login/role schema.", br [] [], bText "4 tables", text ", the easiest schema, just enough play with the product." ]
+            , viewSampleProject "#" Yellow Calendar "Wordpress" [ text "The well known CMS powering most of the web.", br [] [], bText "12 tables", text ", interesting schema, but with no foreign keys!" ]
+            , viewSampleProject "#" Green Photograph "Gospeak.io" [ text "A full featured SaaS for meetup organizers.", br [] [], bText "26 tables", text ", a good real world example to explore." ]
+            , viewSampleProject "#" Blue ViewBoards "Create a Board" [ text "Track tasks in different stages of your project." ]
+            , viewSampleProject "#" Indigo Table "Create a Spreadsheet" [ text "Lots of numbers and things — good for nerds." ]
+            , viewSampleProject "#" Purple Clock "Create a Timeline" [ text "Get a birds-eye-view of your procrastination." ]
             ]
         ]
 
 
-viewSampleProject : String -> TwColor -> Icon -> String -> String -> Html msg
+viewFirstProject : Html msg
+viewFirstProject =
+    a [ href (Route.toHref Route.Projects__New), css [ mt_6, relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, py_12, text_center, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ border_gray_400 ] ] ]
+        [ Icon.view DocumentAdd [ mx_auto, h_12, w_12 ]
+        , span [ css [ mt_2, block, text_sm, font_medium ] ] [ text "Create a new project" ]
+        ]
+
+
+viewSampleProject : String -> TwColor -> Icon -> String -> List (Html msg) -> Html msg
 viewSampleProject url color icon title description =
     li [ css [ flow_root ] ]
         [ div [ css [ relative, neg_m_2, p_2, flex, items_center, space_x_4, rounded_xl, focusWithin [ ring_2, ring_indigo_500 ], hover [ bg_gray_50 ] ] ]
@@ -327,10 +335,9 @@ viewSampleProject url color icon title description =
                     [ a [ href url, css [ focus [ outline_none ] ] ]
                         [ span [ css [ absolute, inset_0 ], ariaHidden True ] []
                         , text title
-                        , span [ ariaHidden True ] [ text "→" ]
                         ]
                     ]
-                , p [ css [ mt_1, text_sm, text_gray_500 ] ] [ text description ]
+                , p [ css [ mt_1, text_sm, text_gray_500 ] ] description
                 ]
             ]
         ]
@@ -355,7 +362,7 @@ viewProjectCard zone project =
         ]
 
 
-viewNewProject : Html Msg
+viewNewProject : Html msg
 viewNewProject =
     li [ css [ col_span_1 ] ]
         [ a [ href (Route.toHref Route.Projects__New), css [ relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, py_12, text_center, text_gray_200, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ border_gray_400, text_gray_400 ] ] ]

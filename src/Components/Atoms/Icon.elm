@@ -6,6 +6,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, span, text)
 import Html.Styled.Attributes exposing (title)
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
+import Libs.Svg.Styled.Attributes exposing (vectorEffect)
 import Svg.Styled exposing (path, svg)
 import Svg.Styled.Attributes exposing (clipRule, css, d, fill, fillRule, stroke, strokeLinecap, strokeLinejoin, strokeWidth, viewBox)
 import Tailwind.Utilities exposing (h_5, h_6, inline, w_5, w_6)
@@ -51,6 +52,7 @@ type Icon
     | EyeOff
     | Filter
     | FingerPrint
+    | FolderAdd
     | Gift
     | Github
     | Hand
@@ -207,6 +209,9 @@ view icon =
 
         FingerPrint ->
             viewIcon Outline [ "M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 008 4.07M3 15.364c.64-1.319 1-2.8 1-4.364 0-1.457.39-2.823 1.07-4" ]
+
+        FolderAdd ->
+            viewIcon Outline [ "M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" ]
 
         Gift ->
             viewIcon Outline [ "M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" ]
@@ -369,7 +374,7 @@ viewIcon style lines styles =
 
         Outline ->
             svg [ css ([ h_6, w_6 ] ++ styles), viewBox "0 0 24 24", fill "none", stroke "currentColor", ariaHidden True ]
-                (lines |> List.map (\line -> path [ strokeLinecap "round", strokeLinejoin "round", strokeWidth "2", d line ] []))
+                (lines |> List.map (\line -> path [ strokeLinecap "round", strokeLinejoin "round", strokeWidth "2", vectorEffect "non-scaling-stroke", d line ] []))
 
         Social ->
             svg [ css ([ h_6, w_6 ] ++ styles), viewBox "0 0 24 24", fill "currentColor", role "img", ariaHidden True ]
@@ -417,6 +422,7 @@ allIcons =
     , ( EyeOff, "EyeOff" )
     , ( Filter, "Filter" )
     , ( FingerPrint, "FingerPrint" )
+    , ( FolderAdd, "FolderAdd" )
     , ( Gift, "Gift" )
     , ( Github, "Github" )
     , ( Hand, "Hand" )
