@@ -11,11 +11,11 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model msg
-page _ _ =
+page shared _ =
     Page.element
         { init = init
         , update = update
-        , view = view
+        , view = view shared
         , subscriptions = subscriptions
         }
 
@@ -38,10 +38,10 @@ update _ model =
     ( model, Cmd.none )
 
 
-view : Model -> View msg
-view _ =
+view : Shared.Model -> Model -> View msg
+view shared _ =
     { title = "Azimutt - Explore your database schema"
-    , body = viewHome |> List.map Styled.toUnstyled
+    , body = viewHome shared |> List.map Styled.toUnstyled
     }
 
 

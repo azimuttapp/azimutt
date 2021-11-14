@@ -38,24 +38,24 @@ viewSavedProjects time storedProjects =
     divIf (List.length storedProjects > 0)
         [ class "row row-cols-1 row-cols-sm-2 row-cols-lg-3" ]
         (storedProjects
-            |> List.sortBy (\s -> negate (Time.posixToMillis s.updatedAt))
+            |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
             |> List.map
-                (\prj ->
+                (\project ->
                     div [ class "col" ]
                         [ div [ class "card h-100" ]
                             [ div [ class "card-body" ]
-                                [ h5 [ class "card-title" ] [ text prj.name ]
+                                [ h5 [ class "card-title" ] [ text project.name ]
                                 , p [ class "card-text" ]
                                     [ small [ class "text-muted" ]
-                                        [ text (prj.layouts |> Dict.size |> S.plural "No saved layout" "1 saved layout" "saved layouts")
+                                        [ text (project.layouts |> Dict.size |> S.plural "No saved layout" "1 saved layout" "saved layouts")
                                         , br [] []
-                                        , text ("Updated on " ++ formatDate time.zone prj.createdAt)
+                                        , text ("Updated on " ++ formatDate time.zone project.createdAt)
                                         ]
                                     ]
                                 ]
                             , div [ class "card-footer d-flex" ]
-                                [ button [ type_ "button", class "link link-secondary me-auto", title "Delete this project", bsToggle Tooltip, onClickConfirm ("You you really want to delete " ++ prj.name ++ " project ?") (DeleteProject prj) ] [ viewIcon Icon.trash ]
-                                , bsButton Primary [ onClick (UseProject prj) ] [ text "Use this project" ]
+                                [ button [ type_ "button", class "link link-secondary me-auto", title "Delete this project", bsToggle Tooltip, onClickConfirm ("You you really want to delete " ++ project.name ++ " project ?") (DeleteProject project) ] [ viewIcon Icon.trash ]
+                                , bsButton Primary [ onClick (UseProject project) ] [ text "Use this project" ]
                                 ]
                             ]
                         ]

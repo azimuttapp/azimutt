@@ -1,8 +1,19 @@
-module Libs.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, human, parse, unsafeParse)
+module Libs.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, greaterThan, human, minus, parse, unsafeParse)
 
 import Iso8601
+import Libs.Duration as Duration exposing (Duration)
 import Libs.String as S
 import Time
+
+
+minus : Duration -> Time.Posix -> Time.Posix
+minus duration time =
+    Time.posixToMillis time - Duration.toMillis duration |> Time.millisToPosix
+
+
+greaterThan : Time.Posix -> Time.Posix -> Bool
+greaterThan b a =
+    Time.posixToMillis a > Time.posixToMillis b
 
 
 unsafeParse : String -> Time.Posix

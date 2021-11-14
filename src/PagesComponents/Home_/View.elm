@@ -13,21 +13,51 @@ import Gen.Route as Route
 import Html.Styled exposing (Html, b, br, div, span, text)
 import Html.Styled.Attributes exposing (css, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
+import Libs.DateTime as DateTime
+import Libs.Duration as Duration
 import Libs.Html.Styled exposing (bText, extLink)
+import Models.Project exposing (Project)
 import PagesComponents.Helpers as Helpers
+import Shared exposing (StoredProjects(..))
 import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800)
+import Time
 import Tracking exposing (events)
 
 
-viewHome : List (Html msg)
-viewHome =
+viewHome : Shared.Model -> List (Html msg)
+viewHome shared =
+    let
+        currentThreshold : Time.Posix
+        currentThreshold =
+            shared.now |> DateTime.minus (10 |> Duration.days)
+
+        lastCurrentProject : Maybe Project
+        lastCurrentProject =
+            case shared.projects of
+                Loading ->
+                    Nothing
+
+                Loaded projects ->
+                    projects
+                        |> List.filter (\p -> p.updatedAt |> DateTime.greaterThan currentThreshold)
+                        |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
+                        |> List.head
+
+        appRoute : Route.Route
+        appRoute =
+            lastCurrentProject |> Maybe.map (\p -> Route.Projects__Id_ { id = p.id }) |> Maybe.withDefault Route.Projects
+
+        mainCtaText : String
+        mainCtaText =
+            lastCurrentProject |> Maybe.map (\p -> "Explore " ++ p.name) |> Maybe.withDefault "Explore your schema"
+    in
     [ Global.global globalStyles
     , Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your database SQL schema"
         , content = [ bText "Did you ever find yourself lost in your database?", br [] [], bText "Discover how Azimutt will help you understand it." ]
-        , cta = { url = Route.toHref Route.App, text = "Explore your schema", track = Just (events.openAppCta "home-hero") }
+        , cta = { url = Route.toHref appRoute, text = mainCtaText, track = Just (events.openAppCta "home-hero") }
         }
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
         { image = { src = "/assets/images/basic-schema.png", alt = "Basic schema by Azimutt" }
@@ -44,7 +74,7 @@ viewHome =
                 , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "Let's try it!", track = Just (events.openAppCta "home-explore-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "Let's try it!", track = Just (events.openAppCta "home-explore-section") }
         , quote =
             Just
                 { text = "Using Azimutt is like having super powers!"
@@ -66,7 +96,7 @@ viewHome =
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "Let me see...", track = Just (events.openAppCta "home-display-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "Let me see...", track = Just (events.openAppCta "home-display-section") }
         , quote =
             Just
                 { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
@@ -92,7 +122,7 @@ viewHome =
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "I can't resist, let's go!", track = Just (events.openAppCta "home-relations-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "I can't resist, let's go!", track = Just (events.openAppCta "home-relations-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
@@ -108,7 +138,7 @@ viewHome =
                 , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "That's enough, I'm in!", track = Just (events.openAppCta "home-layouts-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "That's enough, I'm in!", track = Just (events.openAppCta "home-layouts-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
@@ -132,7 +162,7 @@ viewHome =
                 , text ", just as you like!"
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "I'm hooked!", track = Just (events.openAppCta "home-find-path-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "I'm hooked!", track = Just (events.openAppCta "home-find-path-section") }
         , quote = Nothing
         }
     , FeatureGrid.cardSlice
