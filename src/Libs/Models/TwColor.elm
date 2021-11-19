@@ -1,5 +1,6 @@
-module Libs.Models.TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..), render)
+module Libs.Models.TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..), colorToString, colors, levelToString, levels, render, toHex)
 
+import Array
 import Css
 import Tailwind.Utilities as Tw
 
@@ -43,6 +44,399 @@ type TwColorPosition
     | Text
     | To
     | Via
+
+
+colors : List TwColor
+colors =
+    [ Blue, Gray, Green, Indigo, Pink, Purple, Red, Yellow, Black, White, Current, Transparent ]
+
+
+levels : List TwColorLevel
+levels =
+    [ L50, L100, L200, L300, L400, L500, L600, L700, L800, L900 ]
+
+
+colorToString : TwColor -> String
+colorToString color =
+    case color of
+        Blue ->
+            "blue"
+
+        Gray ->
+            "gray"
+
+        Green ->
+            "green"
+
+        Indigo ->
+            "indigo"
+
+        Pink ->
+            "pink"
+
+        Purple ->
+            "purple"
+
+        Red ->
+            "red"
+
+        Yellow ->
+            "yellow"
+
+        Black ->
+            "black"
+
+        White ->
+            "white"
+
+        Current ->
+            "current"
+
+        Transparent ->
+            "transparent"
+
+
+levelToString : TwColorLevel -> String
+levelToString level =
+    case level of
+        L50 ->
+            "50"
+
+        L100 ->
+            "100"
+
+        L200 ->
+            "200"
+
+        L300 ->
+            "300"
+
+        L400 ->
+            "400"
+
+        L500 ->
+            "500"
+
+        L600 ->
+            "600"
+
+        L700 ->
+            "700"
+
+        L800 ->
+            "800"
+
+        L900 ->
+            "900"
+
+
+toHex : TwColorLevel -> TwColor -> String
+toHex level color =
+    color |> withLevel level |> colorToHex
+
+
+type alias Color =
+    ( Int, Int, Int )
+
+
+withLevel : TwColorLevel -> TwColor -> Color
+withLevel level color =
+    case color of
+        Blue ->
+            case level of
+                L50 ->
+                    ( 239, 246, 255 )
+
+                L100 ->
+                    ( 219, 234, 254 )
+
+                L200 ->
+                    ( 191, 219, 254 )
+
+                L300 ->
+                    ( 147, 197, 253 )
+
+                L400 ->
+                    ( 96, 165, 250 )
+
+                L500 ->
+                    ( 59, 130, 246 )
+
+                L600 ->
+                    ( 37, 99, 235 )
+
+                L700 ->
+                    ( 29, 78, 216 )
+
+                L800 ->
+                    ( 30, 64, 175 )
+
+                L900 ->
+                    ( 30, 58, 138 )
+
+        Gray ->
+            case level of
+                L50 ->
+                    ( 249, 250, 251 )
+
+                L100 ->
+                    ( 243, 244, 246 )
+
+                L200 ->
+                    ( 229, 231, 235 )
+
+                L300 ->
+                    ( 209, 213, 219 )
+
+                L400 ->
+                    ( 156, 163, 175 )
+
+                L500 ->
+                    ( 107, 114, 128 )
+
+                L600 ->
+                    ( 75, 85, 99 )
+
+                L700 ->
+                    ( 55, 65, 81 )
+
+                L800 ->
+                    ( 31, 41, 55 )
+
+                L900 ->
+                    ( 17, 24, 39 )
+
+        Green ->
+            case level of
+                L50 ->
+                    ( 236, 253, 245 )
+
+                L100 ->
+                    ( 209, 250, 229 )
+
+                L200 ->
+                    ( 167, 243, 208 )
+
+                L300 ->
+                    ( 110, 231, 183 )
+
+                L400 ->
+                    ( 52, 211, 153 )
+
+                L500 ->
+                    ( 16, 185, 129 )
+
+                L600 ->
+                    ( 5, 150, 105 )
+
+                L700 ->
+                    ( 4, 120, 87 )
+
+                L800 ->
+                    ( 6, 95, 70 )
+
+                L900 ->
+                    ( 6, 78, 59 )
+
+        Indigo ->
+            case level of
+                L50 ->
+                    ( 238, 242, 255 )
+
+                L100 ->
+                    ( 224, 231, 255 )
+
+                L200 ->
+                    ( 199, 210, 254 )
+
+                L300 ->
+                    ( 165, 180, 252 )
+
+                L400 ->
+                    ( 129, 140, 248 )
+
+                L500 ->
+                    ( 99, 102, 241 )
+
+                L600 ->
+                    ( 79, 70, 229 )
+
+                L700 ->
+                    ( 67, 56, 202 )
+
+                L800 ->
+                    ( 55, 48, 163 )
+
+                L900 ->
+                    ( 49, 46, 129 )
+
+        Pink ->
+            case level of
+                L50 ->
+                    ( 253, 242, 248 )
+
+                L100 ->
+                    ( 252, 231, 243 )
+
+                L200 ->
+                    ( 251, 207, 232 )
+
+                L300 ->
+                    ( 249, 168, 212 )
+
+                L400 ->
+                    ( 244, 114, 182 )
+
+                L500 ->
+                    ( 236, 72, 153 )
+
+                L600 ->
+                    ( 219, 39, 119 )
+
+                L700 ->
+                    ( 190, 24, 93 )
+
+                L800 ->
+                    ( 157, 23, 77 )
+
+                L900 ->
+                    ( 131, 24, 67 )
+
+        Purple ->
+            case level of
+                L50 ->
+                    ( 245, 243, 255 )
+
+                L100 ->
+                    ( 237, 233, 254 )
+
+                L200 ->
+                    ( 221, 214, 254 )
+
+                L300 ->
+                    ( 196, 181, 253 )
+
+                L400 ->
+                    ( 167, 139, 250 )
+
+                L500 ->
+                    ( 139, 92, 246 )
+
+                L600 ->
+                    ( 124, 58, 237 )
+
+                L700 ->
+                    ( 109, 40, 217 )
+
+                L800 ->
+                    ( 91, 33, 182 )
+
+                L900 ->
+                    ( 76, 29, 149 )
+
+        Red ->
+            case level of
+                L50 ->
+                    ( 254, 242, 242 )
+
+                L100 ->
+                    ( 254, 226, 226 )
+
+                L200 ->
+                    ( 254, 202, 202 )
+
+                L300 ->
+                    ( 252, 165, 165 )
+
+                L400 ->
+                    ( 248, 113, 113 )
+
+                L500 ->
+                    ( 239, 68, 68 )
+
+                L600 ->
+                    ( 220, 38, 38 )
+
+                L700 ->
+                    ( 185, 28, 28 )
+
+                L800 ->
+                    ( 153, 27, 27 )
+
+                L900 ->
+                    ( 127, 29, 29 )
+
+        Yellow ->
+            case level of
+                L50 ->
+                    ( 255, 251, 235 )
+
+                L100 ->
+                    ( 254, 243, 199 )
+
+                L200 ->
+                    ( 253, 230, 138 )
+
+                L300 ->
+                    ( 252, 211, 77 )
+
+                L400 ->
+                    ( 251, 191, 36 )
+
+                L500 ->
+                    ( 245, 158, 11 )
+
+                L600 ->
+                    ( 217, 119, 6 )
+
+                L700 ->
+                    ( 180, 83, 9 )
+
+                L800 ->
+                    ( 146, 64, 14 )
+
+                L900 ->
+                    ( 120, 53, 15 )
+
+        Black ->
+            ( 0, 0, 0 )
+
+        White ->
+            ( 255, 255, 255 )
+
+        Current ->
+            ( 256, 0, 0 )
+
+        Transparent ->
+            ( 257, 0, 0 )
+
+
+colorToHex : Color -> String
+colorToHex ( r, g, b ) =
+    case r of
+        256 ->
+            "currentColor"
+
+        257 ->
+            "transparent"
+
+        _ ->
+            "#" ++ byteToHex r ++ byteToHex g ++ byteToHex b
+
+
+byteToHex : Int -> String
+byteToHex dec =
+    [ dec // 16, dec |> modBy 16 ] |> List.map getHexChar |> String.fromList
+
+
+getHexChar : Int -> Char
+getHexChar i =
+    hexDigits |> Array.get i |> Maybe.withDefault '?'
+
+
+hexDigits : Array.Array Char
+hexDigits =
+    Array.fromList (String.toList "0123456789ABCDEF")
 
 
 render : TwColorPosition -> TwColor -> TwColorLevel -> Css.Style

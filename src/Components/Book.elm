@@ -18,34 +18,34 @@ import Components.Slices.Hero as Hero
 import Components.Slices.Newsletter as Newsletter
 import Css.Global as Global
 import ElmBook exposing (withChapterGroups, withComponentOptions, withThemeOptions)
-import ElmBook.Chapter exposing (chapter, render)
+import ElmBook.Chapter exposing (chapter, render, renderComponent)
 import ElmBook.ComponentOptions
 import ElmBook.ElmCSS exposing (Book, Chapter, book)
 import ElmBook.ThemeOptions
-import Html.Styled exposing (Html, img)
-import Html.Styled.Attributes exposing (alt, css, src)
+import Html.Styled exposing (Html, div, img, table, td, text, th, tr)
+import Html.Styled.Attributes exposing (alt, css, src, style)
+import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..))
 import Tailwind.Breakpoints exposing (sm)
-import Tailwind.Utilities exposing (globalStyles, h_6, h_8, w_auto)
+import Tailwind.Utilities exposing (globalStyles, h_6, h_8, p_3, w_auto)
 
 
 main : Book x
 main =
     book "Azimutt Design System"
-        |> withThemeOptions [ ElmBook.ThemeOptions.subtitle "v0.1.0", ElmBook.ThemeOptions.globals [ Global.global globalStyles ], ElmBook.ThemeOptions.logo logo ]
+        |> withThemeOptions
+            [ ElmBook.ThemeOptions.subtitle "v0.1.0"
+            , ElmBook.ThemeOptions.globals [ Global.global globalStyles ]
+            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt elm-book", css [ h_8, w_auto, sm [ h_6 ] ] ] [])
+            ]
         |> withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
         |> withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc, Button.doc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
             , ( "Molecules", [ Feature.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc ] )
             ]
-
-
-logo : Html msg
-logo =
-    img [ src "/logo.svg", alt "Azimutt elm-book", css [ h_8, w_auto, sm [ h_6 ] ] ] []
 
 
 docs : Chapter x
@@ -55,3 +55,21 @@ docs =
 work in progress
 ---
 """
+
+
+colorsDoc : Chapter x
+colorsDoc =
+    chapter "Colors"
+        |> renderComponent
+            (div []
+                [ table []
+                    (tr [] (th [] [] :: (TwColor.levels |> List.map (\l -> th [] [ text (TwColor.levelToString l) ])))
+                        :: (TwColor.colors |> List.map (\c -> tr [] (th [] [ text (TwColor.colorToString c) ] :: (TwColor.levels |> List.map (viewColorCell c)))))
+                    )
+                ]
+            )
+
+
+viewColorCell : TwColor -> TwColorLevel -> Html msg
+viewColorCell c l =
+    td [ style "background-color" (TwColor.toHex l c), css [ p_3 ] ] [ text (TwColor.toHex l c) ]
