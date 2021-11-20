@@ -1,4 +1,4 @@
-module Components.Book exposing (main)
+module Components.Book exposing (Model, main)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
@@ -7,6 +7,7 @@ import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
 import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Feature as Feature
+import Components.Molecules.Modal as Modal
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Slices.Blog as Blog
@@ -17,50 +18,60 @@ import Components.Slices.FeatureSideBySide as FeatureSideBySide
 import Components.Slices.Hero as Hero
 import Components.Slices.Newsletter as Newsletter
 import Css.Global as Global
-import ElmBook exposing (withChapterGroups, withComponentOptions, withThemeOptions)
-import ElmBook.Chapter exposing (chapter, render, renderComponent)
+import ElmBook
+import ElmBook.Chapter as Chapter
 import ElmBook.ComponentOptions
-import ElmBook.ElmCSS exposing (Book, Chapter, book)
+import ElmBook.ElmCSS as ElmCSS
+import ElmBook.StatefulOptions
 import ElmBook.ThemeOptions
 import Html.Styled exposing (Html, div, img, table, td, text, th, tr)
 import Html.Styled.Attributes exposing (alt, css, src, style)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..))
-import Tailwind.Breakpoints exposing (sm)
-import Tailwind.Utilities exposing (globalStyles, h_6, h_8, p_3, w_auto)
+import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 
 
-main : Book x
+type alias Model =
+    { modal : Modal.DocModel }
+
+
+init : Model
+init =
+    { modal = Modal.docInit }
+
+
+main : ElmCSS.Book Model
 main =
-    book "Azimutt Design System"
-        |> withThemeOptions
+    ElmCSS.book "Azimutt Design System"
+        |> ElmBook.withThemeOptions
             [ ElmBook.ThemeOptions.subtitle "v0.1.0"
             , ElmBook.ThemeOptions.globals [ Global.global globalStyles ]
-            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt elm-book", css [ h_8, w_auto, sm [ h_6 ] ] ] [])
+            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ h_12 ] ] [])
             ]
-        |> withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
-        |> withChapterGroups
+        |> ElmBook.withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
+        |> ElmBook.withStatefulOptions [ ElmBook.StatefulOptions.initialState init ]
+        |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
-            , ( "Molecules", [ Feature.doc ] )
+            , ( "Molecules", [ Feature.doc, Modal.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc ] )
             ]
 
 
-docs : Chapter x
+docs : ElmCSS.Chapter x
 docs =
-    chapter "Readme" |> render """
+    Chapter.chapter "Readme" |> Chapter.render """
 
 work in progress
 ---
 """
 
 
-colorsDoc : Chapter x
+colorsDoc : ElmCSS.Chapter x
 colorsDoc =
-    chapter "Colors"
-        |> renderComponent
+    Chapter.chapter "Colors"
+        |> Chapter.renderComponent
             (div []
                 [ table []
                     (tr [] (th [] [] :: (TwColor.levels |> List.map (\l -> th [] [ text (TwColor.levelToString l) ])))
