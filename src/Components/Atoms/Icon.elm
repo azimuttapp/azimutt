@@ -26,6 +26,14 @@ type Icon
     | Calendar
     | ChatAlt2
     | Check
+    | ChevronDoubleDown
+    | ChevronDoubleLeft
+    | ChevronDoubleRight
+    | ChevronDoubleUp
+    | ChevronDown
+    | ChevronLeft
+    | ChevronRight
+    | ChevronUp
     | ClipboardCheck
     | ClipboardCopy
     | Clock
@@ -131,6 +139,30 @@ view icon =
 
         Check ->
             viewIcon Outline [ "M5 13l4 4L19 7" ]
+
+        ChevronDoubleDown ->
+            viewIcon Outline [ "M19 13l-7 7-7-7m14-8l-7 7-7-7" ]
+
+        ChevronDoubleLeft ->
+            viewIcon Outline [ "M11 19l-7-7 7-7m8 14l-7-7 7-7" ]
+
+        ChevronDoubleRight ->
+            viewIcon Outline [ "M13 5l7 7-7 7M5 5l7 7-7 7" ]
+
+        ChevronDoubleUp ->
+            viewIcon Outline [ "M5 11l7-7 7 7M5 19l7-7 7 7" ]
+
+        ChevronDown ->
+            viewIcon Outline [ "M19 9l-7 7-7-7" ]
+
+        ChevronLeft ->
+            viewIcon Outline [ "M15 19l-7-7 7-7" ]
+
+        ChevronRight ->
+            viewIcon Outline [ "M9 5l7 7-7 7" ]
+
+        ChevronUp ->
+            viewIcon Outline [ "M5 15l7-7 7 7" ]
 
         ClipboardCheck ->
             viewIcon Outline [ "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" ]
@@ -396,6 +428,14 @@ allIcons =
     , ( Calendar, "Calendar" )
     , ( ChatAlt2, "ChatAlt2" )
     , ( Check, "Check" )
+    , ( ChevronDoubleDown, "ChevronDoubleDown" )
+    , ( ChevronDoubleLeft, "ChevronDoubleLeft" )
+    , ( ChevronDoubleRight, "ChevronDoubleRight" )
+    , ( ChevronDoubleUp, "ChevronDoubleUp" )
+    , ( ChevronDown, "ChevronDown" )
+    , ( ChevronLeft, "ChevronLeft" )
+    , ( ChevronRight, "ChevronRight" )
+    , ( ChevronUp, "ChevronUp" )
     , ( ClipboardCheck, "ClipboardCheck" )
     , ( ClipboardCopy, "ClipboardCopy" )
     , ( Clock, "Clock" )

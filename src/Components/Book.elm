@@ -6,6 +6,7 @@ import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
 import Components.Atoms.Markdown as Markdown
+import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Feature as Feature
 import Components.Molecules.Modal as Modal
 import Components.Organisms.Footer as Footer
@@ -31,12 +32,16 @@ import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 
 
 type alias Model =
-    { modal : Modal.DocModel }
+    { dropdown : Dropdown.DocModel
+    , modal : Modal.DocModel
+    }
 
 
 init : Model
 init =
-    { modal = Modal.docInit }
+    { dropdown = Dropdown.docInit
+    , modal = Modal.docInit
+    }
 
 
 main : ElmCSS.Book Model
@@ -53,7 +58,7 @@ main =
             -- sorted alphabetically
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
-            , ( "Molecules", [ Feature.doc, Modal.doc ] )
+            , ( "Molecules", [ Dropdown.doc, Feature.doc, Modal.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc ] )
             ]
