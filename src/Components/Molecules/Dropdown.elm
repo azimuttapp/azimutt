@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (DocModel, Model, SharedState, doc, docInit, simple)
+module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, initDocState, simple)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css
@@ -33,32 +33,32 @@ simple model isOpen elt content =
 -- DOCUMENTATION
 
 
-type alias SharedState x =
-    { x | dropdown : DocModel }
+type alias SharedDocState x =
+    { x | dropdownDocState : DocState }
 
 
-type alias DocModel =
+type alias DocState =
     { simpleOpen : Bool }
 
 
-docInit : DocModel
-docInit =
+initDocState : DocState
+initDocState =
     { simpleOpen = False }
 
 
-update : (DocModel -> DocModel) -> Msg (SharedState x)
+update : (DocState -> DocState) -> Msg (SharedDocState x)
 update transform =
-    Actions.updateState (\s -> { s | dropdown = s.dropdown |> transform })
+    Actions.updateState (\s -> { s | dropdownDocState = s.dropdownDocState |> transform })
 
 
-doc : Chapter (SharedState x)
+doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Dropdown"
         |> Chapter.renderStatefulComponentList
             [ ( "simple"
-              , \{ dropdown } ->
+              , \{ dropdownDocState } ->
                     simple { id = "menu-button" }
-                        dropdown.simpleOpen
+                        dropdownDocState.simpleOpen
                         (\model ->
                             button [ type_ "button", id model.id, ariaExpanded True, ariaHaspopup True, onClick (update (\m -> { m | simpleOpen = not m.simpleOpen })), css [ Tw.inline_flex, Tw.justify_center, Tw.w_full, Tw.rounded_md, Tw.border, Tw.border_gray_300, Tw.shadow_sm, Tw.px_4, Tw.py_2, Tw.bg_white, Tw.text_sm, Tw.font_medium, Tw.text_gray_700, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Tw.ring_offset_gray_100, Tw.ring_indigo_500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
                                 [ text "Options"

@@ -1,4 +1,4 @@
-module Components.Book exposing (Model, main)
+module Components.Book exposing (DocState, main)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
@@ -31,20 +31,20 @@ import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..))
 import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 
 
-type alias Model =
-    { dropdown : Dropdown.DocModel
-    , modal : Modal.DocModel
+type alias DocState =
+    { dropdownDocState : Dropdown.DocState
+    , modalDocState : Modal.DocState
     }
 
 
-init : Model
+init : DocState
 init =
-    { dropdown = Dropdown.docInit
-    , modal = Modal.docInit
+    { dropdownDocState = Dropdown.initDocState
+    , modalDocState = Modal.initDocState
     }
 
 
-main : ElmCSS.Book Model
+main : ElmCSS.Book DocState
 main =
     ElmCSS.book "Azimutt Design System"
         |> ElmBook.withThemeOptions
