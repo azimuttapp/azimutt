@@ -1,6 +1,7 @@
 module PagesComponents.Projects.View exposing (viewProjects)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Css exposing (Style, focus, hover)
 import Css.Global as Global
 import Dict
@@ -11,7 +12,7 @@ import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.DateTime exposing (formatDate)
 import Libs.Html.Styled exposing (bText)
-import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabelledby, ariaOrientation, role)
+import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaHidden, role)
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
@@ -21,7 +22,7 @@ import Models.Project exposing (Project)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
 import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_gray_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, duration_100, duration_75, ease_in, ease_out, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, flow_root, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, hidden, inline_flex, inset_0, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_2, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mt_6, mx_auto, neg_m_2, neg_mt_32, opacity_0, opacity_100, origin_top_right, outline_none, p_1, p_2, p_6, p_8, pb_12, pb_3, pb_32, pb_4, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, pt_6, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_1, py_10, py_12, py_2, py_4, relative, right_0, ring_1, ring_2, ring_black, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_opacity_5, ring_white, rounded_full, rounded_lg, rounded_md, rounded_xl, scale_100, scale_95, shadow, shadow_lg, shadow_sm, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_indigo_600, text_lg, text_sm, text_white, transform, transition, w_10, w_12, w_16, w_48, w_8, w_full)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_gray_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_2, border_b, border_dashed, border_gray_200, border_gray_400, border_indigo_300, border_indigo_400, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, col_span_1, divide_gray_200, divide_x, divide_y, flex, flex_1, flex_col, flex_grow, flex_grow_0, flex_shrink_0, flow_root, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_10, h_12, h_16, h_8, h_full, hidden, inline_flex, inset_0, inset_y_0, items_center, justify_between, justify_center, justify_end, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_2, ml_3, ml_4, ml_6, ml_auto, mt_1, mt_2, mt_3, mt_6, mx_auto, neg_m_2, neg_mt_32, outline_none, p_1, p_2, p_6, p_8, pb_12, pb_3, pb_32, pb_4, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, pt_6, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_10, py_12, py_2, py_4, relative, ring_2, ring_indigo_500, ring_offset_2, ring_offset_indigo_600, ring_white, rounded_full, rounded_lg, rounded_md, rounded_xl, shadow, shadow_lg, shadow_sm, space_x_4, space_y_1, sr_only, text_3xl, text_base, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_indigo_600, text_lg, text_sm, text_white, w_10, w_12, w_16, w_48, w_8, w_full)
 import Time
 
 
@@ -192,25 +193,17 @@ viewNotificationsButton =
 
 viewProfileDropdown : ProfileDropdown -> Bool -> Html Msg
 viewProfileDropdown dropdown isOpen =
-    let
-        open : List Style
-        open =
-            if isOpen then
-                [ transform, opacity_100, scale_100, transition, ease_in, duration_75 ]
-
-            else
-                [ transform, opacity_0, scale_95, transition, ease_out, duration_100 ]
-    in
-    div [ css [ ml_3, relative, flex_shrink_0 ] ]
-        [ div []
-            [ button [ type_ "button", id dropdown.id, onClick ToggleProfileDropdown, css [ bg_indigo_600, rounded_full, flex, text_sm, text_white, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ] ], ariaExpanded isOpen, ariaHaspopup True ]
+    Dropdown.dropdown { id = "profile-dropdown", direction = BottomLeft, isOpen = isOpen }
+        (\_ ->
+            button [ type_ "button", id dropdown.id, onClick ToggleProfileDropdown, css [ ml_3, bg_indigo_600, rounded_full, flex, text_sm, text_white, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ] ], ariaExpanded isOpen, ariaHaspopup True ]
                 [ span [ css [ sr_only ] ] [ text "Open user menu" ]
                 , img [ css [ rounded_full, h_8, w_8 ], src user.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]
-            ]
-        , div [ css ([ origin_top_right, absolute, right_0, mt_2, w_48, rounded_md, shadow_lg, py_1, bg_white, ring_1, ring_black, ring_opacity_5, focus [ outline_none ] ] ++ open), role "menu", ariaOrientation "vertical", ariaLabelledby dropdown.id, tabindex -1 ]
-            (dropdown.links |> List.map (\link -> a [ href link.url, role "menuitem", tabindex -1, css [ block, py_2, px_4, text_sm, text_gray_700, hover [ bg_gray_100 ] ] ] [ text link.text ]))
-        ]
+        )
+        (\_ ->
+            div [ css [ w_48 ] ]
+                (dropdown.links |> List.map (\link -> a [ href link.url, role "menuitem", tabindex -1, css [ block, py_2, px_4, text_sm, text_gray_700, hover [ bg_gray_100 ] ] ] [ text link.text ]))
+        )
 
 
 viewMobileMenuButton : MobileMenu -> Bool -> Html Msg

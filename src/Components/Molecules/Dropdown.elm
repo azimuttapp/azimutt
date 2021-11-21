@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, dropdown, initDocState)
+module Components.Molecules.Dropdown exposing (Direction(..), DocState, Model, SharedDocState, doc, dropdown, initDocState)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css
@@ -17,10 +17,15 @@ import Tailwind.Utilities as Tw
 
 
 type alias Model =
-    { id : HtmlId, isOpen : Bool }
+    { id : HtmlId, direction : Direction, isOpen : Bool }
 
 
-dropdown : Model -> (Model -> Html msg) -> (Model -> List (Html msg)) -> Html msg
+type Direction
+    = BottomRight
+    | BottomLeft
+
+
+dropdown : Model -> (Model -> Html msg) -> (Model -> Html msg) -> Html msg
 dropdown model elt content =
     let
         dropdownMenu : List Css.Style
@@ -30,11 +35,20 @@ dropdown model elt content =
 
             else
                 [ Tw.transition, Tw.ease_out, Tw.duration_100, Tw.opacity_0, Tw.transform, Tw.scale_95, Tw.pointer_events_none ]
+
+        direction : List Css.Style
+        direction =
+            case model.direction of
+                BottomRight ->
+                    [ Tw.left_0, Tw.origin_top_left ]
+
+                BottomLeft ->
+                    [ Tw.right_0, Tw.origin_top_right ]
     in
     div [ css [ Tw.relative, Tw.inline_block, Tw.text_left ] ]
         [ elt model
-        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css ([ Tw.origin_top_right, Tw.absolute, Tw.left_0, Tw.mt_2, Tw.w_56, Tw.rounded_md, Tw.shadow_lg, Tw.bg_white, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Css.focus [ Tw.outline_none ] ] ++ dropdownMenu) ]
-            [ div [ role "none", css [ Tw.py_1 ] ] (content model)
+        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css ([ Tw.absolute, Tw.mt_2, Tw.py_1, Tw.min_w_max, Tw.rounded_md, Tw.shadow_lg, Tw.bg_white, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Css.focus [ Tw.outline_none ] ] ++ direction ++ dropdownMenu) ]
+            [ content model
             ]
         ]
 
@@ -79,6 +93,7 @@ doc =
                 (\isOpen setIsOpen ->
                     dropdown
                         { id = "menu-button"
+                        , direction = BottomRight
                         , isOpen = isOpen
                         }
                         (\model ->
@@ -86,10 +101,11 @@ doc =
                                 [ text "Options", Icon.solid ChevronDown [] ]
                         )
                         (\_ ->
-                            [ a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-0" ] [ text "Account settings" ]
-                            , a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-1" ] [ text "Support" ]
-                            , a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-2" ] [ text "License" ]
-                            ]
+                            div []
+                                [ a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-0" ] [ text "Account settings" ]
+                                , a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-1" ] [ text "Support" ]
+                                , a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-2" ] [ text "License" ]
+                                ]
                         )
                 )
             ]
