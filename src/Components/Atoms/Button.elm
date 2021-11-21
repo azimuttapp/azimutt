@@ -1,29 +1,102 @@
-module Components.Atoms.Button exposing (ButtonProps, button, doc)
+module Components.Atoms.Button exposing (doc, primary1, primary2, primary3, primary4, primary5, secondary1, secondary2, secondary3, secondary4, secondary5, white1, white2, white3, white4, white5)
 
-import Css exposing (focus, hover)
-import ElmBook exposing (Msg)
-import ElmBook.Actions exposing (logAction)
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled as Styled exposing (Html, text)
-import Html.Styled.Attributes exposing (css, disabled, type_)
-import Html.Styled.Events exposing (onClick)
-import Tailwind.Utilities exposing (bg_indigo_600, bg_indigo_700, border, border_transparent, font_medium, inline_flex, items_center, justify_center, outline_none, px_5, py_3, ring_2, ring_indigo_500, ring_offset_2, rounded_md, text_base, text_white)
+import Html.Styled as Styled exposing (Attribute, Html, div, text)
+import Html.Styled.Attributes exposing (css, type_)
+import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
+import Tailwind.Utilities as Tw
 
 
-type alias ButtonProps msg =
-    { label : String, disabled : Bool, onClick : msg }
+primary1 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+primary1 =
+    primary [ Tw.px_2_dot_5, Tw.py_1_dot_5, Tw.text_xs, Tw.rounded ]
 
 
-button : ButtonProps msg -> Html msg
-button props =
-    Styled.button
-        [ type_ "button"
-        , disabled props.disabled
-        , onClick props.onClick
-        , css [ inline_flex, items_center, justify_center, px_5, py_3, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_indigo_600, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ bg_indigo_700 ] ]
-        ]
-        [ text props.label ]
+primary2 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+primary2 =
+    primary [ Tw.px_3, Tw.py_2, Tw.text_sm, Tw.leading_4, Tw.rounded_md ]
+
+
+primary3 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+primary3 =
+    primary [ Tw.px_4, Tw.py_2, Tw.text_sm, Tw.rounded_md ]
+
+
+primary4 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+primary4 =
+    primary [ Tw.px_4, Tw.py_2, Tw.text_base, Tw.rounded_md ]
+
+
+primary5 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+primary5 =
+    primary [ Tw.px_6, Tw.py_3, Tw.text_base, Tw.rounded_md ]
+
+
+primary : List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+primary styles color attrs content =
+    Styled.button (attrs ++ [ type_ "button", css (styles ++ [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.border_transparent, Tw.font_medium, Tw.shadow_sm, Tw.text_white, TwColor.render Bg color L600, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring color L500 ], Css.hover [ TwColor.render Bg color L700 ] ]) ]) content
+
+
+secondary1 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+secondary1 =
+    secondary [ Tw.px_2_dot_5, Tw.py_1_dot_5, Tw.text_xs, Tw.rounded ]
+
+
+secondary2 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+secondary2 =
+    secondary [ Tw.px_3, Tw.py_2, Tw.text_sm, Tw.leading_4, Tw.rounded_md ]
+
+
+secondary3 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+secondary3 =
+    secondary [ Tw.px_4, Tw.py_2, Tw.text_sm, Tw.rounded_md ]
+
+
+secondary4 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+secondary4 =
+    secondary [ Tw.px_4, Tw.py_2, Tw.text_base, Tw.rounded_md ]
+
+
+secondary5 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+secondary5 =
+    secondary [ Tw.px_6, Tw.py_3, Tw.text_base, Tw.rounded_md ]
+
+
+secondary : List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+secondary styles color attrs content =
+    Styled.button (attrs ++ [ type_ "button", css (styles ++ [ Tw.inline_flex, Tw.items_center, Tw.border, Tw.border_transparent, Tw.text_xs, Tw.font_medium, TwColor.render Text color L700, TwColor.render Bg color L100, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring color L500 ], Css.hover [ TwColor.render Bg color L200 ] ]) ]) content
+
+
+white1 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+white1 =
+    white [ Tw.px_2_dot_5, Tw.py_1_dot_5, Tw.text_xs, Tw.rounded ]
+
+
+white2 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+white2 =
+    white [ Tw.px_3, Tw.py_2, Tw.text_sm, Tw.leading_4, Tw.rounded_md ]
+
+
+white3 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+white3 =
+    white [ Tw.px_4, Tw.py_2, Tw.text_sm, Tw.rounded_md ]
+
+
+white4 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+white4 =
+    white [ Tw.px_4, Tw.py_2, Tw.text_base, Tw.rounded_md ]
+
+
+white5 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+white5 =
+    white [ Tw.px_6, Tw.py_3, Tw.text_base, Tw.rounded_md ]
+
+
+white : List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+white styles color attrs content =
+    Styled.button (attrs ++ [ type_ "button", css (styles ++ [ Tw.inline_flex, Tw.items_center, Tw.border, Tw.border_gray_300, Tw.shadow_sm, Tw.font_medium, Tw.text_gray_700, Tw.bg_white, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring color L500 ], Css.hover [ Tw.bg_gray_50 ] ]) ]) content
 
 
 
@@ -32,13 +105,33 @@ button props =
 
 doc : Chapter x
 doc =
-    let
-        defaultProps : ButtonProps (Msg state)
-        defaultProps =
-            { label = "Click me!", disabled = False, onClick = logAction "Clicked button" }
-    in
     chapter "Button"
         |> renderComponentList
-            [ ( "default", button { defaultProps | onClick = logAction "Clicked default button" } )
-            , ( "disabled", button { defaultProps | disabled = True } )
+            [ ( "primary"
+              , div []
+                    [ primary1 Indigo [ css [ Tw.mr_3 ] ] [ text "primary1" ]
+                    , primary2 Indigo [ css [ Tw.mr_3 ] ] [ text "primary2" ]
+                    , primary3 Indigo [ css [ Tw.mr_3 ] ] [ text "primary3" ]
+                    , primary4 Indigo [ css [ Tw.mr_3 ] ] [ text "primary4" ]
+                    , primary5 Indigo [ css [ Tw.mr_3 ] ] [ text "primary5" ]
+                    ]
+              )
+            , ( "secondary"
+              , div []
+                    [ secondary1 Indigo [ css [ Tw.mr_3 ] ] [ text "secondary1" ]
+                    , secondary2 Indigo [ css [ Tw.mr_3 ] ] [ text "secondary2" ]
+                    , secondary3 Indigo [ css [ Tw.mr_3 ] ] [ text "secondary3" ]
+                    , secondary4 Indigo [ css [ Tw.mr_3 ] ] [ text "secondary4" ]
+                    , secondary5 Indigo [ css [ Tw.mr_3 ] ] [ text "secondary5" ]
+                    ]
+              )
+            , ( "white"
+              , div []
+                    [ white1 Indigo [ css [ Tw.mr_3 ] ] [ text "white1" ]
+                    , white2 Indigo [ css [ Tw.mr_3 ] ] [ text "white2" ]
+                    , white3 Indigo [ css [ Tw.mr_3 ] ] [ text "white3" ]
+                    , white4 Indigo [ css [ Tw.mr_3 ] ] [ text "white4" ]
+                    , white5 Indigo [ css [ Tw.mr_3 ] ] [ text "white5" ]
+                    ]
+              )
             ]

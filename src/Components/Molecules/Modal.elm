@@ -1,5 +1,6 @@
 module Components.Molecules.Modal exposing (ConfirmModel, DocState, SharedDocState, confirm, doc, initDocState)
 
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css
 import Dict exposing (Dict)
@@ -7,8 +8,8 @@ import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.Custom exposing (Msg)
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Attribute, Html, button, div, h3, p, span, text)
-import Html.Styled.Attributes exposing (css, id, type_)
+import Html.Styled exposing (Html, div, h3, p, span, text)
+import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
 import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, role)
@@ -50,10 +51,8 @@ confirm model =
                     ]
                 ]
             , div [ css [ Tw.mt_5, Bp.sm [ Tw.mt_4, Tw.flex, Tw.flex_row_reverse ] ] ]
-                [ button [ type_ "button", onClick model.onConfirm, css [ Tw.w_full, Tw.inline_flex, Tw.justify_center, Tw.rounded_md, Tw.border, Tw.border_transparent, Tw.shadow_sm, Tw.px_4, Tw.py_2, TwColor.render Bg model.color L600, Tw.text_base, Tw.font_medium, Tw.text_white, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring model.color L500 ], Css.hover [ TwColor.render Bg model.color L700 ], Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ]
-                    [ text model.confirm ]
-                , button [ type_ "button", onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.inline_flex, Tw.justify_center, Tw.rounded_md, Tw.border, Tw.border_gray_300, Tw.shadow_sm, Tw.px_4, Tw.py_2, Tw.bg_white, Tw.text_base, Tw.font_medium, Tw.text_gray_700, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Tw.ring_indigo_500 ], Css.hover [ Tw.bg_gray_50 ], Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ]
-                    [ text model.cancel ]
+                [ Button.primary3 model.color [ onClick model.onConfirm, css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text model.confirm ]
+                , Button.white3 model.color [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
                 ]
             ]
         }
@@ -135,11 +134,6 @@ component name buildComponent =
     )
 
 
-btn : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
-btn color attrs content =
-    button ([ type_ "button", css [ Tw.w_full, Tw.inline_flex, Tw.justify_center, Tw.rounded_md, Tw.border, Tw.border_transparent, Tw.shadow_sm, Tw.px_4, Tw.py_2, TwColor.render Bg color L600, Tw.text_base, Tw.font_medium, Tw.text_white, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring color L500 ], Css.hover [ TwColor.render Bg color L700 ], Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] ++ attrs) content
-
-
 doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Modal"
@@ -147,7 +141,7 @@ doc =
             [ component "confirm"
                 (\isOpen setIsOpen ->
                     div []
-                        [ btn Red [ onClick (setIsOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Indigo [ onClick (setIsOpen True) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
                             , icon = Exclamation
@@ -165,7 +159,7 @@ doc =
             , component "modal"
                 (\isOpen setIsOpen ->
                     div []
-                        [ btn Red [ onClick (setIsOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Indigo [ onClick (setIsOpen True) ] [ text "Click me!" ]
                         , modal
                             { id = "modal-title"
                             , onBackgroundClick = setIsOpen False
