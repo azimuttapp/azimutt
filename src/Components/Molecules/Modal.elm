@@ -1,4 +1,4 @@
-module Components.Molecules.Modal exposing (DocModel, Model, SharedState, confirm, doc, docInit)
+module Components.Molecules.Modal exposing (DocModel, Model, SharedState, basic, doc, docInit)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css
@@ -9,7 +9,6 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Attribute, Html, button, div, h3, p, span, text)
 import Html.Styled.Attributes exposing (css, id, type_)
 import Html.Styled.Events exposing (onClick)
-import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, role)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
@@ -30,13 +29,38 @@ type alias Model msg =
     }
 
 
-confirm : Model msg -> Bool -> Html msg
-confirm model isOpen =
-    div [ B.cond isOpen (css [ Tw.fixed, Tw.z_10, Tw.inset_0, Tw.overflow_y_auto ]) (css [ Tw.hidden ]), ariaLabelledby model.id, role "dialog", ariaModal True ]
+basic : Model msg -> Bool -> Html msg
+basic model isOpen =
+    let
+        modalContainer : List Css.Style
+        modalContainer =
+            if isOpen then
+                []
+
+            else
+                [ Tw.pointer_events_none ]
+
+        backgroundOverlay : List Css.Style
+        backgroundOverlay =
+            if isOpen then
+                [ Tw.transition_opacity, Tw.opacity_100, Tw.ease_in, Tw.duration_200 ]
+
+            else
+                [ Tw.transition_opacity, Tw.opacity_0, Tw.ease_out, Tw.duration_300 ]
+
+        modalPanel : List Css.Style
+        modalPanel =
+            if isOpen then
+                [ Tw.transition_all, Tw.opacity_100, Tw.translate_y_0, Bp.sm [ Tw.scale_100 ], Tw.ease_in, Tw.duration_200 ]
+
+            else
+                [ Tw.transition_all, Tw.opacity_0, Tw.translate_y_4, Bp.sm [ Tw.translate_y_0, Tw.scale_95 ], Tw.ease_out, Tw.duration_300 ]
+    in
+    div [ ariaLabelledby model.id, role "dialog", ariaModal True, css ([ Tw.fixed, Tw.z_10, Tw.inset_0, Tw.overflow_y_auto ] ++ modalContainer) ]
         [ div [ css [ Tw.flex, Tw.items_end, Tw.justify_center, Tw.min_h_screen, Tw.pt_4, Tw.px_4, Tw.pb_20, Tw.text_center, Bp.sm [ Tw.block, Tw.p_0 ] ] ]
-            [ div [ css [ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75 ], ariaHidden True ] []
+            [ div [ ariaHidden True, css ([ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75 ] ++ backgroundOverlay) ] []
             , {- This element is to trick the browser into centering the modal contents. -} span [ css [ Tw.hidden, Bp.sm [ Tw.inline_block, Tw.align_middle, Tw.h_screen ] ], ariaHidden True ] [ text "\u{200B}" ]
-            , div [ css [ Tw.inline_block, Tw.align_bottom, Tw.bg_white, Tw.rounded_lg, Tw.px_4, Tw.pt_5, Tw.pb_4, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.align_middle, Tw.max_w_lg, Tw.w_full, Tw.p_6 ] ] ]
+            , div [ css ([ Tw.inline_block, Tw.align_bottom, Tw.bg_white, Tw.rounded_lg, Tw.px_4, Tw.pt_5, Tw.pb_4, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.align_middle, Tw.max_w_lg, Tw.w_full, Tw.p_6 ] ] ++ modalPanel) ]
                 [ div [ css [ Bp.sm [ Tw.flex, Tw.items_start ] ] ]
                     [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, TwColor.render Bg model.color L100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
                         [ Icon.view model.icon [ TwColor.render Text model.color L600 ]
@@ -91,11 +115,11 @@ doc : Chapter (SharedState x)
 doc =
     Chapter.chapter "Modal"
         |> Chapter.withStatefulComponentList
-            [ ( "confirm"
+            [ ( "basic"
               , \{ modal } ->
                     div []
                         [ btn Red [ onClick (update (\m -> { m | confirmOpen = True })) ] [ text "Click me!" ]
-                        , confirm
+                        , basic
                             { id = "modal-title"
                             , icon = Exclamation
                             , color = Red
@@ -114,6 +138,6 @@ doc =
 Modals are quite complex, especially due to their animation.
 
 Here is a basic one:
-<component with-label="confirm" />
+<component with-label="basic" />
 
 Awesome, isn't it?"""
