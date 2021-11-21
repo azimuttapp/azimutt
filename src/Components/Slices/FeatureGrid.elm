@@ -19,27 +19,27 @@ coloredSlice =
             , p [ css [ mt_4, max_w_3xl, text_lg, text_purple_200 ] ]
                 [ text "Your new weapons to dig into your schema:" ]
             , div [ css [ mt_12, grid, grid_cols_1, gap_x_6, gap_y_12, text_white, lg [ mt_16, grid_cols_3, gap_x_8, gap_y_16 ], sm [ grid_cols_2 ] ] ]
-                [ item (Icon.view Inbox [])
+                [ item (Icon.outline Inbox [])
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
                               Seeing only what you need is vital to understand how it works. This is true for tables but also for columns and relations!""" ]
-                , item (Icon.view DocumentSearch [])
+                , item (Icon.outline DocumentSearch [])
                     "Search"
                     [ text """Search is awesome, don't know where to start? Just type a few words and you will have related tables and columns ranked by relevance.
                               Looking at table and column names, but also comments, keys or relations.""" ]
-                , item (Icon.view Photograph [])
+                , item (Icon.outline Photograph [])
                     "Layouts"
                     [ text """Your database is probably supporting many use cases, why not save them and move from one to an other ?
                               Layouts are here for that: select tables and columns related to a feature and save them as a layout. So you can easily switch between them.""" ]
-                , item (Icon.view Link [])
+                , item (Icon.outline Link [])
                     "Relation exploration"
                     [ text """Start from a table and look at its relations to display more.
                               Outgoing, of course (foreign keys), but incoming ones also (foreign keys from other tables)!""" ]
-                , item (Icon.view Link [])
+                , item (Icon.outline Link [])
                     "Relation search"
                     [ text """Did you ever ask how to join two tables ?
                               Azimutt can help showing all the possible paths between two tables. But also between a table and a column!""" ]
-                , item (Icon.view Link [])
+                , item (Icon.outline Link [])
                     "Lorem Ipsum"
                     [ text "You came this far ??? Awesome! You seem quite interested and ready to dig in ^^", br [] [], text """
                             The best you can do now is to """, a [ href (Route.toHref Route.App), class "link" ] [ text "try it out" ], text " right away :D" ]
@@ -96,7 +96,7 @@ card model =
         [ div [ css [ flow_root, bg_gray_50, rounded_lg, px_6, pb_8 ] ]
             [ div [ css [ neg_mt_6 ] ]
                 [ div []
-                    [ span [ css [ inline_flex, items_center, justify_center, p_3, rounded_md, shadow_lg, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ Icon.view model.icon [ text_white ] ]
+                    [ span [ css [ inline_flex, items_center, justify_center, p_3, rounded_md, shadow_lg, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ Icon.outline model.icon [ text_white ] ]
                     ]
                 , h3 [ css [ mt_8, text_lg, font_medium, text_gray_900, tracking_tight ] ] [ text model.title ]
                 , p [ css [ mt_5, text_base, text_gray_500 ] ] model.description

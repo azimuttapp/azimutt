@@ -172,7 +172,7 @@ viewHome shared =
         , cards =
             [ { icon = ArrowCircleDown, title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at your fingertips. Whatever happens." ] }
             , { icon = ShieldCheck, title = "Everything is local", description = [ text "Don't worry about privacy, everything stays on your computer, this is your data! #localStorage" ] }
-            , { icon = Github
+            , { icon = DocumentSearch
               , title = "Fully open source"
               , description =
                     [ text "Want to have a look? Everything is on "

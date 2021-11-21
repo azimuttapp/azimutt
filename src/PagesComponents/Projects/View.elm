@@ -175,7 +175,7 @@ viewSearch search =
         [ div [ css [ max_w_lg, w_full, lg [ max_w_xs ] ] ]
             [ label [ for search.id, css [ sr_only ] ] [ text "Search" ]
             , div [ css [ relative, text_gray_400, focusWithin [ text_gray_600 ] ] ]
-                [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.view SearchSolid [] ]
+                [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.solid Icon.Search [] ]
                 , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white, border_white ], sm [ text_sm ] ] ] []
                 ]
             ]
@@ -186,7 +186,7 @@ viewNotificationsButton : Html msg
 viewNotificationsButton =
     button [ type_ "button", css [ bg_indigo_600, flex_shrink_0, rounded_full, p_1, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white ] ] ]
         [ span [ css [ sr_only ] ] [ text "View notifications" ]
-        , Icon.view Bell []
+        , Icon.outline Bell []
         ]
 
 
@@ -218,8 +218,8 @@ viewMobileMenuButton mobileMenu isOpen =
     div [ css [ flex, lg [ hidden ] ] ]
         [ button [ type_ "button", onClick ToggleMobileMenu, css [ bg_indigo_600, p_2, rounded_md, inline_flex, items_center, justify_center, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white, bg_indigo_500, bg_opacity_75 ] ], ariaControls mobileMenu.id, ariaExpanded isOpen ]
             [ span [ css [ sr_only ] ] [ text "Open main menu" ]
-            , Icon.view Menu [ B.cond isOpen hidden block ]
-            , Icon.view X [ B.cond isOpen block hidden ]
+            , Icon.outline Menu [ B.cond isOpen hidden block ]
+            , Icon.outline X [ B.cond isOpen block hidden ]
             ]
         ]
 
@@ -248,7 +248,7 @@ viewMobileMenu navigation profileDropdown mobileMenu activeMenu isOpen =
                     ]
                 , button [ type_ "button", css [ ml_auto, bg_indigo_600, flex_shrink_0, rounded_full, p_1, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white ] ] ]
                     [ span [ css [ sr_only ] ] [ text "View notifications" ]
-                    , Icon.view Bell []
+                    , Icon.outline Bell []
                     ]
                 ]
             , div [ css [ mt_3, px_2, space_y_1 ] ]
@@ -320,7 +320,7 @@ viewNoProjects =
 viewFirstProject : Html msg
 viewFirstProject =
     a [ href (Route.toHref Route.Projects__New), css [ mt_6, relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, py_12, text_center, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ border_gray_400 ] ] ]
-        [ Icon.view DocumentAdd [ mx_auto, h_12, w_12 ]
+        [ Icon.outline DocumentAdd [ mx_auto, h_12, w_12 ]
         , span [ css [ mt_2, block, text_sm, font_medium ] ] [ text "Create a new project" ]
         ]
 
@@ -329,7 +329,7 @@ viewSampleProject : String -> TwColor -> Icon -> String -> List (Html msg) -> Ht
 viewSampleProject url color icon title description =
     li [ css [ flow_root ] ]
         [ div [ css [ relative, neg_m_2, p_2, flex, items_center, space_x_4, rounded_xl, focusWithin [ ring_2, ring_indigo_500 ], hover [ bg_gray_50 ] ] ]
-            [ div [ css [ flex_shrink_0, flex, items_center, justify_center, h_16, w_16, rounded_lg, TwColor.render Bg color L500 ] ] [ Icon.view icon [ text_white ] ]
+            [ div [ css [ flex_shrink_0, flex, items_center, justify_center, h_16, w_16, rounded_lg, TwColor.render Bg color L500 ] ] [ Icon.outline icon [ text_white ] ]
             , div []
                 [ h3 [ css [ text_sm, font_medium, text_gray_900 ] ]
                     [ a [ href url, css [ focus [ outline_none ] ] ]
@@ -355,9 +355,9 @@ viewProjectCard zone project =
             ]
         , div [ css [ flex, divide_x, divide_gray_200 ] ]
             [ button [ type_ "button", title "Delete this project", onClick (DeleteProject project), css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
-                [ Icon.view Trash [ text_gray_400 ] ]
+                [ Icon.outline Trash [ text_gray_400 ] ]
             , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ flex_grow, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, hover [ text_gray_500 ] ] ]
-                [ Icon.view ArrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]
+                [ Icon.outline ArrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]
             ]
         ]
 
@@ -366,7 +366,7 @@ viewNewProject : Html msg
 viewNewProject =
     li [ css [ col_span_1 ] ]
         [ a [ href (Route.toHref Route.Projects__New), css [ relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, py_12, text_center, text_gray_200, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ border_gray_400, text_gray_400 ] ] ]
-            [ Icon.view DocumentAdd [ mx_auto, h_12, w_12 ]
+            [ Icon.outline DocumentAdd [ mx_auto, h_12, w_12 ]
             , span [ css [ mt_2, block, text_sm, font_medium ] ] [ text "Create a new project" ]
             ]
         ]

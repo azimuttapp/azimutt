@@ -83,9 +83,7 @@ doc =
                         }
                         (\model ->
                             button [ type_ "button", id model.id, ariaExpanded True, ariaHaspopup True, onClick (setIsOpen (not isOpen)), css [ Tw.inline_flex, Tw.justify_center, Tw.w_full, Tw.rounded_md, Tw.border, Tw.border_gray_300, Tw.shadow_sm, Tw.px_4, Tw.py_2, Tw.bg_white, Tw.text_sm, Tw.font_medium, Tw.text_gray_700, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Tw.ring_offset_gray_100, Tw.ring_indigo_500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
-                                [ text "Options"
-                                , {- Heroicon name: solid/chevron-down -} Icon.view ChevronDown []
-                                ]
+                                [ text "Options", Icon.solid ChevronDown [] ]
                         )
                         (\_ ->
                             [ a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-0" ] [ text "Account settings" ]

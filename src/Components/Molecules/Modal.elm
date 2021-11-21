@@ -41,7 +41,7 @@ confirm model isOpen =
         }
         [ div [ css [ Bp.sm [ Tw.flex, Tw.items_start ] ] ]
             [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, TwColor.render Bg model.color L100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
-                [ Icon.view model.icon [ TwColor.render Text model.color L600 ]
+                [ Icon.outline model.icon [ TwColor.render Text model.color L600 ]
                 ]
             , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
                 [ h3 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ], id model.id ]

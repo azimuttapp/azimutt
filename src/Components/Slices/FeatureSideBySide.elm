@@ -117,7 +117,7 @@ details position model =
 
 featureIcon : Icon -> Html msg
 featureIcon icon =
-    span [ css [ h_12, w_12, rounded_md, flex, items_center, justify_center, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ Icon.view icon [ text_white ] ]
+    span [ css [ h_12, w_12, rounded_md, flex, items_center, justify_center, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ Icon.outline icon [ text_white ] ]
 
 
 featureDescription : Description msg -> Html msg
