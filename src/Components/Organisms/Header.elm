@@ -1,15 +1,24 @@
-module Components.Organisms.Header exposing (Brand, ExtLink, LeftLinksModel, LeftLinksTheme, RightLinksModel, RightLinksTheme, doc, leftLinks, leftLinksIndigo, leftLinksWhite, rightLinks, rightLinksIndigo, rightLinksWhite)
+module Components.Organisms.Header exposing (AppMobileMenu, AppModel, AppNavigation, AppNotifications, AppProfile, AppSearch, AppState, Brand, DocState, ExtLink, LeftLinksModel, LeftLinksTheme, RightLinksModel, RightLinksTheme, SharedDocState, app, doc, initDocState, leftLinks, leftLinksIndigo, leftLinksWhite, rightLinks, rightLinksIndigo, rightLinksWhite)
 
-import Css exposing (hover)
-import ElmBook.Chapter exposing (chapter, renderComponentList)
+import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Css exposing (Style, focus, hover)
+import ElmBook exposing (Msg)
+import ElmBook.Actions as Actions
+import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, div, header, img, nav, span, text)
-import Html.Styled.Attributes exposing (alt, css, href, src)
+import Html.Styled exposing (Html, a, button, div, header, img, input, label, nav, span, text)
+import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, tabindex, type_, width)
+import Html.Styled.Events exposing (onClick)
+import Libs.Bool as B
 import Libs.Html.Styled exposing (extLink)
-import Libs.Html.Styled.Attributes exposing (ariaLabel)
+import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaLabel, role)
+import Libs.Maybe as M
 import Libs.Models exposing (Image, Link)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Tailwind.Utilities exposing (focusWithin)
 import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_500, border_none, border_transparent, flex, flex_1, flex_wrap, font_medium, h_10, h_8, hidden, inline_block, items_center, justify_between, justify_center, justify_start, max_w_7xl, ml_10, ml_3, mx_auto, px_4, px_6, px_8, py_2, py_4, py_6, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, sr_only, text_2xl, text_base, text_gray_500, text_gray_900, text_indigo_50, text_indigo_600, text_white, w_0, w_auto, w_full)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_300, border_indigo_400, border_indigo_500, border_indigo_700, border_none, border_opacity_25, border_t, border_transparent, border_white, flex, flex_1, flex_shrink_0, flex_wrap, font_medium, h_10, h_16, h_8, hidden, inline_block, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, justify_start, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_3, mx_auto, outline_none, p_1, p_2, pb_3, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_2, py_4, py_6, relative, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white, rounded_full, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, space_y_1, sr_only, text_2xl, text_base, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_200, text_indigo_300, text_indigo_50, text_indigo_600, text_sm, text_white, w_0, w_10, w_48, w_8, w_auto, w_full)
 
 
 type alias RightLinksModel msg =
@@ -106,6 +115,183 @@ leftLinks theme model =
         ]
 
 
+type alias AppModel msg =
+    { brand : Brand
+    , navigation : AppNavigation msg
+    , search : Maybe AppSearch
+    , notifications : Maybe AppNotifications
+    , profile : Maybe (AppProfile msg)
+    , mobileMenu : AppMobileMenu msg
+    }
+
+
+type alias AppNavigation msg =
+    { links : List Link
+    , onClick : Link -> msg
+    }
+
+
+type alias AppSearch =
+    { id : HtmlId }
+
+
+type alias AppNotifications =
+    {}
+
+
+type alias AppProfile msg =
+    { id : HtmlId
+    , avatar : String
+    , firstName : String
+    , lastName : String
+    , email : String
+    , links : List Link
+    , onClick : msg
+    }
+
+
+type alias AppMobileMenu msg =
+    { id : HtmlId
+    , onClick : msg
+    }
+
+
+type alias AppState =
+    { navigationActive : String
+    , mobileMenuOpen : Bool
+    , profileOpen : Bool
+    }
+
+
+app : AppModel msg -> AppState -> Html msg
+app model state =
+    nav [ css [ bg_indigo_600, border_b, border_indigo_300, border_opacity_25, lg [ border_none ] ] ]
+        [ div [ css [ max_w_7xl, mx_auto, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
+            [ div [ css [ relative, h_16, flex, items_center, justify_between, lg [ border_b, border_indigo_400, border_opacity_25 ] ] ]
+                [ div [ css [ px_2, flex, items_center, lg [ px_0 ] ] ]
+                    [ div [ css [ flex_shrink_0 ] ] [ appBrand model.brand ]
+                    , div [ css [ hidden, lg [ block, ml_10 ] ] ] [ appNavigation model.navigation state.navigationActive ]
+                    ]
+                , model.search |> M.mapOrElse appSearch (div [] [])
+                , appMobileMenuButton model.mobileMenu state.mobileMenuOpen
+                , div [ css [ hidden, lg [ block, ml_4 ] ] ]
+                    [ div [ css [ flex, items_center ] ]
+                        [ model.notifications |> M.mapOrElse appNotifications (div [] [])
+                        , model.profile |> M.mapOrElse (appProfile state.profileOpen) (div [] [])
+                        ]
+                    ]
+                ]
+            ]
+        , appMobileMenu model.navigation model.notifications model.profile model.mobileMenu state.navigationActive state.mobileMenuOpen
+        ]
+
+
+appBrand : Brand -> Html msg
+appBrand brand =
+    a [ href brand.link.url ] [ img [ css [ block, h_8, w_8 ], src brand.img.src, alt brand.img.alt, width 32, height 32 ] [] ]
+
+
+appNavigation : AppNavigation msg -> String -> Html msg
+appNavigation navigation navigationActive =
+    div [ css [ flex, space_x_4 ] ] (navigation.links |> List.map (appNavigationLink [ text_sm ] navigationActive navigation.onClick))
+
+
+appNavigationLink : List Style -> String -> (Link -> msg) -> Link -> Html msg
+appNavigationLink styles navigationActive navigationOnClick link =
+    if link.text == navigationActive then
+        a [ href link.url, onClick (navigationOnClick link), css ([ text_white, rounded_md, py_2, px_3, font_medium, bg_indigo_700 ] ++ styles), ariaCurrent "page" ] [ text link.text ]
+
+    else
+        a [ href link.url, onClick (navigationOnClick link), css ([ text_white, rounded_md, py_2, px_3, font_medium, hover [ bg_indigo_500, bg_opacity_75 ] ] ++ styles) ] [ text link.text ]
+
+
+appSearch : AppSearch -> Html msg
+appSearch search =
+    div [ css [ flex_1, px_2, flex, justify_center, lg [ ml_6, justify_end ] ] ]
+        [ div [ css [ max_w_lg, w_full, lg [ max_w_xs ] ] ]
+            [ label [ for search.id, css [ sr_only ] ] [ text "Search" ]
+            , div [ css [ relative, text_gray_400, focusWithin [ text_gray_600 ] ] ]
+                [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.solid Search [] ]
+                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white, border_white ], sm [ text_sm ] ] ] []
+                ]
+            ]
+        ]
+
+
+appMobileMenuButton : AppMobileMenu msg -> Bool -> Html msg
+appMobileMenuButton mobileMenu isOpen =
+    div [ css [ flex, lg [ hidden ] ] ]
+        [ button [ type_ "button", onClick mobileMenu.onClick, css [ bg_indigo_600, p_2, rounded_md, inline_flex, items_center, justify_center, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white, bg_indigo_500, bg_opacity_75 ] ], ariaControls mobileMenu.id, ariaExpanded isOpen ]
+            [ span [ css [ sr_only ] ] [ text "Open main menu" ]
+            , Icon.outline Menu [ B.cond isOpen hidden block ]
+            , Icon.outline X [ B.cond isOpen block hidden ]
+            ]
+        ]
+
+
+appNotifications : AppNotifications -> Html msg
+appNotifications _ =
+    button [ type_ "button", css [ ml_auto, bg_indigo_600, flex_shrink_0, rounded_full, p_1, text_indigo_200, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ], hover [ text_white ] ] ]
+        [ span [ css [ sr_only ] ] [ text "View notifications" ]
+        , Icon.outline Bell []
+        ]
+
+
+appProfile : Bool -> AppProfile msg -> Html msg
+appProfile isOpen profile =
+    Dropdown.dropdown { id = profile.id, direction = BottomLeft, isOpen = isOpen }
+        (\m ->
+            button [ type_ "button", id m.id, onClick profile.onClick, css [ ml_3, bg_indigo_600, rounded_full, flex, text_sm, text_white, focus [ outline_none, ring_2, ring_offset_2, ring_offset_indigo_600, ring_white ] ], ariaExpanded isOpen, ariaHaspopup True ]
+                [ span [ css [ sr_only ] ] [ text "Open user menu" ]
+                , img [ css [ rounded_full, h_8, w_8 ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
+                ]
+        )
+        (\_ ->
+            div [ css [ w_48 ] ]
+                (profile.links |> List.map (\link -> a [ href link.url, role "menuitem", tabindex -1, css [ block, py_2, px_4, text_sm, text_gray_700, hover [ bg_gray_100 ] ] ] [ text link.text ]))
+        )
+
+
+appMobileMenu : AppNavigation msg -> Maybe AppNotifications -> Maybe (AppProfile msg) -> AppMobileMenu msg -> String -> Bool -> Html msg
+appMobileMenu navigation notifications profile mobileMenu activeMenu isOpen =
+    let
+        open : List Style
+        open =
+            if isOpen then
+                []
+
+            else
+                [ hidden ]
+    in
+    div [ css ([ lg [ hidden ] ] ++ open), id mobileMenu.id ]
+        [ appMobileNavigation navigation activeMenu
+        , profile
+            |> M.mapOrElse
+                (\p ->
+                    div [ css [ pt_4, pb_3, border_t, border_indigo_700 ] ]
+                        [ div [ css [ px_5, flex, items_center ] ]
+                            [ div [ css [ flex_shrink_0 ] ]
+                                [ img [ css [ rounded_full, h_10, w_10 ], src p.avatar, alt "Your avatar", width 40, height 40 ] []
+                                ]
+                            , div [ css [ ml_3 ] ]
+                                [ div [ css [ text_base, font_medium, text_white ] ] [ text (p.firstName ++ " " ++ p.lastName) ]
+                                , div [ css [ text_sm, font_medium, text_indigo_300 ] ] [ text p.email ]
+                                ]
+                            , notifications |> M.mapOrElse appNotifications (div [] [])
+                            ]
+                        , div [ css [ mt_3, px_2, space_y_1 ] ]
+                            (p.links |> List.map (\link -> a [ href link.url, css [ block, rounded_md, py_2, px_3, text_base, font_medium, text_white, hover [ bg_indigo_500, bg_opacity_75 ] ] ] [ text link.text ]))
+                        ]
+                )
+                (div [] [])
+        ]
+
+
+appMobileNavigation : AppNavigation msg -> String -> Html msg
+appMobileNavigation navigation navigationActive =
+    div [ css [ px_2, pt_2, pb_3, space_y_1 ] ] (navigation.links |> List.map (appNavigationLink [ block, text_base ] navigationActive navigation.onClick))
+
+
 
 -- DOCUMENTATION
 
@@ -118,6 +304,39 @@ logoWhite =
 logoIndigo : String
 logoIndigo =
     "https://tailwindui.com/img/logos/workflow-mark-indigo-600.svg"
+
+
+appModel : AppModel (Msg (SharedDocState x))
+appModel =
+    { brand = { img = { src = logoWhite, alt = "Workflow" }, link = { url = "#", text = "Workflow" } }
+    , navigation =
+        { links =
+            [ { url = "#", text = "Dashboard" }
+            , { url = "#", text = "Team" }
+            , { url = "#", text = "Projects" }
+            , { url = "#", text = "Calendar" }
+            , { url = "#", text = "Reports" }
+            ]
+        , onClick = \link -> updateAppState (\a -> { a | navigationActive = link.text })
+        }
+    , search = Just { id = "search" }
+    , notifications = Just {}
+    , profile =
+        Just
+            { id = "profile-dropdown"
+            , avatar = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+            , firstName = "John"
+            , lastName = "Doe"
+            , email = "john.doe@mail.com"
+            , links =
+                [ { url = "#", text = "Your profile" }
+                , { url = "#", text = "Settings" }
+                , { url = "#", text = "Sign out" }
+                ]
+            , onClick = updateAppState (\a -> { a | profileOpen = not a.profileOpen })
+            }
+    , mobileMenu = { id = "mobile-menu", onClick = updateAppState (\a -> { a | mobileMenuOpen = not a.mobileMenuOpen }) }
+    }
 
 
 rightLinksModel : String -> RightLinksModel msg
@@ -146,14 +365,43 @@ leftLinksModel img =
     }
 
 
-doc : Chapter x
+type alias SharedDocState x =
+    { x | headerDocState : DocState }
+
+
+type alias DocState =
+    { app : AppState }
+
+
+initDocState : DocState
+initDocState =
+    { app =
+        { navigationActive = "Dashboard"
+        , mobileMenuOpen = False
+        , profileOpen = False
+        }
+    }
+
+
+updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
+updateDocState transform =
+    Actions.updateState (\s -> { s | headerDocState = transform s.headerDocState })
+
+
+updateAppState : (AppState -> AppState) -> Msg (SharedDocState x)
+updateAppState transform =
+    updateDocState (\d -> { d | app = transform d.app })
+
+
+doc : Chapter (SharedDocState x)
 doc =
-    chapter "Header"
-        |> renderComponentList
-            [ ( "rightLinksIndigo", rightLinksIndigo (rightLinksModel logoWhite) )
-            , ( "rightLinksWhite", rightLinksWhite (rightLinksModel logoIndigo) )
-            , ( "rightLinks", rightLinks { bg = bg_white, text = [] } (rightLinksModel logoIndigo) )
-            , ( "leftLinksIndigo", leftLinksIndigo (leftLinksModel logoWhite) )
-            , ( "leftLinksWhite", leftLinksWhite (leftLinksModel logoIndigo) )
-            , ( "leftLinks", leftLinks { bg = bg_white, links = [], secondary = [], primary = [] } (leftLinksModel logoIndigo) )
+    Chapter.chapter "Header"
+        |> Chapter.renderStatefulComponentList
+            [ ( "app", \{ headerDocState } -> app appModel headerDocState.app )
+            , ( "rightLinksIndigo", \_ -> rightLinksIndigo (rightLinksModel logoWhite) )
+            , ( "rightLinksWhite", \_ -> rightLinksWhite (rightLinksModel logoIndigo) )
+            , ( "rightLinks", \_ -> rightLinks { bg = bg_white, text = [] } (rightLinksModel logoIndigo) )
+            , ( "leftLinksIndigo", \_ -> leftLinksIndigo (leftLinksModel logoWhite) )
+            , ( "leftLinksWhite", \_ -> leftLinksWhite (leftLinksModel logoIndigo) )
+            , ( "leftLinks", \_ -> leftLinks { bg = bg_white, links = [], secondary = [], primary = [] } (leftLinksModel logoIndigo) )
             ]

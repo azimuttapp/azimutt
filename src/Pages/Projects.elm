@@ -36,8 +36,8 @@ type alias Msg =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { activeMenu = Just "Dashboard"
-      , profileDropdownOpen = False
+    ( { navigationActive = "Dashboard"
+      , profileOpen = False
       , mobileMenuOpen = False
       }
     , Cmd.batch [ Ports.loadProjects ]
@@ -52,10 +52,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         SelectMenu menu ->
-            ( { model | activeMenu = menu }, Cmd.none )
+            ( { model | navigationActive = menu }, Cmd.none )
 
         ToggleProfileDropdown ->
-            ( { model | profileDropdownOpen = not model.profileDropdownOpen }, Cmd.none )
+            ( { model | profileOpen = not model.profileOpen }, Cmd.none )
 
         ToggleMobileMenu ->
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )

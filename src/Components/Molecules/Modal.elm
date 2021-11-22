@@ -4,9 +4,9 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css
 import Dict exposing (Dict)
+import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
-import ElmBook.Custom exposing (Msg)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, h3, p, span, text)
 import Html.Styled.Attributes exposing (css, id)

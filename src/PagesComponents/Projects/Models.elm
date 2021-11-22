@@ -4,14 +4,14 @@ import Models.Project exposing (Project)
 
 
 type alias Model =
-    { activeMenu : Maybe String
-    , profileDropdownOpen : Bool
+    { navigationActive : String
+    , profileOpen : Bool
     , mobileMenuOpen : Bool
     }
 
 
 type Msg
-    = SelectMenu (Maybe String)
+    = SelectMenu String
     | ToggleProfileDropdown
     | ToggleMobileMenu
     | DeleteProject Project

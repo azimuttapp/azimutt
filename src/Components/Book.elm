@@ -34,6 +34,7 @@ import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 type alias DocState =
     { dropdownDocState : Dropdown.DocState
     , modalDocState : Modal.DocState
+    , headerDocState : Header.DocState
     }
 
 
@@ -41,6 +42,7 @@ init : DocState
 init =
     { dropdownDocState = Dropdown.initDocState
     , modalDocState = Modal.initDocState
+    , headerDocState = Header.initDocState
     }
 
 
