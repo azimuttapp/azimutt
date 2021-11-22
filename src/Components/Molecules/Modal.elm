@@ -21,10 +21,10 @@ import Tailwind.Utilities as Tw
 
 type alias ConfirmModel msg =
     { id : HtmlId
-    , icon : Icon
     , color : TwColor
+    , icon : Icon
     , title : String
-    , description : String
+    , message : Html msg
     , confirm : String
     , cancel : String
     , onConfirm : msg
@@ -47,7 +47,7 @@ confirm model isOpen =
                 [ h3 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ], id model.id ]
                     [ text model.title ]
                 , div [ css [ Tw.mt_2 ] ]
-                    [ p [ css [ Tw.text_sm, Tw.text_gray_500 ] ] [ text model.description ]
+                    [ p [ css [ Tw.text_sm, Tw.text_gray_500 ] ] [ model.message ]
                     ]
                 ]
             ]
@@ -143,10 +143,10 @@ doc =
                         [ Button.primary3 Indigo [ onClick (setIsOpen True) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
-                            , icon = Exclamation
                             , color = Red
+                            , icon = Exclamation
                             , title = "Deactivate account"
-                            , description = "Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
+                            , message = text "Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
                             , confirm = "Deactivate"
                             , cancel = "Cancel"
                             , onConfirm = setIsOpen False

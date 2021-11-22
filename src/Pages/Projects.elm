@@ -1,7 +1,11 @@
 module Pages.Projects exposing (Model, Msg, page)
 
+import Components.Atoms.Icon exposing (Icon(..))
 import Gen.Params.Projects exposing (Params)
-import Html.Styled as Styled
+import Html.Styled as Styled exposing (text)
+import Libs.Bool as B
+import Libs.Models.TwColor exposing (TwColor(..))
+import Libs.Task as T
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
@@ -38,6 +42,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { navigationActive = "Dashboard"
       , mobileMenuOpen = False
+      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", cmd = T.send Noop, isOpen = False }
       }
     , Cmd.batch [ Ports.loadProjects ]
     )
@@ -58,6 +63,15 @@ update msg model =
 
         DeleteProject project ->
             ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Tracking.events.deleteProject project) ] )
+
+        ConfirmOpen confirm ->
+            ( { model | confirm = { confirm | isOpen = True } }, Cmd.none )
+
+        ConfirmAnswer answer cmd ->
+            ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )
+
+        Noop ->
+            ( model, Cmd.none )
 
 
 

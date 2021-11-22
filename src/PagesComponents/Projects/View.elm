@@ -1,6 +1,7 @@
 module PagesComponents.Projects.View exposing (viewProjects)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.Modal as Modal
 import Components.Organisms.Header as Header
 import Conf exposing (theme)
 import Css exposing (focus, hover)
@@ -16,8 +17,9 @@ import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.String as S
 import Libs.Tailwind.Utilities exposing (focusWithin)
+import Libs.Task as T
 import Models.Project exposing (Project)
-import PagesComponents.Projects.Models exposing (Model, Msg(..))
+import PagesComponents.Projects.Models exposing (Confirm, Model, Msg(..))
 import Shared exposing (StoredProjects(..))
 import Tailwind.Breakpoints exposing (lg, md, sm)
 import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_gray_50, bg_indigo_600, bg_indigo_700, bg_white, block, border, border_2, border_dashed, border_gray_200, border_gray_400, col_span_1, divide_gray_200, divide_x, divide_y, flex, flex_col, flex_grow, flex_grow_0, flex_shrink_0, flow_root, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_12, h_16, h_full, inline_flex, inset_0, items_center, justify_center, max_w_7xl, ml_2, ml_3, mt_1, mt_2, mt_6, mx_auto, neg_m_2, neg_mt_32, outline_none, p_2, p_6, p_8, pb_12, pb_32, pb_4, pt_6, px_4, px_6, px_8, py_10, py_12, py_2, py_4, relative, ring_2, ring_indigo_500, ring_offset_2, rounded_lg, rounded_md, rounded_xl, shadow, shadow_lg, shadow_sm, space_x_4, text_3xl, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_700, text_gray_900, text_indigo_600, text_lg, text_sm, text_white, w_12, w_16, w_full)
@@ -52,6 +54,7 @@ viewProjects shared model =
             [ div [ css [ bg_white, rounded_lg, shadow, p_8, sm [ p_6 ] ] ] [ viewContent shared ]
             ]
         ]
+    , viewConfirm model.confirm
     ]
 
 
@@ -152,12 +155,26 @@ viewProjectCard zone project =
                 ]
             ]
         , div [ css [ flex, divide_x, divide_gray_200 ] ]
-            [ button [ type_ "button", title "Delete this project", onClick (DeleteProject project), css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
+            [ button [ type_ "button", title "Delete this project", onClick (confirmDeleteProject project), css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
                 [ Icon.outline Trash [ text_gray_400 ] ]
             , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ flex_grow, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, hover [ text_gray_500 ] ] ]
                 [ Icon.outline ArrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]
             ]
         ]
+
+
+confirmDeleteProject : Project -> Msg
+confirmDeleteProject project =
+    ConfirmOpen
+        { color = Red
+        , icon = Trash
+        , title = "Delete project"
+        , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
+        , confirm = "Delete " ++ project.name
+        , cancel = "Cancel"
+        , cmd = T.send (DeleteProject project)
+        , isOpen = True
+        }
 
 
 viewNewProject : Html msg
@@ -168,3 +185,19 @@ viewNewProject =
             , span [ css [ mt_2, block, text_sm, font_medium ] ] [ text "Create a new project" ]
             ]
         ]
+
+
+viewConfirm : Confirm -> Html Msg
+viewConfirm c =
+    Modal.confirm
+        { id = "confirm-modal"
+        , icon = c.icon
+        , color = c.color
+        , title = c.title
+        , message = c.message
+        , confirm = c.confirm
+        , cancel = c.cancel
+        , onConfirm = ConfirmAnswer True c.cmd
+        , onCancel = ConfirmAnswer False c.cmd
+        }
+        c.isOpen
