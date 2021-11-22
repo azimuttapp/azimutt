@@ -1,4 +1,4 @@
-module Conf exposing (conf, constants, newsletterConf, schemaSamples)
+module Conf exposing (conf, constants, newsletterConf, schemaSamples, theme)
 
 import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
@@ -6,6 +6,7 @@ import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.Color exposing (Color)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
@@ -78,6 +79,11 @@ constants =
     { azimuttTwitter = "https://twitter.com/azimuttapp"
     , azimuttGithub = "https://github.com/azimuttapp/azimutt"
     }
+
+
+theme : { color : TwColor }
+theme =
+    { color = Indigo }
 
 
 newsletterConf : Newsletter.Form

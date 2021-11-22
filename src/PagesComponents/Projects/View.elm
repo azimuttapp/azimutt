@@ -2,6 +2,7 @@ module PagesComponents.Projects.View exposing (viewProjects)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Organisms.Header as Header
+import Conf exposing (theme)
 import Css exposing (focus, hover)
 import Css.Global as Global
 import Dict
@@ -27,45 +28,24 @@ viewProjects : Shared.Model -> Model -> List (Html Msg)
 viewProjects shared model =
     [ Global.global globalStyles
     , Global.global [ Global.selector "html" [ h_full, bg_gray_100 ], Global.selector "body" [ h_full ] ]
-    , div [ css [ bg_indigo_600, pb_32 ] ]
+    , div [ css [ TwColor.render Bg theme.color L600, pb_32 ] ]
         [ Header.app
-            { brand = { img = { src = "https://tailwindui.com/img/logos/workflow-mark-indigo-300.svg", alt = "Workflow" }, link = { url = Route.toHref Route.Home_, text = "Workflow" } }
+            { theme = theme
+            , brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
             , navigation =
-                { links =
-                    [ { url = "#", text = "Dashboard" }
-                    , { url = "#", text = "Team" }
-                    , { url = "#", text = "Projects" }
-                    , { url = "#", text = "Calendar" }
-                    , { url = "#", text = "Reports" }
-                    ]
+                { links = [ { url = "", text = "Dashboard" } ]
                 , onClick = \link -> SelectMenu link.text
                 }
-            , search = Just { id = "search" }
-            , notifications = Just {}
-            , profile =
-                Just
-                    { id = "profile-dropdown"
-                    , avatar = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                    , firstName = "Tom"
-                    , lastName = "Cook"
-                    , email = "tom@example.com"
-                    , links =
-                        [ { url = "#", text = "Your Profile" }
-                        , { url = "#", text = "Settings" }
-                        , { url = "#", text = "Sign out" }
-                        ]
-                    , onClick = ToggleProfileDropdown
-                    }
-            , mobileMenu =
-                { id = "mobile-menu"
-                , onClick = ToggleMobileMenu
-                }
+            , search = Nothing
+            , notifications = Nothing
+            , profile = Nothing
+            , mobileMenu = { id = "mobile-menu", onClick = ToggleMobileMenu }
             }
             { navigationActive = model.navigationActive
             , mobileMenuOpen = model.mobileMenuOpen
-            , profileOpen = model.profileOpen
+            , profileOpen = False
             }
-        , viewHeader "Dashboard"
+        , viewHeader model.navigationActive
         ]
     , div [ css [ neg_mt_32 ] ]
         [ main_ [ css [ max_w_7xl, mx_auto, pb_12, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
