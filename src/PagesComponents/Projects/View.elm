@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast as Toast
 import Components.Organisms.Header as Header
-import Css exposing (focus, hover)
+import Css
 import Css.Global as Global
 import Dict
 import Gen.Route as Route
@@ -23,21 +23,21 @@ import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Models exposing (Confirm, Model, Msg(..))
 import Shared exposing (StoredProjects(..))
-import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_gray_50, bg_white, block, border, border_2, border_dashed, border_gray_200, border_gray_400, col_span_1, divide_gray_200, divide_x, divide_y, flex, flex_col, flex_grow, flex_grow_0, flex_shrink_0, flow_root, font_bold, font_medium, gap_6, globalStyles, grid, grid_cols_1, grid_cols_2, grid_cols_3, grid_cols_4, h_12, h_16, h_full, inline_flex, inset_0, items_center, justify_center, max_w_7xl, ml_2, ml_3, mt_1, mt_2, mt_6, mx_auto, neg_m_2, neg_mt_32, outline_none, p_2, p_6, p_8, pb_12, pb_32, pb_4, pt_6, px_4, px_6, px_8, py_10, py_12, py_4, relative, ring_2, ring_offset_2, rounded_lg, rounded_xl, shadow, shadow_lg, space_x_4, text_3xl, text_center, text_gray_200, text_gray_400, text_gray_500, text_gray_700, text_gray_900, text_lg, text_sm, text_white, w_12, w_16, w_full)
+import Tailwind.Breakpoints as Bp
+import Tailwind.Utilities as Tw
 import Time
 
 
 viewProjects : Shared.Model -> Model -> List (Html Msg)
 viewProjects shared model =
-    [ Global.global globalStyles
-    , Global.global [ Global.selector "html" [ h_full, bg_gray_100 ], Global.selector "body" [ h_full ] ]
-    , div [ css [ TwColor.render Bg shared.theme.color L600, pb_32 ] ]
+    [ Global.global Tw.globalStyles
+    , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100 ], Global.selector "body" [ Tw.h_full ] ]
+    , div [ css [ TwColor.render Bg shared.theme.color L600, Tw.pb_32 ] ]
         [ Header.app
             { theme = shared.theme
             , brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
             , navigation =
-                { links = [ { url = "", text = "Dashboard" } ]
+                { links = [ { url = Route.toHref Route.Projects, text = "Dashboard" } ]
                 , onClick = \link -> SelectMenu link.text
                 }
             , search = Nothing
@@ -49,11 +49,11 @@ viewProjects shared model =
             , mobileMenuOpen = model.mobileMenuOpen
             , profileOpen = False
             }
-        , viewHeader model.navigationActive
+        , viewHeader [ text model.navigationActive ]
         ]
-    , div [ css [ neg_mt_32 ] ]
-        [ main_ [ css [ max_w_7xl, mx_auto, pb_12, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
-            [ div [ css [ bg_white, rounded_lg, shadow, p_8, sm [ p_6 ] ] ] [ viewContent shared model ]
+    , div [ css [ Tw.neg_mt_32 ] ]
+        [ main_ [ css [ Tw.max_w_7xl, Tw.mx_auto, Tw.pb_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
+            [ div [ css [ Tw.bg_white, Tw.rounded_lg, Tw.shadow, Tw.p_8, Bp.sm [ Tw.p_6 ] ] ] [ viewContent shared model ]
             ]
         ]
     , viewConfirm shared.theme model.confirm
@@ -61,11 +61,11 @@ viewProjects shared model =
     ]
 
 
-viewHeader : String -> Html msg
-viewHeader title =
-    header [ css [ py_10 ] ]
-        [ div [ css [ max_w_7xl, mx_auto, px_4, lg [ px_8 ], sm [ px_6 ] ] ]
-            [ h1 [ css [ text_3xl, font_bold, text_white ] ] [ text title ]
+viewHeader : List (Html msg) -> Html msg
+viewHeader content =
+    header [ css [ Tw.py_10 ] ]
+        [ div [ css [ Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
+            [ h1 [ css [ Tw.text_3xl, Tw.font_bold, Tw.text_white ] ] content
             ]
         ]
 
@@ -81,30 +81,30 @@ viewContent shared model =
 viewProjectList : Shared.Model -> Html Msg
 viewProjectList shared =
     div []
-        [ h3 [ css [ text_lg, font_medium ] ] [ text "Projects" ]
+        [ h3 [ css [ Tw.text_lg, Tw.font_medium ] ] [ text "Projects" ]
         , case shared.projects of
             Loading ->
-                div [ css [ mt_6 ] ] [ text "Loading..." ]
+                div [ css [ Tw.mt_6 ] ] [ text "Loading..." ]
 
             Loaded [] ->
                 viewNoProjects shared.theme
 
             Loaded projects ->
-                ul [ role "list", css [ mt_6, grid, grid_cols_1, gap_6, lg [ grid_cols_4 ], md [ grid_cols_3 ], sm [ grid_cols_2 ] ] ] ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject shared.theme ])
+                ul [ role "list", css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_6, Bp.lg [ Tw.grid_cols_4 ], Bp.md [ Tw.grid_cols_3 ], Bp.sm [ Tw.grid_cols_2 ] ] ] ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject shared.theme ])
         ]
 
 
 viewNoProjects : Theme -> Html msg
 viewNoProjects theme =
     div []
-        [ p [ css [ mt_1, text_sm, text_gray_500 ] ]
+        [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
             [ text "You haven’t created any project yet. Import your own or select a sample one." ]
         , viewFirstProject theme
-        , div [ css [ mt_6, text_sm, font_medium, TwColor.render Text theme.color L600 ] ]
+        , div [ css [ Tw.mt_6, Tw.text_sm, Tw.font_medium, TwColor.render Text theme.color L600 ] ]
             [ text "Or start from an sample project"
             , span [ ariaHidden True ] [ text " →" ]
             ]
-        , ul [ role "list", css [ mt_6, grid, grid_cols_1, gap_6, sm [ grid_cols_2 ] ] ]
+        , ul [ role "list", css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_6, Bp.sm [ Tw.grid_cols_2 ] ] ]
             [ viewSampleProject theme "#" Pink ViewList "Basic" [ text "Simple login/role schema.", br [] [], bText "4 tables", text ", the easiest schema, just enough play with the product." ]
             , viewSampleProject theme "#" Yellow Calendar "Wordpress" [ text "The well known CMS powering most of the web.", br [] [], bText "12 tables", text ", interesting schema, but with no foreign keys!" ]
             , viewSampleProject theme "#" Green Photograph "Gospeak.io" [ text "A full featured SaaS for meetup organizers.", br [] [], bText "26 tables", text ", a good real world example to explore." ]
@@ -117,25 +117,25 @@ viewNoProjects theme =
 
 viewFirstProject : Theme -> Html msg
 viewFirstProject theme =
-    a [ href (Route.toHref Route.Projects__New), css [ mt_6, relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, py_12, text_center, text_gray_400, focus [ outline_none, ring_2, ring_offset_2, TwColor.render Ring theme.color L500 ], hover [ border_gray_400 ] ] ]
-        [ Icon.outline DocumentAdd [ mx_auto, h_12, w_12 ]
-        , span [ css [ mt_2, block, text_sm, font_medium ] ] [ text "Create a new project" ]
+    a [ href (Route.toHref Route.Projects__New), css [ Tw.mt_6, Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_400, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.border_gray_400 ] ] ]
+        [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
+        , span [ css [ Tw.mt_2, Tw.block, Tw.text_sm, Tw.font_medium ] ] [ text "Create a new project" ]
         ]
 
 
 viewSampleProject : Theme -> String -> TwColor -> Icon -> String -> List (Html msg) -> Html msg
 viewSampleProject theme url color icon title description =
-    li [ css [ flow_root ] ]
-        [ div [ css [ relative, neg_m_2, p_2, flex, items_center, space_x_4, rounded_xl, focusWithin [ ring_2, TwColor.render Ring theme.color L500 ], hover [ bg_gray_50 ] ] ]
-            [ div [ css [ flex_shrink_0, flex, items_center, justify_center, h_16, w_16, rounded_lg, TwColor.render Bg color L500 ] ] [ Icon.outline icon [ text_white ] ]
+    li [ css [ Tw.flow_root ] ]
+        [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, focusWithin [ Tw.ring_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
+            [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_16, Tw.w_16, Tw.rounded_lg, TwColor.render Bg color L500 ] ] [ Icon.outline icon [ Tw.text_white ] ]
             , div []
-                [ h3 [ css [ text_sm, font_medium, text_gray_900 ] ]
-                    [ a [ href url, css [ focus [ outline_none ] ] ]
-                        [ span [ css [ absolute, inset_0 ], ariaHidden True ] []
+                [ h3 [ css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_900 ] ]
+                    [ a [ href url, css [ Css.focus [ Tw.outline_none ] ] ]
+                        [ span [ css [ Tw.absolute, Tw.inset_0 ], ariaHidden True ] []
                         , text title
                         ]
                     ]
-                , p [ css [ mt_1, text_sm, text_gray_500 ] ] description
+                , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] description
                 ]
             ]
         ]
@@ -143,19 +143,19 @@ viewSampleProject theme url color icon title description =
 
 viewProjectCard : Time.Zone -> Project -> Html Msg
 viewProjectCard zone project =
-    li [ css [ col_span_1, flex, flex_col, border, border_gray_200, rounded_lg, divide_y, divide_gray_200, hover [ shadow_lg ] ] ]
-        [ div [ css [ p_6 ] ]
-            [ h3 [ css [ text_lg, font_medium ] ] [ text project.name ]
-            , ul [ css [ mt_1, text_gray_500, text_sm ] ]
+    li [ css [ Tw.col_span_1, Tw.flex, Tw.flex_col, Tw.border, Tw.border_gray_200, Tw.rounded_lg, Tw.divide_y, Tw.divide_gray_200, Css.hover [ Tw.shadow_lg ] ] ]
+        [ div [ css [ Tw.p_6 ] ]
+            [ h3 [ css [ Tw.text_lg, Tw.font_medium ] ] [ text project.name ]
+            , ul [ css [ Tw.mt_1, Tw.text_gray_500, Tw.text_sm ] ]
                 [ li [] [ text ((project.tables |> Dict.size |> S.pluralize "table") ++ ", " ++ (project.layouts |> Dict.size |> S.pluralize "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]
                 ]
             ]
-        , div [ css [ flex, divide_x, divide_gray_200 ] ]
-            [ button [ type_ "button", title "Delete this project", onClick (confirmDeleteProject project), css [ flex_grow_0, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, px_4, hover [ text_gray_500 ] ] ]
-                [ Icon.outline Trash [ text_gray_400 ] ]
-            , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ flex_grow, inline_flex, items_center, justify_center, py_4, text_sm, text_gray_700, font_medium, hover [ text_gray_500 ] ] ]
-                [ Icon.outline ArrowCircleRight [ text_gray_400 ], span [ css [ ml_3 ] ] [ text "Open project" ] ]
+        , div [ css [ Tw.flex, Tw.divide_x, Tw.divide_gray_200 ] ]
+            [ button [ type_ "button", title "Delete this project", onClick (confirmDeleteProject project), css [ Tw.flex_grow_0, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Tw.px_4, Css.hover [ Tw.text_gray_500 ] ] ]
+                [ Icon.outline Trash [ Tw.text_gray_400 ] ]
+            , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ Tw.flex_grow, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Css.hover [ Tw.text_gray_500 ] ] ]
+                [ Icon.outline ArrowCircleRight [ Tw.text_gray_400 ], span [ css [ Tw.ml_3 ] ] [ text "Open project" ] ]
             ]
         ]
 
@@ -176,10 +176,10 @@ confirmDeleteProject project =
 
 viewNewProject : Theme -> Html msg
 viewNewProject theme =
-    li [ css [ col_span_1 ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ relative, block, w_full, border_2, border_gray_200, border_dashed, rounded_lg, py_12, text_center, text_gray_200, focus [ outline_none, ring_2, ring_offset_2, TwColor.render Ring theme.color L500 ], hover [ border_gray_400, text_gray_400 ] ] ]
-            [ Icon.outline DocumentAdd [ mx_auto, h_12, w_12 ]
-            , span [ css [ mt_2, block, text_sm, font_medium ] ] [ text "Create a new project" ]
+    li [ css [ Tw.col_span_1 ] ]
+        [ a [ href (Route.toHref Route.Projects__New), css [ Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.border_gray_400, Tw.text_gray_400 ] ] ]
+            [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
+            , span [ css [ Tw.mt_2, Tw.block, Tw.text_sm, Tw.font_medium ] ] [ text "Create a new project" ]
             ]
         ]
 
@@ -203,7 +203,7 @@ viewConfirm theme c =
 viewOther : Theme -> Model -> Html Msg
 viewOther theme model =
     div []
-        [ h3 [ css [ text_lg, font_medium, pt_6, pb_4 ] ] [ text "Other" ]
+        [ h3 [ css [ Tw.text_lg, Tw.font_medium, Tw.pt_6, Tw.pb_4 ] ] [ text "Other" ]
         , div []
             [ Button.primary3 theme.color
                 [ onClick
@@ -231,7 +231,7 @@ viewOther theme model =
                             }
                         )
                     )
-                , css [ ml_2 ]
+                , css [ Tw.ml_2 ]
                 ]
                 [ text "Show toast" ]
             ]
