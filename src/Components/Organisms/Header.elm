@@ -17,9 +17,9 @@ import Libs.Maybe as M
 import Libs.Models exposing (Image, Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
-import Libs.Tailwind.Utilities exposing (focusWithin)
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_500, border_none, border_opacity_25, border_t, border_transparent, border_white, flex, flex_1, flex_shrink_0, flex_wrap, font_medium, h_10, h_16, h_8, hidden, inline_block, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, justify_start, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_3, mx_auto, outline_none, p_1, p_2, pb_3, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_2, py_4, py_6, relative, ring_2, ring_offset_2, ring_white, rounded_full, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, space_y_1, sr_only, text_2xl, text_base, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_50, text_indigo_600, text_sm, text_white, w_0, w_10, w_48, w_8, w_auto, w_full)
+import Tailwind.Utilities exposing (absolute, bg_gray_100, bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_500, border_none, border_opacity_25, border_t, border_transparent, flex, flex_1, flex_shrink_0, flex_wrap, font_medium, h_10, h_16, h_8, hidden, inline_block, inline_flex, inset_y_0, items_center, justify_between, justify_center, justify_end, justify_start, leading_5, left_0, max_w_7xl, max_w_lg, max_w_xs, ml_10, ml_3, ml_4, ml_6, ml_auto, mt_3, mx_auto, outline_none, p_1, p_2, pb_3, pl_10, pl_3, placeholder_gray_500, pointer_events_none, pr_3, pt_2, pt_4, px_0, px_2, px_3, px_4, px_5, px_6, px_8, py_2, py_4, py_6, relative, ring_2, ring_offset_2, ring_white, rounded_full, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, space_y_1, sr_only, text_2xl, text_base, text_gray_400, text_gray_500, text_gray_600, text_gray_700, text_gray_900, text_indigo_50, text_indigo_600, text_sm, text_white, w_0, w_10, w_48, w_8, w_auto, w_full)
 
 
 type alias RightLinksModel msg =
@@ -216,9 +216,9 @@ appSearch theme search =
     div [ css [ flex_1, px_2, flex, justify_center, lg [ ml_6, justify_end ] ] ]
         [ div [ css [ max_w_lg, w_full, lg [ max_w_xs ] ] ]
             [ label [ for search.id, css [ sr_only ] ] [ text "Search" ]
-            , div [ css [ relative, text_gray_400, focusWithin [ text_gray_600 ] ] ]
+            , div [ css [ relative, text_gray_400, Tu.focusWithin [ text_gray_600 ] ] ]
                 [ div [ css [ pointer_events_none, absolute, inset_y_0, left_0, pl_3, flex, items_center ] ] [ Icon.solid Search [] ]
-                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, focus [ outline_none, ring_2, ring_offset_2, TwColor.render RingOffset theme.color L600, ring_white, border_white ], sm [ text_sm ] ] ] []
+                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ block, w_full, bg_white, py_2, pl_10, pr_3, border, border_transparent, rounded_md, leading_5, text_gray_900, placeholder_gray_500, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), sm [ text_sm ] ] ] []
                 ]
             ]
         ]
@@ -237,7 +237,7 @@ appMobileMenuButton theme mobileMenu isOpen =
 
 appNotifications : AppTheme -> AppNotifications -> Html msg
 appNotifications theme _ =
-    button [ type_ "button", css [ ml_auto, TwColor.render Bg theme.color L600, flex_shrink_0, rounded_full, p_1, TwColor.render Text theme.color L200, focus [ outline_none, ring_2, ring_offset_2, TwColor.render RingOffset theme.color L600, ring_white ], hover [ text_white ] ] ]
+    button [ type_ "button", css [ ml_auto, TwColor.render Bg theme.color L600, flex_shrink_0, rounded_full, p_1, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), hover [ text_white ] ] ]
         [ span [ css [ sr_only ] ] [ text "View notifications" ]
         , Icon.outline Bell []
         ]
@@ -247,7 +247,7 @@ appProfile : AppTheme -> Bool -> AppProfile msg -> Html msg
 appProfile theme isOpen profile =
     Dropdown.dropdown { id = profile.id, direction = BottomLeft, isOpen = isOpen }
         (\m ->
-            button [ type_ "button", id m.id, onClick profile.onClick, css [ ml_3, TwColor.render Bg theme.color L600, rounded_full, flex, text_sm, text_white, focus [ outline_none, ring_2, ring_offset_2, TwColor.render RingOffset theme.color L600, ring_white ] ], ariaExpanded isOpen, ariaHaspopup True ]
+            button [ type_ "button", id m.id, onClick profile.onClick, css [ ml_3, TwColor.render Bg theme.color L600, rounded_full, flex, text_sm, text_white, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ], ariaExpanded isOpen, ariaHaspopup True ]
                 [ span [ css [ sr_only ] ] [ text "Open user menu" ]
                 , img [ css [ rounded_full, h_8, w_8 ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]

@@ -7,6 +7,7 @@ import Html.Styled as Styled exposing (Attribute, Html, div, text)
 import Html.Styled.Attributes exposing (css, type_)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Utilities as Tw
 
 
@@ -102,7 +103,7 @@ white styles color attrs content =
 
 commonStyles : TwColor -> List Css.Style
 commonStyles color =
-    [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.font_medium, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring color L500 ] ]
+    [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.font_medium, Tu.focusRing ( color, L500 ) ( White, L500 ) ]
 
 
 

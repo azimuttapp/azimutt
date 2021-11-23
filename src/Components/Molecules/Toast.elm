@@ -14,6 +14,7 @@ import Html.Styled.Keyed as Keyed
 import Libs.Html.Styled.Attributes exposing (ariaLive)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
@@ -51,7 +52,7 @@ simple theme onClose isOpen model =
                 , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text model.message ]
                 ]
             , div [ css [ Tw.ml_4, Tw.flex_shrink_0, Tw.flex ] ]
-                [ button [ onClick onClose, css [ Tw.bg_white, Tw.rounded_md, Tw.inline_flex, Tw.text_gray_400, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.text_gray_500 ] ] ]
+                [ button [ onClick onClose, css [ Tw.bg_white, Tw.rounded_md, Tw.inline_flex, Tw.text_gray_400, Tu.focusRing ( theme.color, L500 ) ( White, L500 ), Css.hover [ Tw.text_gray_500 ] ] ]
                     [ span [ css [ Tw.sr_only ] ] [ text "Close" ]
                     , Icon.solid X []
                     ]

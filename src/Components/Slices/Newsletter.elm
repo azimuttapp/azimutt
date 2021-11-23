@@ -5,8 +5,10 @@ import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, button, div, form, h2, input, label, p, text)
 import Html.Styled.Attributes exposing (action, attribute, css, for, href, id, method, name, placeholder, rel, required, target, type_)
+import Libs.Models.TwColor exposing (TwColor(..), TwColorLevel(..))
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (appearance_none, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_white, border, border_blue_300, border_gray_300, border_indigo_500, border_transparent, duration_150, ease_in_out, flex, flex_1, flex_col, flex_row, flex_shrink_0, font_extrabold, font_medium, inline_flex, items_center, justify_center, justify_end, leading_6, max_w_3xl, max_w_7xl, max_w_prose, max_w_xs, ml_3, ml_8, mt_0, mt_2, mt_3, mt_6, mt_8, mx_auto, outline_none, placeholder_gray_400, placeholder_gray_500, px_4, px_5, px_6, px_8, py_2, py_24, py_3, py_32, ring_1, ring_2, ring_indigo_500, ring_offset_2, rounded_md, shadow, shadow_sm, sr_only, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_lg, text_sm, text_white, transition, underline, w_0, w_auto, w_full)
+import Tailwind.Utilities exposing (appearance_none, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_white, border, border_blue_300, border_gray_300, border_indigo_500, border_transparent, duration_150, ease_in_out, flex, flex_1, flex_col, flex_row, flex_shrink_0, font_extrabold, font_medium, inline_flex, items_center, justify_center, justify_end, leading_6, max_w_3xl, max_w_7xl, max_w_prose, max_w_xs, ml_3, ml_8, mt_0, mt_2, mt_3, mt_6, mt_8, mx_auto, outline_none, placeholder_gray_400, placeholder_gray_500, px_4, px_5, px_6, px_8, py_2, py_24, py_3, py_32, ring_1, ring_indigo_500, rounded_md, shadow, shadow_sm, sr_only, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_lg, text_sm, text_white, transition, underline, w_0, w_auto, w_full)
 
 
 type alias Model msg =
@@ -38,7 +40,7 @@ basicSlice model =
                     [ label [ for "newsletter-email", css [ sr_only ] ] [ text model.form.placeholder ]
                     , input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.form.placeholder, attribute "autocomplete" "email", required True, css [ w_full, px_5, py_3, border, border_gray_300, shadow_sm, placeholder_gray_400, rounded_md, Css.focus [ ring_1, ring_indigo_500, border_indigo_500 ], sm [ max_w_xs ] ] ] []
                     , div [ css [ mt_3, rounded_md, shadow, sm [ mt_0, ml_3, flex_shrink_0 ] ] ]
-                        [ button [ type_ "submit", css [ w_full, flex, items_center, justify_center, py_3, px_5, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_indigo_600, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ bg_indigo_700 ] ] ]
+                        [ button [ type_ "submit", css [ w_full, flex, items_center, justify_center, py_3, px_5, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_indigo_600, Tu.focusRing ( Indigo, L500 ) ( White, L500 ), hover [ bg_indigo_700 ] ] ]
                             [ text model.form.cta ]
                         ]
                     ]
@@ -69,7 +71,7 @@ small model =
             , input [ type_ "email", name "member[email]", id "newsletter-email", attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_4, py_2, border, border_gray_300, text_base, rounded_md, text_gray_900, bg_white, placeholder_gray_500, focus [ outline_none, ring_indigo_500, border_indigo_500 ], lg [ max_w_xs ] ], placeholder model.placeholder ] []
             ]
         , div [ css [ mt_2, flex_shrink_0, w_full, flex, rounded_md, shadow_sm, sm [ mt_0, ml_3, w_auto, inline_flex ] ] ]
-            [ button [ type_ "submit", css [ w_full, bg_indigo_600, px_4, py_2, border, border_transparent, rounded_md, flex, items_center, justify_center, text_base, font_medium, text_white, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ bg_indigo_700 ], sm [ w_auto, inline_flex ] ] ]
+            [ button [ type_ "submit", css [ w_full, bg_indigo_600, px_4, py_2, border, border_transparent, rounded_md, flex, items_center, justify_center, text_base, font_medium, text_white, Tu.focusRing ( Indigo, L500 ) ( White, L500 ), hover [ bg_indigo_700 ], sm [ w_auto, inline_flex ] ] ]
                 [ text model.cta ]
             ]
         ]

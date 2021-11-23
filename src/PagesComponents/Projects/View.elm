@@ -18,7 +18,7 @@ import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.String as S
-import Libs.Tailwind.Utilities exposing (focusWithin)
+import Libs.Tailwind.Utilities as Tu
 import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Models exposing (Confirm, Model, Msg(..))
@@ -126,7 +126,7 @@ viewFirstProject theme =
 viewSampleProject : Theme -> String -> TwColor -> Icon -> String -> List (Html msg) -> Html msg
 viewSampleProject theme url color icon title description =
     li [ css [ Tw.flow_root ] ]
-        [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, focusWithin [ Tw.ring_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
+        [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, Tu.focusWithin [ Tw.ring_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
             [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_16, Tw.w_16, Tw.rounded_lg, TwColor.render Bg color L500 ] ] [ Icon.outline icon [ Tw.text_white ] ]
             , div []
                 [ h3 [ css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_900 ] ]
@@ -177,7 +177,7 @@ confirmDeleteProject project =
 viewNewProject : Theme -> Html msg
 viewNewProject theme =
     li [ css [ Tw.col_span_1 ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.border_gray_400, Tw.text_gray_400 ] ] ]
+        [ a [ href (Route.toHref Route.Projects__New), css [ Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_200, Tu.focusRing ( theme.color, L500 ) ( White, L500 ), Css.hover [ Tw.border_gray_400, Tw.text_gray_400 ] ] ]
             [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
             , span [ css [ Tw.mt_2, Tw.block, Tw.text_sm, Tw.font_medium ] ] [ text "Create a new project" ]
             ]
