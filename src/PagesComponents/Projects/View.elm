@@ -4,12 +4,10 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast as Toast
-import Components.Organisms.Header as Header
 import Css
-import Css.Global as Global
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, br, button, div, h1, h3, header, li, main_, p, span, text, ul)
+import Html.Styled exposing (Html, a, br, button, div, h3, li, p, span, text, ul)
 import Html.Styled.Attributes exposing (css, href, title, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
@@ -21,8 +19,9 @@ import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Libs.Task as T
 import Models.Project exposing (Project)
-import PagesComponents.Projects.Models exposing (Confirm, Model, Msg(..))
-import Shared exposing (StoredProjects(..))
+import PagesComponents.Helpers exposing (appShell)
+import PagesComponents.Projects.Models exposing (Model, Msg(..))
+import Shared exposing (Confirm, StoredProjects(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 import Time
@@ -30,43 +29,14 @@ import Time
 
 viewProjects : Shared.Model -> Model -> List (Html Msg)
 viewProjects shared model =
-    [ Global.global Tw.globalStyles
-    , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100 ], Global.selector "body" [ Tw.h_full ] ]
-    , div [ css [ TwColor.render Bg shared.theme.color L600, Tw.pb_32 ] ]
-        [ Header.app
-            { theme = shared.theme
-            , brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
-            , navigation =
-                { links = [ { url = Route.toHref Route.Projects, text = "Dashboard" } ]
-                , onClick = \link -> SelectMenu link.text
-                }
-            , search = Nothing
-            , notifications = Nothing
-            , profile = Nothing
-            , mobileMenu = { id = "mobile-menu", onClick = ToggleMobileMenu }
-            }
-            { navigationActive = model.navigationActive
-            , mobileMenuOpen = model.mobileMenuOpen
-            , profileOpen = False
-            }
-        , viewHeader [ text model.navigationActive ]
-        ]
-    , div [ css [ Tw.neg_mt_32 ] ]
-        [ main_ [ css [ Tw.max_w_7xl, Tw.mx_auto, Tw.pb_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ div [ css [ Tw.bg_white, Tw.rounded_lg, Tw.shadow, Tw.p_8, Bp.sm [ Tw.p_6 ] ] ] [ viewContent shared model ]
-            ]
-        ]
-    , viewConfirm shared.theme model.confirm
-    , Toast.container (model.toasts |> List.map (\t -> Toast.render shared.theme (ToastHide t.key) t))
-    ]
-
-
-viewHeader : List (Html msg) -> Html msg
-viewHeader content =
-    header [ css [ Tw.py_10 ] ]
-        [ div [ css [ Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ h1 [ css [ Tw.text_3xl, Tw.font_bold, Tw.text_white ] ] content
-            ]
+    appShell shared.theme
+        (\link -> SelectMenu link.text)
+        ToggleMobileMenu
+        model
+        [ text model.navigationActive ]
+        [ viewContent shared model ]
+        [ viewConfirm shared.theme model.confirm
+        , Toast.container (model.toasts |> List.map (\t -> Toast.render shared.theme (ToastHide t.key) t))
         ]
 
 
@@ -184,7 +154,7 @@ viewNewProject theme =
         ]
 
 
-viewConfirm : Theme -> Confirm -> Html Msg
+viewConfirm : Theme -> Confirm Msg -> Html Msg
 viewConfirm theme c =
     Modal.confirm theme
         { id = "confirm-modal"

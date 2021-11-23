@@ -8,5 +8,5 @@ type alias Model =
 
 
 type Msg
-    = ReplaceMe
-    | Noop
+    = SelectMenu String
+    | ToggleMobileMenu

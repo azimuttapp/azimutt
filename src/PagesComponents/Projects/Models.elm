@@ -1,31 +1,21 @@
-module PagesComponents.Projects.Models exposing (Confirm, Model, Msg(..))
+module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
-import Components.Atoms.Icon exposing (Icon)
 import Components.Molecules.Toast as Toast
-import Html.Styled exposing (Html)
 import Libs.Models exposing (Millis)
-import Libs.Models.TwColor exposing (TwColor)
 import Models.Project exposing (Project)
+import Shared exposing (Confirm)
+
+
+
+-- TODO migrate these common properties to shared model? How to trigger shared Msg from Projects view?
 
 
 type alias Model =
     { navigationActive : String
     , mobileMenuOpen : Bool
-    , confirm : Confirm
+    , confirm : Confirm Msg
     , toastCpt : Int
     , toasts : List Toast.Model
-    }
-
-
-type alias Confirm =
-    { color : TwColor
-    , icon : Icon
-    , title : String
-    , message : Html Msg
-    , confirm : String
-    , cancel : String
-    , onConfirm : Cmd Msg
-    , isOpen : Bool
     }
 
 
@@ -37,6 +27,6 @@ type Msg
     | ToastShow (Maybe Millis) String
     | ToastHide String
     | ToastRemove String
-    | ConfirmOpen Confirm
+    | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | Noop

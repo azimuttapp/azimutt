@@ -2,7 +2,6 @@ module Pages.Projects.New exposing (Model, Msg, page)
 
 import Gen.Params.Projects.New exposing (Params)
 import Html.Styled as Styled
-import Libs.Task exposing (send)
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
@@ -38,7 +37,7 @@ init =
     ( { navigationActive = "New project"
       , mobileMenuOpen = False
       }
-    , send ReplaceMe
+    , Cmd.none
     )
 
 
@@ -49,11 +48,11 @@ init =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReplaceMe ->
-            ( model, Cmd.none )
+        SelectMenu menu ->
+            ( { model | navigationActive = menu }, Cmd.none )
 
-        Noop ->
-            ( model, Cmd.none )
+        ToggleMobileMenu ->
+            ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
 
 

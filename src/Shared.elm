@@ -1,5 +1,7 @@
-module Shared exposing (Flags, Model, Msg, StoredProjects(..), init, subscriptions, update)
+module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, subscriptions, update)
 
+import Components.Atoms.Icon exposing (Icon)
+import Html.Styled exposing (Html)
 import Libs.Json.Decode as D
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor exposing (TwColor(..))
@@ -19,6 +21,18 @@ type alias Model =
     , now : Time.Posix
     , theme : Theme
     , projects : StoredProjects
+    }
+
+
+type alias Confirm msg =
+    { color : TwColor
+    , icon : Icon
+    , title : String
+    , message : Html msg
+    , confirm : String
+    , cancel : String
+    , onConfirm : Cmd msg
+    , isOpen : Bool
     }
 
 
