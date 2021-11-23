@@ -16,10 +16,11 @@ import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.DateTime as DateTime
 import Libs.Duration as Duration
 import Libs.Html.Styled exposing (bText, extLink)
+import Libs.Models.TwColor exposing (TwColor(..))
 import Models.Project exposing (Project)
 import PagesComponents.Helpers as Helpers
 import Shared exposing (StoredProjects(..))
-import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800)
+import Tailwind.Utilities exposing (globalStyles, mt_3)
 import Time
 import Tracking exposing (events)
 
@@ -156,7 +157,7 @@ viewHome shared =
                 , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
                 , br [] []
-                , Badge.basic [ bg_red_100, text_red_800 ] "soon"
+                , Badge.basic Red [] [ text "soon" ]
                 , text " It will make you a "
                 , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
                 , text ", just as you like!"

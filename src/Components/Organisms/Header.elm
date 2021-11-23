@@ -392,7 +392,7 @@ initDocState =
 
 updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
 updateDocState transform =
-    Actions.updateState (\s -> { s | headerDocState = transform s.headerDocState })
+    Actions.updateState (\s -> { s | headerDocState = s.headerDocState |> transform })
 
 
 updateAppState : (AppState -> AppState) -> Msg (SharedDocState x)

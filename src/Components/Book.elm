@@ -9,6 +9,7 @@ import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Feature as Feature
 import Components.Molecules.Modal as Modal
+import Components.Molecules.Toast as Toast
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Slices.Blog as Blog
@@ -33,17 +34,24 @@ import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 
 type alias DocState =
     { dropdownDocState : Dropdown.DocState
-    , modalDocState : Modal.DocState
     , headerDocState : Header.DocState
+    , modalDocState : Modal.DocState
+    , toastDocState : Toast.DocState
     }
 
 
 init : DocState
 init =
     { dropdownDocState = Dropdown.initDocState
-    , modalDocState = Modal.initDocState
     , headerDocState = Header.initDocState
+    , modalDocState = Modal.initDocState
+    , toastDocState = Toast.initDocState
     }
+
+
+theme : { color : TwColor }
+theme =
+    { color = Indigo }
 
 
 main : ElmCSS.Book DocState
@@ -59,8 +67,8 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
-            , ( "Molecules", [ Dropdown.doc, Feature.doc, Modal.doc ] )
+            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
+            , ( "Molecules", [ Dropdown.doc theme, Feature.doc, Modal.doc theme, Toast.doc theme ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc ] )
             ]

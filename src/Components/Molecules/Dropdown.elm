@@ -1,5 +1,6 @@
 module Components.Molecules.Dropdown exposing (Direction(..), DocState, Model, SharedDocState, doc, dropdown, initDocState)
 
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css
 import Dict exposing (Dict)
@@ -7,12 +8,13 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, button, div, text)
-import Html.Styled.Attributes exposing (css, href, id, tabindex, type_)
+import Html.Styled exposing (Html, a, div, text)
+import Html.Styled.Attributes exposing (css, href, id, tabindex)
 import Html.Styled.Events exposing (onClick)
 import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Theme exposing (Theme)
 import Tailwind.Utilities as Tw
 
 
@@ -85,21 +87,14 @@ component name buildComponent =
     )
 
 
-doc : Chapter (SharedDocState x)
-doc =
+doc : Theme -> Chapter (SharedDocState x)
+doc theme =
     Chapter.chapter "Dropdown"
         |> Chapter.renderStatefulComponentList
             [ component "simple"
                 (\isOpen setIsOpen ->
-                    dropdown
-                        { id = "menu-button"
-                        , direction = BottomRight
-                        , isOpen = isOpen
-                        }
-                        (\model ->
-                            button [ type_ "button", id model.id, ariaExpanded True, ariaHaspopup True, onClick (setIsOpen (not isOpen)), css [ Tw.inline_flex, Tw.justify_center, Tw.w_full, Tw.rounded_md, Tw.border, Tw.border_gray_300, Tw.shadow_sm, Tw.px_4, Tw.py_2, Tw.bg_white, Tw.text_sm, Tw.font_medium, Tw.text_gray_700, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Tw.ring_offset_gray_100, Tw.ring_indigo_500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
-                                [ text "Options", Icon.solid ChevronDown [] ]
-                        )
+                    dropdown { id = "menu-button", direction = BottomRight, isOpen = isOpen }
+                        (\model -> Button.white3 theme.color [ id model.id, ariaExpanded True, ariaHaspopup True, onClick (setIsOpen (not isOpen)) ] [ text "Options", Icon.solid ChevronDown [] ])
                         (\_ ->
                             div []
                                 [ a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-0" ] [ text "Account settings" ]

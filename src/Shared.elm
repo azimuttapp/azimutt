@@ -1,6 +1,8 @@
 module Shared exposing (Flags, Model, Msg, StoredProjects(..), init, subscriptions, update)
 
 import Libs.Json.Decode as D
+import Libs.Models.Theme exposing (Theme)
+import Libs.Models.TwColor exposing (TwColor(..))
 import Models.Project exposing (Project)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
@@ -15,6 +17,7 @@ type alias Flags =
 type alias Model =
     { zone : Time.Zone
     , now : Time.Posix
+    , theme : Theme
     , projects : StoredProjects
     }
 
@@ -34,6 +37,7 @@ init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
+      , theme = { color = Indigo }
       , projects = Loading
       }
     , Cmd.batch

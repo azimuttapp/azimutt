@@ -14,6 +14,7 @@ import Html.Styled.Events exposing (onClick)
 import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, role)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
@@ -32,8 +33,8 @@ type alias ConfirmModel msg =
     }
 
 
-confirm : ConfirmModel msg -> Bool -> Html msg
-confirm model isOpen =
+confirm : Theme -> ConfirmModel msg -> Bool -> Html msg
+confirm theme model isOpen =
     modal
         { id = model.id
         , isOpen = isOpen
@@ -53,7 +54,7 @@ confirm model isOpen =
             ]
         , div [ css [ Tw.mt_5, Bp.sm [ Tw.mt_4, Tw.flex, Tw.flex_row_reverse ] ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text model.confirm ]
-            , Button.white3 model.color [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
+            , Button.white3 theme.color [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
             ]
         ]
 
@@ -133,15 +134,15 @@ component name buildComponent =
     )
 
 
-doc : Chapter (SharedDocState x)
-doc =
+doc : Theme -> Chapter (SharedDocState x)
+doc theme =
     Chapter.chapter "Modal"
         |> Chapter.renderStatefulComponentList
             [ component "confirm"
                 (\isOpen setIsOpen ->
                     div []
-                        [ Button.primary3 Indigo [ onClick (setIsOpen True) ] [ text "Click me!" ]
-                        , confirm
+                        [ Button.primary3 theme.color [ onClick (setIsOpen True) ] [ text "Click me!" ]
+                        , confirm theme
                             { id = "modal-title"
                             , color = Red
                             , icon = Exclamation
@@ -158,7 +159,7 @@ doc =
             , component "modal"
                 (\isOpen setIsOpen ->
                     div []
-                        [ Button.primary3 Indigo [ onClick (setIsOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 theme.color [ onClick (setIsOpen True) ] [ text "Click me!" ]
                         , modal
                             { id = "modal-title"
                             , isOpen = isOpen

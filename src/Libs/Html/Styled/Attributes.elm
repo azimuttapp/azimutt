@@ -1,4 +1,4 @@
-module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaModal, ariaOrientation, role, track)
+module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, role, track)
 
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
@@ -49,6 +49,11 @@ ariaLabel text =
 ariaLabelledby : Text -> Attribute msg
 ariaLabelledby text =
     attribute "aria-labelledby" text
+
+
+ariaLive : Text -> Attribute msg
+ariaLive text =
+    attribute "aria-live" text
 
 
 ariaModal : Bool -> Attribute msg
