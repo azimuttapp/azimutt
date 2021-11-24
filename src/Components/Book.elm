@@ -19,6 +19,7 @@ import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide
 import Components.Slices.Hero as Hero
 import Components.Slices.Newsletter as Newsletter
+import Components.Slices.NotFound as NotFound
 import Css.Global as Global
 import ElmBook
 import ElmBook.Chapter as Chapter
@@ -70,7 +71,7 @@ main =
             , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
             , ( "Molecules", [ Dropdown.doc theme, Feature.doc, Modal.doc theme, Toast.doc theme ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
-            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc ] )
+            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
             ]
 
 
