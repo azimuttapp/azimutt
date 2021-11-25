@@ -3,7 +3,7 @@ module Pages.Projects.New exposing (Model, Msg, page)
 import Gen.Params.Projects.New exposing (Params)
 import Html.Styled as Styled
 import Page
-import PagesComponents.Projects.New.Models as Models exposing (Msg(..))
+import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Request
 import Shared
@@ -36,6 +36,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { navigationActive = "New project"
       , mobileMenuOpen = False
+      , tabActive = Schema
       }
     , Cmd.none
     )
@@ -53,6 +54,9 @@ update msg model =
 
         ToggleMobileMenu ->
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
+
+        SelectTab tab ->
+            ( { model | tabActive = tab }, Cmd.none )
 
 
 

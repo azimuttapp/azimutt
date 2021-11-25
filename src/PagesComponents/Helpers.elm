@@ -91,7 +91,7 @@ appShell theme onNavigationClick onMobileMenuClick model title content footer =
         ]
     , S.div [ SA.css [ Tw.neg_mt_32 ] ]
         [ S.main_ [ SA.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.pb_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ S.div [ SA.css [ Tw.bg_white, Tw.rounded_lg, Tw.shadow, Tw.p_8, Bp.sm [ Tw.p_6 ] ] ] content
+            [ S.div [ SA.css [ Tw.bg_white, Tw.rounded_lg, Tw.shadow ] ] content
             ]
         ]
     ]

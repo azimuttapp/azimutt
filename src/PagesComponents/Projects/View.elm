@@ -42,7 +42,7 @@ viewProjects shared model =
 
 viewContent : Shared.Model -> Model -> Html Msg
 viewContent shared model =
-    div []
+    div [ css [ Tw.p_8, Bp.sm [ Tw.p_6 ] ] ]
         [ viewProjectList shared
         , viewOther shared.theme model
         ]
