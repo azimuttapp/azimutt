@@ -1,4 +1,4 @@
-module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, subscriptions, update)
+module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, loadedProjects, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
 import Html.Styled exposing (Html)
@@ -93,3 +93,13 @@ subscriptions _ _ =
         [ Time.every (10 * 1000) TimeChanged
         , Ports.onJsMessage JsMessage
         ]
+
+
+loadedProjects : Model -> List Project
+loadedProjects model =
+    case model.projects of
+        Loading ->
+            []
+
+        Loaded projects ->
+            projects

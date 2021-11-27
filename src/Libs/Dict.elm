@@ -1,6 +1,11 @@
-module Libs.Dict exposing (fromListMap, get, getOrElse, merge)
+module Libs.Dict exposing (fromIndexedList, fromListMap, get, getOrElse, merge)
 
 import Dict exposing (Dict)
+
+
+fromIndexedList : List a -> Dict Int a
+fromIndexedList list =
+    list |> List.indexedMap (\i a -> ( i, a )) |> Dict.fromList
 
 
 fromListMap : (a -> comparable) -> List a -> Dict comparable a

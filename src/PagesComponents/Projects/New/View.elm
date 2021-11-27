@@ -1,19 +1,28 @@
 module PagesComponents.Projects.New.View exposing (viewNewProject)
 
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
 import Css
+import DataSources.SqlParser.FileParser exposing (SchemaError)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
+import Dict
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, aside, div, form, h2, label, nav, p, span, text)
 import Html.Styled.Attributes exposing (css, for, href)
 import Html.Styled.Events exposing (onClick)
 import Libs.FileInput as FileInput
 import Libs.Html.Styled.Attributes exposing (ariaCurrent, role)
+import Libs.Maybe as M
+import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
+import Libs.Result as R
 import Libs.Tailwind.Utilities as Tu
+import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
+import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 import Shared
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
@@ -52,7 +61,7 @@ viewContent theme model page =
         [ aside [ css [ Tw.py_6, Bp.lg [ Tw.col_span_3 ] ] ]
             [ nav [ css [ Tw.space_y_1 ] ] (page.tabs |> List.map (viewTab theme model.tabActive)) ]
         , div [ css [ Tw.px_4, Tw.py_6, Bp.sm [ Tw.p_6 ], Bp.lg [ Tw.pb_8, Tw.col_span_9, Tw.rounded_r_lg ] ] ]
-            [ viewTabContent theme model.tabActive ]
+            [ viewTabContent theme model ]
         ]
 
 
@@ -71,20 +80,20 @@ viewTab theme selected tab =
             ]
 
 
-viewTabContent : Theme -> Tab -> Html Msg
-viewTabContent theme tab =
-    case tab of
+viewTabContent : Theme -> Model -> Html Msg
+viewTabContent theme model =
+    case model.tabActive of
         Schema ->
-            viewSchemaUpload theme
+            viewSchemaUpload theme model
 
         Sample ->
             viewSample
 
 
-viewSchemaUpload : Theme -> Html Msg
-viewSchemaUpload theme =
+viewSchemaUpload : Theme -> Model -> Html Msg
+viewSchemaUpload theme model =
     div []
-        [ form []
+        ([ form []
             [ div []
                 [ h2 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text "Import your SQL schema" ]
                 , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text "Everything stay on your machine, don't worry about your schema privacy." ]
@@ -95,13 +104,19 @@ viewSchemaUpload theme =
                     ]
                 ]
             ]
-        , div [ css [ Tw.my_6 ] ] [ Divider.withLabel "Parsing ..." ]
-        , div [ css [ Tw.bg_gray_50, Tw.overflow_hidden, Tw.rounded_lg ] ]
-            [ div [ css [ Tw.px_4, Tw.py_5, Bp.sm [ Tw.p_6 ] ] ]
-                [ div [] [ text "some logs..." ]
-                ]
-            ]
-        ]
+         ]
+            ++ (Maybe.map2
+                    (\file p ->
+                        [ div [ css [ Tw.my_6 ] ] [ Divider.withLabel (model.project |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                        , viewLogs file.name p
+                        ]
+                    )
+                    model.schemaFile
+                    model.schemaParser
+                    |> Maybe.withDefault []
+               )
+            ++ (model.project |> M.mapOrElse (\p -> [ viewActions theme p ]) [])
+        )
 
 
 viewFileUpload : Theme -> Html Msg
@@ -129,6 +144,67 @@ viewFileUpload theme =
                 , p [ css [ Tw.pl_1 ] ] [ text "or drag and drop" ]
                 ]
             , p [ css [ Tw.text_xs ] ] [ text "SQL only" ]
+            ]
+        ]
+
+
+viewLogs : FileName -> ProjectParser.Model msg -> Html msg
+viewLogs fileName model =
+    div [ css [ Tw.px_4, Tw.py_2, Tw.max_h_96, Tw.overflow_y_auto, Tw.font_mono, Tw.text_xs, Tw.bg_gray_50, Tw.shadow, Tw.rounded_lg ] ]
+        ([ div [] [ text ("Loaded file " ++ fileName ++ ".") ] ]
+            ++ (model.lines |> M.mapOrElse (\l -> [ div [] [ text ("The file has " ++ (l |> List.length |> String.fromInt) ++ " lines.") ] ]) [])
+            ++ (model.statements |> M.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements in it.") ] ]) [])
+            ++ (model.commands
+                    |> M.mapOrElse
+                        (\commands ->
+                            commands
+                                |> Dict.toList
+                                |> List.sortBy (\( i, _ ) -> i)
+                                |> List.map (\( _, ( s, r ) ) -> r |> R.bimap (\e -> ( s, e )) (\c -> ( s, c )))
+                                |> R.partition
+                                |> (\( errs, cmds ) ->
+                                        if errs |> List.isEmpty then
+                                            [ div [] [ text "All statements are correctly parsed." ] ]
+
+                                        else
+                                            (errs |> List.map (\( s, e ) -> viewParseError s e))
+                                                ++ [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements are correctly parsed, " ++ (errs |> List.length |> String.fromInt) ++ " are in error.") ] ]
+                                   )
+                        )
+                        []
+               )
+            ++ (if model.schemaErrors |> List.isEmpty then
+                    []
+
+                else
+                    (model.schemaErrors |> List.map viewSchemaError) ++ [ div [] [ text ((model.schemaErrors |> List.length |> String.fromInt) ++ " statements can't be added to the schema.") ] ]
+               )
+            ++ (model.schema |> M.mapOrElse (\s -> [ div [] [ text ("The built schema has " ++ (s |> Dict.size |> String.fromInt) ++ " tables.") ] ]) [])
+        )
+
+
+viewParseError : SqlStatement -> List ParseError -> Html msg
+viewParseError statement errors =
+    div [ css [ Tw.text_red_500 ] ]
+        (div [] [ text ("Paring error line " ++ (statement.head.line |> String.fromInt) ++ ":") ]
+            :: (errors |> List.map (\error -> div [ css [ Tw.pl_3 ] ] [ text error ]))
+        )
+
+
+viewSchemaError : List SchemaError -> Html msg
+viewSchemaError errors =
+    div [ css [ Tw.text_red_500 ] ]
+        (div [] [ text "Schema error:" ]
+            :: (errors |> List.map (\error -> div [ css [ Tw.pl_3 ] ] [ text error ]))
+        )
+
+
+viewActions : Theme -> Project -> Html Msg
+viewActions theme project =
+    div [ css [ Tw.pt_5 ] ]
+        [ div [ css [ Tw.flex, Tw.justify_end ] ]
+            [ Button.white3 theme.color [ onClick DropSchema ] [ text "Trash this schema" ]
+            , Button.primary3 theme.color [ onClick (CreateProject project), css [ Tw.ml_3 ] ] [ text "Create project!" ]
             ]
         ]
 

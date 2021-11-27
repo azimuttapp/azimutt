@@ -1,7 +1,7 @@
 module DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParse, testParseSql, testParseStatement)
 
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
-import DataSources.SqlParser.StatementParser exposing (Command, parseStatement)
+import DataSources.SqlParser.StatementParser exposing (Command, parse)
 import DataSources.SqlParser.Utils.Types exposing (RawSql, SqlStatement)
 import Expect
 import Libs.Nel as Nel exposing (Nel)
@@ -10,7 +10,7 @@ import Test exposing (Test, test)
 
 testParseStatement : String -> RawSql -> Command -> Test
 testParseStatement name sql command =
-    test name (\_ -> sql |> asStatement |> parseStatement |> Result.map Tuple.second |> Expect.equal (Ok command))
+    test name (\_ -> sql |> asStatement |> parse |> Result.map Tuple.second |> Expect.equal (Ok command))
 
 
 testParse : ( SqlStatement -> Result e a, String ) -> RawSql -> a -> Test
