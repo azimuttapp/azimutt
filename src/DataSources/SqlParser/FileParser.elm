@@ -1,4 +1,4 @@
-module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlComment, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildLines, buildStatements, parseSchema, splitLines)
+module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlComment, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildSqlLines, buildStatements, parseLines, parseSchema)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
@@ -81,15 +81,22 @@ defaultSchema =
     "public"
 
 
+parseLines : FileContent -> List FileLineContent
+parseLines fileContent =
+    fileContent
+        |> String.replace "\u{000D}" "\n"
+        |> String.split "\n"
+
+
 parseSchema : FileContent -> ( List SchemaError, ( List FileLineContent, SqlSchema ) )
 parseSchema fileContent =
     let
         lines : List FileLineContent
         lines =
-            splitLines fileContent
+            parseLines fileContent
     in
     lines
-        |> buildLines
+        |> buildSqlLines
         |> buildStatements
         |> List.foldl
             (\statement ( errs, schema ) ->
@@ -429,13 +436,6 @@ statementIsEmpty statement =
     statement.head.text == ";"
 
 
-buildLines : List String -> List SqlLine
-buildLines lines =
+buildSqlLines : List FileLineContent -> List SqlLine
+buildSqlLines lines =
     lines |> List.indexedMap (\i line -> { line = i, text = line })
-
-
-splitLines : FileContent -> List FileLineContent
-splitLines fileContent =
-    fileContent
-        |> String.replace "\u{000D}" "\n"
-        |> String.split "\n"

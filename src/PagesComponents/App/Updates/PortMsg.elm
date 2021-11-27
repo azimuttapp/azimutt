@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.PortMsg exposing (handlePortMsg)
+module PagesComponents.App.Updates.PortMsg exposing (handleJsMsg)
 
 import Array
 import Dict
@@ -17,8 +17,8 @@ import PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
 import Ports exposing (JsMsg(..), toastError, trackJsonError)
 
 
-handlePortMsg : JsMsg -> Model -> Cmd Msg
-handlePortMsg msg model =
+handleJsMsg : JsMsg -> Model -> Cmd Msg
+handleJsMsg msg model =
     case msg of
         GotSizes sizes ->
             send (SizesChanged sizes)

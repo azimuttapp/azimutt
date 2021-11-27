@@ -4,12 +4,13 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
 import Css
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, aside, div, form, input, label, nav, p, span, text)
-import Html.Styled.Attributes exposing (css, for, href, id, name, type_)
+import Html.Styled exposing (Html, a, aside, div, form, h2, label, nav, p, span, text)
+import Html.Styled.Attributes exposing (css, for, href)
 import Html.Styled.Events exposing (onClick)
-import Libs.Html.Styled.Attributes exposing (ariaCurrent)
+import Libs.FileInput as FileInput
+import Libs.Html.Styled.Attributes exposing (ariaCurrent, role)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColorLevel(..), TwColorPosition(..))
+import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.Tailwind.Utilities as Tu
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
@@ -51,7 +52,7 @@ viewContent theme model page =
         [ aside [ css [ Tw.py_6, Bp.lg [ Tw.col_span_3 ] ] ]
             [ nav [ css [ Tw.space_y_1 ] ] (page.tabs |> List.map (viewTab theme model.tabActive)) ]
         , div [ css [ Tw.px_4, Tw.py_6, Bp.sm [ Tw.p_6 ], Bp.lg [ Tw.pb_8, Tw.col_span_9, Tw.rounded_r_lg ] ] ]
-            [ viewTabContent model.tabActive ]
+            [ viewTabContent theme model.tabActive ]
         ]
 
 
@@ -70,39 +71,27 @@ viewTab theme selected tab =
             ]
 
 
-viewTabContent : Tab -> Html msg
-viewTabContent tab =
+viewTabContent : Theme -> Tab -> Html Msg
+viewTabContent theme tab =
     case tab of
         Schema ->
-            viewSchemaUpload
+            viewSchemaUpload theme
 
         Sample ->
             viewSample
 
 
-viewSchemaUpload : Html msg
-viewSchemaUpload =
+viewSchemaUpload : Theme -> Html Msg
+viewSchemaUpload theme =
     div []
         [ form []
             [ div []
-                [ label [ for "cover-photo", css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text "Import your SQL schema" ]
+                [ h2 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text "Import your SQL schema" ]
                 , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text "Everything stay on your machine, don't worry about your schema privacy." ]
                 ]
             , div [ css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_y_6, Tw.gap_x_4, Bp.sm [ Tw.grid_cols_6 ] ] ]
                 [ div [ css [ Bp.sm [ Tw.col_span_6 ] ] ]
-                    [ div [ css [ Tw.mt_1, Tw.flex, Tw.justify_center, Tw.px_6, Tw.pt_5, Tw.pb_6, Tw.border_2, Tw.border_gray_300, Tw.border_dashed, Tw.rounded_md ] ]
-                        [ div [ css [ Tw.space_y_1, Tw.text_center ] ]
-                            [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12, Tw.text_gray_400 ]
-                            , div [ css [ Tw.flex, Tw.text_sm, Tw.text_gray_600 ] ]
-                                [ label [ for "file-upload", css [ Tw.relative, Tw.cursor_pointer, Tw.bg_white, Tw.rounded_md, Tw.font_medium, Tw.text_indigo_600, Tu.focusWithin [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Tw.ring_indigo_500 ], Css.hover [ Tw.text_indigo_500 ] ] ]
-                                    [ span [] [ text "Upload a file" ]
-                                    , input [ id "file-upload", name "file-upload", type_ "file", css [ Tw.sr_only ] ] []
-                                    ]
-                                , p [ css [ Tw.pl_1 ] ] [ text "or drag and drop" ]
-                                ]
-                            , p [ css [ Tw.text_xs, Tw.text_gray_500 ] ] [ text "PNG, JPG, GIF up to 10MB" ]
-                            ]
-                        ]
+                    [ viewFileUpload theme
                     ]
                 ]
             ]
@@ -111,6 +100,35 @@ viewSchemaUpload =
             [ div [ css [ Tw.px_4, Tw.py_5, Bp.sm [ Tw.p_6 ] ] ]
                 [ div [] [ text "some logs..." ]
                 ]
+            ]
+        ]
+
+
+viewFileUpload : Theme -> Html Msg
+viewFileUpload theme =
+    let
+        id : String
+        id =
+            "file-upload"
+    in
+    label
+        ([ for id, role "button", css [ Tw.mt_1, Tw.flex, Tw.justify_center, Tw.px_6, Tw.pt_5, Tw.pb_6, Tw.border_2, Tw.border_gray_300, Tw.border_dashed, Tw.rounded_md, Tw.text_gray_600, Tu.focusWithinRing ( theme.color, L600 ) ( White, L600 ), Css.hover [ TwColor.render Border theme.color L400, TwColor.render Text theme.color L600 ] ] ]
+            ++ FileInput.onDrop
+                { onOver = \_ _ -> FileDragOver
+                , onLeave = Just { id = id ++ "-label", msg = FileDragLeave }
+                , onDrop = \head _ -> LoadLocalFile head
+                }
+        )
+        [ div [ css [ Tw.space_y_1, Tw.text_center ] ]
+            [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
+            , div [ css [ Tw.flex, Tw.text_sm ] ]
+                [ span [ css [ Tw.relative, Tw.cursor_pointer, Tw.bg_white, Tw.rounded_md, Tw.font_medium, TwColor.render Text theme.color L600 ] ]
+                    [ span [] [ text "Upload a file" ]
+                    , FileInput.hiddenInputSingle id [ ".sql" ] LoadLocalFile
+                    ]
+                , p [ css [ Tw.pl_1 ] ] [ text "or drag and drop" ]
+                ]
+            , p [ css [ Tw.text_xs ] ] [ text "SQL only" ]
             ]
         ]
 

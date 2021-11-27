@@ -1,11 +1,11 @@
-module PagesComponents.Projects.Updates.PortMsg exposing (handlePortMsg)
+module PagesComponents.Projects.Updates.PortMsg exposing (handleJsMsg)
 
 import PagesComponents.Projects.Models exposing (Model, Msg)
 import Ports exposing (JsMsg(..))
 
 
-handlePortMsg : JsMsg -> Model -> Cmd Msg
-handlePortMsg msg _ =
+handleJsMsg : JsMsg -> Model -> Cmd Msg
+handleJsMsg msg _ =
     case msg of
         _ ->
             Cmd.none

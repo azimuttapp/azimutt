@@ -4,7 +4,9 @@ import Gen.Params.Projects.New exposing (Params)
 import Html.Styled as Styled
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
+import PagesComponents.Projects.New.Updates.PortMsg exposing (handleJsMsg)
 import PagesComponents.Projects.New.View exposing (viewNewProject)
+import Ports exposing (JsMsg(..), onJsMessage, readLocalFile)
 import Request
 import Shared
 import View exposing (View)
@@ -37,6 +39,8 @@ init =
     ( { navigationActive = "New project"
       , mobileMenuOpen = False
       , tabActive = Schema
+      , schemaFile = Nothing
+      , schemaFileContent = Nothing
       }
     , Cmd.none
     )
@@ -58,6 +62,24 @@ update msg model =
         SelectTab tab ->
             ( { model | tabActive = tab }, Cmd.none )
 
+        FileDragOver ->
+            ( model, Cmd.none )
+
+        FileDragLeave ->
+            ( model, Cmd.none )
+
+        LoadLocalFile file ->
+            ( { model | schemaFile = Just file }, readLocalFile Nothing Nothing file )
+
+        FileLoaded projectId sourceInfo fileContent ->
+            ( { model | schemaFileContent = Just ( projectId, sourceInfo, fileContent ) }, Cmd.none )
+
+        JsMessage jsMsg ->
+            ( model, handleJsMsg jsMsg )
+
+        Noop ->
+            ( model, Cmd.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -65,7 +87,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    onJsMessage JsMessage
 
 
 

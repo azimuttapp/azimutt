@@ -20,7 +20,7 @@ import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (handleLayout)
-import PagesComponents.App.Updates.PortMsg exposing (handlePortMsg)
+import PagesComponents.App.Updates.PortMsg exposing (handleJsMsg)
 import PagesComponents.App.Updates.Project exposing (deleteProject, useProject)
 import PagesComponents.App.Updates.Settings exposing (handleSettings)
 import PagesComponents.App.Updates.Source exposing (handleSource)
@@ -214,7 +214,7 @@ update msg model =
             ( { model | confirm = initConfirm }, B.cond answer cmd Cmd.none )
 
         JsMessage m ->
-            ( model, model |> handlePortMsg m )
+            ( model, model |> handleJsMsg m )
 
         Noop ->
             ( model, Cmd.none )
