@@ -1,26 +1,25 @@
-module Components.Molecules.Alert exposing (Action, ActionsModel, DescriptionModel, ListModel, doc, withActions, withDescription, withList)
+module Components.Molecules.Alert exposing (ActionsModel, DescriptionModel, ListModel, doc, withActions, withDescription, withList)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, div, h3, li, p, text, ul)
+import Html.Styled exposing (Html, div, h3, li, text, ul)
 import Html.Styled.Attributes exposing (css)
 import Libs.Html.Styled.Attributes exposing (role)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Tailwind.Utilities as Tw
 
 
-type alias DescriptionModel =
+type alias DescriptionModel msg =
     { color : TwColor
     , icon : Icon
     , title : String
-    , description : String
+    , description : Html msg
     }
 
 
-withDescription : DescriptionModel -> Html msg
+withDescription : DescriptionModel msg -> Html msg
 withDescription model =
     alert
         { color = model.color
@@ -50,13 +49,9 @@ type alias ActionsModel msg =
     { color : TwColor
     , icon : Icon
     , title : String
-    , description : String
-    , actions : List (Action msg)
+    , description : Html msg
+    , actions : List (Html msg)
     }
-
-
-type alias Action msg =
-    { name : String, onClick : msg }
 
 
 withActions : ActionsModel msg -> Html msg
@@ -67,7 +62,7 @@ withActions model =
         , content =
             [ alertTitle model.color model.title
             , alertDescription model.color model.description
-            , alertActions model.color model.actions
+            , alertActions model.actions
             ]
         }
 
@@ -100,9 +95,9 @@ alertTitle color title =
     h3 [ css [ Tw.text_sm, Tw.font_medium, TwColor.render Text color L800 ] ] [ text title ]
 
 
-alertDescription : TwColor -> String -> Html msg
+alertDescription : TwColor -> Html msg -> Html msg
 alertDescription color description =
-    div [ css [ Tw.mt_2, Tw.text_sm, TwColor.render Text color L700 ] ] [ p [] [ text description ] ]
+    div [ css [ Tw.mt_2, Tw.text_sm, TwColor.render Text color L700 ] ] [ description ]
 
 
 alertList : TwColor -> List String -> Html msg
@@ -113,17 +108,12 @@ alertList color items =
         ]
 
 
-alertActions : TwColor -> List (Action msg) -> Html msg
-alertActions color actions =
-    case actions of
-        [] ->
-            div [] []
-
-        head :: tail ->
-            div [ css [ Tw.mt_4 ] ]
-                [ div [ css [ Tw.neg_mx_2, Tw.neg_my_1_dot_5, Tw.flex ] ]
-                    (Button.light2 color [] [ text head.name ] :: (tail |> List.map (\action -> Button.light2 color [ css [ Tw.ml_3 ] ] [ text action.name ])))
-                ]
+alertActions : List (Html msg) -> Html msg
+alertActions actions =
+    div [ css [ Tw.mt_4 ] ]
+        [ div [ css [ Tw.neg_mx_2, Tw.neg_my_1_dot_5, Tw.flex ] ]
+            actions
+        ]
 
 
 
@@ -134,7 +124,7 @@ doc : Chapter x
 doc =
     Chapter.chapter "Alert"
         |> Chapter.renderComponentList
-            [ ( "withDescription", withDescription { color = Yellow, icon = Exclamation, title = "Attention needed", description = "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." } )
+            [ ( "withDescription", withDescription { color = Yellow, icon = Exclamation, title = "Attention needed", description = text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." } )
             , ( "withList", withList { color = Red, icon = XCircle, title = "There were 2 errors with your submission", items = [ "Your password must be at least 8 characters", "Your password must include at least one pro wrestling finishing move" ] } )
-            , ( "withActions", withActions { color = Green, icon = CheckCircle, title = "Order completed", description = "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam.", actions = [ { name = "View status", onClick = logAction "View status" }, { name = "Dismiss", onClick = logAction "Dismiss" } ] } )
+            , ( "withActions", withActions { color = Green, icon = CheckCircle, title = "Order completed", description = text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam.", actions = [ Button.light2 Green [] [ text "View status" ], Button.light2 Green [ css [ Tw.ml_3 ] ] [ text "Dismiss" ] ] } )
             ]

@@ -2,16 +2,20 @@ module PagesComponents.Projects.New.View exposing (viewNewProject)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Link as Link
+import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
+import Conf exposing (constants)
 import Css
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, aside, div, form, h2, label, nav, p, span, text)
+import Html.Styled exposing (Html, a, aside, br, div, form, h2, label, nav, p, span, text)
 import Html.Styled.Attributes exposing (css, for, href)
 import Html.Styled.Events exposing (onClick)
 import Libs.FileInput as FileInput
+import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaCurrent, role)
 import Libs.Maybe as M
 import Libs.Models.FileName exposing (FileName)
@@ -26,6 +30,7 @@ import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 import Shared
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
+import Url exposing (percentEncode)
 
 
 viewNewProject : Shared.Model -> Model -> List (Html Msg)
@@ -107,8 +112,9 @@ viewSchemaUpload theme model =
          ]
             ++ (Maybe.map2
                     (\file p ->
-                        [ div [ css [ Tw.my_6 ] ] [ Divider.withLabel (model.project |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                        [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.project |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
                         , viewLogs file.name p
+                        , viewErrorAlert p
                         ]
                     )
                     model.schemaFile
@@ -150,7 +156,7 @@ viewFileUpload theme =
 
 viewLogs : FileName -> ProjectParser.Model msg -> Html msg
 viewLogs fileName model =
-    div [ css [ Tw.px_4, Tw.py_2, Tw.max_h_96, Tw.overflow_y_auto, Tw.font_mono, Tw.text_xs, Tw.bg_gray_50, Tw.shadow, Tw.rounded_lg ] ]
+    div [ css [ Tw.mt_6, Tw.px_4, Tw.py_2, Tw.max_h_96, Tw.overflow_y_auto, Tw.font_mono, Tw.text_xs, Tw.bg_gray_50, Tw.shadow, Tw.rounded_lg ] ]
         ([ div [] [ text ("Loaded file " ++ fileName ++ ".") ] ]
             ++ (model.lines |> M.mapOrElse (\l -> [ div [] [ text ("The file has " ++ (l |> List.length |> String.fromInt) ++ " lines.") ] ]) [])
             ++ (model.statements |> M.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements in it.") ] ]) [])
@@ -199,9 +205,63 @@ viewSchemaError errors =
         )
 
 
+viewErrorAlert : ProjectParser.Model msg -> Html Msg
+viewErrorAlert model =
+    let
+        parseErrors : List (List ParseError)
+        parseErrors =
+            model.commands |> Maybe.map (\commands -> commands |> Dict.values |> List.filterMap (\( _, r ) -> r |> R.toErrMaybe)) |> Maybe.withDefault []
+    in
+    if (parseErrors |> List.isEmpty) && (model.schemaErrors |> List.isEmpty) then
+        div [] []
+
+    else
+        div [ css [ Tw.mt_6 ] ]
+            [ Alert.withActions
+                { color = Red
+                , icon = XCircle
+                , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (model.schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
+                , description = p [] [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it.", br [] [], bText "Please send it", text ", you will be able to edit it if needed to remove your private information." ]
+                , actions = [ Link.light2 Red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
+                }
+            ]
+
+
+sendErrorReport : List (List ParseError) -> List (List SchemaError) -> String
+sendErrorReport parseErrors schemaErrors =
+    let
+        email : String
+        email =
+            constants.azimuttEmail
+
+        subject : String
+        subject =
+            "[Azimutt] SQL Parser error report"
+
+        body : String
+        body =
+            "Hi Azimutt team!\nGot some errors using the Azimutt SQL parser.\nHere are the details..."
+                ++ (if parseErrors |> List.isEmpty then
+                        ""
+
+                    else
+                        "\n\n\n------------------------------------------------------------- Parsing errors -------------------------------------------------------------\n\n"
+                            ++ (parseErrors |> List.indexedMap (\i errors -> String.fromInt (i + 1) ++ ".\n" ++ (errors |> String.join "\n")) |> String.join "\n\n")
+                   )
+                ++ (if schemaErrors |> List.isEmpty then
+                        ""
+
+                    else
+                        "\n\n\n------------------------------------------------------------- Schema errors -------------------------------------------------------------\n\n"
+                            ++ (schemaErrors |> List.indexedMap (\i errors -> String.fromInt (i + 1) ++ ".\n" ++ (errors |> String.join "\n")) |> String.join "\n\n")
+                   )
+    in
+    "mailto:" ++ email ++ "?subject=" ++ percentEncode subject ++ "&body=" ++ percentEncode body
+
+
 viewActions : Theme -> Project -> Html Msg
 viewActions theme project =
-    div [ css [ Tw.pt_5 ] ]
+    div [ css [ Tw.mt_6 ] ]
         [ div [ css [ Tw.flex, Tw.justify_end ] ]
             [ Button.white3 theme.color [ onClick DropSchema ] [ text "Trash this schema" ]
             , Button.primary3 theme.color [ onClick (CreateProject project), css [ Tw.ml_3 ] ] [ text "Create project!" ]

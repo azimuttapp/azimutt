@@ -70,7 +70,7 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Link.doc, Markdown.doc ] )
+            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Link.doc theme, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, Modal.doc theme, Toast.doc theme ] )
             , ( "Organisms", [ Footer.doc, Header.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )

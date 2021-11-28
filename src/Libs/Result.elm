@@ -1,4 +1,4 @@
-module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, fold, isOk, map6, partition)
+module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, fold, isOk, map6, partition, toErrMaybe)
 
 import Libs.Nel as Nel exposing (Nel)
 
@@ -11,6 +11,16 @@ isOk result =
 
         Err _ ->
             False
+
+
+toErrMaybe : Result e a -> Maybe e
+toErrMaybe result =
+    case result of
+        Ok _ ->
+            Nothing
+
+        Err e ->
+            Just e
 
 
 partition : List (Result e a) -> ( List e, List a )
