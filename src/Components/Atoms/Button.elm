@@ -1,4 +1,4 @@
-module Components.Atoms.Button exposing (doc, light1, light2, light3, light4, light5, primary1, primary2, primary3, primary4, primary5, secondary1, secondary2, secondary3, secondary4, secondary5, white1, white2, white3, white4, white5)
+module Components.Atoms.Button exposing (commonStyles, doc, light, light1, light2, light3, light4, light5, primary, primary1, primary2, primary3, primary4, primary5, secondary, secondary1, secondary2, secondary3, secondary4, secondary5, size1, size2, size3, size4, size5, white, white1, white2, white3, white4, white5)
 
 import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
@@ -13,127 +13,122 @@ import Tailwind.Utilities as Tw
 
 primary1 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 primary1 =
-    primary size1
+    build primary size1
 
 
 primary2 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 primary2 =
-    primary size2
+    build primary size2
 
 
 primary3 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 primary3 =
-    primary size3
+    build primary size3
 
 
 primary4 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 primary4 =
-    primary size4
+    build primary size4
 
 
 primary5 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 primary5 =
-    primary size5
+    build primary size5
 
 
 secondary1 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 secondary1 =
-    secondary size1
+    build secondary size1
 
 
 secondary2 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 secondary2 =
-    secondary size2
+    build secondary size2
 
 
 secondary3 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 secondary3 =
-    secondary size3
+    build secondary size3
 
 
 secondary4 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 secondary4 =
-    secondary size4
+    build secondary size4
 
 
 secondary5 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 secondary5 =
-    secondary size5
+    build secondary size5
 
 
 light1 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 light1 =
-    light size1
+    build light size1
 
 
 light2 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 light2 =
-    light size2
+    build light size2
 
 
 light3 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 light3 =
-    light size3
+    build light size3
 
 
 light4 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 light4 =
-    light size4
+    build light size4
 
 
 light5 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 light5 =
-    light size5
+    build light size5
 
 
 white1 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 white1 =
-    white size1
+    build white size1
 
 
 white2 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 white2 =
-    white size2
+    build white size2
 
 
 white3 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 white3 =
-    white size3
+    build white size3
 
 
 white4 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 white4 =
-    white size4
+    build white size4
 
 
 white5 : TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
 white5 =
-    white size5
+    build white size5
 
 
-primary : List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
-primary styles color attrs content =
-    button (attrs ++ [ type_ "button", css (styles ++ commonStyles color ++ [ Tw.border_transparent, Tw.shadow_sm, Tw.text_white, TwColor.render Bg color L600, Css.hover [ TwColor.render Bg color L700 ] ]) ]) content
+primary : TwColor -> List Css.Style
+primary color =
+    [ Tw.border_transparent, Tw.shadow_sm, Tw.text_white, TwColor.render Bg color L600, Css.hover [ TwColor.render Bg color L700 ] ]
 
 
-secondary : List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
-secondary styles color attrs content =
-    button (attrs ++ [ type_ "button", css (styles ++ commonStyles color ++ [ Tw.border_transparent, TwColor.render Text color L700, TwColor.render Bg color L100, Css.hover [ TwColor.render Bg color L200 ] ]) ]) content
+secondary : TwColor -> List Css.Style
+secondary color =
+    [ Tw.border_transparent, TwColor.render Text color L700, TwColor.render Bg color L100, Css.hover [ TwColor.render Bg color L200 ] ]
 
 
-light : List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
-light styles color attrs content =
-    button (attrs ++ [ type_ "button", css (styles ++ commonStyles color ++ [ Tw.border_transparent, TwColor.render Text color L800, TwColor.render Bg color L50, Css.hover [ TwColor.render Bg color L100 ] ]) ]) content
+light : TwColor -> List Css.Style
+light color =
+    [ Tw.border_transparent, TwColor.render Text color L800, TwColor.render Bg color L50, Css.hover [ TwColor.render Bg color L100 ] ]
 
 
-white : List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
-white styles color attrs content =
-    button (attrs ++ [ type_ "button", css (styles ++ commonStyles color ++ [ Tw.border_gray_300, Tw.shadow_sm, Tw.text_gray_700, Tw.bg_white, Css.hover [ Tw.bg_gray_50 ] ]) ]) content
-
-
-commonStyles : TwColor -> List Css.Style
-commonStyles color =
-    [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.font_medium, Tu.focusRing ( color, L500 ) ( White, L500 ) ]
+white : TwColor -> List Css.Style
+white color =
+    [ Tw.border_gray_300, Tw.shadow_sm, TwColor.render Text color L700, Tw.bg_white, Css.hover [ TwColor.render Bg color L50 ] ]
 
 
 size1 : List Css.Style
@@ -159,6 +154,16 @@ size4 =
 size5 : List Css.Style
 size5 =
     [ Tw.px_6, Tw.py_3, Tw.text_base, Tw.rounded_md ]
+
+
+commonStyles : TwColor -> List Css.Style
+commonStyles color =
+    [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.font_medium, Tu.focusRing ( color, L500 ) ( White, L500 ) ]
+
+
+build : (TwColor -> List Css.Style) -> List Css.Style -> TwColor -> List (Attribute msg) -> List (Html msg) -> Html msg
+build colorStyles sizeStyles color attrs content =
+    button (attrs ++ [ type_ "button", css (commonStyles color ++ colorStyles color ++ sizeStyles) ]) content
 
 
 

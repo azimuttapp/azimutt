@@ -2,6 +2,7 @@ module PagesComponents.Home_.View exposing (viewHome)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Atoms.Link as Link
 import Components.Molecules.Feature as Feature
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
@@ -11,46 +12,46 @@ import Conf exposing (constants)
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, b, br, div, span, text)
-import Html.Styled.Attributes exposing (css, title)
+import Html.Styled.Attributes exposing (css, href, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
-import Libs.DateTime as DateTime
-import Libs.Duration as Duration
 import Libs.Html.Styled exposing (bText, extLink)
+import Libs.Html.Styled.Attributes exposing (track)
 import Libs.Models.TwColor exposing (TwColor(..))
-import Models.Project exposing (Project)
 import PagesComponents.Helpers as Helpers
 import Shared exposing (StoredProjects(..))
-import Tailwind.Utilities exposing (globalStyles, mt_3)
-import Time
+import Tailwind.Utilities as Tw exposing (globalStyles, mt_3)
 import Tracking exposing (events)
 
 
 viewHome : Shared.Model -> List (Html msg)
 viewHome shared =
     let
-        currentThreshold : Time.Posix
-        currentThreshold =
-            shared.now |> DateTime.minus (10 |> Duration.days)
-
-        lastCurrentProject : Maybe Project
-        lastCurrentProject =
+        heroCta : Html msg
+        heroCta =
             case shared.projects of
                 Loading ->
-                    Nothing
+                    Link.white5 Indigo ([ href (Route.toHref Route.Projects) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ]
 
                 Loaded projects ->
                     projects
-                        |> List.filter (\p -> p.updatedAt |> DateTime.greaterThan currentThreshold)
-                        |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
                         |> List.head
+                        |> Maybe.map
+                            (\p ->
+                                span []
+                                    [ Link.white5 Indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (events.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                                    , Link.white5 Indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (events.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                                    ]
+                            )
+                        |> Maybe.withDefault (Link.white5 Indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ])
 
         appRoute : Route.Route
         appRoute =
-            lastCurrentProject |> Maybe.map (\p -> Route.Projects__Id_ { id = p.id }) |> Maybe.withDefault Route.Projects
+            case shared.projects of
+                Loading ->
+                    Route.Projects
 
-        mainCtaText : String
-        mainCtaText =
-            lastCurrentProject |> Maybe.map (\p -> "Explore " ++ p.name) |> Maybe.withDefault "Explore your schema"
+                Loaded projects ->
+                    projects |> List.head |> Maybe.map (\_ -> Route.Projects) |> Maybe.withDefault Route.Projects__New
     in
     [ Global.global globalStyles
     , Helpers.publicHeader
@@ -58,7 +59,7 @@ viewHome shared =
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your database SQL schema"
         , content = [ bText "Did you ever find yourself lost in your database?", br [] [], bText "Discover how Azimutt will help you understand it." ]
-        , cta = { url = Route.toHref appRoute, text = mainCtaText, track = Just (events.openAppCta "home-hero") }
+        , cta = heroCta
         }
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
         { image = { src = "/assets/images/basic-schema.png", alt = "Basic schema by Azimutt" }

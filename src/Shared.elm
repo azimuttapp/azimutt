@@ -71,7 +71,7 @@ update _ msg model =
             ( { model | now = time }, Cmd.none )
 
         JsMessage (GotProjects ( errors, projects )) ->
-            ( { model | projects = Loaded projects }
+            ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }
             , Cmd.batch
                 (errors
                     |> List.concatMap

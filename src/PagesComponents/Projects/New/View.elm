@@ -221,7 +221,13 @@ viewErrorAlert model =
                 { color = Red
                 , icon = XCircle
                 , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (model.schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
-                , description = p [] [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it.", br [] [], bText "Please send it", text ", you will be able to edit it if needed to remove your private information." ]
+                , description =
+                    p []
+                        [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it."
+                        , br [] []
+                        , bText "Please send it"
+                        , text ", you will be able to edit it if needed to remove your private information."
+                        ]
                 , actions = [ Link.light2 Red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
                 }
             ]
