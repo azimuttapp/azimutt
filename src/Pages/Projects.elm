@@ -1,5 +1,6 @@
 module Pages.Projects exposing (Model, Msg, page)
 
+import Browser.Navigation as Navigation
 import Components.Atoms.Icon exposing (Icon(..))
 import Gen.Params.Projects exposing (Params)
 import Html.Styled as Styled exposing (text)
@@ -18,10 +19,10 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared _ =
+page shared req =
     Page.element
         { init = init
-        , update = update
+        , update = update req
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -41,7 +42,7 @@ type alias Msg =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { navigationActive = "Dashboard"
+    ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
       , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
       , toastCpt = 0
@@ -55,11 +56,11 @@ init =
 -- UPDATE
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
+update req msg model =
     case msg of
         SelectMenu menu ->
-            ( { model | navigationActive = menu }, Cmd.none )
+            ( { model | selectedMenu = menu }, Cmd.none )
 
         ToggleMobileMenu ->
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
@@ -84,6 +85,9 @@ update msg model =
 
         ConfirmAnswer answer cmd ->
             ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )
+
+        NavigateTo url ->
+            ( model, Navigation.pushUrl req.key url )
 
         Noop ->
             ( model, Cmd.none )

@@ -62,7 +62,7 @@ appShell :
     Theme
     -> (Link -> msg)
     -> msg
-    -> { x | navigationActive : String, mobileMenuOpen : Bool }
+    -> { x | selectedMenu : String, mobileMenuOpen : Bool }
     -> List (S.Html msg)
     -> List (S.Html msg)
     -> List (S.Html msg)
@@ -83,7 +83,7 @@ appShell theme onNavigationClick onMobileMenuClick model title content footer =
             , profile = Nothing
             , mobileMenu = { id = "mobile-menu", onClick = onMobileMenuClick }
             }
-            { navigationActive = model.navigationActive
+            { selectedMenu = model.selectedMenu
             , mobileMenuOpen = model.mobileMenuOpen
             , profileOpen = False
             }

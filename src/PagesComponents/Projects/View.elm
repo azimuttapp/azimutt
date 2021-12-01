@@ -2,12 +2,14 @@ module PagesComponents.Projects.View exposing (viewProjects)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast as Toast
+import Conf exposing (schemaSamples)
 import Css
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, br, button, div, h3, li, p, span, text, ul)
+import Html.Styled exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Styled.Attributes exposing (css, href, title, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
@@ -33,9 +35,9 @@ viewProjects shared model =
         (\link -> SelectMenu link.text)
         ToggleMobileMenu
         model
-        [ text model.navigationActive ]
+        [ text model.selectedMenu ]
         [ viewContent shared model ]
-        [ viewConfirm shared.theme model.confirm
+        [ viewConfirm model.confirm
         , Toast.container (model.toasts |> List.map (\t -> Toast.render shared.theme (ToastHide t.key) t))
         ]
 
@@ -64,24 +66,31 @@ viewProjectList shared =
         ]
 
 
-viewNoProjects : Theme -> Html msg
+viewNoProjects : Theme -> Html Msg
 viewNoProjects theme =
     div []
         [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
-            [ text "You haven’t created any project yet. Import your own or select a sample one." ]
+            [ text "You haven’t created any project yet. Import your own schema." ]
         , viewFirstProject theme
         , div [ css [ Tw.mt_6, Tw.text_sm, Tw.font_medium, TwColor.render Text theme.color L600 ] ]
-            [ text "Or start from an sample project"
+            [ text "Or explore a sample one"
             , span [ ariaHidden True ] [ text " →" ]
             ]
-        , ul [ role "list", css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_6, Bp.sm [ Tw.grid_cols_2 ] ] ]
-            [ viewSampleProject theme "#" Pink ViewList "Basic" [ text "Simple login/role schema.", br [] [], bText "4 tables", text ", the easiest schema, just enough play with the product." ]
-            , viewSampleProject theme "#" Yellow Calendar "Wordpress" [ text "The well known CMS powering most of the web.", br [] [], bText "12 tables", text ", interesting schema, but with no foreign keys!" ]
-            , viewSampleProject theme "#" Green Photograph "Gospeak.io" [ text "A full featured SaaS for meetup organizers.", br [] [], bText "26 tables", text ", a good real world example to explore." ]
-            , viewSampleProject theme "#" Blue ViewBoards "Create a Board" [ text "Track tasks in different stages of your project." ]
-            , viewSampleProject theme "#" Indigo Table "Create a Spreadsheet" [ text "Lots of numbers and things — good for nerds." ]
-            , viewSampleProject theme "#" Purple Clock "Create a Timeline" [ text "Get a birds-eye-view of your procrastination." ]
-            ]
+        , ItemList.withIcons theme
+            (schemaSamples
+                |> Dict.values
+                |> List.sortBy .tables
+                |> List.map
+                    (\s ->
+                        { color = s.color
+                        , icon = s.icon
+                        , title = s.name ++ " (" ++ (s.tables |> String.fromInt) ++ " tables)"
+                        , description = s.description
+                        , active = True
+                        , onClick = NavigateTo (Route.toHref Route.Projects__New ++ "?sample=" ++ s.key)
+                        }
+                    )
+            )
         ]
 
 
@@ -90,24 +99,6 @@ viewFirstProject theme =
     a [ href (Route.toHref Route.Projects__New), css [ Tw.mt_6, Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_400, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.border_gray_400 ] ] ]
         [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
         , span [ css [ Tw.mt_2, Tw.block, Tw.text_sm, Tw.font_medium ] ] [ text "Create a new project" ]
-        ]
-
-
-viewSampleProject : Theme -> String -> TwColor -> Icon -> String -> List (Html msg) -> Html msg
-viewSampleProject theme url color icon title description =
-    li [ css [ Tw.flow_root ] ]
-        [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, Tu.focusWithin [ Tw.ring_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
-            [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_16, Tw.w_16, Tw.rounded_lg, TwColor.render Bg color L500 ] ] [ Icon.outline icon [ Tw.text_white ] ]
-            , div []
-                [ h3 [ css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_900 ] ]
-                    [ a [ href url, css [ Css.focus [ Tw.outline_none ] ] ]
-                        [ span [ css [ Tw.absolute, Tw.inset_0 ], ariaHidden True ] []
-                        , text title
-                        ]
-                    ]
-                , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] description
-                ]
-            ]
         ]
 
 
@@ -154,9 +145,9 @@ viewNewProject theme =
         ]
 
 
-viewConfirm : Theme -> Confirm Msg -> Html Msg
-viewConfirm theme c =
-    Modal.confirm theme
+viewConfirm : Confirm Msg -> Html Msg
+viewConfirm c =
+    Modal.confirm
         { id = "confirm-modal"
         , icon = c.icon
         , color = c.color

@@ -1,11 +1,12 @@
-module Conf exposing (conf, constants, newsletterConf, schemaSamples)
+module Conf exposing (SampleSchema, conf, constants, newsletterConf, schemaSamples)
 
+import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.Color exposing (Color)
-import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
@@ -86,10 +87,15 @@ newsletterConf =
     { method = "post", url = "https://www.getrevue.co/profile/azimuttapp/add_subscriber", placeholder = "Enter your email", cta = "Subscribe" }
 
 
-schemaSamples : Dict String ( Int, FileUrl )
+type alias SampleSchema =
+    { url : String, color : TwColor, icon : Icon, key : String, name : String, description : String, tables : Int }
+
+
+schemaSamples : Dict String SampleSchema
 schemaSamples =
-    Dict.fromList
-        [ ( "basic schema", ( 4, "samples/basic.sql" ) )
-        , ( "wordpress", ( 12, "samples/wordpress.sql" ) )
-        , ( "gospeak.io", ( 26, "samples/gospeak.sql" ) )
-        ]
+    [ { url = "/samples/basic.sql", color = Pink, icon = ViewList, key = "basic", name = "Basic", description = "Simple login/role schema. The easiest one, just enough play with Azimutt features.", tables = 4 }
+    , { url = "/samples/wordpress.sql", color = Yellow, icon = Template, key = "wordpress", name = "Wordpress", description = "The well known CMS powering most of the web. An interesting schema, but with no foreign keys!", tables = 12 }
+    , { url = "/samples/gospeak.sql", color = Green, icon = ClipboardList, key = "gospeak", name = "Gospeak.io", description = "A full featured SaaS for meetup organizers. A good real world example to explore and really see the power of Azimutt.", tables = 26 }
+    ]
+        |> List.map (\sample -> ( sample.key, sample ))
+        |> Dict.fromList

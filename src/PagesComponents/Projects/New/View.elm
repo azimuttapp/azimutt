@@ -5,20 +5,20 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
-import Conf exposing (constants)
+import Components.Molecules.ItemList as ItemList
+import Conf exposing (constants, schemaSamples)
 import Css
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, aside, br, div, form, h2, label, nav, p, span, text)
+import Html.Styled exposing (Html, a, aside, div, form, h2, label, nav, p, span, text)
 import Html.Styled.Attributes exposing (css, for, href)
 import Html.Styled.Events exposing (onClick)
 import Libs.FileInput as FileInput
 import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaCurrent, role)
 import Libs.Maybe as M
-import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.Result as R
@@ -39,7 +39,7 @@ viewNewProject shared model =
         (\link -> SelectMenu link.text)
         ToggleMobileMenu
         model
-        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft [ Tw.inline_block ], text " ", text model.navigationActive ] ]
+        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft [ Tw.inline_block ], text " ", text model.selectedMenu ] ]
         [ viewContent shared.theme
             model
             { tabs =
@@ -64,7 +64,7 @@ viewContent : Theme -> Model -> PageModel -> Html Msg
 viewContent theme model page =
     div [ css [ Tw.divide_y, Bp.lg [ Tw.grid, Tw.grid_cols_12, Tw.divide_x ] ] ]
         [ aside [ css [ Tw.py_6, Bp.lg [ Tw.col_span_3 ] ] ]
-            [ nav [ css [ Tw.space_y_1 ] ] (page.tabs |> List.map (viewTab theme model.tabActive)) ]
+            [ nav [ css [ Tw.space_y_1 ] ] (page.tabs |> List.map (viewTab theme model.selectedTab)) ]
         , div [ css [ Tw.px_4, Tw.py_6, Bp.sm [ Tw.p_6 ], Bp.lg [ Tw.pb_8, Tw.col_span_9, Tw.rounded_r_lg ] ] ]
             [ viewTabContent theme model ]
         ]
@@ -87,42 +87,29 @@ viewTab theme selected tab =
 
 viewTabContent : Theme -> Model -> Html Msg
 viewTabContent theme model =
-    case model.tabActive of
-        Schema ->
-            viewSchemaUpload theme model
-
-        Sample ->
-            viewSample
-
-
-viewSchemaUpload : Theme -> Model -> Html Msg
-viewSchemaUpload theme model =
     div []
-        ([ form []
-            [ div []
-                [ h2 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text "Import your SQL schema" ]
-                , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text "Everything stay on your machine, don't worry about your schema privacy." ]
-                ]
-            , div [ css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_y_6, Tw.gap_x_4, Bp.sm [ Tw.grid_cols_6 ] ] ]
+        [ case model.selectedTab of
+            Schema ->
+                viewSchemaUpload theme
+
+            Sample ->
+                viewSampleSelection theme model.selectedSample
+        , viewSchemaImport theme model
+        ]
+
+
+viewSchemaUpload : Theme -> Html Msg
+viewSchemaUpload theme =
+    div []
+        [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
+        , form []
+            [ div [ css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_y_6, Tw.gap_x_4, Bp.sm [ Tw.grid_cols_6 ] ] ]
                 [ div [ css [ Bp.sm [ Tw.col_span_6 ] ] ]
                     [ viewFileUpload theme
                     ]
                 ]
             ]
-         ]
-            ++ (Maybe.map2
-                    (\file p ->
-                        [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.project |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                        , viewLogs file.name p
-                        , viewErrorAlert p
-                        ]
-                    )
-                    model.schemaFile
-                    model.schemaParser
-                    |> Maybe.withDefault []
-               )
-            ++ (model.project |> M.mapOrElse (\p -> [ viewActions theme p ]) [])
-        )
+        ]
 
 
 viewFileUpload : Theme -> Html Msg
@@ -137,7 +124,7 @@ viewFileUpload theme =
             ++ FileInput.onDrop
                 { onOver = \_ _ -> FileDragOver
                 , onLeave = Just { id = id ++ "-label", msg = FileDragLeave }
-                , onDrop = \head _ -> LoadLocalFile head
+                , onDrop = \head _ -> SelectLocalFile head
                 }
         )
         [ div [ css [ Tw.space_y_1, Tw.text_center ] ]
@@ -145,21 +132,69 @@ viewFileUpload theme =
             , div [ css [ Tw.flex, Tw.text_sm ] ]
                 [ span [ css [ Tw.relative, Tw.cursor_pointer, Tw.bg_white, Tw.rounded_md, Tw.font_medium, TwColor.render Text theme.color L600 ] ]
                     [ span [] [ text "Upload a file" ]
-                    , FileInput.hiddenInputSingle id [ ".sql" ] LoadLocalFile
+                    , FileInput.hiddenInputSingle id [ ".sql" ] SelectLocalFile
                     ]
                 , p [ css [ Tw.pl_1 ] ] [ text "or drag and drop" ]
                 ]
-            , p [ css [ Tw.text_xs ] ] [ text "SQL only" ]
+            , p [ css [ Tw.text_xs ] ] [ text "SQL file only" ]
             ]
         ]
 
 
-viewLogs : FileName -> ProjectParser.Model msg -> Html msg
-viewLogs fileName model =
+viewSampleSelection : Theme -> Maybe String -> Html Msg
+viewSampleSelection theme selectedSample =
+    div []
+        [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
+        , ItemList.withIcons theme
+            (schemaSamples
+                |> Dict.values
+                |> List.sortBy .tables
+                |> List.map
+                    (\s ->
+                        { color = s.color
+                        , icon = s.icon
+                        , title = s.name ++ " (" ++ (s.tables |> String.fromInt) ++ " tables)"
+                        , description = s.description
+                        , active = selectedSample == Nothing || selectedSample == Just s.key
+                        , onClick = SelectSample s.key
+                        }
+                    )
+            )
+        ]
+
+
+viewHeading : String -> String -> Html msg
+viewHeading title description =
+    div []
+        [ h2 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text title ]
+        , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text description ]
+        ]
+
+
+viewSchemaImport : Theme -> Model -> Html Msg
+viewSchemaImport theme model =
+    div []
+        ((Maybe.map2
+            (\source p ->
+                [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.project |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                , viewLogs source p
+                , viewErrorAlert p
+                ]
+            )
+            ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample")))
+            model.parsedSchema
+            |> Maybe.withDefault []
+         )
+            ++ (model.project |> M.mapOrElse (\p -> [ viewActions theme p ]) [])
+        )
+
+
+viewLogs : String -> ProjectParser.Model msg -> Html msg
+viewLogs source model =
     div [ css [ Tw.mt_6, Tw.px_4, Tw.py_2, Tw.max_h_96, Tw.overflow_y_auto, Tw.font_mono, Tw.text_xs, Tw.bg_gray_50, Tw.shadow, Tw.rounded_lg ] ]
-        ([ div [] [ text ("Loaded file " ++ fileName ++ ".") ] ]
-            ++ (model.lines |> M.mapOrElse (\l -> [ div [] [ text ("The file has " ++ (l |> List.length |> String.fromInt) ++ " lines.") ] ]) [])
-            ++ (model.statements |> M.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements in it.") ] ]) [])
+        ([ div [] [ text ("Loaded " ++ source ++ ".") ] ]
+            ++ (model.lines |> M.mapOrElse (\l -> [ div [] [ text ("Found " ++ (l |> List.length |> String.fromInt) ++ " lines in the file.") ] ]) [])
+            ++ (model.statements |> M.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements.") ] ]) [])
             ++ (model.commands
                     |> M.mapOrElse
                         (\commands ->
@@ -169,12 +204,15 @@ viewLogs fileName model =
                                 |> List.map (\( _, ( s, r ) ) -> r |> R.bimap (\e -> ( s, e )) (\c -> ( s, c )))
                                 |> R.partition
                                 |> (\( errs, cmds ) ->
-                                        if errs |> List.isEmpty then
-                                            [ div [] [ text "All statements are correctly parsed." ] ]
+                                        if (cmds |> List.length) == (model.statements |> M.mapOrElse Dict.size 0) then
+                                            [ div [] [ text "All statements were correctly parsed." ] ]
+
+                                        else if errs |> List.isEmpty then
+                                            [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed.") ] ]
 
                                         else
                                             (errs |> List.map (\( s, e ) -> viewParseError s e))
-                                                ++ [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements are correctly parsed, " ++ (errs |> List.length |> String.fromInt) ++ " are in error.") ] ]
+                                                ++ [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed, " ++ (errs |> List.length |> String.fromInt) ++ " were in error.") ] ]
                                    )
                         )
                         []
@@ -185,7 +223,7 @@ viewLogs fileName model =
                 else
                     (model.schemaErrors |> List.map viewSchemaError) ++ [ div [] [ text ((model.schemaErrors |> List.length |> String.fromInt) ++ " statements can't be added to the schema.") ] ]
                )
-            ++ (model.schema |> M.mapOrElse (\s -> [ div [] [ text ("The built schema has " ++ (s |> Dict.size |> String.fromInt) ++ " tables.") ] ]) [])
+            ++ (model.schema |> M.mapOrElse (\s -> [ div [] [ text ("Schema built with " ++ (s |> Dict.size |> String.fromInt) ++ " tables.") ] ]) [])
         )
 
 
@@ -210,7 +248,7 @@ viewErrorAlert model =
     let
         parseErrors : List (List ParseError)
         parseErrors =
-            model.commands |> Maybe.map (\commands -> commands |> Dict.values |> List.filterMap (\( _, r ) -> r |> R.toErrMaybe)) |> Maybe.withDefault []
+            model.commands |> Maybe.map (Dict.values >> List.filterMap (\( _, r ) -> r |> R.toErrMaybe)) |> Maybe.withDefault []
     in
     if (parseErrors |> List.isEmpty) && (model.schemaErrors |> List.isEmpty) then
         div [] []
@@ -222,11 +260,13 @@ viewErrorAlert model =
                 , icon = XCircle
                 , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (model.schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
                 , description =
-                    p []
-                        [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it."
-                        , br [] []
-                        , bText "Please send it"
-                        , text ", you will be able to edit it if needed to remove your private information."
+                    div []
+                        [ p []
+                            [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it. "
+                            , bText "Please send it"
+                            , text ", you will be able to edit it if needed to remove your private information."
+                            ]
+                        , p [] [ text "In the meantime, you can look at the errors and your schema and try to simplify it. Or just use it as is, only not recognized statements will be missing." ]
                         ]
                 , actions = [ Link.light2 Red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
                 }
@@ -269,12 +309,7 @@ viewActions : Theme -> Project -> Html Msg
 viewActions theme project =
     div [ css [ Tw.mt_6 ] ]
         [ div [ css [ Tw.flex, Tw.justify_end ] ]
-            [ Button.white3 theme.color [ onClick DropSchema ] [ text "Trash this schema" ]
+            [ Button.white3 theme.color [ onClick DropSchema ] [ text "Trash this" ]
             , Button.primary3 theme.color [ onClick (CreateProject project), css [ Tw.ml_3 ] ] [ text "Create project!" ]
             ]
         ]
-
-
-viewSample : Html msg
-viewSample =
-    div [] [ text "Sample" ]

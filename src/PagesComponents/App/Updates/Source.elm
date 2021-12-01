@@ -27,7 +27,7 @@ handleSource msg model =
             ( model, readRemoteFile project source url Nothing )
 
         LoadSample name ->
-            ( model, schemaSamples |> Dict.get name |> M.mapOrElse (\( _, url ) -> readRemoteFile Nothing Nothing url (Just name)) (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
+            ( model, schemaSamples |> Dict.get name |> M.mapOrElse (\sample -> readRemoteFile Nothing Nothing sample.url (Just name)) (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
 
         FileLoaded projectId sourceInfo content ->
             model.project

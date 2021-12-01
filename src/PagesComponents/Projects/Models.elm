@@ -11,7 +11,7 @@ import Shared exposing (Confirm)
 
 
 type alias Model =
-    { navigationActive : String
+    { selectedMenu : String
     , mobileMenuOpen : Bool
     , confirm : Confirm Msg
     , toastCpt : Int
@@ -29,4 +29,5 @@ type Msg
     | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
+    | NavigateTo String
     | Noop

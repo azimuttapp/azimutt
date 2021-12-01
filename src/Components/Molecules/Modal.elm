@@ -33,8 +33,8 @@ type alias ConfirmModel msg =
     }
 
 
-confirm : Theme -> ConfirmModel msg -> Bool -> Html msg
-confirm theme model isOpen =
+confirm : ConfirmModel msg -> Bool -> Html msg
+confirm model isOpen =
     modal
         { id = model.id
         , isOpen = isOpen
@@ -54,7 +54,7 @@ confirm theme model isOpen =
             ]
         , div [ css [ Tw.mt_5, Bp.sm [ Tw.mt_4, Tw.flex, Tw.flex_row_reverse ] ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text model.confirm ]
-            , Button.white3 theme.color [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
+            , Button.white3 Gray [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
             ]
         ]
 
@@ -142,7 +142,7 @@ doc theme =
                 (\isOpen setIsOpen ->
                     div []
                         [ Button.primary3 theme.color [ onClick (setIsOpen True) ] [ text "Click me!" ]
-                        , confirm theme
+                        , confirm
                             { id = "modal-title"
                             , color = Red
                             , icon = Exclamation

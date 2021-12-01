@@ -10,7 +10,8 @@ import Libs.Models exposing (FileContent, FileLineContent)
 
 
 type alias Model msg =
-    { fileContent : FileContent
+    { cpt : Int
+    , fileContent : FileContent
     , lines : Maybe (List FileLineContent)
     , statements : Maybe (Dict Int SqlStatement)
     , commands : Maybe (Dict Int ( SqlStatement, Result (List ParseError) Command ))
@@ -31,7 +32,8 @@ type Msg
 
 init : FileContent -> (Msg -> msg) -> msg -> Model msg
 init fileContent buildMsg buildProject =
-    { fileContent = fileContent
+    { cpt = 0
+    , fileContent = fileContent
     , lines = Nothing
     , statements = Nothing
     , commands = Nothing
@@ -43,14 +45,14 @@ init fileContent buildMsg buildProject =
     }
 
 
-update : Msg -> Model msg -> ( Model msg, List msg )
+update : Msg -> Model msg -> ( Model msg, msg )
 update msg model =
-    case msg of
+    (case msg of
         BuildLines ->
-            ( { model | lines = model.fileContent |> FileParser.parseLines |> Just }, [ model.buildMsg BuildStatements ] )
+            ( { model | lines = model.fileContent |> FileParser.parseLines |> Just }, model.buildMsg BuildStatements )
 
         BuildStatements ->
-            model.lines |> M.mapOrElse (\l -> l |> FileParser.parseStatements |> (\statements -> ( { model | statements = statements |> D.fromIndexedList |> Just }, [ model.buildMsg BuildCommand ] ))) ( model, [ model.buildMsg BuildStatements ] )
+            model.lines |> M.mapOrElse (\l -> l |> FileParser.parseStatements |> (\statements -> ( { model | statements = statements |> D.fromIndexedList |> Just }, model.buildMsg BuildCommand ))) ( model, model.buildMsg BuildStatements )
 
         BuildCommand ->
             let
@@ -61,8 +63,8 @@ update msg model =
             model.statements
                 |> Maybe.withDefault Dict.empty
                 |> Dict.get index
-                |> Maybe.map (\s -> ( { model | commands = model.commands |> Maybe.withDefault Dict.empty |> Dict.insert index ( s, s |> FileParser.parseCommand ) |> Just }, [ model.buildMsg BuildCommand ] ))
-                |> Maybe.withDefault ( model, [ model.buildMsg EvolveSchema ] )
+                |> Maybe.map (\s -> ( { model | commands = model.commands |> Maybe.withDefault Dict.empty |> Dict.insert index ( s, s |> FileParser.parseCommand ) |> Just }, model.buildMsg BuildCommand ))
+                |> Maybe.withDefault ( model, model.buildMsg EvolveSchema )
 
         EvolveSchema ->
             model.commands
@@ -74,12 +76,19 @@ update msg model =
                             Ok cmd ->
                                 case model.schema |> Maybe.withDefault Dict.empty |> FileParser.evolve ( s, cmd ) of
                                     Ok schema ->
-                                        ( { model | schemaIndex = model.schemaIndex + 1, schema = Just schema }, [ model.buildMsg EvolveSchema ] )
+                                        ( { model | schemaIndex = model.schemaIndex + 1, schema = Just schema }, model.buildMsg EvolveSchema )
 
                                     Err errors ->
-                                        ( { model | schemaIndex = model.schemaIndex + 1, schemaErrors = errors :: model.schemaErrors }, [ model.buildMsg EvolveSchema ] )
+                                        ( { model | schemaIndex = model.schemaIndex + 1, schemaErrors = errors :: model.schemaErrors }, model.buildMsg EvolveSchema )
 
                             Err _ ->
-                                ( { model | schemaIndex = model.schemaIndex + 1 }, [ model.buildMsg EvolveSchema ] )
+                                ( { model | schemaIndex = model.schemaIndex + 1 }, model.buildMsg EvolveSchema )
                     )
-                |> Maybe.withDefault ( model, [ model.buildProject ] )
+                |> Maybe.withDefault ( model, model.buildProject )
+    )
+        |> Tuple.mapFirst incCpt
+
+
+incCpt : Model msg -> Model msg
+incCpt model =
+    { model | cpt = model.cpt + 1 }

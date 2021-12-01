@@ -10,12 +10,13 @@ import Ports exposing (JsMsg)
 
 
 type alias Model =
-    { navigationActive : String
+    { selectedMenu : String
     , mobileMenuOpen : Bool
-    , tabActive : Tab
-    , schemaFile : Maybe File
-    , schemaFileContent : Maybe ( ProjectId, SourceInfo, FileContent )
-    , schemaParser : Maybe (ProjectParser.Model Msg)
+    , selectedTab : Tab
+    , selectedLocalFile : Maybe File
+    , selectedSample : Maybe String
+    , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
+    , parsedSchema : Maybe (ProjectParser.Model Msg)
     , project : Maybe Project
     }
 
@@ -31,7 +32,8 @@ type Msg
     | SelectTab Tab
     | FileDragOver
     | FileDragLeave
-    | LoadLocalFile File
+    | SelectLocalFile File
+    | SelectSample String
     | FileLoaded ProjectId SourceInfo FileContent
     | ParseMsg ProjectParser.Msg
     | BuildProject

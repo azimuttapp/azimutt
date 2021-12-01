@@ -104,9 +104,9 @@ viewSampleSchemas =
             [ button [ type_ "button", class "link link-primary", id "schema-samples", bsToggle Dropdown, ariaExpanded False ] [ text "an example" ]
             , ul [ class "dropdown-menu", ariaLabelledby "schema-samples" ]
                 (schemaSamples
-                    |> Dict.toList
-                    |> List.sortBy (\( _, ( tables, _ ) ) -> tables)
-                    |> List.map (\( name, ( tables, _ ) ) -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample name)) ] [ text (name ++ " (" ++ String.fromInt tables ++ " tables)") ] ])
+                    |> Dict.values
+                    |> List.sortBy .tables
+                    |> List.map (\sample -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample sample.name)) ] [ text (sample.name ++ " (" ++ String.fromInt sample.tables ++ " tables)") ] ])
                 )
             ]
         ]

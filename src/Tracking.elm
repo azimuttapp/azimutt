@@ -1,12 +1,15 @@
 module Tracking exposing (events)
 
 import Dict
+import Libs.Dict as D
 import Libs.Maybe as M
 import Libs.Models exposing (TrackEvent)
+import Libs.Result as R
 import Models.Project exposing (Project)
 import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Source exposing (Source)
+import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 
 
 
@@ -25,6 +28,7 @@ events :
     , openSaveLayout : TrackEvent
     , openFindPath : TrackEvent
     , findPathResult : FindPathResult -> TrackEvent
+    , parsedProject : ProjectParser.Model msg -> Project -> TrackEvent
     , createProject : Project -> TrackEvent
     , loadProject : Project -> TrackEvent
     , updateProject : Project -> TrackEvent
@@ -48,6 +52,7 @@ events =
     , openIncomingRelationsDropdown = { name = "open-incoming-relations-dropdown", details = [], enabled = True }
     , openSaveLayout = { name = "open-save-layout", details = [], enabled = True }
     , openFindPath = { name = "open-find-path", details = [], enabled = True }
+    , parsedProject = parserEvent "parse"
     , createProject = projectEvent "create"
     , loadProject = projectEvent "load"
     , updateProject = projectEvent "update"
@@ -60,6 +65,21 @@ events =
     , deleteLayout = layoutEvent "delete"
     , findPathResult = findPathResults
     , externalLink = \url -> { name = "external-link", details = [ ( "url", url ) ], enabled = True }
+    }
+
+
+parserEvent : String -> ProjectParser.Model msg -> Project -> TrackEvent
+parserEvent eventName parser project =
+    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> M.toList) |> List.head |> M.mapOrElse (\_ -> "-sample") "") ++ "-project"
+    , details =
+        [ ( "lines-count", parser.lines |> M.mapOrElse List.length 0 |> String.fromInt )
+        , ( "statements-count", parser.statements |> M.mapOrElse Dict.size 0 |> String.fromInt )
+        , ( "table-count", project.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", project.relations |> List.length |> String.fromInt )
+        , ( "parsing-errors", parser.commands |> M.mapOrElse (D.count (\_ ( _, r ) -> r |> R.isErr)) 0 |> String.fromInt )
+        , ( "schema-errors", parser.schemaErrors |> List.length |> String.fromInt )
+        ]
+    , enabled = True
     }
 
 

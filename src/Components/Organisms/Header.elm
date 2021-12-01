@@ -163,7 +163,7 @@ type alias AppMobileMenu msg =
 
 
 type alias AppState =
-    { navigationActive : String
+    { selectedMenu : String
     , mobileMenuOpen : Bool
     , profileOpen : Bool
     }
@@ -176,7 +176,7 @@ app model state =
             [ div [ css [ relative, h_16, flex, items_center, justify_between, lg [ border_b, TwColor.render Border model.theme.color L400, border_opacity_25 ] ] ]
                 [ div [ css [ px_2, flex, items_center, lg [ px_0 ] ] ]
                     [ div [ css [ flex_shrink_0 ] ] [ appBrand model.brand ]
-                    , div [ css [ hidden, lg [ block, ml_10 ] ] ] [ appNavigation model.theme model.navigation state.navigationActive ]
+                    , div [ css [ hidden, lg [ block, ml_10 ] ] ] [ appNavigation model.theme model.navigation state.selectedMenu ]
                     ]
                 , model.search |> M.mapOrElse (appSearch model.theme) (div [] [])
                 , appMobileMenuButton model.theme model.mobileMenu state.mobileMenuOpen
@@ -188,7 +188,7 @@ app model state =
                     ]
                 ]
             ]
-        , appMobileMenu model.theme model.navigation model.notifications model.profile model.mobileMenu state.navigationActive state.mobileMenuOpen
+        , appMobileMenu model.theme model.navigation model.notifications model.profile model.mobileMenu state.selectedMenu state.mobileMenuOpen
         ]
 
 
@@ -324,7 +324,7 @@ appModel =
             , { url = "#", text = "Calendar" }
             , { url = "#", text = "Reports" }
             ]
-        , onClick = \link -> updateAppState (\a -> { a | navigationActive = link.text })
+        , onClick = \link -> updateAppState (\a -> { a | selectedMenu = link.text })
         }
     , search = Just { id = "search" }
     , notifications = Just {}
@@ -383,7 +383,7 @@ type alias DocState =
 initDocState : DocState
 initDocState =
     { app =
-        { navigationActive = "Dashboard"
+        { selectedMenu = "Dashboard"
         , mobileMenuOpen = False
         , profileOpen = False
         }

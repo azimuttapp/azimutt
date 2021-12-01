@@ -1,9 +1,12 @@
 module Pages.Projects.New exposing (Model, Msg, page)
 
+import Conf exposing (schemaSamples)
 import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
+import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Html.Styled as Styled
+import Libs.Bool as B
 import Libs.String as S
 import Libs.Task as T
 import Models.Project as Project
@@ -12,16 +15,17 @@ import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.Updates.PortMsg exposing (handleJsMsg)
 import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 import PagesComponents.Projects.New.View exposing (viewNewProject)
-import Ports exposing (JsMsg(..), onJsMessage, readLocalFile, saveProject)
+import Ports exposing (JsMsg(..), onJsMessage, readLocalFile, readRemoteFile, saveProject, track)
 import Request
 import Shared exposing (loadedProjects)
+import Tracking
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init
+        { init = init req
         , update = update req shared
         , view = view shared
         , subscriptions = subscriptions
@@ -40,17 +44,18 @@ type alias Msg =
 -- INIT
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { navigationActive = "New project"
+init : Request.With Params -> ( Model, Cmd Msg )
+init req =
+    ( { selectedMenu = "New project"
       , mobileMenuOpen = False
-      , tabActive = Schema
-      , schemaFile = Nothing
-      , schemaFileContent = Nothing
-      , schemaParser = Nothing
+      , selectedTab = req.query |> Dict.get "sample" |> Maybe.map (\_ -> Sample) |> Maybe.withDefault Schema
+      , selectedLocalFile = Nothing
+      , selectedSample = Nothing
+      , loadedFile = Nothing
+      , parsedSchema = Nothing
       , project = Nothing
       }
-    , Cmd.none
+    , req.query |> Dict.get "sample" |> Maybe.map (\sample -> T.send (SelectSample sample)) |> Maybe.withDefault Cmd.none
     )
 
 
@@ -62,13 +67,13 @@ update : Request.With Params -> Shared.Model -> Msg -> Model -> ( Model, Cmd Msg
 update req shared msg model =
     case msg of
         SelectMenu menu ->
-            ( { model | navigationActive = menu }, Cmd.none )
+            ( { model | selectedMenu = menu }, Cmd.none )
 
         ToggleMobileMenu ->
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
         SelectTab tab ->
-            ( { model | tabActive = tab }, Cmd.none )
+            ( { model | selectedTab = tab, selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, Cmd.none )
 
         FileDragOver ->
             ( model, Cmd.none )
@@ -76,31 +81,43 @@ update req shared msg model =
         FileDragLeave ->
             ( model, Cmd.none )
 
-        LoadLocalFile file ->
-            ( { model | schemaFile = Just file, schemaFileContent = Nothing, schemaParser = Nothing, project = Nothing }, readLocalFile Nothing Nothing file )
+        SelectLocalFile file ->
+            ( { model | selectedLocalFile = Just file, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, readLocalFile Nothing Nothing file )
+
+        SelectSample sample ->
+            ( { model | selectedLocalFile = Nothing, selectedSample = Just sample, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, schemaSamples |> Dict.get sample |> Maybe.map (\s -> readRemoteFile Nothing Nothing s.url (Just s.key)) |> Maybe.withDefault Cmd.none )
 
         FileLoaded projectId sourceInfo fileContent ->
-            ( { model | schemaFileContent = Just ( projectId, sourceInfo, fileContent ), schemaParser = Just (ProjectParser.init fileContent ParseMsg BuildProject) }
+            ( { model | loadedFile = Just ( projectId, sourceInfo, fileContent ), parsedSchema = Just (ProjectParser.init fileContent ParseMsg BuildProject) }
             , T.send (ParseMsg ProjectParser.BuildLines)
             )
 
         ParseMsg parseMsg ->
-            model.schemaParser
-                |> Maybe.map (\p -> p |> ProjectParser.update parseMsg |> (\( m, messages ) -> ( { model | schemaParser = Just m }, Cmd.batch (messages |> List.map T.send) )))
+            model.parsedSchema
+                |> Maybe.map
+                    (\p ->
+                        p
+                            |> ProjectParser.update parseMsg
+                            |> (\( parsed, message ) ->
+                                    ( { model | parsedSchema = Just parsed }
+                                    , B.cond ((parsed.cpt |> modBy 342) == 1) (T.sendAfter 1 message) (T.send message)
+                                    )
+                               )
+                    )
                 |> Maybe.withDefault ( model, Cmd.none )
 
         BuildProject ->
-            model.schemaParser
-                |> Maybe.andThen (\p -> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, buildSourceFromSql sourceInfo lines schema )) model.schemaFileContent p.lines p.schema)
-                |> Maybe.map (\( projectId, source ) -> Project.create projectId (S.unique (shared |> loadedProjects |> List.map .name) source.name) source)
-                |> Maybe.map (\project -> ( { model | project = Just project }, Cmd.none ))
+            model.parsedSchema
+                |> Maybe.andThen (\p -> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, buildSourceFromSql sourceInfo lines schema, p )) model.loadedFile p.lines p.schema)
+                |> Maybe.map (\( projectId, source, parser ) -> ( Project.create projectId (S.unique (shared |> loadedProjects |> List.map .name) source.name) source, parser ))
+                |> Maybe.map (\( project, parser ) -> ( { model | project = Just project }, track (Tracking.events.parsedProject parser project) ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         DropSchema ->
-            ( { model | schemaFile = Nothing, schemaFileContent = Nothing, schemaParser = Nothing, project = Nothing }, Cmd.none )
+            ( { model | selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, Cmd.none )
 
         CreateProject project ->
-            ( model, Cmd.batch [ saveProject project, Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ saveProject project, track (Tracking.events.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
         JsMessage jsMsg ->
             ( model, handleJsMsg jsMsg )
