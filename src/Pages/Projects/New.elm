@@ -17,7 +17,7 @@ import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..), onJsMessage, readLocalFile, readRemoteFile, saveProject, track)
 import Request
-import Shared exposing (loadedProjects)
+import Shared
 import Tracking
 import View exposing (View)
 
@@ -109,7 +109,7 @@ update req shared msg model =
         BuildProject ->
             model.parsedSchema
                 |> Maybe.andThen (\p -> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, buildSourceFromSql sourceInfo lines schema, p )) model.loadedFile p.lines p.schema)
-                |> Maybe.map (\( projectId, source, parser ) -> ( Project.create projectId (S.unique (shared |> loadedProjects |> List.map .name) source.name) source, parser ))
+                |> Maybe.map (\( projectId, source, parser ) -> ( Project.create projectId (S.unique (shared |> Shared.projects |> List.map .name) source.name) source, parser ))
                 |> Maybe.map (\( project, parser ) -> ( { model | project = Just project }, track (Tracking.events.parsedProject parser project) ))
                 |> Maybe.withDefault ( model, Cmd.none )
 

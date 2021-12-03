@@ -1,4 +1,4 @@
-module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, loadedProjects, subscriptions, update)
+module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, projects, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
 import Html.Styled exposing (Html)
@@ -70,8 +70,8 @@ update _ msg model =
         TimeChanged time ->
             ( { model | now = time }, Cmd.none )
 
-        JsMessage (GotProjects ( errors, projects )) ->
-            ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }
+        JsMessage (GotProjects ( errors, prjs )) ->
+            ( { model | projects = Loaded (prjs |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }
             , Cmd.batch
                 (errors
                     |> List.concatMap
@@ -95,11 +95,11 @@ subscriptions _ _ =
         ]
 
 
-loadedProjects : Model -> List Project
-loadedProjects model =
+projects : Model -> List Project
+projects model =
     case model.projects of
         Loading ->
             []
 
-        Loaded projects ->
-            projects
+        Loaded prjs ->
+            prjs

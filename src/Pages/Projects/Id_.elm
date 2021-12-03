@@ -2,39 +2,43 @@ module Pages.Projects.Id_ exposing (Model, Msg, page)
 
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Styled as Styled
-import Libs.Task exposing (send)
+import Libs.List as L
+import Libs.Maybe as M
+import Libs.Task as T
 import Page
+import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.View exposing (viewProject)
+import Ports
 import Request
 import Shared
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page _ _ =
+page shared req =
     Page.element
-        { init = init
+        { init = init shared req
         , update = update
-        , view = view
+        , view = view shared
         , subscriptions = subscriptions
         }
 
 
 type alias Model =
-    {}
+    Models.Model
 
 
-type Msg
-    = ReplaceMe
+type alias Msg =
+    Models.Msg
 
 
 
 -- INIT
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( {}, send ReplaceMe )
+init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
+init _ req =
+    ( { projectId = req.params.id }, Cmd.batch [ Ports.loadProjects, T.send ReplaceMe ] )
 
 
 
@@ -61,8 +65,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : Model -> View Msg
-view _ =
-    { title = "Azimutt - Explore your database schema"
-    , body = viewProject |> List.map Styled.toUnstyled
+view : Shared.Model -> Model -> View Msg
+view shared model =
+    { title = shared |> Shared.projects |> L.find (\p -> p.id == model.projectId) |> M.mapOrElse (\p -> p.name ++ " - Azimutt") "Azimutt - Explore your database schema"
+    , body = model |> viewProject shared |> List.map Styled.toUnstyled
     }
