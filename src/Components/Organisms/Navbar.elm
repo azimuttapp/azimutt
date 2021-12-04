@@ -99,7 +99,10 @@ admin theme model state =
 
 adminBrand : AdminBrand -> Html msg
 adminBrand brand =
-    a [ href brand.link.url ] [ img [ css [ Tw.block, Tw.h_8, Tw.w_8 ], src brand.img.src, alt brand.img.alt, width 32, height 32 ] [] ]
+    a [ href brand.link.url, css [ Tw.flex, Tw.justify_start, Tw.items_center, Tw.font_medium ] ]
+        [ img [ css [ Tw.block, Tw.h_8, Tw.w_8 ], src brand.img.src, alt brand.img.alt, width 32, height 32 ] []
+        , span [ css [ Tw.ml_3, Tw.text_2xl, Tw.text_white, Tw.hidden, Bp.lg [ Tw.block ] ] ] [ text brand.link.text ]
+        ]
 
 
 adminNavigation : Theme -> AdminNavigation msg -> String -> Html msg
