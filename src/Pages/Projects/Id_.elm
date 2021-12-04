@@ -1,9 +1,11 @@
 module Pages.Projects.Id_ exposing (Model, Msg, page)
 
+import Components.Atoms.Icon exposing (Icon(..))
 import Gen.Params.Projects.Id_ exposing (Params)
-import Html.Styled as Styled
+import Html.Styled as Styled exposing (text)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
@@ -38,7 +40,14 @@ type alias Msg =
 
 init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init _ req =
-    ( { projectId = req.params.id }, Cmd.batch [ Ports.loadProjects, T.send ReplaceMe ] )
+    ( { projectId = req.params.id
+      , navbar = { mobileMenuOpen = False }
+      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
+      , toastCpt = 0
+      , toasts = []
+      }
+    , Cmd.batch [ Ports.loadProjects ]
+    )
 
 
 
@@ -48,7 +57,7 @@ init _ req =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        ReplaceMe ->
+        Noop ->
             ( model, Cmd.none )
 
 

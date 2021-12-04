@@ -3,6 +3,7 @@ module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFoot
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
+import Components.Organisms.Navbar as Navbar
 import Components.Slices.Newsletter as Newsletter
 import Conf exposing (constants, newsletterConf)
 import Css.Global as Global
@@ -15,7 +16,7 @@ import Libs.Models exposing (Link)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColorLevel(..), TwColorPosition(..))
 import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw exposing (sr_only)
+import Tailwind.Utilities as Tw
 
 
 root : List (Html msg) -> List (Html msg)
@@ -38,7 +39,7 @@ publicHeader =
             , { url = constants.azimuttGithub ++ "/projects/1", content = [ S.text "Roadmap" ], external = True }
             , { url = constants.azimuttGithub, content = [ S.text "Source code" ], external = True }
             , { url = constants.azimuttGithub ++ "/issues", content = [ S.text "Bug reports" ], external = True }
-            , { url = constants.azimuttTwitter, content = [ Icon.twitter [], S.span [ SA.css [ sr_only ] ] [ S.text "Twitter" ] ], external = True }
+            , { url = constants.azimuttTwitter, content = [ Icon.twitter [], S.span [ SA.css [ Tw.sr_only ] ] [ S.text "Twitter" ] ], external = True }
             ]
         }
 
@@ -71,9 +72,8 @@ appShell theme onNavigationClick onMobileMenuClick model title content footer =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100 ], Global.selector "body" [ Tw.h_full ] ]
     , S.div [ SA.css [ TwColor.render Bg theme.color L600, Tw.pb_32 ] ]
-        [ Header.app
-            { theme = theme
-            , brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
+        [ Navbar.admin theme
+            { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
             , navigation =
                 { links = [ { url = Route.toHref Route.Projects, text = "Dashboard" } ]
                 , onClick = onNavigationClick
