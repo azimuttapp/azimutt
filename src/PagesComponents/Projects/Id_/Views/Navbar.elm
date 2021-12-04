@@ -20,7 +20,7 @@ import Tailwind.Utilities as Tw
 
 
 viewNavbar : Theme -> List Project -> Project -> NavbarModel -> Html msg
-viewNavbar theme _ _ model =
+viewNavbar theme storedProjects project model =
     let
         menuLinks : List Link
         menuLinks =
@@ -40,9 +40,10 @@ viewNavbar theme _ _ model =
                 [ div [ css [ Tw.flex, Tw.items_center, Tw.px_2, Bp.lg [ Tw.px_0 ] ] ]
                     [ navbarBrand
                     , navbarSearch theme { id = "search" }
+                    , helpIcon theme
                     ]
                 , div [ css [ Tw.flex_1, Tw.flex, Tw.justify_center, Tw.px_2 ] ]
-                    [ navbarLinks theme activeLink menuLinks
+                    [ title storedProjects project
                     ]
                 , navbarMobileButton theme model.mobileMenuOpen
                 , div [ css [ Tw.hidden, Bp.lg [ Tw.block, Tw.ml_4 ] ] ]
@@ -83,11 +84,46 @@ navbarSearch theme search =
         ]
 
 
-navbarLinks : Theme -> String -> List Link -> Html msg
-navbarLinks theme active links =
-    div [ css [ Tw.hidden, Bp.lg [ Tw.block ] ] ]
-        [ div [ css [ Tw.flex, Tw.space_x_4 ] ]
-            (links |> List.map (navbarLink [ Tw.text_sm ] theme active))
+helpIcon : Theme -> Html msg
+helpIcon theme =
+    div [ css [ Tw.ml_3 ] ] [ Icon.solid QuestionMarkCircle [ TwColor.render Text theme.color L300 ] ]
+
+
+title : List Project -> Project -> Html msg
+title storedProjects project =
+    div [ css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.text_white ] ]
+        [ Dropdown.dropdown { id = "switch-project", direction = BottomRight, isOpen = True }
+            (\m ->
+                button [ type_ "button", id m.id, ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center ] ]
+                    [ span [] [ text project.name ]
+                    , Icon.solid ChevronDown []
+                    ]
+            )
+            (\m ->
+                div [ css [ Tw.w_48, Tw.divide_y, Tw.divide_gray_100 ] ]
+                    [ div [ role "none", css [ Tw.py_1 ] ]
+                        (storedProjects |> List.map (\p -> a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-1"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text p.name ]))
+                    , div [ role "none", css [ Tw.py_1 ] ]
+                        [ a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Back to project list" ]
+                        ]
+                    ]
+            )
+        , Icon.outline ChevronRight []
+        , Dropdown.dropdown { id = "switch-layout", direction = BottomRight, isOpen = True }
+            (\m ->
+                button [ type_ "button", id m.id, ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center ] ]
+                    [ span [] [ text "All tables" ]
+                    , Icon.solid ChevronDown []
+                    ]
+            )
+            (\m ->
+                div [ css [ Tw.w_48, Tw.divide_y, Tw.divide_gray_100 ] ]
+                    [ div [ role "none", css [ Tw.py_1 ] ]
+                        [ a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-1"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Layout 1" ] ]
+                    , div [ role "none", css [ Tw.py_1 ] ]
+                        [ a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Stop using All tables" ] ]
+                    ]
+            )
         ]
 
 
@@ -104,16 +140,16 @@ navbarMobileButton theme isOpen =
 
 navbarProfile : Theme -> List Link -> Html msg
 navbarProfile theme links =
-    Dropdown.dropdown { id = "user-menu-button", direction = BottomLeft, isOpen = True }
+    Dropdown.dropdown { id = "user-menu", direction = BottomLeft, isOpen = True }
         (\m ->
             button [ type_ "button", id m.id, ariaExpanded False, ariaHaspopup True, css [ Tw.ml_3, TwColor.render Bg theme.color L600, Tw.rounded_full, Tw.flex, Tw.text_sm, Tw.text_white, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ] ]
                 [ span [ css [ Tw.sr_only ] ] [ text "Open user menu" ]
                 , img [ css [ Tw.h_8, Tw.w_8, Tw.rounded_full ], src "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80", alt "" ] []
                 ]
         )
-        (\_ ->
+        (\m ->
             div [ css [ Tw.w_48 ] ]
-                (links |> List.map (\link -> a [ href link.url, role "menuitem", tabindex -1, id "user-menu-item-1", css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text link.text ]))
+                (links |> List.map (\link -> a [ href link.url, role "menuitem", tabindex -1, id (m.id ++ "-item-1"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text link.text ]))
         )
 
 
