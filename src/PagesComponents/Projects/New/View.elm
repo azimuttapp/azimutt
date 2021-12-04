@@ -6,7 +6,7 @@ import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.ItemList as ItemList
-import Conf exposing (constants, schemaSamples)
+import Conf
 import Css
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
@@ -146,7 +146,7 @@ viewSampleSelection theme selectedSample =
     div []
         [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
         , ItemList.withIcons theme
-            (schemaSamples
+            (Conf.schemaSamples
                 |> Dict.values
                 |> List.sortBy .tables
                 |> List.map
@@ -278,7 +278,7 @@ sendErrorReport parseErrors schemaErrors =
     let
         email : String
         email =
-            constants.azimuttEmail
+            Conf.constants.azimuttEmail
 
         subject : String
         subject =

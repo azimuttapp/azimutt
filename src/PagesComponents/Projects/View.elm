@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast as Toast
-import Conf exposing (schemaSamples)
+import Conf
 import Css
 import Dict
 import Gen.Route as Route
@@ -77,7 +77,7 @@ viewNoProjects theme =
             , span [ ariaHidden True ] [ text " →" ]
             ]
         , ItemList.withIcons theme
-            (schemaSamples
+            (Conf.schemaSamples
                 |> Dict.values
                 |> List.sortBy .tables
                 |> List.map

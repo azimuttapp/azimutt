@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Command exposing (viewCommands)
 
-import Conf exposing (conf)
+import Conf
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
 import Html exposing (Html, button, div, li, text, ul)
@@ -32,13 +32,13 @@ viewCommands cursorMode canvas =
                             [ button [ type_ "button", class "btn btn-sm btn-outline-secondary", id "canvas-zoom", bsToggle Dropdown ]
                                 [ text (String.fromInt (round (c.zoom * 100)) ++ " %") ]
                             , ul [ class "dropdown-menu", ariaLabelledby "canvas-zoom" ]
-                                [ li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (conf.zoom.min - c.zoom)) ] [ text (String.fromFloat (conf.zoom.min * 100) ++ " %") ] ]
+                                [ li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (Conf.canvas.zoom.min - c.zoom)) ] [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ] ]
                                 , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (0.25 - c.zoom)) ] [ text "25 %" ] ]
                                 , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (0.5 - c.zoom)) ] [ text "50 %" ] ]
                                 , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (1 - c.zoom)) ] [ text "100 %" ] ]
                                 , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (1.5 - c.zoom)) ] [ text "150 %" ] ]
                                 , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (2 - c.zoom)) ] [ text "200 %" ] ]
-                                , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (conf.zoom.max - c.zoom)) ] [ text (String.fromFloat (conf.zoom.max * 100) ++ " %") ] ]
+                                , li [] [ button [ type_ "button", class "dropdown-item", onClick (Zoom (Conf.canvas.zoom.max - c.zoom)) ] [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ] ]
                                 ]
                             ]
                         , button [ type_ "button", class "btn btn-sm btn-outline-secondary", onClick (Zoom (c.zoom / 10)) ] [ viewIcon Icon.plus ]

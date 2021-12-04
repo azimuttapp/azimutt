@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.Drag exposing (Model, dragEnd, dragMove, dragStart)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area, overlap)
 import Libs.Delta as Delta
@@ -86,7 +86,7 @@ computeSelectedArea domInfos canvas dragState =
     let
         erdPos : Position
         erdPos =
-            domInfos |> Dict.get conf.ids.erd |> M.mapOrElse .position (Position 0 0)
+            domInfos |> Dict.get Conf.ids.erd |> M.mapOrElse .position (Position 0 0)
 
         position : Position
         position =

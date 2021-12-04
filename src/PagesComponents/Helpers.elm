@@ -5,7 +5,7 @@ import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
 import Components.Slices.Newsletter as Newsletter
-import Conf exposing (constants, newsletterConf)
+import Conf
 import Css.Global as Global
 import Gen.Route as Route
 import Html exposing (Html, div)
@@ -35,11 +35,11 @@ publicHeader =
         { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
         , links =
             [ { url = Route.toHref Route.Blog, content = [ S.text "Blog" ], external = False }
-            , { url = constants.azimuttGithub ++ "/discussions", content = [ S.text "Discussions" ], external = True }
-            , { url = constants.azimuttGithub ++ "/projects/1", content = [ S.text "Roadmap" ], external = True }
-            , { url = constants.azimuttGithub, content = [ S.text "Source code" ], external = True }
-            , { url = constants.azimuttGithub ++ "/issues", content = [ S.text "Bug reports" ], external = True }
-            , { url = constants.azimuttTwitter, content = [ Icon.twitter [], S.span [ SA.css [ Tw.sr_only ] ] [ S.text "Twitter" ] ], external = True }
+            , { url = Conf.constants.azimuttGithub ++ "/discussions", content = [ S.text "Discussions" ], external = True }
+            , { url = Conf.constants.azimuttGithub ++ "/projects/1", content = [ S.text "Roadmap" ], external = True }
+            , { url = Conf.constants.azimuttGithub, content = [ S.text "Source code" ], external = True }
+            , { url = Conf.constants.azimuttGithub ++ "/issues", content = [ S.text "Bug reports" ], external = True }
+            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter [], S.span [ SA.css [ Tw.sr_only ] ] [ S.text "Twitter" ] ], external = True }
             ]
         }
 
@@ -47,7 +47,7 @@ publicHeader =
 newsletterSection : S.Html msg
 newsletterSection =
     Newsletter.basicSlice
-        { form = { newsletterConf | cta = "Get onboard" }
+        { form = Conf.newsletter |> (\n -> { n | cta = "Get onboard" })
         , title = "Sign up for Azimutt newsletter"
         , description = "Stay in touch with Azimutt news, features, articles or offers, directly in your mail box. Once a week at most, no spam guarantee."
         , legalText = []

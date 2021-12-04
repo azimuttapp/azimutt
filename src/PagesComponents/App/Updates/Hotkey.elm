@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
 
-import Conf exposing (conf)
+import Conf
 import Libs.Maybe as M
 import Libs.Task exposing (send)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..), VirtualRelationMsg(..))
@@ -13,7 +13,7 @@ handleHotkey : Model -> String -> List (Cmd Msg)
 handleHotkey model hotkey =
     case hotkey of
         "focus-search" ->
-            [ click conf.ids.searchInput ]
+            [ click Conf.ids.searchInput ]
 
         "remove" ->
             [ removeElement model.hover ]
@@ -48,7 +48,7 @@ handleHotkey model hotkey =
             model.virtualRelation |> M.mapOrElse (\_ -> [ send (VirtualRelationMsg VRCancel) ]) []
 
         "help" ->
-            [ showModal conf.ids.helpModal ]
+            [ showModal Conf.ids.helpModal ]
 
         other ->
             [ toastInfo ("Shortcut <b>" ++ other ++ "</b> is not implemented yet :(") ]

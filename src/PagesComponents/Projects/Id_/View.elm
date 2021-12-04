@@ -3,7 +3,7 @@ module PagesComponents.Projects.Id_.View exposing (viewProject)
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Components.Slices.NotFound as NotFound
-import Conf exposing (constants)
+import Conf
 import Css exposing (Style)
 import Css.Global as Global
 import Gen.Route as Route
@@ -57,8 +57,8 @@ viewNotFound theme =
         , message = "Sorry, we couldn't find the project you’re looking for."
         , link = { url = Route.toHref Route.Projects, text = "Go back to dashboard" }
         , footer =
-            [ { url = constants.azimuttGithub ++ "/discussions", text = "Contact Support" }
-            , { url = constants.azimuttTwitter, text = "Twitter" }
+            [ { url = Conf.constants.azimuttGithub ++ "/discussions", text = "Contact Support" }
+            , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
         }

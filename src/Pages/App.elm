@@ -1,7 +1,7 @@
 module Pages.App exposing (Model, Msg, page)
 
 import Browser.Events
-import Conf exposing (conf)
+import Conf
 import Dict
 import Gen.Params.App exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
@@ -75,12 +75,12 @@ init =
       , hover = initHover
       }
     , Cmd.batch
-        [ observeSize conf.ids.erd
-        , showModal conf.ids.projectSwitchModal
+        [ observeSize Conf.ids.erd
+        , showModal Conf.ids.projectSwitchModal
         , loadProjects
         , getZone
         , getTime
-        , listenHotkeys conf.hotkeys
+        , listenHotkeys Conf.hotkeys
         , trackPage "app"
         ]
     )
@@ -107,7 +107,7 @@ update msg model =
             model |> handleSource m
 
         ChangeProject ->
-            ( model, Cmd.batch [ hideOffcanvas conf.ids.menu, showModal conf.ids.projectSwitchModal, loadProjects ] )
+            ( model, Cmd.batch [ hideOffcanvas Conf.ids.menu, showModal Conf.ids.projectSwitchModal, loadProjects ] )
 
         ProjectsLoaded projects ->
             ( { model | storedProjects = projects }, Cmd.none )
@@ -181,7 +181,7 @@ update msg model =
             ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
 
         ResetCanvas ->
-            ( model |> setProject resetCanvas, click conf.ids.searchInput )
+            ( model |> setProject resetCanvas, click Conf.ids.searchInput )
 
         DragStart id pos ->
             model |> dragStart id pos
@@ -208,7 +208,7 @@ update msg model =
             model |> handleSettings m
 
         OpenConfirm confirm ->
-            ( { model | confirm = confirm }, showModal conf.ids.confirm )
+            ( { model | confirm = confirm }, showModal Conf.ids.confirm )
 
         OnConfirm answer cmd ->
             ( { model | confirm = initConfirm }, B.cond answer cmd Cmd.none )

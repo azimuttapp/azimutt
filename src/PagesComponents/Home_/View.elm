@@ -8,7 +8,7 @@ import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
-import Conf exposing (constants)
+import Conf
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, b, br, div, span, text)
@@ -178,7 +178,7 @@ viewHome shared =
               , title = "Fully open source"
               , description =
                     [ text "Want to have a look? Everything is on "
-                    , b [] [ extLink constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
+                    , b [] [ extLink Conf.constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
                     , text ", awesomely built with Elm. Come a let's discuss!"
                     ]
               }

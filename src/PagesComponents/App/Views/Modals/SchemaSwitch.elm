@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewFileLoader, viewSchemaSwitchModal)
 
-import Conf exposing (conf, constants, schemaSamples)
+import Conf
 import Dict
 import FileValue exposing (hiddenInputSingle)
 import FontAwesome.Icon exposing (viewIcon)
@@ -23,7 +23,7 @@ import Time
 
 viewSchemaSwitchModal : TimeInfo -> Switch -> String -> List Project -> Html Msg
 viewSchemaSwitchModal time switch title storedProjects =
-    bsModal conf.ids.projectSwitchModal
+    bsModal Conf.ids.projectSwitchModal
         title
         [ viewSavedProjects time storedProjects
         , viewFileUpload switch
@@ -103,7 +103,7 @@ viewSampleSchemas =
         , div [ class "dropdown", style "display" "inline-block" ]
             [ button [ type_ "button", class "link link-primary", id "schema-samples", bsToggle Dropdown, ariaExpanded False ] [ text "an example" ]
             , ul [ class "dropdown-menu", ariaLabelledby "schema-samples" ]
-                (schemaSamples
+                (Conf.schemaSamples
                     |> Dict.values
                     |> List.sortBy .tables
                     |> List.map (\sample -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample sample.name)) ] [ text (sample.name ++ " (" ++ String.fromInt sample.tables ++ " tables)") ] ])
@@ -149,6 +149,6 @@ viewFooter =
     p [ class "fw-lighter fst-italic text-muted" ]
         [ bText "Azimutt"
         , text " is "
-        , extLink constants.azimuttGithub [] [ text "open source" ]
+        , extLink Conf.constants.azimuttGithub [] [ text "open source" ]
         , text ", feel free to report bugs, ask questions or request features in github issues."
         ]

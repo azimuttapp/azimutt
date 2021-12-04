@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.Canvas exposing (computeFit, fitCanvas, handleWheel, performZoom, resetCanvas, zoomCanvas)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
@@ -21,7 +21,7 @@ import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setTa
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
 handleWheel event canvas =
     if event.keys.ctrl then
-        canvas |> performZoom (-event.delta.y * conf.zoom.speed) (Position event.mouse.x event.mouse.y)
+        canvas |> performZoom (-event.delta.y * Conf.canvas.zoom.speed) (Position event.mouse.x event.mouse.y)
 
     else
         canvas |> performMove event.delta.x event.delta.y
@@ -84,7 +84,7 @@ performZoom delta center canvas =
     let
         newZoom : ZoomLevel
         newZoom =
-            (canvas.zoom + delta) |> clamp conf.zoom.min conf.zoom.max
+            (canvas.zoom + delta) |> clamp Conf.canvas.zoom.min Conf.canvas.zoom.max
 
         zoomFactor : Float
         zoomFactor =
@@ -145,7 +145,7 @@ computeZoom viewport padding content zoom =
 
         newZoom : ZoomLevel
         newZoom =
-            (zoom * min grow.width grow.height) |> clamp conf.zoom.min 1
+            (zoom * min grow.width grow.height) |> clamp Conf.canvas.zoom.min 1
     in
     newZoom
 

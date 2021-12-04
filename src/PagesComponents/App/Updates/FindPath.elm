@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.FindPath exposing (computeFindPath, handleFindPath)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Libs.Maybe as M
 import Libs.Nel as Nel
@@ -39,7 +39,7 @@ handleFindPath : FindPathMsg -> Model x y -> ( Model x y, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPInit from to ->
-            ( { model | findPath = Just { from = from, to = to, result = Empty } }, Cmd.batch [ showModal conf.ids.findPathModal, track events.openFindPath ] )
+            ( { model | findPath = Just { from = from, to = to, result = Empty } }, Cmd.batch [ showModal Conf.ids.findPathModal, track events.openFindPath ] )
 
         FPUpdateFrom from ->
             ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | from = from }) }, Cmd.none )

@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Erd exposing (viewErd)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, classList, id, style)
@@ -42,10 +42,10 @@ viewErd hover cursorMode dragState virtualRelation selection domInfos project =
             , ( "cursor-hand-drag", cursorMode == Drag && dragState /= Nothing && virtualRelation == Nothing )
             , ( "cursor-cross", virtualRelation /= Nothing )
             ]
-        , id conf.ids.erd
+        , id Conf.ids.erd
         , sizeAttr (viewportSize domInfos |> Maybe.withDefault (Size 0 0))
         , onWheel OnWheel
-        , onDrag conf.ids.erd
+        , onDrag Conf.ids.erd
         ]
         [ div [ class "canvas", placeAndZoom (project |> M.mapOrElse (.layout >> .canvas) (CanvasProps (Position 0 0) 1)) ]
             (project |> M.mapOrElse (\p -> viewErdContent hover virtualRelation selection domInfos p) [])

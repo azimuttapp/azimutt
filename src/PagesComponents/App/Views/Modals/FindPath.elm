@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.FindPath exposing (viewFindPathModal)
 
-import Conf exposing (conf, constants)
+import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, abbr, b, br, button, code, div, h2, input, label, option, pre, select, small, span, text)
 import Html.Attributes as Attributes exposing (class, disabled, for, id, placeholder, selected, title, type_, value)
@@ -26,12 +26,12 @@ import PagesComponents.App.Models exposing (FindPathMsg(..), Msg(..))
 
 viewFindPathModal : Dict TableId Table -> FindPathSettings -> FindPath -> Html Msg
 viewFindPathModal tables settings model =
-    bsModal conf.ids.findPathModal
+    bsModal Conf.ids.findPathModal
         "Find path"
         ([ viewAlert ]
-            ++ [ viewSettings conf.ids.findPathModal settings ]
+            ++ [ viewSettings Conf.ids.findPathModal settings ]
             ++ [ viewSearchForm tables model.from model.to ]
-            ++ viewPaths conf.ids.findPathModal model
+            ++ viewPaths Conf.ids.findPathModal model
         )
         (viewFooter settings model)
 
@@ -122,9 +122,9 @@ viewSelectCard : String -> String -> String -> Maybe TableId -> (Maybe TableId -
 viewSelectCard ref title description selectedValue buildMsg tables =
     div [ class "card" ]
         [ div [ class "card-body" ]
-            [ label [ for (conf.ids.findPathModal ++ "-" ++ ref), class "form-label card-title h5" ] [ text title ]
+            [ label [ for (Conf.ids.findPathModal ++ "-" ++ ref), class "form-label card-title h5" ] [ text title ]
             , viewSelectInput ref selectedValue buildMsg tables
-            , div [ id (conf.ids.findPathModal ++ "-" ++ ref ++ "-help"), class "form-text" ] [ text description ]
+            , div [ id (Conf.ids.findPathModal ++ "-" ++ ref ++ "-help"), class "form-text" ] [ text description ]
             ]
         ]
 
@@ -133,7 +133,7 @@ viewSelectInput : String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict Tabl
 viewSelectInput ref selectedValue buildMsg tables =
     select
         [ class "form-select"
-        , id (conf.ids.findPathModal ++ "-" ++ ref)
+        , id (Conf.ids.findPathModal ++ "-" ++ ref)
         , onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg)
         ]
         (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
@@ -174,7 +174,7 @@ viewPaths idPrefix model =
                 , small [ class "text-muted" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                 , div [ class "mt-3" ]
                     [ text "We hope your like this feature. If you have a few minutes, please write us "
-                    , extLink (constants.azimuttGithub ++ "/discussions/7") [] [ text "a quick feedback" ]
+                    , extLink (Conf.constants.azimuttGithub ++ "/discussions/7") [] [ text "a quick feedback" ]
                     , text " about it and your use case so we can continue to improve 🚀"
                     ]
                 ]

@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Erd.Table exposing (viewTable)
 
-import Conf exposing (conf)
+import Conf
 import Dict
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Regular as IconLight
@@ -55,7 +55,7 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
         , classList [ ( "view", table.view ), ( "selected", props.selected ) ]
         , id (TableId.toHtmlId table.id)
         , placeAt props.position
-        , style "z-index" (String.fromInt (conf.zIndex.tables + index))
+        , style "z-index" (String.fromInt (Conf.canvas.zIndex.tables + index))
         , domInfo |> M.mapOrElse (\i -> sizeAttr i.size) (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)

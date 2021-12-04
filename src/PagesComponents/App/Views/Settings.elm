@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Settings exposing (viewSettings)
 
-import Conf exposing (conf)
+import Conf
 import Dict
 import FontAwesome.Icon exposing (Icon, viewIcon)
 import FontAwesome.Solid as Icon
@@ -31,9 +31,9 @@ viewSettings time project =
     project
         |> M.mapOrElse
             (\p ->
-                div [ id conf.ids.settings, class "offcanvas offcanvas-end", bsScroll True, bsBackdrop "false", ariaLabelledby (conf.ids.settings ++ "-label"), tabindex -1 ]
+                div [ id Conf.ids.settings, class "offcanvas offcanvas-end", bsScroll True, bsBackdrop "false", ariaLabelledby (Conf.ids.settings ++ "-label"), tabindex -1 ]
                     [ div [ class "offcanvas-header" ]
-                        [ h5 [ class "offcanvas-title", id (conf.ids.settings ++ "-label") ] [ text "Settings" ]
+                        [ h5 [ class "offcanvas-title", id (Conf.ids.settings ++ "-label") ] [ text "Settings" ]
                         , button [ type_ "button", class "btn-close text-reset", bsDismiss Offcanvas, ariaLabel "Close" ] []
                         ]
                     , div [ class "offcanvas-body" ] [ viewSourcesSection time p, viewSchemasSection p, viewDisplaySettingsSection p.settings ]

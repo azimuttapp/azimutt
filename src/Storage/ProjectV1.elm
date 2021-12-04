@@ -1,7 +1,7 @@
 module Storage.ProjectV1 exposing (CanvasPropsV1, CheckNameV1, CheckV1, ColumnIndexV1, ColumnNameV1, ColumnRefV1, ColumnTypeV1, ColumnV1, ColumnValueV1, CommentV1, FindPathSettingsV1, IndexNameV1, IndexV1, LayoutNameV1, LayoutV1, PrimaryKeyNameV1, PrimaryKeyV1, ProjectIdV1, ProjectNameV1, ProjectSettingsV1, ProjectSourceContentV1(..), ProjectSourceIdV1, ProjectSourceNameV1, ProjectSourceV1, ProjectV1, RelationNameV1, RelationV1, SampleNameV1, SchemaNameV1, SchemaV1, SourceLineV1, SourceV1, TableIdV1, TableNameV1, TablePropsV1, TableV1, UniqueNameV1, UniqueV1, decodeProject, defaultProjectSettings, upgrade)
 
 import Array
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Dict as D
@@ -230,7 +230,7 @@ stringAsTableId id =
             ( schema, table )
 
         _ ->
-            ( conf.default.schema, id )
+            ( Conf.schema.default, id )
 
 
 stringAsLayoutName : String -> LayoutNameV1

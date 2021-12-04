@@ -1,6 +1,6 @@
 module TestHelpers.Fuzzers exposing (..)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as F
@@ -59,12 +59,12 @@ fileModified =
 
 zoomLevel : Fuzzer ZoomLevel
 zoomLevel =
-    Fuzz.floatRange conf.zoom.min conf.zoom.max
+    Fuzz.floatRange Conf.canvas.zoom.min Conf.canvas.zoom.max
 
 
 color : Fuzzer Color
 color =
-    Fuzz.oneOf (conf.colors |> List.map Fuzz.constant)
+    Fuzz.oneOf (Conf.color.list |> List.map Fuzz.constant)
 
 
 

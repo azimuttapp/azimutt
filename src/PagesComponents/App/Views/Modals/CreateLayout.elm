@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.CreateLayout exposing (viewCreateLayoutModal)
 
-import Conf exposing (conf)
+import Conf
 import Html exposing (Html, button, div, input, label, text)
 import Html.Attributes exposing (autofocus, class, disabled, for, id, type_, value)
 import Html.Events exposing (onClick, onInput)
@@ -13,7 +13,7 @@ import Url exposing (percentEncode)
 
 viewCreateLayoutModal : Maybe LayoutName -> Html Msg
 viewCreateLayoutModal newLayout =
-    bsModal conf.ids.newLayoutModal
+    bsModal Conf.ids.newLayoutModal
         "Save layout"
         [ div [ class "row g-3 align-items-center" ]
             [ div [ class "col-auto" ] [ label [ class "col-form-label", for "new-layout-name" ] [ text "Layout name" ] ]

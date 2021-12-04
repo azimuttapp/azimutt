@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.Source exposing (handleSource)
 
-import Conf exposing (schemaSamples)
+import Conf
 import Dict
 import Libs.Bool as B
 import Libs.Maybe as M
@@ -27,7 +27,7 @@ handleSource msg model =
             ( model, readRemoteFile project source url Nothing )
 
         LoadSample name ->
-            ( model, schemaSamples |> Dict.get name |> M.mapOrElse (\sample -> readRemoteFile Nothing Nothing sample.url (Just name)) (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
+            ( model, Conf.schemaSamples |> Dict.get name |> M.mapOrElse (\sample -> readRemoteFile Nothing Nothing sample.url (Just name)) (toastError ("Sample <b>" ++ name ++ "</b> not found")) )
 
         FileLoaded projectId sourceInfo content ->
             model.project

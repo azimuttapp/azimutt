@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.Project exposing (createProject, deleteProject, updateProject, useProject)
 
-import Conf exposing (conf)
+import Conf
 import DataSources.SqlParser.FileParser exposing (parseSchema)
 import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 import Dict
@@ -75,7 +75,7 @@ updateProject sourceInfo content project =
                         ((errors |> List.map toastError)
                             ++ (errors |> List.map (trackError "parse-schema"))
                             ++ [ toastInfo message
-                               , hideOffcanvas conf.ids.settings
+                               , hideOffcanvas Conf.ids.settings
                                , saveProject updatedProject
                                , track event
                                ]
@@ -114,14 +114,14 @@ loadProject projectEvent model ( errors, project ) =
                             (if not (p.layout.tables |> List.isEmpty) then
                                 observeTablesSize (p.layout.tables |> List.map .id)
 
-                             else if Dict.size p.tables < 10 then
+                             else if Dict.size p.tables < Conf.canvas.showAllTablesThreshold then
                                 T.send ShowAllTables
 
                              else
-                                click conf.ids.searchInput
+                                click Conf.ids.searchInput
                             )
                                 :: [ toastInfo ("<b>" ++ p.name ++ "</b> loaded.<br>Use the search bar to explore it")
-                                   , hideModal conf.ids.projectSwitchModal
+                                   , hideModal Conf.ids.projectSwitchModal
                                    , saveProject p
                                    , activateTooltipsAndPopovers
                                    , track (projectEvent p)

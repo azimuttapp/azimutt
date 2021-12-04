@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates exposing (moveTable, removeElement, updateSizes)
 
-import Conf exposing (conf)
+import Conf
 import Dict
 import Libs.Bool as B
 import Libs.List as L
@@ -36,7 +36,7 @@ initializeTableOnFirstSize model change =
                 Maybe.map3 (\t props canvasInfos -> ( t, props, canvasInfos ))
                     (p.tables |> Dict.get (TableId.fromHtmlId change.id))
                     (p.layout.tables |> L.findBy .id (TableId.fromHtmlId change.id))
-                    (model.domInfos |> Dict.get conf.ids.erd)
+                    (model.domInfos |> Dict.get Conf.ids.erd)
                     |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.domInfos |> Dict.member change.id))
                     |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (viewportArea canvasInfos.size p.layout.canvas))
             )

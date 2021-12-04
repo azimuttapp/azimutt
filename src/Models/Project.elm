@@ -1,6 +1,6 @@
 module Models.Project exposing (Project, addSource, compute, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -138,7 +138,7 @@ computeRelations sources =
 
 viewportSize : Dict HtmlId DomInfo -> Maybe Size
 viewportSize domInfos =
-    domInfos |> Dict.get conf.ids.erd |> Maybe.map .size
+    domInfos |> Dict.get Conf.ids.erd |> Maybe.map .size
 
 
 viewportArea : Size -> CanvasProps -> Area

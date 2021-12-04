@@ -2,7 +2,7 @@ module PagesComponents.Blog.View exposing (viewBlog)
 
 import Components.Slices.Blog as Blog
 import Components.Slices.Newsletter as Newsletter
-import Conf exposing (newsletterConf)
+import Conf
 import Css exposing (hover)
 import Css.Global as Global
 import Html.Styled exposing (Html, div, h1, hr, p, text)
@@ -28,7 +28,7 @@ viewBlog model =
             , text ". We're building an application to empower developers understanding their relational databases. You can read about how we build it and how to use it on this blog."
             ]
         ]
-    , div [ css [ mt_12 ] ] [ Newsletter.centered newsletterConf ]
+    , div [ css [ mt_12 ] ] [ Newsletter.centered Conf.newsletter ]
     , hr [ css [ w_full, bg_gray_100, my_12 ], style "height" "1px" ] []
     , div [ css [ mt_16, mb_24, max_w_prose, mx_auto ] ] (model.articles |> List.map Tuple.second |> List.map Blog.article |> List.intersperse (hr [ css [ w_full, bg_gray_100, my_12 ], style "height" "1px" ] []))
 

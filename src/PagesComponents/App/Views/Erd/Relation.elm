@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
 
-import Conf exposing (conf)
+import Conf
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color exposing (Color)
@@ -34,17 +34,17 @@ viewRelation hover { name, src, ref } =
         ( ( Just ( sProps, sIndex, sSize ), Nothing ), ( label, color ) ) ->
             case { x = sProps.position.left + sSize.width, y = positionY sProps src.column } of
                 srcPos ->
-                    drawRelation srcPos { x = srcPos.x + 20, y = srcPos.y } src.column.nullable color (conf.zIndex.tables + sIndex) label
+                    drawRelation srcPos { x = srcPos.x + 20, y = srcPos.y } src.column.nullable color (Conf.canvas.zIndex.tables + sIndex) label
 
         ( ( Nothing, Just ( rProps, rIndex, _ ) ), ( label, color ) ) ->
             case { x = rProps.position.left, y = positionY rProps ref.column } of
                 refPos ->
-                    drawRelation { x = refPos.x - 20, y = refPos.y } refPos src.column.nullable color (conf.zIndex.tables + rIndex) label
+                    drawRelation { x = refPos.x - 20, y = refPos.y } refPos src.column.nullable color (Conf.canvas.zIndex.tables + rIndex) label
 
         ( ( Just ( sProps, _, sSize ), Just ( rProps, _, rSize ) ), ( label, color ) ) ->
             case ( positionX ( sProps, sSize ) ( rProps, rSize ), ( positionY sProps src.column, positionY rProps ref.column ) ) of
                 ( ( srcX, refX ), ( srcY, refY ) ) ->
-                    drawRelation { x = srcX, y = srcY } { x = refX, y = refY } src.column.nullable color (conf.zIndex.tables - 1) label
+                    drawRelation { x = srcX, y = srcY } { x = refX, y = refY } src.column.nullable color (Conf.canvas.zIndex.tables - 1) label
 
 
 viewVirtualRelation : ( ColumnRefFull, Position ) -> Svg Msg
@@ -56,7 +56,7 @@ viewVirtualRelation ( src, pos ) =
                 { x = pos.left, y = pos.top }
                 src.column.nullable
                 (Just props.color)
-                (conf.zIndex.tables - 1)
+                (Conf.canvas.zIndex.tables - 1)
                 "virtual relation"
 
         Nothing ->

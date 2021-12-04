@@ -1,7 +1,7 @@
 module Pages.NotFound exposing (Model, Msg, page)
 
 import Components.Slices.NotFound as NotFound
-import Conf exposing (constants)
+import Conf
 import Css.Global as Global
 import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
@@ -96,8 +96,8 @@ viewNotFound shared _ =
         , message = "Sorry, we couldn't find the page you’re looking for."
         , link = { url = Route.toHref Route.Home_, text = "Go back home" }
         , footer =
-            [ { url = constants.azimuttGithub ++ "/discussions", text = "Contact Support" }
-            , { url = constants.azimuttTwitter, text = "Twitter" }
+            [ { url = Conf.constants.azimuttGithub ++ "/discussions", text = "Contact Support" }
+            , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
         }

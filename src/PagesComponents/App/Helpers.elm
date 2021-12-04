@@ -1,6 +1,6 @@
 module PagesComponents.App.Helpers exposing (pagePosToCanvasPos)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Maybe as M
@@ -14,6 +14,6 @@ pagePosToCanvasPos domInfos canvas pos =
     let
         erdPos : Position
         erdPos =
-            domInfos |> Dict.get conf.ids.erd |> M.mapOrElse .position (Position 0 0)
+            domInfos |> Dict.get Conf.ids.erd |> M.mapOrElse .position (Position 0 0)
     in
     pos |> Position.sub erdPos |> Position.sub canvas.position |> Position.div canvas.zoom
