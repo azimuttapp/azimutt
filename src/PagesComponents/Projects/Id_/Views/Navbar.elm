@@ -3,24 +3,29 @@ module PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Css exposing (Style)
+import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, button, div, img, input, label, nav, span, text)
+import Html.Styled exposing (Html, a, button, div, img, input, label, nav, small, span, text)
 import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, tabindex, type_, width)
+import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaExpanded, ariaHaspopup, role)
+import Libs.Maybe as M
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
+import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
-import PagesComponents.Projects.Id_.Models exposing (NavbarModel)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), NavbarModel)
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
+import Time
 
 
-viewNavbar : Theme -> List Project -> Project -> NavbarModel -> Html msg
-viewNavbar theme storedProjects project model =
+viewNavbar : Theme -> String -> List Project -> Project -> NavbarModel -> Html Msg
+viewNavbar theme openedDropdown storedProjects project model =
     let
         menuLinks : List Link
         menuLinks =
@@ -43,13 +48,13 @@ viewNavbar theme storedProjects project model =
                     , helpIcon theme
                     ]
                 , div [ css [ Tw.flex_1, Tw.flex, Tw.justify_center, Tw.px_2 ] ]
-                    [ title storedProjects project
+                    [ title openedDropdown storedProjects project
                     ]
                 , navbarMobileButton theme model.mobileMenuOpen
                 , div [ css [ Tw.hidden, Bp.lg [ Tw.block, Tw.ml_4 ] ] ]
                     [ div [ css [ Tw.flex, Tw.items_center ] ]
                         [ navbarNotifications theme
-                        , navbarProfile theme profileLinks
+                        , navbarProfile theme openedDropdown profileLinks
                         ]
                     ]
                 ]
@@ -62,7 +67,7 @@ navbarBrand : Html msg
 navbarBrand =
     a [ href (Route.toHref Route.Projects), css [ Tw.flex, Tw.justify_start, Tw.items_center, Tw.font_medium ] ]
         [ img [ css [ Tw.block, Tw.h_8, Tw.h_8 ], src "/logo.png", alt "Azimutt", width 32, height 32 ] []
-        , span [ css [ Tw.ml_3, Tw.text_2xl, Tw.text_white, Tw.hidden, Bp.lg [ Tw.block ] ] ] [ text "Azimutt" ]
+        , span [ css [ Tw.ml_1, Tw.text_2xl, Tw.text_white, Tw.hidden, Bp.lg [ Tw.block ] ] ] [ text "zimutt" ]
         ]
 
 
@@ -89,12 +94,12 @@ helpIcon theme =
     div [ css [ Tw.ml_3 ] ] [ Icon.solid QuestionMarkCircle [ TwColor.render Text theme.color L300 ] ]
 
 
-title : List Project -> Project -> Html msg
-title storedProjects project =
+title : String -> List Project -> Project -> Html Msg
+title openedDropdown storedProjects project =
     div [ css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.text_white ] ]
-        [ Dropdown.dropdown { id = "switch-project", direction = BottomRight, isOpen = True }
+        ([ Dropdown.dropdown { id = "switch-project", direction = BottomRight, isOpen = openedDropdown == "switch-project" }
             (\m ->
-                button [ type_ "button", id m.id, ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center ] ]
+                button [ type_ "button", id m.id, onClick (ToggleDropdown m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center ] ]
                     [ span [] [ text project.name ]
                     , Icon.solid ChevronDown []
                     ]
@@ -102,29 +107,52 @@ title storedProjects project =
             (\m ->
                 div [ css [ Tw.w_48, Tw.divide_y, Tw.divide_gray_100 ] ]
                     [ div [ role "none", css [ Tw.py_1 ] ]
-                        (storedProjects |> List.map (\p -> a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-1"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text p.name ]))
+                        (storedProjects
+                            |> List.filter (\p -> p.id /= project.id)
+                            |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
+                            |> List.map (\p -> a [ href (Route.toHref (Route.Projects__Id_ { id = p.id })), role "menuitem", tabindex -1, id (m.id ++ "-item-1"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text p.name ])
+                        )
                     , div [ role "none", css [ Tw.py_1 ] ]
-                        [ a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Back to project list" ]
-                        ]
+                        [ a [ href (Route.toHref Route.Projects), role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Back to dashboard" ] ]
                     ]
             )
-        , Icon.outline ChevronRight []
-        , Dropdown.dropdown { id = "switch-layout", direction = BottomRight, isOpen = True }
-            (\m ->
-                button [ type_ "button", id m.id, ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center ] ]
-                    [ span [] [ text "All tables" ]
-                    , Icon.solid ChevronDown []
-                    ]
-            )
-            (\m ->
-                div [ css [ Tw.w_48, Tw.divide_y, Tw.divide_gray_100 ] ]
-                    [ div [ role "none", css [ Tw.py_1 ] ]
-                        [ a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-1"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Layout 1" ] ]
-                    , div [ role "none", css [ Tw.py_1 ] ]
-                        [ a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Stop using All tables" ] ]
-                    ]
-            )
-        ]
+         ]
+            ++ (project.usedLayout
+                    |> M.mapOrElse
+                        (\usedLayout ->
+                            [ Icon.outline ChevronRight []
+                            , Dropdown.dropdown { id = "switch-layout", direction = BottomRight, isOpen = openedDropdown == "switch-layout" }
+                                (\m ->
+                                    button [ type_ "button", id m.id, onClick (ToggleDropdown m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center ] ]
+                                        [ span [] [ text usedLayout ]
+                                        , Icon.solid ChevronDown []
+                                        ]
+                                )
+                                (\m ->
+                                    div [ css [ Tw.w_48, Tw.divide_y, Tw.divide_gray_100 ] ]
+                                        [ div [ role "none", css [ Tw.py_1 ] ]
+                                            (project.layouts
+                                                |> Dict.toList
+                                                |> List.filter (\( name, _ ) -> name /= usedLayout)
+                                                |> List.sortBy (\( name, _ ) -> name)
+                                                |> List.indexedMap
+                                                    (\i ( name, layout ) ->
+                                                        a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-" ++ String.fromInt i), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ]
+                                                            [ text name
+                                                            , text " "
+                                                            , small [] [ text ("(" ++ (layout.tables |> List.length |> S.pluralize "table") ++ ")") ]
+                                                            ]
+                                                    )
+                                            )
+                                        , div [ role "none", css [ Tw.py_1 ] ]
+                                            [ a [ href "#", role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text ("Stop using " ++ usedLayout) ] ]
+                                        ]
+                                )
+                            ]
+                        )
+                        []
+               )
+        )
 
 
 navbarMobileButton : Theme -> Bool -> Html msg
@@ -138,11 +166,11 @@ navbarMobileButton theme isOpen =
         ]
 
 
-navbarProfile : Theme -> List Link -> Html msg
-navbarProfile theme links =
-    Dropdown.dropdown { id = "user-menu", direction = BottomLeft, isOpen = True }
+navbarProfile : Theme -> String -> List Link -> Html Msg
+navbarProfile theme openedDropdown links =
+    Dropdown.dropdown { id = "user-menu", direction = BottomLeft, isOpen = openedDropdown == "user-menu" }
         (\m ->
-            button [ type_ "button", id m.id, ariaExpanded False, ariaHaspopup True, css [ Tw.ml_3, TwColor.render Bg theme.color L600, Tw.rounded_full, Tw.flex, Tw.text_sm, Tw.text_white, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ] ]
+            button [ type_ "button", id m.id, onClick (ToggleDropdown m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.ml_3, TwColor.render Bg theme.color L600, Tw.rounded_full, Tw.flex, Tw.text_sm, Tw.text_white, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ] ]
                 [ span [ css [ Tw.sr_only ] ] [ text "Open user menu" ]
                 , img [ css [ Tw.h_8, Tw.w_8, Tw.rounded_full ], src "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80", alt "" ] []
                 ]

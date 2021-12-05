@@ -8,6 +8,7 @@ import Shared exposing (Confirm)
 type alias Model =
     { projectId : ProjectId
     , navbar : NavbarModel
+    , openedDropdown : String
     , confirm : Confirm Msg
     , toastCpt : Int
     , toasts : List Toast.Model
@@ -19,4 +20,5 @@ type alias NavbarModel =
 
 
 type Msg
-    = Noop
+    = ToggleDropdown String
+    | Noop

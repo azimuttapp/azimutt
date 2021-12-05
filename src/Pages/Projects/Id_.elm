@@ -3,6 +3,7 @@ module Pages.Projects.Id_ exposing (Model, Msg, page)
 import Components.Atoms.Icon exposing (Icon(..))
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Styled as Styled exposing (text)
+import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.TwColor exposing (TwColor(..))
@@ -42,6 +43,7 @@ init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init _ req =
     ( { projectId = req.params.id
       , navbar = { mobileMenuOpen = False }
+      , openedDropdown = ""
       , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
       , toastCpt = 0
       , toasts = []
@@ -57,6 +59,9 @@ init _ req =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleDropdown id ->
+            ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
+
         Noop ->
             ( model, Cmd.none )
 
