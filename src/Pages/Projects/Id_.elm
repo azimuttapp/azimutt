@@ -59,6 +59,9 @@ init _ req =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleMobileMenu ->
+            ( { model | navbar = model.navbar |> (\n -> { n | mobileMenuOpen = not n.mobileMenuOpen }) }, Cmd.none )
+
         ToggleDropdown id ->
             ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
 

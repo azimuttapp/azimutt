@@ -20,5 +20,6 @@ type alias NavbarModel =
 
 
 type Msg
-    = ToggleDropdown String
+    = ToggleMobileMenu
+    | ToggleDropdown String
     | Noop

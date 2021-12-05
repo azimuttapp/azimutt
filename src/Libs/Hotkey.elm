@@ -1,6 +1,7 @@
-module Libs.Hotkey exposing (Hotkey, HotkeyTarget, hotkey, hotkeyEncoder, target)
+module Libs.Hotkey exposing (Hotkey, HotkeyTarget, hotkey, hotkeyEncoder, keys, target)
 
 import Json.Encode as Encode exposing (Value)
+import Libs.Bool as B
 import Libs.Json.Encode as E
 
 
@@ -20,6 +21,17 @@ hotkey =
 target : HotkeyTarget
 target =
     { id = Nothing, class = Nothing, tag = Nothing }
+
+
+keys : Hotkey -> List String
+keys h =
+    [ B.cond h.ctrl (Just "Ctrl") Nothing
+    , B.cond h.alt (Just "Alt") Nothing
+    , B.cond h.shift (Just "Shift") Nothing
+    , B.cond h.meta (Just "Meta") Nothing
+    , h.key
+    ]
+        |> List.filterMap identity
 
 
 hotkeyEncoder : Hotkey -> Value

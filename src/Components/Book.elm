@@ -4,6 +4,7 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
+import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
 import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Alert as Alert
@@ -72,7 +73,7 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Link.doc theme, Markdown.doc ] )
+            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Kbd.doc, Link.doc theme, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, ItemList.doc theme, Modal.doc theme, Toast.doc theme ] )
             , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
