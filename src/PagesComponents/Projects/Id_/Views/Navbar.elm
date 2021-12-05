@@ -4,7 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Conf
-import Css exposing (Style)
+import Css
 import Dict
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, img, input, label, nav, small, span, text)
@@ -14,7 +14,6 @@ import Libs.Bool as B
 import Libs.Hotkey as Hotkey
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaExpanded, ariaHaspopup, role)
 import Libs.Maybe as M
-import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
@@ -29,19 +28,6 @@ import Time
 
 viewNavbar : Theme -> String -> List Project -> Project -> NavbarModel -> Html Msg
 viewNavbar theme openedDropdown storedProjects project model =
-    let
-        menuLinks : List Link
-        menuLinks =
-            [ { url = "#", text = "Dashboard" }, { url = "#", text = "Team" }, { url = "#", text = "Projects" }, { url = "#", text = "Calendar" } ]
-
-        activeLink : String
-        activeLink =
-            "Dashboard"
-
-        profileLinks : List Link
-        profileLinks =
-            [ { url = "#", text = "Your Profile" }, { url = "#", text = "Settings" }, { url = "#", text = "Sign out" } ]
-    in
     nav [ css [ TwColor.render Bg theme.color L600 ] ]
         [ div [ css [ Tw.mx_auto, Tw.px_2, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_4 ] ] ]
             [ div [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Tw.h_16 ] ]
@@ -65,7 +51,7 @@ viewNavbar theme openedDropdown storedProjects project model =
                     ]
                 ]
             ]
-        , navbarMobileMenu theme model.mobileMenuOpen activeLink menuLinks profileLinks
+        , navbarMobileMenu theme model.mobileMenuOpen
         ]
 
 
@@ -126,7 +112,7 @@ title theme openedDropdown storedProjects project =
             ++ (project.usedLayout
                     |> M.mapOrElse
                         (\usedLayout ->
-                            [ Icon.outline ChevronRight []
+                            [ Icon.slash [ TwColor.render Text theme.color L300 ]
                             , Dropdown.dropdown { id = "switch-layout", direction = BottomLeft, isOpen = openedDropdown == "switch-layout" }
                                 (\m ->
                                     button [ type_ "button", id m.id, onClick (ToggleDropdown m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ] ]
@@ -197,23 +183,6 @@ navbarSettings theme =
         ]
 
 
-navbarNotifications : Theme -> Html msg
-navbarNotifications theme =
-    button [ type_ "button", css [ Tw.ml_auto, Tw.flex_shrink_0, TwColor.render Bg theme.color L600, Tw.p_1, Tw.rounded_full, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), Css.hover [ Tw.text_white ] ] ]
-        [ span [ css [ Tw.sr_only ] ] [ text "View notifications" ]
-        , Icon.outline Bell []
-        ]
-
-
-navbarLink : List Style -> Theme -> String -> Link -> Html msg
-navbarLink styles theme active link =
-    if link.text == active then
-        a [ href link.url, css ([ TwColor.render Bg theme.color L700, Tw.text_white, Tw.block, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.font_medium ] ++ styles) ] [ text link.text ]
-
-    else
-        a [ href link.url, css ([ TwColor.render Text theme.color L100, Tw.block, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ] ] ++ styles) ] [ text link.text ]
-
-
 navbarMobileButton : Theme -> Bool -> Html Msg
 navbarMobileButton theme isOpen =
     div [ css [ Tw.flex, Bp.lg [ Tw.hidden ] ] ]
@@ -225,23 +194,23 @@ navbarMobileButton theme isOpen =
         ]
 
 
-navbarMobileMenu : Theme -> Bool -> String -> List Link -> List Link -> Html msg
-navbarMobileMenu theme isOpen active menuLinks profileLinks =
+navbarMobileMenu : Theme -> Bool -> Html msg
+navbarMobileMenu theme isOpen =
     div [ css ([ Bp.lg [ Tw.hidden ] ] ++ B.cond isOpen [] [ Tw.hidden ]), id "mobile-menu" ]
         [ div [ css [ Tw.px_2, Tw.pt_2, Tw.pb_3, Tw.space_y_1 ] ]
-            (menuLinks |> List.map (navbarLink [ Tw.text_base ] theme active))
-        , div [ css [ Tw.pt_4, Tw.pb_3, Tw.border_t, TwColor.render Border theme.color L500 ] ]
-            [ div [ css [ Tw.flex, Tw.items_center, Tw.px_5 ] ]
-                [ div [ css [ Tw.flex_shrink_0 ] ]
-                    [ img [ css [ Tw.h_10, Tw.w_10, Tw.rounded_full ], src "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80", alt "" ] []
-                    ]
-                , div [ css [ Tw.ml_3 ] ]
-                    [ div [ css [ Tw.text_base, Tw.font_medium, Tw.text_white ] ] [ text "Tom Cook" ]
-                    , div [ css [ Tw.text_sm, Tw.font_medium, TwColor.render Text theme.color L200 ] ] [ text "tom@example.com" ]
-                    ]
-                , navbarNotifications theme
+            [ a [ href "#", css [ TwColor.render Text theme.color L100, Tw.flex, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ] ] ]
+                [ text "Show all tables" ]
+            , a [ href "#", css [ TwColor.render Text theme.color L100, Tw.flex, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ] ] ]
+                [ text "Hide all tables" ]
+            , a [ href "#", css [ TwColor.render Text theme.color L100, Tw.flex, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ] ] ]
+                [ text "Find path between tables" ]
+            , a [ href "#", css [ TwColor.render Text theme.color L100, Tw.flex, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ] ] ]
+                [ text "Create a virtual relation" ]
+            ]
+        , div [ css [ Tw.px_2, Tw.pt_2, Tw.pb_3, Tw.space_y_1, Tw.border_t, TwColor.render Border theme.color L500 ] ]
+            [ a [ href "#", css [ TwColor.render Text theme.color L100, Tw.flex, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ] ] ]
+                [ Icon.outline Cog [ Tw.mr_3 ]
+                , text "Settings"
                 ]
-            , div [ css [ Tw.mt_3, Tw.px_2, Tw.space_y_1 ] ]
-                (profileLinks |> List.map (\link -> a [ href link.url, css [ Tw.block, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, TwColor.render Text theme.color L200, Css.hover [ Tw.text_white, TwColor.render Bg theme.color L500 ] ] ] [ text link.text ]))
             ]
         ]
