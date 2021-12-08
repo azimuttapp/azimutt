@@ -106,7 +106,7 @@ viewSampleSchemas =
                 (Conf.schemaSamples
                     |> Dict.values
                     |> List.sortBy .tables
-                    |> List.map (\sample -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample sample.name)) ] [ text (sample.name ++ " (" ++ String.fromInt sample.tables ++ " tables)") ] ])
+                    |> List.map (\sample -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample sample.key)) ] [ text (sample.name ++ " (" ++ String.fromInt sample.tables ++ " tables)") ] ])
                 )
             ]
         ]

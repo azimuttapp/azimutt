@@ -9,7 +9,7 @@ import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.Time as Time
 import Models.Project.Relation as Relation exposing (Relation)
-import Models.Project.SampleName as SampleName exposing (SampleName)
+import Models.Project.SampleName as SampleName exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind exposing (SourceKind)
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
@@ -27,7 +27,7 @@ type alias Source =
     , tables : Dict TableId Table
     , relations : List Relation
     , enabled : Bool
-    , fromSample : Maybe SampleName
+    , fromSample : Maybe SampleKey
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }

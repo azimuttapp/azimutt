@@ -20,7 +20,7 @@ import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
-import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SampleName exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
@@ -120,7 +120,7 @@ type SourceMsg
     | FileDragLeave
     | LoadLocalFile (Maybe ProjectId) (Maybe SourceId) File
     | LoadRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl
-    | LoadSample SampleName
+    | LoadSample SampleKey
     | FileLoaded ProjectId SourceInfo FileContent
     | ToggleSource Source
     | CreateSource Source String

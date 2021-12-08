@@ -59,7 +59,7 @@ navbarBrand : Html msg
 navbarBrand =
     a [ href (Route.toHref Route.Projects), css [ Tw.flex, Tw.justify_start, Tw.items_center, Tw.flex_shrink_0, Tw.font_medium ] ]
         [ img [ css [ Tw.block, Tw.h_8, Tw.h_8 ], src "/logo.png", alt "Azimutt", width 32, height 32 ] []
-        , span [ css [ Tw.ml_1, Tw.text_2xl, Tw.text_white, Tw.hidden, Bp.lg [ Tw.block ] ] ] [ text "zimutt" ]
+        , span [ css [ Tw.ml_3, Tw.text_2xl, Tw.text_white, Tw.hidden, Bp.lg [ Tw.block ] ] ] [ text "Azimutt" ]
         ]
 
 

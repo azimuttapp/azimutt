@@ -1,6 +1,6 @@
 module Models.SourceInfo exposing (SourceInfo)
 
-import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SampleName exposing (SampleKey)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind)
 import Models.Project.SourceName exposing (SourceName)
@@ -12,7 +12,7 @@ type alias SourceInfo =
     , name : SourceName
     , kind : SourceKind
     , enabled : Bool
-    , fromSample : Maybe SampleName
+    , fromSample : Maybe SampleKey
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }

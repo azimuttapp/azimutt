@@ -16,7 +16,7 @@ import Libs.Models.Size as Size
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
-import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SampleName exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Storage.ProjectV2 exposing (decodeProject)
@@ -88,7 +88,7 @@ readLocalFile project source file =
     messageToJs (GetLocalFile project source file)
 
 
-readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleName -> Cmd msg
+readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleKey -> Cmd msg
 readRemoteFile project source url sample =
     messageToJs (GetRemoteFile project source url sample)
 
@@ -158,7 +158,7 @@ type ElmMsg
     | SaveProject Project
     | DropProject Project
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
-    | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleName)
+    | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
     | GetSourceId ColumnRef ColumnRef
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
@@ -171,7 +171,7 @@ type JsMsg
     = GotSizes (List SizeChange)
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
-    | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleName)
+    | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
     | Error Decode.Error
