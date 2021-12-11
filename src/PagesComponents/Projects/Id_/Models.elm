@@ -22,4 +22,10 @@ type alias NavbarModel =
 type Msg
     = ToggleMobileMenu
     | ToggleDropdown String
+    | ShowAllTables
+    | HideAllTables
+    | ResetCanvas
+    | LayoutMsg
+    | VirtualRelationMsg
+    | FindPathMsg
     | Noop

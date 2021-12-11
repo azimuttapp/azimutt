@@ -65,6 +65,24 @@ update msg model =
         ToggleDropdown id ->
             ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
 
+        ShowAllTables ->
+            ( model, Cmd.none )
+
+        HideAllTables ->
+            ( model, Cmd.none )
+
+        ResetCanvas ->
+            ( model, Cmd.none )
+
+        LayoutMsg ->
+            ( model, Cmd.none )
+
+        VirtualRelationMsg ->
+            ( model, Cmd.none )
+
+        FindPathMsg ->
+            ( model, Cmd.none )
+
         Noop ->
             ( model, Cmd.none )
 

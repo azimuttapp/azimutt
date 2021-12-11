@@ -105,6 +105,7 @@ hotkeys =
         , ( "move-to-top", [ { hotkey | key = Just "ArrowUp", ctrl = True, shift = True } ] )
         , ( "move-to-back", [ { hotkey | key = Just "ArrowDown", ctrl = True, shift = True } ] )
         , ( "select-all", [ { hotkey | key = Just "a", ctrl = True, preventDefault = True } ] )
+        , ( "save-layout", [ { hotkey | key = Just "l", alt = True } ] )
         , ( "find-path", [ { hotkey | key = Just "p", alt = True } ] )
         , ( "create-virtual-relation", [ { hotkey | key = Just "v", alt = True } ] )
         , ( "undo", [ { hotkey | key = Just "z", ctrl = True } ] )
