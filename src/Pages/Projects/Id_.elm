@@ -8,6 +8,7 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
+import Models.Project.TableId as TableId
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.View exposing (viewProject)
@@ -42,7 +43,7 @@ type alias Msg =
 init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init _ req =
     ( { projectId = req.params.id
-      , navbar = { mobileMenuOpen = False }
+      , navbar = { mobileMenuOpen = False, search = "" }
       , openedDropdown = ""
       , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
       , toastCpt = 0
@@ -65,26 +66,35 @@ update msg model =
         ToggleDropdown id ->
             ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
 
+        SearchUpdated search ->
+            ( { model | navbar = model.navbar |> (\n -> { n | search = search }) }, Cmd.none )
+
+        ShowTable id ->
+            ( model, Debug.log ("ShowTable: " ++ TableId.toString id) Cmd.none )
+
+        HideTable id ->
+            ( model, Debug.log ("HideTable: " ++ TableId.toString id) Cmd.none )
+
         ShowAllTables ->
-            ( model, Cmd.none )
+            ( model, Debug.log "ShowAllTables" Cmd.none )
 
         HideAllTables ->
-            ( model, Cmd.none )
+            ( model, Debug.log "HideAllTables" Cmd.none )
 
         ResetCanvas ->
-            ( model, Cmd.none )
+            ( model, Debug.log "ResetCanvas" Cmd.none )
 
         LayoutMsg ->
-            ( model, Cmd.none )
+            ( model, Debug.log "LayoutMsg" Cmd.none )
 
         VirtualRelationMsg ->
-            ( model, Cmd.none )
+            ( model, Debug.log "VirtualRelationMsg" Cmd.none )
 
         FindPathMsg ->
-            ( model, Cmd.none )
+            ( model, Debug.log "FindPathMsg" Cmd.none )
 
         Noop ->
-            ( model, Cmd.none )
+            ( model, Debug.log "Noop" Cmd.none )
 
 
 
