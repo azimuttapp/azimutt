@@ -80,10 +80,12 @@ toast content isOpen =
         ]
 
 
-container : List ( String, Html msg ) -> Html msg
-container toasts =
+container : Theme -> List Model -> (String -> msg) -> Html msg
+container theme toasts close =
     div [ ariaLive "assertive", css [ Tw.fixed, Tw.inset_0, Tw.flex, Tw.items_end, Tw.px_4, Tw.py_6, Tw.pointer_events_none, Bp.sm [ Tw.p_6, Tw.items_end ] ] ]
-        [ Keyed.node "div" [ css [ Tw.w_full, Tw.flex, Tw.flex_col, Tw.items_center, Tw.space_y_4, Bp.sm [ Tw.items_start ] ] ] toasts
+        [ Keyed.node "div"
+            [ css [ Tw.w_full, Tw.flex, Tw.flex_col, Tw.items_center, Tw.space_y_4, Bp.sm [ Tw.items_start ] ] ]
+            (toasts |> List.map (\t -> render theme (close t.key) t))
         ]
 
 
@@ -145,5 +147,5 @@ doc theme =
                         ]
                         [ text "Simple toast!" ]
               )
-            , ( "container", \{ toastDocState } -> container (toastDocState.toasts |> List.map (\t -> render theme (removeToast t.key) t)) )
+            , ( "container", \{ toastDocState } -> container theme toastDocState.toasts removeToast )
             ]

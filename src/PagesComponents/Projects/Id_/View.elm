@@ -1,5 +1,7 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
+import Components.Molecules.Modal as Modal
+import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Css.Global as Global
@@ -10,10 +12,11 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
+import Libs.Task as T
 import Models.Project exposing (Project)
-import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
+import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
-import Shared exposing (StoredProjects(..))
+import Shared exposing (Confirm, StoredProjects(..))
 import Tailwind.Utilities as Tw
 
 
@@ -27,6 +30,8 @@ viewProject shared model =
 
         Loaded projects ->
             projects |> L.find (\p -> p.id == model.projectId) |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
+    , viewConfirm model.confirm
+    , Toast.container shared.theme model.toasts ToastHide
     ]
 
 
@@ -68,3 +73,19 @@ viewContent : Theme -> Project -> Html msg
 viewContent _ _ =
     main_ [ css [ Tw.border_4, Tw.border_dashed, Tw.border_gray_200, Tw.rounded_lg, Tw.h_96 ] ]
         [{- Replace with your content -}]
+
+
+viewConfirm : Confirm Msg -> Html Msg
+viewConfirm c =
+    Modal.confirm
+        { id = "confirm-modal"
+        , icon = c.icon
+        , color = c.color
+        , title = c.title
+        , message = c.message
+        , confirm = c.confirm
+        , cancel = c.cancel
+        , onConfirm = ConfirmAnswer True c.onConfirm
+        , onCancel = ConfirmAnswer False (T.send Noop)
+        }
+        c.isOpen

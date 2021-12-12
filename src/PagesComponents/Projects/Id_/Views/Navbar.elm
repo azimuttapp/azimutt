@@ -22,7 +22,7 @@ import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), NavbarModel)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), NavbarModel, confirm)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Tailwind.Breakpoints as Bp
@@ -85,8 +85,8 @@ viewNavbarHelp theme =
 
 viewNavbarResetLayout : Theme -> Maybe LayoutName -> Layout -> Html Msg
 viewNavbarResetLayout theme usedLayout layout =
-    if canResetLayout usedLayout layout then
-        Button.primary3 theme.color [ onClick ResetCanvas, css [ Tw.ml_auto ] ] [ text "Reset layout" ]
+    if canResetCanvas usedLayout layout then
+        Button.primary3 theme.color [ onClick resetCanvasMsg, css [ Tw.ml_auto ] ] [ text "Reset canvas" ]
 
     else
         div [] []
@@ -164,7 +164,7 @@ viewNavbarMobileMenu theme features usedLayout layout isOpen =
             [ TwColor.render Text theme.color L100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
     in
     div [ css ([ Bp.lg [ Tw.hidden ] ] ++ B.cond isOpen [] [ Tw.hidden ]), id "mobile-menu" ]
-        ([ B.cond (canResetLayout usedLayout layout) [ button [ type_ "button", onClick ResetCanvas, css btnStyle ] [ text "Reset layout" ] ] []
+        ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvasMsg, css btnStyle ] [ text "Reset canvas" ] ] []
          , features |> List.map (\f -> button [ type_ "button", onClick f.action, css btnStyle ] [ text f.text ])
          , [ button [ type_ "button", onClick Noop, css btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ], text "Settings" ] ]
          ]
@@ -173,6 +173,11 @@ viewNavbarMobileMenu theme features usedLayout layout isOpen =
         )
 
 
-canResetLayout : Maybe LayoutName -> Layout -> Bool
-canResetLayout usedLayout layout =
+resetCanvasMsg : Msg
+resetCanvasMsg =
+    confirm "Reset canvas?" (text "You will loose your current canvas state.") ResetCanvas
+
+
+canResetCanvas : Maybe LayoutName -> Layout -> Bool
+canResetCanvas usedLayout layout =
     usedLayout /= Nothing || not ((layout.tables == []) && (layout.hiddenTables == []) && layout.canvas == { position = { left = 0, top = 0 }, zoom = 1 })

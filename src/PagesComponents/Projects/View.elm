@@ -1,10 +1,8 @@
 module PagesComponents.Projects.View exposing (viewProjects)
 
-import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
-import Components.Molecules.Toast as Toast
 import Conf
 import Css
 import Dict
@@ -36,17 +34,15 @@ viewProjects shared model =
         ToggleMobileMenu
         model
         [ text model.selectedMenu ]
-        [ viewContent shared model ]
+        [ viewContent shared ]
         [ viewConfirm model.confirm
-        , Toast.container (model.toasts |> List.map (\t -> Toast.render shared.theme (ToastHide t.key) t))
         ]
 
 
-viewContent : Shared.Model -> Model -> Html Msg
-viewContent shared model =
+viewContent : Shared.Model -> Html Msg
+viewContent shared =
     div [ css [ Tw.p_8, Bp.sm [ Tw.p_6 ] ] ]
         [ viewProjectList shared
-        , viewOther shared.theme model
         ]
 
 
@@ -159,41 +155,3 @@ viewConfirm c =
         , onCancel = ConfirmAnswer False (T.send Noop)
         }
         c.isOpen
-
-
-viewOther : Theme -> Model -> Html Msg
-viewOther theme model =
-    div []
-        [ h3 [ css [ Tw.text_lg, Tw.font_medium, Tw.pt_6, Tw.pb_4 ] ] [ text "Other" ]
-        , div []
-            [ Button.primary3 theme.color
-                [ onClick
-                    (ConfirmOpen
-                        { color = Green
-                        , icon = Check
-                        , title = "A modal"
-                        , message = span [] [ text "You can open a confirm modal with ConfirmOpen \\o/" ]
-                        , confirm = "Great!"
-                        , cancel = "Cancel"
-                        , onConfirm = T.send Noop
-                        , isOpen = True
-                        }
-                    )
-                ]
-                [ text "Show modal" ]
-            , Button.primary3 theme.color
-                [ onClick
-                    (ToastAdd (Just 5000)
-                        (Toast.Simple
-                            { color = Green
-                            , icon = Check
-                            , title = "Well done! (" ++ (model.toastCpt |> String.fromInt) ++ ")"
-                            , message = "Well done :D"
-                            }
-                        )
-                    )
-                , css [ Tw.ml_2 ]
-                ]
-                [ text "Show toast" ]
-            ]
-        ]

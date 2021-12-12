@@ -1,7 +1,6 @@
 module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
 import Components.Molecules.Toast as Toast
-import Libs.Models exposing (Millis)
 import Models.Project exposing (Project)
 import Shared exposing (Confirm)
 
@@ -23,10 +22,6 @@ type Msg
     = SelectMenu String
     | ToggleMobileMenu
     | DeleteProject Project
-    | ToastAdd (Maybe Millis) Toast.Content
-    | ToastShow (Maybe Millis) String
-    | ToastHide String
-    | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | NavigateTo String

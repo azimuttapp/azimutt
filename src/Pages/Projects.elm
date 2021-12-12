@@ -5,7 +5,6 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Gen.Params.Projects exposing (Params)
 import Html.Styled as Styled exposing (text)
 import Libs.Bool as B
-import Libs.Maybe as M
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Page
@@ -67,18 +66,6 @@ update req msg model =
 
         DeleteProject project ->
             ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Tracking.events.deleteProject project) ] )
-
-        ToastAdd millis toast ->
-            model.toastCpt |> String.fromInt |> (\key -> ( { model | toastCpt = model.toastCpt + 1, toasts = { key = key, content = toast, isOpen = False } :: model.toasts }, T.sendAfter 100 (ToastShow millis key) ))
-
-        ToastShow millis key ->
-            ( { model | toasts = model.toasts |> List.map (\t -> B.cond (t.key == key) { t | isOpen = True } t) }, millis |> M.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
-
-        ToastHide key ->
-            ( { model | toasts = model.toasts |> List.map (\t -> B.cond (t.key == key) { t | isOpen = False } t) }, T.sendAfter 300 (ToastRemove key) )
-
-        ToastRemove key ->
-            ( { model | toasts = model.toasts |> List.filter (\t -> t.key /= key) }, Cmd.none )
 
         ConfirmOpen confirm ->
             ( { model | confirm = { confirm | isOpen = True } }, Cmd.none )

@@ -1,6 +1,7 @@
 module Pages.Projects.Id_ exposing (Model, Msg, page)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Molecules.Toast exposing (Content(..))
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Styled as Styled exposing (text)
 import Libs.Bool as B
@@ -10,7 +11,7 @@ import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project.TableId as TableId
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
+import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports
 import Request
@@ -70,31 +71,49 @@ update msg model =
             ( { model | navbar = model.navbar |> (\n -> { n | search = search }) }, Cmd.none )
 
         ShowTable id ->
-            ( model, Debug.log ("ShowTable: " ++ TableId.toString id) Cmd.none )
+            ( model, T.send (toastSuccess ("ShowTable: " ++ TableId.toString id)) )
 
         HideTable id ->
-            ( model, Debug.log ("HideTable: " ++ TableId.toString id) Cmd.none )
-
-        ShowAllTables ->
-            ( model, Debug.log "ShowAllTables" Cmd.none )
-
-        HideAllTables ->
-            ( model, Debug.log "HideAllTables" Cmd.none )
+            ( model, T.send (toastSuccess ("HideTable: " ++ TableId.toString id)) )
 
         ResetCanvas ->
-            ( model, Debug.log "ResetCanvas" Cmd.none )
+            ( model, T.send (toastSuccess "ResetCanvas") )
+
+        ShowAllTables ->
+            ( model, T.send (toastSuccess "ShowAllTables") )
+
+        HideAllTables ->
+            ( model, T.send (toastSuccess "HideAllTables") )
 
         LayoutMsg ->
-            ( model, Debug.log "LayoutMsg" Cmd.none )
+            ( model, T.send (toastSuccess "LayoutMsg") )
 
         VirtualRelationMsg ->
-            ( model, Debug.log "VirtualRelationMsg" Cmd.none )
+            ( model, T.send (toastSuccess "VirtualRelationMsg") )
 
         FindPathMsg ->
-            ( model, Debug.log "FindPathMsg" Cmd.none )
+            ( model, T.send (toastSuccess "FindPathMsg") )
+
+        ToastAdd millis toast ->
+            model.toastCpt |> String.fromInt |> (\key -> ( { model | toastCpt = model.toastCpt + 1, toasts = { key = key, content = toast, isOpen = False } :: model.toasts }, T.sendAfter 1 (ToastShow millis key) ))
+
+        ToastShow millis key ->
+            ( { model | toasts = model.toasts |> List.map (\t -> B.cond (t.key == key) { t | isOpen = True } t) }, millis |> M.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
+
+        ToastHide key ->
+            ( { model | toasts = model.toasts |> List.map (\t -> B.cond (t.key == key) { t | isOpen = False } t) }, T.sendAfter 300 (ToastRemove key) )
+
+        ToastRemove key ->
+            ( { model | toasts = model.toasts |> List.filter (\t -> t.key /= key) }, Cmd.none )
+
+        ConfirmOpen confirm ->
+            ( { model | confirm = { confirm | isOpen = True } }, Cmd.none )
+
+        ConfirmAnswer answer cmd ->
+            ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )
 
         Noop ->
-            ( model, Debug.log "Noop" Cmd.none )
+            ( model, T.send (toastSuccess "Noop") )
 
 
 
