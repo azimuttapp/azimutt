@@ -47,7 +47,7 @@ init =
       , toastCpt = 0
       , toasts = []
       }
-    , Cmd.batch [ Ports.loadProjects ]
+    , Cmd.none
     )
 
 

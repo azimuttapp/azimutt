@@ -11,9 +11,11 @@ import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project.TableId as TableId
 import Page
+import PagesComponents.App.Updates.Helpers exposing (setProjectWithCmd)
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
+import PagesComponents.Projects.Id_.Updates.Table exposing (showTable)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
-import Ports
+import Ports exposing (JsMsg(..))
 import Request
 import Shared
 import View exposing (View)
@@ -23,7 +25,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init shared req
-        , update = update
+        , update = update req
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -42,15 +44,15 @@ type alias Msg =
 
 
 init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
-init _ req =
-    ( { projectId = req.params.id
+init shared req =
+    ( { project = shared |> Shared.projects |> L.find (\p -> p.id == req.params.id)
       , navbar = { mobileMenuOpen = False, search = "" }
       , openedDropdown = ""
       , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
       , toastCpt = 0
       , toasts = []
       }
-    , Cmd.batch [ Ports.loadProjects ]
+    , Cmd.none
     )
 
 
@@ -58,8 +60,8 @@ init _ req =
 -- UPDATE
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
+update req msg model =
     case msg of
         ToggleMobileMenu ->
             ( { model | navbar = model.navbar |> (\n -> { n | mobileMenuOpen = not n.mobileMenuOpen }) }, Cmd.none )
@@ -71,7 +73,7 @@ update msg model =
             ( { model | navbar = model.navbar |> (\n -> { n | search = search }) }, Cmd.none )
 
         ShowTable id ->
-            ( model, T.send (toastSuccess ("ShowTable: " ++ TableId.toString id)) )
+            model |> setProjectWithCmd (showTable id)
 
         HideTable id ->
             ( model, T.send (toastSuccess ("HideTable: " ++ TableId.toString id)) )
@@ -112,6 +114,12 @@ update msg model =
         ConfirmAnswer answer cmd ->
             ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )
 
+        JsMessage (GotProjects ( _, projects )) ->
+            ( { model | project = projects |> L.find (\p -> p.id == req.params.id) }, Cmd.none )
+
+        JsMessage _ ->
+            ( model, Cmd.none )
+
         Noop ->
             ( model, T.send (toastSuccess "Noop") )
 
@@ -122,7 +130,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Ports.onJsMessage JsMessage
 
 
 
@@ -131,6 +139,6 @@ subscriptions _ =
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    { title = shared |> Shared.projects |> L.find (\p -> p.id == model.projectId) |> M.mapOrElse (\p -> p.name ++ " - Azimutt") "Azimutt - Explore your database schema"
+    { title = model.project |> M.mapOrElse (\p -> p.name ++ " - Azimutt") "Azimutt - Explore your database schema"
     , body = model |> viewProject shared |> List.map Styled.toUnstyled
     }

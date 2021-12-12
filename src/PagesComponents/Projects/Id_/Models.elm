@@ -6,13 +6,14 @@ import Html.Styled exposing (Html)
 import Libs.Models exposing (Millis)
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
-import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project exposing (Project)
 import Models.Project.TableId exposing (TableId)
+import Ports exposing (JsMsg)
 import Shared exposing (Confirm)
 
 
 type alias Model =
-    { projectId : ProjectId
+    { project : Maybe Project
     , navbar : NavbarModel
     , openedDropdown : String
     , confirm : Confirm Msg
@@ -45,6 +46,7 @@ type Msg
     | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
+    | JsMessage JsMsg
     | Noop
 
 

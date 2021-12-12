@@ -8,7 +8,6 @@ import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, div, main_)
 import Html.Styled.Attributes exposing (css)
-import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
@@ -29,7 +28,7 @@ viewProject shared model =
             viewLoader shared.theme
 
         Loaded projects ->
-            projects |> L.find (\p -> p.id == model.projectId) |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
+            model.project |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
     , viewConfirm model.confirm
     , Toast.container shared.theme model.toasts ToastHide
     ]
