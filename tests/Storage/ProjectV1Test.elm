@@ -4,6 +4,7 @@ import Dict
 import Expect
 import Json.Decode as Decode
 import Libs.Dict as D
+import Libs.Models.Color as Color
 import Libs.Models.Position exposing (Position)
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
@@ -57,7 +58,7 @@ project1 =
     , schema =
         { tables = D.fromListMap .id [ TableV1 ( "public", "users" ) "public" "users" (Ned.singletonMap .name (ColumnV1 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
         , relations = []
-        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
+        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Color.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
     , layouts = Dict.fromList [ ( "empty", LayoutV1 (CanvasPropsV1 (Position 0 0) 0.5) [] [] (time 1202) (time 1203) ) ]
     , currentLayout = Nothing
@@ -129,12 +130,12 @@ project2 =
                   }
                 ]
         , relations = [ RelationV1 "creds_user_id" (ColumnRefV1 ( "public", "creds" ) "user_id") (ColumnRefV1 ( "public", "users" ) "id") [] ]
-        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
+        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Color.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
     , layouts =
         Dict.fromList
             [ ( "empty", LayoutV1 (CanvasPropsV1 (Position 0 0) 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", LayoutV1 (CanvasPropsV1 (Position 12 32) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 102) "red" [ "id", "name" ] True ] [] (time 1202) (time 1203) )
+            , ( "users", LayoutV1 (CanvasPropsV1 (Position 12 32) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 102) Color.red [ "id", "name" ] True ] [] (time 1202) (time 1203) )
             ]
     , currentLayout = Just "users"
     , settings = { findPath = FindPathSettingsV1 4 [ ( "public", "users" ) ] [ "created_by" ] }

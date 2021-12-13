@@ -17,6 +17,7 @@ import Components.Molecules.Toast as Toast
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
+import Components.Organisms.Table as Table
 import Components.Slices.Blog as Blog
 import Components.Slices.Content as Content
 import Components.Slices.Cta as Cta
@@ -40,8 +41,9 @@ import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 
 type alias DocState =
     { dropdownDocState : Dropdown.DocState
-    , navbarDocState : Navbar.DocState
     , modalDocState : Modal.DocState
+    , navbarDocState : Navbar.DocState
+    , tableDocState : Table.DocState
     , toastDocState : Toast.DocState
     }
 
@@ -49,8 +51,9 @@ type alias DocState =
 init : DocState
 init =
     { dropdownDocState = Dropdown.initDocState
-    , navbarDocState = Navbar.initDocState
     , modalDocState = Modal.initDocState
+    , navbarDocState = Navbar.initDocState
+    , tableDocState = Table.initDocState
     , toastDocState = Toast.initDocState
     }
 
@@ -75,7 +78,7 @@ main =
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Kbd.doc, Link.doc theme, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, ItemList.doc theme, Modal.doc theme, Toast.doc theme ] )
-            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme ] )
+            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
             ]
 

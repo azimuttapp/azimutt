@@ -1,6 +1,5 @@
 module Models.Project.TableProps exposing (TableProps, decode, encode, init)
 
-import Conf
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
@@ -57,9 +56,9 @@ computeColor ( _, table ) =
     S.wordSplit table
         |> List.head
         |> Maybe.map S.hashCode
-        |> Maybe.map (modBy (List.length Conf.color.list))
-        |> Maybe.andThen (\index -> Conf.color.list |> L.get index)
-        |> Maybe.withDefault Conf.color.default
+        |> Maybe.map (modBy (List.length Color.list))
+        |> Maybe.andThen (\index -> Color.list |> L.get index)
+        |> Maybe.withDefault Color.default
 
 
 encode : TableProps -> Value

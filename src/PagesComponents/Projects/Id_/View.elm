@@ -6,7 +6,7 @@ import Components.Slices.NotFound as NotFound
 import Conf
 import Css.Global as Global
 import Gen.Route as Route
-import Html.Styled exposing (Html, div, main_)
+import Html.Styled exposing (Html, div)
 import Html.Styled.Attributes exposing (css)
 import Libs.Maybe as M
 import Libs.Models.Theme exposing (Theme)
@@ -14,6 +14,7 @@ import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), T
 import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
+import PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Shared exposing (Confirm, StoredProjects(..))
 import Tailwind.Utilities as Tw
@@ -22,7 +23,7 @@ import Tailwind.Utilities as Tw
 viewProject : Shared.Model -> Model -> List (Html Msg)
 viewProject shared model =
     [ Global.global Tw.globalStyles
-    , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100 ], Global.selector "body" [ Tw.h_full ] ]
+    , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100, Tw.overflow_hidden ], Global.selector "body" [ Tw.h_full ] ]
     , case shared.projects of
         Loading ->
             viewLoader shared.theme
@@ -32,6 +33,14 @@ viewProject shared model =
     , viewConfirm model.confirm
     , Toast.container shared.theme model.toasts ToastHide
     ]
+
+
+viewApp : Theme -> Model -> List Project -> Project -> Html Msg
+viewApp theme model storedProjects project =
+    div []
+        [ viewNavbar theme model.openedDropdown storedProjects project model.navbar
+        , viewErd theme model.openedDropdown project
+        ]
 
 
 viewLoader : Theme -> Html msg
@@ -58,20 +67,6 @@ viewNotFound theme =
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
         }
-
-
-viewApp : Theme -> Model -> List Project -> Project -> Html Msg
-viewApp theme model storedProjects project =
-    div []
-        [ viewNavbar theme model.openedDropdown storedProjects project model.navbar
-        , viewContent theme project
-        ]
-
-
-viewContent : Theme -> Project -> Html msg
-viewContent _ _ =
-    main_ [ css [ Tw.border_4, Tw.border_dashed, Tw.border_gray_200, Tw.rounded_lg, Tw.h_96 ] ]
-        [{- Replace with your content -}]
 
 
 viewConfirm : Confirm Msg -> Html Msg

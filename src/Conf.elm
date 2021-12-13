@@ -1,10 +1,9 @@
-module Conf exposing (SampleSchema, canvas, color, constants, hotkeys, ids, newsletter, schema, schemaSamples)
+module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
-import Libs.Models.Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
@@ -47,13 +46,6 @@ canvas =
     { zoom = { min = 0.05, max = 5, speed = 0.001 }
     , zIndex = { tables = 10 }
     , showAllTablesThreshold = 20
-    }
-
-
-color : { list : List Color, default : Color }
-color =
-    { list = [ "red", "orange", "amber", "yellow", "lime", "green", "emerald", "teal", "cyan", "sky", "blue", "indigo", "violet", "purple", "fuchsia", "pink", "rose" ]
-    , default = "gray"
     }
 
 

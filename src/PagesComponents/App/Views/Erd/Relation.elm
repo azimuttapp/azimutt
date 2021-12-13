@@ -96,7 +96,7 @@ viewLine p1 p2 optional color =
             , y2 (String.fromFloat p2.y)
             , style
                 (color
-                    |> M.mapOrElse (\c -> "stroke: var(--tw-" ++ c ++ "); stroke-width: 3;")
+                    |> M.mapOrElse (\c -> "stroke: var(--tw-" ++ c.name ++ "); stroke-width: 3;")
                         "stroke: #A0AEC0; stroke-width: 2;"
                 )
             ]

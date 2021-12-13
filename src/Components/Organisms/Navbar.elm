@@ -155,7 +155,7 @@ adminProfile : Theme -> Bool -> AdminProfile msg -> Html msg
 adminProfile theme isOpen profile =
     Dropdown.dropdown { id = profile.id, direction = BottomLeft, isOpen = isOpen }
         (\m ->
-            button [ type_ "button", id m.id, onClick profile.onClick, css [ Tw.ml_3, TwColor.render Bg theme.color L600, Tw.rounded_full, Tw.flex, Tw.text_sm, Tw.text_white, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ], ariaExpanded isOpen, ariaHaspopup True ]
+            button [ type_ "button", id m.id, onClick profile.onClick, css [ Tw.ml_3, TwColor.render Bg theme.color L600, Tw.rounded_full, Tw.flex, Tw.text_sm, Tw.text_white, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ], ariaExpanded m.isOpen, ariaHaspopup True ]
                 [ span [ css [ Tw.sr_only ] ] [ text "Open user menu" ]
                 , img [ css [ Tw.rounded_full, Tw.h_8, Tw.w_8 ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]

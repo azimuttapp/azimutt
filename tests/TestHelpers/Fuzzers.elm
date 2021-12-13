@@ -4,7 +4,7 @@ import Conf
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as F
-import Libs.Models.Color exposing (Color)
+import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.FileModified exposing (FileModified)
 import Libs.Models.FileName exposing (FileName)
@@ -64,7 +64,7 @@ zoomLevel =
 
 color : Fuzzer Color
 color =
-    Fuzz.oneOf (Conf.color.list |> List.map Fuzz.constant)
+    Fuzz.oneOf (Color.list |> List.map Fuzz.constant)
 
 
 
