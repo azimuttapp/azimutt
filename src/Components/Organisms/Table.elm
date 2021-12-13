@@ -2,25 +2,27 @@ module Components.Organisms.Table exposing (Actions, Column, ColumnRef, DocState
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
-import Css exposing (Style)
+import Css
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, br, button, div, span, text)
-import Html.Styled.Attributes exposing (class, css, href, id, tabindex, type_)
+import Html.Styled.Attributes exposing (class, css, href, id, tabindex, title, type_)
 import Html.Styled.Events exposing (onClick)
 import Html.Styled.Keyed as Keyed
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role)
 import Libs.Models.Color as Color exposing (Color)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.TwColor exposing (TwColorLevel(..))
 import Tailwind.Utilities as Tw
 
 
 type alias Model msg =
-    { id : String
+    { id : HtmlId
     , name : String
+    , isView : Bool
     , columns : List Column
     , relations : List Relation
     , state : State
@@ -46,22 +48,21 @@ type alias ColumnRef =
 
 
 type alias State =
-    { color : Color, hover : Bool, selected : Bool, settingsOpened : Bool }
+    { color : Color, hover : Bool, selected : Bool, openedDropdown : HtmlId }
 
 
 type alias Actions msg =
-    { toggleSettings : msg }
+    { toggleSettings : HtmlId -> msg }
 
 
-table : List Style -> Model msg -> Html msg
-table styles model =
+table : Model msg -> Html msg
+table model =
     div
         [ class "table"
         , id model.id
         , css
-            ([ Tw.inline_block, Tw.bg_white, Tw.shadow_md, Tw.rounded ]
+            ([ Tw.inline_block, Tw.bg_white, Tw.shadow_md, Tw.rounded_lg ]
                 ++ B.cond model.state.selected [ Tw.ring_4, Tw.ring_red_500, Color.ring model.state.color L500 ] []
-                ++ styles
             )
         ]
         [ viewHeader model
@@ -72,14 +73,19 @@ table styles model =
 
 viewHeader : Model msg -> Html msg
 viewHeader model =
-    div [ class "header", css [ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.rounded_t, Tw.border_t_4, Tw.border_indigo_500, Color.border model.state.color L500, B.cond model.state.hover (Color.bg model.state.color L50) Tw.bg_gray_50 ] ]
-        [ div [] [ text model.name ]
-        , Dropdown.dropdown { id = model.id ++ "-settings", direction = BottomLeft, isOpen = model.state.settingsOpened }
+    let
+        dropdownId : HtmlId
+        dropdownId =
+            model.id ++ "-settings"
+    in
+    div [ class "header", css [ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.rounded_t_lg, Tw.border_t_8, Tw.border_indigo_500, Color.border model.state.color L500, B.cond model.state.hover (Color.bg model.state.color L50) Tw.bg_gray_50 ] ]
+        [ div (B.cond model.isView [ title "This is a view", css [ Tw.italic, Tw.underline, Css.property "text-decoration-style" "dotted" ] ] []) [ text model.name ]
+        , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
                     [ type_ "button"
                     , id m.id
-                    , onClick model.actions.toggleSettings
+                    , onClick (model.actions.toggleSettings m.id)
                     , ariaExpanded m.isOpen
                     , ariaHaspopup True
                     , css [ Tw.ml_3, Tw.rounded_full, Tw.flex, Tw.text_sm, Css.focus [ Tw.outline_none ] ]
@@ -141,6 +147,7 @@ sample : Model (Msg x)
 sample =
     { id = "table-public-users"
     , name = "users"
+    , isView = False
     , columns =
         [ { name = "id", kind = "integer", nullable = False, default = Nothing, comment = Nothing }
         , { name = "name", kind = "character varying(120)", nullable = False, default = Nothing, comment = Nothing }
@@ -155,10 +162,10 @@ sample =
         { color = Color.indigo
         , hover = False
         , selected = False
-        , settingsOpened = False
+        , openedDropdown = ""
         }
     , actions =
-        { toggleSettings = logAction "Toggle settings"
+        { toggleSettings = \id -> logAction ("open " ++ id)
         }
     }
 
@@ -170,20 +177,20 @@ doc =
             [ ( "table"
               , \{ tableDocState } ->
                     table
-                        []
                         { sample
                             | state = tableDocState
                             , actions =
-                                { toggleSettings = updateDocState (\s -> { s | settingsOpened = not s.settingsOpened })
+                                { toggleSettings = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 }
                         }
               )
             , ( "table states"
               , \_ ->
                     div [ css [ Tw.flex ] ]
-                        [ div [] [ text "Hover:", br [] [], table [] { sample | state = sample.state |> (\s -> { s | hover = True }) } ]
-                        , div [ css [ Tw.ml_3 ] ] [ text "Selected:", br [] [], table [] { sample | state = sample.state |> (\s -> { s | selected = True }) } ]
+                        [ div [] [ text "View:", br [] [], table { sample | id = "view", isView = True } ]
+                        , div [ css [ Tw.ml_3 ] ] [ text "Hover:", br [] [], table { sample | id = "hover", state = sample.state |> (\s -> { s | hover = True }) } ]
+                        , div [ css [ Tw.ml_3 ] ] [ text "Selected:", br [] [], table { sample | id = "selected", state = sample.state |> (\s -> { s | selected = True }) } ]
                         ]
               )
-            , ( "table settings opened", \_ -> table [] { sample | state = sample.state |> (\s -> { s | settingsOpened = True }) } )
+            , ( "table settings opened", \_ -> table { sample | state = sample.state |> (\s -> { s | openedDropdown = "table-public-users-settings" }) } )
             ]

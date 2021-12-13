@@ -7,6 +7,7 @@ import Libs.Delta as Delta
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
@@ -14,7 +15,7 @@ import Models.Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.App.Models exposing (CursorMode(..), DragId, DragState, Msg)
+import PagesComponents.App.Models exposing (CursorMode(..), DragState, Msg)
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
 import Ports exposing (toastInfo)
 

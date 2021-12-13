@@ -1,17 +1,23 @@
 module Pages.Projects.Id_ exposing (Model, Msg, page)
 
+import Browser.Events
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast exposing (Content(..))
 import Gen.Params.Projects.Id_ exposing (Params)
+import Html.Events.Extra.Mouse as Mouse
 import Html.Styled as Styled exposing (text)
+import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
+import Libs.Json.Decode as D
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position as Position
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project.TableId as TableId
 import Page
-import PagesComponents.App.Updates.Helpers exposing (setProjectWithCmd)
+import PagesComponents.App.Updates.Helpers exposing (setProjectWithCmd, setTableProps)
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
 import PagesComponents.Projects.Id_.Updates.Table exposing (showTable)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
@@ -48,9 +54,10 @@ init shared req =
     ( { project = shared |> Shared.projects |> L.find (\p -> p.id == req.params.id)
       , navbar = { mobileMenuOpen = False, search = "" }
       , openedDropdown = ""
-      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
-      , toastCpt = 0
+      , dragging = Nothing
+      , toastIdx = 0
       , toasts = []
+      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
       }
     , Cmd.none
     )
@@ -65,9 +72,6 @@ update req msg model =
     case msg of
         ToggleMobileMenu ->
             ( { model | navbar = model.navbar |> (\n -> { n | mobileMenuOpen = not n.mobileMenuOpen }) }, Cmd.none )
-
-        ToggleDropdown id ->
-            ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
 
         SearchUpdated search ->
             ( { model | navbar = model.navbar |> (\n -> { n | search = search }) }, Cmd.none )
@@ -96,8 +100,20 @@ update req msg model =
         FindPathMsg ->
             ( model, T.send (toastSuccess "FindPathMsg") )
 
+        DropdownToggle id ->
+            ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
+
+        DragStart id pos ->
+            ( { model | dragging = Just { id = id, init = pos, last = pos } }, Cmd.none )
+
+        DragMove pos ->
+            ( { model | dragging = model.dragging |> Maybe.map (\d -> { d | last = pos }) }, Cmd.none )
+
+        DragEnd last ->
+            ( model.dragging |> M.mapOrElse (\d -> { model | dragging = Nothing } |> setTableProps (TableId.fromHtmlId d.id) (\t -> { t | position = t.position |> Position.add (last |> Position.sub d.init) })) model, Cmd.none )
+
         ToastAdd millis toast ->
-            model.toastCpt |> String.fromInt |> (\key -> ( { model | toastCpt = model.toastCpt + 1, toasts = { key = key, content = toast, isOpen = False } :: model.toasts }, T.sendAfter 1 (ToastShow millis key) ))
+            model.toastIdx |> String.fromInt |> (\key -> ( { model | toastIdx = model.toastIdx + 1, toasts = { key = key, content = toast, isOpen = False } :: model.toasts }, T.sendAfter 1 (ToastShow millis key) ))
 
         ToastShow millis key ->
             ( { model | toasts = model.toasts |> List.map (\t -> B.cond (t.key == key) { t | isOpen = True } t) }, millis |> M.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
@@ -129,8 +145,33 @@ update req msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Ports.onJsMessage JsMessage
+subscriptions model =
+    Sub.batch
+        ([ Ports.onJsMessage JsMessage ]
+            ++ B.cond (model.openedDropdown == "") [] [ Browser.Events.onClick (targetIdDecoder |> Decode.map (\id -> B.cond (id == model.openedDropdown) Noop (DropdownToggle id))) ]
+            ++ (model.dragging
+                    |> M.mapOrElse
+                        (\_ ->
+                            [ Browser.Events.onMouseMove (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> DragMove))
+                            , Browser.Events.onMouseUp (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> DragEnd))
+                            ]
+                        )
+                        []
+               )
+        )
+
+
+targetIdDecoder : Decoder HtmlId
+targetIdDecoder =
+    Decode.field "target"
+        (Decode.oneOf
+            [ Decode.at [ "id" ] Decode.string |> D.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
+            , Decode.succeed ""
+            ]
+        )
 
 
 

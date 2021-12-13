@@ -1,9 +1,12 @@
-module PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), NavbarModel, confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (DragState, Model, Msg(..), NavbarModel, confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Html.Styled exposing (Html)
 import Libs.Models exposing (Millis)
+import Libs.Models.DragId exposing (DragId)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position exposing (Position)
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project exposing (Project)
@@ -15,10 +18,13 @@ import Shared exposing (Confirm)
 type alias Model =
     { project : Maybe Project
     , navbar : NavbarModel
-    , openedDropdown : String
-    , confirm : Confirm Msg
-    , toastCpt : Int
+
+    -- global attrs
+    , openedDropdown : HtmlId
+    , dragging : Maybe DragState
+    , toastIdx : Int
     , toasts : List Toast.Model
+    , confirm : Confirm Msg
     }
 
 
@@ -28,9 +34,12 @@ type alias NavbarModel =
     }
 
 
+type alias DragState =
+    { id : DragId, init : Position, last : Position }
+
+
 type Msg
     = ToggleMobileMenu
-    | ToggleDropdown String
     | SearchUpdated String
     | ShowTable TableId
     | HideTable TableId
@@ -40,6 +49,11 @@ type Msg
     | LayoutMsg
     | VirtualRelationMsg
     | FindPathMsg
+      -- global messages
+    | DropdownToggle HtmlId
+    | DragStart DragId Position
+    | DragMove Position
+    | DragEnd Position
     | ToastAdd (Maybe Millis) Toast.Content
     | ToastShow (Maybe Millis) String
     | ToastHide String

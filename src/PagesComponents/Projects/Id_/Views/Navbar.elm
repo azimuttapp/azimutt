@@ -16,6 +16,7 @@ import Libs.Hotkey as Hotkey
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaExpanded, role)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.Tailwind.Utilities as Tu
@@ -33,7 +34,7 @@ type alias Btn msg =
     { action : msg, text : String, hotkey : Maybe String }
 
 
-viewNavbar : Theme -> String -> List Project -> Project -> NavbarModel -> Html Msg
+viewNavbar : Theme -> HtmlId -> List Project -> Project -> NavbarModel -> Html Msg
 viewNavbar theme openedDropdown storedProjects project model =
     let
         features : List (Btn Msg)
@@ -92,11 +93,11 @@ viewNavbarResetLayout theme usedLayout layout =
         div [] []
 
 
-viewNavbarFeatures : Theme -> List (Btn Msg) -> String -> Html Msg
+viewNavbarFeatures : Theme -> List (Btn Msg) -> HtmlId -> Html Msg
 viewNavbarFeatures theme features openedDropdown =
     Dropdown.dropdown { id = "features", direction = BottomLeft, isOpen = openedDropdown == "features" }
         (\m ->
-            button [ type_ "button", onClick (ToggleDropdown m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, TwColor.render Bg theme.color L600, Tw.p_1, Tw.rounded_full, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), Css.hover [ Tw.text_white ] ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, TwColor.render Bg theme.color L600, Tw.p_1, Tw.rounded_full, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), Css.hover [ Tw.text_white ] ] ]
                 [ span [ css [ Tw.sr_only ] ] [ text "View features" ]
                 , Icon.outline LightningBolt []
                 , Icon.solid (B.cond (openedDropdown == m.id) ChevronUp ChevronDown) []

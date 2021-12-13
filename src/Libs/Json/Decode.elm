@@ -1,10 +1,23 @@
-module Libs.Json.Decode exposing (defaultField, defaultFieldDeep, dict, errorToHtml, map10, map11, map12, map9, matchOn, maybeField, maybeWithDefault, ned, nel, tuple)
+module Libs.Json.Decode exposing (defaultField, defaultFieldDeep, dict, errorToHtml, filter, map10, map11, map12, map9, matchOn, maybeField, maybeWithDefault, ned, nel, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Maybe as M
 import Libs.Ned as Ned exposing (Ned)
-import Libs.Nel as Nel exposing (Nel)
+import Libs.Nel exposing (Nel)
+
+
+filter : (a -> Bool) -> Decoder a -> Decoder a
+filter predicate decoder =
+    decoder
+        |> Decode.andThen
+            (\a ->
+                if predicate a then
+                    Decode.succeed a
+
+                else
+                    Decode.fail "Invalid predicate"
+            )
 
 
 tuple : Decoder a -> Decoder b -> Decoder ( a, b )
@@ -21,7 +34,7 @@ dict buildKey decoder =
 
 nel : Decode.Decoder a -> Decode.Decoder (Nel a)
 nel decoder =
-    Decode.list decoder |> Decode.andThen (\l -> l |> Nel.fromList |> M.mapOrElse Decode.succeed (Decode.fail "Non empty list can't be empty"))
+    Decode.oneOrMore Nel decoder
 
 
 ned : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Ned comparable a)

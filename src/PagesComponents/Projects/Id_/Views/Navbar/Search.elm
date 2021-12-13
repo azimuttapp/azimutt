@@ -33,7 +33,7 @@ type alias NavbarSearch =
     }
 
 
-viewNavbarSearch : Theme -> String -> NavbarSearch -> Html Msg
+viewNavbarSearch : Theme -> HtmlId -> NavbarSearch -> Html Msg
 viewNavbarSearch theme openedDropdown model =
     div [ css [ Tw.ml_6 ] ]
         [ div [ css [ Tw.max_w_lg, Tw.w_full, Bp.lg [ Tw.max_w_xs ] ] ]
@@ -50,8 +50,8 @@ viewNavbarSearch theme openedDropdown model =
                             , autocomplete False
                             , value model.search
                             , onInput SearchUpdated
-                            , onFocus (ToggleDropdown m.id)
-                            , onBlur (ToggleDropdown m.id)
+                            , onFocus (DropdownToggle m.id)
+                            , onBlur (DropdownToggle m.id)
                             , css
                                 [ Tw.block
                                 , Tw.w_full

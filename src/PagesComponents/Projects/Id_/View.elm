@@ -39,7 +39,7 @@ viewApp : Theme -> Model -> List Project -> Project -> Html Msg
 viewApp theme model storedProjects project =
     div []
         [ viewNavbar theme model.openedDropdown storedProjects project model.navbar
-        , viewErd theme model.openedDropdown project
+        , viewErd theme model.openedDropdown model.dragging project
         ]
 
 

@@ -1,10 +1,14 @@
-module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, role, track)
+module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, onMousedown, role, track)
 
+import Html.Events.Extra.Mouse as Mouse
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
+import Html.Styled.Events as Events
+import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Models exposing (Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position as Position exposing (Position)
 
 
 
@@ -64,6 +68,11 @@ ariaModal value =
 ariaOrientation : Text -> Attribute msg
 ariaOrientation text =
     attribute "aria-orientation" text
+
+
+onMousedown : (Position -> msg) -> Attribute msg
+onMousedown msg =
+    Events.on "mousedown" (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> msg))
 
 
 role : String -> Attribute msg
