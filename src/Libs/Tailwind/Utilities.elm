@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (focusRing, focusWithin, focusWithinRing, translate_x_y)
+module Libs.Tailwind.Utilities exposing (focusRing, focusWithin, focusWithinRing, translate_x_y, underline_dotted, z_max)
 
 import Css exposing (Style, pseudoClass)
 import Libs.Models.TwColor as TwColor exposing (TwColorPosition(..))
@@ -23,3 +23,13 @@ focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
 translate_x_y : Float -> Float -> String -> Style
 translate_x_y x y unit =
     Css.batch [ Css.property "--tw-translate-x" (String.fromFloat x ++ unit), Css.property "--tw-translate-y" (String.fromFloat y ++ unit) ]
+
+
+underline_dotted : Css.Style
+underline_dotted =
+    Css.property "text-decoration-style" "dotted"
+
+
+z_max : Css.Style
+z_max =
+    Css.property "z-index" "10000"

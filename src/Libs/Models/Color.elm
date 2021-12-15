@@ -1,4 +1,4 @@
-module Libs.Models.Color exposing (Color, HexColor, RgbColor, all, amber, bg, blue, border, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, teal, text, to, via, violet, yellow)
+module Libs.Models.Color exposing (Color, HexColor, RgbColor, all, amber, bg, blue, border, border_b, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, teal, text, to, via, violet, yellow)
 
 import Css exposing (Style)
 import Css.Global
@@ -168,6 +168,14 @@ border color level =
     Css.batch
         [ Css.property "--tw-border-opacity" "1"
         , Css.property "border-color" (color |> rgba "var(--tw-border-opacity)" level)
+        ]
+
+
+border_b : Color -> TwColorLevel -> Style
+border_b color level =
+    Css.batch
+        [ Css.property "--tw-border-opacity" "1"
+        , Css.property "border-bottom-color" (color |> rgba "var(--tw-border-opacity)" level)
         ]
 
 

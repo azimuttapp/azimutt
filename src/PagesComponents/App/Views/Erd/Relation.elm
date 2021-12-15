@@ -121,7 +121,7 @@ getColor hover src ref =
 
 shouldHighlight : Hover -> ColumnRefFull -> Bool
 shouldHighlight hover target =
-    target.props |> M.exist (\( p, _, _ ) -> p.selected || (hover.column |> M.contains target.ref))
+    target.props |> M.exist (\( p, _, _ ) -> p.selected || (hover.column |> M.has target.ref))
 
 
 positionX : ( TableProps, Size ) -> ( TableProps, Size ) -> ( Float, Float )

@@ -135,7 +135,7 @@ viewSearchResult layout res =
                 viewItem (ShowTable relation.ref.table) ExternalLink [ text relation.name ] False
 
             else
-                viewItem Noop ExternalLink [ text relation.name ] True
+                viewItem (ShowTable relation.src.table) ExternalLink [ text relation.name ] True
 
 
 performSearch : Dict TableId Table -> List Relation -> String -> List SearchResult

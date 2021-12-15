@@ -10,6 +10,7 @@ import Libs.Models.Position exposing (Position)
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project exposing (Project)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
 import Ports exposing (JsMsg)
 import Shared exposing (Confirm)
@@ -18,6 +19,8 @@ import Shared exposing (Confirm)
 type alias Model =
     { project : Maybe Project
     , navbar : NavbarModel
+    , hoverTable : Maybe TableId
+    , hoverColumn : Maybe ColumnRef
 
     -- global attrs
     , openedDropdown : HtmlId
@@ -43,6 +46,9 @@ type Msg
     | SearchUpdated String
     | ShowTable TableId
     | HideTable TableId
+    | SelectTable TableId Bool
+    | ToggleHoverTable TableId
+    | ToggleHoverColumn ColumnRef
     | ShowAllTables
     | HideAllTables
     | ResetCanvas
@@ -61,7 +67,7 @@ type Msg
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | JsMessage JsMsg
-    | Noop
+    | Noop String
 
 
 toastSuccess : String -> Msg

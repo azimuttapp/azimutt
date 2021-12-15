@@ -143,7 +143,7 @@ viewSelectInput ref selectedValue buildMsg tables =
                         (\t ->
                             option
                                 [ value (TableId.toString t.id)
-                                , selected (selectedValue |> M.contains t.id)
+                                , selected (selectedValue |> M.has t.id)
                                 ]
                                 [ text (TableId.show t.id) ]
                         )

@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterZip, find, fromList, indexedMap, length, map, merge, prepend, sortBy, toList, unique, uniqueBy, zipWith)
+module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, fromList, has, indexedMap, length, map, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
 
 -- Nel: NonEmptyList
 
@@ -49,6 +49,11 @@ filter predicate nel =
     nel |> toList |> List.filter predicate
 
 
+filterNot : (a -> Bool) -> Nel a -> List a
+filterNot predicate nel =
+    nel |> toList |> List.filter (\a -> not (predicate a))
+
+
 filterMap : (a -> Maybe b) -> Nel a -> List b
 filterMap f nel =
     nel |> toList |> List.filterMap f
@@ -59,9 +64,19 @@ filterZip f nel =
     filterMap (\a -> f a |> Maybe.map (\b -> ( a, b ))) nel
 
 
+partition : (a -> Bool) -> Nel a -> ( List a, List a )
+partition predicate nel =
+    nel |> toList |> List.partition predicate
+
+
 any : (a -> Bool) -> Nel a -> Bool
 any predicate nel =
     nel |> toList |> List.any predicate
+
+
+has : a -> Nel a -> Bool
+has value nel =
+    nel |> toList |> List.any (\a -> a == value)
 
 
 length : Nel a -> Int

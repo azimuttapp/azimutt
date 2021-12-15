@@ -17,7 +17,7 @@ import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project.TableId as TableId
 import Page
-import PagesComponents.App.Updates.Helpers exposing (setProjectWithCmd, setTableProps)
+import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setProjectWithCmd, setTableProps)
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
 import PagesComponents.Projects.Id_.Updates.Table exposing (showTable)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
@@ -53,11 +53,13 @@ init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init shared req =
     ( { project = shared |> Shared.projects |> L.find (\p -> p.id == req.params.id)
       , navbar = { mobileMenuOpen = False, search = "" }
+      , hoverTable = Nothing
+      , hoverColumn = Nothing
       , openedDropdown = ""
       , dragging = Nothing
       , toastIdx = 0
       , toasts = []
-      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
+      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send (Noop "confirm init"), isOpen = False }
       }
     , Cmd.none
     )
@@ -81,6 +83,15 @@ update req msg model =
 
         HideTable id ->
             ( model, T.send (toastSuccess ("HideTable: " ++ TableId.toString id)) )
+
+        SelectTable id ctrl ->
+            ( model |> setAllTableProps (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }), Cmd.none )
+
+        ToggleHoverTable table ->
+            ( { model | hoverTable = B.cond (model.hoverTable |> M.has table) Nothing (Just table) }, Cmd.none )
+
+        ToggleHoverColumn column ->
+            ( { model | hoverColumn = B.cond (model.hoverColumn |> M.has column) Nothing (Just column) }, Cmd.none )
 
         ResetCanvas ->
             ( model, T.send (toastSuccess "ResetCanvas") )
@@ -136,8 +147,8 @@ update req msg model =
         JsMessage _ ->
             ( model, Cmd.none )
 
-        Noop ->
-            ( model, T.send (toastSuccess "Noop") )
+        Noop text ->
+            ( model, T.send (toastSuccess ("Noop: " ++ text)) )
 
 
 
@@ -148,7 +159,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         ([ Ports.onJsMessage JsMessage ]
-            ++ B.cond (model.openedDropdown == "") [] [ Browser.Events.onClick (targetIdDecoder |> Decode.map (\id -> B.cond (id == model.openedDropdown) Noop (DropdownToggle id))) ]
+            ++ B.cond (model.openedDropdown == "") [] [ Browser.Events.onClick (targetIdDecoder |> Decode.map (\id -> B.cond (id == model.openedDropdown) (Noop "dropdown opened twice") (DropdownToggle id))) ]
             ++ (model.dragging
                     |> M.mapOrElse
                         (\_ ->

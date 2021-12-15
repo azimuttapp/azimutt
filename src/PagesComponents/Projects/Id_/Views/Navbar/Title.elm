@@ -65,9 +65,9 @@ viewNavbarTitle theme openedDropdown storedProjects project =
                                                 |> List.indexedMap
                                                     (\i ( name, layout ) ->
                                                         span [ role "menuitem", tabindex -1, id (m.id ++ "-item-" ++ String.fromInt i), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ]
-                                                            [ button [ type_ "button", onClick Noop, title "Delete this layout" ] [ Icon.solid Trash [ Tw.inline_block, Tw.mr_3 ] ]
-                                                            , button [ type_ "button", onClick Noop, title "Update layout with current one" ] [ Icon.solid Pencil [ Tw.inline_block, Tw.mr_3 ] ]
-                                                            , button [ type_ "button", onClick Noop ]
+                                                            [ button [ type_ "button", onClick (Noop "delete layout"), title "Delete this layout" ] [ Icon.solid Trash [ Tw.inline_block, Tw.mr_3 ] ]
+                                                            , button [ type_ "button", onClick (Noop "update layout"), title "Update layout with current one" ] [ Icon.solid Pencil [ Tw.inline_block, Tw.mr_3 ] ]
+                                                            , button [ type_ "button", onClick (Noop "load layout") ]
                                                                 [ text name
                                                                 , text " "
                                                                 , small [] [ text ("(" ++ (layout.tables |> List.length |> S.pluralize "table") ++ ")") ]
@@ -76,7 +76,7 @@ viewNavbarTitle theme openedDropdown storedProjects project =
                                                     )
                                             )
                                         , div [ role "none", css [ Tw.py_1 ] ]
-                                            [ button [ type_ "button", onClick Noop, role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.w_full, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text ("Stop using " ++ usedLayout) ] ]
+                                            [ button [ type_ "button", onClick (Noop "stop using layout"), role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.w_full, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text ("Stop using " ++ usedLayout) ] ]
                                         ]
                                 )
                             ]

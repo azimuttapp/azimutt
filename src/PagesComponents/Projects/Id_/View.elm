@@ -39,7 +39,7 @@ viewApp : Theme -> Model -> List Project -> Project -> Html Msg
 viewApp theme model storedProjects project =
     div []
         [ viewNavbar theme model.openedDropdown storedProjects project model.navbar
-        , viewErd theme model.openedDropdown model.dragging project
+        , viewErd theme model project
         ]
 
 
@@ -80,6 +80,6 @@ viewConfirm c =
         , confirm = c.confirm
         , cancel = c.cancel
         , onConfirm = ConfirmAnswer True c.onConfirm
-        , onCancel = ConfirmAnswer False (T.send Noop)
+        , onCancel = ConfirmAnswer False (T.send (Noop "confirm cancel"))
         }
         c.isOpen

@@ -15,6 +15,7 @@ import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Utilities as Tw
 
 
@@ -49,7 +50,7 @@ dropdown model elt content =
     in
     div [ css [ Tw.relative, Tw.inline_block, Tw.text_left ] ]
         [ elt model
-        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css ([ Tw.absolute, Tw.mt_2, Tw.py_1, Tw.min_w_max, Tw.rounded_md, Tw.shadow_lg, Tw.bg_white, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Css.focus [ Tw.outline_none ] ] ++ direction ++ dropdownMenu) ]
+        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css ([ Tw.absolute, Tu.z_max, Tw.mt_2, Tw.py_1, Tw.min_w_max, Tw.rounded_md, Tw.shadow_lg, Tw.bg_white, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Css.focus [ Tw.outline_none ] ] ++ direction ++ dropdownMenu) ]
             [ content model
             ]
         ]

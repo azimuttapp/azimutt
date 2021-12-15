@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -40,6 +40,11 @@ setLayout transform item =
 setCurrentLayout : (l -> l) -> { m | project : Maybe { p | layout : l } } -> { m | project : Maybe { p | layout : l } }
 setCurrentLayout transform item =
     setProject (setLayout transform) item
+
+
+setAllTableProps : ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
+setAllTableProps transform item =
+    setProject (setLayout (setTables (List.map transform))) item
 
 
 setTableProps : comparable -> ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }

@@ -130,9 +130,9 @@ hotkey id =
         |> M.mapOrElse (\h -> [ Kbd.badge [ css [ Tw.ml_3 ] ] (Hotkey.keys h) ]) []
 
 
-viewNavbarSettings : Theme -> Html msg
+viewNavbarSettings : Theme -> Html Msg
 viewNavbarSettings theme =
-    button [ type_ "button", css [ Tw.ml_3, Tw.flex_shrink_0, TwColor.render Bg theme.color L600, Tw.p_1, Tw.rounded_full, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), Css.hover [ Tw.text_white ] ] ]
+    button [ type_ "button", onClick (Noop "open settings"), css [ Tw.ml_3, Tw.flex_shrink_0, TwColor.render Bg theme.color L600, Tw.p_1, Tw.rounded_full, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), Css.hover [ Tw.text_white ] ] ]
         [ span [ css [ Tw.sr_only ] ] [ text "View settings" ]
         , Icon.outline Cog []
         ]
@@ -167,7 +167,7 @@ viewNavbarMobileMenu theme features usedLayout layout isOpen =
     div [ css ([ Bp.lg [ Tw.hidden ] ] ++ B.cond isOpen [] [ Tw.hidden ]), id "mobile-menu" ]
         ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvasMsg, css btnStyle ] [ text "Reset canvas" ] ] []
          , features |> List.map (\f -> button [ type_ "button", onClick f.action, css btnStyle ] [ text f.text ])
-         , [ button [ type_ "button", onClick Noop, css btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ], text "Settings" ] ]
+         , [ button [ type_ "button", onClick (Noop "open settings mobile"), css btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ], text "Settings" ] ]
          ]
             |> List.filter L.nonEmpty
             |> List.indexedMap (\i groupContent -> div [ css (groupSpace ++ B.cond (i == 0) [] groupBorder) ] groupContent)
