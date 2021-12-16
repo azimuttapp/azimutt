@@ -85,6 +85,7 @@ viewTable model _ table props tableRelations =
                 , hover = model.hoverTable |> Maybe.map (\( schemaName, tableName ) -> { schema = schemaName, table = tableName })
                 , hoverColumn = model.hoverColumn |> Maybe.map (\ref -> { schema = ref.table |> Tuple.first, table = ref.table |> Tuple.second, column = ref.column })
                 , selected = props.selected
+                , dragging = model.dragging |> M.filter (\d -> d.id == tableId) |> M.isJust
                 , openedDropdown = model.openedDropdown
                 }
             , actions =

@@ -2,13 +2,14 @@ module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, Co
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.Tooltip as Tooltip
 import Css
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Attribute, Html, a, br, button, div, span, text)
-import Html.Styled.Attributes exposing (css, href, id, tabindex, title, type_)
+import Html.Styled exposing (Html, a, br, button, div, span, text)
+import Html.Styled.Attributes exposing (css, href, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Styled.Keyed as Keyed
 import Libs.Bool as B
@@ -74,6 +75,7 @@ type alias State =
     , hover : Maybe TableRef
     , hoverColumn : Maybe ColumnRef
     , selected : Bool
+    , dragging : Bool
     , openedDropdown : HtmlId
     }
 
@@ -96,6 +98,7 @@ table model =
         , css
             ([ Tw.inline_block, Tw.bg_white, Tw.rounded_lg, Tw.cursor_pointer, B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md ]
                 ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color L500 ] []
+                ++ B.cond model.state.dragging [ Tw.transform, Tw.transition_transform, Tw.duration_75, Tw.neg_rotate_3 ] []
             )
         ]
         [ model |> viewHeader
@@ -110,14 +113,6 @@ viewHeader model =
         dropdownId : HtmlId
         dropdownId =
             model.id ++ "-settings"
-
-        labelAttrs : List (Attribute msg)
-        labelAttrs =
-            if model.isView then
-                [ css [ Tw.flex_grow, Tw.text_center, Tw.text_xl, Tw.italic, Tw.underline, Tu.underline_dotted ], title "This is a view" ]
-
-            else
-                [ css [ Tw.flex_grow, Tw.text_center, Tw.text_xl ] ]
     in
     div
         [ css
@@ -134,7 +129,11 @@ viewHeader model =
             , Color.bg (B.cond (isTableHover model) model.state.color Color.default) L50
             ]
         ]
-        [ div labelAttrs [ text model.label ]
+        [ if model.isView then
+            div [ css [ Tw.flex_grow, Tw.text_center ] ] [ span [ css [ Tw.text_xl, Tw.italic, Tw.underline, Tu.underline_dotted ] ] [ text model.label ] |> Tooltip.top "This is a view" ]
+
+          else
+            div [ css [ Tw.flex_grow, Tw.text_center, Tw.text_xl ] ] [ text model.label ]
         , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
@@ -196,19 +195,19 @@ viewHiddenColumns _ =
 viewColumnIcon : Column -> Html msg
 viewColumnIcon column =
     if column.isPrimaryKey then
-        div [ css [ Tw.w_6, Tw.h_6 ], title "Primary key" ] [ Icon.solid Key [] ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.top "Primary key" ]
 
     else if column.outRelations |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ], title ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse formatRef "")) ] [ Icon.solid ExternalLink [] ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse formatRef "")) ]
 
     else if column.uniques |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ], title ("Unique constraint in " ++ (column.uniques |> List.map .name |> String.join ", ")) ] [ Icon.solid FingerPrint [] ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [] |> Tooltip.top ("Unique constraint in " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ], title ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ] [ Icon.solid SortDescending [] ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid SortDescending [] |> Tooltip.top ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ], title ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ] [ Icon.solid Check [] ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Check [] |> Tooltip.top ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
         div [ css [ Tw.w_6, Tw.h_6 ] ] []
@@ -227,28 +226,32 @@ viewColumnName column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    span [ title comment, css [ Tw.opacity_25, Tw.ml_1 ] ] [ Icon.outline Chat [ Tw.w_4 ] ]
+    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Tooltip.top comment
 
 
 viewColumnKind : Model msg -> Column -> Html msg
 viewColumnKind model column =
     let
+        opacity : Css.Style
+        opacity =
+            B.cond (isColumnHover model column) Tw.opacity_100 Tw.opacity_25
+
         value : Html msg
         value =
             column.default
                 |> M.mapOrElse
-                    (\default -> span [ title ("default value: " ++ default), css [ Tw.underline ] ] [ text column.kind ])
-                    (span [] [ text column.kind ])
+                    (\default -> span [ css [ opacity, Tw.underline ] ] [ text column.kind ] |> Tooltip.top ("default value: " ++ default))
+                    (span [ css [ opacity ] ] [ text column.kind ])
 
         nullable : List (Html msg)
         nullable =
             if column.nullable then
-                [ span [ title "nullable" ] [ text "?" ] ]
+                [ span [ css [ opacity ] ] [ text "?" ] |> Tooltip.top "nullable" ]
 
             else
                 []
     in
-    div [ css ([ Tw.ml_1 ] ++ B.cond (isColumnHover model column) [] [ Tw.opacity_25 ]) ] (value :: nullable)
+    div [ css [ Tw.ml_1 ] ] (value :: nullable)
 
 
 formatRef : ColumnRef -> String
@@ -317,6 +320,7 @@ sample =
         , hover = Nothing
         , hoverColumn = Nothing
         , selected = False
+        , dragging = False
         , openedDropdown = ""
         }
     , actions =
@@ -345,16 +349,18 @@ doc =
                                 }
                         }
               )
-            , ( "table states"
+            , ( "states"
               , \_ ->
-                    div [ css [ Tw.flex ] ]
+                    div [ css [ Tw.flex, Tw.flex_wrap, Tw.gap_6 ] ]
                         ([ { sample | id = "View", isView = True }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | hover = Just sample.ref }) }
                          , { sample | id = "Hover column", state = sample.state |> (\s -> { s | hover = Just sample.ref, hoverColumn = Just { schema = sample.ref.schema, table = sample.ref.table, column = "name" } }) }
                          , { sample | id = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
+                         , { sample | id = "Dragging", state = sample.state |> (\s -> { s | dragging = True }) }
+                         , { sample | id = "Settings", state = sample.state |> (\s -> { s | openedDropdown = "Settings-settings" }) }
                          ]
-                            |> List.indexedMap (\i model -> div [ css (B.cond (i == 0) [] [ Tw.ml_6 ]) ] [ text (model.id ++ ":"), br [] [], table model ])
+                            |> List.map (\model -> div [] [ text (model.id ++ ":"), br [] [], table model ])
                         )
               )
-            , ( "table settings opened", \_ -> table { sample | state = sample.state |> (\s -> { s | openedDropdown = "table-public-users-settings" }) } )
+            , ( "global css", \_ -> div [] [ Tooltip.global, text "The global css is needed for tooltip hover reveal" ] )
             ]

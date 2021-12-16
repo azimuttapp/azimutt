@@ -2,11 +2,12 @@ module PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.Tooltip as Tooltip
 import Css
 import Dict
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, small, span, text)
-import Html.Styled.Attributes exposing (css, href, id, tabindex, title, type_)
+import Html.Styled.Attributes exposing (css, href, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role)
@@ -65,8 +66,8 @@ viewNavbarTitle theme openedDropdown storedProjects project =
                                                 |> List.indexedMap
                                                     (\i ( name, layout ) ->
                                                         span [ role "menuitem", tabindex -1, id (m.id ++ "-item-" ++ String.fromInt i), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ]
-                                                            [ button [ type_ "button", onClick (Noop "delete layout"), title "Delete this layout" ] [ Icon.solid Trash [ Tw.inline_block, Tw.mr_3 ] ]
-                                                            , button [ type_ "button", onClick (Noop "update layout"), title "Update layout with current one" ] [ Icon.solid Pencil [ Tw.inline_block, Tw.mr_3 ] ]
+                                                            [ button [ type_ "button", onClick (Noop "delete layout") ] [ Icon.solid Trash [ Tw.inline_block ] ] |> Tooltip.top "Delete this layout"
+                                                            , button [ type_ "button", onClick (Noop "update layout"), css [ Tw.mx_3 ] ] [ Icon.solid Pencil [ Tw.inline_block ] ] |> Tooltip.top "Update layout with current one"
                                                             , button [ type_ "button", onClick (Noop "load layout") ]
                                                                 [ text name
                                                                 , text " "
