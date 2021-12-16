@@ -75,7 +75,7 @@ viewNavbarSearch theme openedDropdown model =
                 (\_ ->
                     if model.search == "" then
                         div []
-                            [ span [ role "menuitem", tabindex -1, css [ Tw.text_gray_500, Tw.flex, Tw.w_full, Tw.items_center, Tw.px_4, Tw.py_2, Tw.text_sm ] ]
+                            [ span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles) ]
                                 [ text "Type to search into tables (", Icon.solid Icon.Table [], text "), columns (", Icon.solid Tag [], text ") and relations (", Icon.solid ExternalLink [], text ")" ]
                             ]
 
@@ -84,7 +84,7 @@ viewNavbarSearch theme openedDropdown model =
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
-                                            [ span [ role "menuitem", tabindex -1, css [ Tw.text_gray_700, Tw.flex, Tw.w_full, Tw.items_center, Tw.px_4, Tw.py_2, Tw.text_sm ] ]
+                                            [ span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles) ]
                                                 [ text "No result :(" ]
                                             ]
 
@@ -113,11 +113,11 @@ viewSearchResult layout res =
         viewItem =
             \msg icon content disabled ->
                 if disabled then
-                    span [ role "menuitem", tabindex -1, css [ Tw.text_gray_400, Tw.flex, Tw.w_full, Tw.items_center, Tw.px_4, Tw.py_2, Tw.text_sm ] ]
+                    span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles) ]
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
 
                 else
-                    button [ type_ "button", onMouseDown msg, role "menuitem", tabindex -1, css [ Tw.text_gray_700, Tw.flex, Tw.w_full, Tw.items_center, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ], Css.focus [ Tw.outline_none ] ] ]
+                    button [ type_ "button", onMouseDown msg, role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles) ]
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
     in
     case res of
@@ -165,7 +165,7 @@ performSearch tables relations query =
             else
                 []
     in
-    (tableResults ++ columnResults ++ relationResults) |> List.sortBy (Tuple.first >> negate) |> List.take maxResults |> List.map Tuple.second
+    (tableResults ++ columnResults ++ relationResults) |> List.sortBy (\( r, _ ) -> negate r) |> List.take maxResults |> List.map Tuple.second
 
 
 tableMatch : String -> Table -> Maybe ( Float, SearchResult )

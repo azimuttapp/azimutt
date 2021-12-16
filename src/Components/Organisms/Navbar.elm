@@ -8,10 +8,10 @@ import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, button, div, img, input, label, nav, span, text)
-import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, tabindex, type_, width)
+import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
-import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, role)
+import Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup)
 import Libs.Maybe as M
 import Libs.Models exposing (Image, Link)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -160,10 +160,7 @@ adminProfile theme isOpen profile =
                 , img [ css [ Tw.rounded_full, Tw.h_8, Tw.w_8 ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]
         )
-        (\_ ->
-            div [ css [ Tw.w_48 ] ]
-                (profile.links |> List.map (\link -> a [ href link.url, role "menuitem", tabindex -1, css [ Tw.block, Tw.py_2, Tw.px_4, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text link.text ]))
-        )
+        (Dropdown.menuLinks profile.links)
 
 
 adminMobileMenu : Theme -> AdminNavigation msg -> Maybe AdminNotifications -> Maybe (AdminProfile msg) -> AdminMobileMenu msg -> String -> Bool -> Html msg

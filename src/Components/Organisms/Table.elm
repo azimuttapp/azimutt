@@ -1,19 +1,21 @@
 module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Atoms.Styles as Styles
+import Components.Molecules.Dropdown as Dropdown exposing (Direction(..), MenuItem)
 import Components.Molecules.Tooltip as Tooltip
 import Css
+import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, br, button, div, span, text)
-import Html.Styled.Attributes exposing (css, href, id, tabindex, type_)
+import Html.Styled exposing (Html, br, button, div, span, text)
+import Html.Styled.Attributes exposing (css, id, type_)
 import Html.Styled.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Styled.Keyed as Keyed
 import Libs.Bool as B
-import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, onPointerUp, role)
+import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, onPointerUp)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
@@ -30,6 +32,7 @@ type alias Model msg =
     , isView : Bool
     , columns : List Column
     , hiddenColumns : List Column
+    , settings : List (MenuItem msg)
     , state : State
     , actions : Actions msg
     }
@@ -81,10 +84,10 @@ type alias State =
 
 
 type alias Actions msg =
-    { toggleSettings : HtmlId -> msg
-    , toggleHover : msg
+    { toggleHover : msg
     , toggleHoverColumn : String -> msg
     , toggleSelected : Bool -> msg
+    , toggleSettings : HtmlId -> msg
     }
 
 
@@ -98,7 +101,7 @@ table model =
         , css
             ([ Tw.inline_block, Tw.bg_white, Tw.rounded_lg, Tw.cursor_pointer, B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md ]
                 ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color L500 ] []
-                ++ B.cond model.state.dragging [ Tw.transform, Tw.transition_transform, Tw.duration_75, Tw.neg_rotate_3 ] []
+                ++ B.cond model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] []
             )
         ]
         [ model |> viewHeader
@@ -148,15 +151,7 @@ viewHeader model =
                     , Icon.solid DotsVertical []
                     ]
             )
-            (\_ ->
-                div [ css [ Tw.w_48 ] ]
-                    ([ "Hide table", "Sort columns", "Hide columns", "Show columns", "Order", "Find path for this table" ]
-                        |> List.map
-                            (\action ->
-                                a [ href "#", role "menuitem", tabindex -1, css [ Tw.block, Tw.py_2, Tw.px_4, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text action ]
-                            )
-                    )
-            )
+            (Dropdown.submenuButtons model.settings)
         ]
 
 
@@ -177,7 +172,7 @@ viewColumn model isLast column =
         , onMouseLeave (model.actions.toggleHoverColumn column.name)
         , css
             ([ Tw.flex, Tw.px_2, Tw.py_1 ]
-                ++ B.cond (isColumnHover model column) [ Color.text model.state.color L500, Color.bg Color.default L100 ] [ Color.text Color.default L500 ]
+                ++ B.cond (isColumnHover model column) [ Color.text model.state.color L500, Color.bg model.state.color L50 ] [ Color.text Color.default L500 ]
                 ++ B.cond isLast [ Tw.rounded_b_lg ] []
             )
         ]
@@ -315,6 +310,16 @@ sample =
         , { sampleColumn | name = "created", kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
     , hiddenColumns = []
+    , settings =
+        [ { label = "Menu item 1", action = Right (logAction "menu item 1") }
+        , { label = "Menu item 2"
+          , action =
+                Left
+                    [ { label = "Menu item 2.1", action = logAction "menu item 2.1" }
+                    , { label = "Menu item 2.2", action = logAction "menu item 2.2" }
+                    ]
+          }
+        ]
     , state =
         { color = Color.indigo
         , hover = Nothing
@@ -324,10 +329,10 @@ sample =
         , openedDropdown = ""
         }
     , actions =
-        { toggleSettings = \id -> logAction ("open " ++ id)
-        , toggleHover = logAction "hover table"
+        { toggleHover = logAction "hover table"
         , toggleHoverColumn = \c -> logAction ("hover column " ++ c)
         , toggleSelected = \_ -> logAction "selected"
+        , toggleSettings = \id -> logAction ("open " ++ id)
         }
     }
 
@@ -342,10 +347,10 @@ doc =
                         { sample
                             | state = tableDocState
                             , actions =
-                                { toggleSettings = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
-                                , toggleHover = sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond (s.hover |> M.has ref) Nothing (Just ref) }))
+                                { toggleHover = sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond (s.hover |> M.has ref) Nothing (Just ref) }))
                                 , toggleHoverColumn = \c -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond (s.hoverColumn |> M.has ref) Nothing (Just ref) }))
                                 , toggleSelected = \_ -> updateDocState (\s -> { s | selected = not s.selected })
+                                , toggleSettings = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 }
                         }
               )
@@ -362,5 +367,5 @@ doc =
                             |> List.map (\model -> div [] [ text (model.id ++ ":"), br [] [], table model ])
                         )
               )
-            , ( "global css", \_ -> div [] [ Tooltip.global, text "The global css is needed for tooltip hover reveal" ] )
+            , ( "global css", \_ -> div [] [ Styles.global, text "Global styles are needed for tooltip reveal and dropdown submenu" ] )
             ]

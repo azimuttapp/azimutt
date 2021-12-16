@@ -17,9 +17,9 @@ import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project.TableId as TableId
 import Page
-import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setProjectWithCmd, setTableProps)
+import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCurrentLayout, setProjectWithCmd, setTableProps)
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
-import PagesComponents.Projects.Id_.Updates.Table exposing (showTable)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideTable, showTable)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
@@ -82,7 +82,7 @@ update req msg model =
             model |> setProjectWithCmd (showTable id)
 
         HideTable id ->
-            ( model, T.send (toastSuccess ("HideTable: " ++ TableId.toString id)) )
+            ( model |> setCurrentLayout (hideTable id), Cmd.none )
 
         SelectTable id ctrl ->
             ( model |> setAllTableProps (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }), Cmd.none )
@@ -118,7 +118,7 @@ update req msg model =
             ( { model | dragging = Just { id = id, init = pos, last = pos } }, Cmd.none )
 
         DragMove pos ->
-            ( { model | dragging = model.dragging |> Maybe.map (\d -> { d | last = pos }) }, Cmd.none )
+            ( { model | dragging = model.dragging |> Maybe.map (\d -> B.cond ((d.init |> Position.distance pos) > 10) { d | last = pos } { d | last = d.init }) }, Cmd.none )
 
         DragEnd last ->
             ( model.dragging |> M.mapOrElse (\d -> { model | dragging = Nothing } |> setTableProps (TableId.fromHtmlId d.id) (\t -> { t | position = t.position |> Position.add (last |> Position.sub d.init) })) model, Cmd.none )

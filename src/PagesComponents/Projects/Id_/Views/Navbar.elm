@@ -103,18 +103,17 @@ viewNavbarFeatures theme features openedDropdown =
                 , Icon.solid (B.cond (openedDropdown == m.id) ChevronUp ChevronDown) []
                 ]
         )
-        (\m ->
+        (\_ ->
             div []
                 (features
-                    |> List.indexedMap
-                        (\i btn ->
+                    |> List.map
+                        (\btn ->
                             button
                                 [ type_ "button"
                                 , onClick btn.action
                                 , role "menuitem"
                                 , tabindex -1
-                                , id (m.id ++ "-item-" ++ String.fromInt i)
-                                , css [ Tw.flex, Tw.w_full, Tw.justify_between, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ], Css.focus [ Tw.outline_none ] ]
+                                , css ([ Tw.flex, Tw.w_full, Tw.justify_between, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles)
                                 ]
                                 ([ text btn.text ] ++ (btn.hotkey |> M.mapOrElse hotkey []))
                         )

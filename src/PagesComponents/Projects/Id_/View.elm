@@ -1,8 +1,8 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
+import Components.Atoms.Styles as Styles
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast as Toast
-import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.NotFound as NotFound
 import Conf
 import Css.Global as Global
@@ -25,7 +25,7 @@ viewProject : Shared.Model -> Model -> List (Html Msg)
 viewProject shared model =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100, Tw.overflow_hidden ], Global.selector "body" [ Tw.h_full ] ]
-    , Tooltip.global
+    , Styles.global
     , case shared.projects of
         Loading ->
             viewLoader shared.theme

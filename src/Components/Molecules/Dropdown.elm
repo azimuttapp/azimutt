@@ -1,18 +1,21 @@
-module Components.Molecules.Dropdown exposing (Direction(..), DocState, Model, SharedDocState, doc, dropdown, initDocState)
+module Components.Molecules.Dropdown exposing (Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuLinks, menuStyles, submenuButton, submenuButtons)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Styles as Styles
 import Css
 import Dict exposing (Dict)
+import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, div, text)
-import Html.Styled.Attributes exposing (css, href, id, tabindex)
+import Html.Styled exposing (Html, a, button, div, text)
+import Html.Styled.Attributes exposing (class, css, href, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
+import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind.Utilities as Tu
@@ -26,6 +29,14 @@ type alias Model =
 type Direction
     = BottomRight
     | BottomLeft
+
+
+type alias MenuItem msg =
+    { label : String, action : Either (List (SubMenuItem msg)) msg }
+
+
+type alias SubMenuItem msg =
+    { label : String, action : msg }
 
 
 dropdown : Model -> (Model -> Html msg) -> (Model -> Html msg) -> Html msg
@@ -50,10 +61,59 @@ dropdown model elt content =
     in
     div [ css [ Tw.relative, Tw.inline_block, Tw.text_left ] ]
         [ elt model
-        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css ([ Tw.absolute, Tu.z_max, Tw.mt_2, Tw.py_1, Tw.min_w_max, Tw.rounded_md, Tw.shadow_lg, Tw.bg_white, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Css.focus [ Tw.outline_none ] ] ++ direction ++ dropdownMenu) ]
+        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css ([ Tw.mt_2 ] ++ menuStyles ++ direction ++ dropdownMenu) ]
             [ content model
             ]
         ]
+
+
+menuLinks : List Link -> Model -> Html msg
+menuLinks links _ =
+    div [] (links |> List.map link)
+
+
+link : Link -> Html msg
+link l =
+    a [ href l.url, role "menuitem", tabindex -1, css ([ Tw.block ] ++ itemStyles) ] [ text l.text ]
+
+
+submenuButtons : List (MenuItem msg) -> Model -> Html msg
+submenuButtons menus _ =
+    div [] (menus |> List.map submenuButton)
+
+
+submenuButton : MenuItem msg -> Html msg
+submenuButton menu =
+    case menu.action of
+        Left submenus ->
+            div [ class "group", css ([ Tw.relative ] ++ itemStyles) ]
+                [ text (menu.label ++ " »")
+                , div [ class "group-hover-block", css ([ Tw.hidden, Tw.neg_top_1, Tw.left_full ] ++ menuStyles) ]
+                    (submenus |> List.map (\submenu -> btn submenu.action submenu.label))
+                ]
+
+        Right action ->
+            btn action menu.label
+
+
+btn : msg -> String -> Html msg
+btn message label =
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemStyles) ] [ text label ]
+
+
+menuStyles : List Css.Style
+menuStyles =
+    [ Tw.absolute, Tu.z_max, Tw.w_48, Tw.min_w_max, Tw.py_1, Tw.bg_white, Tw.rounded_md, Tw.shadow_lg, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5 ]
+
+
+itemStyles : List Css.Style
+itemStyles =
+    [ Tw.py_2, Tw.px_4, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ]
+
+
+itemDisabledStyles : List Css.Style
+itemDisabledStyles =
+    [ Tw.py_2, Tw.px_4, Tw.text_sm, Tw.text_gray_400 ]
 
 
 
@@ -104,4 +164,5 @@ doc theme =
                                 ]
                         )
                 )
+            , ( "global styles", \_ -> div [] [ Styles.global, text "Global styles are needed for tooltip reveal" ] )
             ]

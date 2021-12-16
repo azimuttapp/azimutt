@@ -1,7 +1,7 @@
 module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader, root)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Tooltip as Tooltip
+import Components.Atoms.Styles as Styles
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
@@ -72,7 +72,7 @@ appShell :
 appShell theme onNavigationClick onMobileMenuClick model title content footer =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100 ], Global.selector "body" [ Tw.h_full ] ]
-    , Tooltip.global
+    , Styles.global
     , S.div [ SA.css [ TwColor.render Bg theme.color L600, Tw.pb_32 ] ]
         [ Navbar.admin theme
             { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }

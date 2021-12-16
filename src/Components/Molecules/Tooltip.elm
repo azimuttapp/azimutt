@@ -1,8 +1,8 @@
-module Components.Molecules.Tooltip exposing (doc, global, top)
+module Components.Molecules.Tooltip exposing (doc, top)
 
 import Components.Atoms.Button as Button
+import Components.Atoms.Styles as Styles
 import Css
-import Css.Global as Global
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, span, text)
@@ -27,11 +27,6 @@ top value content =
         ]
 
 
-global : Html msg
-global =
-    Global.global [ Global.selector ".group:hover .group-hover-flex" [ Tw.flex ] ]
-
-
 
 -- DOCUMENTATION
 
@@ -41,5 +36,5 @@ doc =
     Chapter.chapter "Tooltip"
         |> Chapter.renderComponentList
             [ ( "tooltip", Button.primary3 Indigo [] [ text "Top tooltip" ] |> top "A top aligned tooltip." )
-            , ( "global", div [] [ global, text "The global css is needed for hover reveal" ] )
+            , ( "global styles", div [] [ Styles.global, text "Global styles are needed for tooltip reveal" ] )
             ]

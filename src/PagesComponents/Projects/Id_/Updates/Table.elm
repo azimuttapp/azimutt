@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (showTable)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideTable, showTable)
 
 import Dict
 import Libs.List as L
@@ -26,6 +26,14 @@ showTable id project =
 
         Nothing ->
             ( project, T.send (toastError ("Can't show table <b>" ++ TableId.show id ++ "</b>: not found")) )
+
+
+hideTable : TableId -> Layout -> Layout
+hideTable id layout =
+    { layout
+        | tables = layout.tables |> List.filter (\t -> not (t.id == id))
+        , hiddenTables = ((layout.tables |> L.findBy .id id |> M.toList) ++ layout.hiddenTables) |> L.uniqueBy .id
+    }
 
 
 performShowTable : Table -> Project -> Project

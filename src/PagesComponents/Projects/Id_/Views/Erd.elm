@@ -2,6 +2,7 @@ module PagesComponents.Projects.Id_.Views.Erd exposing (Model, viewErd)
 
 import Components.Organisms.Table as Table
 import Dict exposing (Dict)
+import Either exposing (Either(..))
 import Html.Styled exposing (Html, div, main_)
 import Html.Styled.Attributes exposing (class, css)
 import Html.Styled.Keyed as Keyed
@@ -80,19 +81,56 @@ viewTable model _ table props tableRelations =
             , isView = table.view
             , columns = columns
             , hiddenColumns = hiddenColumns
+            , settings =
+                [ { label = "Hide table", action = Right (HideTable table.id) }
+                , { label = "Sort columns"
+                  , action =
+                        Left
+                            [ { label = "By property", action = Noop "Sort columns by property" }
+                            , { label = "By name", action = Noop "Sort columns by name" }
+                            , { label = "By SQL order", action = Noop "Sort columns by SQL order" }
+                            , { label = "By type", action = Noop "Sort columns by type" }
+                            ]
+                  }
+                , { label = "Hide columns"
+                  , action =
+                        Left
+                            [ { label = "Regular ones", action = Noop "Hide regular columns" }
+                            , { label = "Nullable ones", action = Noop "Hide nullable columns" }
+                            , { label = "All", action = Noop "Hide all columns" }
+                            ]
+                  }
+                , { label = "Show columns"
+                  , action =
+                        Left
+                            [ { label = "With relations", action = Noop "Show columns with relations" }
+                            , { label = "All", action = Noop "Show all columns" }
+                            ]
+                  }
+                , { label = "Order"
+                  , action =
+                        Left
+                            [ { label = "Bring to front", action = Noop "Move table on top" }
+                            , { label = "Bring forward", action = Noop "Move table forward" }
+                            , { label = "Send backward", action = Noop "Move table backward" }
+                            , { label = "Send to back", action = Noop "Move table to the back" }
+                            ]
+                  }
+                , { label = "Find path for this table", action = Right (Noop ("Find path for " ++ tableId)) }
+                ]
             , state =
                 { color = props.color
                 , hover = model.hoverTable |> Maybe.map (\( schemaName, tableName ) -> { schema = schemaName, table = tableName })
                 , hoverColumn = model.hoverColumn |> Maybe.map (\ref -> { schema = ref.table |> Tuple.first, table = ref.table |> Tuple.second, column = ref.column })
                 , selected = props.selected
-                , dragging = model.dragging |> M.filter (\d -> d.id == tableId) |> M.isJust
+                , dragging = model.dragging |> M.filter (\d -> d.id == tableId && d.init /= d.last) |> M.isJust
                 , openedDropdown = model.openedDropdown
                 }
             , actions =
-                { toggleSettings = DropdownToggle
-                , toggleHover = ToggleHoverTable table.id
+                { toggleHover = ToggleHoverTable table.id
                 , toggleHoverColumn = \c -> ToggleHoverColumn { table = table.id, column = c }
                 , toggleSelected = SelectTable table.id
+                , toggleSettings = DropdownToggle
                 }
             }
         ]

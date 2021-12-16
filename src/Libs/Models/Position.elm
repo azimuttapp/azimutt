@@ -1,4 +1,4 @@
-module Libs.Models.Position exposing (Position, add, decode, diff, div, encode, fromTuple, mult, negate, sub, toTuple)
+module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, sub, toTuple)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -47,6 +47,11 @@ negate pos =
 diff : Position -> Position -> ( Float, Float )
 diff to from =
     ( from.left - to.left, from.top - to.top )
+
+
+distance : Position -> Position -> Float
+distance to from =
+    diff to from |> (\( dx, dy ) -> sqrt (dx * dx + dy * dy))
 
 
 encode : Position -> Value

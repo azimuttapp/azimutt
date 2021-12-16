@@ -6,8 +6,8 @@ import Components.Molecules.Tooltip as Tooltip
 import Css
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, button, div, small, span, text)
-import Html.Styled.Attributes exposing (css, href, id, tabindex, type_)
+import Html.Styled exposing (Html, button, div, small, span, text)
+import Html.Styled.Attributes exposing (css, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role)
@@ -33,16 +33,15 @@ viewNavbarTitle theme openedDropdown storedProjects project =
                     , Icon.solid (B.cond m.isOpen ChevronUp ChevronDown) []
                     ]
             )
-            (\m ->
-                div [ css [ Tw.w_48, Tw.divide_y, Tw.divide_gray_100 ] ]
+            (\_ ->
+                div [ css [ Tw.divide_y, Tw.divide_gray_100 ] ]
                     [ div [ role "none", css [ Tw.py_1 ] ]
                         (storedProjects
                             |> List.filter (\p -> p.id /= project.id)
                             |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
-                            |> List.map (\p -> a [ href (Route.toHref (Route.Projects__Id_ { id = p.id })), role "menuitem", tabindex -1, id (m.id ++ "-item-1"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text p.name ])
+                            |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name })
                         )
-                    , div [ role "none", css [ Tw.py_1 ] ]
-                        [ a [ href (Route.toHref Route.Projects), role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text "Back to dashboard" ] ]
+                    , div [ role "none", css [ Tw.py_1 ] ] [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ]
                     ]
             )
          ]
@@ -57,18 +56,18 @@ viewNavbarTitle theme openedDropdown storedProjects project =
                                         , Icon.solid (B.cond m.isOpen ChevronUp ChevronDown) []
                                         ]
                                 )
-                                (\m ->
+                                (\_ ->
                                     div [ css [ Tw.min_w_max, Tw.divide_y, Tw.divide_gray_100 ] ]
                                         [ div [ role "none", css [ Tw.py_1 ] ]
                                             (project.layouts
                                                 |> Dict.toList
                                                 |> List.sortBy (\( name, _ ) -> name)
-                                                |> List.indexedMap
-                                                    (\i ( name, layout ) ->
-                                                        span [ role "menuitem", tabindex -1, id (m.id ++ "-item-" ++ String.fromInt i), css [ Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ]
-                                                            [ button [ type_ "button", onClick (Noop "delete layout") ] [ Icon.solid Trash [ Tw.inline_block ] ] |> Tooltip.top "Delete this layout"
-                                                            , button [ type_ "button", onClick (Noop "update layout"), css [ Tw.mx_3 ] ] [ Icon.solid Pencil [ Tw.inline_block ] ] |> Tooltip.top "Update layout with current one"
-                                                            , button [ type_ "button", onClick (Noop "load layout") ]
+                                                |> List.map
+                                                    (\( name, layout ) ->
+                                                        span [ role "menuitem", tabindex -1, css ([ Tw.block ] ++ Dropdown.itemStyles) ]
+                                                            [ button [ type_ "button", onClick (Noop "delete layout"), css [ Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Trash [ Tw.inline_block ] ] |> Tooltip.top "Delete this layout"
+                                                            , button [ type_ "button", onClick (Noop "update layout"), css [ Tw.mx_3, Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Pencil [ Tw.inline_block ] ] |> Tooltip.top "Update layout with current one"
+                                                            , button [ type_ "button", onClick (Noop "load layout"), css [ Css.focus [ Tw.outline_none ] ] ]
                                                                 [ text name
                                                                 , text " "
                                                                 , small [] [ text ("(" ++ (layout.tables |> List.length |> S.pluralize "table") ++ ")") ]
@@ -76,8 +75,7 @@ viewNavbarTitle theme openedDropdown storedProjects project =
                                                             ]
                                                     )
                                             )
-                                        , div [ role "none", css [ Tw.py_1 ] ]
-                                            [ button [ type_ "button", onClick (Noop "stop using layout"), role "menuitem", tabindex -1, id (m.id ++ "-item-last"), css [ Tw.block, Tw.w_full, Tw.px_4, Tw.py_2, Tw.text_sm, Tw.text_gray_700, Css.hover [ Tw.bg_gray_100 ] ] ] [ text ("Stop using " ++ usedLayout) ] ]
+                                        , div [ role "none", css [ Tw.py_1 ] ] [ Dropdown.btn (Noop "stop using layout") ("Stop using " ++ usedLayout) ]
                                         ]
                                 )
                             ]
