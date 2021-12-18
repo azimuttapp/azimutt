@@ -14,7 +14,7 @@ import Models.ColumnOrder as ColumnOrder
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation exposing (Relation)
+import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 
@@ -42,7 +42,7 @@ computeColumns settings relations table columns =
 
         tableRelations : List Relation
         tableRelations =
-            relations |> List.filter (\r -> r.src.table == table.id)
+            relations |> Relation.withTableSrc table.id
     in
     columns
         |> List.filterMap (\c -> table.columns |> Ned.get c)

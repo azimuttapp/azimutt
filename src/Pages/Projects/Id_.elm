@@ -17,9 +17,9 @@ import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.Project.TableId as TableId
 import Page
-import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCurrentLayout, setProjectWithCmd, setTableProps)
+import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideTable, showTable)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
@@ -84,8 +84,20 @@ update req msg model =
         HideTable id ->
             ( model |> setCurrentLayout (hideTable id), Cmd.none )
 
+        ShowColumns id kind ->
+            ( model |> setProject (showColumns id kind), Cmd.none )
+
+        HideColumns id kind ->
+            ( model |> setProject (hideColumns id kind), Cmd.none )
+
         SelectTable id ctrl ->
             ( model |> setAllTableProps (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }), Cmd.none )
+
+        TableOrder id index ->
+            ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
+
+        SortColumns id kind ->
+            ( model |> setProject (sortColumns id kind), Cmd.none )
 
         ToggleHoverTable table ->
             ( { model | hoverTable = B.cond (model.hoverTable |> M.has table) Nothing (Just table) }, Cmd.none )

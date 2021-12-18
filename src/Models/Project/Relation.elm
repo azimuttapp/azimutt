@@ -1,4 +1,4 @@
-module Models.Project.Relation exposing (Relation, decode, encode, inOutRelation, merge, new, virtual)
+module Models.Project.Relation exposing (Relation, decode, encode, inOutRelation, merge, new, virtual, withLink, withRef, withSrc, withTableLink, withTableRef, withTableSrc)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -10,6 +10,7 @@ import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.RelationId as RelationId exposing (RelationId)
 import Models.Project.RelationName as RelationName exposing (RelationName)
 import Models.Project.SourceId exposing (SourceId)
+import Models.Project.TableId exposing (TableId)
 
 
 type alias Relation =
@@ -29,6 +30,36 @@ virtual src ref source =
 inOutRelation : List Relation -> ColumnName -> List Relation
 inOutRelation tableOutRelations column =
     tableOutRelations |> List.filter (\r -> r.src.column == column)
+
+
+withTableSrc : TableId -> List Relation -> List Relation
+withTableSrc table relations =
+    relations |> List.filter (\r -> r.src.table == table)
+
+
+withTableRef : TableId -> List Relation -> List Relation
+withTableRef table relations =
+    relations |> List.filter (\r -> r.ref.table == table)
+
+
+withTableLink : TableId -> List Relation -> List Relation
+withTableLink table relations =
+    relations |> List.filter (\r -> (r.src.table == table) || (r.ref.table == table))
+
+
+withSrc : TableId -> ColumnName -> List Relation -> List Relation
+withSrc table column relations =
+    relations |> List.filter (\r -> r.src.table == table && r.src.column == column)
+
+
+withRef : TableId -> ColumnName -> List Relation -> List Relation
+withRef table column relations =
+    relations |> List.filter (\r -> r.ref.table == table && r.ref.column == column)
+
+
+withLink : TableId -> ColumnName -> List Relation -> List Relation
+withLink table column relations =
+    relations |> List.filter (\r -> (r.src.table == table && r.src.column == column) || (r.ref.table == table && r.ref.column == column))
 
 
 merge : Relation -> Relation -> Relation

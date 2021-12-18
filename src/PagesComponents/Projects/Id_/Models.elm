@@ -9,6 +9,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
+import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
@@ -46,7 +47,11 @@ type Msg
     | SearchUpdated String
     | ShowTable TableId
     | HideTable TableId
+    | ShowColumns TableId String
+    | HideColumns TableId String
     | SelectTable TableId Bool
+    | TableOrder TableId Int
+    | SortColumns TableId ColumnOrder
     | ToggleHoverTable TableId
     | ToggleHoverColumn ColumnRef
     | ShowAllTables
