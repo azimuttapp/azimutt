@@ -49,6 +49,7 @@ type Msg
     | HideTable TableId
     | ShowColumns TableId String
     | HideColumns TableId String
+    | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
     | TableOrder TableId Int
     | SortColumns TableId ColumnOrder

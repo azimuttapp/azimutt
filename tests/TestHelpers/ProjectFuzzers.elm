@@ -145,7 +145,7 @@ canvasProps =
 
 tableProps : Fuzzer TableProps
 tableProps =
-    Fuzz.map5 TableProps tableId position color (listSmall columnName) Fuzz.bool
+    F.map6 TableProps tableId position color (listSmall columnName) Fuzz.bool Fuzz.bool
 
 
 projectSettings : Fuzzer ProjectSettings

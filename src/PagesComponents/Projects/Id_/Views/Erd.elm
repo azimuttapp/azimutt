@@ -116,12 +116,14 @@ viewTable model index table props tableRelations =
                 , selected = props.selected
                 , dragging = model.dragging |> M.filter (\d -> d.id == tableId && d.init /= d.last) |> M.isJust
                 , openedDropdown = model.openedDropdown
+                , showHiddenColumns = props.hiddenColumns
                 }
             , actions =
                 { toggleHover = ToggleHoverTable table.id
                 , toggleHoverColumn = \c -> ToggleHoverColumn { table = table.id, column = c }
                 , toggleSelected = SelectTable table.id
                 , toggleSettings = DropdownToggle
+                , toggleHiddenColumns = ToggleHiddenColumns table.id
                 }
             }
         ]

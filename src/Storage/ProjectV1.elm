@@ -20,6 +20,7 @@ import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.Index exposing (Index)
+import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
@@ -28,6 +29,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
+import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Time
 
@@ -269,12 +271,33 @@ upgrade project =
     , sources = project.sources |> Nel.toList |> List.map (upgradeProjectSource project.schema.tables project.schema.relations project.fromSample)
     , tables = project.schema.tables |> Dict.map (\_ -> upgradeTable)
     , relations = project.schema.relations |> List.map upgradeRelation
-    , layout = project.schema.layout
+    , layout = project.schema.layout |> upgradeLayout
     , usedLayout = project.currentLayout
-    , layouts = project.layouts
+    , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)
     , settings = ProjectSettings project.settings.findPath [] False "" "" SqlOrder
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
+    }
+
+
+upgradeLayout : LayoutV1 -> Layout
+upgradeLayout layout =
+    { canvas = layout.canvas
+    , tables = layout.tables |> List.map upgradeTableProps
+    , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
+    , createdAt = layout.createdAt
+    , updatedAt = layout.updatedAt
+    }
+
+
+upgradeTableProps : TablePropsV1 -> TableProps
+upgradeTableProps props =
+    { id = props.id
+    , position = props.position
+    , color = props.color
+    , columns = props.columns
+    , selected = props.selected
+    , hiddenColumns = False
     }
 
 

@@ -20,7 +20,13 @@ import Models.Project.TableId as TableId exposing (TableId)
 
 
 type alias TableProps =
-    { id : TableId, position : Position, color : Color, columns : List ColumnName, selected : Bool }
+    { id : TableId
+    , position : Position
+    , color : Color
+    , columns : List ColumnName
+    , selected : Bool
+    , hiddenColumns : Bool
+    }
 
 
 init : ProjectSettings -> List Relation -> Table -> TableProps
@@ -28,8 +34,9 @@ init settings relations table =
     { id = table.id
     , position = Position 0 0
     , color = computeColor table.id
-    , selected = False
     , columns = table.columns |> Ned.values |> Nel.toList |> List.map .name |> computeColumns settings relations table
+    , selected = False
+    , hiddenColumns = False
     }
 
 
@@ -69,14 +76,16 @@ encode value =
         , ( "color", value.color |> Color.encode )
         , ( "columns", value.columns |> E.withDefault (Encode.list ColumnName.encode) [] )
         , ( "selected", value.selected |> E.withDefault Encode.bool False )
+        , ( "hiddenColumns", value.hiddenColumns |> E.withDefault Encode.bool False )
         ]
 
 
 decode : Decode.Decoder TableProps
 decode =
-    Decode.map5 TableProps
+    Decode.map6 TableProps
         (Decode.field "id" TableId.decode)
         (Decode.field "position" Position.decode)
         (Decode.field "color" Color.decode)
         (D.defaultField "columns" (Decode.list ColumnName.decode) [])
         (D.defaultField "selected" Decode.bool False)
+        (D.defaultField "hiddenColumns" Decode.bool False)

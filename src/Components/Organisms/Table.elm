@@ -21,6 +21,7 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.TwColor exposing (TwColorLevel(..))
+import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Tailwind.Utilities as Tw
 
@@ -80,6 +81,7 @@ type alias State =
     , selected : Bool
     , dragging : Bool
     , openedDropdown : HtmlId
+    , showHiddenColumns : Bool
     }
 
 
@@ -88,6 +90,7 @@ type alias Actions msg =
     , toggleHoverColumn : String -> msg
     , toggleSelected : Bool -> msg
     , toggleSettings : HtmlId -> msg
+    , toggleHiddenColumns : msg
     }
 
 
@@ -165,13 +168,28 @@ viewColumns model =
     Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, viewColumn model (i + 1 == count) c )))
 
 
+viewHiddenColumns : Model msg -> Html msg
+viewHiddenColumns model =
+    if model.hiddenColumns |> List.isEmpty then
+        div [] []
+
+    else
+        div [ css [ Tw.m_2, Tw.p_2, Tw.bg_gray_100, Tw.rounded_lg ] ]
+            [ div [ onClick model.actions.toggleHiddenColumns, css [ Tw.text_gray_400, Tw.uppercase, Tw.font_bold, Tw.text_sm ] ]
+                [ text (model.hiddenColumns |> List.length |> S.pluralize "hidden column") ]
+            , Keyed.node "div"
+                [ css ([ Tw.rounded_lg, Tw.pt_2 ] ++ B.cond model.state.showHiddenColumns [] [ Tw.hidden ]) ]
+                (model.hiddenColumns |> List.map (\c -> ( c.name, viewColumn model False c )))
+            ]
+
+
 viewColumn : Model msg -> Bool -> Column -> Html msg
 viewColumn model isLast column =
     div
         [ onMouseEnter (model.actions.toggleHoverColumn column.name)
         , onMouseLeave (model.actions.toggleHoverColumn column.name)
         , css
-            ([ Tw.flex, Tw.px_2, Tw.py_1 ]
+            ([ Tw.flex, Tw.px_2, Tw.py_1, Tw.bg_white ]
                 ++ B.cond (isColumnHover model column) [ Color.text model.state.color L500, Color.bg model.state.color L50 ] [ Color.text Color.default L500 ]
                 ++ B.cond isLast [ Tw.rounded_b_lg ] []
             )
@@ -180,11 +198,6 @@ viewColumn model isLast column =
         , viewColumnName column
         , viewColumnKind model column
         ]
-
-
-viewHiddenColumns : Model msg -> Html msg
-viewHiddenColumns _ =
-    div [] []
 
 
 viewColumnIcon : Column -> Html msg
@@ -327,12 +340,14 @@ sample =
         , selected = False
         , dragging = False
         , openedDropdown = ""
+        , showHiddenColumns = False
         }
     , actions =
         { toggleHover = logAction "hover table"
         , toggleHoverColumn = \c -> logAction ("hover column " ++ c)
         , toggleSelected = \_ -> logAction "selected"
         , toggleSettings = \id -> logAction ("open " ++ id)
+        , toggleHiddenColumns = logAction "hidden columns"
         }
     }
 
@@ -345,12 +360,14 @@ doc =
               , \{ tableDocState } ->
                     table
                         { sample
-                            | state = tableDocState
+                            | hiddenColumns = [ { sampleColumn | name = "created", kind = "timestamp without time zone" } ]
+                            , state = tableDocState
                             , actions =
                                 { toggleHover = sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond (s.hover |> M.has ref) Nothing (Just ref) }))
                                 , toggleHoverColumn = \c -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond (s.hoverColumn |> M.has ref) Nothing (Just ref) }))
                                 , toggleSelected = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , toggleSettings = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
+                                , toggleHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
                                 }
                         }
               )
@@ -363,6 +380,8 @@ doc =
                          , { sample | id = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
                          , { sample | id = "Dragging", state = sample.state |> (\s -> { s | dragging = True }) }
                          , { sample | id = "Settings", state = sample.state |> (\s -> { s | openedDropdown = "Settings-settings" }) }
+                         , { sample | id = "Hidden columns hidden", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = False }) }
+                         , { sample | id = "Hidden columns visible", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = True }) }
                          ]
                             |> List.map (\model -> div [] [ text (model.id ++ ":"), br [] [], table model ])
                         )

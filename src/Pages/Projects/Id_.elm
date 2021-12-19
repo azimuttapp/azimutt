@@ -90,6 +90,9 @@ update req msg model =
         HideColumns id kind ->
             ( model |> setProject (hideColumns id kind), Cmd.none )
 
+        ToggleHiddenColumns id ->
+            ( model |> setTableProps id (\t -> { t | hiddenColumns = not t.hiddenColumns }), Cmd.none )
+
         SelectTable id ctrl ->
             ( model |> setAllTableProps (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }), Cmd.none )
 
