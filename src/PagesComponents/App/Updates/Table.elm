@@ -56,7 +56,7 @@ showTables ids project =
                 ( p
                 , Cmd.batch
                     (cond (found |> List.isEmpty) [] [ observeTablesSize found, activateTooltipsAndPopovers ]
-                        ++ cond (shown |> List.isEmpty) [] [ toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are ealready shown") ]
+                        ++ cond (shown |> List.isEmpty) [] [ toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown") ]
                         ++ cond (notFound |> List.isEmpty) [] [ toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them") ]
                     )
                 )

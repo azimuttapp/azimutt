@@ -1,6 +1,7 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, sortColumns)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, showTables, sortColumns)
 
 import Dict
+import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned
@@ -16,7 +17,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setLayout)
 import PagesComponents.Projects.Id_.Models exposing (Msg, toastError, toastInfo)
-import Ports exposing (observeTableSize)
+import Ports exposing (observeTableSize, observeTablesSize)
 
 
 showTable : TableId -> Project -> ( Project, Cmd Msg )
@@ -31,6 +32,35 @@ showTable id project =
 
         Nothing ->
             ( project, T.send (toastError ("Can't show table <b>" ++ TableId.show id ++ "</b>: not found")) )
+
+
+showTables : List TableId -> Project -> ( Project, Cmd Msg )
+showTables ids project =
+    ids
+        |> L.zipWith (\id -> project.tables |> Dict.get id)
+        |> List.foldr
+            (\( id, maybeTable ) ( p, ( found, shown, notFound ) ) ->
+                case maybeTable of
+                    Just table ->
+                        if project.layout.tables |> L.memberBy .id id then
+                            ( p, ( found, id :: shown, notFound ) )
+
+                        else
+                            ( p |> performShowTable table, ( id :: found, shown, notFound ) )
+
+                    Nothing ->
+                        ( p, ( found, shown, id :: notFound ) )
+            )
+            ( project, ( [], [], [] ) )
+        |> (\( p, ( found, shown, notFound ) ) ->
+                ( p
+                , Cmd.batch
+                    (B.cond (found |> List.isEmpty) [] [ observeTablesSize found ]
+                        ++ B.cond (shown |> List.isEmpty) [] [ T.send (toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown")) ]
+                        ++ B.cond (notFound |> List.isEmpty) [] [ T.send (toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them")) ]
+                    )
+                )
+           )
 
 
 hideTable : TableId -> Layout -> Layout

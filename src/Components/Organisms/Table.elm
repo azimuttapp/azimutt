@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Styles as Styles
@@ -15,6 +15,7 @@ import Html.Styled.Attributes exposing (css, id, type_)
 import Html.Styled.Events exposing (onClick, onMouseEnter, onMouseLeave)
 import Html.Styled.Keyed as Keyed
 import Libs.Bool as B
+import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, onPointerUp)
 import Libs.List as L
 import Libs.Maybe as M
@@ -46,8 +47,8 @@ type alias Column =
     , default : Maybe String
     , comment : Maybe String
     , isPrimaryKey : Bool
-    , inRelations : List ColumnRef
-    , outRelations : List ColumnRef
+    , inRelations : List Relation
+    , outRelations : List Relation
     , uniques : List UniqueConstraint
     , indexes : List IndexConstraint
     , checks : List CheckConstraint
@@ -60,6 +61,10 @@ type alias TableRef =
 
 type alias ColumnRef =
     { schema : String, table : String, column : String }
+
+
+type alias Relation =
+    { column : ColumnRef, nullable : Bool, tableShown : Bool }
 
 
 type alias UniqueConstraint =
@@ -89,8 +94,9 @@ type alias Actions msg =
     { toggleHover : msg
     , toggleHoverColumn : String -> msg
     , toggleSelected : Bool -> msg
-    , toggleSettings : HtmlId -> msg
+    , toggleDropdown : HtmlId -> msg
     , toggleHiddenColumns : msg
+    , showRelations : List Relation -> msg
     }
 
 
@@ -145,7 +151,7 @@ viewHeader model =
                 button
                     [ type_ "button"
                     , id m.id
-                    , onClick (model.actions.toggleSettings m.id)
+                    , onClick (model.actions.toggleDropdown m.id)
                     , ariaExpanded m.isOpen
                     , ariaHaspopup True
                     , css [ Tw.flex, Tw.text_sm, Tw.opacity_25, Css.focus [ Tw.outline_none ] ]
@@ -194,7 +200,7 @@ viewColumn model isLast column =
                 ++ B.cond isLast [ Tw.rounded_b_lg ] []
             )
         ]
-        [ viewColumnIconDropdown (viewColumnIcon column)
+        [ viewColumnIconDropdown model (viewColumnIcon column) column
         , viewColumnName column
         , viewColumnKind model column
         ]
@@ -206,7 +212,7 @@ viewColumnIcon column =
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.top "Primary key" ]
 
     else if column.outRelations |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse formatRef "")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.uniques |> L.nonEmpty then
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [] |> Tooltip.top ("Unique constraint in " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
@@ -221,9 +227,47 @@ viewColumnIcon column =
         div [ css [ Tw.w_6, Tw.h_6 ] ] []
 
 
-viewColumnIconDropdown : Html msg -> Html msg
-viewColumnIconDropdown icon =
-    div [] [ icon ]
+viewColumnIconDropdown : Model msg -> Html msg -> Column -> Html msg
+viewColumnIconDropdown model icon column =
+    let
+        dropdownId : HtmlId
+        dropdownId =
+            model.id ++ "-" ++ column.name ++ "-dropdown"
+    in
+    if column.inRelations |> List.isEmpty then
+        div [] [ button [ type_ "button", id dropdownId, css [ Css.focus [ Tw.outline_none ] ] ] [ icon ] ]
+
+    else
+        Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
+            (\m -> button [ type_ "button", id m.id, onClick (model.actions.toggleDropdown m.id), ariaExpanded m.isOpen, ariaHaspopup True, css [ Css.focus [ Tw.outline_none ] ] ] [ icon ])
+            (\_ ->
+                div []
+                    ((column.inRelations
+                        |> List.map
+                            (\r ->
+                                let
+                                    content : List (Html msg)
+                                    content =
+                                        [ Icon.solid ExternalLink [ Tw.inline ]
+                                        , bText (formatTableRef { schema = r.column.schema, table = r.column.table })
+                                        , text ("." ++ r.column.column ++ B.cond r.nullable "?" "")
+                                        ]
+                                in
+                                if r.tableShown then
+                                    Dropdown.btnDisabled content
+
+                                else
+                                    Dropdown.btn (model.actions.showRelations [ r ]) content
+                            )
+                     )
+                        ++ (column.inRelations
+                                |> List.filter (\r -> not r.tableShown)
+                                |> (\relations ->
+                                        [ Dropdown.btn (model.actions.showRelations relations) [ text ("Show all (" ++ (relations |> List.length |> S.pluralize "table") ++ ")") ] ]
+                                   )
+                           )
+                    )
+            )
 
 
 viewColumnName : Column -> Html msg
@@ -262,8 +306,17 @@ viewColumnKind model column =
     div [ css [ Tw.ml_1 ] ] (value :: nullable)
 
 
-formatRef : ColumnRef -> String
-formatRef ref =
+formatTableRef : TableRef -> String
+formatTableRef ref =
+    if ref.schema == "public" then
+        ref.table
+
+    else
+        ref.schema ++ "." ++ ref.table
+
+
+formatColumnRef : ColumnRef -> String
+formatColumnRef ref =
     if ref.schema == "public" then
         ref.table ++ "." ++ ref.column
 
@@ -315,11 +368,11 @@ sample =
     , label = "users"
     , isView = False
     , columns =
-        [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { schema = "public", table = "accounts", column = "user" } ] }
+        [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "public", table = "accounts", column = "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | name = "name", kind = "character varying(120)", comment = Just "Should be unique", uniques = [ { name = "users_name_unique" } ] }
         , { sampleColumn | name = "email", kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
         , { sampleColumn | name = "bio", kind = "text", checks = [ { name = "users_bio_min_length" } ] }
-        , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { schema = "public", table = "organizations", column = "id" } ] }
+        , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { column = { schema = "public", table = "organizations", column = "id" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | name = "created", kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
     , hiddenColumns = []
@@ -346,8 +399,9 @@ sample =
         { toggleHover = logAction "hover table"
         , toggleHoverColumn = \c -> logAction ("hover column " ++ c)
         , toggleSelected = \_ -> logAction "selected"
-        , toggleSettings = \id -> logAction ("open " ++ id)
+        , toggleDropdown = \id -> logAction ("open " ++ id)
         , toggleHiddenColumns = logAction "hidden columns"
+        , showRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
         }
     }
 
@@ -366,8 +420,9 @@ doc =
                                 { toggleHover = sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond (s.hover |> M.has ref) Nothing (Just ref) }))
                                 , toggleHoverColumn = \c -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond (s.hoverColumn |> M.has ref) Nothing (Just ref) }))
                                 , toggleSelected = \_ -> updateDocState (\s -> { s | selected = not s.selected })
-                                , toggleSettings = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
+                                , toggleDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 , toggleHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
+                                , showRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
                                 }
                         }
               )

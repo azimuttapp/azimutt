@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuLinks, menuStyles, submenuButton, submenuButtons)
+module Components.Molecules.Dropdown exposing (Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, btnDisabled, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuLinks, menuStyles, submenuButton, submenuButtons)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -89,16 +89,21 @@ submenuButton menu =
             div [ class "group", css ([ Tw.relative ] ++ itemStyles) ]
                 [ text (menu.label ++ " »")
                 , div [ class "group-hover-block", css ([ Tw.hidden, Tw.neg_top_1, Tw.left_full ] ++ menuStyles) ]
-                    (submenus |> List.map (\submenu -> btn submenu.action submenu.label))
+                    (submenus |> List.map (\submenu -> btn submenu.action [ text submenu.label ]))
                 ]
 
         Right action ->
-            btn action menu.label
+            btn action [ text menu.label ]
 
 
-btn : msg -> String -> Html msg
-btn message label =
-    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemStyles) ] [ text label ]
+btn : msg -> List (Html msg) -> Html msg
+btn message content =
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemStyles) ] content
+
+
+btnDisabled : List (Html msg) -> Html msg
+btnDisabled content =
+    button [ type_ "button", role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemDisabledStyles) ] content
 
 
 menuStyles : List Css.Style

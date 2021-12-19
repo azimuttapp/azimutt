@@ -2,7 +2,9 @@ module PagesComponents.Projects.Id_.Models exposing (DragState, Model, Msg(..), 
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
+import Dict exposing (Dict)
 import Html.Styled exposing (Html)
+import Libs.DomInfo exposing (DomInfo)
 import Libs.Models exposing (Millis)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -24,6 +26,7 @@ type alias Model =
     , hoverColumn : Maybe ColumnRef
 
     -- global attrs
+    , domInfos : Dict HtmlId DomInfo
     , openedDropdown : HtmlId
     , dragging : Maybe DragState
     , toastIdx : Int
@@ -46,6 +49,7 @@ type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | ShowTable TableId
+    | ShowTables (List TableId)
     | HideTable TableId
     | ShowColumns TableId String
     | HideColumns TableId String

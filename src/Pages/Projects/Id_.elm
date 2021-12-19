@@ -3,6 +3,7 @@ module Pages.Projects.Id_ exposing (Model, Msg, page)
 import Browser.Events
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast exposing (Content(..))
+import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
 import Html.Styled as Styled exposing (text)
@@ -19,7 +20,7 @@ import Models.Project.TableId as TableId
 import Page
 import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
@@ -55,6 +56,7 @@ init shared req =
       , navbar = { mobileMenuOpen = False, search = "" }
       , hoverTable = Nothing
       , hoverColumn = Nothing
+      , domInfos = Dict.empty
       , openedDropdown = ""
       , dragging = Nothing
       , toastIdx = 0
@@ -80,6 +82,9 @@ update req msg model =
 
         ShowTable id ->
             model |> setProjectWithCmd (showTable id)
+
+        ShowTables ids ->
+            model |> setProjectWithCmd (showTables ids)
 
         HideTable id ->
             ( model |> setCurrentLayout (hideTable id), Cmd.none )
@@ -195,6 +200,8 @@ targetIdDecoder =
             , Decode.at [ "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
             , Decode.at [ "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
             , Decode.at [ "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
             , Decode.succeed ""
             ]
         )
