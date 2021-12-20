@@ -48,6 +48,8 @@ type alias DragState =
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
+    | LoadProject Project
+    | InitializedTable TableId Position
     | ShowTable TableId
     | ShowTables (List TableId)
     | HideTable TableId

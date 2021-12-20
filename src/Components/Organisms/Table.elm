@@ -200,19 +200,19 @@ viewColumn model isLast column =
                 ++ B.cond isLast [ Tw.rounded_b_lg ] []
             )
         ]
-        [ viewColumnIconDropdown model (viewColumnIcon column) column
+        [ viewColumnIcon model column |> viewColumnIconDropdown model column
         , viewColumnName column
         , viewColumnKind model column
         ]
 
 
-viewColumnIcon : Column -> Html msg
-viewColumnIcon column =
+viewColumnIcon : Model msg -> Column -> Html msg
+viewColumnIcon model column =
     if column.isPrimaryKey then
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.top "Primary key" ]
 
     else if column.outRelations |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.showRelations column.outRelations) ] [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.uniques |> L.nonEmpty then
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [] |> Tooltip.top ("Unique constraint in " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
@@ -227,8 +227,8 @@ viewColumnIcon column =
         div [ css [ Tw.w_6, Tw.h_6 ] ] []
 
 
-viewColumnIconDropdown : Model msg -> Html msg -> Column -> Html msg
-viewColumnIconDropdown model icon column =
+viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
+viewColumnIconDropdown model column icon =
     let
         dropdownId : HtmlId
         dropdownId =

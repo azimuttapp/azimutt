@@ -1,10 +1,11 @@
 module PagesComponents.Projects.Id_.Views.Erd exposing (Model, viewErd)
 
 import Components.Organisms.Table as Table
+import Conf
 import Dict exposing (Dict)
 import Either exposing (Either(..))
 import Html.Styled exposing (Html, div, main_)
-import Html.Styled.Attributes exposing (class, css)
+import Html.Styled.Attributes exposing (class, css, id)
 import Html.Styled.Keyed as Keyed
 import Libs.Dict as D
 import Libs.DomInfo exposing (DomInfo)
@@ -13,7 +14,6 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size exposing (Size)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
@@ -60,7 +60,7 @@ viewErd _ model project =
                 |> List.filter (\r -> Dict.member r.src.table layoutTablesDict || Dict.member r.ref.table layoutTablesDict)
                 |> List.filterMap (buildRelationFull project.tables layoutTablesDict layoutTablesDictSize model.domInfos)
     in
-    main_ [ class "erd" ]
+    main_ [ class "erd", id Conf.ids.erd ]
         [ div [ class "canvas" ]
             [ viewTables model project.tables project.layout.tables shownRelations
             ]
@@ -74,12 +74,13 @@ viewTables model tables layout relations =
         (layout
             |> List.reverse
             |> L.filterZip (\p -> tables |> Dict.get p.id)
-            |> List.indexedMap (\i ( p, t ) -> ( TableId.toString t.id, viewTable model i t p (relations |> List.filter (RelationFull.hasTableLink t.id)) ))
+            |> L.zipWith (\( _, table ) -> ( model.domInfos |> Dict.get (TableId.toHtmlId table.id), relations |> List.filter (RelationFull.hasTableLink table.id) ))
+            |> List.indexedMap (\i ( ( props, table ), ( domInfos, tableRelations ) ) -> ( TableId.toString table.id, viewTable model i table props domInfos tableRelations ))
         )
 
 
-viewTable : Model x -> Int -> Table -> TableProps -> List RelationFull -> Html Msg
-viewTable model index table props tableRelations =
+viewTable : Model x -> Int -> Table -> TableProps -> Maybe DomInfo -> List RelationFull -> Html Msg
+viewTable model index table props domInfo tableRelations =
     let
         tableId : HtmlId
         tableId =
@@ -93,7 +94,10 @@ viewTable model index table props tableRelations =
         columns =
             table.columns |> Ned.map (\_ col -> buildColumn tableRelations table col)
     in
-    div [ onPointerDown (DragStart tableId), css [ Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px" ] ]
+    div
+        [ onPointerDown (DragStart tableId)
+        , css ([ Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px" ] ++ (domInfo |> M.mapOrElse (\_ -> []) [ Tw.invisible ]))
+        ]
         [ Table.table
             { id = tableId
             , ref = { schema = table.schema, table = table.name }
@@ -193,7 +197,7 @@ buildRelationFull tables layoutTables layoutTablesSize domInfos rel =
 
 
 buildColumnRefFull : Dict TableId Table -> Dict TableId ( TableProps, Int ) -> Int -> Dict HtmlId DomInfo -> ColumnRef -> Maybe ColumnRefFull
-buildColumnRefFull tables layoutTables layoutTablesSize _ ref =
+buildColumnRefFull tables layoutTables layoutTablesSize domInfos ref =
     (tables |> Dict.get ref.table |> M.andThenZip (\table -> table.columns |> Ned.get ref.column))
         |> Maybe.map
             (\( table, column ) ->
@@ -203,8 +207,7 @@ buildColumnRefFull tables layoutTables layoutTablesSize _ ref =
                 , props =
                     M.zip
                         (layoutTables |> Dict.get ref.table)
-                        (Just { position = Position 0 0, size = Size 0 0 })
-                        -- FIXME: reintroduce when handle domInfos: (domInfos |> Dict.get (TableId.toHtmlId ref.table))
+                        (domInfos |> Dict.get (TableId.toHtmlId ref.table))
                         |> Maybe.map (\( ( t, i ), d ) -> ( t, layoutTablesSize - 1 - i, d.size ))
                 }
             )

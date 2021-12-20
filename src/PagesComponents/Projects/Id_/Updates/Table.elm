@@ -25,13 +25,13 @@ showTable id project =
     case project.tables |> Dict.get id of
         Just table ->
             if project.layout.tables |> L.memberBy .id id then
-                ( project, T.send (toastInfo ("Table <b>" ++ TableId.show id ++ "</b> already shown")) )
+                ( project, T.send (toastInfo ("Table " ++ TableId.show id ++ " already shown")) )
 
             else
                 ( project |> performShowTable table, Cmd.batch [ observeTableSize id ] )
 
         Nothing ->
-            ( project, T.send (toastError ("Can't show table <b>" ++ TableId.show id ++ "</b>: not found")) )
+            ( project, T.send (toastError ("Can't show table " ++ TableId.show id ++ ": not found")) )
 
 
 showTables : List TableId -> Project -> ( Project, Cmd Msg )

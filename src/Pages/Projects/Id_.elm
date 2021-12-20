@@ -3,6 +3,7 @@ module Pages.Projects.Id_ exposing (Model, Msg, page)
 import Browser.Events
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast exposing (Content(..))
+import Conf
 import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
@@ -19,10 +20,11 @@ import Libs.Task as T
 import Models.Project.TableId as TableId
 import Page
 import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastSuccess)
+import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastError, toastSuccess)
+import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
-import Ports exposing (JsMsg(..))
+import Ports exposing (JsMsg(..), observeSize, observeTablesSize, trackJsonError)
 import Request
 import Shared
 import View exposing (View)
@@ -52,7 +54,7 @@ type alias Msg =
 
 init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init shared req =
-    ( { project = shared |> Shared.projects |> L.find (\p -> p.id == req.params.id)
+    ( { project = Nothing
       , navbar = { mobileMenuOpen = False, search = "" }
       , hoverTable = Nothing
       , hoverColumn = Nothing
@@ -63,7 +65,7 @@ init shared req =
       , toasts = []
       , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send (Noop "confirm init"), isOpen = False }
       }
-    , Cmd.none
+    , Cmd.batch (shared |> Shared.projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) [])
     )
 
 
@@ -79,6 +81,12 @@ update req msg model =
 
         SearchUpdated search ->
             ( { model | navbar = model.navbar |> (\n -> { n | search = search }) }, Cmd.none )
+
+        LoadProject project ->
+            ( { model | project = Just project }, Cmd.batch [ observeSize Conf.ids.erd, observeTablesSize (project.layout.tables |> List.map .id) ] )
+
+        InitializedTable id position ->
+            ( model |> setTableProps id (\t -> { t | position = position }), Cmd.none )
 
         ShowTable id ->
             model |> setProjectWithCmd (showTable id)
@@ -161,14 +169,42 @@ update req msg model =
         ConfirmAnswer answer cmd ->
             ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )
 
-        JsMessage (GotProjects ( _, projects )) ->
-            ( { model | project = projects |> L.find (\p -> p.id == req.params.id) }, Cmd.none )
-
-        JsMessage _ ->
-            ( model, Cmd.none )
+        JsMessage message ->
+            model |> handleJsMessage req message
 
         Noop text ->
             ( model, T.send (toastSuccess ("Noop: " ++ text)) )
+
+
+handleJsMessage : Request.With Params -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage req message model =
+    case message of
+        GotSizes sizes ->
+            model |> updateSizes sizes
+
+        GotProjects ( errors, projects ) ->
+            ( model, Cmd.batch ((projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) []) ++ (errors |> List.concatMap (\( name, err ) -> [ T.send (toastError ("Unable to read project <b>" ++ name ++ "</b>:<br>" ++ D.errorToHtml err)), trackJsonError "decode-project" err ]))) )
+
+        --GotLocalFile now projectId sourceId file content ->
+        --    -- send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment file.name) (localSource file) True Nothing now now) content))
+        --    ( model, T.send (Noop "GotLocalFile not handled") )
+        --
+        --GotRemoteFile now projectId sourceId url content sample ->
+        --    -- send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content))
+        --    ( model, T.send (Noop "GotRemoteFile not handled") )
+        --
+        --GotSourceId now sourceId src ref ->
+        --    -- send (SourceMsg (CreateSource (Source sourceId "User" UserDefined Array.empty Dict.empty [ Relation.virtual src ref sourceId ] True Nothing now now) "Relation added to newly create <b>User</b> source."))
+        --    ( model, T.send (Noop "GotSourceId not handled") )
+        --
+        --GotHotkey hotkey ->
+        --    -- Cmd.batch (handleHotkey model hotkey)
+        --    ( model, T.send (Noop "GotHotkey not handled") )
+        Error err ->
+            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message:<br>" ++ D.errorToHtml err)), trackJsonError "js-message" err ] )
+
+        _ ->
+            ( model, Cmd.none )
 
 
 
