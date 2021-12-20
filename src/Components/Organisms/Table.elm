@@ -12,7 +12,7 @@ import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, br, button, div, span, text)
 import Html.Styled.Attributes exposing (css, id, type_)
-import Html.Styled.Events exposing (onClick, onMouseEnter, onMouseLeave)
+import Html.Styled.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Styled.Keyed as Keyed
 import Libs.Bool as B
 import Libs.Html.Styled exposing (bText)
@@ -96,6 +96,7 @@ type alias Actions msg =
     , toggleSelected : Bool -> msg
     , toggleDropdown : HtmlId -> msg
     , toggleHiddenColumns : msg
+    , toggleColumn : String -> msg
     , showRelations : List Relation -> msg
     }
 
@@ -194,6 +195,7 @@ viewColumn model isLast column =
     div
         [ onMouseEnter (model.actions.toggleHoverColumn column.name)
         , onMouseLeave (model.actions.toggleHoverColumn column.name)
+        , onDoubleClick (model.actions.toggleColumn column.name)
         , css
             ([ Tw.flex, Tw.px_2, Tw.py_1, Tw.bg_white ]
                 ++ B.cond (isColumnHover model column) [ Color.text model.state.color L500, Color.bg model.state.color L50 ] [ Color.text Color.default L500 ]
@@ -401,6 +403,7 @@ sample =
         , toggleSelected = \_ -> logAction "selected"
         , toggleDropdown = \id -> logAction ("open " ++ id)
         , toggleHiddenColumns = logAction "hidden columns"
+        , toggleColumn = \col -> logAction ("toggle column: " ++ col)
         , showRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
         }
     }
@@ -422,6 +425,7 @@ doc =
                                 , toggleSelected = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , toggleDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 , toggleHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
+                                , toggleColumn = \col -> logAction ("toggle column: " ++ col)
                                 , showRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
                                 }
                         }

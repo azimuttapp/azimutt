@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, showTables, sortColumns)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverNextColumn, showColumn, showColumns, showTable, showTables, sortColumns)
 
 import Dict
 import Libs.Bool as B
@@ -10,13 +10,14 @@ import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Relation as Relation
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setLayout)
-import PagesComponents.Projects.Id_.Models exposing (Msg, toastError, toastInfo)
+import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
 import Ports exposing (observeTableSize, observeTablesSize)
 
 
@@ -69,6 +70,28 @@ hideTable id layout =
         | tables = layout.tables |> List.filter (\t -> not (t.id == id))
         , hiddenTables = ((layout.tables |> L.findBy .id id |> M.toList) ++ layout.hiddenTables) |> L.uniqueBy .id
     }
+
+
+showColumn : TableId -> ColumnName -> Layout -> Layout
+showColumn table column layout =
+    { layout | tables = layout.tables |> L.updateBy .id table (\t -> { t | columns = t.columns |> L.addAt column (t.columns |> List.length) }) }
+
+
+hideColumn : TableId -> ColumnName -> Layout -> Layout
+hideColumn table column layout =
+    { layout | tables = layout.tables |> L.updateBy .id table (\t -> { t | columns = t.columns |> List.filter (\c -> not (c == column)) }) }
+
+
+hoverNextColumn : TableId -> ColumnName -> Model -> Model
+hoverNextColumn table column model =
+    let
+        nextColumn : Maybe ColumnName
+        nextColumn =
+            model.project
+                |> Maybe.andThen (\p -> p.layout.tables |> L.findBy .id table)
+                |> Maybe.andThen (\t -> t.columns |> L.dropUntil (\c -> c == column) |> List.drop 1 |> List.head)
+    in
+    { model | hoverColumn = nextColumn |> Maybe.map (ColumnRef table) }
 
 
 showColumns : TableId -> String -> Project -> Project

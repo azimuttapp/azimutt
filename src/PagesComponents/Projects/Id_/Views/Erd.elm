@@ -7,6 +7,7 @@ import Either exposing (Either(..))
 import Html.Styled exposing (Html, div, main_)
 import Html.Styled.Attributes exposing (class, css, id)
 import Html.Styled.Keyed as Keyed
+import Libs.Bool as B
 import Libs.Dict as D
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Styled.Attributes exposing (onPointerDown)
@@ -149,6 +150,7 @@ viewTable model index table props domInfo tableRelations =
                 , toggleSelected = SelectTable table.id
                 , toggleDropdown = DropdownToggle
                 , toggleHiddenColumns = ToggleHiddenColumns table.id
+                , toggleColumn = \col -> { table = table.id, column = col } |> B.cond (props.columns |> L.has col) HideColumn ShowColumn
                 , showRelations =
                     \cols ->
                         case cols of

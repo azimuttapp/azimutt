@@ -53,6 +53,8 @@ type Msg
     | ShowTable TableId
     | ShowTables (List TableId)
     | HideTable TableId
+    | ShowColumn ColumnRef
+    | HideColumn ColumnRef
     | ShowColumns TableId String
     | HideColumns TableId String
     | ToggleHiddenColumns TableId

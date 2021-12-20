@@ -22,7 +22,7 @@ import Page
 import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastError, toastSuccess)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumns, hideTable, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverNextColumn, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..), observeSize, observeTablesSize, trackJsonError)
 import Request
@@ -96,6 +96,12 @@ update req msg model =
 
         HideTable id ->
             ( model |> setCurrentLayout (hideTable id), Cmd.none )
+
+        ShowColumn { table, column } ->
+            ( model |> setCurrentLayout (showColumn table column), Cmd.none )
+
+        HideColumn { table, column } ->
+            ( model |> setCurrentLayout (hideColumn table column) |> hoverNextColumn table column, Cmd.none )
 
         ShowColumns id kind ->
             ( model |> setProject (showColumns id kind), Cmd.none )
