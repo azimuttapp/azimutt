@@ -17,11 +17,12 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
-import Models.Project.TableId as TableId
 import Page
-import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), toastError, toastSuccess)
+import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), toastError, toastInfo, toastSuccess)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
+import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
+import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverNextColumn, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..), observeSize, observeTablesSize, trackJsonError)
@@ -58,6 +59,9 @@ init shared req =
       , navbar = { mobileMenuOpen = False, search = "" }
       , hoverTable = Nothing
       , hoverColumn = Nothing
+      , cursorMode = CursorSelect
+      , selectionBox = Nothing
+      , virtualRelation = Nothing
       , domInfos = Dict.empty
       , openedDropdown = ""
       , dragging = Nothing
@@ -145,17 +149,39 @@ update req msg model =
         FindPathMsg ->
             ( model, T.send (toastSuccess "FindPathMsg") )
 
+        CursorMode mode ->
+            ( { model | cursorMode = mode }, Cmd.none )
+
+        FitContent ->
+            ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
+
+        OnWheel event ->
+            ( model |> setCurrentLayout (setCanvas (handleWheel event)), Cmd.none )
+
+        Zoom delta ->
+            ( model |> setCurrentLayout (setCanvas (zoomCanvas model.domInfos delta)), Cmd.none )
+
         DropdownToggle id ->
             ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
 
         DragStart id pos ->
-            ( { model | dragging = Just { id = id, init = pos, last = pos } }, Cmd.none )
+            model.dragging
+                |> M.mapOrElse (\d -> ( model, T.send (toastInfo ("Already dragging " ++ d.id)) ))
+                    ( { id = id, init = pos, last = pos } |> (\d -> { model | dragging = Just d } |> handleDrag d False), Cmd.none )
 
         DragMove pos ->
-            ( { model | dragging = model.dragging |> Maybe.map (\d -> B.cond ((d.init |> Position.distance pos) > 10) { d | last = pos } { d | last = d.init }) }, Cmd.none )
+            ( model.dragging
+                |> Maybe.map (\d -> B.cond ((d.init |> Position.distance pos) > 10) { d | last = pos } { d | last = d.init })
+                |> M.mapOrElse (\d -> { model | dragging = Just d } |> handleDrag d False) model
+            , Cmd.none
+            )
 
-        DragEnd last ->
-            ( model.dragging |> M.mapOrElse (\d -> { model | dragging = Nothing } |> setTableProps (TableId.fromHtmlId d.id) (\t -> { t | position = t.position |> Position.add (last |> Position.sub d.init) })) model, Cmd.none )
+        DragEnd pos ->
+            ( model.dragging
+                |> Maybe.map (\d -> B.cond ((d.init |> Position.distance pos) > 10) { d | last = pos } { d | last = d.init })
+                |> M.mapOrElse (\d -> { model | dragging = Nothing } |> handleDrag d True) model
+            , Cmd.none
+            )
 
         ToastAdd millis toast ->
             model.toastIdx |> String.fromInt |> (\key -> ( { model | toastIdx = model.toastIdx + 1, toasts = { key = key, content = toast, isOpen = False } :: model.toasts }, T.sendAfter 1 (ToastShow millis key) ))

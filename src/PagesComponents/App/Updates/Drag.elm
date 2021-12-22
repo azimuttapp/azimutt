@@ -88,16 +88,10 @@ computeSelectedArea domInfos canvas dragState =
         erdPos : Position
         erdPos =
             domInfos |> Dict.get Conf.ids.erd |> M.mapOrElse .position (Position 0 0)
-
-        position : Position
-        position =
-            dragState.init |> Position.sub erdPos |> Position.sub canvas.position
-
-        size : Size
-        size =
-            Size (dragState.last.left - dragState.init.left) (dragState.last.top - dragState.init.top)
     in
-    Area position size |> Area.div canvas.zoom |> Area.normalize
+    Area.from dragState.init dragState.last
+        |> Area.move (erdPos |> Position.add canvas.position |> Position.negate)
+        |> Area.div canvas.zoom
 
 
 tableArea : TableProps -> Dict HtmlId DomInfo -> Area

@@ -1,11 +1,13 @@
-module PagesComponents.Projects.Id_.Models exposing (DragState, Model, Msg(..), NavbarModel, confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Model, Msg(..), NavbarModel, VirtualRelation, confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html.Styled exposing (Html)
+import Libs.Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
-import Libs.Models exposing (Millis)
+import Libs.Html.Events exposing (WheelEvent)
+import Libs.Models exposing (Millis, ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
@@ -24,6 +26,9 @@ type alias Model =
     , navbar : NavbarModel
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
+    , cursorMode : CursorMode
+    , selectionBox : Maybe Area
+    , virtualRelation : Maybe VirtualRelation
 
     -- global attrs
     , domInfos : Dict HtmlId DomInfo
@@ -39,6 +44,15 @@ type alias NavbarModel =
     { mobileMenuOpen : Bool
     , search : String
     }
+
+
+type alias VirtualRelation =
+    { src : Maybe ColumnRef, mouse : Position }
+
+
+type CursorMode
+    = CursorDrag
+    | CursorSelect
 
 
 type alias DragState =
@@ -69,6 +83,10 @@ type Msg
     | LayoutMsg
     | VirtualRelationMsg
     | FindPathMsg
+    | CursorMode CursorMode
+    | FitContent
+    | OnWheel WheelEvent
+    | Zoom ZoomDelta
       -- global messages
     | DropdownToggle HtmlId
     | DragStart DragId Position

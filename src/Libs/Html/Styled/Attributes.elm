@@ -1,4 +1,4 @@
-module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, onPointerDown, onPointerUp, role, track)
+module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, onPointerDown, onPointerDownPreventDefault, onPointerDownStopPropagation, onPointerUp, role, track)
 
 import Html.Events.Extra.Mouse as Mouse
 import Html.Events.Extra.Pointer as Pointer exposing (Event)
@@ -74,6 +74,16 @@ ariaOrientation text =
 onPointerDown : (Position -> msg) -> Attribute msg
 onPointerDown msg =
     Events.on "pointerdown" (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> msg))
+
+
+onPointerDownStopPropagation : (Position -> msg) -> Attribute msg
+onPointerDownStopPropagation msg =
+    Events.stopPropagationOn "pointerdown" (Mouse.eventDecoder |> Decode.map (\e -> ( e.pagePos |> Position.fromTuple |> msg, True )))
+
+
+onPointerDownPreventDefault : (Position -> msg) -> Attribute msg
+onPointerDownPreventDefault msg =
+    Events.preventDefaultOn "pointerdown" (Mouse.eventDecoder |> Decode.map (\e -> ( e.pagePos |> Position.fromTuple |> msg, True )))
 
 
 onPointerUp : (Event -> msg) -> Attribute msg

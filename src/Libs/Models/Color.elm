@@ -32,12 +32,12 @@ type alias RgbaColor =
 
 list : List Color
 list =
-    [ red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue, indigo, violet, purple, fuchsia, pink, rose ]
+    [ indigo, violet, purple, fuchsia, pink, rose, red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue ]
 
 
 all : List Color
 all =
-    list ++ [ slate, gray, zinc, neutral, stone ]
+    list ++ [ slate, gray, zinc, neutral, stone, white, black ]
 
 
 default : Color
@@ -137,7 +137,7 @@ violet =
 
 purple : Color
 purple =
-    { name = "purple", l50 = "#faf5ff", l100 = "#f3e8ff", l200 = "#d8b4fe", l300 = "#d8b4fe", l400 = "#c084fc", l500 = "#a855f7", l600 = "#9333ea", l700 = "#7e22ce", l800 = "#6b21a8", l900 = "#581c87" }
+    { name = "purple", l50 = "#faf5ff", l100 = "#f3e8ff", l200 = "#e9d5ff", l300 = "#d8b4fe", l400 = "#c084fc", l500 = "#a855f7", l600 = "#9333ea", l700 = "#7e22ce", l800 = "#6b21a8", l900 = "#581c87" }
 
 
 fuchsia : Color
@@ -153,6 +153,16 @@ pink =
 rose : Color
 rose =
     { name = "rose", l50 = "#fff1f2", l100 = "#ffe4e6", l200 = "#fecdd3", l300 = "#fda4af", l400 = "#fb7185", l500 = "#f43f5e", l600 = "#e11d48", l700 = "#be123c", l800 = "#9f1239", l900 = "#881337" }
+
+
+black : Color
+black =
+    { name = "black", l50 = "#000000", l100 = "#000000", l200 = "#000000", l300 = "#000000", l400 = "#000000", l500 = "#000000", l600 = "#000000", l700 = "#000000", l800 = "#000000", l900 = "#000000" }
+
+
+white : Color
+white =
+    { name = "white", l50 = "#ffffff", l100 = "#ffffff", l200 = "#ffffff", l300 = "#ffffff", l400 = "#ffffff", l500 = "#ffffff", l600 = "#ffffff", l700 = "#ffffff", l800 = "#ffffff", l900 = "#ffffff" }
 
 
 bg : Color -> TwColorLevel -> Style

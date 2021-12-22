@@ -197,7 +197,7 @@ viewColumn model isLast column =
         , onMouseLeave (model.actions.toggleHoverColumn column.name)
         , onDoubleClick (model.actions.toggleColumn column.name)
         , css
-            ([ Tw.flex, Tw.px_2, Tw.py_1, Tw.bg_white ]
+            ([ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.px_2, Tw.bg_white ]
                 ++ B.cond (isColumnHover model column) [ Color.text model.state.color L500, Color.bg model.state.color L50 ] [ Color.text Color.default L500 ]
                 ++ B.cond isLast [ Tw.rounded_b_lg ] []
             )
@@ -226,7 +226,7 @@ viewColumnIcon model column =
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Check [] |> Tooltip.top ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
-        div [ css [ Tw.w_6, Tw.h_6 ] ] []
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Empty [] ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg

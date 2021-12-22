@@ -1,4 +1,4 @@
-module Libs.Html.Events exposing (WheelEvent, onWheel, stopClick)
+module Libs.Html.Events exposing (WheelEvent, onWheel, stopClick, wheelEventDecoder)
 
 import Html exposing (Attribute)
 import Html.Events exposing (stopPropagationOn)
@@ -56,28 +56,29 @@ type alias WheelEvent =
 onWheel : (WheelEvent -> msg) -> Attribute msg
 onWheel callback =
     let
-        decoder : Decoder msg
-        decoder =
-            Decode.map3 WheelEvent
-                (Decode.map3 (\x y z -> { x = x, y = y, z = z })
-                    (Decode.field "deltaX" Decode.float)
-                    (Decode.field "deltaY" Decode.float)
-                    (Decode.field "deltaZ" Decode.float)
-                )
-                (Decode.map2 (\x y -> { x = x, y = y })
-                    (Decode.field "pageX" Decode.float)
-                    (Decode.field "pageY" Decode.float)
-                )
-                (Decode.map4 (\ctrl alt shift meta -> { ctrl = ctrl, alt = alt, shift = shift, meta = meta })
-                    (Decode.field "ctrlKey" Decode.bool)
-                    (Decode.field "altKey" Decode.bool)
-                    (Decode.field "shiftKey" Decode.bool)
-                    (Decode.field "metaKey" Decode.bool)
-                )
-                |> Decode.map callback
-
         preventDefaultAndStopPropagation : msg -> { message : msg, stopPropagation : Bool, preventDefault : Bool }
         preventDefaultAndStopPropagation msg =
             { message = msg, stopPropagation = True, preventDefault = True }
     in
-    Html.Events.custom "wheel" (Decode.map preventDefaultAndStopPropagation decoder)
+    Html.Events.custom "wheel" (Decode.map preventDefaultAndStopPropagation (wheelEventDecoder callback))
+
+
+wheelEventDecoder : (WheelEvent -> msg) -> Decoder msg
+wheelEventDecoder callback =
+    Decode.map3 WheelEvent
+        (Decode.map3 (\x y z -> { x = x, y = y, z = z })
+            (Decode.field "deltaX" Decode.float)
+            (Decode.field "deltaY" Decode.float)
+            (Decode.field "deltaZ" Decode.float)
+        )
+        (Decode.map2 (\x y -> { x = x, y = y })
+            (Decode.field "pageX" Decode.float)
+            (Decode.field "pageY" Decode.float)
+        )
+        (Decode.map4 (\ctrl alt shift meta -> { ctrl = ctrl, alt = alt, shift = shift, meta = meta })
+            (Decode.field "ctrlKey" Decode.bool)
+            (Decode.field "altKey" Decode.bool)
+            (Decode.field "shiftKey" Decode.bool)
+            (Decode.field "metaKey" Decode.bool)
+        )
+        |> Decode.map callback

@@ -15,6 +15,7 @@ import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), T
 import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
+import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 import PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Shared exposing (Confirm, StoredProjects(..))
@@ -42,6 +43,7 @@ viewApp theme model storedProjects project =
     div []
         [ viewNavbar theme model.openedDropdown storedProjects project model.navbar
         , viewErd theme model project
+        , viewCommands theme model.openedDropdown model.cursorMode project.layout.canvas
         ]
 
 

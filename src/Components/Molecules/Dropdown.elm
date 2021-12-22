@@ -4,16 +4,15 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Styles as Styles
 import Css
-import Dict exposing (Dict)
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
-import ElmBook.Actions as Actions
+import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, button, div, text)
 import Html.Styled.Attributes exposing (class, css, href, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick)
-import Libs.Dict as D
+import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -29,6 +28,8 @@ type alias Model =
 type Direction
     = BottomRight
     | BottomLeft
+    | TopRight
+    | TopLeft
 
 
 type alias MenuItem msg =
@@ -54,14 +55,20 @@ dropdown model elt content =
         direction =
             case model.direction of
                 BottomRight ->
-                    [ Tw.left_0, Tw.origin_top_left ]
+                    [ Tw.origin_top_left, Tw.left_0, Tw.top_full, Tw.mt_2 ]
 
                 BottomLeft ->
-                    [ Tw.right_0, Tw.origin_top_right ]
+                    [ Tw.origin_top_right, Tw.right_0, Tw.top_full, Tw.mt_2 ]
+
+                TopRight ->
+                    [ Tw.origin_bottom_left, Tw.left_0, Tw.bottom_full, Tw.mb_2 ]
+
+                TopLeft ->
+                    [ Tw.origin_bottom_right, Tw.right_0, Tw.bottom_full, Tw.mb_2 ]
     in
     div [ css [ Tw.relative, Tw.inline_block, Tw.text_left ] ]
         [ elt model
-        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css ([ Tw.mt_2 ] ++ menuStyles ++ direction ++ dropdownMenu) ]
+        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css (menuStyles ++ direction ++ dropdownMenu) ]
             [ content model
             ]
         ]
@@ -130,12 +137,12 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { isOpen : Dict String Bool }
+    { opened : String }
 
 
 initDocState : DocState
 initDocState =
-    { isOpen = Dict.empty }
+    { opened = "" }
 
 
 updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
@@ -143,13 +150,13 @@ updateDocState transform =
     Actions.updateState (\s -> { s | dropdownDocState = s.dropdownDocState |> transform })
 
 
-component : String -> (Bool -> (Bool -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Html msg )
+component : String -> (String -> (String -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Html msg )
 component name buildComponent =
     ( name
     , \{ dropdownDocState } ->
         buildComponent
-            (dropdownDocState.isOpen |> D.getOrElse name False)
-            (\isOpen -> updateDocState (\s -> { s | isOpen = s.isOpen |> Dict.insert name isOpen }))
+            dropdownDocState.opened
+            (\id -> updateDocState (\s -> { s | opened = B.cond (s.opened == id) "" id }))
     )
 
 
@@ -157,17 +164,42 @@ doc : Theme -> Chapter (SharedDocState x)
 doc theme =
     Chapter.chapter "Dropdown"
         |> Chapter.renderStatefulComponentList
-            [ component "simple"
-                (\isOpen setIsOpen ->
-                    dropdown { id = "menu-button", direction = BottomRight, isOpen = isOpen }
-                        (\model -> Button.white3 theme.color [ id model.id, ariaExpanded True, ariaHaspopup True, onClick (setIsOpen (not isOpen)) ] [ text "Options", Icon.solid ChevronDown [] ])
+            [ component "dropdown"
+                (\opened toggleOpen ->
+                    dropdown { id = "dropdown", direction = BottomRight, isOpen = opened == "dropdown" }
+                        (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown [] ])
+                        (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                )
+            , component "item styles"
+                (\opened toggleOpen ->
+                    dropdown { id = "styles", direction = BottomRight, isOpen = opened == "styles" }
+                        (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown [] ])
                         (\_ ->
                             div []
-                                [ a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-0" ] [ text "Account settings" ]
-                                , a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-1" ] [ text "Support" ]
-                                , a [ href "#", css [ Tw.text_gray_700, Tw.block, Tw.px_4, Tw.py_2, Tw.text_sm, Css.hover [ Tw.bg_gray_100, Tw.text_gray_900 ] ], role "menuitem", tabindex -1, id "menu-item-2" ] [ text "License" ]
+                                [ btn (logAction "btn") [ text "btn" ]
+                                , btnDisabled [ text "btnDisabled" ]
+                                , link { url = "#", text = "link" }
+                                , submenuButton { label = "submenuButton Right", action = Right (logAction "submenuButton Right") }
+                                , submenuButton { label = "submenuButton Left", action = Left ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label })) }
                                 ]
                         )
+                )
+            , component "directions"
+                (\opened toggleOpen ->
+                    div [ css [ Tw.flex, Tw.space_x_3, Tw.neg_ml_3 ] ]
+                        [ dropdown { id = "BottomRight", direction = BottomRight, isOpen = opened == "BottomRight" }
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "BottomRight", Icon.solid ChevronDown [] ])
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                        , dropdown { id = "BottomLeft", direction = BottomLeft, isOpen = opened == "BottomLeft" }
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "BottomLeft", Icon.solid ChevronDown [] ])
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                        , dropdown { id = "TopRight", direction = TopRight, isOpen = opened == "TopRight" }
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "TopRight", Icon.solid ChevronDown [] ])
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                        , dropdown { id = "TopLeft", direction = TopLeft, isOpen = opened == "TopLeft" }
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "TopLeft", Icon.solid ChevronDown [] ])
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                        ]
                 )
             , ( "global styles", \_ -> div [] [ Styles.global, text "Global styles are needed for tooltip reveal" ] )
             ]

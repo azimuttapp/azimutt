@@ -62,6 +62,7 @@ ids :
     , menu : HtmlId
     , settings : HtmlId
     , erd : HtmlId
+    , selectionBox : HtmlId
     , projectSwitchModal : HtmlId
     , findPathModal : HtmlId
     , newLayoutModal : HtmlId
@@ -76,6 +77,7 @@ ids =
     , menu = "menu"
     , settings = "settings"
     , erd = "erd"
+    , selectionBox = "selection-box"
     , projectSwitchModal = "project-switch-modal"
     , findPathModal = "find-path-modal"
     , newLayoutModal = "new-layout-modal"

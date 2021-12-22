@@ -9,7 +9,7 @@ import Css
 import Dict
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, img, nav, span, text)
-import Html.Styled.Attributes exposing (alt, css, height, href, id, src, tabindex, type_, width)
+import Html.Styled.Attributes exposing (alt, class, css, height, href, id, src, tabindex, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
@@ -46,7 +46,7 @@ viewNavbar theme openedDropdown storedProjects project model =
             , { action = FindPathMsg, text = "Find path between tables", hotkey = Just "find-path" }
             ]
     in
-    nav [ css [ TwColor.render Bg theme.color L600 ] ]
+    nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, TwColor.render Bg theme.color L600 ] ]
         [ div [ css [ Tw.mx_auto, Tw.px_2, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_4 ] ] ]
             [ div [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Tw.h_16 ] ]
                 [ div [ css [ Tw.flex, Tw.items_center, Tw.px_2, Bp.lg [ Tw.px_0 ] ] ]

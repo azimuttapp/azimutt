@@ -4,18 +4,22 @@ import Components.Organisms.Table as Table
 import Conf
 import Dict exposing (Dict)
 import Either exposing (Either(..))
-import Html.Styled exposing (Html, div, main_)
-import Html.Styled.Attributes exposing (class, css, id)
+import Html.Styled exposing (Attribute, Html, div, main_)
+import Html.Styled.Attributes exposing (class, classList, css, id)
 import Html.Styled.Keyed as Keyed
+import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Dict as D
 import Libs.DomInfo exposing (DomInfo)
-import Libs.Html.Styled.Attributes exposing (onPointerDown)
+import Libs.Html.Styled.Attributes exposing (onPointerDownStopPropagation)
+import Libs.Html.Styled.Events exposing (onWheel)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Position exposing (Position)
 import Libs.Models.Theme exposing (Theme)
+import Libs.Models.TwColor exposing (TwColorLevel(..))
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
 import Libs.Tailwind.Utilities as Tu
@@ -30,13 +34,17 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull as RelationFull exposing (RelationFull)
-import PagesComponents.Projects.Id_.Models exposing (DragState, Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation)
+import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import Tailwind.Utilities as Tw
 
 
 type alias Model x =
     { x
-        | domInfos : Dict HtmlId DomInfo
+        | cursorMode : CursorMode
+        , selectionBox : Maybe Area
+        , virtualRelation : Maybe VirtualRelation
+        , domInfos : Dict HtmlId DomInfo
         , openedDropdown : HtmlId
         , dragging : Maybe DragState
         , hoverTable : Maybe TableId
@@ -60,28 +68,43 @@ viewErd _ model project =
             project.relations
                 |> List.filter (\r -> Dict.member r.src.table layoutTablesDict || Dict.member r.ref.table layoutTablesDict)
                 |> List.filterMap (buildRelationFull project.tables layoutTablesDict layoutTablesDictSize model.domInfos)
+
+        position : Position
+        position =
+            project.layout.canvas.position |> (\pos -> model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> pos |> Drag.move d 1) pos)
     in
-    main_ [ class "erd", id Conf.ids.erd ]
-        [ div [ class "canvas" ]
-            [ viewTables model project.tables project.layout.tables shownRelations
+    main_
+        [ class "tw-erd"
+        , classList
+            [ ( "tw-cursor-hand", model.cursorMode == CursorDrag && model.dragging == Nothing && model.virtualRelation == Nothing )
+            , ( "tw-cursor-hand-drag", model.cursorMode == CursorDrag && model.dragging /= Nothing && model.virtualRelation == Nothing )
+            , ( "tw-cursor-cross", model.virtualRelation /= Nothing )
+            ]
+        , id Conf.ids.erd
+        , onWheel OnWheel
+        , onPointerDownStopPropagation (DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        ]
+        [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y position.left position.top "px", Tu.scale project.layout.canvas.zoom ] ]
+            [ viewTables model project project.tables project.layout.tables shownRelations
+            , model.selectionBox |> M.mapOrElse viewSelectionBox (div [] [])
             ]
         ]
 
 
-viewTables : Model x -> Dict TableId Table -> List TableProps -> List RelationFull -> Html Msg
-viewTables model tables layout relations =
+viewTables : Model x -> Project -> Dict TableId Table -> List TableProps -> List RelationFull -> Html Msg
+viewTables model project tables layout relations =
     Keyed.node "div"
         [ class "tables" ]
         (layout
             |> List.reverse
             |> L.filterZip (\p -> tables |> Dict.get p.id)
             |> L.zipWith (\( _, table ) -> ( model.domInfos |> Dict.get (TableId.toHtmlId table.id), relations |> List.filter (RelationFull.hasTableLink table.id) ))
-            |> List.indexedMap (\i ( ( props, table ), ( domInfos, tableRelations ) ) -> ( TableId.toString table.id, viewTable model i table props domInfos tableRelations ))
+            |> List.indexedMap (\i ( ( props, table ), ( domInfos, tableRelations ) ) -> ( TableId.toString table.id, viewTable model project i table props domInfos tableRelations ))
         )
 
 
-viewTable : Model x -> Int -> Table -> TableProps -> Maybe DomInfo -> List RelationFull -> Html Msg
-viewTable model index table props domInfo tableRelations =
+viewTable : Model x -> Project -> Int -> Table -> TableProps -> Maybe DomInfo -> List RelationFull -> Html Msg
+viewTable model project index table props domInfo tableRelations =
     let
         tableId : HtmlId
         tableId =
@@ -89,16 +112,17 @@ viewTable model index table props domInfo tableRelations =
 
         position : Position
         position =
-            props.position |> Position.add (model.dragging |> M.filter (\d -> d.id == tableId) |> M.mapOrElse (\d -> d.last |> Position.sub d.init) (Position 0 0))
+            model.dragging |> M.filter (\d -> d.id == tableId) |> M.mapOrElse (\d -> props.position |> Drag.move d project.layout.canvas.zoom) props.position
 
         columns : Ned ColumnName Table.Column
         columns =
             table.columns |> Ned.map (\_ col -> buildColumn tableRelations table col)
+
+        drag : List (Attribute Msg)
+        drag =
+            B.cond (model.cursorMode == CursorDrag) [] [ onPointerDownStopPropagation (DragStart tableId) ]
     in
-    div
-        [ onPointerDown (DragStart tableId)
-        , css ([ Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px" ] ++ (domInfo |> M.mapOrElse (\_ -> []) [ Tw.invisible ]))
-        ]
+    div (drag ++ [ css ([ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px" ] ++ (domInfo |> M.mapOrElse (\_ -> []) [ Tw.invisible ])) ])
         [ Table.table
             { id = tableId
             , ref = { schema = table.schema, table = table.name }
@@ -165,6 +189,28 @@ viewTable model index table props domInfo tableRelations =
                 }
             }
         ]
+
+
+viewSelectionBox : Area -> Html Msg
+viewSelectionBox area =
+    div
+        [ class "tw-selection-area"
+        , css
+            [ Tw.transform
+            , Tu.translate_x_y area.position.left area.position.top "px"
+            , Tu.w area.size.width "px"
+            , Tu.h area.size.height "px"
+            , Color.border Color.teal L400
+            , Tw.border_2
+            , Color.bg Color.teal L400
+            , Tw.bg_opacity_25
+            ]
+        ]
+        []
+
+
+
+-- HELPERS
 
 
 buildColumn : List RelationFull -> Table -> Column -> Table.Column

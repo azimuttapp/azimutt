@@ -34,8 +34,9 @@ import ElmBook.ComponentOptions
 import ElmBook.ElmCSS as ElmCSS
 import ElmBook.StatefulOptions
 import ElmBook.ThemeOptions
-import Html.Styled exposing (Html, div, img, table, td, text, th, tr)
+import Html.Styled exposing (Html, img, table, td, text, th, tr)
 import Html.Styled.Attributes exposing (alt, css, src, style)
+import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..))
 import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 
@@ -96,16 +97,27 @@ work in progress
 colorsDoc : ElmCSS.Chapter x
 colorsDoc =
     Chapter.chapter "Colors"
-        |> Chapter.renderComponent
-            (div []
-                [ table []
+        |> Chapter.renderComponentList
+            [ ( "Color"
+              , table []
                     (tr [] (th [] [] :: (TwColor.levels |> List.map (\l -> th [] [ text (TwColor.levelToString l) ])))
-                        :: (TwColor.colors |> List.map (\c -> tr [] (th [] [ text (TwColor.colorToString c) ] :: (TwColor.levels |> List.map (viewColorCell c)))))
+                        :: (Color.all |> List.map (\c -> tr [] (th [] [ text c.name ] :: (TwColor.levels |> List.map (viewColorCell c)))))
                     )
-                ]
-            )
+              )
+            , ( "TwColor"
+              , table []
+                    (tr [] (th [] [] :: (TwColor.levels |> List.map (\l -> th [] [ text (TwColor.levelToString l) ])))
+                        :: (TwColor.colors |> List.map (\c -> tr [] (th [] [ text (TwColor.colorToString c) ] :: (TwColor.levels |> List.map (viewTwColorCell c)))))
+                    )
+              )
+            ]
 
 
-viewColorCell : TwColor -> TwColorLevel -> Html msg
+viewColorCell : Color -> TwColorLevel -> Html msg
 viewColorCell c l =
+    td [ css [ p_3, Color.bg c l ] ] [ text (Color.hex l c) ]
+
+
+viewTwColorCell : TwColor -> TwColorLevel -> Html msg
+viewTwColorCell c l =
     td [ style "background-color" (TwColor.toHex l c), css [ p_3 ] ] [ text (TwColor.toHex l c) ]
