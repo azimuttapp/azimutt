@@ -11,7 +11,7 @@ import Html.Styled exposing (Html, a, button, div, h1, img, main_, nav, p, span,
 import Html.Styled.Attributes exposing (alt, css, href, src, type_)
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel)
 import Libs.Models exposing (Image)
-import Libs.Models.TwColor exposing (TwColor(..))
+import Libs.Models.Color as Color
 import Tailwind.Breakpoints exposing (lg, md, sm, xl)
 import Tailwind.Utilities exposing (absolute, bg_blue_600, bg_blue_800, bg_gradient_to_r, bg_gray_100, bg_gray_50, bg_white, block, border, border_transparent, bottom_0, flex, flex_1, font_extrabold, font_medium, from_green_200, gap_5, grid_cols_1, h_10, h_1over2, h_8, h_full, hidden, inline, inline_flex, inline_grid, inset_0, inset_x_0, inset_y_0, items_center, justify_between, justify_center, left_0, left_full, max_w_3xl, max_w_7xl, max_w_lg, max_w_md, mix_blend_multiply, mt_10, mt_16, mt_24, mt_3, mt_5, mt_6, mt_8, mx_auto, neg_mr_2, neg_translate_x_1over2, neg_translate_x_1over4, neg_translate_y_1over2, neg_translate_y_3over4, object_cover, origin_top_right, outline_none, overflow_hidden, p_2, pb_16, pb_24, pt_4, pt_6, px_10, px_4, px_5, px_6, px_8, py_16, py_24, py_3, py_32, py_4, relative, right_full, ring_1, ring_2, ring_black, ring_indigo_500, ring_inset, ring_opacity_5, rounded_2xl, rounded_lg, rounded_md, shadow, shadow_md, shadow_xl, space_y_0, space_y_4, sr_only, text_4xl, text_5xl, text_6xl, text_base, text_blue_600, text_center, text_gray_400, text_gray_500, text_gray_900, text_indigo_100, text_lg, text_white, text_xl, to_indigo_700, top_0, tracking_tight, transform, transition, translate_x_1over2, translate_x_1over4, translate_y_1over4, w_auto, w_full)
 
@@ -121,7 +121,7 @@ docModel =
     { bg = { src = "https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=2830&q=80&sat=-100", alt = "People working on laptops" }
     , title = "Take control of your customer support"
     , content = [ text "Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo. Elit sunt amet fugiat veniam occaecat fugiat aliqua." ]
-    , cta = Link.white5 Indigo [ href "#" ] [ text "Get started" ]
+    , cta = Link.white5 Color.indigo [ href "#" ] [ text "Get started" ]
     }
 
 

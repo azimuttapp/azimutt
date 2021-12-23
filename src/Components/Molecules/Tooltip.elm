@@ -7,7 +7,7 @@ import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, span, text)
 import Html.Styled.Attributes exposing (class, css)
-import Libs.Models.TwColor exposing (TwColor(..))
+import Libs.Models.Color as Color
 import Tailwind.Utilities as Tw
 
 
@@ -35,6 +35,6 @@ doc : Chapter x
 doc =
     Chapter.chapter "Tooltip"
         |> Chapter.renderComponentList
-            [ ( "tooltip", Button.primary3 Indigo [] [ text "Top tooltip" ] |> top "A top aligned tooltip." )
+            [ ( "tooltip", Button.primary3 Color.indigo [] [ text "Top tooltip" ] |> top "A top aligned tooltip." )
             , ( "global styles", div [] [ Styles.global, text "Global styles are needed for tooltip reveal" ] )
             ]

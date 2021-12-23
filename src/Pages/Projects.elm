@@ -5,7 +5,7 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Gen.Params.Projects exposing (Params)
 import Html.Styled as Styled exposing (text)
 import Libs.Bool as B
-import Libs.Models.TwColor exposing (TwColor(..))
+import Libs.Models.Color as Color
 import Libs.Task as T
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
@@ -43,7 +43,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
-      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
+      , confirm = { color = Color.red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
       , toastCpt = 0
       , toasts = []
       }

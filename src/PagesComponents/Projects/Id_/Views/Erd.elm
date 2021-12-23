@@ -19,7 +19,6 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor exposing (TwColorLevel(..))
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
 import Libs.Tailwind.Utilities as Tu
@@ -200,9 +199,9 @@ viewSelectionBox area =
             , Tu.translate_x_y area.position.left area.position.top "px"
             , Tu.w area.size.width "px"
             , Tu.h area.size.height "px"
-            , Color.border Color.teal L400
+            , Color.border Color.teal 400
             , Tw.border_2
-            , Color.bg Color.teal L400
+            , Color.bg Color.teal 400
             , Tw.bg_opacity_25
             ]
         ]

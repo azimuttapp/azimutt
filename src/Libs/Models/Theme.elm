@@ -1,7 +1,7 @@
 module Libs.Models.Theme exposing (Theme)
 
-import Libs.Models.TwColor exposing (TwColor)
+import Libs.Models.Color exposing (Color)
 
 
 type alias Theme =
-    { color : TwColor }
+    { color : Color }

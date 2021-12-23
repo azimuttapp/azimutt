@@ -21,7 +21,6 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.TwColor exposing (TwColorLevel(..))
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Tailwind.Utilities as Tw
@@ -110,7 +109,7 @@ table model =
         , onPointerUp (\e -> model.actions.toggleSelected e.pointer.keys.ctrl)
         , css
             ([ Tw.inline_block, Tw.bg_white, Tw.rounded_lg, Tw.cursor_pointer, B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md ]
-                ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color L500 ] []
+                ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ] []
                 ++ B.cond model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] []
             )
         ]
@@ -136,10 +135,10 @@ viewHeader model =
             , Tw.py_1
             , Tw.rounded_t_lg
             , Tw.border_t_8
-            , Color.border model.state.color L500
+            , Color.border model.state.color 500
             , Tw.border_b
-            , Color.border_b Color.default L200
-            , Color.bg (B.cond (isTableHover model) model.state.color Color.default) L50
+            , Color.border_b Color.default 200
+            , Color.bg (B.cond (isTableHover model) model.state.color Color.default) 50
             ]
         ]
         [ if model.isView then
@@ -198,7 +197,7 @@ viewColumn model isLast column =
         , onDoubleClick (model.actions.toggleColumn column.name)
         , css
             ([ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.px_2, Tw.bg_white ]
-                ++ B.cond (isColumnHover model column) [ Color.text model.state.color L500, Color.bg model.state.color L50 ] [ Color.text Color.default L500 ]
+                ++ B.cond (isColumnHover model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]
                 ++ B.cond isLast [ Tw.rounded_b_lg ] []
             )
         ]

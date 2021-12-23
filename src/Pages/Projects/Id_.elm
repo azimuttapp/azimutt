@@ -13,9 +13,9 @@ import Libs.Bool as B
 import Libs.Json.Decode as D
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
-import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Page
 import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
@@ -67,7 +67,7 @@ init shared req =
       , dragging = Nothing
       , toastIdx = 0
       , toasts = []
-      , confirm = { color = Red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send (Noop "confirm init"), isOpen = False }
+      , confirm = { color = Color.red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send (Noop "confirm init"), isOpen = False }
       }
     , Cmd.batch (shared |> Shared.projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) [])
     )

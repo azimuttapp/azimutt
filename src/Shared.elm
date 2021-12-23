@@ -3,8 +3,8 @@ module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, pr
 import Components.Atoms.Icon exposing (Icon)
 import Html.Styled exposing (Html)
 import Libs.Json.Decode as D
+import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor exposing (TwColor(..))
 import Models.Project exposing (Project)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
@@ -25,7 +25,7 @@ type alias Model =
 
 
 type alias Confirm msg =
-    { color : TwColor
+    { color : Color
     , icon : Icon
     , title : String
     , message : Html msg
@@ -51,7 +51,7 @@ init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
-      , theme = { color = Indigo }
+      , theme = { color = Color.indigo }
       , projects = Loading
       }
     , Cmd.batch

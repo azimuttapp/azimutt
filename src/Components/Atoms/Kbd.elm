@@ -4,12 +4,12 @@ import Components.Atoms.Badge as Badge
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Attribute, Html, text)
-import Libs.Models.TwColor exposing (TwColor(..))
+import Libs.Models.Color as Color
 
 
 badge : List (Attribute msg) -> List String -> Html msg
 badge attrs keys =
-    Badge.rounded Gray attrs [ text (keys |> String.join " + ") ]
+    Badge.rounded Color.gray attrs [ text (keys |> String.join " + ") ]
 
 
 

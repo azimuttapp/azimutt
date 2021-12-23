@@ -12,8 +12,8 @@ import Html.Styled.Attributes exposing (css)
 import Html.Styled.Events exposing (onClick)
 import Html.Styled.Keyed as Keyed
 import Libs.Html.Styled.Attributes exposing (ariaLive)
+import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.Tailwind.Utilities as Tu
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
@@ -28,7 +28,7 @@ type Content
 
 
 type alias SimpleModel =
-    { color : TwColor
+    { color : Color
     , icon : Icon
     , title : String
     , message : String
@@ -46,13 +46,13 @@ simple : Theme -> msg -> Bool -> SimpleModel -> Html msg
 simple theme onClose isOpen model =
     toast
         (div [ css [ Tw.flex, Tw.items_start ] ]
-            [ div [ css [ Tw.flex_shrink_0 ] ] [ Icon.outline model.icon [ TwColor.render Text model.color L400 ] ]
+            [ div [ css [ Tw.flex_shrink_0 ] ] [ Icon.outline model.icon [ Color.text model.color 400 ] ]
             , div [ css [ Tw.ml_3, Tw.w_0, Tw.flex_1, Tw.pt_0_dot_5 ] ]
                 [ p [ css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_900 ] ] [ text model.title ]
                 , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text model.message ]
                 ]
             , div [ css [ Tw.ml_4, Tw.flex_shrink_0, Tw.flex ] ]
-                [ button [ onClick onClose, css [ Tw.bg_white, Tw.rounded_md, Tw.inline_flex, Tw.text_gray_400, Tu.focusRing ( theme.color, L500 ) ( White, L500 ), Css.hover [ Tw.text_gray_500 ] ] ]
+                [ button [ onClick onClose, css [ Tw.bg_white, Tw.rounded_md, Tw.inline_flex, Tw.text_gray_400, Tu.focusRing ( theme.color, 500 ) ( Color.white, 500 ), Css.hover [ Tw.text_gray_500 ] ] ]
                     [ span [ css [ Tw.sr_only ] ] [ text "Close" ]
                     , Icon.solid X []
                     ]
@@ -130,14 +130,14 @@ doc : Theme -> Chapter (SharedDocState x)
 doc theme =
     Chapter.chapter "Toast"
         |> Chapter.renderStatefulComponentList
-            [ ( "simple", \_ -> simple theme noop True { color = Green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
+            [ ( "simple", \_ -> simple theme noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
             , ( "add toasts"
               , \{ toastDocState } ->
                     Button.primary3 theme.color
                         [ onClick
                             (addToast
                                 (Simple
-                                    { color = Green
+                                    { color = Color.green
                                     , icon = CheckCircle
                                     , title = (toastDocState.index |> String.fromInt) ++ ". Successfully saved!"
                                     , message = "Anyone with a link can now view this file."

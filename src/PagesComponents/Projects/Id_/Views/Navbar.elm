@@ -16,9 +16,9 @@ import Libs.Hotkey as Hotkey
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaExpanded, role)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
@@ -46,7 +46,7 @@ viewNavbar theme openedDropdown storedProjects project model =
             , { action = FindPathMsg, text = "Find path between tables", hotkey = Just "find-path" }
             ]
     in
-    nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, TwColor.render Bg theme.color L600 ] ]
+    nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, Color.bg theme.color 600 ] ]
         [ div [ css [ Tw.mx_auto, Tw.px_2, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_4 ] ] ]
             [ div [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Tw.h_16 ] ]
                 [ div [ css [ Tw.flex, Tw.items_center, Tw.px_2, Bp.lg [ Tw.px_0 ] ] ]
@@ -81,7 +81,7 @@ viewNavbarBrand =
 
 viewNavbarHelp : Theme -> Html msg
 viewNavbarHelp theme =
-    div [ css [ Tw.ml_3 ] ] [ Icon.solid QuestionMarkCircle [ TwColor.render Text theme.color L300 ] ]
+    div [ css [ Tw.ml_3 ] ] [ Icon.solid QuestionMarkCircle [ Color.text theme.color 300 ] ]
 
 
 viewNavbarResetLayout : Theme -> Maybe LayoutName -> Layout -> Html Msg
@@ -97,7 +97,7 @@ viewNavbarFeatures : Theme -> List (Btn Msg) -> HtmlId -> Html Msg
 viewNavbarFeatures theme features openedDropdown =
     Dropdown.dropdown { id = "features", direction = BottomLeft, isOpen = openedDropdown == "features" }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, TwColor.render Bg theme.color L600, Tw.p_1, Tw.rounded_full, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), Css.hover [ Tw.text_white ] ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, Color.bg theme.color 600, Tw.p_1, Tw.rounded_full, Color.text theme.color 200, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
                 [ span [ css [ Tw.sr_only ] ] [ text "View features" ]
                 , Icon.outline LightningBolt []
                 , Icon.solid (B.cond (openedDropdown == m.id) ChevronUp ChevronDown) []
@@ -131,7 +131,7 @@ hotkey id =
 
 viewNavbarSettings : Theme -> Html Msg
 viewNavbarSettings theme =
-    button [ type_ "button", onClick (Noop "open settings"), css [ Tw.ml_3, Tw.flex_shrink_0, TwColor.render Bg theme.color L600, Tw.p_1, Tw.rounded_full, TwColor.render Text theme.color L200, Tu.focusRing ( White, L600 ) ( theme.color, L600 ), Css.hover [ Tw.text_white ] ] ]
+    button [ type_ "button", onClick (Noop "open settings"), css [ Tw.ml_3, Tw.flex_shrink_0, Color.bg theme.color 600, Tw.p_1, Tw.rounded_full, Color.text theme.color 200, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
         [ span [ css [ Tw.sr_only ] ] [ text "View settings" ]
         , Icon.outline Cog []
         ]
@@ -140,7 +140,7 @@ viewNavbarSettings theme =
 navbarMobileButton : Theme -> Bool -> Html Msg
 navbarMobileButton theme isOpen =
     div [ css [ Tw.flex, Bp.lg [ Tw.hidden ] ] ]
-        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_2, Tw.rounded_md, TwColor.render Text theme.color L200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_white ], Css.hover [ Tw.text_white, TwColor.render Bg theme.color L500 ] ] ]
+        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_2, Tw.rounded_md, Color.text theme.color 200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_white ], Css.hover [ Tw.text_white, Color.bg theme.color 500 ] ] ]
             [ span [ css [ Tw.sr_only ] ] [ text "Open main menu" ]
             , Icon.outline Menu [ B.cond isOpen Tw.hidden Tw.block ]
             , Icon.outline X [ B.cond isOpen Tw.block Tw.hidden ]
@@ -157,11 +157,11 @@ viewNavbarMobileMenu theme features usedLayout layout isOpen =
 
         groupBorder : List Css.Style
         groupBorder =
-            [ Tw.border_t, TwColor.render Border theme.color L500 ]
+            [ Tw.border_t, Color.border theme.color 500 ]
 
         btnStyle : List Css.Style
         btnStyle =
-            [ TwColor.render Text theme.color L100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
+            [ Color.text theme.color 100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ Color.bg theme.color 500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
     in
     div [ css ([ Bp.lg [ Tw.hidden ] ] ++ B.cond isOpen [] [ Tw.hidden ]), id "mobile-menu" ]
         ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvasMsg, css btnStyle ] [ text "Reset canvas" ] ] []

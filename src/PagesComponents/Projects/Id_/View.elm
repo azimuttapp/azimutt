@@ -10,8 +10,8 @@ import Gen.Route as Route
 import Html.Styled exposing (Html, div)
 import Html.Styled.Attributes exposing (css)
 import Libs.Maybe as M
+import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
@@ -50,7 +50,7 @@ viewApp theme model storedProjects project =
 viewLoader : Theme -> Html msg
 viewLoader theme =
     div [ css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.h_screen ] ]
-        [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, TwColor.render Border theme.color L500 ] ] []
+        [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, Color.border theme.color 500 ] ] []
         ]
 
 

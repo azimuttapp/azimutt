@@ -16,7 +16,7 @@ import Html.Styled.Attributes exposing (css, href, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText, extLink)
 import Libs.Html.Styled.Attributes exposing (track)
-import Libs.Models.TwColor exposing (TwColor(..))
+import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
 import Shared exposing (StoredProjects(..))
 import Tailwind.Utilities as Tw exposing (globalStyles, mt_3)
@@ -30,7 +30,7 @@ viewHome shared =
         heroCta =
             case shared.projects of
                 Loading ->
-                    Link.white5 Indigo ([ href (Route.toHref Route.Projects) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ]
+                    Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ]
 
                 Loaded projects ->
                     projects
@@ -38,11 +38,11 @@ viewHome shared =
                         |> Maybe.map
                             (\p ->
                                 span []
-                                    [ Link.white5 Indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (events.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
-                                    , Link.white5 Indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (events.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                                    [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (events.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                                    , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (events.openAppCta "dashboard")) [ text "Open Dashboard" ]
                                     ]
                             )
-                        |> Maybe.withDefault (Link.white5 Indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ])
+                        |> Maybe.withDefault (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ])
 
         appRoute : Route.Route
         appRoute =
@@ -158,7 +158,7 @@ viewHome shared =
                 , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
                 , br [] []
-                , Badge.basic Red [] [ text "soon" ]
+                , Badge.basic Color.red [] [ text "soon" ]
                 , text " It will make you a "
                 , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
                 , text ", just as you like!"

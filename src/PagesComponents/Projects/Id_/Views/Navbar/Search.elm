@@ -10,9 +10,9 @@ import Html.Styled.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Libs.Html.Styled.Attributes exposing (role)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColorLevel(..), TwColorPosition(..))
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Models.Project exposing (Project)
@@ -41,7 +41,7 @@ viewNavbarSearch theme openedDropdown model =
             , Dropdown.dropdown { id = model.id, direction = BottomRight, isOpen = openedDropdown == model.id }
                 (\m ->
                     div []
-                        [ div [ css [ Tw.pointer_events_none, Tw.absolute, Tw.inset_y_0, Tw.left_0, Tw.pl_3, Tw.flex, Tw.items_center ] ] [ Icon.solid Search [ TwColor.render Text theme.color L200 ] ]
+                        [ div [ css [ Tw.pointer_events_none, Tw.absolute, Tw.inset_y_0, Tw.left_0, Tw.pl_3, Tw.flex, Tw.items_center ] ] [ Icon.solid Search [ Color.text theme.color 200 ] ]
                         , input
                             [ type_ "search"
                             , name "search"
@@ -62,10 +62,10 @@ viewNavbarSearch theme openedDropdown model =
                                 , Tw.border_transparent
                                 , Tw.rounded_md
                                 , Tw.leading_5
-                                , TwColor.render Bg theme.color L500
-                                , TwColor.render Text theme.color L100
-                                , TwColor.render Placeholder theme.color L200
-                                , Css.focus [ Tw.outline_none, Tw.bg_white, Tw.border_white, Tw.ring_white, TwColor.render Text theme.color L900, TwColor.render Placeholder theme.color L400 ]
+                                , Color.bg theme.color 500
+                                , Color.text theme.color 100
+                                , Color.placeholder theme.color 200
+                                , Css.focus [ Tw.outline_none, Tw.bg_white, Tw.border_white, Tw.ring_white, Color.text theme.color 900, Color.placeholder theme.color 400 ]
                                 , Bp.sm [ Tw.text_sm ]
                                 ]
                             ]

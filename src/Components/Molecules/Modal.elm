@@ -13,16 +13,16 @@ import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
 import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, role)
+import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
 type alias ConfirmModel msg =
     { id : HtmlId
-    , color : TwColor
+    , color : Color
     , icon : Icon
     , title : String
     , message : Html msg
@@ -41,8 +41,8 @@ confirm model isOpen =
         , onBackgroundClick = model.onCancel
         }
         [ div [ css [ Bp.sm [ Tw.flex, Tw.items_start ] ] ]
-            [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, TwColor.render Bg model.color L100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
-                [ Icon.outline model.icon [ TwColor.render Text model.color L600 ]
+            [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg model.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
+                [ Icon.outline model.icon [ Color.text model.color 600 ]
                 ]
             , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
                 [ h3 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ], id model.id ]
@@ -54,7 +54,7 @@ confirm model isOpen =
             ]
         , div [ css [ Tw.mt_5, Bp.sm [ Tw.mt_4, Tw.flex, Tw.flex_row_reverse ] ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text model.confirm ]
-            , Button.white3 Gray [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
+            , Button.white3 Color.gray [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
             ]
         ]
 
@@ -144,7 +144,7 @@ doc theme =
                         [ Button.primary3 theme.color [ onClick (setIsOpen True) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
-                            , color = Red
+                            , color = Color.red
                             , icon = Exclamation
                             , title = "Deactivate account"
                             , message = text "Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."

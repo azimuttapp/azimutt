@@ -35,9 +35,8 @@ import ElmBook.ElmCSS as ElmCSS
 import ElmBook.StatefulOptions
 import ElmBook.ThemeOptions
 import Html.Styled exposing (Html, img, table, td, text, th, tr)
-import Html.Styled.Attributes exposing (alt, css, src, style)
-import Libs.Models.Color as Color exposing (Color)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..))
+import Html.Styled.Attributes exposing (alt, css, src)
+import Libs.Models.Color as Color exposing (Color, ColorLevel)
 import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
 
 
@@ -60,9 +59,9 @@ init =
     }
 
 
-theme : { color : TwColor }
+theme : { color : Color }
 theme =
-    { color = Indigo }
+    { color = Color.indigo }
 
 
 main : ElmCSS.Book DocState
@@ -100,24 +99,13 @@ colorsDoc =
         |> Chapter.renderComponentList
             [ ( "Color"
               , table []
-                    (tr [] (th [] [] :: (TwColor.levels |> List.map (\l -> th [] [ text (TwColor.levelToString l) ])))
-                        :: (Color.all |> List.map (\c -> tr [] (th [] [ text c.name ] :: (TwColor.levels |> List.map (viewColorCell c)))))
-                    )
-              )
-            , ( "TwColor"
-              , table []
-                    (tr [] (th [] [] :: (TwColor.levels |> List.map (\l -> th [] [ text (TwColor.levelToString l) ])))
-                        :: (TwColor.colors |> List.map (\c -> tr [] (th [] [ text (TwColor.colorToString c) ] :: (TwColor.levels |> List.map (viewTwColorCell c)))))
+                    (tr [] (th [] [] :: (Color.levels |> List.map (\l -> th [] [ text (String.fromInt l) ])))
+                        :: (Color.all |> List.map (\color -> tr [] (th [] [ text color.name ] :: (Color.levels |> List.map (viewColorCell color)))))
                     )
               )
             ]
 
 
-viewColorCell : Color -> TwColorLevel -> Html msg
-viewColorCell c l =
-    td [ css [ p_3, Color.bg c l ] ] [ text (Color.hex l c) ]
-
-
-viewTwColorCell : TwColor -> TwColorLevel -> Html msg
-viewTwColorCell c l =
-    td [ style "background-color" (TwColor.toHex l c), css [ p_3 ] ] [ text (TwColor.toHex l c) ]
+viewColorCell : Color -> ColorLevel -> Html msg
+viewColorCell color level =
+    td [ css [ p_3, Color.bg color level ] ] [ text (color |> Color.hex level) ]

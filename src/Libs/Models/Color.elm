@@ -1,4 +1,4 @@
-module Libs.Models.Color exposing (Color, HexColor, RgbColor, all, amber, bg, blue, border, border_b, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, teal, text, to, via, violet, yellow)
+module Libs.Models.Color exposing (Color, ColorLevel, HexColor, RgbColor, all, amber, bg, black, blue, border, border_b, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, levels, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, teal, text, to, via, violet, white, yellow)
 
 import Css exposing (Style)
 import Css.Global
@@ -6,7 +6,6 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.TwColor exposing (TwColorLevel(..))
 import Libs.Regex as R
 
 
@@ -28,6 +27,10 @@ type alias RgbColor =
 
 type alias RgbaColor =
     { red : Int, green : Int, blue : Int, alpha : String }
+
+
+type alias ColorLevel =
+    Int
 
 
 list : List Color
@@ -165,7 +168,12 @@ white =
     { name = "white", l50 = "#ffffff", l100 = "#ffffff", l200 = "#ffffff", l300 = "#ffffff", l400 = "#ffffff", l500 = "#ffffff", l600 = "#ffffff", l700 = "#ffffff", l800 = "#ffffff", l900 = "#ffffff" }
 
 
-bg : Color -> TwColorLevel -> Style
+levels : List ColorLevel
+levels =
+    [ 50, 100, 200, 300, 400, 500, 600, 700, 800, 900 ]
+
+
+bg : Color -> ColorLevel -> Style
 bg color level =
     Css.batch
         [ Css.property "--tw-bg-opacity" "1"
@@ -173,7 +181,7 @@ bg color level =
         ]
 
 
-border : Color -> TwColorLevel -> Style
+border : Color -> ColorLevel -> Style
 border color level =
     Css.batch
         [ Css.property "--tw-border-opacity" "1"
@@ -181,7 +189,7 @@ border color level =
         ]
 
 
-border_b : Color -> TwColorLevel -> Style
+border_b : Color -> ColorLevel -> Style
 border_b color level =
     Css.batch
         [ Css.property "--tw-border-opacity" "1"
@@ -189,7 +197,7 @@ border_b color level =
         ]
 
 
-divide : Color -> TwColorLevel -> Style
+divide : Color -> ColorLevel -> Style
 divide color level =
     Css.batch
         [ Css.Global.children
@@ -201,7 +209,7 @@ divide color level =
         ]
 
 
-from : Color -> TwColorLevel -> Style
+from : Color -> ColorLevel -> Style
 from color level =
     Css.batch
         [ Css.property "--tw-gradient-from" (color |> hex level)
@@ -209,7 +217,7 @@ from color level =
         ]
 
 
-placeholder : Color -> TwColorLevel -> Style
+placeholder : Color -> ColorLevel -> Style
 placeholder color level =
     Css.batch
         [ Css.pseudoElement "placeholder"
@@ -227,7 +235,7 @@ placeholder color level =
         ]
 
 
-ring : Color -> TwColorLevel -> Style
+ring : Color -> ColorLevel -> Style
 ring color level =
     Css.batch
         [ Css.property "--tw-ring-opacity" "1"
@@ -235,12 +243,12 @@ ring color level =
         ]
 
 
-ringOffset : Color -> TwColorLevel -> Style
+ringOffset : Color -> ColorLevel -> Style
 ringOffset color level =
     Css.property "--tw-ring-offset-color" (color |> hex level)
 
 
-text : Color -> TwColorLevel -> Style
+text : Color -> ColorLevel -> Style
 text color level =
     Css.batch
         [ Css.property "--tw-text-opacity" "1"
@@ -248,17 +256,17 @@ text color level =
         ]
 
 
-to : Color -> TwColorLevel -> Style
+to : Color -> ColorLevel -> Style
 to color level =
     Css.property "--tw-gradient-to" (color |> hex level)
 
 
-via : Color -> TwColorLevel -> Style
+via : Color -> ColorLevel -> Style
 via color level =
     Css.property "--tw-gradient-stops" ("var(--tw-gradient-from), " ++ (color |> hex level) ++ ", var(--tw-gradient-to, " ++ (color |> rgba "0" level) ++ ")")
 
 
-rgba : String -> TwColorLevel -> Color -> String
+rgba : String -> ColorLevel -> Color -> String
 rgba alpha level color =
     color
         |> hex level
@@ -267,38 +275,37 @@ rgba alpha level color =
         |> (\c -> "rgba(" ++ ([ c.red, c.green, c.blue ] |> List.map String.fromInt |> String.join ", ") ++ ", " ++ alpha ++ ")")
 
 
-hex : TwColorLevel -> Color -> String
+hex : ColorLevel -> Color -> String
 hex level color =
-    case level of
-        L50 ->
-            color.l50
+    if level < 100 then
+        color.l50
 
-        L100 ->
-            color.l100
+    else if level < 200 then
+        color.l100
 
-        L200 ->
-            color.l200
+    else if level < 300 then
+        color.l200
 
-        L300 ->
-            color.l300
+    else if level < 400 then
+        color.l300
 
-        L400 ->
-            color.l400
+    else if level < 500 then
+        color.l400
 
-        L500 ->
-            color.l500
+    else if level < 600 then
+        color.l500
 
-        L600 ->
-            color.l600
+    else if level < 700 then
+        color.l600
 
-        L700 ->
-            color.l700
+    else if level < 800 then
+        color.l700
 
-        L800 ->
-            color.l800
+    else if level < 900 then
+        color.l800
 
-        L900 ->
-            color.l900
+    else
+        color.l900
 
 
 hexToRgb : HexColor -> Maybe RgbColor

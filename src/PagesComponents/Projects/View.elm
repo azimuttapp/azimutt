@@ -14,8 +14,8 @@ import Html.Styled.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
+import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Libs.Task as T
@@ -69,7 +69,7 @@ viewNoProjects theme =
         [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
             [ text "You haven’t created any project yet. Import your own schema." ]
         , viewFirstProject theme
-        , div [ css [ Tw.mt_6, Tw.text_sm, Tw.font_medium, TwColor.render Text theme.color L600 ] ]
+        , div [ css [ Tw.mt_6, Tw.text_sm, Tw.font_medium, Color.text theme.color 600 ] ]
             [ text "Or explore a sample one"
             , span [ ariaHidden True ] [ text " →" ]
             ]
@@ -93,7 +93,7 @@ viewNoProjects theme =
 
 viewFirstProject : Theme -> Html msg
 viewFirstProject theme =
-    a [ href (Route.toHref Route.Projects__New), css [ Tw.mt_6, Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_400, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring theme.color L500 ], Css.hover [ Tw.border_gray_400 ] ] ]
+    a [ href (Route.toHref Route.Projects__New), css [ Tw.mt_6, Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_400, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Color.ring theme.color 500 ], Css.hover [ Tw.border_gray_400 ] ] ]
         [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
         , span [ css [ Tw.mt_2, Tw.block, Tw.text_sm, Tw.font_medium ] ] [ text "Create a new project" ]
         ]
@@ -122,7 +122,7 @@ viewProjectCard zone project =
 confirmDeleteProject : Project -> Msg
 confirmDeleteProject project =
     ConfirmOpen
-        { color = Red
+        { color = Color.red
         , icon = Trash
         , title = "Delete project"
         , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
@@ -136,7 +136,7 @@ confirmDeleteProject project =
 viewNewProject : Theme -> Html msg
 viewNewProject theme =
     li [ css [ Tw.col_span_1 ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_200, Tu.focusRing ( theme.color, L500 ) ( White, L500 ), Css.hover [ Tw.border_gray_400, Tw.text_gray_400 ] ] ]
+        [ a [ href (Route.toHref Route.Projects__New), css [ Tw.relative, Tw.block, Tw.w_full, Tw.border_2, Tw.border_gray_200, Tw.border_dashed, Tw.rounded_lg, Tw.py_12, Tw.text_center, Tw.text_gray_200, Tu.focusRing ( theme.color, 500 ) ( Color.white, 500 ), Css.hover [ Tw.border_gray_400, Tw.text_gray_400 ] ] ]
             [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
             , span [ css [ Tw.mt_2, Tw.block, Tw.text_sm, Tw.font_medium ] ] [ text "Create a new project" ]
             ]

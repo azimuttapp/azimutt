@@ -19,8 +19,8 @@ import Libs.FileInput as FileInput
 import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaCurrent, role)
 import Libs.Maybe as M
+import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.Result as R
 import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
@@ -73,8 +73,8 @@ viewContent theme model page =
 viewTab : Theme -> Tab -> TabModel Tab -> Html Msg
 viewTab theme selected tab =
     if tab.tab == selected then
-        a [ href "", css [ TwColor.render Bg theme.color L50, TwColor.render Border theme.color L500, TwColor.render Text theme.color L700, Tw.border_l_4, Tw.px_3, Tw.py_2, Tw.flex, Tw.items_center, Tw.text_sm, Tw.font_medium, Css.hover [ TwColor.render Bg theme.color L50, TwColor.render Text theme.color L700 ] ], ariaCurrent "page" ]
-            [ Icon.outline tab.icon [ TwColor.render Text theme.color L500, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ]
+        a [ href "", css [ Color.bg theme.color 50, Color.border theme.color 500, Color.text theme.color 700, Tw.border_l_4, Tw.px_3, Tw.py_2, Tw.flex, Tw.items_center, Tw.text_sm, Tw.font_medium, Css.hover [ Color.bg theme.color 50, Color.text theme.color 700 ] ], ariaCurrent "page" ]
+            [ Icon.outline tab.icon [ Color.text theme.color 500, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ]
             , span [ css [ Tw.truncate ] ] [ text tab.text ]
             ]
 
@@ -120,7 +120,7 @@ viewFileUpload theme =
             "file-upload"
     in
     label
-        ([ for id, role "button", css [ Tw.mt_1, Tw.flex, Tw.justify_center, Tw.px_6, Tw.pt_5, Tw.pb_6, Tw.border_2, Tw.border_gray_300, Tw.border_dashed, Tw.rounded_md, Tw.text_gray_600, Tu.focusWithinRing ( theme.color, L600 ) ( White, L600 ), Css.hover [ TwColor.render Border theme.color L400, TwColor.render Text theme.color L600 ] ] ]
+        ([ for id, role "button", css [ Tw.mt_1, Tw.flex, Tw.justify_center, Tw.px_6, Tw.pt_5, Tw.pb_6, Tw.border_2, Tw.border_gray_300, Tw.border_dashed, Tw.rounded_md, Tw.text_gray_600, Tu.focusWithinRing ( theme.color, 600 ) ( Color.white, 600 ), Css.hover [ Color.border theme.color 400, Color.text theme.color 600 ] ] ]
             ++ FileInput.onDrop
                 { onOver = \_ _ -> FileDragOver
                 , onLeave = Just { id = id ++ "-label", msg = FileDragLeave }
@@ -130,7 +130,7 @@ viewFileUpload theme =
         [ div [ css [ Tw.space_y_1, Tw.text_center ] ]
             [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ]
             , div [ css [ Tw.flex, Tw.text_sm ] ]
-                [ span [ css [ Tw.relative, Tw.cursor_pointer, Tw.bg_white, Tw.rounded_md, Tw.font_medium, TwColor.render Text theme.color L600 ] ]
+                [ span [ css [ Tw.relative, Tw.cursor_pointer, Tw.bg_white, Tw.rounded_md, Tw.font_medium, Color.text theme.color 600 ] ]
                     [ span [] [ text "Upload a file" ]
                     , FileInput.hiddenInputSingle id [ ".sql" ] SelectLocalFile
                     ]
@@ -256,7 +256,7 @@ viewErrorAlert model =
     else
         div [ css [ Tw.mt_6 ] ]
             [ Alert.withActions
-                { color = Red
+                { color = Color.red
                 , icon = XCircle
                 , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (model.schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
                 , description =
@@ -268,7 +268,7 @@ viewErrorAlert model =
                             ]
                         , p [] [ text "In the meantime, you can look at the errors and your schema and try to simplify it. Or just use it as is, only not recognized statements will be missing." ]
                         ]
-                , actions = [ Link.light2 Red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
+                , actions = [ Link.light2 Color.red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
                 }
             ]
 

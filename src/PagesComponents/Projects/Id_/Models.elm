@@ -8,10 +8,10 @@ import Libs.Area exposing (Area)
 import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (Millis, ZoomDelta)
+import Libs.Models.Color as Color
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
-import Libs.Models.TwColor exposing (TwColor(..))
 import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
@@ -104,28 +104,28 @@ type Msg
 
 toastSuccess : String -> Msg
 toastSuccess message =
-    ToastAdd (Just 8000) (Simple { color = Green, icon = CheckCircle, title = message, message = "" })
+    ToastAdd (Just 8000) (Simple { color = Color.green, icon = CheckCircle, title = message, message = "" })
 
 
 toastInfo : String -> Msg
 toastInfo message =
-    ToastAdd (Just 8000) (Simple { color = Blue, icon = InformationCircle, title = message, message = "" })
+    ToastAdd (Just 8000) (Simple { color = Color.blue, icon = InformationCircle, title = message, message = "" })
 
 
 toastWarning : String -> Msg
 toastWarning message =
-    ToastAdd (Just 8000) (Simple { color = Yellow, icon = ExclamationCircle, title = message, message = "" })
+    ToastAdd (Just 8000) (Simple { color = Color.yellow, icon = ExclamationCircle, title = message, message = "" })
 
 
 toastError : String -> Msg
 toastError message =
-    ToastAdd Nothing (Simple { color = Red, icon = Exclamation, title = message, message = "" })
+    ToastAdd Nothing (Simple { color = Color.red, icon = Exclamation, title = message, message = "" })
 
 
 confirm : String -> Html Msg -> Msg -> Msg
 confirm title content message =
     ConfirmOpen
-        { color = Blue
+        { color = Color.blue
         , icon = QuestionMarkCircle
         , title = title
         , message = content

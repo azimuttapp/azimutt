@@ -1,7 +1,7 @@
 module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, focusRing, focusWithin, focusWithinRing, h, scale, translate_x_y, underline_dotted, w, z_max)
 
 import Css exposing (Style, pseudoClass)
-import Libs.Models.TwColor as TwColor exposing (TwColorPosition(..))
+import Libs.Models.Color as Color exposing (Color, ColorLevel)
 import Tailwind.Utilities as Tw
 
 
@@ -10,14 +10,14 @@ focusWithin =
     pseudoClass "focus-within"
 
 
-focusRing : ( TwColor.TwColor, TwColor.TwColorLevel ) -> ( TwColor.TwColor, TwColor.TwColorLevel ) -> Style
+focusRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> Style
 focusRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
-    Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring ringColor ringLevel, TwColor.render RingOffset offsetColor offsetLevel ]
+    Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Color.ring ringColor ringLevel, Color.ringOffset offsetColor offsetLevel ]
 
 
-focusWithinRing : ( TwColor.TwColor, TwColor.TwColorLevel ) -> ( TwColor.TwColor, TwColor.TwColorLevel ) -> Style
+focusWithinRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> Style
 focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
-    focusWithin [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, TwColor.render Ring ringColor ringLevel, TwColor.render RingOffset offsetColor offsetLevel ]
+    focusWithin [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Color.ring ringColor ringLevel, Color.ringOffset offsetColor offsetLevel ]
 
 
 w : Float -> String -> Style

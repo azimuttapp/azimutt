@@ -12,9 +12,9 @@ import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role)
 import Libs.Maybe as M
+import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColor(..), TwColorLevel(..), TwColorPosition(..))
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
@@ -28,7 +28,7 @@ viewNavbarTitle theme openedDropdown storedProjects project =
     div [ css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.text_white ] ]
         ([ Dropdown.dropdown { id = "switch-project", direction = BottomRight, isOpen = openedDropdown == "switch-project" }
             (\m ->
-                button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ] ]
+                button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
                     [ span [] [ text project.name ]
                     , Icon.solid (B.cond m.isOpen ChevronUp ChevronDown) []
                     ]
@@ -48,10 +48,10 @@ viewNavbarTitle theme openedDropdown storedProjects project =
             ++ (project.usedLayout
                     |> M.mapOrElse
                         (\usedLayout ->
-                            [ Icon.slash [ TwColor.render Text theme.color L300 ]
+                            [ Icon.slash [ Color.text theme.color 300 ]
                             , Dropdown.dropdown { id = "switch-layout", direction = BottomLeft, isOpen = openedDropdown == "switch-layout" }
                                 (\m ->
-                                    button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( White, L600 ) ( theme.color, L600 ) ] ]
+                                    button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
                                         [ span [] [ text usedLayout ]
                                         , Icon.solid (B.cond m.isOpen ChevronUp ChevronDown) []
                                         ]

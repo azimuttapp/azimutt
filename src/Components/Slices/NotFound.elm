@@ -7,8 +7,8 @@ import Html.Styled exposing (Html, a, div, footer, h1, img, main_, nav, p, span,
 import Html.Styled.Attributes exposing (alt, css, href, src)
 import Libs.Html.Styled.Attributes exposing (ariaHidden)
 import Libs.Models exposing (Image, Link)
+import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColorLevel(..), TwColorPosition(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
@@ -39,11 +39,11 @@ simple theme model =
                 ]
             , div [ css [ Tw.py_16 ] ]
                 [ div [ css [ Tw.text_center ] ]
-                    [ p [ css [ Tw.text_sm, Tw.font_semibold, TwColor.render Text theme.color L600, Tw.uppercase, Tw.tracking_wide ] ] [ text model.header ]
+                    [ p [ css [ Tw.text_sm, Tw.font_semibold, Color.text theme.color 600, Tw.uppercase, Tw.tracking_wide ] ] [ text model.header ]
                     , h1 [ css [ Tw.mt_2, Tw.text_4xl, Tw.font_extrabold, Tw.text_gray_900, Tw.tracking_tight, Bp.sm [ Tw.text_5xl ] ] ] [ text model.title ]
                     , p [ css [ Tw.mt_2, Tw.text_base, Tw.text_gray_500 ] ] [ text model.message ]
                     , div [ css [ Tw.mt_6 ] ]
-                        [ a [ href model.link.url, css [ Tw.text_base, Tw.font_medium, TwColor.render Text theme.color L600, Css.hover [ TwColor.render Text theme.color L500 ] ] ]
+                        [ a [ href model.link.url, css [ Tw.text_base, Tw.font_medium, Color.text theme.color 600, Css.hover [ Color.text theme.color 500 ] ] ]
                             [ text model.link.text
                             , span [ ariaHidden True ] [ text "→" ]
                             ]

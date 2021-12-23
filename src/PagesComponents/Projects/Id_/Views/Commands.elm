@@ -10,8 +10,8 @@ import Html.Styled.Attributes exposing (class, css, id, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup)
+import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
-import Libs.Models.TwColor as TwColor exposing (TwColorLevel(..), TwColorPosition(..))
 import Models.Project.CanvasProps exposing (CanvasProps)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 import Tailwind.Utilities as Tw
@@ -22,7 +22,7 @@ viewCommands theme openedDropdown cursorMode canvas =
     let
         buttonStyles : List Css.Style
         buttonStyles =
-            [ Tw.relative, Tw.inline_flex, Tw.items_center, Tw.p_2, Tw.border, Tw.border_gray_300, Tw.text_sm, Tw.font_medium, Css.focus [ Tw.z_10, Tw.outline_none, Tw.ring_1, TwColor.render Ring theme.color L500, TwColor.render Border theme.color L500 ] ]
+            [ Tw.relative, Tw.inline_flex, Tw.items_center, Tw.p_2, Tw.border, Tw.border_gray_300, Tw.text_sm, Tw.font_medium, Css.focus [ Tw.z_10, Tw.outline_none, Tw.ring_1, Color.ring theme.color 500, Color.border theme.color 500 ] ]
 
         classic : List Css.Style
         classic =
