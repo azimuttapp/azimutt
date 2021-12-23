@@ -160,7 +160,7 @@ adminProfile theme isOpen profile =
                 , img [ css [ Tw.rounded_full, Tw.h_8, Tw.w_8 ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]
         )
-        (Dropdown.menuLinks profile.links)
+        (\_ -> div [] (profile.links |> List.map Dropdown.link))
 
 
 adminMobileMenu : Theme -> AdminNavigation msg -> Maybe AdminNotifications -> Maybe (AdminProfile msg) -> AdminMobileMenu msg -> String -> Bool -> Html msg

@@ -136,6 +136,9 @@ hideColumns id kind project =
                             |> List.filter
                                 (\( name, col ) ->
                                     case ( kind, col ) of
+                                        ( "relations", Just _ ) ->
+                                            tableRelations |> Relation.withLink id name |> L.nonEmpty
+
                                         ( "regular", Just _ ) ->
                                             (name |> Table.inPrimaryKey table |> M.isJust)
                                                 || (tableRelations |> Relation.withLink id name |> L.nonEmpty)

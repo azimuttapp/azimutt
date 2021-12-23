@@ -11,19 +11,21 @@ import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, br, button, div, span, text)
-import Html.Styled.Attributes exposing (css, id, type_)
+import Html.Styled.Attributes exposing (css, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Styled.Keyed as Keyed
 import Libs.Bool as B
 import Libs.Html.Styled exposing (bText)
-import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, onPointerUp)
+import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, onPointerUp, role, track)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Tailwind.Utilities as Tw
+import Tracking
 
 
 type alias Model msg =
@@ -36,11 +38,13 @@ type alias Model msg =
     , settings : List (MenuItem msg)
     , state : State
     , actions : Actions msg
+    , zoom : ZoomLevel
     }
 
 
 type alias Column =
-    { name : String
+    { index : Int
+    , name : String
     , kind : String
     , nullable : Bool
     , default : Maybe String
@@ -106,11 +110,10 @@ table model =
         [ id model.id
         , onMouseEnter model.actions.toggleHover
         , onMouseLeave model.actions.toggleHover
-        , onPointerUp (\e -> model.actions.toggleSelected e.pointer.keys.ctrl)
         , css
             ([ Tw.inline_block, Tw.bg_white, Tw.rounded_lg, Tw.cursor_pointer, B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md ]
                 ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ] []
-                ++ B.cond model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] []
+             -- ++ B.cond model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] []
             )
         ]
         [ model |> viewHeader
@@ -125,6 +128,14 @@ viewHeader model =
         dropdownId : HtmlId
         dropdownId =
             model.id ++ "-settings"
+
+        textSize : Css.Style
+        textSize =
+            if model.zoom < 0.5 then
+                Css.property "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem")
+
+            else
+                Tw.text_xl
     in
     div
         [ css
@@ -141,26 +152,30 @@ viewHeader model =
             , Color.bg (B.cond (isTableHover model) model.state.color Color.default) 50
             ]
         ]
-        [ if model.isView then
-            div [ css [ Tw.flex_grow, Tw.text_center ] ] [ span [ css [ Tw.text_xl, Tw.italic, Tw.underline, Tu.underline_dotted ] ] [ text model.label ] |> Tooltip.top "This is a view" ]
+        [ div [ onPointerUp (\e -> model.actions.toggleSelected e.pointer.keys.ctrl), css [ Tw.flex_grow, Tw.text_center ] ]
+            [ if model.isView then
+                span [ css [ textSize, Tw.italic, Tw.underline, Tu.underline_dotted ] ] [ text model.label ] |> Tooltip.top "This is a view"
 
-          else
-            div [ css [ Tw.flex_grow, Tw.text_center, Tw.text_xl ] ] [ text model.label ]
+              else
+                span [ css [ textSize ] ] [ text model.label ]
+            ]
         , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
-                    [ type_ "button"
-                    , id m.id
-                    , onClick (model.actions.toggleDropdown m.id)
-                    , ariaExpanded m.isOpen
-                    , ariaHaspopup True
-                    , css [ Tw.flex, Tw.text_sm, Tw.opacity_25, Css.focus [ Tw.outline_none ] ]
-                    ]
+                    ([ type_ "button"
+                     , id m.id
+                     , onClick (model.actions.toggleDropdown m.id)
+                     , ariaExpanded m.isOpen
+                     , ariaHaspopup True
+                     , css [ Tw.flex, Tw.text_sm, Tw.opacity_25, Css.focus [ Tw.outline_none ] ]
+                     ]
+                        ++ track Tracking.events.openTableSettings
+                    )
                     [ span [ css [ Tw.sr_only ] ] [ text "Open table settings" ]
                     , Icon.solid DotsVertical []
                     ]
             )
-            (Dropdown.submenuButtons model.settings)
+            (\_ -> div [ css [ Tu.z_max ] ] (model.settings |> List.map Dropdown.submenuButton))
         ]
 
 
@@ -209,11 +224,11 @@ viewColumn model isLast column =
 
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
-    if column.isPrimaryKey then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.top "Primary key" ]
+    if column.outRelations |> L.nonEmpty then
+        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.showRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
-    else if column.outRelations |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.showRelations column.outRelations) ] [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+    else if column.isPrimaryKey then
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.top "Primary key" ]
 
     else if column.uniques |> L.nonEmpty then
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [] |> Tooltip.top ("Unique constraint in " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
@@ -240,7 +255,19 @@ viewColumnIconDropdown model column icon =
 
     else
         Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
-            (\m -> button [ type_ "button", id m.id, onClick (model.actions.toggleDropdown m.id), ariaExpanded m.isOpen, ariaHaspopup True, css [ Css.focus [ Tw.outline_none ] ] ] [ icon ])
+            (\m ->
+                button
+                    ([ type_ "button"
+                     , id m.id
+                     , onClick (model.actions.toggleDropdown m.id)
+                     , ariaExpanded m.isOpen
+                     , ariaHaspopup True
+                     , css [ Css.focus [ Tw.outline_none ] ]
+                     ]
+                        ++ track Tracking.events.openIncomingRelationsDropdown
+                    )
+                    [ icon ]
+            )
             (\_ ->
                 div []
                     ((column.inRelations
@@ -255,20 +282,34 @@ viewColumnIconDropdown model column icon =
                                         ]
                                 in
                                 if r.tableShown then
-                                    Dropdown.btnDisabled content
+                                    Dropdown.btnDisabled [ Tw.py_1 ] content
 
                                 else
-                                    Dropdown.btn (model.actions.showRelations [ r ]) content
+                                    viewColumnIconDropdownItem (model.actions.showRelations [ r ]) content
                             )
                      )
                         ++ (column.inRelations
                                 |> List.filter (\r -> not r.tableShown)
                                 |> (\relations ->
-                                        [ Dropdown.btn (model.actions.showRelations relations) [ text ("Show all (" ++ (relations |> List.length |> S.pluralize "table") ++ ")") ] ]
+                                        [ viewColumnIconDropdownItem (model.actions.showRelations relations) [ text ("Show all (" ++ (relations |> List.length |> S.pluralize "table") ++ ")") ] ]
                                    )
                            )
                     )
             )
+
+
+viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
+viewColumnIconDropdownItem message content =
+    button
+        ([ type_ "button"
+         , onClick message
+         , role "menuitem"
+         , tabindex -1
+         , css ([ Tw.py_1, Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles)
+         ]
+            ++ track Tracking.events.showTableWithIncomingRelationsDropdown
+        )
+        content
 
 
 viewColumnName : Column -> Html msg
@@ -332,7 +373,13 @@ isTableHover model =
 
 isColumnHover : Model msg -> Column -> Bool
 isColumnHover model column =
-    model.state.hoverColumn |> M.has { schema = model.ref.schema, table = model.ref.table, column = column.name }
+    model.state.hoverColumn
+        |> M.exist
+            (\c ->
+                (c == { schema = model.ref.schema, table = model.ref.table, column = column.name })
+                    || (column.inRelations |> List.any (\r -> r.column == c))
+                    || (column.outRelations |> List.any (\r -> r.column == c))
+            )
 
 
 
@@ -359,7 +406,7 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [] }
+    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [] }
 
 
 sample : Model (Msg x)
@@ -405,6 +452,7 @@ sample =
         , toggleColumn = \col -> logAction ("toggle column: " ++ col)
         , showRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
         }
+    , zoom = 1
     }
 
 

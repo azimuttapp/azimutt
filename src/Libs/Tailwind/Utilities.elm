@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, focusRing, focusWithin, focusWithinRing, h, scale, translate_x_y, underline_dotted, w, z_max)
+module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, focusRing, focusWithin, focusWithinRing, h, left, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
 
 import Css exposing (Style, pseudoClass)
 import Libs.Models.Color as Color exposing (Color, ColorLevel)
@@ -40,14 +40,34 @@ scale factor =
     Css.batch [ Css.property "--tw-scale-x" (String.fromFloat factor), Css.property "--tw-scale-y" (String.fromFloat factor) ]
 
 
+left : Float -> String -> Css.Style
+left x unit =
+    Css.property "left" (String.fromFloat x ++ unit)
+
+
+top : Float -> String -> Css.Style
+top x unit =
+    Css.property "top" (String.fromFloat x ++ unit)
+
+
 underline_dotted : Css.Style
 underline_dotted =
     Css.property "text-decoration-style" "dotted"
 
 
+z : Int -> Css.Style
+z value =
+    Css.property "z-index" (String.fromInt value)
+
+
 z_max : Css.Style
 z_max =
     Css.property "z-index" "10000"
+
+
+stroke_3 : Css.Style
+stroke_3 =
+    Css.property "stroke-width" "3"
 
 
 cursor_hand : Css.Style

@@ -72,7 +72,7 @@ sortBy order table relations columns =
             columns |> List.sortBy (\c -> c.name |> String.toLower)
 
         Type ->
-            columns |> List.sortBy (\c -> c.kind |> String.toLower |> Column.withNullableInfo c.nullable)
+            columns |> List.sortBy (\c -> c.kind |> String.toLower |> Column.withNullable c)
 
 
 sortOffset : Bool -> Float

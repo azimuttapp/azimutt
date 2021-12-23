@@ -75,7 +75,7 @@ viewNavbarTitle theme openedDropdown storedProjects project =
                                                             ]
                                                     )
                                             )
-                                        , div [ role "none", css [ Tw.py_1 ] ] [ Dropdown.btn (Noop "stop using layout") [ text ("Stop using " ++ usedLayout) ] ]
+                                        , div [ role "none", css [ Tw.py_1 ] ] [ Dropdown.btn [] (Noop "stop using layout") [ text ("Stop using " ++ usedLayout) ] ]
                                         ]
                                 )
                             ]

@@ -19,14 +19,13 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project exposing (Project, viewportSize)
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull exposing (RelationFull)
-import PagesComponents.App.Helpers exposing (pagePosToCanvasPos)
 import PagesComponents.App.Models exposing (CursorMode(..), DragState, Hover, Msg(..), VirtualRelation)
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
 import PagesComponents.App.Views.Erd.Table exposing (viewTable)
@@ -76,7 +75,7 @@ viewErdContent hover virtualRelation selection domInfos project =
                     (\vr ->
                         vr.src
                             |> Maybe.andThen (buildColumnRefFull project.tables layoutTablesDict layoutTablesDictSize domInfos)
-                            |> Maybe.map (\ref -> ( ref, vr.mouse |> pagePosToCanvasPos domInfos project.layout.canvas ))
+                            |> Maybe.map (\ref -> ( ref, vr.mouse |> CanvasProps.adapt project.layout.canvas domInfos ))
                     )
     in
     [ lazy7 viewTables hover virtualRelation domInfos project.layout.canvas.zoom project.layout.tables shownRelations project.tables

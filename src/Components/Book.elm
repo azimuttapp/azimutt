@@ -18,6 +18,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
+import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
 import Components.Slices.Blog as Blog
 import Components.Slices.Content as Content
@@ -79,7 +80,7 @@ main =
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Kbd.doc, Link.doc theme, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, ItemList.doc theme, Modal.doc theme, Toast.doc theme, Tooltip.doc ] )
-            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Table.doc ] )
+            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
             ]
 

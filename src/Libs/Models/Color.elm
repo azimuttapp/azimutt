@@ -1,4 +1,4 @@
-module Libs.Models.Color exposing (Color, ColorLevel, HexColor, RgbColor, all, amber, bg, black, blue, border, border_b, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, levels, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, teal, text, to, via, violet, white, yellow)
+module Libs.Models.Color exposing (Color, ColorLevel, HexColor, RgbColor, all, amber, bg, black, blue, border, border_b, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, levels, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, stroke, teal, text, to, via, violet, white, yellow)
 
 import Css exposing (Style)
 import Css.Global
@@ -264,6 +264,11 @@ to color level =
 via : Color -> ColorLevel -> Style
 via color level =
     Css.property "--tw-gradient-stops" ("var(--tw-gradient-from), " ++ (color |> hex level) ++ ", var(--tw-gradient-to, " ++ (color |> rgba "0" level) ++ ")")
+
+
+stroke : Color -> ColorLevel -> Style
+stroke color level =
+    Css.property "stroke" (color |> hex level)
 
 
 rgba : String -> ColorLevel -> Color -> String

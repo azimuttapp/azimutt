@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, btnDisabled, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuLinks, menuStyles, submenuButton, submenuButtons)
+module Components.Molecules.Dropdown exposing (Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, btnDisabled, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuStyles, submenuButton)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -74,19 +74,9 @@ dropdown model elt content =
         ]
 
 
-menuLinks : List Link -> Model -> Html msg
-menuLinks links _ =
-    div [] (links |> List.map link)
-
-
 link : Link -> Html msg
 link l =
     a [ href l.url, role "menuitem", tabindex -1, css ([ Tw.block ] ++ itemStyles) ] [ text l.text ]
-
-
-submenuButtons : List (MenuItem msg) -> Model -> Html msg
-submenuButtons menus _ =
-    div [] (menus |> List.map submenuButton)
 
 
 submenuButton : MenuItem msg -> Html msg
@@ -96,21 +86,21 @@ submenuButton menu =
             div [ class "group", css ([ Tw.relative ] ++ itemStyles) ]
                 [ text (menu.label ++ " »")
                 , div [ class "group-hover-block", css ([ Tw.hidden, Tw.neg_top_1, Tw.left_full ] ++ menuStyles) ]
-                    (submenus |> List.map (\submenu -> btn submenu.action [ text submenu.label ]))
+                    (submenus |> List.map (\submenu -> btn [] submenu.action [ text submenu.label ]))
                 ]
 
         Right action ->
-            btn action [ text menu.label ]
+            btn [] action [ text menu.label ]
 
 
-btn : msg -> List (Html msg) -> Html msg
-btn message content =
-    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemStyles) ] content
+btn : List Css.Style -> msg -> List (Html msg) -> Html msg
+btn styles message content =
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemStyles ++ styles) ] content
 
 
-btnDisabled : List (Html msg) -> Html msg
-btnDisabled content =
-    button [ type_ "button", role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemDisabledStyles) ] content
+btnDisabled : List Css.Style -> List (Html msg) -> Html msg
+btnDisabled styles content =
+    button [ type_ "button", role "menuitem", tabindex -1, css ([ Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ itemDisabledStyles ++ styles) ] content
 
 
 menuStyles : List Css.Style
@@ -168,7 +158,7 @@ doc theme =
                 (\opened toggleOpen ->
                     dropdown { id = "dropdown", direction = BottomRight, isOpen = opened == "dropdown" }
                         (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown [] ])
-                        (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                        (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn [] (logAction label) [ text label ])))
                 )
             , component "item styles"
                 (\opened toggleOpen ->
@@ -176,8 +166,8 @@ doc theme =
                         (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown [] ])
                         (\_ ->
                             div []
-                                [ btn (logAction "btn") [ text "btn" ]
-                                , btnDisabled [ text "btnDisabled" ]
+                                [ btn [] (logAction "btn") [ text "btn" ]
+                                , btnDisabled [] [ text "btnDisabled" ]
                                 , link { url = "#", text = "link" }
                                 , submenuButton { label = "submenuButton Right", action = Right (logAction "submenuButton Right") }
                                 , submenuButton { label = "submenuButton Left", action = Left ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label })) }
@@ -189,16 +179,16 @@ doc theme =
                     div [ css [ Tw.flex, Tw.space_x_3, Tw.neg_ml_3 ] ]
                         [ dropdown { id = "BottomRight", direction = BottomRight, isOpen = opened == "BottomRight" }
                             (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "BottomRight", Icon.solid ChevronDown [] ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn [] (logAction label) [ text label ])))
                         , dropdown { id = "BottomLeft", direction = BottomLeft, isOpen = opened == "BottomLeft" }
                             (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "BottomLeft", Icon.solid ChevronDown [] ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn [] (logAction label) [ text label ])))
                         , dropdown { id = "TopRight", direction = TopRight, isOpen = opened == "TopRight" }
                             (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "TopRight", Icon.solid ChevronDown [] ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn [] (logAction label) [ text label ])))
                         , dropdown { id = "TopLeft", direction = TopLeft, isOpen = opened == "TopLeft" }
                             (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "TopLeft", Icon.solid ChevronDown [] ])
-                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn (logAction label) [ text label ])))
+                            (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn [] (logAction label) [ text label ])))
                         ]
                 )
             , ( "global styles", \_ -> div [] [ Styles.global, text "Global styles are needed for tooltip reveal" ] )

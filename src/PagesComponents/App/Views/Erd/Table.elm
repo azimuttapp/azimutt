@@ -38,7 +38,7 @@ import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
-import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
+import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr)
 import Tracking exposing (events)
 
 
@@ -217,7 +217,7 @@ viewColumnDropdown columnRelations ref element =
                             [ viewIcon Icon.externalLinkAlt
                             , text " "
                             , b [] [ text (TableId.show relation.src.table.id) ]
-                            , text ("" |> withColumnName relation.src.column.name |> Column.withNullableInfo relation.src.column.nullable)
+                            , text ("" |> Column.withName relation.src.column |> Column.withNullable relation.src.column)
                             ]
                         ]
                 )
@@ -340,4 +340,4 @@ formatCheckTitle checks =
 
 formatReference : RelationFull -> String
 formatReference rel =
-    TableId.show rel.ref.table.id |> withColumnName rel.ref.column.name
+    TableId.show rel.ref.table.id |> Column.withName rel.ref.column

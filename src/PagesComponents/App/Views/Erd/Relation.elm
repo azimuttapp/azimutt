@@ -7,14 +7,13 @@ import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Models.ColumnRefFull exposing (ColumnRefFull)
-import Models.Project.Column exposing (Column)
+import Models.Project.Column as Column exposing (Column)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (Hover, Msg)
-import PagesComponents.App.Views.Helpers exposing (withColumnName)
 import Svg exposing (Svg, line, svg, text)
 import Svg.Attributes exposing (class, height, strokeDasharray, style, width, x1, x2, y1, y2)
 
@@ -63,7 +62,7 @@ viewVirtualRelation ( src, pos ) =
             svg [ class "erd-relation" ] [ text "virtual relation" ]
 
 
-drawRelation : Point -> Point -> Bool -> Maybe Color -> Int -> String -> Svg Msg
+drawRelation : Point -> Point -> Bool -> Maybe Color -> Int -> String -> Svg msg
 drawRelation src ref optional color index name =
     let
         padding : Float
@@ -85,7 +84,7 @@ drawRelation src ref optional color index name =
         ]
 
 
-viewLine : Point -> Point -> Bool -> Maybe Color -> Svg Msg
+viewLine : Point -> Point -> Bool -> Maybe Color -> Svg msg
 viewLine p1 p2 optional color =
     line
         (L.prependIf optional
@@ -177,4 +176,4 @@ formatText name src ref =
 
 formatRef : Table -> Column -> String
 formatRef table column =
-    TableId.show table.id |> withColumnName column.name
+    TableId.show table.id |> Column.withName column

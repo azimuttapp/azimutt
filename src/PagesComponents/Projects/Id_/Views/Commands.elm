@@ -49,13 +49,13 @@ viewCommands theme openedDropdown cursorMode canvas =
                 )
                 (\_ ->
                     div []
-                        [ Dropdown.btn (Zoom (Conf.canvas.zoom.min - canvas.zoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
-                        , Dropdown.btn (Zoom (0.25 - canvas.zoom)) [ text "25%" ]
-                        , Dropdown.btn (Zoom (0.5 - canvas.zoom)) [ text "50%" ]
-                        , Dropdown.btn (Zoom (1 - canvas.zoom)) [ text "100%" ]
-                        , Dropdown.btn (Zoom (1.5 - canvas.zoom)) [ text "150%" ]
-                        , Dropdown.btn (Zoom (2 - canvas.zoom)) [ text "200%" ]
-                        , Dropdown.btn (Zoom (Conf.canvas.zoom.max - canvas.zoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
+                        [ Dropdown.btn [] (Zoom (Conf.canvas.zoom.min - canvas.zoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
+                        , Dropdown.btn [] (Zoom (0.25 - canvas.zoom)) [ text "25%" ]
+                        , Dropdown.btn [] (Zoom (0.5 - canvas.zoom)) [ text "50%" ]
+                        , Dropdown.btn [] (Zoom (1 - canvas.zoom)) [ text "100%" ]
+                        , Dropdown.btn [] (Zoom (1.5 - canvas.zoom)) [ text "150%" ]
+                        , Dropdown.btn [] (Zoom (2 - canvas.zoom)) [ text "200%" ]
+                        , Dropdown.btn [] (Zoom (Conf.canvas.zoom.max - canvas.zoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
                         ]
                 )
             , button [ type_ "button", onClick (Zoom (canvas.zoom / 10)), css ([ Tw.neg_ml_px, Tw.rounded_r_md ] ++ buttonStyles ++ classic) ] [ Icon.solid Plus [] ]
