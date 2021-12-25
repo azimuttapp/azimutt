@@ -52,14 +52,18 @@ type alias Model x =
 viewErd : Theme -> Model x -> Project -> Html Msg
 viewErd _ model project =
     let
+        layoutTables : Dict TableId TableFull
+        layoutTables =
+            project.layout.tables |> List.reverse |> L.zipWithIndex |> List.filterMap (\( props, i ) -> project.tables |> Dict.get props.id |> Maybe.map (\t -> TableFull t.id i t props)) |> D.fromListMap .id
+
         shownTables : Dict TableId TableFull
         shownTables =
-            project.layout.tables |> List.reverse |> L.zipWithIndex |> List.filterMap (\( props, i ) -> project.tables |> Dict.get props.id |> Maybe.map (\t -> TableFull t.id i t props)) |> D.fromListMap .id
+            layoutTables |> Dict.filter (\_ t -> t.props.size /= Size.zero)
 
         shownRelations : List RelationFull
         shownRelations =
             project.relations
-                |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> shownTables |> Dict.get c.table |> M.any (\t -> t.props.size /= Size.zero)))
+                |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> shownTables |> Dict.member c.table))
                 |> List.filterMap (buildRelationFull project.tables shownTables)
 
         virtualRelation : Maybe ( ColumnRefFull, Position )
@@ -88,7 +92,7 @@ viewErd _ model project =
         , onPointerDownStopPropagation (DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y position.left position.top "px", Tu.scale project.layout.canvas.zoom ] ]
-            [ shownTables |> viewTables model project.layout.canvas.zoom shownRelations
+            [ layoutTables |> viewTables model project.layout.canvas.zoom shownRelations
             , shownRelations |> viewRelations model.dragging project.layout.canvas.zoom model.hoverColumn
             , model.selectionBox |> M.mapOrElse viewSelectionBox (div [] [])
             , virtualRelation |> M.mapOrElse viewVirtualRelation (svg [] [])
@@ -135,20 +139,20 @@ viewSelectionBox area =
 
 
 buildRelationFull : Dict TableId Table -> Dict TableId TableFull -> Relation -> Maybe RelationFull
-buildRelationFull allTables layoutTables rel =
+buildRelationFull allTables shownTables rel =
     Maybe.map2 (\src ref -> { name = rel.name, src = src, ref = ref, origins = rel.origins })
-        (rel.src |> buildColumnRefFull allTables layoutTables)
-        (rel.ref |> buildColumnRefFull allTables layoutTables)
+        (rel.src |> buildColumnRefFull allTables shownTables)
+        (rel.ref |> buildColumnRefFull allTables shownTables)
 
 
 buildColumnRefFull : Dict TableId Table -> Dict TableId TableFull -> ColumnRef -> Maybe ColumnRefFull
-buildColumnRefFull allTables layoutTables ref =
+buildColumnRefFull allTables shownTables ref =
     (allTables |> Dict.get ref.table |> M.andThenZip (\table -> table.columns |> Ned.get ref.column))
         |> Maybe.map
             (\( table, column ) ->
                 { ref = ref
                 , table = table
                 , column = column
-                , props = (layoutTables |> Dict.get ref.table) |> Maybe.map (\t -> ( t.props, t.index, t.props.size ))
+                , props = (shownTables |> Dict.get ref.table) |> Maybe.map (\t -> ( t.props, t.index, t.props.size ))
                 }
             )
