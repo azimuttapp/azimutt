@@ -10,12 +10,14 @@ import Libs.Maybe as M
 import Libs.Models exposing (UID)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Time as Time
 import Models.ColumnOrder exposing (ColumnOrder(..))
 import Models.Project exposing (Project)
+import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
@@ -242,7 +244,7 @@ stringAsLayoutName name =
 
 initLayout : Time.Posix -> LayoutV1
 initLayout now =
-    { canvas = CanvasPropsV1 (Position 0 0) 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
+    { canvas = CanvasPropsV1 Position.zero 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 defaultTime : Time.Posix
@@ -282,7 +284,7 @@ upgrade project =
 
 upgradeLayout : LayoutV1 -> Layout
 upgradeLayout layout =
-    { canvas = layout.canvas
+    { canvas = layout.canvas |> upgradeCanvasProps
     , tables = layout.tables |> List.map upgradeTableProps
     , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
     , createdAt = layout.createdAt
@@ -294,10 +296,20 @@ upgradeTableProps : TablePropsV1 -> TableProps
 upgradeTableProps props =
     { id = props.id
     , position = props.position
+    , size = Size.zero
     , color = props.color
     , columns = props.columns
     , selected = props.selected
     , hiddenColumns = False
+    }
+
+
+upgradeCanvasProps : CanvasPropsV1 -> CanvasProps
+upgradeCanvasProps props =
+    { origin = Position.zero
+    , size = Size.zero
+    , position = props.position
+    , zoom = props.zoom
     }
 
 

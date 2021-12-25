@@ -147,7 +147,7 @@ viewColumn isHover virtualRelation columnRelations table column =
 
 isRelationHover : Hover -> List RelationFull -> Bool
 isRelationHover hover columnRelations =
-    hover.column |> M.exist (\c -> columnRelations |> List.any (\r -> (r.src.table.id == c.table && r.src.column.name == c.column) || (r.ref.table.id == c.table && r.ref.column.name == c.column)))
+    hover.column |> M.any (\c -> columnRelations |> List.any (\r -> (r.src.table.id == c.table && r.src.column.name == c.column) || (r.ref.table.id == c.table && r.ref.column.name == c.column)))
 
 
 viewHiddenColumns : String -> Table -> List RelationFull -> List Column -> Html Msg

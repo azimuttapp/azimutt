@@ -6,12 +6,12 @@ import Either exposing (Either(..))
 import Html.Styled exposing (Attribute, Html, div)
 import Html.Styled.Attributes exposing (css)
 import Libs.Bool as B
-import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Styled.Attributes exposing (onPointerDownStopPropagation)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
+import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
@@ -40,8 +40,8 @@ type alias Model x =
     }
 
 
-viewTable : Model x -> ZoomLevel -> TableFull -> Maybe DomInfo -> List RelationFull -> Html Msg
-viewTable model zoom table domInfo tableRelations =
+viewTable : Model x -> ZoomLevel -> TableFull -> List RelationFull -> Html Msg
+viewTable model zoom table tableRelations =
     let
         tableId : HtmlId
         tableId =
@@ -59,7 +59,7 @@ viewTable model zoom table domInfo tableRelations =
         drag =
             B.cond (model.cursorMode == CursorDrag) [] [ onPointerDownStopPropagation (DragStart tableId) ]
     in
-    div (drag ++ [ css ([ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px", Tu.z (Conf.canvas.zIndex.tables + table.index) ] ++ (domInfo |> M.mapOrElse (\_ -> []) [ Tw.invisible ])) ])
+    div (drag ++ [ css ([ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px", Tu.z (Conf.canvas.zIndex.tables + table.index) ] ++ B.cond (table.props.size == Size.zero) [ Tw.invisible ] []) ])
         [ Table.table
             { id = tableId
             , ref = { schema = table.table.schema, table = table.table.name }

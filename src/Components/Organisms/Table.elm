@@ -374,7 +374,7 @@ isTableHover model =
 isColumnHover : Model msg -> Column -> Bool
 isColumnHover model column =
     model.state.hoverColumn
-        |> M.exist
+        |> M.any
             (\c ->
                 (c == { schema = model.ref.schema, table = model.ref.table, column = column.name })
                     || (column.inRelations |> List.any (\r -> r.column == c))

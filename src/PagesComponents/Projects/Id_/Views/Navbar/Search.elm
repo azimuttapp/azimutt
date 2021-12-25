@@ -180,8 +180,8 @@ tableMatch query table =
         Just ( 8 + shortBonus table.name, FoundTable table )
 
     else if
-        (table.comment |> M.exist (.text >> String.contains query))
-            || (table.primaryKey |> M.exist (.name >> String.contains query))
+        (table.comment |> M.any (.text >> String.contains query))
+            || (table.primaryKey |> M.any (.name >> String.contains query))
             || (table.uniques |> List.any (\u -> (u.name |> String.contains query) || (u.definition |> String.contains query)))
             || (table.indexes |> List.any (\i -> (i.name |> String.contains query) || (i.definition |> String.contains query)))
             || (table.checks |> List.any (\c -> (c.name |> String.contains query) || (c.predicate |> String.contains query)))
@@ -204,9 +204,9 @@ columnMatch query table column =
         Just ( 0.8, FoundColumn table column )
 
     else if
-        (column.comment |> M.exist (.text >> String.contains query))
+        (column.comment |> M.any (.text >> String.contains query))
             || (column.kind |> String.contains query)
-            || (column.default |> M.exist (String.contains query))
+            || (column.default |> M.any (String.contains query))
     then
         Just ( 0.7, FoundColumn table column )
 

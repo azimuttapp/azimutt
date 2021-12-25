@@ -14,7 +14,7 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
-import Libs.Models.Size exposing (Size)
+import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Models.ColumnRefFull exposing (ColumnRefFull)
@@ -42,11 +42,11 @@ viewErd hover cursorMode dragState virtualRelation selection domInfos project =
             , ( "cursor-cross", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
-        , sizeAttr (viewportSize domInfos |> Maybe.withDefault (Size 0 0))
+        , sizeAttr (viewportSize domInfos |> Maybe.withDefault Size.zero)
         , onWheel OnWheel
         , onDrag Conf.ids.erd
         ]
-        [ div [ class "canvas", placeAndZoom (project |> M.mapOrElse (.layout >> .canvas) (CanvasProps (Position 0 0) 1)) ]
+        [ div [ class "canvas", placeAndZoom (project |> M.mapOrElse (.layout >> .canvas) CanvasProps.zero) ]
             (project |> M.mapOrElse (\p -> viewErdContent hover virtualRelation selection domInfos p) [])
         ]
 

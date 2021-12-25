@@ -9,6 +9,7 @@ import Models.Project.TableProps exposing (TableProps)
 
 
 type alias ColumnRefFull =
+    -- FIXME: use Maybe ( Int, TableProps ) in props (Size is now inside TableProps)
     { ref : ColumnRef, table : Table, column : Column, props : Maybe ( TableProps, Int, Size ) }
 
 

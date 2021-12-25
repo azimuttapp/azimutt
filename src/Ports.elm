@@ -266,10 +266,11 @@ jsDecoder =
             case kind of
                 "GotSizes" ->
                     Decode.field "sizes"
-                        (Decode.map3 SizeChange
+                        (Decode.map4 SizeChange
                             (Decode.field "id" Decode.string)
                             (Decode.field "position" Position.decode)
                             (Decode.field "size" Size.decode)
+                            (Decode.field "seeds" Position.decode)
                             |> Decode.list
                         )
                         |> Decode.map GotSizes

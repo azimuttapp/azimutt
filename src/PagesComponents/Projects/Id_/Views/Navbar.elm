@@ -179,5 +179,5 @@ resetCanvasMsg =
 
 
 canResetCanvas : Maybe LayoutName -> Layout -> Bool
-canResetCanvas usedLayout layout =
-    usedLayout /= Nothing || not ((layout.tables == []) && (layout.hiddenTables == []) && layout.canvas == { position = { left = 0, top = 0 }, zoom = 1 })
+canResetCanvas usedLayout { tables, hiddenTables, canvas } =
+    usedLayout /= Nothing || not ((tables == []) && (hiddenTables == []) && canvas.position == { left = 0, top = 0 } && canvas.zoom == 1)

@@ -8,7 +8,7 @@ import Conf
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, div)
-import Html.Styled.Attributes exposing (css)
+import Html.Styled.Attributes exposing (class, css)
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
@@ -34,13 +34,13 @@ viewProject shared model =
         Loaded projects ->
             model.project |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
     , viewConfirm model.confirm
-    , Toast.container shared.theme model.toasts ToastHide
+    , viewToasts shared.theme model.toasts
     ]
 
 
 viewApp : Theme -> Model -> List Project -> Project -> Html Msg
 viewApp theme model storedProjects project =
-    div []
+    div [ class "tw-app" ]
         [ viewNavbar theme model.openedDropdown storedProjects project model.navbar
         , viewErd theme model project
         , viewCommands theme model.openedDropdown model.cursorMode project.layout.canvas
@@ -49,7 +49,7 @@ viewApp theme model storedProjects project =
 
 viewLoader : Theme -> Html msg
 viewLoader theme =
-    div [ css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.h_screen ] ]
+    div [ class "tw-loader", css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.h_screen ] ]
         [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, Color.border theme.color 500 ] ] []
         ]
 
@@ -75,15 +75,22 @@ viewNotFound theme =
 
 viewConfirm : Confirm Msg -> Html Msg
 viewConfirm c =
-    Modal.confirm
-        { id = "confirm-modal"
-        , icon = c.icon
-        , color = c.color
-        , title = c.title
-        , message = c.message
-        , confirm = c.confirm
-        , cancel = c.cancel
-        , onConfirm = ConfirmAnswer True c.onConfirm
-        , onCancel = ConfirmAnswer False (T.send (Noop "confirm cancel"))
-        }
-        c.isOpen
+    div [ class "tw-confirm" ]
+        [ Modal.confirm
+            { id = "confirm-modal"
+            , icon = c.icon
+            , color = c.color
+            , title = c.title
+            , message = c.message
+            , confirm = c.confirm
+            , cancel = c.cancel
+            , onConfirm = ConfirmAnswer True c.onConfirm
+            , onCancel = ConfirmAnswer False (T.send (Noop "confirm cancel"))
+            }
+            c.isOpen
+        ]
+
+
+viewToasts : Theme -> List Toast.Model -> Html Msg
+viewToasts theme toasts =
+    div [ class "tw-toasts" ] [ Toast.container theme toasts ToastHide ]

@@ -1,20 +1,15 @@
 module PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 
 import Conf
-import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
-import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Maybe as M
-import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Models.Project exposing (tablesArea, viewportArea, viewportSize)
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
-import Models.Project.TableProps exposing (TableProps)
+import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setCanvas, setTables)
 
 
@@ -27,41 +22,36 @@ handleWheel event canvas =
         canvas |> performMove event.delta.x event.delta.y
 
 
-zoomCanvas : Dict HtmlId DomInfo -> Float -> CanvasProps -> CanvasProps
-zoomCanvas domInfos delta canvas =
-    viewportSize domInfos |> M.mapOrElse (\size -> canvas |> performZoom delta (viewportArea size canvas |> Area.center)) canvas
+zoomCanvas : Float -> CanvasProps -> CanvasProps
+zoomCanvas delta canvas =
+    canvas |> performZoom delta (canvas |> CanvasProps.viewport |> Area.center)
 
 
-fitCanvas : Dict HtmlId DomInfo -> Layout -> Layout
-fitCanvas domInfos layout =
-    viewportSize domInfos
-        |> M.mapOrElse
-            (\size ->
-                let
-                    viewport : Area
-                    viewport =
-                        viewportArea size layout.canvas
+fitCanvas : Layout -> Layout
+fitCanvas layout =
+    let
+        selectedTables : List TableProps
+        selectedTables =
+            layout.tables |> List.filter .selected
 
-                    selectedTables : List TableProps
-                    selectedTables =
-                        layout.tables |> List.filter .selected
+        tables : List TableProps
+        tables =
+            B.cond (selectedTables |> List.isEmpty) layout.tables selectedTables
 
-                    contentArea : Area
-                    contentArea =
-                        tablesArea domInfos (B.cond (selectedTables |> List.isEmpty) layout.tables selectedTables)
+        tablesArea : Area
+        tablesArea =
+            tables |> List.map TableProps.area |> Area.merge |> Maybe.withDefault Area.zero
 
-                    padding : Float
-                    padding =
-                        20
+        padding : Float
+        padding =
+            20
 
-                    ( newZoom, centerOffset ) =
-                        computeFit viewport padding contentArea layout.canvas.zoom
-                in
-                layout
-                    |> setCanvas (\c -> { c | position = Position 0 0, zoom = newZoom })
-                    |> setTables (\tables -> tables |> List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
-            )
-            layout
+        ( newZoom, centerOffset ) =
+            computeFit (layout.canvas |> CanvasProps.viewport) padding tablesArea layout.canvas.zoom
+    in
+    layout
+        |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })
+        |> setTables (List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
 
 
 performMove : Float -> Float -> CanvasProps -> CanvasProps

@@ -13,7 +13,7 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size exposing (Size)
+import Libs.Models.Size as Size exposing (Size)
 import Libs.Time as Time
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout as Layout exposing (Layout)
@@ -138,11 +138,13 @@ computeRelations sources =
 
 viewportSize : Dict HtmlId DomInfo -> Maybe Size
 viewportSize domInfos =
+    -- TODO remove, used to inject into viewportArea most of the time
     domInfos |> Dict.get Conf.ids.erd |> Maybe.map .size
 
 
 viewportArea : Size -> CanvasProps -> Area
 viewportArea size canvas =
+    -- TODO use CanvasProps.viewport instead
     Area (canvas.position |> Position.negate) size |> Area.div canvas.zoom
 
 
@@ -151,7 +153,7 @@ tablesArea domInfos tables =
     let
         positions : List ( TableProps, Size )
         positions =
-            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> M.mapOrElse .size (Size 0 0))
+            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> M.mapOrElse .size Size.zero)
 
         left : Float
         left =

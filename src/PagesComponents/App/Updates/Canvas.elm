@@ -58,7 +58,7 @@ fitCanvas domInfos layout =
                         computeFit viewport padding contentArea layout.canvas.zoom
                 in
                 layout
-                    |> setCanvas (\c -> { c | position = Position 0 0, zoom = newZoom })
+                    |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })
                     |> setTables (\tables -> tables |> List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
             )
             layout
@@ -153,4 +153,4 @@ computeZoom viewport padding content zoom =
 resetCanvas : Project -> Project
 resetCanvas project =
     { project | usedLayout = Nothing }
-        |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = { position = { left = 0, top = 0 }, zoom = 1 } })
+        |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = project.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })

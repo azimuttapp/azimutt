@@ -4,7 +4,6 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
-import Libs.Models.Position exposing (Position)
 import Libs.Time as Time
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableProps as TableProps exposing (TableProps)
@@ -22,7 +21,7 @@ type alias Layout =
 
 init : Time.Posix -> Layout
 init now =
-    { canvas = CanvasProps (Position 0 0) 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
+    { canvas = CanvasProps.zero, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 encode : Layout -> Value

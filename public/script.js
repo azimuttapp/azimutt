@@ -178,6 +178,10 @@ window.addEventListener('load', function() {
             size: {
                 width: entry.contentRect.width,
                 height: entry.contentRect.height
+            },
+            seeds: {
+                left: Math.random(),
+                top: Math.random()
             }
         }))
         sendToElm({kind: 'GotSizes', sizes: sizes})

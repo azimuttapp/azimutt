@@ -2,10 +2,8 @@ module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, 
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
-import Dict exposing (Dict)
 import Html.Styled exposing (Html)
 import Libs.Area exposing (Area)
-import Libs.DomInfo exposing (DomInfo)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (Millis, ZoomDelta)
 import Libs.Models.Color as Color
@@ -31,7 +29,6 @@ type alias Model =
     , virtualRelation : Maybe VirtualRelation
 
     -- global attrs
-    , domInfos : Dict HtmlId DomInfo
     , openedDropdown : HtmlId
     , dragging : Maybe DragState
     , toastIdx : Int
@@ -63,7 +60,6 @@ type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | LoadProject Project
-    | InitializedTable TableId Position
     | ShowTable TableId
     | ShowTables (List TableId)
     | HideTable TableId

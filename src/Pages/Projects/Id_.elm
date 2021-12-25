@@ -4,7 +4,6 @@ import Browser.Events
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast exposing (Content(..))
 import Conf
-import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
 import Html.Styled as Styled exposing (text)
@@ -62,7 +61,6 @@ init shared req =
       , cursorMode = CursorSelect
       , selectionBox = Nothing
       , virtualRelation = Nothing
-      , domInfos = Dict.empty
       , openedDropdown = ""
       , dragging = Nothing
       , toastIdx = 0
@@ -88,9 +86,6 @@ update req msg model =
 
         LoadProject project ->
             ( { model | project = Just project }, Cmd.batch [ observeSize Conf.ids.erd, observeTablesSize (project.layout.tables |> List.map .id) ] )
-
-        InitializedTable id position ->
-            ( model |> setTableProps id (\t -> { t | position = position }), Cmd.none )
 
         ShowTable id ->
             model |> setProjectWithCmd (showTable id)
@@ -153,13 +148,13 @@ update req msg model =
             ( { model | cursorMode = mode }, Cmd.none )
 
         FitContent ->
-            ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
+            ( model |> setCurrentLayout fitCanvas, Cmd.none )
 
         OnWheel event ->
             ( model |> setCurrentLayout (setCanvas (handleWheel event)), Cmd.none )
 
         Zoom delta ->
-            ( model |> setCurrentLayout (setCanvas (zoomCanvas model.domInfos delta)), Cmd.none )
+            ( model |> setCurrentLayout (setCanvas (zoomCanvas delta)), Cmd.none )
 
         DropdownToggle id ->
             ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )

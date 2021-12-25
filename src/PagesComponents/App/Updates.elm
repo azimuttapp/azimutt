@@ -6,8 +6,8 @@ import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (SizeChange)
-import Libs.Models.Position exposing (Position)
-import Libs.Models.Size exposing (Size)
+import Libs.Models.Position as Position
+import Libs.Models.Size as Size
 import Libs.Task exposing (send)
 import Models.Project exposing (viewportArea)
 import Models.Project.Layout exposing (Layout)
@@ -25,7 +25,7 @@ updateSizes sizeChanges model =
 
 updateSize : SizeChange -> Model -> Model
 updateSize change model =
-    { model | domInfos = model.domInfos |> Dict.update change.id (\_ -> B.cond (change.size == Size 0 0) Nothing (Just { position = change.position, size = change.size })) }
+    { model | domInfos = model.domInfos |> Dict.update change.id (\_ -> B.cond (change.size == Size.zero) Nothing (Just { position = change.position, size = change.size })) }
 
 
 initializeTableOnFirstSize : Model -> SizeChange -> Maybe (Cmd Msg)
@@ -37,7 +37,7 @@ initializeTableOnFirstSize model change =
                     (p.tables |> Dict.get (TableId.fromHtmlId change.id))
                     (p.layout.tables |> L.findBy .id (TableId.fromHtmlId change.id))
                     (model.domInfos |> Dict.get Conf.ids.erd)
-                    |> M.filter (\( _, props, _ ) -> props.position == Position 0 0 && not (model.domInfos |> Dict.member change.id))
+                    |> M.filter (\( _, props, _ ) -> props.position == Position.zero && not (model.domInfos |> Dict.member change.id))
                     |> Maybe.map (\( t, _, canvasInfos ) -> t.id |> initializeTable change.size (viewportArea canvasInfos.size p.layout.canvas))
             )
 

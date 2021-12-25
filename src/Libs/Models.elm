@@ -35,7 +35,7 @@ type alias ZoomDelta =
 
 
 type alias SizeChange =
-    { id : HtmlId, position : Position, size : Size }
+    { id : HtmlId, position : Position, size : Size, seeds : Position }
 
 
 type alias Millis =

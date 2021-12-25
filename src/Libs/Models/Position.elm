@@ -1,4 +1,4 @@
-module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, sub, toTuple)
+module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, sub, toTuple, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -7,6 +7,11 @@ import Libs.Json.Encode as E
 
 type alias Position =
     { left : Float, top : Float }
+
+
+zero : Position
+zero =
+    { left = 0, top = 0 }
 
 
 fromTuple : ( Float, Float ) -> Position

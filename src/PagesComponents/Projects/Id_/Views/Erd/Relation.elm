@@ -90,7 +90,7 @@ getColor hover src ref =
 
 shouldHighlight : Maybe ColumnRef -> ColumnRefFull -> Bool
 shouldHighlight hover target =
-    target.props |> M.exist (\( p, _, _ ) -> p.selected || (hover |> M.has target.ref))
+    target.props |> M.any (\( p, _, _ ) -> p.selected || (hover |> M.has target.ref))
 
 
 headerHeight : Float

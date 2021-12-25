@@ -69,7 +69,7 @@ doc =
         |> Chapter.renderComponentList
             [ ( "relation"
               , relation
-                    { src = Position 0 0
+                    { src = Position.zero
                     , ref = Position 50 50
                     , nullable = False
                     , color = Nothing

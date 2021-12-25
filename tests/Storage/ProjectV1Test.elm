@@ -5,7 +5,7 @@ import Expect
 import Json.Decode as Decode
 import Libs.Dict as D
 import Libs.Models.Color as Color
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Storage.ProjectV1 exposing (CanvasPropsV1, ColumnRefV1, ColumnV1, CommentV1, FindPathSettingsV1, IndexV1, LayoutV1, PrimaryKeyV1, ProjectSourceContentV1(..), ProjectSourceV1, ProjectV1, RelationV1, SchemaV1, SourceLineV1, SourceV1, TablePropsV1, TableV1, UniqueV1, decodeProject, defaultProjectSettings, upgrade)
@@ -60,7 +60,7 @@ project1 =
         , relations = []
         , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Color.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
-    , layouts = Dict.fromList [ ( "empty", LayoutV1 (CanvasPropsV1 (Position 0 0) 0.5) [] [] (time 1202) (time 1203) ) ]
+    , layouts = Dict.fromList [ ( "empty", LayoutV1 (CanvasPropsV1 Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
     , currentLayout = Nothing
     , settings = { findPath = FindPathSettingsV1 4 [] [] }
     , createdAt = time 1000
@@ -134,7 +134,7 @@ project2 =
         }
     , layouts =
         Dict.fromList
-            [ ( "empty", LayoutV1 (CanvasPropsV1 (Position 0 0) 0.5) [] [] (time 1202) (time 1203) )
+            [ ( "empty", LayoutV1 (CanvasPropsV1 Position.zero 0.5) [] [] (time 1202) (time 1203) )
             , ( "users", LayoutV1 (CanvasPropsV1 (Position 12 32) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 102) Color.red [ "id", "name" ] True ] [] (time 1202) (time 1203) )
             ]
     , currentLayout = Just "users"

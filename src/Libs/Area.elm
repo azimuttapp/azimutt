@@ -1,4 +1,4 @@
-module Libs.Area exposing (Area, center, div, from, inside, move, mult, normalize, overlap)
+module Libs.Area exposing (Area, center, div, from, inside, merge, move, mult, normalize, overlap, zero)
 
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
@@ -6,6 +6,11 @@ import Libs.Models.Size as Size exposing (Size)
 
 type alias Area =
     { position : Position, size : Size }
+
+
+zero : Area
+zero =
+    { position = Position.zero, size = Size.zero }
 
 
 from : Position -> Position -> Area
@@ -31,6 +36,15 @@ mult factor area =
 div : Float -> Area -> Area
 div factor area =
     Area (area.position |> Position.div factor) (area.size |> Size.div factor)
+
+
+merge : List Area -> Maybe Area
+merge areas =
+    Maybe.map4 (\left top right bottom -> Area (Position left top) (Size (right - left) (bottom - top)))
+        ((areas |> List.map (\area -> area.position.left)) |> List.minimum)
+        (areas |> List.map (\area -> area.position.top) |> List.minimum)
+        (areas |> List.map (\area -> area.position.left + area.size.width) |> List.maximum)
+        (areas |> List.map (\area -> area.position.top + area.size.height) |> List.maximum)
 
 
 normalize : Area -> Area

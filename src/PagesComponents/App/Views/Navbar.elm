@@ -130,8 +130,8 @@ tablesInLayout project layout =
 
 
 viewResetButton : Maybe LayoutName -> Layout -> Html Msg
-viewResetButton selectedLayout layout =
-    if selectedLayout /= Nothing || not ((layout.tables == []) && (layout.hiddenTables == []) && layout.canvas == { position = { left = 0, top = 0 }, zoom = 1 }) then
+viewResetButton selectedLayout { tables, hiddenTables, canvas } =
+    if selectedLayout /= Nothing || not ((tables == []) && (hiddenTables == []) && canvas.position == { left = 0, top = 0 } && canvas.zoom == 1) then
         bsButton Secondary [ class "me-2", onClick ResetCanvas ] [ text "Reset layout" ]
 
     else

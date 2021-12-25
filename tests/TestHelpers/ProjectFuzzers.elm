@@ -5,6 +5,8 @@ import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Dict as D
 import Libs.Fuzz as F exposing (listN)
+import Libs.Models.Position as Position
+import Libs.Models.Size as Size
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
@@ -140,12 +142,12 @@ layout =
 
 canvasProps : Fuzzer CanvasProps
 canvasProps =
-    Fuzz.map2 CanvasProps position zoomLevel
+    Fuzz.map2 (CanvasProps Position.zero Size.zero) position zoomLevel
 
 
 tableProps : Fuzzer TableProps
 tableProps =
-    F.map6 TableProps tableId position color (listSmall columnName) Fuzz.bool Fuzz.bool
+    F.map6 (\id p c cols s h -> TableProps id p Size.zero c cols s h) tableId position color (listSmall columnName) Fuzz.bool Fuzz.bool
 
 
 projectSettings : Fuzzer ProjectSettings
