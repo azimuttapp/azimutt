@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, blur, click, dropProject, focus, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scroll, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -26,6 +26,26 @@ import Time
 click : HtmlId -> Cmd msg
 click id =
     messageToJs (Click id)
+
+
+mouseDown : HtmlId -> Cmd msg
+mouseDown id =
+    messageToJs (MouseDown id)
+
+
+focus : HtmlId -> Cmd msg
+focus id =
+    messageToJs (Focus id)
+
+
+blur : HtmlId -> Cmd msg
+blur id =
+    messageToJs (Blur id)
+
+
+scroll : HtmlId -> String -> Cmd msg
+scroll id position =
+    messageToJs (Scroll id position)
 
 
 showModal : HtmlId -> Cmd msg
@@ -149,6 +169,10 @@ trackError name error =
 
 type ElmMsg
     = Click HtmlId
+    | MouseDown HtmlId
+    | Focus HtmlId
+    | Blur HtmlId
+    | Scroll HtmlId String
     | ShowModal HtmlId
     | HideModal HtmlId
     | HideOffcanvas HtmlId
@@ -204,6 +228,18 @@ elmEncoder elm =
     case elm of
         Click id ->
             Encode.object [ ( "kind", "Click" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        MouseDown id ->
+            Encode.object [ ( "kind", "MouseDown" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        Focus id ->
+            Encode.object [ ( "kind", "Focus" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        Blur id ->
+            Encode.object [ ( "kind", "Blur" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        Scroll id position ->
+            Encode.object [ ( "kind", "Scroll" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
 
         ShowModal id ->
             Encode.object [ ( "kind", "ShowModal" |> Encode.string ), ( "id", id |> Encode.string ) ]

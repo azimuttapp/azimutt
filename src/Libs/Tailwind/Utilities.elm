@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, focusRing, focusWithin, focusWithinRing, h, left, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
+module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, focusRing, focusWithin, focusWithinRing, h, left, max_h, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
 
 import Css exposing (Style, pseudoClass)
 import Libs.Models.Color as Color exposing (Color, ColorLevel)
@@ -53,6 +53,11 @@ top x unit =
 underline_dotted : Css.Style
 underline_dotted =
     Css.property "text-decoration-style" "dotted"
+
+
+max_h : Float -> String -> Css.Style
+max_h num unit =
+    Css.property "max-height" (String.fromFloat num ++ unit)
 
 
 z : Int -> Css.Style

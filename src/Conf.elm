@@ -89,9 +89,11 @@ ids =
 hotkeys : Dict String (List Hotkey)
 hotkeys =
     Dict.fromList
-        [ ( "focus-search", [ { hotkey | key = Just "/" } ] )
-        , ( "autocomplete-up", [ { hotkey | key = Just "ArrowUp", target = Just { target | id = Just "search", tag = Just "input" } } ] )
-        , ( "autocomplete-down", [ { hotkey | key = Just "ArrowDown", target = Just { target | id = Just "search", tag = Just "input" } } ] )
+        [ ( "search-open", [ { hotkey | key = Just "/" } ] )
+        , ( "search-close", [ { hotkey | key = Just "Escape", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
+        , ( "search-up", [ { hotkey | key = Just "ArrowUp", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
+        , ( "search-down", [ { hotkey | key = Just "ArrowDown", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
+        , ( "search-confirm", [ { hotkey | key = Just "Enter", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "remove", [ { hotkey | key = Just "d" }, { hotkey | key = Just "h" }, { hotkey | key = Just "Backspace" }, { hotkey | key = Just "Delete" } ] )
         , ( "save", [ { hotkey | key = Just "s", ctrl = True, onInput = True, preventDefault = True } ] )
         , ( "move-forward", [ { hotkey | key = Just "ArrowUp", ctrl = True } ] )

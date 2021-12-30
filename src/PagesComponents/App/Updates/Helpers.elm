@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
+module PagesComponents.App.Updates.Helpers exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayouts, setNavbar, setPosition, setProject, setProjectWithCmd, setRelations, setSearch, setSettings, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -10,6 +10,21 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 setTime : (t -> t) -> { item | time : t } -> { item | time : t }
 setTime transform item =
     { item | time = item.time |> transform }
+
+
+setNavbar : (n -> n) -> { item | navbar : n } -> { item | navbar : n }
+setNavbar transform item =
+    { item | navbar = item.navbar |> transform }
+
+
+setSearch : (s -> s) -> { item | search : s } -> { item | search : s }
+setSearch transform item =
+    { item | search = item.search |> transform }
+
+
+setActive : (a -> a) -> { item | active : a } -> { item | active : a }
+setActive transform item =
+    { item | active = item.active |> transform }
 
 
 setSwitch : (s -> s) -> { item | switch : s } -> { item | switch : s }

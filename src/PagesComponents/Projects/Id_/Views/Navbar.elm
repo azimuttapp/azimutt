@@ -51,7 +51,7 @@ viewNavbar theme openedDropdown storedProjects project model =
             [ div [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Tw.h_16 ] ]
                 [ div [ css [ Tw.flex, Tw.items_center, Tw.px_2, Bp.lg [ Tw.px_0 ] ] ]
                     [ viewNavbarBrand
-                    , viewNavbarSearch theme openedDropdown { id = "search", search = model.search, project = project }
+                    , viewNavbarSearch theme openedDropdown { id = Conf.ids.searchInput, search = model.search.text, active = model.search.active, project = project }
                     , viewNavbarHelp theme
                     ]
                 , div [ css [ Tw.flex_1, Tw.flex, Tw.justify_center, Tw.px_2 ] ]

@@ -22,9 +22,10 @@ import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), M
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
+import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverNextColumn, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
-import Ports exposing (JsMsg(..), observeSize, observeTablesSize, trackJsonError)
+import Ports exposing (JsMsg(..), listenHotkeys, observeSize, observeTablesSize, trackJsonError, trackPage)
 import Request
 import Shared
 import View exposing (View)
@@ -55,7 +56,7 @@ type alias Msg =
 init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init shared req =
     ( { project = Nothing
-      , navbar = { mobileMenuOpen = False, search = "" }
+      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
@@ -67,7 +68,12 @@ init shared req =
       , toasts = []
       , confirm = { color = Color.red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send (Noop "confirm init"), isOpen = False }
       }
-    , Cmd.batch (shared |> Shared.projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) [])
+    , Cmd.batch
+        ((shared |> Shared.projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) [])
+            ++ [ listenHotkeys Conf.hotkeys
+               , trackPage "app"
+               ]
+        )
     )
 
 
@@ -82,7 +88,7 @@ update req msg model =
             ( { model | navbar = model.navbar |> (\n -> { n | mobileMenuOpen = not n.mobileMenuOpen }) }, Cmd.none )
 
         SearchUpdated search ->
-            ( { model | navbar = model.navbar |> (\n -> { n | search = search }) }, Cmd.none )
+            ( { model | navbar = model.navbar |> (\n -> { n | search = n.search |> (\s -> { s | text = search, active = 0 }) }) }, Cmd.none )
 
         LoadProject project ->
             ( { model | project = Just project }, Cmd.batch [ observeSize Conf.ids.erd, observeTablesSize (project.layout.tables |> List.map .id) ] )
@@ -223,10 +229,9 @@ handleJsMessage req message model =
         --GotSourceId now sourceId src ref ->
         --    -- send (SourceMsg (CreateSource (Source sourceId "User" UserDefined Array.empty Dict.empty [ Relation.virtual src ref sourceId ] True Nothing now now) "Relation added to newly create <b>User</b> source."))
         --    ( model, T.send (Noop "GotSourceId not handled") )
-        --
-        --GotHotkey hotkey ->
-        --    -- Cmd.batch (handleHotkey model hotkey)
-        --    ( model, T.send (Noop "GotHotkey not handled") )
+        GotHotkey hotkey ->
+            handleHotkey model hotkey
+
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message:<br>" ++ D.errorToHtml err)), trackJsonError "js-message" err ] )
 

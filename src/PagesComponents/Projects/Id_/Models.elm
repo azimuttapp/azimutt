@@ -39,7 +39,7 @@ type alias Model =
 
 type alias NavbarModel =
     { mobileMenuOpen : Bool
-    , search : String
+    , search : { text : String, active : Int }
     }
 
 

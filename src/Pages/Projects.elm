@@ -10,7 +10,7 @@ import Libs.Task as T
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
-import Ports
+import Ports exposing (trackPage)
 import Request
 import Shared
 import Tracking
@@ -47,7 +47,7 @@ init =
       , toastCpt = 0
       , toasts = []
       }
-    , Cmd.none
+    , Cmd.batch [ trackPage "dashboard" ]
     )
 
 

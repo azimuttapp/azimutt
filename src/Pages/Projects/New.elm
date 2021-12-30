@@ -15,7 +15,7 @@ import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.Updates.PortMsg exposing (handleJsMsg)
 import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 import PagesComponents.Projects.New.View exposing (viewNewProject)
-import Ports exposing (JsMsg(..), onJsMessage, readLocalFile, readRemoteFile, saveProject, track)
+import Ports exposing (JsMsg(..), onJsMessage, readLocalFile, readRemoteFile, saveProject, track, trackPage)
 import Request
 import Shared
 import Tracking
@@ -55,7 +55,10 @@ init req =
       , parsedSchema = Nothing
       , project = Nothing
       }
-    , req.query |> Dict.get "sample" |> Maybe.map (\sample -> T.send (SelectSample sample)) |> Maybe.withDefault Cmd.none
+    , Cmd.batch
+        ((req.query |> Dict.get "sample" |> Maybe.map (\sample -> [ T.send (SelectSample sample) ]) |> Maybe.withDefault [])
+            ++ [ trackPage "new-project" ]
+        )
     )
 
 

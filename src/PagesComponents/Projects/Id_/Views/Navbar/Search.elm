@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Navbar.Search exposing (NavbarSearch, viewNavbarSearch)
+module PagesComponents.Projects.Id_.Views.Navbar.Search exposing (Model, viewNavbarSearch)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
@@ -7,6 +7,7 @@ import Dict exposing (Dict)
 import Html.Styled exposing (Html, button, div, input, label, span, text)
 import Html.Styled.Attributes exposing (autocomplete, css, for, id, name, placeholder, tabindex, type_, value)
 import Html.Styled.Events exposing (onBlur, onFocus, onInput, onMouseDown)
+import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (role)
 import Libs.List as L
 import Libs.Maybe as M
@@ -15,6 +16,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
+import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Column exposing (Column)
 import Models.Project.Layout exposing (Layout)
@@ -26,14 +28,15 @@ import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-type alias NavbarSearch =
+type alias Model =
     { id : HtmlId
     , search : String
+    , active : Int
     , project : Project
     }
 
 
-viewNavbarSearch : Theme -> HtmlId -> NavbarSearch -> Html Msg
+viewNavbarSearch : Theme -> HtmlId -> Model -> Html Msg
 viewNavbarSearch theme openedDropdown model =
     div [ css [ Tw.ml_6 ] ]
         [ div [ css [ Tw.max_w_lg, Tw.w_full, Bp.lg [ Tw.max_w_xs ] ] ]
@@ -72,7 +75,7 @@ viewNavbarSearch theme openedDropdown model =
                             []
                         ]
                 )
-                (\_ ->
+                (\m ->
                     if model.search == "" then
                         div []
                             [ span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles) ]
@@ -89,7 +92,8 @@ viewNavbarSearch theme openedDropdown model =
                                             ]
 
                                     else
-                                        div [] (results |> List.map (viewSearchResult model.project.layout))
+                                        div [ css [ Tu.max_h 600 "px", Tw.overflow_y_auto ] ]
+                                            (results |> List.indexedMap (viewSearchResult theme m.id model.project.layout (model.active |> modBy (results |> List.length))))
                                )
                 )
             ]
@@ -102,8 +106,8 @@ type SearchResult
     | FoundRelation Relation
 
 
-viewSearchResult : Layout -> SearchResult -> Html Msg
-viewSearchResult layout res =
+viewSearchResult : Theme -> HtmlId -> Layout -> Int -> Int -> SearchResult -> Html Msg
+viewSearchResult theme searchId layout active index res =
     let
         shownTables : List TableId
         shownTables =
@@ -113,11 +117,11 @@ viewSearchResult layout res =
         viewItem =
             \msg icon content disabled ->
                 if disabled then
-                    span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles) ]
+                    span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles ++ B.cond (active == index) [ Color.text theme.color 400 ] []) ]
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
 
                 else
-                    button [ type_ "button", onMouseDown msg, role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles) ]
+                    button ([ type_ "button", onMouseDown msg, role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles ++ B.cond (active == index) [ Color.bg theme.color 600, Tw.text_white ] []) ] ++ B.cond (active == index) [ id (searchId ++ "-active") ] [])
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
     in
     case res of
@@ -125,7 +129,7 @@ viewSearchResult layout res =
             viewItem (ShowTable table.id) Icon.Table [ text (TableId.show table.id) ] (shownTables |> L.has table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id) Tag [ span [ css [ Tw.text_gray_500 ] ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> L.has table.id)
+            viewItem (ShowTable table.id) Tag [ span [ css [ Tw.opacity_50 ] ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> L.has table.id)
 
         FoundRelation relation ->
             if shownTables |> L.hasNot relation.src.table then

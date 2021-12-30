@@ -29,6 +29,10 @@ window.addEventListener('load', function() {
             // console.log('elm message', msg)
             switch (msg.kind) {
                 case 'Click':         click(msg.id); break;
+                case 'MouseDown':     mousedown(msg.id); break;
+                case 'Focus':         focus(msg.id); break;
+                case 'Blur':          blur(msg.id); break;
+                case 'Scroll':        scroll(msg.id, msg.position); break;
                 case 'ShowModal':     showModal(msg.id); break;
                 case 'HideModal':     hideModal(msg.id); break;
                 case 'HideOffcanvas': hideOffcanvas(msg.id); break;
@@ -52,6 +56,18 @@ window.addEventListener('load', function() {
 
     function click(id) {
         getElementById(id).click()
+    }
+    function mousedown(id) {
+        getElementById(id).dispatchEvent(new Event('mousedown'))
+    }
+    function focus(id) {
+        getElementById(id).focus()
+    }
+    function blur(id) {
+        getElementById(id).blur()
+    }
+    function scroll(id, position) {
+        maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
     function showModal(id) {
         bootstrap.Modal.getOrCreateInstance(getElementById(id)).show()

@@ -12,7 +12,7 @@ import Tracking exposing (events)
 handleHotkey : Model -> String -> List (Cmd Msg)
 handleHotkey model hotkey =
     case hotkey of
-        "focus-search" ->
+        "search-open" ->
             [ click Conf.ids.searchInput ]
 
         "remove" ->
