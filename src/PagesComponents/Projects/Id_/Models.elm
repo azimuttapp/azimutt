@@ -71,8 +71,8 @@ type Msg
     | SelectTable TableId Bool
     | TableOrder TableId Int
     | SortColumns TableId ColumnOrder
-    | ToggleHoverTable TableId
-    | ToggleHoverColumn ColumnRef
+    | ToggleHoverTable TableId Bool
+    | ToggleHoverColumn ColumnRef Bool
     | ShowAllTables
     | HideAllTables
     | ResetCanvas

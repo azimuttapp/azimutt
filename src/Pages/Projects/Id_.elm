@@ -126,11 +126,11 @@ update req msg model =
         SortColumns id kind ->
             ( model |> setProject (sortColumns id kind), Cmd.none )
 
-        ToggleHoverTable table ->
-            ( { model | hoverTable = B.cond (model.hoverTable |> M.has table) Nothing (Just table) }, Cmd.none )
+        ToggleHoverTable table on ->
+            ( { model | hoverTable = B.cond on (Just table) Nothing }, Cmd.none )
 
-        ToggleHoverColumn column ->
-            ( { model | hoverColumn = B.cond (model.hoverColumn |> M.has column) Nothing (Just column) }, Cmd.none )
+        ToggleHoverColumn column on ->
+            ( { model | hoverColumn = B.cond on (Just column) Nothing }, Cmd.none )
 
         ResetCanvas ->
             ( model, T.send (toastSuccess "ResetCanvas") )
@@ -142,12 +142,15 @@ update req msg model =
             ( model, T.send (toastSuccess "HideAllTables") )
 
         LayoutMsg ->
+            -- FIXME
             ( model, T.send (toastSuccess "LayoutMsg") )
 
         VirtualRelationMsg ->
+            -- FIXME
             ( model, T.send (toastSuccess "VirtualRelationMsg") )
 
         FindPathMsg ->
+            -- FIXME
             ( model, T.send (toastSuccess "FindPathMsg") )
 
         CursorMode mode ->

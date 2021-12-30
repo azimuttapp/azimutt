@@ -94,8 +94,8 @@ type alias State =
 
 
 type alias Actions msg =
-    { toggleHover : msg
-    , toggleHoverColumn : String -> msg
+    { toggleHover : Bool -> msg
+    , toggleHoverColumn : String -> Bool -> msg
     , toggleSelected : Bool -> msg
     , toggleDropdown : HtmlId -> msg
     , toggleHiddenColumns : msg
@@ -108,8 +108,8 @@ table : Model msg -> Html msg
 table model =
     div
         [ id model.id
-        , onMouseEnter model.actions.toggleHover
-        , onMouseLeave model.actions.toggleHover
+        , onMouseEnter (model.actions.toggleHover True)
+        , onMouseLeave (model.actions.toggleHover False)
         , css
             ([ Tw.inline_block, Tw.bg_white, Tw.rounded_lg, Tw.cursor_pointer, B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md ]
                 ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ] []
@@ -207,8 +207,8 @@ viewHiddenColumns model =
 viewColumn : Model msg -> Bool -> Column -> Html msg
 viewColumn model isLast column =
     div
-        [ onMouseEnter (model.actions.toggleHoverColumn column.name)
-        , onMouseLeave (model.actions.toggleHoverColumn column.name)
+        [ onMouseEnter (model.actions.toggleHoverColumn column.name True)
+        , onMouseLeave (model.actions.toggleHoverColumn column.name False)
         , onDoubleClick (model.actions.toggleColumn column.name)
         , css
             ([ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.px_2, Tw.bg_white ]
@@ -444,8 +444,8 @@ sample =
         , showHiddenColumns = False
         }
     , actions =
-        { toggleHover = logAction "hover table"
-        , toggleHoverColumn = \c -> logAction ("hover column " ++ c)
+        { toggleHover = \h -> logAction ("hover table " ++ B.cond h "on" " off")
+        , toggleHoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ B.cond h "on" " off")
         , toggleSelected = \_ -> logAction "selected"
         , toggleDropdown = \id -> logAction ("open " ++ id)
         , toggleHiddenColumns = logAction "hidden columns"
@@ -467,8 +467,8 @@ doc =
                             | hiddenColumns = [ { sampleColumn | name = "created", kind = "timestamp without time zone" } ]
                             , state = tableDocState
                             , actions =
-                                { toggleHover = sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond (s.hover |> M.has ref) Nothing (Just ref) }))
-                                , toggleHoverColumn = \c -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond (s.hoverColumn |> M.has ref) Nothing (Just ref) }))
+                                { toggleHover = \h -> sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond h (Just ref) Nothing }))
+                                , toggleHoverColumn = \c h -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond h (Just ref) Nothing }))
                                 , toggleSelected = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , toggleDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 , toggleHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })

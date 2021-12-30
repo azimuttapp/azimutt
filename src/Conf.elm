@@ -94,7 +94,7 @@ hotkeys =
         , ( "search-up", [ { hotkey | key = Just "ArrowUp", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-down", [ { hotkey | key = Just "ArrowDown", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-confirm", [ { hotkey | key = Just "Enter", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
-        , ( "remove", [ { hotkey | key = Just "d" }, { hotkey | key = Just "h" }, { hotkey | key = Just "Backspace" }, { hotkey | key = Just "Delete" } ] )
+        , ( "remove", [ { hotkey | key = Just "d" }, { hotkey | key = Just "Backspace" }, { hotkey | key = Just "Delete" } ] )
         , ( "save", [ { hotkey | key = Just "s", ctrl = True, onInput = True, preventDefault = True } ] )
         , ( "move-forward", [ { hotkey | key = Just "ArrowUp", ctrl = True } ] )
         , ( "move-backward", [ { hotkey | key = Just "ArrowDown", ctrl = True } ] )
