@@ -17,7 +17,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Task as T
 import Page
-import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableProps, setTables)
+import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), toastError, toastInfo, toastSuccess)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
@@ -25,7 +25,7 @@ import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverNextColumn, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
-import Ports exposing (JsMsg(..), listenHotkeys, observeSize, observeTablesSize, trackJsonError, trackPage)
+import Ports exposing (JsMsg(..), autofocus, listenHotkeys, observeSize, observeTablesSize, trackJsonError, trackPage)
 import Request
 import Shared
 import View exposing (View)
@@ -133,7 +133,7 @@ update req msg model =
             ( { model | hoverColumn = B.cond on (Just column) Nothing }, Cmd.none )
 
         ResetCanvas ->
-            ( model, T.send (toastSuccess "ResetCanvas") )
+            ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )
 
         ShowAllTables ->
             ( model, T.send (toastSuccess "ShowAllTables") )
@@ -200,7 +200,7 @@ update req msg model =
             ( { model | toasts = model.toasts |> List.filter (\t -> t.key /= key) }, Cmd.none )
 
         ConfirmOpen confirm ->
-            ( { model | confirm = { confirm | isOpen = True } }, Cmd.none )
+            ( { model | confirm = { confirm | isOpen = True } }, autofocus Conf.ids.confirm )
 
         ConfirmAnswer answer cmd ->
             ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )

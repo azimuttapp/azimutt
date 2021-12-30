@@ -9,7 +9,7 @@ import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, h3, p, span, text)
-import Html.Styled.Attributes exposing (css, id)
+import Html.Styled.Attributes exposing (autofocus, css, id)
 import Html.Styled.Events exposing (onClick)
 import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, role)
@@ -35,8 +35,14 @@ type alias ConfirmModel msg =
 
 confirm : ConfirmModel msg -> Bool -> Html msg
 confirm model isOpen =
+    let
+        titleId : HtmlId
+        titleId =
+            model.id ++ "-title"
+    in
     modal
         { id = model.id
+        , titleId = titleId
         , isOpen = isOpen
         , onBackgroundClick = model.onCancel
         }
@@ -45,7 +51,7 @@ confirm model isOpen =
                 [ Icon.outline model.icon [ Color.text model.color 600 ]
                 ]
             , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
-                [ h3 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ], id model.id ]
+                [ h3 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ], id titleId ]
                     [ text model.title ]
                 , div [ css [ Tw.mt_2 ] ]
                     [ p [ css [ Tw.text_sm, Tw.text_gray_500 ] ] [ model.message ]
@@ -53,7 +59,7 @@ confirm model isOpen =
                 ]
             ]
         , div [ css [ Tw.mt_5, Bp.sm [ Tw.mt_4, Tw.flex, Tw.flex_row_reverse ] ] ]
-            [ Button.primary3 model.color [ onClick model.onConfirm, css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text model.confirm ]
+            [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text model.confirm ]
             , Button.white3 Color.gray [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
             ]
         ]
@@ -61,6 +67,7 @@ confirm model isOpen =
 
 type alias Model msg =
     { id : HtmlId
+    , titleId : HtmlId
     , isOpen : Bool
     , onBackgroundClick : msg
     }
@@ -93,11 +100,11 @@ modal model content =
             else
                 [ Tw.transition_all, Tw.ease_out, Tw.duration_300, Tw.opacity_0, Tw.translate_y_4, Bp.sm [ Tw.translate_y_0, Tw.scale_95 ] ]
     in
-    div [ ariaLabelledby model.id, role "dialog", ariaModal True, css ([ Tw.fixed, Tw.z_10, Tw.inset_0, Tw.overflow_y_auto ] ++ modalContainer) ]
+    div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css ([ Tw.fixed, Tw.z_10, Tw.inset_0, Tw.overflow_y_auto ] ++ modalContainer) ]
         [ div [ css [ Tw.flex, Tw.items_end, Tw.justify_center, Tw.min_h_screen, Tw.pt_4, Tw.px_4, Tw.pb_20, Tw.text_center, Bp.sm [ Tw.block, Tw.p_0 ] ] ]
             [ div [ ariaHidden True, onClick model.onBackgroundClick, css ([ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75 ] ++ backgroundOverlay) ] []
             , {- This element is to trick the browser into centering the modal contents. -} span [ css [ Tw.hidden, Bp.sm [ Tw.inline_block, Tw.align_middle, Tw.h_screen ] ], ariaHidden True ] [ text "\u{200B}" ]
-            , div [ css ([ Tw.inline_block, Tw.align_bottom, Tw.bg_white, Tw.rounded_lg, Tw.px_4, Tw.pt_5, Tw.pb_4, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.align_middle, Tw.max_w_lg, Tw.w_full, Tw.p_6 ] ] ++ modalPanel) ] content
+            , div [ id model.id, css ([ Tw.inline_block, Tw.align_bottom, Tw.bg_white, Tw.rounded_lg, Tw.px_4, Tw.pt_5, Tw.pb_4, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.align_middle, Tw.max_w_lg, Tw.w_full, Tw.p_6 ] ] ++ modalPanel) ] content
             ]
         ]
 
@@ -161,7 +168,8 @@ doc theme =
                     div []
                         [ Button.primary3 theme.color [ onClick (setIsOpen True) ] [ text "Click me!" ]
                         , modal
-                            { id = "modal-title"
+                            { id = "modal"
+                            , titleId = "modal-title"
                             , isOpen = isOpen
                             , onBackgroundClick = setIsOpen False
                             }

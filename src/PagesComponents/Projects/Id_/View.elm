@@ -77,7 +77,7 @@ viewConfirm : Confirm Msg -> Html Msg
 viewConfirm c =
     div [ class "tw-confirm" ]
         [ Modal.confirm
-            { id = "confirm-modal"
+            { id = Conf.ids.confirm
             , icon = c.icon
             , color = c.color
             , title = c.title

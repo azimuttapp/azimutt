@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, blur, click, dropProject, focus, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scroll, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, autofocus, blur, click, dropProject, focus, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scroll, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -46,6 +46,11 @@ blur id =
 scroll : HtmlId -> String -> Cmd msg
 scroll id position =
     messageToJs (Scroll id position)
+
+
+autofocus : HtmlId -> Cmd msg
+autofocus id =
+    messageToJs (Autofocus id)
 
 
 showModal : HtmlId -> Cmd msg
@@ -173,6 +178,7 @@ type ElmMsg
     | Focus HtmlId
     | Blur HtmlId
     | Scroll HtmlId String
+    | Autofocus HtmlId
     | ShowModal HtmlId
     | HideModal HtmlId
     | HideOffcanvas HtmlId
@@ -240,6 +246,9 @@ elmEncoder elm =
 
         Scroll id position ->
             Encode.object [ ( "kind", "Scroll" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
+
+        Autofocus id ->
+            Encode.object [ ( "kind", "Autofocus" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
         ShowModal id ->
             Encode.object [ ( "kind", "ShowModal" |> Encode.string ), ( "id", id |> Encode.string ) ]

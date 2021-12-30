@@ -33,6 +33,7 @@ window.addEventListener('load', function() {
                 case 'Focus':         focus(msg.id); break;
                 case 'Blur':          blur(msg.id); break;
                 case 'Scroll':        scroll(msg.id, msg.position); break;
+                case 'Autofocus':     autofocus(msg.id); break;
                 case 'ShowModal':     showModal(msg.id); break;
                 case 'HideModal':     hideModal(msg.id); break;
                 case 'HideOffcanvas': hideOffcanvas(msg.id); break;
@@ -68,6 +69,9 @@ window.addEventListener('load', function() {
     }
     function scroll(id, position) {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
+    }
+    function autofocus(id) {
+        getElementById(id).querySelector('[autofocus]').focus()
     }
     function showModal(id) {
         bootstrap.Modal.getOrCreateInstance(getElementById(id)).show()

@@ -71,7 +71,7 @@ handleHotkey model hotkey =
             ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
 
         "cancel" ->
-            ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
+            ( model, cancelElement model )
 
         "help" ->
             ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
@@ -85,6 +85,19 @@ removeElement model =
     (model.hoverColumn |> Maybe.map (HideColumn >> T.send))
         |> M.orElse (model.hoverTable |> Maybe.map (HideTable >> T.send))
         |> Maybe.withDefault (T.send (toastInfo "Can't find an element to remove :("))
+
+
+cancelElement : Model -> Cmd Msg
+cancelElement model =
+    if model.confirm.isOpen then
+        T.send (ConfirmAnswer False model.confirm.onConfirm)
+
+    else if model.virtualRelation /= Nothing then
+        -- FIXME
+        T.send VirtualRelationMsg
+
+    else
+        T.send (toastInfo "Nothing to cancel")
 
 
 moveTables : Int -> Model -> Cmd Msg
