@@ -2,10 +2,12 @@ module PagesComponents.Projects.Id_.Views.Erd.Table exposing (Model, viewTable)
 
 import Components.Organisms.Table as Table
 import Conf
+import Dict
 import Either exposing (Either(..))
 import Html.Styled exposing (Attribute, Html, div)
 import Html.Styled.Attributes exposing (css)
 import Libs.Bool as B
+import Libs.Hotkey as Hotkey
 import Libs.Html.Styled.Attributes exposing (onPointerDownStopPropagation)
 import Libs.List as L
 import Libs.Maybe as M
@@ -68,34 +70,34 @@ viewTable model zoom table tableRelations =
             , columns = table.props.columns |> List.filterMap (\name -> columns |> Ned.get name)
             , hiddenColumns = columns |> Ned.values |> Nel.filter (\c -> table.props.columns |> L.hasNot c.name) |> List.sortBy .index
             , settings =
-                [ { label = "Hide table", action = Right (HideTable table.id) }
-                , { label = "Sort columns", action = Left (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o })) }
+                [ { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                , { label = "Sort columns", action = Left (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
                 , { label = "Hide columns"
                   , action =
                         Left
-                            [ { label = "Without relation", action = HideColumns table.id "relations" }
-                            , { label = "Regular ones", action = HideColumns table.id "regular" }
-                            , { label = "Nullable ones", action = HideColumns table.id "nullable" }
-                            , { label = "All", action = HideColumns table.id "all" }
+                            [ { label = "Without relation", action = HideColumns table.id "relations", hotkey = Nothing }
+                            , { label = "Regular ones", action = HideColumns table.id "regular", hotkey = Nothing }
+                            , { label = "Nullable ones", action = HideColumns table.id "nullable", hotkey = Nothing }
+                            , { label = "All", action = HideColumns table.id "all", hotkey = Nothing }
                             ]
                   }
                 , { label = "Show columns"
                   , action =
                         Left
-                            [ { label = "With relations", action = ShowColumns table.id "relations" }
-                            , { label = "All", action = ShowColumns table.id "all" }
+                            [ { label = "With relations", action = ShowColumns table.id "relations", hotkey = Nothing }
+                            , { label = "All", action = ShowColumns table.id "all", hotkey = Nothing }
                             ]
                   }
                 , { label = "Order"
                   , action =
                         Left
-                            [ { label = "Bring to front", action = TableOrder table.id 1000 }
-                            , { label = "Bring forward", action = TableOrder table.id (table.index + 1) }
-                            , { label = "Send backward", action = TableOrder table.id (table.index - 1) }
-                            , { label = "Send to back", action = TableOrder table.id 0 }
+                            [ { label = "Bring to front", action = TableOrder table.id 1000, hotkey = Conf.hotkeys |> Dict.get "move-to-top" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                            , { label = "Bring forward", action = TableOrder table.id (table.index + 1), hotkey = Conf.hotkeys |> Dict.get "move-forward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                            , { label = "Send backward", action = TableOrder table.id (table.index - 1), hotkey = Conf.hotkeys |> Dict.get "move-backward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                            , { label = "Send to back", action = TableOrder table.id 0, hotkey = Conf.hotkeys |> Dict.get "move-to-back" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             ]
                   }
-                , { label = "Find path for this table", action = Right FindPathMsg }
+                , { label = "Find path for this table", action = Right { action = FindPathMsg, hotkey = Nothing } }
                 ]
             , state =
                 { color = table.props.color

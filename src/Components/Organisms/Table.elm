@@ -425,12 +425,12 @@ sample =
         ]
     , hiddenColumns = []
     , settings =
-        [ { label = "Menu item 1", action = Right (logAction "menu item 1") }
+        [ { label = "Menu item 1", action = Right { action = logAction "menu item 1", hotkey = Nothing } }
         , { label = "Menu item 2"
           , action =
                 Left
-                    [ { label = "Menu item 2.1", action = logAction "menu item 2.1" }
-                    , { label = "Menu item 2.2", action = logAction "menu item 2.2" }
+                    [ { label = "Menu item 2.1", action = logAction "menu item 2.1", hotkey = Nothing }
+                    , { label = "Menu item 2.2", action = logAction "menu item 2.2", hotkey = Nothing }
                     ]
           }
         ]

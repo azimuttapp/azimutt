@@ -1,7 +1,8 @@
-module Components.Molecules.Dropdown exposing (Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, btnDisabled, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuStyles, submenuButton)
+module Components.Molecules.Dropdown exposing (Action, Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, btnDisabled, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuStyles, submenuButton)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Styles as Styles
 import Css
 import Either exposing (Either(..))
@@ -14,6 +15,7 @@ import Html.Styled.Attributes exposing (class, css, href, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, role)
+import Libs.Maybe as M
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
@@ -33,11 +35,15 @@ type Direction
 
 
 type alias MenuItem msg =
-    { label : String, action : Either (List (SubMenuItem msg)) msg }
+    { label : String, action : Either (List (SubMenuItem msg)) (Action msg) }
+
+
+type alias Action msg =
+    { action : msg, hotkey : Maybe (List String) }
 
 
 type alias SubMenuItem msg =
-    { label : String, action : msg }
+    { label : String, action : msg, hotkey : Maybe (List String) }
 
 
 dropdown : Model -> (Model -> Html msg) -> (Model -> Html msg) -> Html msg
@@ -86,11 +92,16 @@ submenuButton menu =
             div [ class "group", css ([ Tw.relative ] ++ itemStyles) ]
                 [ text (menu.label ++ " »")
                 , div [ class "group-hover-block", css ([ Tw.hidden, Tw.neg_top_1, Tw.left_full ] ++ menuStyles) ]
-                    (submenus |> List.map (\submenu -> btn [] submenu.action [ text submenu.label ]))
+                    (submenus |> List.map (\submenu -> hotkeyBtn submenu.action submenu.label submenu.hotkey))
                 ]
 
-        Right action ->
-            btn [] action [ text menu.label ]
+        Right { action, hotkey } ->
+            hotkeyBtn action menu.label hotkey
+
+
+hotkeyBtn : msg -> String -> Maybe (List String) -> Html msg
+hotkeyBtn action label hotkey =
+    btn [ Tw.flex, Tw.justify_between ] action ([ text label ] ++ (hotkey |> M.mapOrElse (\k -> [ Kbd.badge [ css [ Tw.ml_3 ] ] k ]) []))
 
 
 btn : List Css.Style -> msg -> List (Html msg) -> Html msg
@@ -169,8 +180,8 @@ doc theme =
                                 [ btn [] (logAction "btn") [ text "btn" ]
                                 , btnDisabled [] [ text "btnDisabled" ]
                                 , link { url = "#", text = "link" }
-                                , submenuButton { label = "submenuButton Right", action = Right (logAction "submenuButton Right") }
-                                , submenuButton { label = "submenuButton Left", action = Left ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label })) }
+                                , submenuButton { label = "submenuButton Right", action = Right { action = logAction "submenuButton Right", hotkey = Nothing } }
+                                , submenuButton { label = "submenuButton Left", action = Left ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label, hotkey = Nothing })) }
                                 ]
                         )
                 )
