@@ -92,6 +92,9 @@ cancelElement model =
     if model.confirm.isOpen then
         T.send (ConfirmAnswer False model.confirm.onConfirm)
 
+    else if model.dragging /= Nothing then
+        T.send DragCancel
+
     else if model.virtualRelation /= Nothing then
         -- FIXME
         T.send VirtualRelationMsg

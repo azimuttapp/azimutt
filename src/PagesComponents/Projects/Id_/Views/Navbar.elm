@@ -39,8 +39,8 @@ viewNavbar theme openedDropdown storedProjects project model =
     let
         features : List (Btn Msg)
         features =
-            [ { action = ShowAllTables, text = "Show all tables", hotkey = Nothing }
-            , { action = HideAllTables, text = "Hide all tables", hotkey = Nothing }
+            [ { action = HideAllTables, text = "Hide all tables", hotkey = Nothing }
+            , { action = ShowAllTables, text = "Show all tables", hotkey = Nothing }
             , { action = LayoutMsg, text = "Create new layout", hotkey = Just "save-layout" }
             , { action = VirtualRelationMsg, text = "Create a virtual relation", hotkey = Just "create-virtual-relation" }
             , { action = FindPathMsg, text = "Find path between tables", hotkey = Just "find-path" }

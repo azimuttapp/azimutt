@@ -62,7 +62,9 @@ type Msg
     | LoadProject Project
     | ShowTable TableId
     | ShowTables (List TableId)
+    | ShowAllTables
     | HideTable TableId
+    | HideAllTables
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId String
@@ -73,8 +75,6 @@ type Msg
     | SortColumns TableId ColumnOrder
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
-    | ShowAllTables
-    | HideAllTables
     | ResetCanvas
     | LayoutMsg
     | VirtualRelationMsg
@@ -88,6 +88,7 @@ type Msg
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position
+    | DragCancel
     | ToastAdd (Maybe Millis) Toast.Content
     | ToastShow (Maybe Millis) String
     | ToastHide String

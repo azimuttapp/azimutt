@@ -23,7 +23,7 @@ import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverNextColumn, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..), autofocus, listenHotkeys, observeSize, observeTablesSize, trackJsonError, trackPage)
 import Request
@@ -99,8 +99,14 @@ update req msg model =
         ShowTables ids ->
             model |> setProjectWithCmd (showTables ids)
 
+        ShowAllTables ->
+            model |> setProjectWithCmd showAllTables
+
         HideTable id ->
             ( model |> setCurrentLayout (hideTable id), Cmd.none )
+
+        HideAllTables ->
+            ( model |> setCurrentLayout hideAllTables, Cmd.none )
 
         ShowColumn { table, column } ->
             ( model |> setCurrentLayout (showColumn table column), Cmd.none )
@@ -134,12 +140,6 @@ update req msg model =
 
         ResetCanvas ->
             ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )
-
-        ShowAllTables ->
-            ( model, T.send (toastSuccess "ShowAllTables") )
-
-        HideAllTables ->
-            ( model, T.send (toastSuccess "HideAllTables") )
 
         LayoutMsg ->
             -- FIXME
@@ -186,6 +186,9 @@ update req msg model =
                 |> M.mapOrElse (\d -> { model | dragging = Nothing } |> handleDrag d True) model
             , Cmd.none
             )
+
+        DragCancel ->
+            ( { model | dragging = Nothing }, Cmd.none )
 
         ToastAdd millis toast ->
             model.toastIdx |> String.fromInt |> (\key -> ( { model | toastIdx = model.toastIdx + 1, toasts = { key = key, content = toast, isOpen = False } :: model.toasts }, T.sendAfter 1 (ToastShow millis key) ))

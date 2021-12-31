@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverNextColumn, showColumn, showColumns, showTable, showTables, sortColumns)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 
 import Dict
 import Libs.Bool as B
@@ -64,12 +64,33 @@ showTables ids project =
            )
 
 
+showAllTables : Project -> ( Project, Cmd Msg )
+showAllTables project =
+    let
+        initProps : Layout -> List TableProps
+        initProps =
+            \l ->
+                project.tables
+                    |> Dict.values
+                    |> List.filter (\t -> not ((l.tables |> L.memberBy .id t.id) && (l.hiddenTables |> L.memberBy .id t.id)))
+                    |> List.map (TableProps.init project.settings project.relations)
+    in
+    ( project |> setLayout (\l -> { l | tables = (l.tables ++ l.hiddenTables ++ initProps l) |> L.uniqueBy .id, hiddenTables = [] })
+    , Cmd.batch [ observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))) ]
+    )
+
+
 hideTable : TableId -> Layout -> Layout
 hideTable id layout =
     { layout
         | tables = layout.tables |> List.filter (\t -> not (t.id == id))
         , hiddenTables = ((layout.tables |> L.findBy .id id |> M.toList) ++ layout.hiddenTables) |> L.uniqueBy .id
     }
+
+
+hideAllTables : Layout -> Layout
+hideAllTables layout =
+    { layout | tables = [], hiddenTables = (layout.tables ++ layout.hiddenTables) |> L.uniqueBy .id }
 
 
 showColumn : TableId -> ColumnName -> Layout -> Layout
