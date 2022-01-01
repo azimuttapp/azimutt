@@ -1,6 +1,7 @@
-module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, focusRing, focusWithin, focusWithinRing, h, left, max_h, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
+module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, max_h, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
 
 import Css exposing (Style, pseudoClass)
+import Libs.Models exposing (Millis)
 import Libs.Models.Color as Color exposing (Color, ColorLevel)
 import Tailwind.Utilities as Tw
 
@@ -68,6 +69,11 @@ z value =
 z_max : Css.Style
 z_max =
     Css.property "z-index" "10000"
+
+
+duration : Millis -> Css.Style
+duration millis =
+    Css.property "transition-duration" (String.fromInt millis ++ "ms")
 
 
 stroke_3 : Css.Style

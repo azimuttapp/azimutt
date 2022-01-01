@@ -1,24 +1,24 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
 import Components.Atoms.Styles as Styles
-import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, div)
-import Html.Styled.Attributes exposing (class, css)
+import Html.Styled.Attributes exposing (class, css, id)
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
-import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 import PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
+import PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
+import PagesComponents.Projects.Id_.Views.Modals.CreateLayout exposing (viewCreateLayout)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
-import Shared exposing (Confirm, StoredProjects(..))
+import Shared exposing (StoredProjects(..))
 import Tailwind.Utilities as Tw
 
 
@@ -33,7 +33,7 @@ viewProject shared model =
 
         Loaded projects ->
             model.project |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
-    , viewConfirm model.confirm
+    , viewModal shared.theme model
     , viewToasts shared.theme model.toasts
     ]
 
@@ -73,21 +73,12 @@ viewNotFound theme =
         }
 
 
-viewConfirm : Confirm Msg -> Html Msg
-viewConfirm c =
-    div [ class "tw-confirm" ]
-        [ Modal.confirm
-            { id = Conf.ids.confirm
-            , icon = c.icon
-            , color = c.color
-            , title = c.title
-            , message = c.message
-            , confirm = c.confirm
-            , cancel = c.cancel
-            , onConfirm = ConfirmAnswer True c.onConfirm
-            , onCancel = ConfirmAnswer False (T.send (Noop "confirm cancel"))
-            }
-            c.isOpen
+viewModal : Theme -> Model -> Html Msg
+viewModal theme model =
+    div [ class "tw-modal", id Conf.ids.modal ]
+        [ (model.confirm |> Maybe.map (viewConfirm model.modalOpened))
+            |> M.orElse (model.newLayout |> Maybe.map (viewCreateLayout theme model.modalOpened))
+            |> Maybe.withDefault (div [] [])
         ]
 
 

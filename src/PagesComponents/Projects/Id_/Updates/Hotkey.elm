@@ -6,7 +6,7 @@ import Libs.Maybe as M
 import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
-import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Model, Msg(..), toastInfo, toastWarning)
 import Ports exposing (blur, focus, mouseDown, saveProject, scroll, track)
 import Tracking
 
@@ -51,8 +51,7 @@ handleHotkey model hotkey =
             ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = True }))), Cmd.none )
 
         "save-layout" ->
-            -- FIXME
-            ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
+            ( model, T.send (LayoutMsg LOpen) )
 
         "find-path" ->
             -- FIXME
@@ -89,18 +88,13 @@ removeElement model =
 
 cancelElement : Model -> Cmd Msg
 cancelElement model =
-    if model.confirm.isOpen then
-        T.send (ConfirmAnswer False model.confirm.onConfirm)
-
-    else if model.dragging /= Nothing then
-        T.send DragCancel
-
-    else if model.virtualRelation /= Nothing then
-        -- FIXME
-        T.send VirtualRelationMsg
-
-    else
-        T.send (toastInfo "Nothing to cancel")
+    T.send
+        ((model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.onConfirm)))
+            |> M.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
+            |> M.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
+            |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg {- FIXME -}))
+            |> Maybe.withDefault (toastInfo "Nothing to cancel")
+        )
 
 
 moveTables : Int -> Model -> Cmd Msg

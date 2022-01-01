@@ -32,7 +32,6 @@ type alias Confirm msg =
     , confirm : String
     , cancel : String
     , onConfirm : Cmd msg
-    , isOpen : Bool
     }
 
 

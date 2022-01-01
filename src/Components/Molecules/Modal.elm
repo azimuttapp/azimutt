@@ -1,4 +1,4 @@
-module Components.Molecules.Modal exposing (ConfirmModel, DocState, SharedDocState, confirm, doc, initDocState)
+module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, SharedDocState, closeDuration, confirm, doc, initDocState, modal)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -13,11 +13,23 @@ import Html.Styled.Attributes exposing (autofocus, css, id)
 import Html.Styled.Events exposing (onClick)
 import Libs.Dict as D
 import Libs.Html.Styled.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, role)
+import Libs.Models exposing (Millis)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
+
+
+openDuration : Millis
+openDuration =
+    200
+
+
+closeDuration : Millis
+closeDuration =
+    300
 
 
 type alias ConfirmModel msg =
@@ -87,24 +99,24 @@ modal model content =
         backgroundOverlay : List Css.Style
         backgroundOverlay =
             if model.isOpen then
-                [ Tw.transition_opacity, Tw.ease_in, Tw.duration_200, Tw.opacity_100 ]
+                [ Tw.transition_opacity, Tw.ease_in, Tu.duration openDuration, Tw.opacity_100 ]
 
             else
-                [ Tw.transition_opacity, Tw.ease_out, Tw.duration_300, Tw.opacity_0 ]
+                [ Tw.transition_opacity, Tw.ease_out, Tu.duration closeDuration, Tw.opacity_0 ]
 
         modalPanel : List Css.Style
         modalPanel =
             if model.isOpen then
-                [ Tw.transition_all, Tw.ease_in, Tw.duration_200, Tw.opacity_100, Tw.translate_y_0, Bp.sm [ Tw.scale_100 ] ]
+                [ Tw.transition_all, Tw.ease_in, Tu.duration openDuration, Tw.opacity_100, Tw.translate_y_0, Bp.sm [ Tw.scale_100 ] ]
 
             else
-                [ Tw.transition_all, Tw.ease_out, Tw.duration_300, Tw.opacity_0, Tw.translate_y_4, Bp.sm [ Tw.translate_y_0, Tw.scale_95 ] ]
+                [ Tw.transition_all, Tw.ease_out, Tu.duration closeDuration, Tw.opacity_0, Tw.translate_y_4, Bp.sm [ Tw.translate_y_0, Tw.scale_95 ] ]
     in
-    div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css ([ Tw.fixed, Tw.z_10, Tw.inset_0, Tw.overflow_y_auto ] ++ modalContainer) ]
+    div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css ([ Tw.fixed, Tu.z_max, Tw.inset_0, Tw.overflow_y_auto ] ++ modalContainer) ]
         [ div [ css [ Tw.flex, Tw.items_end, Tw.justify_center, Tw.min_h_screen, Tw.pt_4, Tw.px_4, Tw.pb_20, Tw.text_center, Bp.sm [ Tw.block, Tw.p_0 ] ] ]
             [ div [ ariaHidden True, onClick model.onBackgroundClick, css ([ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75 ] ++ backgroundOverlay) ] []
             , {- This element is to trick the browser into centering the modal contents. -} span [ css [ Tw.hidden, Bp.sm [ Tw.inline_block, Tw.align_middle, Tw.h_screen ] ], ariaHidden True ] [ text "\u{200B}" ]
-            , div [ id model.id, css ([ Tw.inline_block, Tw.align_bottom, Tw.bg_white, Tw.rounded_lg, Tw.px_4, Tw.pt_5, Tw.pb_4, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.align_middle, Tw.max_w_lg, Tw.w_full, Tw.p_6 ] ] ++ modalPanel) ] content
+            , div [ id model.id, css ([ Tw.inline_block, Tw.align_bottom, Tw.bg_white, Tw.rounded_lg, Tw.px_4, Tw.pt_5, Tw.pb_4, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.align_middle, Tw.max_w_max, Tw.w_full, Tw.p_6 ] ] ++ modalPanel) ] content
             ]
         ]
 

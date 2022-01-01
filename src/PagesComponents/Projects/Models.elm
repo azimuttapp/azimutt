@@ -12,7 +12,8 @@ import Shared exposing (Confirm)
 type alias Model =
     { selectedMenu : String
     , mobileMenuOpen : Bool
-    , confirm : Confirm Msg
+    , confirm : Maybe (Confirm Msg)
+    , modalOpened : Bool
     , toastCpt : Int
     , toasts : List Toast.Model
     }
@@ -24,5 +25,7 @@ type Msg
     | DeleteProject Project
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
+    | ModalOpen
+    | ModalClose Msg
     | NavigateTo String
     | Noop

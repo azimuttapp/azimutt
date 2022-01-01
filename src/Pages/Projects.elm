@@ -1,16 +1,16 @@
 module Pages.Projects exposing (Model, Msg, page)
 
 import Browser.Navigation as Navigation
-import Components.Atoms.Icon exposing (Icon(..))
+import Components.Molecules.Modal as Modal
+import Conf
 import Gen.Params.Projects exposing (Params)
-import Html.Styled as Styled exposing (text)
+import Html.Styled as Styled
 import Libs.Bool as B
-import Libs.Models.Color as Color
 import Libs.Task as T
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
-import Ports exposing (trackPage)
+import Ports exposing (autofocus, trackPage)
 import Request
 import Shared
 import Tracking
@@ -43,7 +43,8 @@ init : ( Model, Cmd Msg )
 init =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
-      , confirm = { color = Color.red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send Noop, isOpen = False }
+      , confirm = Nothing
+      , modalOpened = False
       , toastCpt = 0
       , toasts = []
       }
@@ -68,10 +69,16 @@ update req msg model =
             ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Tracking.events.deleteProject project) ] )
 
         ConfirmOpen confirm ->
-            ( { model | confirm = { confirm | isOpen = True } }, Cmd.none )
+            ( { model | confirm = Just confirm }, T.sendAfter 1 ModalOpen )
 
         ConfirmAnswer answer cmd ->
-            ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )
+            ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
+
+        ModalOpen ->
+            ( { model | modalOpened = True }, autofocus Conf.ids.modal )
+
+        ModalClose message ->
+            ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )
 
         NavigateTo url ->
             ( model, Navigation.pushUrl req.key url )

@@ -9,7 +9,7 @@ import Css
 import Dict
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, h3, li, p, span, text, ul)
-import Html.Styled.Attributes exposing (css, href, type_)
+import Html.Styled.Attributes exposing (class, css, href, id, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html.Styled exposing (bText)
@@ -22,7 +22,7 @@ import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
-import Shared exposing (Confirm, StoredProjects(..))
+import Shared exposing (StoredProjects(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 import Time
@@ -36,7 +36,7 @@ viewProjects shared model =
         model
         [ text model.selectedMenu ]
         [ viewContent shared ]
-        [ viewConfirm model.confirm
+        [ viewModal model
         ]
 
 
@@ -129,7 +129,6 @@ confirmDeleteProject project =
         , confirm = "Delete " ++ project.name
         , cancel = "Cancel"
         , onConfirm = T.send (DeleteProject project)
-        , isOpen = True
         }
 
 
@@ -143,17 +142,24 @@ viewNewProject theme =
         ]
 
 
-viewConfirm : Confirm Msg -> Html Msg
-viewConfirm c =
-    Modal.confirm
-        { id = "confirm-modal"
-        , icon = c.icon
-        , color = c.color
-        , title = c.title
-        , message = c.message
-        , confirm = c.confirm
-        , cancel = c.cancel
-        , onConfirm = ConfirmAnswer True c.onConfirm
-        , onCancel = ConfirmAnswer False (T.send Noop)
-        }
-        c.isOpen
+viewModal : Model -> Html Msg
+viewModal model =
+    div [ class "tw-modal", id Conf.ids.modal ]
+        [ model.confirm
+            |> Maybe.map
+                (\c ->
+                    Modal.confirm
+                        { id = Conf.ids.confirm
+                        , icon = c.icon
+                        , color = c.color
+                        , title = c.title
+                        , message = c.message
+                        , confirm = c.confirm
+                        , cancel = c.cancel
+                        , onConfirm = ModalClose (ConfirmAnswer True c.onConfirm)
+                        , onCancel = ModalClose (ConfirmAnswer False (T.send Noop))
+                        }
+                        model.modalOpened
+                )
+            |> Maybe.withDefault (div [] [])
+        ]

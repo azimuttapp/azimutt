@@ -12,7 +12,7 @@ import Html.Styled exposing (Html, a, button, div, img, nav, span, text)
 import Html.Styled.Attributes exposing (alt, class, css, height, href, id, src, tabindex, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
-import Libs.Hotkey as Hotkey
+import Libs.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaExpanded, role)
 import Libs.List as L
 import Libs.Maybe as M
@@ -23,7 +23,7 @@ import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), NavbarModel, confirm)
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), NavbarModel, confirm)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Tailwind.Breakpoints as Bp
@@ -31,7 +31,7 @@ import Tailwind.Utilities as Tw
 
 
 type alias Btn msg =
-    { action : msg, text : String, hotkey : Maybe String }
+    { action : msg, text : String, hotkey : Maybe Hotkey }
 
 
 viewNavbar : Theme -> HtmlId -> List Project -> Project -> NavbarModel -> Html Msg
@@ -41,9 +41,9 @@ viewNavbar theme openedDropdown storedProjects project model =
         features =
             [ { action = HideAllTables, text = "Hide all tables", hotkey = Nothing }
             , { action = ShowAllTables, text = "Show all tables", hotkey = Nothing }
-            , { action = LayoutMsg, text = "Create new layout", hotkey = Just "save-layout" }
-            , { action = VirtualRelationMsg, text = "Create a virtual relation", hotkey = Just "create-virtual-relation" }
-            , { action = FindPathMsg, text = "Find path between tables", hotkey = Just "find-path" }
+            , { action = LayoutMsg LOpen, text = "Save your layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
+            , { action = VirtualRelationMsg, text = "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
+            , { action = FindPathMsg, text = "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
             ]
     in
     nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, Color.bg theme.color 600 ] ]
@@ -115,18 +115,10 @@ viewNavbarFeatures theme features openedDropdown =
                                 , tabindex -1
                                 , css ([ Tw.flex, Tw.w_full, Tw.justify_between, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles)
                                 ]
-                                ([ text btn.text ] ++ (btn.hotkey |> M.mapOrElse hotkey []))
+                                ([ text btn.text ] ++ (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ css [ Tw.ml_3 ] ] (Hotkey.keys h) ]) []))
                         )
                 )
         )
-
-
-hotkey : String -> List (Html msg)
-hotkey id =
-    Conf.hotkeys
-        |> Dict.get id
-        |> Maybe.andThen List.head
-        |> M.mapOrElse (\h -> [ Kbd.badge [ css [ Tw.ml_3 ] ] (Hotkey.keys h) ]) []
 
 
 viewNavbarSettings : Theme -> Html Msg

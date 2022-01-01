@@ -68,6 +68,7 @@ ids :
     , newLayoutModal : HtmlId
     , helpModal : HtmlId
     , confirm : HtmlId
+    , modal : HtmlId
     }
 ids =
     { searchInput = "search"
@@ -83,6 +84,7 @@ ids =
     , newLayoutModal = "new-layout-modal"
     , helpModal = "help-modal"
     , confirm = "confirm-modal"
+    , modal = "modal"
     }
 
 

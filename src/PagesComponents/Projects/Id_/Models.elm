@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Model, Msg(..), NavbarModel, VirtualRelation, confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -14,6 +14,7 @@ import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.TableId exposing (TableId)
 import Ports exposing (JsMsg)
 import Shared exposing (Confirm)
@@ -22,6 +23,7 @@ import Shared exposing (Confirm)
 type alias Model =
     { project : Maybe Project
     , navbar : NavbarModel
+    , newLayout : Maybe LayoutName
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
@@ -33,7 +35,8 @@ type alias Model =
     , dragging : Maybe DragState
     , toastIdx : Int
     , toasts : List Toast.Model
-    , confirm : Confirm Msg
+    , confirm : Maybe (Confirm Msg)
+    , modalOpened : Bool
     }
 
 
@@ -76,7 +79,7 @@ type Msg
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
     | ResetCanvas
-    | LayoutMsg
+    | LayoutMsg LayoutMsg
     | VirtualRelationMsg
     | FindPathMsg
     | CursorMode CursorMode
@@ -95,8 +98,21 @@ type Msg
     | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
+    | ModalOpen
+    | ModalClose Msg
     | JsMessage JsMsg
     | Noop String
+
+
+type LayoutMsg
+    = LOpen
+    | LEdit LayoutName
+    | LCreate LayoutName
+    | LCancel
+    | LLoad LayoutName
+    | LUnload
+    | LUpdate LayoutName
+    | LDelete LayoutName
 
 
 toastSuccess : String -> Msg
@@ -129,5 +145,4 @@ confirm title content message =
         , confirm = "Yes!"
         , cancel = "Nope"
         , onConfirm = T.send message
-        , isOpen = True
         }

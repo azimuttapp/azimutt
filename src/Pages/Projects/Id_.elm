@@ -1,7 +1,7 @@
 module Pages.Projects.Id_ exposing (Model, Msg, page)
 
 import Browser.Events
-import Components.Atoms.Icon exposing (Icon(..))
+import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast exposing (Content(..))
 import Conf
 import Gen.Params.Projects.Id_ exposing (Params)
@@ -12,7 +12,6 @@ import Libs.Bool as B
 import Libs.Json.Decode as D
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Task as T
@@ -23,6 +22,7 @@ import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
+import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..), autofocus, listenHotkeys, observeSize, observeTablesSize, trackJsonError, trackPage)
@@ -57,6 +57,7 @@ init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init shared req =
     ( { project = Nothing
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
+      , newLayout = Nothing
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
@@ -66,7 +67,8 @@ init shared req =
       , dragging = Nothing
       , toastIdx = 0
       , toasts = []
-      , confirm = { color = Color.red, icon = X, title = "", message = text "", confirm = "", cancel = "", onConfirm = T.send (Noop "confirm init"), isOpen = False }
+      , confirm = Nothing
+      , modalOpened = False
       }
     , Cmd.batch
         ((shared |> Shared.projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) [])
@@ -141,9 +143,8 @@ update req msg model =
         ResetCanvas ->
             ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )
 
-        LayoutMsg ->
-            -- FIXME
-            ( model, T.send (toastSuccess "LayoutMsg") )
+        LayoutMsg message ->
+            model |> handleLayout message
 
         VirtualRelationMsg ->
             -- FIXME
@@ -203,10 +204,16 @@ update req msg model =
             ( { model | toasts = model.toasts |> List.filter (\t -> t.key /= key) }, Cmd.none )
 
         ConfirmOpen confirm ->
-            ( { model | confirm = { confirm | isOpen = True } }, autofocus Conf.ids.confirm )
+            ( { model | confirm = Just confirm }, T.sendAfter 1 ModalOpen )
 
         ConfirmAnswer answer cmd ->
-            ( { model | confirm = model.confirm |> (\c -> { c | isOpen = False }) }, B.cond answer cmd Cmd.none )
+            ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
+
+        ModalOpen ->
+            ( { model | modalOpened = True }, autofocus Conf.ids.modal )
+
+        ModalClose message ->
+            ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )
 
         JsMessage message ->
             model |> handleJsMessage req message
