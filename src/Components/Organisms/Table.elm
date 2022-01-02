@@ -16,11 +16,13 @@ import Html.Styled.Events exposing (onClick, onDoubleClick, onMouseEnter, onMous
 import Html.Styled.Keyed as Keyed
 import Libs.Bool as B
 import Libs.Html.Styled exposing (bText)
-import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, onPointerUp, role, track)
+import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role, track)
+import Libs.Html.Styled.Events exposing (onPointerUp)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
@@ -94,13 +96,14 @@ type alias State =
 
 
 type alias Actions msg =
-    { toggleHover : Bool -> msg
-    , toggleHoverColumn : String -> Bool -> msg
-    , toggleSelected : Bool -> msg
-    , toggleDropdown : HtmlId -> msg
-    , toggleHiddenColumns : msg
-    , toggleColumn : String -> msg
-    , showRelations : List Relation -> msg
+    { hoverTable : Bool -> msg
+    , hoverColumn : String -> Bool -> msg
+    , clickHeader : Bool -> msg
+    , clickColumn : Maybe (String -> Position -> msg)
+    , dblClickColumn : String -> msg
+    , clickRelations : List Relation -> msg
+    , clickHiddenColumns : msg
+    , clickDropdown : HtmlId -> msg
     }
 
 
@@ -108,8 +111,8 @@ table : Model msg -> Html msg
 table model =
     div
         [ id model.id
-        , onMouseEnter (model.actions.toggleHover True)
-        , onMouseLeave (model.actions.toggleHover False)
+        , onMouseEnter (model.actions.hoverTable True)
+        , onMouseLeave (model.actions.hoverTable False)
         , css
             ([ Tw.inline_block, Tw.bg_white, Tw.rounded_lg, Tw.cursor_pointer, B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md ]
                 ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ] []
@@ -152,7 +155,7 @@ viewHeader model =
             , Color.bg (B.cond (isTableHover model) model.state.color Color.default) 50
             ]
         ]
-        [ div [ onPointerUp (\e -> model.actions.toggleSelected e.pointer.keys.ctrl), css [ Tw.flex_grow, Tw.text_center ] ]
+        [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), css [ Tw.flex_grow, Tw.text_center ] ]
             [ if model.isView then
                 span [ css [ textSize, Tw.italic, Tw.underline, Tu.underline_dotted ] ] [ text model.label ] |> Tooltip.top "This is a view"
 
@@ -164,7 +167,7 @@ viewHeader model =
                 button
                     ([ type_ "button"
                      , id m.id
-                     , onClick (model.actions.toggleDropdown m.id)
+                     , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
                      , css [ Tw.flex, Tw.text_sm, Tw.opacity_25, Css.focus [ Tw.outline_none ] ]
@@ -196,7 +199,7 @@ viewHiddenColumns model =
 
     else
         div [ css [ Tw.m_2, Tw.p_2, Tw.bg_gray_100, Tw.rounded_lg ] ]
-            [ div [ onClick model.actions.toggleHiddenColumns, css [ Tw.text_gray_400, Tw.uppercase, Tw.font_bold, Tw.text_sm ] ]
+            [ div [ onClick model.actions.clickHiddenColumns, css [ Tw.text_gray_400, Tw.uppercase, Tw.font_bold, Tw.text_sm ] ]
                 [ text (model.hiddenColumns |> List.length |> S.pluralize "hidden column") ]
             , Keyed.node "div"
                 [ css ([ Tw.rounded_lg, Tw.pt_2 ] ++ B.cond model.state.showHiddenColumns [] [ Tw.hidden ]) ]
@@ -207,15 +210,17 @@ viewHiddenColumns model =
 viewColumn : Model msg -> Bool -> Column -> Html msg
 viewColumn model isLast column =
     div
-        [ onMouseEnter (model.actions.toggleHoverColumn column.name True)
-        , onMouseLeave (model.actions.toggleHoverColumn column.name False)
-        , onDoubleClick (model.actions.toggleColumn column.name)
-        , css
+        ([ onMouseEnter (model.actions.hoverColumn column.name True)
+         , onMouseLeave (model.actions.hoverColumn column.name False)
+         , onDoubleClick (model.actions.dblClickColumn column.name)
+         , css
             ([ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.px_2, Tw.bg_white ]
                 ++ B.cond (isColumnHover model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]
                 ++ B.cond isLast [ Tw.rounded_b_lg ] []
             )
-        ]
+         ]
+            ++ (model.actions.clickColumn |> M.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
+        )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
         , viewColumnName column
         , viewColumnKind model column
@@ -225,7 +230,7 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
-        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.showRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.top "Primary key" ]
@@ -259,7 +264,7 @@ viewColumnIconDropdown model column icon =
                 button
                     ([ type_ "button"
                      , id m.id
-                     , onClick (model.actions.toggleDropdown m.id)
+                     , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
                      , css [ Css.focus [ Tw.outline_none ] ]
@@ -285,13 +290,13 @@ viewColumnIconDropdown model column icon =
                                     Dropdown.btnDisabled [ Tw.py_1 ] content
 
                                 else
-                                    viewColumnIconDropdownItem (model.actions.showRelations [ r ]) content
+                                    viewColumnIconDropdownItem (model.actions.clickRelations [ r ]) content
                             )
                      )
                         ++ (column.inRelations
                                 |> List.filter (\r -> not r.tableShown)
                                 |> (\relations ->
-                                        [ viewColumnIconDropdownItem (model.actions.showRelations relations) [ text ("Show all (" ++ (relations |> List.length |> S.pluralize "table") ++ ")") ] ]
+                                        [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> List.length |> S.pluralize "table") ++ ")") ] ]
                                    )
                            )
                     )
@@ -444,13 +449,14 @@ sample =
         , showHiddenColumns = False
         }
     , actions =
-        { toggleHover = \h -> logAction ("hover table " ++ B.cond h "on" " off")
-        , toggleHoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ B.cond h "on" " off")
-        , toggleSelected = \_ -> logAction "selected"
-        , toggleDropdown = \id -> logAction ("open " ++ id)
-        , toggleHiddenColumns = logAction "hidden columns"
-        , toggleColumn = \col -> logAction ("toggle column: " ++ col)
-        , showRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+        { hoverTable = \h -> logAction ("hover table " ++ B.cond h "on" " off")
+        , hoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ B.cond h "on" " off")
+        , clickHeader = \_ -> logAction "selected"
+        , clickColumn = Nothing
+        , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
+        , clickRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+        , clickHiddenColumns = logAction "hidden columns"
+        , clickDropdown = \id -> logAction ("open " ++ id)
         }
     , zoom = 1
     }
@@ -467,13 +473,14 @@ doc =
                             | hiddenColumns = [ { sampleColumn | name = "created", kind = "timestamp without time zone" } ]
                             , state = tableDocState
                             , actions =
-                                { toggleHover = \h -> sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond h (Just ref) Nothing }))
-                                , toggleHoverColumn = \c h -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond h (Just ref) Nothing }))
-                                , toggleSelected = \_ -> updateDocState (\s -> { s | selected = not s.selected })
-                                , toggleDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
-                                , toggleHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
-                                , toggleColumn = \col -> logAction ("toggle column: " ++ col)
-                                , showRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+                                { hoverTable = \h -> sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond h (Just ref) Nothing }))
+                                , hoverColumn = \c h -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond h (Just ref) Nothing }))
+                                , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
+                                , clickColumn = Nothing
+                                , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
+                                , clickRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+                                , clickHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
+                                , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 }
                         }
               )

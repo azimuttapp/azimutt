@@ -3,6 +3,7 @@ module PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWh
 import Conf
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
+import Libs.Delta as Delta
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
@@ -15,11 +16,11 @@ import PagesComponents.App.Updates.Helpers exposing (setCanvas, setTables)
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
 handleWheel event canvas =
-    if event.keys.ctrl then
-        canvas |> performZoom (-event.delta.y * Conf.canvas.zoom.speed) (Position event.mouse.x event.mouse.y)
+    if event.ctrl then
+        canvas |> performZoom (-event.delta.dy * Conf.canvas.zoom.speed) event.position
 
     else
-        canvas |> performMove event.delta.x event.delta.y
+        { canvas | position = event.delta |> Delta.negate |> Delta.adjust canvas.zoom |> Delta.move canvas.position }
 
 
 zoomCanvas : Float -> CanvasProps -> CanvasProps
@@ -52,20 +53,6 @@ fitCanvas layout =
     layout
         |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })
         |> setTables (List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
-
-
-performMove : Float -> Float -> CanvasProps -> CanvasProps
-performMove left top canvas =
-    let
-        newLeft : Float
-        newLeft =
-            canvas.position.left - (left * canvas.zoom)
-
-        newTop : Float
-        newTop =
-            canvas.position.top - (top * canvas.zoom)
-    in
-    { canvas | position = Position newLeft newTop }
 
 
 performZoom : Float -> Position -> CanvasProps -> CanvasProps

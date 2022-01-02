@@ -22,7 +22,7 @@ global =
         , Global.selector ".group:hover .group-hover-block" [ Tw.block ]
         , Global.selector ".tw-cursor-hand, .tw-cursor-hand *" [ Tu.cursor_hand ]
         , Global.selector ".tw-cursor-hand-drag, .tw-cursor-hand-drag *" [ Tu.cursor_hand_drag ]
-        , Global.selector ".tw-cursor-cross, .tw-cursor-cross *" [ Tu.cursor_hand_drag ]
+        , Global.selector ".tw-cursor-cross, .tw-cursor-cross *" [ Tu.cursor_cell ]
         , Global.selector """input[type="search"]::-webkit-search-decoration,
                              input[type="search"]::-webkit-search-cancel-button,
                              input[type="search"]::-webkit-search-results-button,

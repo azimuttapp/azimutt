@@ -41,7 +41,7 @@ viewProject shared model =
 viewApp : Theme -> Model -> List Project -> Project -> Html Msg
 viewApp theme model storedProjects project =
     div [ class "tw-app" ]
-        [ viewNavbar theme model.openedDropdown storedProjects project model.navbar
+        [ viewNavbar theme model.openedDropdown model.virtualRelation storedProjects project model.navbar
         , viewErd theme model project
         , viewCommands theme model.openedDropdown model.cursorMode project.layout.canvas
         ]

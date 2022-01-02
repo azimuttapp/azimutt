@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, addSource, compute, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
+module Models.Project exposing (Project, addSource, addUserSource, compute, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
 import Conf
 import Dict exposing (Dict)
@@ -90,6 +90,11 @@ updateSource id transform project =
 addSource : Source -> Project -> Project
 addSource source project =
     setSources (\sources -> sources ++ [ source ]) project
+
+
+addUserSource : SourceId -> Dict TableId Table -> List Relation -> Time.Posix -> Project -> Project
+addUserSource id tables relations now project =
+    setSources (\sources -> sources ++ [ Source.user id tables relations now ]) project
 
 
 deleteSource : SourceId -> Project -> Project

@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -80,7 +80,7 @@ type Msg
     | ToggleHoverColumn ColumnRef Bool
     | ResetCanvas
     | LayoutMsg LayoutMsg
-    | VirtualRelationMsg
+    | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg
     | CursorMode CursorMode
     | FitContent
@@ -113,6 +113,13 @@ type LayoutMsg
     | LUnload
     | LUpdate LayoutName
     | LDelete LayoutName
+
+
+type VirtualRelationMsg
+    = VRCreate
+    | VRUpdate ColumnRef Position
+    | VRMove Position
+    | VRCancel
 
 
 toastSuccess : String -> Msg

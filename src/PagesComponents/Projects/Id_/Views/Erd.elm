@@ -8,8 +8,7 @@ import Html.Styled.Keyed as Keyed
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Dict as D
-import Libs.Html.Styled.Attributes exposing (onPointerDownStopPropagation)
-import Libs.Html.Styled.Events exposing (onWheel)
+import Libs.Html.Styled.Events exposing (onPointerDownStopPropagation, onWheel)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -89,7 +88,7 @@ viewErd _ model project =
             ]
         , id Conf.ids.erd
         , onWheel OnWheel
-        , onPointerDownStopPropagation (DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        , onPointerDownStopPropagation (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y position.left position.top "px", Tu.scale project.layout.canvas.zoom ] ]
             [ layoutTables |> viewTables model project.layout.canvas.zoom shownRelations

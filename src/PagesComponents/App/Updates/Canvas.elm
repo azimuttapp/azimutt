@@ -20,11 +20,11 @@ import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setTa
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
 handleWheel event canvas =
-    if event.keys.ctrl then
-        canvas |> performZoom (-event.delta.y * Conf.canvas.zoom.speed) (Position event.mouse.x event.mouse.y)
+    if event.ctrl then
+        canvas |> performZoom (-event.delta.dy * Conf.canvas.zoom.speed) event.position
 
     else
-        canvas |> performMove event.delta.x event.delta.y
+        canvas |> performMove event.delta.dx event.delta.dy
 
 
 zoomCanvas : Dict HtmlId DomInfo -> Float -> CanvasProps -> CanvasProps

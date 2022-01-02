@@ -23,7 +23,7 @@ import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), NavbarModel, confirm)
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Tailwind.Breakpoints as Bp
@@ -34,15 +34,17 @@ type alias Btn msg =
     { action : msg, text : String, hotkey : Maybe Hotkey }
 
 
-viewNavbar : Theme -> HtmlId -> List Project -> Project -> NavbarModel -> Html Msg
-viewNavbar theme openedDropdown storedProjects project model =
+viewNavbar : Theme -> HtmlId -> Maybe VirtualRelation -> List Project -> Project -> NavbarModel -> Html Msg
+viewNavbar theme openedDropdown virtualRelation storedProjects project model =
     let
         features : List (Btn Msg)
         features =
             [ { action = HideAllTables, text = "Hide all tables", hotkey = Nothing }
             , { action = ShowAllTables, text = "Show all tables", hotkey = Nothing }
             , { action = LayoutMsg LOpen, text = "Save your layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
-            , { action = VirtualRelationMsg, text = "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
+            , virtualRelation
+                |> Maybe.map (\_ -> { action = VirtualRelationMsg VRCancel, text = "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
+                |> Maybe.withDefault { action = VirtualRelationMsg VRCreate, text = "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
             , { action = FindPathMsg, text = "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
             ]
     in

@@ -8,7 +8,7 @@ import Html.Styled exposing (Attribute, Html, div)
 import Html.Styled.Attributes exposing (css)
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
-import Libs.Html.Styled.Attributes exposing (onPointerDownStopPropagation)
+import Libs.Html.Styled.Events exposing (onPointerDownStopPropagation)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -27,18 +27,19 @@ import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationFull as RelationFull exposing (RelationFull)
 import Models.TableFull exposing (TableFull)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import Tailwind.Utilities as Tw
 
 
 type alias Model x =
     { x
-        | cursorMode : CursorMode
+        | hoverTable : Maybe TableId
+        , hoverColumn : Maybe ColumnRef
+        , cursorMode : CursorMode
+        , virtualRelation : Maybe VirtualRelation
         , openedDropdown : HtmlId
         , dragging : Maybe DragState
-        , hoverTable : Maybe TableId
-        , hoverColumn : Maybe ColumnRef
     }
 
 
@@ -59,7 +60,7 @@ viewTable model zoom table tableRelations =
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (model.cursorMode == CursorDrag) [] [ onPointerDownStopPropagation (DragStart tableId) ]
+            B.cond (model.cursorMode == CursorDrag) [] [ onPointerDownStopPropagation (.position >> DragStart tableId) ]
     in
     div (drag ++ [ css ([ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px", Tu.z (Conf.canvas.zIndex.tables + table.index) ] ++ B.cond (table.props.size == Size.zero) [ Tw.invisible ] []) ])
         [ Table.table
@@ -109,13 +110,12 @@ viewTable model zoom table tableRelations =
                 , showHiddenColumns = table.props.hiddenColumns
                 }
             , actions =
-                { toggleHover = ToggleHoverTable table.id
-                , toggleHoverColumn = \c -> ToggleHoverColumn { table = table.id, column = c }
-                , toggleSelected = SelectTable table.id
-                , toggleDropdown = DropdownToggle
-                , toggleHiddenColumns = ToggleHiddenColumns table.id
-                , toggleColumn = \col -> { table = table.id, column = col } |> B.cond (table.props.columns |> L.has col) HideColumn ShowColumn
-                , showRelations =
+                { hoverTable = ToggleHoverTable table.id
+                , hoverColumn = \col -> ToggleHoverColumn { table = table.id, column = col }
+                , clickHeader = SelectTable table.id
+                , clickColumn = model.virtualRelation |> Maybe.map (\_ -> \col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
+                , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (table.props.columns |> L.has col) HideColumn ShowColumn
+                , clickRelations =
                     \cols ->
                         case cols of
                             [] ->
@@ -126,6 +126,8 @@ viewTable model zoom table tableRelations =
 
                             _ ->
                                 ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table )))
+                , clickHiddenColumns = ToggleHiddenColumns table.id
+                , clickDropdown = DropdownToggle
                 }
             , zoom = zoom
             }

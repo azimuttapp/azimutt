@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, decode, encode)
+module Models.Project.Source exposing (Source, decode, encode, user)
 
 import Array exposing (Array)
 import Dict exposing (Dict)
@@ -11,7 +11,7 @@ import Libs.Time as Time
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleName as SampleName exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
-import Models.Project.SourceKind as SourceKind exposing (SourceKind)
+import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
 import Models.Project.SourceName as SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
@@ -30,6 +30,21 @@ type alias Source =
     , fromSample : Maybe SampleKey
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
+    }
+
+
+user : SourceId -> Dict TableId Table -> List Relation -> Time.Posix -> Source
+user id tables relations now =
+    { id = id
+    , name = "User"
+    , kind = UserDefined
+    , content = Array.empty
+    , tables = tables
+    , relations = relations
+    , enabled = True
+    , fromSample = Nothing
+    , createdAt = now
+    , updatedAt = now
     }
 
 

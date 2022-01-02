@@ -6,7 +6,7 @@ import Libs.Maybe as M
 import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Model, Msg(..), toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Model, Msg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
 import Ports exposing (blur, focus, mouseDown, saveProject, scroll, track)
 import Tracking
 
@@ -53,11 +53,10 @@ handleHotkey model hotkey =
         "save-layout" ->
             ( model, T.send (LayoutMsg LOpen) )
 
-        "find-path" ->
-            -- FIXME
-            ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
-
         "create-virtual-relation" ->
+            ( model, T.send (VirtualRelationMsg (model.virtualRelation |> M.mapOrElse (\_ -> VRCancel) VRCreate)) )
+
+        "find-path" ->
             -- FIXME
             ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
 
@@ -92,7 +91,7 @@ cancelElement model =
         ((model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.onConfirm)))
             |> M.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
             |> M.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
-            |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg {- FIXME -}))
+            |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
             |> Maybe.withDefault (toastInfo "Nothing to cancel")
         )
 

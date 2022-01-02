@@ -1,15 +1,10 @@
-module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, onPointerDown, onPointerDownPreventDefault, onPointerDownStopPropagation, onPointerUp, role, track)
+module Libs.Html.Styled.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, role, track)
 
-import Html.Events.Extra.Mouse as Mouse
-import Html.Events.Extra.Pointer as Pointer exposing (Event)
 import Html.Styled exposing (Attribute)
 import Html.Styled.Attributes exposing (attribute)
-import Html.Styled.Events as Events
-import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Models exposing (Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position exposing (Position)
 
 
 
@@ -69,26 +64,6 @@ ariaModal value =
 ariaOrientation : Text -> Attribute msg
 ariaOrientation text =
     attribute "aria-orientation" text
-
-
-onPointerDown : (Position -> msg) -> Attribute msg
-onPointerDown msg =
-    Events.on "pointerdown" (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> msg))
-
-
-onPointerDownStopPropagation : (Position -> msg) -> Attribute msg
-onPointerDownStopPropagation msg =
-    Events.stopPropagationOn "pointerdown" (Mouse.eventDecoder |> Decode.map (\e -> ( e.pagePos |> Position.fromTuple |> msg, True )))
-
-
-onPointerDownPreventDefault : (Position -> msg) -> Attribute msg
-onPointerDownPreventDefault msg =
-    Events.preventDefaultOn "pointerdown" (Mouse.eventDecoder |> Decode.map (\e -> ( e.pagePos |> Position.fromTuple |> msg, True )))
-
-
-onPointerUp : (Event -> msg) -> Attribute msg
-onPointerUp msg =
-    Events.on "pointerup" (Pointer.eventDecoder |> Decode.map msg)
 
 
 role : String -> Attribute msg

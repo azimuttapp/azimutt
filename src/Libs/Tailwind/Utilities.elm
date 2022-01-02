@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, max_h, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
+module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, max_h, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
 
 import Css exposing (Style, pseudoClass)
 import Libs.Models exposing (Millis)
@@ -79,6 +79,11 @@ duration millis =
 stroke_3 : Css.Style
 stroke_3 =
     Css.property "stroke-width" "3"
+
+
+cursor_cell : Css.Style
+cursor_cell =
+    Css.property "cursor" "cell"
 
 
 cursor_hand : Css.Style

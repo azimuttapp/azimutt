@@ -4,6 +4,7 @@ import Browser.Events
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast exposing (Content(..))
 import Conf
+import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
 import Html.Styled as Styled exposing (text)
@@ -15,15 +16,18 @@ import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Task as T
+import Models.Project as Project
+import Models.Project.Relation as Relation
 import Page
 import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), toastError, toastInfo, toastSuccess)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..), autofocus, listenHotkeys, observeSize, observeTablesSize, trackJsonError, trackPage)
 import Request
@@ -146,9 +150,8 @@ update req msg model =
         LayoutMsg message ->
             model |> handleLayout message
 
-        VirtualRelationMsg ->
-            -- FIXME
-            ( model, T.send (toastSuccess "VirtualRelationMsg") )
+        VirtualRelationMsg message ->
+            model |> handleVirtualRelation message
 
         FindPathMsg ->
             -- FIXME
@@ -238,10 +241,9 @@ handleJsMessage req message model =
         --GotRemoteFile now projectId sourceId url content sample ->
         --    -- send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content))
         --    ( model, T.send (Noop "GotRemoteFile not handled") )
-        --
-        --GotSourceId now sourceId src ref ->
-        --    -- send (SourceMsg (CreateSource (Source sourceId "User" UserDefined Array.empty Dict.empty [ Relation.virtual src ref sourceId ] True Nothing now now) "Relation added to newly create <b>User</b> source."))
-        --    ( model, T.send (Noop "GotSourceId not handled") )
+        GotSourceId now sourceId src ref ->
+            ( model |> setProject (Project.addUserSource sourceId Dict.empty [ Relation.virtual src ref sourceId ] now), T.send (toastInfo "Relation added to newly created user source.") )
+
         GotHotkey hotkey ->
             handleHotkey model hotkey
 
@@ -270,6 +272,7 @@ subscriptions model =
                         )
                         []
                )
+            ++ (model.virtualRelation |> M.mapOrElse (\_ -> [ Browser.Events.onMouseMove (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> VRMove >> VirtualRelationMsg)) ]) [])
         )
 
 
