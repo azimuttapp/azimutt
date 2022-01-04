@@ -18,6 +18,7 @@ import PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 import PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
 import PagesComponents.Projects.Id_.Views.Modals.CreateLayout exposing (viewCreateLayout)
 import PagesComponents.Projects.Id_.Views.Modals.FindPath exposing (viewFindPath)
+import PagesComponents.Projects.Id_.Views.Modals.Help exposing (viewHelp)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Shared exposing (StoredProjects(..))
 import Tailwind.Utilities as Tw
@@ -80,6 +81,7 @@ viewModal theme model =
         [ (model.confirm |> Maybe.map (viewConfirm model.modalOpened))
             |> M.orElse (model.newLayout |> Maybe.map (viewCreateLayout theme model.modalOpened))
             |> M.orElse (model.findPath |> Maybe.map2 (viewFindPath theme model.modalOpened) model.project)
+            |> M.orElse (model.help |> Maybe.map (viewHelp theme model.modalOpened))
             |> Maybe.withDefault (div [] [])
         ]
 

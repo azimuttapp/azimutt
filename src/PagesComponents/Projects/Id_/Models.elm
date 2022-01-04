@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), Help, HelpMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -35,6 +35,7 @@ type alias Model =
     , newLayout : Maybe LayoutName
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPath
+    , help : Maybe Help
 
     -- global attrs
     , openedDropdown : HtmlId
@@ -59,6 +60,10 @@ type CursorMode
 
 type alias VirtualRelation =
     { src : Maybe ColumnRef, mouse : Position }
+
+
+type alias Help =
+    { openedSection : String }
 
 
 type alias DragState =
@@ -89,6 +94,7 @@ type Msg
     | LayoutMsg LayoutMsg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
+    | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
     | OnWheel WheelEvent
@@ -139,6 +145,12 @@ type FindPathMsg
     | FPToggleResult Int
     | FPSettingsUpdate FindPathSettings
     | FPClose
+
+
+type HelpMsg
+    = HOpen String
+    | HClose
+    | HToggle String
 
 
 toastSuccess : String -> Msg

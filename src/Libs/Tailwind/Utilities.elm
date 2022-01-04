@@ -1,42 +1,53 @@
-module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, max_h, noStyle, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
+module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, link, max_h, noStyle, scale, stroke_3, top, translate_x_y, underline_dotted, w, when, z, z_max)
 
-import Css exposing (Style, pseudoClass)
+import Css
 import Libs.Models exposing (Millis)
 import Libs.Models.Color as Color exposing (Color, ColorLevel)
 import Tailwind.Utilities as Tw
 
 
-focusWithin : List Style -> Style
+focusWithin : List Css.Style -> Css.Style
 focusWithin =
-    pseudoClass "focus-within"
+    Css.pseudoClass "focus-within"
 
 
-focusRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> Style
+focusRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> Css.Style
 focusRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
     Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Color.ring ringColor ringLevel, Color.ringOffset offsetColor offsetLevel ]
 
 
-focusWithinRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> Style
+focusWithinRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> Css.Style
 focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
     focusWithin [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Color.ring ringColor ringLevel, Color.ringOffset offsetColor offsetLevel ]
 
 
-noStyle : Style
+noStyle : Css.Style
 noStyle =
     Css.batch []
 
 
-w : Float -> String -> Style
+when : Bool -> List Css.Style -> Css.Style
+when cond styles =
+    Css.batch
+        (if cond then
+            styles
+
+         else
+            []
+        )
+
+
+w : Float -> String -> Css.Style
 w width unit =
     Css.property "width" (String.fromFloat width ++ unit)
 
 
-h : Float -> String -> Style
+h : Float -> String -> Css.Style
 h height unit =
     Css.property "height" (String.fromFloat height ++ unit)
 
 
-translate_x_y : Float -> Float -> String -> Style
+translate_x_y : Float -> Float -> String -> Css.Style
 translate_x_y x y unit =
     Css.batch [ Css.property "--tw-translate-x" (String.fromFloat x ++ unit), Css.property "--tw-translate-y" (String.fromFloat y ++ unit) ]
 
@@ -99,3 +110,12 @@ cursor_hand =
 cursor_hand_drag : Css.Style
 cursor_hand_drag =
     Css.property "cursor" "url(\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAB3ElEQVRYhe2WQWvTYBjHf2moWztlHsbEmTAUUYcgelDQD6CQJhfvbw5eBzv5HbwV/QSln6KhtGVevI0epNh2J7UKEwd1W70+Ht4nsotOTeIpPwgh7+X/e54ned9ASUlJScm/4QJLelWByv8IrWjYCnAVeAvMgR1gFVhWscLCl4Ft4Bsw831/1O/33wPHuvZGxVYooCtVYA04GgwGHzzPm0RRNBIRAaTX68183x8BM5XZVuHcJGrAJiAiImEYjhuNxiQVEBGJomjked5Eu3KkwtU8wh3gInA7DTPG7Btj9kVEXNedi4jEcTyN4/inlArXsoans38G7KUCZ6ECN4DzWQXOAfeA42az+c4YM/4LgS3gQlaBOvAIOOl2u5//qPwCBDaBF8AiSZKDs8Lb7fZH4AS4SU4jWMeO4SXwvdPpfPmdQBiGY6ALXNMCMlHBbiw+8AB45TjO4a86kSTJAbAAngIb2K06My62lT5wH9hxHOcwCILpcDici4i0Wq1PQRBMNfw5cAv76ea2NbvYTlwB7gIG2AW+Yl+4BfBa1+8Al8ip+tNUsBvLOrbCh8BjoAE8wX4tWxpeo6AT0sFWtgpcxh4+1/W+gW37UlHhp0n/B+rY0dT1ubDjuKSkMH4AQppUcJnHZMwAAAAASUVORK5CYII=\") 15 15, auto !important"
+
+
+
+-- Generic styles
+
+
+link : Css.Style
+link =
+    Css.batch [ Tw.underline ]

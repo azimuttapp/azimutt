@@ -6,7 +6,7 @@ import Libs.Maybe as M
 import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), LayoutMsg(..), Model, Msg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
 import Ports exposing (blur, focus, mouseDown, scroll)
 
 
@@ -53,7 +53,7 @@ handleHotkey model hotkey =
             ( model, T.send (VirtualRelationMsg (model.virtualRelation |> M.mapOrElse (\_ -> VRCancel) VRCreate)) )
 
         "find-path" ->
-            ( model, T.send (FindPathMsg (model.findPath |> M.mapOrElse (\_ -> FPClose) (FPOpen Nothing Nothing))) )
+            ( model, T.send (FindPathMsg (model.findPath |> M.mapOrElse (\_ -> FPClose) (FPOpen model.hoverTable Nothing))) )
 
         "undo" ->
             -- FIXME
@@ -67,7 +67,7 @@ handleHotkey model hotkey =
             ( model, cancelElement model )
 
         "help" ->
-            ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
+            ( model, T.send (HelpMsg (model.help |> M.mapOrElse (\_ -> HClose) (HOpen ""))) )
 
         _ ->
             ( model, T.send (toastWarning ("Unhandled hotkey '" ++ hotkey ++ "'")) )
@@ -88,6 +88,7 @@ cancelElement model =
             |> M.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
             |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
             |> M.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
+            |> M.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
             |> Maybe.withDefault (toastInfo "Nothing to cancel")
         )
 

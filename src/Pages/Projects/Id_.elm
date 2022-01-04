@@ -25,6 +25,7 @@ import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.FindPath exposing (handleFindPath)
+import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
@@ -70,6 +71,7 @@ init shared req =
       , newLayout = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
+      , help = Nothing
       , openedDropdown = ""
       , dragging = Nothing
       , toastIdx = 0
@@ -152,6 +154,9 @@ update req msg model =
 
         ResetCanvas ->
             ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )
+
+        HelpMsg message ->
+            model |> handleHelp message
 
         LayoutMsg message ->
             model |> handleLayout message

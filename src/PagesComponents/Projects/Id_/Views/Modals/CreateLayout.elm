@@ -45,7 +45,7 @@ viewCreateLayout theme opened newLayout =
                 [ Icon.outline Template [ Color.text theme.color 600 ]
                 ]
             , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
-                [ h3 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ], id titleId ]
+                [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ]
                     [ text "Save your layout" ]
                 , div [ css [ Tw.mt_2 ] ]
                     [ label [ for inputId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700 ] ] [ text "Layout name" ]

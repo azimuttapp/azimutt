@@ -68,7 +68,7 @@ viewHeader theme titleId =
             [ Icon.outline LocationMarker [ Color.text theme.color 600 ]
             ]
         , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
-            [ h3 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ], id titleId ] [ text "Find a path between tables" ]
+            [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text "Find a path between tables" ]
             , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ]
                 [ text "Use relations to find a path between two tables. Useful when you don't know how tables are connected but you want to query their data together." ]
             ]
@@ -80,7 +80,7 @@ viewAlert =
     div [ css [ Tw.px_6, Tw.mt_3 ] ]
         [ Alert.withDescription { color = Color.yellow, icon = Exclamation, title = "Experimental feature" }
             [ text "This feature is experimental to see if and how it's useful and "
-            , extLink Conf.constants.azimuttDiscussionFindPath [ css [ Tw.underline ] ] [ text "gather some feedback" ]
+            , extLink Conf.constants.azimuttDiscussionFindPath [ css [ Tu.link ] ] [ text "gather some feedback" ]
             , text "."
             , br [] []
             , text "Please, be indulgent with the UX and share your thoughts on it (useful or not, how to improve...)."
@@ -91,7 +91,7 @@ viewAlert =
 viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
 viewSettings modalId opened settings =
     div [ css [ Tw.px_6, Tw.mt_3 ] ]
-        [ button [ onClick (FindPathMsg FPToggleSettings), css [ Tw.underline ] ] [ text "Search settings" ]
+        [ button [ onClick (FindPathMsg FPToggleSettings), css [ Tu.link ] ] [ text "Search settings" ]
         , div [ css [ Tw.p_3, Tw.border, Tw.border_gray_300, Tw.bg_gray_50, Tw.rounded_md, Tw.shadow_sm, B.cond opened Tu.noStyle Tw.hidden ] ]
             [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
@@ -184,7 +184,7 @@ viewPaths theme model =
                     , small [ css [ Tw.text_gray_500 ] ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                     , div [ css [ Tw.mt_3 ] ]
                         [ text "We hope your like this feature. If you have a few minutes, please write us "
-                        , extLink Conf.constants.azimuttDiscussionFindPath [ css [ Tw.underline ] ] [ text "a quick feedback" ]
+                        , extLink Conf.constants.azimuttDiscussionFindPath [ css [ Tu.link ] ] [ text "a quick feedback" ]
                         , text " about it and your use case so we can continue to improve 🚀"
                         ]
                     ]
@@ -196,9 +196,9 @@ viewPaths theme model =
 viewPath : Theme -> Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
 viewPath theme opened from i path =
     div []
-        [ div [ onClick (FindPathMsg (FPToggleResult i)), css ([ Tw.px_6, Tw.py_4, Tw.cursor_pointer ] ++ B.cond (opened == Just i) [ Color.bg theme.color 100, Color.text theme.color 700 ] []) ]
+        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when (opened == Just i) [ Color.bg theme.color 100, Color.text theme.color 700 ] ] ]
             (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep))
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Color.text theme.color 700, B.cond (opened == Just i) Tw.block Tw.hidden ] ]
+        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Color.text theme.color 700, B.cond (opened == Just i) Tu.noStyle Tw.hidden ] ]
             [ pre [] [ text (buildQuery from path) ]
             ]
         ]

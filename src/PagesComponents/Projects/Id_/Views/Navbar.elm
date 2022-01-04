@@ -26,7 +26,7 @@ import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Tailwind.Breakpoints as Bp
@@ -85,9 +85,10 @@ viewNavbarBrand =
         ]
 
 
-viewNavbarHelp : Theme -> Html msg
+viewNavbarHelp : Theme -> Html Msg
 viewNavbarHelp theme =
-    div [ css [ Tw.ml_3 ] ] [ Icon.solid QuestionMarkCircle [ Color.text theme.color 300 ] ]
+    button [ onClick (HelpMsg (HOpen "")), css [ Tw.ml_3, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
+        [ Icon.solid QuestionMarkCircle [ Color.text theme.color 300 ] ]
 
 
 viewNavbarResetLayout : Theme -> Maybe LayoutName -> Layout -> Html Msg
