@@ -2,7 +2,7 @@ module Components.Organisms.Navbar exposing (AdminBrand, AdminMobileMenu, AdminM
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
-import Css exposing (Style)
+import Css
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
@@ -110,7 +110,7 @@ adminNavigation theme navigation navigationActive =
     div [ css [ Tw.flex, Tw.space_x_4 ] ] (navigation.links |> List.map (adminNavigationLink [ Tw.text_sm ] theme navigationActive navigation.onClick))
 
 
-adminNavigationLink : List Style -> Theme -> String -> (Link -> msg) -> Link -> Html msg
+adminNavigationLink : List Css.Style -> Theme -> String -> (Link -> msg) -> Link -> Html msg
 adminNavigationLink styles theme navigationActive navigationOnClick link =
     if link.text == navigationActive then
         a [ href link.url, onClick (navigationOnClick link), css ([ Tw.text_white, Tw.rounded_md, Tw.py_2, Tw.px_3, Tw.font_medium, Color.bg theme.color 700 ] ++ styles), ariaCurrent "page" ] [ text link.text ]
@@ -165,16 +165,7 @@ adminProfile theme isOpen profile =
 
 adminMobileMenu : Theme -> AdminNavigation msg -> Maybe AdminNotifications -> Maybe (AdminProfile msg) -> AdminMobileMenu msg -> String -> Bool -> Html msg
 adminMobileMenu theme navigation notifications profile mobileMenu activeMenu isOpen =
-    let
-        open : List Style
-        open =
-            if isOpen then
-                []
-
-            else
-                [ Tw.hidden ]
-    in
-    div [ css ([ Bp.lg [ Tw.hidden ] ] ++ open), id mobileMenu.id ]
+    div [ css [ Bp.lg [ Tw.hidden ], Tu.when (not isOpen) [ Tw.hidden ] ], id mobileMenu.id ]
         [ adminMobileNavigation theme navigation activeMenu
         , profile
             |> M.mapOrElse

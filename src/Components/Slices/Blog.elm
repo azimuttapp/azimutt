@@ -1,7 +1,7 @@
 module Components.Slices.Blog exposing (Article, Model, Subscribe, article, articleList, doc)
 
 import Components.Slices.Newsletter as Newsletter
-import Css exposing (hover)
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, div, form, h2, p, text, time)
@@ -60,7 +60,7 @@ articleItem model =
             , p [ css [ mt_3, text_base, text_gray_500 ] ] [ text model.excerpt ]
             ]
         , div [ css [ mt_3 ] ]
-            [ a [ href model.link, css [ text_base, font_semibold, text_indigo_600, hover [ text_indigo_500 ] ] ] [ text "Read full story" ] ]
+            [ a [ href model.link, css [ text_base, font_semibold, text_indigo_600, Css.hover [ text_indigo_500 ] ] ] [ text "Read full story" ] ]
         ]
 
 

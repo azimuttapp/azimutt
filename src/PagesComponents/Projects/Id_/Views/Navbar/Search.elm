@@ -78,7 +78,7 @@ viewNavbarSearch theme openedDropdown model =
                 (\m ->
                     if model.search == "" then
                         div []
-                            [ span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles) ]
+                            [ span [ role "menuitem", tabindex -1, css [ Tw.flex, Tw.w_full, Tw.items_center, Dropdown.itemDisabledStyles ] ]
                                 [ text "Type to search into tables (", Icon.solid Icon.Table [], text "), columns (", Icon.solid Tag [], text ") and relations (", Icon.solid ExternalLink [], text ")" ]
                             ]
 
@@ -87,7 +87,7 @@ viewNavbarSearch theme openedDropdown model =
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
-                                            [ span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles) ]
+                                            [ span [ role "menuitem", tabindex -1, css [ Tw.flex, Tw.w_full, Tw.items_center, Dropdown.itemDisabledStyles ] ]
                                                 [ text "No result :(" ]
                                             ]
 
@@ -117,11 +117,11 @@ viewSearchResult theme searchId layout active index res =
         viewItem =
             \msg icon content disabled ->
                 if disabled then
-                    span [ role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center ] ++ Dropdown.itemDisabledStyles ++ B.cond (active == index) [ Color.text theme.color 400 ] []) ]
+                    span [ role "menuitem", tabindex -1, css [ Tw.flex, Tw.w_full, Tw.items_center, Dropdown.itemDisabledStyles, Tu.when (active == index) [ Color.text theme.color 400 ] ] ]
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
 
                 else
-                    button ([ type_ "button", onMouseDown msg, role "menuitem", tabindex -1, css ([ Tw.flex, Tw.w_full, Tw.items_center, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles ++ B.cond (active == index) [ Color.bg theme.color 600, Tw.text_white ] []) ] ++ B.cond (active == index) [ id (searchId ++ "-active") ] [])
+                    button ([ type_ "button", onMouseDown msg, role "menuitem", tabindex -1, css [ Tw.flex, Tw.w_full, Tw.items_center, Dropdown.itemStyles, Css.focus [ Tw.outline_none ], Tu.when (active == index) [ Color.bg theme.color 600, Tw.text_white ] ] ] ++ B.cond (active == index) [ id (searchId ++ "-active") ] [])
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
     in
     case res of

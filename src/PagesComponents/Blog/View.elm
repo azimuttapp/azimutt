@@ -3,7 +3,7 @@ module PagesComponents.Blog.View exposing (viewBlog)
 import Components.Slices.Blog as Blog
 import Components.Slices.Newsletter as Newsletter
 import Conf
-import Css exposing (hover)
+import Css
 import Css.Global as Global
 import Html.Styled exposing (Html, div, h1, hr, p, text)
 import Html.Styled.Attributes exposing (css, style)
@@ -24,7 +24,7 @@ viewBlog model =
             [ text "Hi! We are "
             , extLink "https://twitter.com/sbouaked" [ css [ text_indigo_600, Css.hover [ underline ] ] ] [ text "Samir" ]
             , text " and "
-            , extLink "https://twitter.com/loicknuchel" [ css [ text_indigo_600, hover [ underline ] ] ] [ text "Loïc" ]
+            , extLink "https://twitter.com/loicknuchel" [ css [ text_indigo_600, Css.hover [ underline ] ] ] [ text "Loïc" ]
             , text ". We're building an application to empower developers understanding their relational databases. You can read about how we build it and how to use it on this blog."
             ]
         ]

@@ -88,35 +88,27 @@ type alias Model msg =
 modal : Model msg -> List (Html msg) -> Html msg
 modal model content =
     let
-        modalContainer : List Css.Style
-        modalContainer =
-            if model.isOpen then
-                []
-
-            else
-                [ Tw.pointer_events_none ]
-
-        backgroundOverlay : List Css.Style
+        backgroundOverlay : Css.Style
         backgroundOverlay =
             if model.isOpen then
-                [ Tw.transition_opacity, Tw.ease_in, Tu.duration openDuration, Tw.opacity_100 ]
+                Css.batch [ Tw.transition_opacity, Tw.ease_in, Tu.duration openDuration, Tw.opacity_100 ]
 
             else
-                [ Tw.transition_opacity, Tw.ease_out, Tu.duration closeDuration, Tw.opacity_0 ]
+                Css.batch [ Tw.transition_opacity, Tw.ease_out, Tu.duration closeDuration, Tw.opacity_0 ]
 
-        modalPanel : List Css.Style
+        modalPanel : Css.Style
         modalPanel =
             if model.isOpen then
-                [ Tw.transition_all, Tw.ease_in, Tu.duration openDuration, Tw.opacity_100, Tw.translate_y_0, Bp.sm [ Tw.scale_100 ] ]
+                Css.batch [ Tw.transition_all, Tw.ease_in, Tu.duration openDuration, Tw.opacity_100, Tw.translate_y_0, Bp.sm [ Tw.scale_100 ] ]
 
             else
-                [ Tw.transition_all, Tw.ease_out, Tu.duration closeDuration, Tw.opacity_0, Tw.translate_y_4, Bp.sm [ Tw.translate_y_0, Tw.scale_95 ] ]
+                Css.batch [ Tw.transition_all, Tw.ease_out, Tu.duration closeDuration, Tw.opacity_0, Tw.translate_y_4, Bp.sm [ Tw.translate_y_0, Tw.scale_95 ] ]
     in
-    div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css ([ Tw.fixed, Tu.z_max, Tw.inset_0, Tw.overflow_y_auto ] ++ modalContainer) ]
+    div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css [ Tw.fixed, Tu.z_max, Tw.inset_0, Tw.overflow_y_auto, Tu.when (not model.isOpen) [ Tw.pointer_events_none ] ] ]
         [ div [ css [ Tw.flex, Tw.items_end, Tw.justify_center, Tw.min_h_screen, Tw.pt_4, Tw.px_4, Tw.pb_20, Tw.text_center, Bp.sm [ Tw.block, Tw.p_0 ] ] ]
-            [ div [ ariaHidden True, onClick model.onBackgroundClick, css ([ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75 ] ++ backgroundOverlay) ] []
+            [ div [ ariaHidden True, onClick model.onBackgroundClick, css [ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75, backgroundOverlay ] ] []
             , {- This element is to trick the browser into centering the modal contents. -} span [ css [ Tw.hidden, Bp.sm [ Tw.inline_block, Tw.align_middle, Tw.h_screen ] ], ariaHidden True ] [ text "\u{200B}" ]
-            , div [ id model.id, css ([ Tw.inline_block, Tw.align_middle, Tw.bg_white, Tw.rounded_lg, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.max_w_max, Tw.w_full ] ] ++ modalPanel) ] content
+            , div [ id model.id, css [ Tw.inline_block, Tw.align_middle, Tw.bg_white, Tw.rounded_lg, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.max_w_max, Tw.w_full ], modalPanel ] ] content
             ]
         ]
 

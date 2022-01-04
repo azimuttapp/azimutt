@@ -3,7 +3,7 @@ module Components.Slices.Hero exposing (Model, backgroundImageSlice, basicSlice,
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
-import Css exposing (focus, hover)
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
@@ -36,7 +36,7 @@ basicSlice =
                                     , img [ src "/logo.svg", alt "", css [ h_8, w_auto, sm [ h_10 ] ] ] []
                                     ]
                                 , div [ css [ neg_mr_2, flex, items_center, md [ hidden ] ] ]
-                                    [ button [ type_ "button", css [ bg_gray_50, rounded_md, p_2, inline_flex, items_center, justify_center, text_gray_400, focus [ outline_none, ring_2, ring_inset, ring_indigo_500 ], hover [ text_gray_500, bg_gray_100 ] ], ariaExpanded False ]
+                                    [ button [ type_ "button", css [ bg_gray_50, rounded_md, p_2, inline_flex, items_center, justify_center, text_gray_400, Css.focus [ outline_none, ring_2, ring_inset, ring_indigo_500 ], Css.hover [ text_gray_500, bg_gray_100 ] ], ariaExpanded False ]
                                         [ span [ css [ sr_only ] ] [ text "Open main menu" ]
                                         , Icon.outline Menu []
                                         ]
@@ -52,7 +52,7 @@ basicSlice =
                                 [ img [ src "/logo.svg", alt "Azimutt logo", css [ h_8, w_auto ] ] []
                                 ]
                             , div [ css [ neg_mr_2 ] ]
-                                [ button [ type_ "button", css [ bg_white, rounded_md, p_2, inline_flex, items_center, justify_center, text_gray_400, focus [ outline_none, ring_2, ring_inset, ring_indigo_500 ], hover [ text_gray_500, bg_gray_100 ] ] ]
+                                [ button [ type_ "button", css [ bg_white, rounded_md, p_2, inline_flex, items_center, justify_center, text_gray_400, Css.focus [ outline_none, ring_2, ring_inset, ring_indigo_500 ], Css.hover [ text_gray_500, bg_gray_100 ] ] ]
                                     [ span [ css [ sr_only ] ]
                                         [ text "Close menu" ]
                                     , Icon.outline X []
@@ -74,7 +74,7 @@ basicSlice =
                         [ text "Easily visualize your database schema and see how everything fits together." ]
                     , div [ css [ mt_5, max_w_md, mx_auto, md [ mt_8 ], sm [ flex, justify_center ] ] ]
                         [ div [ css [ rounded_md, shadow ] ]
-                            [ a [ href (Route.toHref Route.App), css [ w_full, flex, items_center, justify_center, px_8, py_3, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_blue_600, hover [ bg_blue_800 ], md [ py_4, text_lg, px_10 ] ] ]
+                            [ a [ href (Route.toHref Route.App), css [ w_full, flex, items_center, justify_center, px_8, py_3, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_blue_600, Css.hover [ bg_blue_800 ], md [ py_4, text_lg, px_10 ] ] ]
                                 [ text "Get started" ]
                             ]
                         ]

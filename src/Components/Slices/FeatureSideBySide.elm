@@ -1,7 +1,7 @@
 module Components.Slices.FeatureSideBySide exposing (Description, Model, Position(..), Quote, doc, imageSlice, imageSwapSlice)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Css exposing (Style, hover)
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
@@ -47,7 +47,7 @@ imageSwapSlice swap model =
     slice model (imageLeftSwap swap) (imageRightSwap swap)
 
 
-slice : Model msg -> (Style -> Image -> Html msg) -> (Style -> Image -> Html msg) -> Html msg
+slice : Model msg -> (Css.Style -> Image -> Html msg) -> (Css.Style -> Image -> Html msg) -> Html msg
 slice model buildImageLeft buildImageRight =
     div [ css [ pb_32, relative, overflow_hidden ] ]
         [ div [ css [ lg [ mx_auto, max_w_7xl, px_8, grid, grid_cols_2, grid_flow_col_dense, gap_24 ] ] ]
@@ -61,7 +61,7 @@ slice model buildImageLeft buildImageRight =
         ]
 
 
-imageLeft : Style -> Image -> Html msg
+imageLeft : Css.Style -> Image -> Html msg
 imageLeft position image =
     div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
         [ div [ css [ pr_4, neg_ml_48, sm [ pr_6 ], md [ neg_ml_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
@@ -70,7 +70,7 @@ imageLeft position image =
         ]
 
 
-imageRight : Style -> Image -> Html msg
+imageRight : Css.Style -> Image -> Html msg
 imageRight position image =
     div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
         [ div [ css [ pl_4, neg_mr_48, sm [ pl_6 ], md [ neg_mr_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
@@ -79,7 +79,7 @@ imageRight position image =
         ]
 
 
-imageLeftSwap : Image -> Style -> Image -> Html msg
+imageLeftSwap : Image -> Css.Style -> Image -> Html msg
 imageLeftSwap swap position base =
     div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
         [ div [ css [ pr_4, neg_ml_48, sm [ pr_6 ], md [ neg_ml_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
@@ -91,7 +91,7 @@ imageLeftSwap swap position base =
         ]
 
 
-imageRightSwap : Image -> Style -> Image -> Html msg
+imageRightSwap : Image -> Css.Style -> Image -> Html msg
 imageRightSwap swap position base =
     div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
         [ div [ css [ pl_4, neg_mr_48, sm [ pl_6 ], md [ neg_mr_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
@@ -103,7 +103,7 @@ imageRightSwap swap position base =
         ]
 
 
-details : Style -> Model msg -> Html msg
+details : Css.Style -> Model msg -> Html msg
 details position model =
     div [ css [ px_4, max_w_xl, mx_auto, sm [ px_6 ], lg [ py_32, max_w_none, mx_0, px_0, position ] ] ]
         (List.filterMap identity
@@ -133,7 +133,7 @@ featureCta cta =
     div [ css [ mt_6 ] ]
         [ a
             ([ href cta.url
-             , css [ inline_flex, px_4, py_2, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_white, bg_gradient_to_r, from_green_600, to_indigo_600, hover [ text_white, from_green_700, to_indigo_700 ] ]
+             , css [ inline_flex, px_4, py_2, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_white, bg_gradient_to_r, from_green_600, to_indigo_600, Css.hover [ text_white, from_green_700, to_indigo_700 ] ]
              ]
                 ++ (cta.track |> M.mapOrElse track [])
             )

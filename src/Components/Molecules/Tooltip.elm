@@ -2,12 +2,12 @@ module Components.Molecules.Tooltip exposing (doc, top)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Styles as Styles
-import Css
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, span, text)
 import Html.Styled.Attributes exposing (class, css)
 import Libs.Models.Color as Color
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Utilities as Tw
 
 
@@ -20,7 +20,7 @@ top : String -> Html msg -> Html msg
 top value content =
     div [ class "group", css [ Tw.relative, Tw.inline_flex, Tw.flex_col, Tw.items_center ] ]
         [ content
-        , div [ class "group-hover-flex", css [ Tw.hidden, Tw.flex_col, Tw.items_center, Tw.absolute, Css.property "top" "-36px" ] ]
+        , div [ class "group-hover-flex", css [ Tw.hidden, Tw.flex_col, Tw.items_center, Tw.absolute, Tu.top -36 "px" ] ]
             [ span [ css [ Tw.relative, Tw.p_2, Tw.bg_black, Tw.text_white, Tw.text_xs, Tw.leading_none, Tw.whitespace_nowrap, Tw.rounded, Tw.shadow_lg ] ] [ text value ]
             , div [ css [ Tw.w_3, Tw.h_3, Tw.neg_mt_2, Tw.bg_black, Tw.transform, Tw.rotate_45 ] ] []
             ]

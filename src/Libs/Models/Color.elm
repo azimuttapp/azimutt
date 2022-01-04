@@ -1,6 +1,6 @@
 module Libs.Models.Color exposing (Color, ColorLevel, HexColor, RgbColor, all, amber, bg, black, blue, border, border_b, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, levels, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, stroke, teal, text, to, via, violet, white, yellow)
 
-import Css exposing (Style)
+import Css
 import Css.Global
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -173,7 +173,7 @@ levels =
     [ 50, 100, 200, 300, 400, 500, 600, 700, 800, 900 ]
 
 
-bg : Color -> ColorLevel -> Style
+bg : Color -> ColorLevel -> Css.Style
 bg color level =
     Css.batch
         [ Css.property "--tw-bg-opacity" "1"
@@ -181,7 +181,7 @@ bg color level =
         ]
 
 
-border : Color -> ColorLevel -> Style
+border : Color -> ColorLevel -> Css.Style
 border color level =
     Css.batch
         [ Css.property "--tw-border-opacity" "1"
@@ -189,7 +189,7 @@ border color level =
         ]
 
 
-border_b : Color -> ColorLevel -> Style
+border_b : Color -> ColorLevel -> Css.Style
 border_b color level =
     Css.batch
         [ Css.property "--tw-border-opacity" "1"
@@ -197,7 +197,7 @@ border_b color level =
         ]
 
 
-divide : Color -> ColorLevel -> Style
+divide : Color -> ColorLevel -> Css.Style
 divide color level =
     Css.batch
         [ Css.Global.children
@@ -209,7 +209,7 @@ divide color level =
         ]
 
 
-from : Color -> ColorLevel -> Style
+from : Color -> ColorLevel -> Css.Style
 from color level =
     Css.batch
         [ Css.property "--tw-gradient-from" (color |> hex level)
@@ -217,7 +217,7 @@ from color level =
         ]
 
 
-placeholder : Color -> ColorLevel -> Style
+placeholder : Color -> ColorLevel -> Css.Style
 placeholder color level =
     Css.batch
         [ Css.pseudoElement "placeholder"
@@ -235,7 +235,7 @@ placeholder color level =
         ]
 
 
-ring : Color -> ColorLevel -> Style
+ring : Color -> ColorLevel -> Css.Style
 ring color level =
     Css.batch
         [ Css.property "--tw-ring-opacity" "1"
@@ -243,12 +243,12 @@ ring color level =
         ]
 
 
-ringOffset : Color -> ColorLevel -> Style
+ringOffset : Color -> ColorLevel -> Css.Style
 ringOffset color level =
     Css.property "--tw-ring-offset-color" (color |> hex level)
 
 
-text : Color -> ColorLevel -> Style
+text : Color -> ColorLevel -> Css.Style
 text color level =
     Css.batch
         [ Css.property "--tw-text-opacity" "1"
@@ -256,17 +256,17 @@ text color level =
         ]
 
 
-to : Color -> ColorLevel -> Style
+to : Color -> ColorLevel -> Css.Style
 to color level =
     Css.property "--tw-gradient-to" (color |> hex level)
 
 
-via : Color -> ColorLevel -> Style
+via : Color -> ColorLevel -> Css.Style
 via color level =
     Css.property "--tw-gradient-stops" ("var(--tw-gradient-from), " ++ (color |> hex level) ++ ", var(--tw-gradient-to, " ++ (color |> rgba "0" level) ++ ")")
 
 
-stroke : Color -> ColorLevel -> Style
+stroke : Color -> ColorLevel -> Css.Style
 stroke color level =
     Css.property "stroke" (color |> hex level)
 

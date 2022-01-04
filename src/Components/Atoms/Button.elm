@@ -111,59 +111,59 @@ white5 =
     build white size5
 
 
-primary : Color -> List Css.Style
+primary : Color -> Css.Style
 primary color =
-    [ Tw.border_transparent, Tw.shadow_sm, Tw.text_white, Color.bg color 600, Css.hover [ Color.bg color 700 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 300 ] ]
+    Css.batch [ Tw.border_transparent, Tw.shadow_sm, Tw.text_white, Color.bg color 600, Css.hover [ Color.bg color 700 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 300 ] ]
 
 
-secondary : Color -> List Css.Style
+secondary : Color -> Css.Style
 secondary color =
-    [ Tw.border_transparent, Color.text color 700, Color.bg color 100, Css.hover [ Color.bg color 200 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 100, Color.text color 300 ] ]
+    Css.batch [ Tw.border_transparent, Color.text color 700, Color.bg color 100, Css.hover [ Color.bg color 200 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 100, Color.text color 300 ] ]
 
 
-light : Color -> List Css.Style
+light : Color -> Css.Style
 light color =
-    [ Tw.border_transparent, Color.text color 800, Color.bg color 50, Css.hover [ Color.bg color 100 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 50, Color.text color 300 ] ]
+    Css.batch [ Tw.border_transparent, Color.text color 800, Color.bg color 50, Css.hover [ Color.bg color 100 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 50, Color.text color 300 ] ]
 
 
-white : Color -> List Css.Style
+white : Color -> Css.Style
 white color =
-    [ Tw.border_gray_300, Tw.shadow_sm, Color.text color 700, Tw.bg_white, Css.hover [ Color.bg color 50 ], Css.disabled [ Tw.cursor_not_allowed, Tw.border_gray_200, Tw.bg_white, Color.text color 300 ] ]
+    Css.batch [ Tw.border_gray_300, Tw.shadow_sm, Color.text color 700, Tw.bg_white, Css.hover [ Color.bg color 50 ], Css.disabled [ Tw.cursor_not_allowed, Tw.border_gray_200, Tw.bg_white, Color.text color 300 ] ]
 
 
-size1 : List Css.Style
+size1 : Css.Style
 size1 =
-    [ Tw.px_2_dot_5, Tw.py_1_dot_5, Tw.text_xs, Tw.rounded ]
+    Css.batch [ Tw.px_2_dot_5, Tw.py_1_dot_5, Tw.text_xs, Tw.rounded ]
 
 
-size2 : List Css.Style
+size2 : Css.Style
 size2 =
-    [ Tw.px_3, Tw.py_2, Tw.text_sm, Tw.leading_4, Tw.rounded_md ]
+    Css.batch [ Tw.px_3, Tw.py_2, Tw.text_sm, Tw.leading_4, Tw.rounded_md ]
 
 
-size3 : List Css.Style
+size3 : Css.Style
 size3 =
-    [ Tw.px_4, Tw.py_2, Tw.text_sm, Tw.rounded_md ]
+    Css.batch [ Tw.px_4, Tw.py_2, Tw.text_sm, Tw.rounded_md ]
 
 
-size4 : List Css.Style
+size4 : Css.Style
 size4 =
-    [ Tw.px_4, Tw.py_2, Tw.text_base, Tw.rounded_md ]
+    Css.batch [ Tw.px_4, Tw.py_2, Tw.text_base, Tw.rounded_md ]
 
 
-size5 : List Css.Style
+size5 : Css.Style
 size5 =
-    [ Tw.px_6, Tw.py_3, Tw.text_base, Tw.rounded_md ]
+    Css.batch [ Tw.px_6, Tw.py_3, Tw.text_base, Tw.rounded_md ]
 
 
-commonStyles : Color -> List Css.Style
+commonStyles : Color -> Css.Style
 commonStyles color =
-    [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.font_medium, Tu.focusRing ( color, 500 ) ( Color.white, 500 ) ]
+    Css.batch [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.font_medium, Tu.focusRing ( color, 500 ) ( Color.white, 500 ) ]
 
 
-build : (Color -> List Css.Style) -> List Css.Style -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+build : (Color -> Css.Style) -> Css.Style -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
 build colorStyles sizeStyles color attrs content =
-    button (attrs ++ [ type_ "button", css (commonStyles color ++ colorStyles color ++ sizeStyles) ]) content
+    button (attrs ++ [ type_ "button", css [ commonStyles color, colorStyles color, sizeStyles ] ]) content
 
 
 

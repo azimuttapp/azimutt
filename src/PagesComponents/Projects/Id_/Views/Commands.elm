@@ -20,31 +20,31 @@ import Tailwind.Utilities as Tw
 viewCommands : Theme -> String -> CursorMode -> CanvasProps -> Html Msg
 viewCommands theme openedDropdown cursorMode canvas =
     let
-        buttonStyles : List Css.Style
+        buttonStyles : Css.Style
         buttonStyles =
-            [ Tw.relative, Tw.inline_flex, Tw.items_center, Tw.p_2, Tw.border, Tw.border_gray_300, Tw.text_sm, Tw.font_medium, Css.focus [ Tw.z_10, Tw.outline_none, Tw.ring_1, Color.ring theme.color 500, Color.border theme.color 500 ] ]
+            Css.batch [ Tw.relative, Tw.inline_flex, Tw.items_center, Tw.p_2, Tw.border, Tw.border_gray_300, Tw.text_sm, Tw.font_medium, Css.focus [ Tw.z_10, Tw.outline_none, Tw.ring_1, Color.ring theme.color 500, Color.border theme.color 500 ] ]
 
-        classic : List Css.Style
+        classic : Css.Style
         classic =
-            [ Tw.bg_white, Tw.text_gray_700, Css.hover [ Tw.bg_gray_50 ] ]
+            Css.batch [ Tw.bg_white, Tw.text_gray_700, Css.hover [ Tw.bg_gray_50 ] ]
 
-        inverted : List Css.Style
+        inverted : Css.Style
         inverted =
-            [ Tw.bg_gray_700, Tw.text_white, Css.hover [ Tw.bg_gray_600 ] ]
+            Css.batch [ Tw.bg_gray_700, Tw.text_white, Css.hover [ Tw.bg_gray_600 ] ]
     in
     div [ class "tw-commands", css [ Tw.absolute, Tw.bottom_0, Tw.right_0, Tw.p_3 ] ]
         [ span [ css [ Tw.relative, Tw.z_0, Tw.inline_flex, Tw.shadow_sm, Tw.rounded_md ] ]
-            [ button [ type_ "button", onClick FitContent, css ([ Tw.rounded_l_md, Tw.rounded_r_md ] ++ buttonStyles ++ classic) ] [ Icon.solid ArrowsExpand [] ] |> Tooltip.top "Fit content in view"
+            [ button [ type_ "button", onClick FitContent, css [ Tw.rounded_l_md, Tw.rounded_r_md, buttonStyles, classic ] ] [ Icon.solid ArrowsExpand [] ] |> Tooltip.top "Fit content in view"
             ]
         , span [ css [ Tw.relative, Tw.z_0, Tw.inline_flex, Tw.shadow_sm, Tw.rounded_md, Tw.ml_2 ] ]
-            [ button [ type_ "button", onClick (CursorMode CursorSelect), css ([ Tw.rounded_l_md ] ++ buttonStyles ++ B.cond (cursorMode == CursorSelect) inverted classic) ] [ Icon.solid CursorClick [] ] |> Tooltip.top "Select tool"
-            , button [ type_ "button", onClick (CursorMode CursorDrag), css ([ Tw.neg_ml_px, Tw.rounded_r_md ] ++ buttonStyles ++ B.cond (cursorMode == CursorDrag) inverted classic) ] [ Icon.solid Hand [] ] |> Tooltip.top "Drag tool"
+            [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ Tw.rounded_l_md, buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick [] ] |> Tooltip.top "Select tool"
+            , button [ type_ "button", onClick (CursorMode CursorDrag), css [ Tw.neg_ml_px, Tw.rounded_r_md, buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand [] ] |> Tooltip.top "Drag tool"
             ]
         , span [ css [ Tw.relative, Tw.z_0, Tw.inline_flex, Tw.shadow_sm, Tw.rounded_md, Tw.ml_2 ] ]
-            [ button [ type_ "button", onClick (Zoom (-canvas.zoom / 10)), css ([ Tw.rounded_l_md ] ++ buttonStyles ++ classic) ] [ Icon.solid Minus [] ]
+            [ button [ type_ "button", onClick (Zoom (-canvas.zoom / 10)), css [ Tw.rounded_l_md, buttonStyles, classic ] ] [ Icon.solid Minus [] ]
             , Dropdown.dropdown { id = "choose-zoom", direction = TopLeft, isOpen = openedDropdown == "choose-zoom" }
                 (\m ->
-                    button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css ([ Tw.neg_ml_px ] ++ buttonStyles ++ classic) ]
+                    button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.neg_ml_px, buttonStyles, classic ] ]
                         [ text (String.fromInt (round (canvas.zoom * 100)) ++ " %") ]
                 )
                 (\_ ->
@@ -58,6 +58,6 @@ viewCommands theme openedDropdown cursorMode canvas =
                         , Dropdown.btn [] (Zoom (Conf.canvas.zoom.max - canvas.zoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
                         ]
                 )
-            , button [ type_ "button", onClick (Zoom (canvas.zoom / 10)), css ([ Tw.neg_ml_px, Tw.rounded_r_md ] ++ buttonStyles ++ classic) ] [ Icon.solid Plus [] ]
+            , button [ type_ "button", onClick (Zoom (canvas.zoom / 10)), css [ Tw.neg_ml_px, Tw.rounded_r_md, buttonStyles, classic ] ] [ Icon.solid Plus [] ]
             ]
         ]

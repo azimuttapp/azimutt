@@ -1,6 +1,6 @@
 module Components.Slices.Newsletter exposing (Form, Model, basicSlice, centered, doc, formDoc, small)
 
-import Css exposing (focus, hover)
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, button, div, form, h2, input, label, p, text)
@@ -40,7 +40,7 @@ basicSlice model =
                     [ label [ for "newsletter-email", css [ sr_only ] ] [ text model.form.placeholder ]
                     , input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.form.placeholder, attribute "autocomplete" "email", required True, css [ w_full, px_5, py_3, border, border_gray_300, shadow_sm, placeholder_gray_400, rounded_md, Css.focus [ ring_1, ring_indigo_500, border_indigo_500 ], sm [ max_w_xs ] ] ] []
                     , div [ css [ mt_3, rounded_md, shadow, sm [ mt_0, ml_3, flex_shrink_0 ] ] ]
-                        [ button [ type_ "submit", css [ w_full, flex, items_center, justify_center, py_3, px_5, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_indigo_600, Tu.focusRing ( Color.indigo, 500 ) ( Color.white, 500 ), hover [ bg_indigo_700 ] ] ]
+                        [ button [ type_ "submit", css [ w_full, flex, items_center, justify_center, py_3, px_5, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_indigo_600, Tu.focusRing ( Color.indigo, 500 ) ( Color.white, 500 ), Css.hover [ bg_indigo_700 ] ] ]
                             [ text model.form.cta ]
                         ]
                     ]
@@ -54,9 +54,9 @@ centered : Form -> Html msg
 centered model =
     div [ css [ max_w_prose, mx_auto ] ]
         [ form [ method model.method, action model.url, target "_blank", rel "noopener", css [ justify_center, sm [ flex ] ] ]
-            [ input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.placeholder, attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_5, py_3, border, border_gray_300, text_base, leading_6, rounded_md, text_gray_900, bg_white, placeholder_gray_500, transition, duration_150, ease_in_out, focus [ outline_none, border_blue_300 ], sm [ max_w_xs ] ] ] []
+            [ input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.placeholder, attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_5, py_3, border, border_gray_300, text_base, leading_6, rounded_md, text_gray_900, bg_white, placeholder_gray_500, transition, duration_150, ease_in_out, Css.focus [ outline_none, border_blue_300 ], sm [ max_w_xs ] ] ] []
             , div [ css [ mt_3, rounded_md, shadow, sm [ mt_0, ml_3, flex_shrink_0 ] ] ]
-                [ button [ css [ w_full, flex, items_center, justify_center, px_5, py_3, border, border_transparent, text_base, leading_6, font_medium, rounded_md, text_white, bg_indigo_600, transition, duration_150, ease_in_out, focus [ outline_none ], hover [ bg_indigo_500 ] ] ]
+                [ button [ css [ w_full, flex, items_center, justify_center, px_5, py_3, border, border_transparent, text_base, leading_6, font_medium, rounded_md, text_white, bg_indigo_600, transition, duration_150, ease_in_out, Css.focus [ outline_none ], Css.hover [ bg_indigo_500 ] ] ]
                     [ text model.cta ]
                 ]
             ]
@@ -68,10 +68,10 @@ small model =
     form [ method model.method, action model.url, target "_blank", rel "noopener", css [ mt_6, flex, flex_col, lg [ mt_0, justify_end ], sm [ flex_row ] ] ]
         [ div []
             [ label [ for "newsletter-email", css [ sr_only ] ] [ text model.placeholder ]
-            , input [ type_ "email", name "member[email]", id "newsletter-email", attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_4, py_2, border, border_gray_300, text_base, rounded_md, text_gray_900, bg_white, placeholder_gray_500, focus [ outline_none, ring_indigo_500, border_indigo_500 ], lg [ max_w_xs ] ], placeholder model.placeholder ] []
+            , input [ type_ "email", name "member[email]", id "newsletter-email", attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_4, py_2, border, border_gray_300, text_base, rounded_md, text_gray_900, bg_white, placeholder_gray_500, Css.focus [ outline_none, ring_indigo_500, border_indigo_500 ], lg [ max_w_xs ] ], placeholder model.placeholder ] []
             ]
         , div [ css [ mt_2, flex_shrink_0, w_full, flex, rounded_md, shadow_sm, sm [ mt_0, ml_3, w_auto, inline_flex ] ] ]
-            [ button [ type_ "submit", css [ w_full, bg_indigo_600, px_4, py_2, border, border_transparent, rounded_md, flex, items_center, justify_center, text_base, font_medium, text_white, Tu.focusRing ( Color.indigo, 500 ) ( Color.white, 500 ), hover [ bg_indigo_700 ], sm [ w_auto, inline_flex ] ] ]
+            [ button [ type_ "submit", css [ w_full, bg_indigo_600, px_4, py_2, border, border_transparent, rounded_md, flex, items_center, justify_center, text_base, font_medium, text_white, Tu.focusRing ( Color.indigo, 500 ) ( Color.white, 500 ), Css.hover [ bg_indigo_700 ], sm [ w_auto, inline_flex ] ] ]
                 [ text model.cta ]
             ]
         ]

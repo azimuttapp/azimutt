@@ -114,10 +114,15 @@ table model =
         , onMouseEnter (model.actions.hoverTable True)
         , onMouseLeave (model.actions.hoverTable False)
         , css
-            ([ Tw.inline_block, Tw.bg_white, Tw.rounded_lg, Tw.cursor_pointer, B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md ]
-                ++ B.cond model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ] []
-             -- ++ B.cond model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] []
-            )
+            [ Tw.inline_block
+            , Tw.bg_white
+            , Tw.rounded_lg
+            , Tw.cursor_pointer
+            , B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md
+            , Tu.when model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ]
+
+            {- , Tu.when model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] -}
+            ]
         ]
         [ model |> viewHeader
         , model |> viewColumns
@@ -135,7 +140,7 @@ viewHeader model =
         textSize : Css.Style
         textSize =
             if model.zoom < 0.5 then
-                Css.property "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem")
+                Tu.font (1.25 * 0.5 / model.zoom) "rem"
 
             else
                 Tw.text_xl
@@ -202,7 +207,7 @@ viewHiddenColumns model =
             [ div [ onClick model.actions.clickHiddenColumns, css [ Tw.text_gray_400, Tw.uppercase, Tw.font_bold, Tw.text_sm ] ]
                 [ text (model.hiddenColumns |> List.length |> S.pluralize "hidden column") ]
             , Keyed.node "div"
-                [ css ([ Tw.rounded_lg, Tw.pt_2 ] ++ B.cond model.state.showHiddenColumns [] [ Tw.hidden ]) ]
+                [ css [ Tw.rounded_lg, Tw.pt_2, Tu.when (not model.state.showHiddenColumns) [ Tw.hidden ] ] ]
                 (model.hiddenColumns |> List.map (\c -> ( c.name, viewColumn model False c )))
             ]
 
@@ -213,11 +218,7 @@ viewColumn model isLast column =
         ([ onMouseEnter (model.actions.hoverColumn column.name True)
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
-         , css
-            ([ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.px_2, Tw.bg_white ]
-                ++ B.cond (isColumnHover model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]
-                ++ B.cond isLast [ Tw.rounded_b_lg ] []
-            )
+         , css [ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.px_2, Tw.bg_white, Css.batch (B.cond (isColumnHover model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]), Tu.when isLast [ Tw.rounded_b_lg ] ]
          ]
             ++ (model.actions.clickColumn |> M.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
         )
@@ -310,7 +311,7 @@ viewColumnIconDropdownItem message content =
          , onClick message
          , role "menuitem"
          , tabindex -1
-         , css ([ Tw.py_1, Tw.block, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles)
+         , css [ Tw.py_1, Tw.block, Tw.w_full, Tw.text_left, Dropdown.itemStyles, Css.focus [ Tw.outline_none ] ]
          ]
             ++ track Tracking.events.showTableWithIncomingRelationsDropdown
         )
@@ -319,7 +320,7 @@ viewColumnIconDropdownItem message content =
 
 viewColumnName : Column -> Html msg
 viewColumnName column =
-    div [ css ([ Tw.flex, Tw.flex_grow ] ++ B.cond column.isPrimaryKey [ Tw.font_bold ] []) ]
+    div [ css [ Tw.flex, Tw.flex_grow, Tu.when column.isPrimaryKey [ Tw.font_bold ] ] ]
         ([ text column.name ] |> L.appendOn column.comment viewComment)
 
 

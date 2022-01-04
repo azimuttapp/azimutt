@@ -11,7 +11,6 @@ import Dict exposing (Dict)
 import Html.Styled exposing (Html, br, button, div, h3, input, label, option, p, pre, select, small, span, text)
 import Html.Styled.Attributes exposing (css, disabled, for, id, placeholder, selected, title, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
-import Libs.Bool as B
 import Libs.Html.Styled exposing (bText, extLink)
 import Libs.List as L
 import Libs.Maybe as M
@@ -92,7 +91,7 @@ viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
 viewSettings modalId opened settings =
     div [ css [ Tw.px_6, Tw.mt_3 ] ]
         [ button [ onClick (FindPathMsg FPToggleSettings), css [ Tu.link ] ] [ text "Search settings" ]
-        , div [ css [ Tw.p_3, Tw.border, Tw.border_gray_300, Tw.bg_gray_50, Tw.rounded_md, Tw.shadow_sm, B.cond opened Tu.noStyle Tw.hidden ] ]
+        , div [ css [ Tw.p_3, Tw.border, Tw.border_gray_300, Tw.bg_gray_50, Tw.rounded_md, Tw.shadow_sm, Tu.when (not opened) [ Tw.hidden ] ] ]
             [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
                           Use the settings below to limit your search and keep the search correct.""" ]
@@ -168,7 +167,7 @@ viewPaths theme model =
                 div [ css [ Tw.px_6, Tw.mt_3 ] ] [ text "No path found" ]
 
             else
-                div [ css [ Tw.px_6, Tw.mt_3, Tw.overflow_y_auto, Css.property "height" "calc(100% - 3.5rem)" ] ]
+                div [ css [ Tw.px_6, Tw.mt_3, Tw.overflow_y_auto ] ]
                     [ div []
                         ([ text ("Found " ++ String.fromInt (List.length result.paths) ++ " paths between tables ")
                          , bText (TableId.show from)
@@ -198,7 +197,7 @@ viewPath theme opened from i path =
     div []
         [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when (opened == Just i) [ Color.bg theme.color 100, Color.text theme.color 700 ] ] ]
             (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep))
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Color.text theme.color 700, B.cond (opened == Just i) Tu.noStyle Tw.hidden ] ]
+        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Color.text theme.color 700, Tu.when (opened /= Just i) [ Tw.hidden ] ] ]
             [ pre [] [ text (buildQuery from path) ]
             ]
         ]

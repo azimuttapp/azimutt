@@ -92,7 +92,7 @@ viewLayouts theme openedDropdown project =
 
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
-    span [ role "menuitem", tabindex -1, css (Dropdown.itemStyles ++ [ Tw.flex ]) ]
+    span [ role "menuitem", tabindex -1, css [ Tw.flex, Dropdown.itemStyles ] ]
         [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Trash [ Tw.inline_block ] ] |> Tooltip.top "Delete this layout"
         , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ Tw.mx_2, Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Pencil [ Tw.inline_block ] ] |> Tooltip.top "Update layout with current one"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ Tw.flex_grow, Tw.text_left, Css.focus [ Tw.outline_none ] ] ]

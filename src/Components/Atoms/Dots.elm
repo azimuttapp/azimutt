@@ -1,10 +1,11 @@
 module Components.Atoms.Dots exposing (doc, dots, dotsBottomRight, dotsMiddleLeft, dotsTopRight)
 
-import Css exposing (Style, property)
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div)
 import Html.Styled.Attributes as HtmlAttr
+import Libs.Tailwind.Utilities as Tu
 import Svg.Styled exposing (defs, pattern, rect, svg)
 import Svg.Styled.Attributes exposing (css, fill, height, id, patternUnits, viewBox, width, x, y)
 import Tailwind.Utilities exposing (absolute, bottom_12, left_full, neg_translate_x_32, neg_translate_y_1over2, right_full, text_gray_200, top_12, top_1over2, transform, translate_x_32)
@@ -25,7 +26,7 @@ dotsBottomRight id height =
     dots id 404 height [ bottom_12, left_full, translate_x_32 ]
 
 
-dots : String -> Int -> Int -> List Style -> Html msg
+dots : String -> Int -> Int -> List Css.Style -> Html msg
 dots patternId dotsWidth dotsHeight styles =
     svg
         [ width (String.fromInt dotsWidth)
@@ -51,5 +52,5 @@ doc : Chapter x
 doc =
     chapter "Dots"
         |> renderComponentList
-            [ ( "dots", div [ HtmlAttr.css [ property "height" "384px" ] ] [ dots "id" 404 384 [] ] )
+            [ ( "dots", div [ HtmlAttr.css [ Tu.h 384 "px" ] ] [ dots "id" 404 384 [] ] )
             ]

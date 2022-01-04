@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, link, max_h, noStyle, scale, stroke_3, top, translate_x_y, underline_dotted, w, when, z, z_max)
+module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, font, h, left, link, max_h, noStyle, scale, stroke_3, top, translate_x_y, underline_dotted, w, when, z, z_max)
 
 import Css
 import Libs.Models exposing (Millis)
@@ -35,6 +35,11 @@ when cond styles =
          else
             []
         )
+
+
+font : Float -> String -> Css.Style
+font x unit =
+    Css.property "font-size" (String.fromFloat x ++ unit)
 
 
 w : Float -> String -> Css.Style

@@ -65,15 +65,15 @@ simple theme onClose isOpen model =
 toast : Html msg -> Bool -> Html msg
 toast content isOpen =
     let
-        toastBlock : List Css.Style
+        toastBlock : Css.Style
         toastBlock =
             if isOpen then
-                [ Tw.transition, Tw.ease_in, Tw.duration_100, Tw.opacity_100, Tw.transform, Tw.translate_y_0, Bp.sm [ Tw.translate_x_2 ] ]
+                Css.batch [ Tw.transition, Tw.ease_in, Tw.duration_100, Tw.opacity_100, Tw.transform, Tw.translate_y_0, Bp.sm [ Tw.translate_x_2 ] ]
 
             else
-                [ Tw.transition, Tw.ease_out, Tw.duration_300, Tw.opacity_0, Tw.transform, Tw.translate_y_2, Bp.sm [ Tw.translate_y_0, Tw.translate_x_0 ], Tw.pointer_events_none ]
+                Css.batch [ Tw.transition, Tw.ease_out, Tw.duration_300, Tw.opacity_0, Tw.transform, Tw.translate_y_2, Bp.sm [ Tw.translate_y_0, Tw.translate_x_0 ], Tw.pointer_events_none ]
     in
-    div [ css ([ Tw.max_w_sm, Tw.w_full, Tw.bg_white, Tw.shadow_lg, Tw.rounded_lg, Tw.pointer_events_auto, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Tw.overflow_hidden ] ++ toastBlock) ]
+    div [ css [ Tw.max_w_sm, Tw.w_full, Tw.bg_white, Tw.shadow_lg, Tw.rounded_lg, Tw.pointer_events_auto, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Tw.overflow_hidden, toastBlock ] ]
         [ div [ css [ Tw.p_4 ] ]
             [ content
             ]

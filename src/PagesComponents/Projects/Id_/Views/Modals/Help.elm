@@ -9,7 +9,6 @@ import Conf
 import Html.Styled exposing (Html, div, h3, p, text)
 import Html.Styled.Attributes exposing (css, id)
 import Html.Styled.Events exposing (onClick)
-import Libs.Bool as B
 import Libs.Html.Styled exposing (extLink)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -210,7 +209,7 @@ sectionToAccordionItem : Theme -> Bool -> Section Msg -> Html Msg
 sectionToAccordionItem theme opened section =
     div []
         [ div [ onClick (HelpMsg (HToggle section.title)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when opened [ Color.bg theme.color 100, Color.text theme.color 700 ] ] ] [ text section.title ]
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, B.cond opened Tu.noStyle Tw.hidden ] ] section.body
+        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Tu.when (not opened) [ Tw.hidden ] ] ] section.body
         ]
 
 

@@ -117,7 +117,7 @@ viewNavbarFeatures theme features openedDropdown =
                         (\btn ->
                             btn.action
                                 |> E.reduce
-                                    (\url -> extLink url [ role "menuitem", tabindex -1, css (Tw.block :: Dropdown.itemStyles) ] [ btn.content ])
+                                    (\url -> extLink url [ role "menuitem", tabindex -1, css [ Tw.block, Dropdown.itemStyles ] ] [ btn.content ])
                                     (\action -> Dropdown.btn [ Tw.flex, Tw.justify_between ] action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ css [ Tw.ml_3 ] ] (Hotkey.keys h) ]) [])))
                         )
                 )
@@ -133,45 +133,45 @@ viewNavbarSettings theme =
 
 
 navbarMobileButton : Theme -> Bool -> Html Msg
-navbarMobileButton theme isOpen =
+navbarMobileButton theme open =
     div [ css [ Tw.flex, Bp.lg [ Tw.hidden ] ] ]
         [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_2, Tw.rounded_md, Color.text theme.color 200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_white ], Css.hover [ Tw.text_white, Color.bg theme.color 500 ] ] ]
             [ span [ css [ Tw.sr_only ] ] [ text "Open main menu" ]
-            , Icon.outline Menu [ B.cond isOpen Tw.hidden Tw.block ]
-            , Icon.outline X [ B.cond isOpen Tw.block Tw.hidden ]
+            , Icon.outline Menu [ B.cond open Tw.hidden Tw.block ]
+            , Icon.outline X [ B.cond open Tw.block Tw.hidden ]
             ]
         ]
 
 
 viewNavbarMobileMenu : Theme -> List (Btn Msg) -> Maybe LayoutName -> Layout -> Bool -> Html Msg
-viewNavbarMobileMenu theme features usedLayout layout isOpen =
+viewNavbarMobileMenu theme features usedLayout layout open =
     let
-        groupSpace : List Css.Style
+        groupSpace : Css.Style
         groupSpace =
-            [ Tw.px_2, Tw.pt_2, Tw.pb_3, Tw.space_y_1 ]
+            Css.batch [ Tw.px_2, Tw.pt_2, Tw.pb_3, Tw.space_y_1 ]
 
-        groupBorder : List Css.Style
+        groupBorder : Css.Style
         groupBorder =
-            [ Tw.border_t, Color.border theme.color 500 ]
+            Css.batch [ Tw.border_t, Color.border theme.color 500 ]
 
-        btnStyle : List Css.Style
+        btnStyle : Css.Style
         btnStyle =
-            [ Color.text theme.color 100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ Color.bg theme.color 500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
+            Css.batch [ Color.text theme.color 100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ Color.bg theme.color 500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
     in
-    div [ css ([ Bp.lg [ Tw.hidden ] ] ++ B.cond isOpen [] [ Tw.hidden ]), id "mobile-menu" ]
-        ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvasMsg, css btnStyle ] [ text "Reset canvas" ] ] []
+    div [ css [ Bp.lg [ Tw.hidden ], Tu.when (not open) [ Tw.hidden ] ], id "mobile-menu" ]
+        ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvasMsg, css [ btnStyle ] ] [ text "Reset canvas" ] ] []
          , features
             |> List.map
                 (\f ->
                     f.action
                         |> E.reduce
-                            (\url -> extLink url [ css btnStyle ] [ f.content ])
-                            (\action -> button [ type_ "button", onClick action, css btnStyle ] [ f.content ])
+                            (\url -> extLink url [ css [ btnStyle ] ] [ f.content ])
+                            (\action -> button [ type_ "button", onClick action, css [ btnStyle ] ] [ f.content ])
                 )
-         , [ button [ type_ "button", onClick (Noop "open settings mobile"), css btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ], text "Settings" ] ]
+         , [ button [ type_ "button", onClick (Noop "open settings mobile"), css [ btnStyle ] ] [ Icon.outline Cog [ Tw.mr_3 ], text "Settings" ] ]
          ]
             |> List.filter L.nonEmpty
-            |> List.indexedMap (\i groupContent -> div [ css (groupSpace ++ B.cond (i == 0) [] groupBorder) ] groupContent)
+            |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, Tu.when (i /= 0) [ groupBorder ] ] ] groupContent)
         )
 
 

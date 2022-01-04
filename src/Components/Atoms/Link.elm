@@ -111,9 +111,9 @@ white5 =
     build white size5
 
 
-build : (Color -> List Css.Style) -> List Css.Style -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+build : (Color -> Css.Style) -> Css.Style -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
 build colorStyles sizeStyles color attrs content =
-    a (attrs ++ [ css (commonStyles color ++ colorStyles color ++ sizeStyles) ]) content
+    a (attrs ++ [ css [ commonStyles color, colorStyles color, sizeStyles ] ]) content
 
 
 

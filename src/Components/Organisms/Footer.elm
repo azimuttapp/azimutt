@@ -2,7 +2,7 @@ module Components.Organisms.Footer exposing (doc, slice)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
-import Css exposing (hover)
+import Css
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, p, span, text)
@@ -17,12 +17,12 @@ slice =
     div [ css [ mt_8, border_t, border_gray_200, py_8, px_8, md [ flex, items_center, justify_between ] ] ]
         [ div [ css [ flex, space_x_6, md [ order_2 ] ] ]
             [ extLink Conf.constants.azimuttTwitter
-                [ css [ text_gray_400, hover [ text_gray_500 ] ] ]
+                [ css [ text_gray_400, Css.hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "Twitter" ]
                 , Icon.twitter []
                 ]
             , extLink Conf.constants.azimuttGithub
-                [ css [ text_gray_400, hover [ text_gray_500 ] ] ]
+                [ css [ text_gray_400, Css.hover [ text_gray_500 ] ] ]
                 [ span [ css [ sr_only ] ] [ text "GitHub" ]
                 , Icon.github []
                 ]

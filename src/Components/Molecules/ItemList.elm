@@ -8,7 +8,6 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, button, div, h3, li, p, span, text, ul)
 import Html.Styled.Attributes exposing (css, type_)
 import Html.Styled.Events exposing (onClick)
-import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
@@ -29,7 +28,7 @@ withIcons theme items =
 
 withIcon : Theme -> IconItem msg -> Html msg
 withIcon theme item =
-    li [ css ([ Tw.flow_root ] ++ B.cond item.active [] [ Tw.filter, Tw.grayscale ]) ]
+    li [ css [ Tw.flow_root, Tu.when (not item.active) [ Tw.filter, Tw.grayscale ] ] ]
         [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, Tu.focusWithin [ Tw.ring_2, Color.ring theme.color 500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
             [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_16, Tw.w_16, Tw.rounded_lg, Color.bg item.color 500 ] ] [ Icon.outline item.icon [ Tw.text_white ] ]
             , div []
