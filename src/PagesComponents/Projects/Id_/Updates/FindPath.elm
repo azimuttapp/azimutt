@@ -1,10 +1,11 @@
-module PagesComponents.App.Updates.FindPath exposing (computeFindPath, handleFindPath)
+module PagesComponents.Projects.Id_.Updates.FindPath exposing (Model, handleFindPath)
 
-import Conf
 import Dict exposing (Dict)
+import Libs.Bool as B
 import Libs.Maybe as M
 import Libs.Nel as Nel
-import Libs.Task exposing (sendAfter)
+import Libs.Task as T
+import Models.Project exposing (Project)
 import Models.Project.FindPath exposing (FindPath)
 import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathResult exposing (FindPathResult)
@@ -12,52 +13,54 @@ import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.FindPathState exposing (FindPathState(..))
 import Models.Project.FindPathStep exposing (FindPathStep)
 import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
-import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..))
 import PagesComponents.App.Updates.Helpers exposing (setProject, setSettings)
-import Ports exposing (activateTooltipsAndPopovers, showModal, track)
-import Tracking exposing (events)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
+import Ports exposing (track)
+import Tracking
 
 
-type alias Model x y =
+type alias Model x =
     { x
-        | findPath : Maybe FindPath
-        , project :
-            Maybe
-                { y
-                    | tables : Dict TableId Table
-                    , relations : List Relation
-                    , settings : ProjectSettings
-                }
+        | project : Maybe Project
+        , findPath : Maybe FindPath
     }
 
 
-handleFindPath : FindPathMsg -> Model x y -> ( Model x y, Cmd Msg )
+handleFindPath : FindPathMsg -> Model x -> ( Model x, Cmd Msg )
 handleFindPath msg model =
     case msg of
-        FPInit from to ->
-            ( { model | findPath = Just { from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ showModal Conf.ids.findPathModal, track events.openFindPath ] )
+        FPOpen from to ->
+            ( { model | findPath = Just { from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ T.sendAfter 1 ModalOpen, track Tracking.events.openFindPath ] )
+
+        FPToggleSettings ->
+            ( model |> setFindPath (\fp -> { fp | showSettings = not fp.showSettings }), Cmd.none )
 
         FPUpdateFrom from ->
-            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | from = from }) }, Cmd.none )
+            ( model |> setFindPath (\fp -> { fp | from = from }), Cmd.none )
 
         FPUpdateTo to ->
-            ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | to = to }) }, Cmd.none )
+            ( model |> setFindPath (\fp -> { fp | to = to }), Cmd.none )
 
         FPSearch ->
             model.findPath
-                |> Maybe.andThen (\fp -> Maybe.map3 (\p from to -> ( p, from, to )) model.project fp.from fp.to)
-                |> M.mapOrElse (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
+                |> Maybe.andThen (\fp -> M.zip3 model.project fp.from fp.to)
+                |> M.mapOrElse (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, T.sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ activateTooltipsAndPopovers, track (events.findPathResult result) ] ))
+            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ track (Tracking.events.findPathResult result) ] ))
+
+        FPToggleResult index ->
+            ( model |> setFindPath (setResult (\r -> { r | opened = B.cond (r.opened == Just index) Nothing (Just index) })), Cmd.none )
 
         FPSettingsUpdate settings ->
             ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )
+
+        FPClose ->
+            ( { model | findPath = Nothing }, Cmd.none )
 
 
 computeFindPath : Dict TableId Table -> List Relation -> TableId -> TableId -> FindPathSettings -> FindPathResult
@@ -110,3 +113,18 @@ buildPaths tables relations settings tableId isDone curPath =
                            )
             )
             []
+
+
+setFindPath : (fp -> fp) -> { item | findPath : Maybe fp } -> { item | findPath : Maybe fp }
+setFindPath transform item =
+    { item | findPath = item.findPath |> Maybe.map transform }
+
+
+setResult : (FindPathResult -> FindPathResult) -> { item | result : FindPathState } -> { item | result : FindPathState }
+setResult transform item =
+    case item.result of
+        Found result ->
+            { item | result = Found (transform result) }
+
+        _ ->
+            item

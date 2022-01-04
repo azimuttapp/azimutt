@@ -174,7 +174,7 @@ viewPaths idPrefix model =
                 , small [ class "text-muted" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                 , div [ class "mt-3" ]
                     [ text "We hope your like this feature. If you have a few minutes, please write us "
-                    , extLink (Conf.constants.azimuttGithub ++ "/discussions/7") [] [ text "a quick feedback" ]
+                    , extLink Conf.constants.azimuttDiscussionFindPath [] [ text "a quick feedback" ]
                     , text " about it and your use case so we can continue to improve 🚀"
                     ]
                 ]

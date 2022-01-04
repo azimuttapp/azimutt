@@ -25,7 +25,7 @@ viewHelpModal =
             )
         , p [ class "mb-0" ]
             [ text "I hope you find Azimutt as much as useful as I do. The application is quickly evolving and any feedback, feature request or use case description is "
-            , extLink (Conf.constants.azimuttGithub ++ "/discussions") [] [ text "very welcome" ]
+            , extLink Conf.constants.azimuttDiscussions [] [ text "very welcome" ]
             , text " to help us make the most out of it."
             ]
         ]
@@ -47,7 +47,7 @@ search =
         , p []
             [ soon
             , text " We plan to use full-text search to be typo tolerant and also include table comment and column names & comments to score the results. If you really want this, please "
-            , extLink (Conf.constants.azimuttGithub ++ "/discussions/8") [] [ text "vote and let us know" ]
+            , extLink Conf.constants.azimuttDiscussionSearch [] [ text "vote and let us know" ]
             , text " to help prioritization."
             ]
         , p []
@@ -79,7 +79,7 @@ canvasNavigation =
         , p []
             [ soon
             , text " Group selection using a box or ctrl + click will allow to move multiple tables at once. "
-            , extLink (Conf.constants.azimuttGithub ++ "/discussions/9") [] [ text "Tell us" ]
+            , extLink Conf.constants.azimuttDiscussionCanvas [] [ text "Tell us" ]
             , text " if this feature is highly expected."
             ]
         ]
@@ -136,7 +136,7 @@ findPath =
             [ experimental
             , text " Find all the possible paths between two tables. To get relevant results, use the settings to ignore some columns or tables. "
             , text "We are still figuring out how this could be the most interesting so don't hesitate to "
-            , extLink (Conf.constants.azimuttGithub ++ "/discussions/7") [] [ text "come and discuss" ]
+            , extLink Conf.constants.azimuttDiscussionFindPath [] [ text "come and discuss" ]
             , text " out it."
             ]
         ]

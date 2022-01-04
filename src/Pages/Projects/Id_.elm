@@ -20,18 +20,20 @@ import Models.Project as Project
 import Models.Project.Relation as Relation
 import Page
 import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
+import PagesComponents.Projects.Id_.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
-import Ports exposing (JsMsg(..), autofocus, listenHotkeys, observeSize, observeTablesSize, trackJsonError, trackPage)
+import Ports exposing (JsMsg(..), autofocus, listenHotkeys, observeSize, observeTablesSize, saveProject, track, trackJsonError, trackPage)
 import Request
 import Shared
+import Tracking
 import View exposing (View)
 
 
@@ -59,14 +61,15 @@ type alias Msg =
 
 init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
 init shared req =
-    ( { project = Nothing
-      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
-      , newLayout = Nothing
+    ( { navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
+      , project = Nothing
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
       , selectionBox = Nothing
+      , newLayout = Nothing
       , virtualRelation = Nothing
+      , findPath = Nothing
       , openedDropdown = ""
       , dragging = Nothing
       , toastIdx = 0
@@ -98,6 +101,9 @@ update req msg model =
 
         LoadProject project ->
             ( { model | project = Just project }, Cmd.batch [ observeSize Conf.ids.erd, observeTablesSize (project.layout.tables |> List.map .id) ] )
+
+        SaveProject ->
+            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ saveProject p, T.send (toastInfo "Project saved"), track (Tracking.events.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
         ShowTable id ->
             model |> setProjectWithCmd (showTable id)
@@ -153,9 +159,8 @@ update req msg model =
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
 
-        FindPathMsg ->
-            -- FIXME
-            ( model, T.send (toastSuccess "FindPathMsg") )
+        FindPathMsg message ->
+            model |> handleFindPath message
 
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )
@@ -242,7 +247,7 @@ handleJsMessage req message model =
         --    -- send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content))
         --    ( model, T.send (Noop "GotRemoteFile not handled") )
         GotSourceId now sourceId src ref ->
-            ( model |> setProject (Project.addUserSource sourceId Dict.empty [ Relation.virtual src ref sourceId ] now), T.send (toastInfo "Relation added to newly created user source.") )
+            ( model |> setProject (Project.addUserSource sourceId Dict.empty [ Relation.virtual src ref sourceId ] now), T.send (toastInfo "Created a user source to add the relation.") )
 
         GotHotkey hotkey ->
             handleHotkey model hotkey

@@ -27,7 +27,7 @@ import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationFull as RelationFull exposing (RelationFull)
 import Models.TableFull exposing (TableFull)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation, VirtualRelationMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import Tailwind.Utilities as Tw
 
@@ -98,7 +98,7 @@ viewTable model zoom table tableRelations =
                             , { label = "Send to back", action = TableOrder table.id 0, hotkey = Conf.hotkeys |> Dict.get "move-to-back" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             ]
                   }
-                , { label = "Find path for this table", action = Right { action = FindPathMsg, hotkey = Nothing } }
+                , { label = "Find path for this table", action = Right { action = FindPathMsg (FPOpen (Just table.id) Nothing), hotkey = Nothing } }
                 ]
             , state =
                 { color = table.props.color

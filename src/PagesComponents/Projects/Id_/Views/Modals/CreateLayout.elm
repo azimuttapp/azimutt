@@ -40,7 +40,7 @@ viewCreateLayout theme opened newLayout =
         , isOpen = opened
         , onBackgroundClick = ModalClose (LayoutMsg LCancel)
         }
-        [ div [ css [ Bp.sm [ Tw.flex, Tw.items_start ] ] ]
+        [ div [ css [ Tw.px_6, Tw.pt_6, Bp.sm [ Tw.flex, Tw.items_start ] ] ]
             [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg theme.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
                 [ Icon.outline Template [ Color.text theme.color 600 ]
                 ]
@@ -50,7 +50,7 @@ viewCreateLayout theme opened newLayout =
                 , div [ css [ Tw.mt_2 ] ]
                     [ label [ for inputId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700 ] ] [ text "Layout name" ]
                     , div [ css [ Tw.mt_1 ] ]
-                        [ input [ type_ "text", name "layout-name", id inputId, value newLayout, onInput (LEdit >> LayoutMsg), autofocus True, css [ Tw.shadow_sm, Tw.block, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ] ] []
+                        [ input [ type_ "text", name "layout-name", id inputId, value newLayout, onInput (LEdit >> LayoutMsg), autofocus True, css [ Tw.form_input, Tw.shadow_sm, Tw.block, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ] ] []
                         ]
                     , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ]
                         [ text "Do you like Azimutt ? Consider "
@@ -62,7 +62,7 @@ viewCreateLayout theme opened newLayout =
                     ]
                 ]
             ]
-        , div [ css [ Tw.mt_5, Bp.sm [ Tw.mt_4, Tw.flex, Tw.flex_row_reverse ] ] ]
+        , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_6, Tw.flex, Tw.items_center, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
             [ Button.primary3 theme.color [ onClick (newLayout |> LCreate |> LayoutMsg |> ModalClose), css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text "Save layout" ]
             , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text "Cancel" ]
             ]

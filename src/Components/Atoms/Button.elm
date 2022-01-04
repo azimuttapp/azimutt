@@ -4,7 +4,7 @@ import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Attribute, Html, button, div, text)
-import Html.Styled.Attributes exposing (css, type_)
+import Html.Styled.Attributes exposing (css, disabled, type_)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind.Utilities as Tu
@@ -113,22 +113,22 @@ white5 =
 
 primary : Color -> List Css.Style
 primary color =
-    [ Tw.border_transparent, Tw.shadow_sm, Tw.text_white, Color.bg color 600, Css.hover [ Color.bg color 700 ] ]
+    [ Tw.border_transparent, Tw.shadow_sm, Tw.text_white, Color.bg color 600, Css.hover [ Color.bg color 700 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 300 ] ]
 
 
 secondary : Color -> List Css.Style
 secondary color =
-    [ Tw.border_transparent, Color.text color 700, Color.bg color 100, Css.hover [ Color.bg color 200 ] ]
+    [ Tw.border_transparent, Color.text color 700, Color.bg color 100, Css.hover [ Color.bg color 200 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 100, Color.text color 300 ] ]
 
 
 light : Color -> List Css.Style
 light color =
-    [ Tw.border_transparent, Color.text color 800, Color.bg color 50, Css.hover [ Color.bg color 100 ] ]
+    [ Tw.border_transparent, Color.text color 800, Color.bg color 50, Css.hover [ Color.bg color 100 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 50, Color.text color 300 ] ]
 
 
 white : Color -> List Css.Style
 white color =
-    [ Tw.border_gray_300, Tw.shadow_sm, Color.text color 700, Tw.bg_white, Css.hover [ Color.bg color 50 ] ]
+    [ Tw.border_gray_300, Tw.shadow_sm, Color.text color 700, Tw.bg_white, Css.hover [ Color.bg color 50 ], Css.disabled [ Tw.cursor_not_allowed, Tw.border_gray_200, Tw.bg_white, Color.text color 300 ] ]
 
 
 size1 : List Css.Style
@@ -181,6 +181,7 @@ doc theme =
                     , primary3 theme.color [ css [ Tw.mr_3 ] ] [ text "primary3" ]
                     , primary4 theme.color [ css [ Tw.mr_3 ] ] [ text "primary4" ]
                     , primary5 theme.color [ css [ Tw.mr_3 ] ] [ text "primary5" ]
+                    , primary5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
                     ]
               )
             , ( "secondary"
@@ -190,6 +191,7 @@ doc theme =
                     , secondary3 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary3" ]
                     , secondary4 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary4" ]
                     , secondary5 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary5" ]
+                    , secondary5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
                     ]
               )
             , ( "light"
@@ -199,6 +201,7 @@ doc theme =
                     , light3 theme.color [ css [ Tw.mr_3 ] ] [ text "light3" ]
                     , light4 theme.color [ css [ Tw.mr_3 ] ] [ text "light4" ]
                     , light5 theme.color [ css [ Tw.mr_3 ] ] [ text "light5" ]
+                    , light5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
                     ]
               )
             , ( "white"
@@ -208,6 +211,7 @@ doc theme =
                     , white3 theme.color [ css [ Tw.mr_3 ] ] [ text "white3" ]
                     , white4 theme.color [ css [ Tw.mr_3 ] ] [ text "white4" ]
                     , white5 theme.color [ css [ Tw.mr_3 ] ] [ text "white5" ]
+                    , white5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
                     ]
               )
             ]

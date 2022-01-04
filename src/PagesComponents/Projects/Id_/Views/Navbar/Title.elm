@@ -13,6 +13,7 @@ import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role)
+import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -38,6 +39,11 @@ viewNavbarTitle theme openedDropdown storedProjects project =
 
 viewProjectsDropdown : Theme -> HtmlId -> List Project -> Project -> Html Msg
 viewProjectsDropdown theme openedDropdown storedProjects project =
+    let
+        projects : List Project
+        projects =
+            storedProjects |> List.filter (\p -> p.id /= project.id) |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
+    in
     Dropdown.dropdown { id = Conf.ids.navProjectDropdown, direction = BottomRight, isOpen = openedDropdown == Conf.ids.navProjectDropdown }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
@@ -47,14 +53,13 @@ viewProjectsDropdown theme openedDropdown storedProjects project =
         )
         (\_ ->
             div [ css [ Tw.divide_y, Tw.divide_gray_100 ] ]
-                [ div [ role "none", css [ Tw.py_1 ] ]
-                    (storedProjects
-                        |> List.filter (\p -> p.id /= project.id)
-                        |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
-                        |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name })
-                    )
-                , div [ role "none", css [ Tw.py_1 ] ] [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ]
-                ]
+                (([ [ Dropdown.btn [] SaveProject [ text "Save project" ] ] ]
+                    ++ B.cond (List.isEmpty projects) [] [ projects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
+                    ++ [ [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
+                 )
+                    |> L.filterNot List.isEmpty
+                    |> List.map (\section -> div [ role "none", css [ Tw.py_1 ] ] section)
+                )
         )
 
 

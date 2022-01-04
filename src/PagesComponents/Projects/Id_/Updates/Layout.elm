@@ -10,7 +10,7 @@ import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..))
-import Ports exposing (observeTablesSize, saveProject, track)
+import Ports exposing (observeTablesSize, track)
 import Time
 import Tracking
 
@@ -55,7 +55,7 @@ createLayout name project =
     -- TODO check that layout name does not already exist
     { project | usedLayout = Just name }
         |> setLayouts (Dict.update name (\_ -> Just project.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (Tracking.events.createLayout project.layout) ] ))
+        |> (\newSchema -> ( newSchema, track (Tracking.events.createLayout project.layout) ))
 
 
 loadLayout : LayoutName -> Project -> ( Project, Cmd Msg )

@@ -88,5 +88,5 @@ extendMarkdown slug md =
     md
         |> String.replace "{{base_link}}" (Route.toHref (Route.Blog__Slug_ { slug = slug }))
         |> String.replace "{{app_link}}" (Route.toHref Route.App)
-        |> String.replace "{{roadmap_link}}" (Conf.constants.azimuttGithub ++ "/projects/1")
-        |> String.replace "{{feedback_link}}" (Conf.constants.azimuttGithub ++ "/discussions")
+        |> String.replace "{{roadmap_link}}" Conf.constants.azimuttRoadmap
+        |> String.replace "{{feedback_link}}" Conf.constants.azimuttDiscussions

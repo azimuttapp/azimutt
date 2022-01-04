@@ -11,20 +11,19 @@ import Libs.Models.Color as Color exposing (Color)
 import Tailwind.Utilities as Tw
 
 
-type alias DescriptionModel msg =
+type alias DescriptionModel =
     { color : Color
     , icon : Icon
     , title : String
-    , description : Html msg
     }
 
 
-withDescription : DescriptionModel msg -> Html msg
-withDescription model =
+withDescription : DescriptionModel -> List (Html msg) -> Html msg
+withDescription model description =
     alert
         { color = model.color
         , icon = model.icon
-        , content = [ alertTitle model.color model.title, alertDescription model.color model.description ]
+        , content = [ alertTitle model.color model.title, alertDescription model.color description ]
         }
 
 
@@ -49,19 +48,18 @@ type alias ActionsModel msg =
     { color : Color
     , icon : Icon
     , title : String
-    , description : Html msg
     , actions : List (Html msg)
     }
 
 
-withActions : ActionsModel msg -> Html msg
-withActions model =
+withActions : ActionsModel msg -> List (Html msg) -> Html msg
+withActions model description =
     alert
         { color = model.color
         , icon = model.icon
         , content =
             [ alertTitle model.color model.title
-            , alertDescription model.color model.description
+            , alertDescription model.color description
             , alertActions model.actions
             ]
         }
@@ -95,9 +93,9 @@ alertTitle color title =
     h3 [ css [ Tw.text_sm, Tw.font_medium, Color.text color 800 ] ] [ text title ]
 
 
-alertDescription : Color -> Html msg -> Html msg
-alertDescription color description =
-    div [ css [ Tw.mt_2, Tw.text_sm, Color.text color 700 ] ] [ description ]
+alertDescription : Color -> List (Html msg) -> Html msg
+alertDescription color content =
+    div [ css [ Tw.mt_2, Tw.text_sm, Color.text color 700 ] ] content
 
 
 alertList : Color -> List String -> Html msg
@@ -124,7 +122,7 @@ doc : Chapter x
 doc =
     Chapter.chapter "Alert"
         |> Chapter.renderComponentList
-            [ ( "withDescription", withDescription { color = Color.yellow, icon = Exclamation, title = "Attention needed", description = text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." } )
+            [ ( "withDescription", withDescription { color = Color.yellow, icon = Exclamation, title = "Attention needed" } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." ] )
             , ( "withList", withList { color = Color.red, icon = XCircle, title = "There were 2 errors with your submission", items = [ "Your password must be at least 8 characters", "Your password must include at least one pro wrestling finishing move" ] } )
-            , ( "withActions", withActions { color = Color.green, icon = CheckCircle, title = "Order completed", description = text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam.", actions = [ Button.light2 Color.green [] [ text "View status" ], Button.light2 Color.green [ css [ Tw.ml_3 ] ] [ text "Dismiss" ] ] } )
+            , ( "withActions", withActions { color = Color.green, icon = CheckCircle, title = "Order completed", actions = [ Button.light2 Color.green [] [ text "View status" ], Button.light2 Color.green [ css [ Tw.ml_3 ] ] [ text "Dismiss" ] ] } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam." ] )
             ]

@@ -1,4 +1,4 @@
-module Components.Atoms.Icon exposing (Icon(..), doc, github, outline, slash, solid, twitter)
+module Components.Atoms.Icon exposing (Icon(..), doc, github, loading, outline, slash, solid, twitter)
 
 import Css exposing (Style)
 import Dict exposing (Dict)
@@ -9,8 +9,8 @@ import Html.Styled.Attributes exposing (title)
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
 import Libs.Maybe as M
 import Libs.Svg.Styled.Attributes exposing (vectorEffect)
-import Svg.Styled exposing (path, svg)
-import Svg.Styled.Attributes exposing (clipRule, css, d, fill, fillRule, stroke, strokeLinecap, strokeLinejoin, strokeWidth, viewBox)
+import Svg.Styled exposing (circle, path, svg)
+import Svg.Styled.Attributes exposing (clipRule, css, cx, cy, d, fill, fillRule, r, stroke, strokeLinecap, strokeLinejoin, strokeWidth, viewBox)
 import Tailwind.Utilities as Tw
 
 
@@ -1215,25 +1215,33 @@ slash =
     viewSolid [ "M5.555 17.776l8-16 .894.448-8 16-.894-.448z" ]
 
 
+loading : List Style -> Html msg
+loading styles =
+    svg [ viewBox "0 0 24 24", fill "none", ariaHidden True, css ([ Tw.flex_shrink_0, Tw.h_5, Tw.w_5 ] ++ styles) ]
+        [ circle [ css [ Tw.opacity_25 ], stroke "currentColor", strokeWidth "4", cx "12", cy "12", r "10" ] []
+        , path [ css [ Tw.opacity_75 ], fill "currentColor", d "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" ] []
+        ]
+
+
 
 -- HELPERS
 
 
 viewOutline : List String -> List Style -> Html msg
 viewOutline lines styles =
-    svg [ css ([ Tw.flex_shrink_0, Tw.h_6, Tw.w_6 ] ++ styles), viewBox "0 0 24 24", fill "none", stroke "currentColor", ariaHidden True ]
+    svg [ viewBox "0 0 24 24", fill "none", stroke "currentColor", ariaHidden True, css ([ Tw.flex_shrink_0, Tw.h_6, Tw.w_6 ] ++ styles) ]
         (lines |> List.map (\line -> path [ d line, strokeLinecap "round", strokeLinejoin "round", strokeWidth "2", vectorEffect "non-scaling-stroke" ] []))
 
 
 viewSolid : List String -> List Style -> Html msg
 viewSolid lines styles =
-    svg [ css ([ Tw.flex_shrink_0, Tw.h_5, Tw.w_5 ] ++ styles), viewBox "0 0 20 20", fill "currentColor", ariaHidden True ]
+    svg [ viewBox "0 0 20 20", fill "currentColor", ariaHidden True, css ([ Tw.flex_shrink_0, Tw.h_5, Tw.w_5 ] ++ styles) ]
         (lines |> List.map (\line -> path [ d line, fillRule "evenodd", clipRule "evenodd" ] []))
 
 
 viewSocial : List String -> List Style -> Html msg
 viewSocial lines styles =
-    svg [ css ([ Tw.flex_shrink_0, Tw.h_6, Tw.w_6 ] ++ styles), viewBox "0 0 24 24", fill "currentColor", role "img", ariaHidden True ]
+    svg [ viewBox "0 0 24 24", fill "currentColor", role "img", ariaHidden True, css ([ Tw.flex_shrink_0, Tw.h_6, Tw.w_6 ] ++ styles) ]
         (lines |> List.map (\line -> path [ d line ] []))
 
 
@@ -1251,6 +1259,8 @@ doc =
               , div []
                     [ span [ title "twitter", css [ Tw.inline_block, Tw.w_6 ] ] [ twitter [] ]
                     , span [ title "github", css [ Tw.inline_block, Tw.w_6 ] ] [ github [] ]
+                    , span [ title "slash", css [ Tw.inline_block, Tw.w_6 ] ] [ slash [] ]
+                    , span [ title "loading", css [ Tw.inline_block, Tw.w_6 ] ] [ loading [] ]
                     ]
               )
             ]

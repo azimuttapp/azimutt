@@ -36,10 +36,10 @@ publicHeader =
         { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
         , links =
             [ { url = Route.toHref Route.Blog, content = [ S.text "Blog" ], external = False }
-            , { url = Conf.constants.azimuttGithub ++ "/discussions", content = [ S.text "Discussions" ], external = True }
-            , { url = Conf.constants.azimuttGithub ++ "/projects/1", content = [ S.text "Roadmap" ], external = True }
+            , { url = Conf.constants.azimuttDiscussions, content = [ S.text "Discussions" ], external = True }
+            , { url = Conf.constants.azimuttRoadmap, content = [ S.text "Roadmap" ], external = True }
             , { url = Conf.constants.azimuttGithub, content = [ S.text "Source code" ], external = True }
-            , { url = Conf.constants.azimuttGithub ++ "/issues", content = [ S.text "Bug reports" ], external = True }
+            , { url = Conf.constants.azimuttBugReport, content = [ S.text "Bug reports" ], external = True }
             , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter [], S.span [ SA.css [ Tw.sr_only ] ] [ S.text "Twitter" ] ], external = True }
             ]
         }

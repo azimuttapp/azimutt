@@ -6,9 +6,8 @@ import Libs.Maybe as M
 import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Model, Msg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
-import Ports exposing (blur, focus, mouseDown, saveProject, scroll, track)
-import Tracking
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), LayoutMsg(..), Model, Msg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
+import Ports exposing (blur, focus, mouseDown, scroll)
 
 
 handleHotkey : Model -> String -> ( Model, Cmd Msg )
@@ -33,7 +32,7 @@ handleHotkey model hotkey =
             ( model, removeElement model )
 
         "save" ->
-            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ saveProject p, T.send (toastInfo "Project saved"), track (Tracking.events.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+            ( model, T.send SaveProject )
 
         "move-forward" ->
             ( model, moveTables 1 model )
@@ -57,8 +56,7 @@ handleHotkey model hotkey =
             ( model, T.send (VirtualRelationMsg (model.virtualRelation |> M.mapOrElse (\_ -> VRCancel) VRCreate)) )
 
         "find-path" ->
-            -- FIXME
-            ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
+            ( model, T.send (FindPathMsg (model.findPath |> M.mapOrElse (\_ -> FPClose) (FPOpen Nothing Nothing))) )
 
         "undo" ->
             -- FIXME
@@ -92,6 +90,7 @@ cancelElement model =
             |> M.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
             |> M.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
             |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
+            |> M.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
             |> Maybe.withDefault (toastInfo "Nothing to cancel")
         )
 

@@ -7,12 +7,15 @@ import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Conf
 import Css
 import Dict
+import Either exposing (Either(..))
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, img, nav, span, text)
 import Html.Styled.Attributes exposing (alt, class, css, height, href, id, src, tabindex, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
+import Libs.Either as E
 import Libs.Hotkey as Hotkey exposing (Hotkey)
+import Libs.Html.Styled exposing (extLink)
 import Libs.Html.Styled.Attributes exposing (ariaControls, ariaExpanded, role)
 import Libs.List as L
 import Libs.Maybe as M
@@ -23,7 +26,7 @@ import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Tailwind.Breakpoints as Bp
@@ -31,7 +34,7 @@ import Tailwind.Utilities as Tw
 
 
 type alias Btn msg =
-    { action : msg, text : String, hotkey : Maybe Hotkey }
+    { action : Either String msg, content : Html msg, hotkey : Maybe Hotkey }
 
 
 viewNavbar : Theme -> HtmlId -> Maybe VirtualRelation -> List Project -> Project -> NavbarModel -> Html Msg
@@ -39,13 +42,14 @@ viewNavbar theme openedDropdown virtualRelation storedProjects project model =
     let
         features : List (Btn Msg)
         features =
-            [ { action = HideAllTables, text = "Hide all tables", hotkey = Nothing }
-            , { action = ShowAllTables, text = "Show all tables", hotkey = Nothing }
-            , { action = LayoutMsg LOpen, text = "Save your layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
+            [ { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
+            , { action = Right ShowAllTables, content = text "Show all tables", hotkey = Nothing }
+            , { action = Right (LayoutMsg LOpen), content = text "Save your layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
             , virtualRelation
-                |> Maybe.map (\_ -> { action = VirtualRelationMsg VRCancel, text = "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
-                |> Maybe.withDefault { action = VirtualRelationMsg VRCreate, text = "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
-            , { action = FindPathMsg, text = "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
+                |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
+                |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
+            , { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
+            , { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkey = Nothing }
             ]
     in
     nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, Color.bg theme.color 600 ] ]
@@ -110,14 +114,10 @@ viewNavbarFeatures theme features openedDropdown =
                 (features
                     |> List.map
                         (\btn ->
-                            button
-                                [ type_ "button"
-                                , onClick btn.action
-                                , role "menuitem"
-                                , tabindex -1
-                                , css ([ Tw.flex, Tw.w_full, Tw.justify_between, Css.focus [ Tw.outline_none ] ] ++ Dropdown.itemStyles)
-                                ]
-                                ([ text btn.text ] ++ (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ css [ Tw.ml_3 ] ] (Hotkey.keys h) ]) []))
+                            btn.action
+                                |> E.reduce
+                                    (\url -> extLink url [ role "menuitem", tabindex -1, css (Tw.block :: Dropdown.itemStyles) ] [ btn.content ])
+                                    (\action -> Dropdown.btn [ Tw.flex, Tw.justify_between ] action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ css [ Tw.ml_3 ] ] (Hotkey.keys h) ]) [])))
                         )
                 )
         )
@@ -159,7 +159,14 @@ viewNavbarMobileMenu theme features usedLayout layout isOpen =
     in
     div [ css ([ Bp.lg [ Tw.hidden ] ] ++ B.cond isOpen [] [ Tw.hidden ]), id "mobile-menu" ]
         ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvasMsg, css btnStyle ] [ text "Reset canvas" ] ] []
-         , features |> List.map (\f -> button [ type_ "button", onClick f.action, css btnStyle ] [ text f.text ])
+         , features
+            |> List.map
+                (\f ->
+                    f.action
+                        |> E.reduce
+                            (\url -> extLink url [ css btnStyle ] [ f.content ])
+                            (\action -> button [ type_ "button", onClick action, css btnStyle ] [ f.content ])
+                )
          , [ button [ type_ "button", onClick (Noop "open settings mobile"), css btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ], text "Settings" ] ]
          ]
             |> List.filter L.nonEmpty

@@ -17,6 +17,7 @@ import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 import PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 import PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
 import PagesComponents.Projects.Id_.Views.Modals.CreateLayout exposing (viewCreateLayout)
+import PagesComponents.Projects.Id_.Views.Modals.FindPath exposing (viewFindPath)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Shared exposing (StoredProjects(..))
 import Tailwind.Utilities as Tw
@@ -66,7 +67,7 @@ viewNotFound theme =
         , message = "Sorry, we couldn't find the project you’re looking for."
         , link = { url = Route.toHref Route.Projects, text = "Go back to dashboard" }
         , footer =
-            [ { url = Conf.constants.azimuttGithub ++ "/discussions", text = "Contact Support" }
+            [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
@@ -78,6 +79,7 @@ viewModal theme model =
     div [ class "tw-modal", id Conf.ids.modal ]
         [ (model.confirm |> Maybe.map (viewConfirm model.modalOpened))
             |> M.orElse (model.newLayout |> Maybe.map (viewCreateLayout theme model.modalOpened))
+            |> M.orElse (model.findPath |> Maybe.map2 (viewFindPath theme model.modalOpened) model.project)
             |> Maybe.withDefault (div [] [])
         ]
 

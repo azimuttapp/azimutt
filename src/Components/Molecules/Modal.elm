@@ -58,7 +58,7 @@ confirm model isOpen =
         , isOpen = isOpen
         , onBackgroundClick = model.onCancel
         }
-        [ div [ css [ Bp.sm [ Tw.flex, Tw.items_start ] ] ]
+        [ div [ css [ Tw.px_6, Tw.pt_6, Bp.sm [ Tw.flex, Tw.items_start ] ] ]
             [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg model.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
                 [ Icon.outline model.icon [ Color.text model.color 600 ]
                 ]
@@ -70,7 +70,7 @@ confirm model isOpen =
                     ]
                 ]
             ]
-        , div [ css [ Tw.mt_5, Bp.sm [ Tw.mt_4, Tw.flex, Tw.flex_row_reverse ] ] ]
+        , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_6, Tw.bg_gray_50, Bp.sm [ Tw.flex, Tw.items_center, Tw.flex_row_reverse ] ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text model.confirm ]
             , Button.white3 Color.gray [ onClick model.onCancel, css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text model.cancel ]
             ]
@@ -116,7 +116,7 @@ modal model content =
         [ div [ css [ Tw.flex, Tw.items_end, Tw.justify_center, Tw.min_h_screen, Tw.pt_4, Tw.px_4, Tw.pb_20, Tw.text_center, Bp.sm [ Tw.block, Tw.p_0 ] ] ]
             [ div [ ariaHidden True, onClick model.onBackgroundClick, css ([ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75 ] ++ backgroundOverlay) ] []
             , {- This element is to trick the browser into centering the modal contents. -} span [ css [ Tw.hidden, Bp.sm [ Tw.inline_block, Tw.align_middle, Tw.h_screen ] ], ariaHidden True ] [ text "\u{200B}" ]
-            , div [ id model.id, css ([ Tw.inline_block, Tw.align_bottom, Tw.bg_white, Tw.rounded_lg, Tw.px_4, Tw.pt_5, Tw.pb_4, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.align_middle, Tw.max_w_max, Tw.w_full, Tw.p_6 ] ] ++ modalPanel) ] content
+            , div [ id model.id, css ([ Tw.inline_block, Tw.align_middle, Tw.bg_white, Tw.rounded_lg, Tw.text_left, Tw.overflow_hidden, Tw.shadow_xl, Tw.transform, Bp.sm [ Tw.my_8, Tw.max_w_max, Tw.w_full ] ] ++ modalPanel) ] content
             ]
         ]
 

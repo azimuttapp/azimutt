@@ -7,5 +7,6 @@ import Models.Project.TableId exposing (TableId)
 type alias FindPath =
     { from : Maybe TableId
     , to : Maybe TableId
+    , showSettings : Bool
     , result : FindPathState
     }

@@ -1,7 +1,8 @@
-module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
+import Dict exposing (Dict)
 import Html.Styled exposing (Html)
 import Libs.Area exposing (Area)
 import Libs.Html.Events exposing (WheelEvent)
@@ -14,21 +15,26 @@ import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Relation exposing (Relation)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Ports exposing (JsMsg)
 import Shared exposing (Confirm)
 
 
 type alias Model =
-    { project : Maybe Project
-    , navbar : NavbarModel
-    , newLayout : Maybe LayoutName
+    { navbar : NavbarModel
+    , project : Maybe Project
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
     , selectionBox : Maybe Area
+    , newLayout : Maybe LayoutName
     , virtualRelation : Maybe VirtualRelation
+    , findPath : Maybe FindPath
 
     -- global attrs
     , openedDropdown : HtmlId
@@ -46,13 +52,13 @@ type alias NavbarModel =
     }
 
 
-type alias VirtualRelation =
-    { src : Maybe ColumnRef, mouse : Position }
-
-
 type CursorMode
     = CursorDrag
     | CursorSelect
+
+
+type alias VirtualRelation =
+    { src : Maybe ColumnRef, mouse : Position }
 
 
 type alias DragState =
@@ -63,6 +69,7 @@ type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | LoadProject Project
+    | SaveProject
     | ShowTable TableId
     | ShowTables (List TableId)
     | ShowAllTables
@@ -81,7 +88,7 @@ type Msg
     | ResetCanvas
     | LayoutMsg LayoutMsg
     | VirtualRelationMsg VirtualRelationMsg
-    | FindPathMsg
+    | FindPathMsg FindPathMsg
     | CursorMode CursorMode
     | FitContent
     | OnWheel WheelEvent
@@ -120,6 +127,18 @@ type VirtualRelationMsg
     | VRUpdate ColumnRef Position
     | VRMove Position
     | VRCancel
+
+
+type FindPathMsg
+    = FPOpen (Maybe TableId) (Maybe TableId)
+    | FPToggleSettings
+    | FPUpdateFrom (Maybe TableId)
+    | FPUpdateTo (Maybe TableId)
+    | FPSearch
+    | FPCompute (Dict TableId Table) (List Relation) TableId TableId FindPathSettings
+    | FPToggleResult Int
+    | FPSettingsUpdate FindPathSettings
+    | FPClose
 
 
 toastSuccess : String -> Msg

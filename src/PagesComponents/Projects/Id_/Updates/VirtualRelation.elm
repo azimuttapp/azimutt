@@ -37,7 +37,7 @@ handleVirtualRelation msg model =
                         Just source ->
                             ( { model | virtualRelation = Nothing }
                                 |> setProject (Project.updateSource source.id (\s -> { s | relations = s.relations ++ [ Relation.virtual src ref source.id ] }))
-                            , T.send (toastInfo ("Relation added to <b>" ++ source.name ++ "</b> source."))
+                            , T.send (toastInfo ("Relation added to " ++ source.name ++ " source."))
                             )
 
                         Nothing ->

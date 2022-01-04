@@ -10,12 +10,35 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.SchemaName exposing (SchemaName)
 
 
-constants : { azimuttTwitter : String, azimuttGithub : String, azimuttEmail : String }
+constants :
+    { azimuttTwitter : String
+    , azimuttGithub : String
+    , azimuttDiscussions : String
+    , azimuttRoadmap : String
+    , azimuttBugReport : String
+    , azimuttFeatureRequests : String
+    , azimuttDiscussionFindPath : String
+    , azimuttDiscussionSearch : String
+    , azimuttDiscussionCanvas : String
+    , azimuttEmail : String
+    }
 constants =
     { azimuttTwitter = "https://twitter.com/azimuttapp"
-    , azimuttGithub = "https://github.com/azimuttapp/azimutt"
+    , azimuttGithub = github
+    , azimuttDiscussions = github ++ "/discussions"
+    , azimuttRoadmap = github ++ "/projects/1"
+    , azimuttBugReport = github ++ "/issues"
+    , azimuttFeatureRequests = github ++ "/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22"
+    , azimuttDiscussionFindPath = github ++ "/discussions/7"
+    , azimuttDiscussionSearch = github ++ "/discussions/8"
+    , azimuttDiscussionCanvas = github ++ "/discussions/9"
     , azimuttEmail = "hey@azimutt.app"
     }
+
+
+github : String
+github =
+    "https://github.com/azimuttapp/azimutt"
 
 
 newsletter : Newsletter.Form
@@ -64,8 +87,8 @@ ids :
     , erd : HtmlId
     , selectionBox : HtmlId
     , projectSwitchModal : HtmlId
-    , findPathModal : HtmlId
     , newLayoutModal : HtmlId
+    , findPathModal : HtmlId
     , helpModal : HtmlId
     , confirm : HtmlId
     , modal : HtmlId
@@ -80,8 +103,8 @@ ids =
     , erd = "erd"
     , selectionBox = "selection-box"
     , projectSwitchModal = "project-switch-modal"
-    , findPathModal = "find-path-modal"
     , newLayoutModal = "new-layout-modal"
+    , findPathModal = "find-path-modal"
     , helpModal = "help-modal"
     , confirm = "confirm-modal"
     , modal = "modal"

@@ -71,7 +71,7 @@ window.addEventListener('load', function() {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
     function autofocus(id) {
-        getElementById(id).querySelector('[autofocus]').focus()
+        getElementById(id).querySelector('[autofocus]')?.focus()
     }
     function showModal(id) {
         bootstrap.Modal.getOrCreateInstance(getElementById(id)).show()

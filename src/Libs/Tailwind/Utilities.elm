@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, max_h, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
+module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, h, left, max_h, noStyle, scale, stroke_3, top, translate_x_y, underline_dotted, w, z, z_max)
 
 import Css exposing (Style, pseudoClass)
 import Libs.Models exposing (Millis)
@@ -19,6 +19,11 @@ focusRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
 focusWithinRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> Style
 focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
     focusWithin [ Tw.outline_none, Tw.ring_2, Tw.ring_offset_2, Color.ring ringColor ringLevel, Color.ringOffset offsetColor offsetLevel ]
+
+
+noStyle : Style
+noStyle =
+    Css.batch []
 
 
 w : Float -> String -> Style

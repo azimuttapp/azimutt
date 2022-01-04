@@ -96,7 +96,7 @@ viewNotFound shared _ =
         , message = "Sorry, we couldn't find the page you’re looking for."
         , link = { url = Route.toHref Route.Home_, text = "Go back home" }
         , footer =
-            [ { url = Conf.constants.azimuttGithub ++ "/discussions", text = "Contact Support" }
+            [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
