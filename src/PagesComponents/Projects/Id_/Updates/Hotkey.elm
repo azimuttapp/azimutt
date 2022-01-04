@@ -16,9 +16,6 @@ handleHotkey model hotkey =
         "search-open" ->
             ( model, focus Conf.ids.searchInput )
 
-        "search-close" ->
-            ( model, blur Conf.ids.searchInput )
-
         "search-up" ->
             ( model |> setNavbar (setSearch (setActive (\a -> a - 1))), scroll (Conf.ids.searchInput ++ "-active") "end" )
 
@@ -60,11 +57,11 @@ handleHotkey model hotkey =
 
         "undo" ->
             -- FIXME
-            ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
+            ( model, T.send (toastInfo "Undo action not handled yet") )
 
         "redo" ->
             -- FIXME
-            ( model, T.send (toastInfo ("Hotkey " ++ hotkey)) )
+            ( model, T.send (toastInfo "Redo action not handled yet") )
 
         "cancel" ->
             ( model, cancelElement model )

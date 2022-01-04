@@ -213,27 +213,33 @@ window.addEventListener('load', function() {
     const hotkeys = {}
     // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
     document.addEventListener('keydown', e => {
-        Object.entries(hotkeys).forEach(([id, alternatives]) => {
-            alternatives.forEach(hotkey => {
-                if ((!hotkey.key || hotkey.key === e.key) &&
-                    (!hotkey.ctrl || e.ctrlKey) &&
-                    (!hotkey.shift || e.shiftKey) &&
-                    (!hotkey.alt || e.altKey) &&
-                    (!hotkey.meta || e.metaKey) &&
-                    ((!hotkey.target && (hotkey.onInput || e.target.localName !== 'input')) || (hotkey.target &&
-                        (!hotkey.target.id || hotkey.target.id === e.target.id) &&
-                        (!hotkey.target.class || e.target.className.split(' ').includes(hotkey.target.class)) &&
-                        (!hotkey.target.tag || hotkey.target.tag === e.target.localName)))) {
-                    if (hotkey.preventDefault) {
-                        e.preventDefault()
-                    }
-                    sendToElm({kind: 'GotHotkey', id: id})
-                }
-            })
+        const matches = (hotkeys[e.key] || []).filter(hotkey =>
+            (hotkey.ctrl === e.ctrlKey) &&
+            (!hotkey.shift || e.shiftKey) &&
+            (hotkey.alt === e.altKey) &&
+            (hotkey.meta === e.metaKey) &&
+            ((!hotkey.target && (hotkey.onInput || e.target.localName !== 'input')) ||
+                (hotkey.target &&
+                    (!hotkey.target.id || hotkey.target.id === e.target.id) &&
+                    (!hotkey.target.class || e.target.className.split(' ').includes(hotkey.target.class)) &&
+                    (!hotkey.target.tag || hotkey.target.tag === e.target.localName)))
+        )
+        matches.map(hotkey => {
+            if (hotkey.preventDefault) { e.preventDefault() }
+            sendToElm({kind: 'GotHotkey', id: hotkey.id})
         })
+        if(matches.length === 0 && e.key === "Escape" && e.target.localName === 'input') { e.target.blur() }
     })
     function listenHotkeys(keys) {
-        Object.assign(hotkeys, keys)
+        Object.keys(hotkeys).forEach(key => hotkeys[key] = [])
+        Object.entries(keys).forEach(([id, alternatives]) => {
+            alternatives.forEach(hotkey => {
+                if (!hotkeys[hotkey.key]) {
+                    hotkeys[hotkey.key] = []
+                }
+                hotkeys[hotkey.key].push({...hotkey, id})
+            })
+        })
     }
 
     // listen at every click to handle tracked events

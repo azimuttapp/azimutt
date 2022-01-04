@@ -6,7 +6,7 @@ import Libs.Json.Encode as E
 
 
 type alias Hotkey =
-    { key : Maybe String, ctrl : Bool, shift : Bool, alt : Bool, meta : Bool, target : Maybe HotkeyTarget, onInput : Bool, preventDefault : Bool }
+    { key : String, ctrl : Bool, shift : Bool, alt : Bool, meta : Bool, target : Maybe HotkeyTarget, onInput : Bool, preventDefault : Bool }
 
 
 type alias HotkeyTarget =
@@ -15,7 +15,7 @@ type alias HotkeyTarget =
 
 hotkey : Hotkey
 hotkey =
-    { key = Nothing, ctrl = False, shift = False, alt = False, meta = False, target = Nothing, onInput = False, preventDefault = False }
+    { key = "", ctrl = False, shift = False, alt = False, meta = False, target = Nothing, onInput = False, preventDefault = False }
 
 
 target : HotkeyTarget
@@ -29,7 +29,7 @@ keys h =
     , B.cond h.alt (Just "Alt") Nothing
     , B.cond h.shift (Just "Shift") Nothing
     , B.cond h.meta (Just "Meta") Nothing
-    , h.key
+    , Just h.key
     ]
         |> List.filterMap identity
 
@@ -37,7 +37,7 @@ keys h =
 hotkeyEncoder : Hotkey -> Value
 hotkeyEncoder key =
     Encode.object
-        [ ( "key", key.key |> E.maybe Encode.string )
+        [ ( "key", key.key |> Encode.string )
         , ( "ctrl", key.ctrl |> Encode.bool )
         , ( "shift", key.shift |> Encode.bool )
         , ( "alt", key.alt |> Encode.bool )
