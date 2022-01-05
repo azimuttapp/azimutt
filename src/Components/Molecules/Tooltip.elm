@@ -12,6 +12,7 @@ import Tailwind.Utilities as Tw
 
 
 
+-- see https://elmcsspatterns.io/feedback/tooltip
 -- see https://codepen.io/robstinson/pen/eYZLRdv
 -- see https://tailwindcomponents.com/component/tooltip
 

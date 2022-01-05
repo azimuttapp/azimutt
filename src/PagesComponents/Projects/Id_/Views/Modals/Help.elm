@@ -186,22 +186,25 @@ shortcuts : Section msg
 shortcuts =
     { title = "Shortcuts"
     , body =
-        [ p [] [ text "Keyboard shortcuts improve user productivity. So Azimutt has some to help you:" ] ]
-            ++ ([ { hotkey = [ "/" ], description = "focus the search" }
-                , { hotkey = [ "Ctrl", "s" ], description = "save the project. It's not done automatically so don't forget it ^^" }
-                , { hotkey = [ "d" ], description = "hide a table or column, depending on what is hovered" }
-                , { hotkey = [ "Alt", "l" ], description = "create a layout from your current state" }
-                , { hotkey = [ "Alt", "v" ], description = "add a new virtual relation" }
-                , { hotkey = [ "Alt", "p" ], description = "open find path dialog, use hovered table as source" }
-                , { hotkey = [ "Ctrl", "ArrowUp" ], description = "bring hovered table on step forward" }
-                , { hotkey = [ "Ctrl", "ArrowDown" ], description = "bring hovered table on step backward" }
-                , { hotkey = [ "Ctrl", "Shift", "ArrowUp" ], description = "bring hovered table in the front" }
-                , { hotkey = [ "Ctrl", "Shift", "ArrowDown" ], description = "bring hovered table to the back" }
-                , { hotkey = [ "Escape" ], description = "cancel what you are doing (drag, opened dialog, input focus, create relation...)" }
-                , { hotkey = [ "?" ], description = "open this documentation dialog" }
-                ]
-                    |> List.map (\h -> div [] [ hotkey h.hotkey, text (" " ++ h.description) ])
-               )
+        [ p [] [ text "Keyboard shortcuts improve user productivity. So Azimutt has some to help you:" ]
+        , div [ css [ Tw.mt_3 ] ]
+            ([ { hotkey = [ "/" ], description = "Focus on the search" }
+             , { hotkey = [ "Ctrl", "s" ], description = "Save the project. It's not done automatically so don't forget it ^^" }
+             , { hotkey = [ "d" ], description = "Hide a table or column, depending on what is hovered" }
+             , { hotkey = [ "Alt", "l" ], description = "Create a layout from your current state" }
+             , { hotkey = [ "Alt", "v" ], description = "Add a new virtual relation" }
+             , { hotkey = [ "Alt", "p" ], description = "Open find path dialog, use hovered table as source" }
+             , { hotkey = [ "Ctrl", "ArrowUp" ], description = "Bring hovered table on step forward" }
+             , { hotkey = [ "Ctrl", "ArrowDown" ], description = "Bring hovered table on step backward" }
+             , { hotkey = [ "Ctrl", "Shift", "ArrowUp" ], description = "Bring hovered table in the front" }
+             , { hotkey = [ "Ctrl", "Shift", "ArrowDown" ], description = "Bring hovered table to the back" }
+             , { hotkey = [ "Escape" ], description = "Cancel what you are doing (drag, opened dialog, input focus, create relation...)" }
+             , { hotkey = [ "?" ], description = "Open this documentation dialog" }
+             ]
+                |> List.map (\h -> div [ css [ Tw.flex, Tw.justify_between, Tw.flex_row_reverse, Tw.mt_1 ] ] [ hotkey h.hotkey, text (" " ++ h.description) ])
+            )
+        , p [ css [ Tw.mt_3 ] ] [ text "If you can think of other or have better suggestion for them, ", extLink Conf.constants.azimuttDiscussions [ css [ Tu.link ] ] [ text "just let us know" ], text "." ]
+        ]
     }
 
 
