@@ -4,7 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Css
 import Dict exposing (Dict)
-import Html.Styled exposing (Html, button, div, input, label, span, text)
+import Html.Styled exposing (Attribute, Html, button, div, input, label, span, text)
 import Html.Styled.Attributes exposing (autocomplete, css, for, id, name, placeholder, tabindex, type_, value)
 import Html.Styled.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Libs.Bool as B
@@ -116,12 +116,21 @@ viewSearchResult theme searchId layout active index res =
         viewItem : msg -> Icon -> List (Html msg) -> Bool -> Html msg
         viewItem =
             \msg icon content disabled ->
+                let
+                    commonAttrs : List (Attribute msg)
+                    commonAttrs =
+                        [ role "menuitem", tabindex -1 ] ++ B.cond (active == index) [ id (searchId ++ "-active") ] []
+
+                    commonStyles : Css.Style
+                    commonStyles =
+                        Css.batch [ Tw.flex, Tw.w_full, Tw.items_center ]
+                in
                 if disabled then
-                    span [ role "menuitem", tabindex -1, css [ Tw.flex, Tw.w_full, Tw.items_center, Dropdown.itemDisabledStyles, Tu.when (active == index) [ Color.text theme.color 400 ] ] ]
+                    span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, Tu.when (active == index) [ Color.text theme.color 400 ] ] ])
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
 
                 else
-                    button ([ type_ "button", onMouseDown msg, role "menuitem", tabindex -1, css [ Tw.flex, Tw.w_full, Tw.items_center, Dropdown.itemStyles, Css.focus [ Tw.outline_none ], Tu.when (active == index) [ Color.bg theme.color 600, Tw.text_white ] ] ] ++ B.cond (active == index) [ id (searchId ++ "-active") ] [])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, Css.focus [ Tw.outline_none ], Tu.when (active == index) [ Color.bg theme.color 600, Tw.text_white ] ] ])
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
     in
     case res of

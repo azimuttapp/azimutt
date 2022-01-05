@@ -32,7 +32,7 @@ import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProj
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
-import Ports exposing (JsMsg(..), autofocus, listenHotkeys, observeSize, observeTablesSize, saveProject, track, trackJsonError, trackPage)
+import Ports exposing (JsMsg(..), autofocusWithin, listenHotkeys, observeSize, observeTablesSize, saveProject, track, trackJsonError, trackPage)
 import Request
 import Shared
 import Tracking
@@ -228,7 +228,7 @@ update req msg model =
             ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
 
         ModalOpen ->
-            ( { model | modalOpened = True }, autofocus Conf.ids.modal )
+            ( { model | modalOpened = True }, autofocusWithin Conf.ids.modal )
 
         ModalClose message ->
             ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )

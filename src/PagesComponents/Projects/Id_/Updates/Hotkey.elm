@@ -7,7 +7,7 @@ import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
-import Ports exposing (blur, focus, mouseDown, scroll)
+import Ports exposing (blur, focus, mouseDown, scrollTo)
 
 
 handleHotkey : Model -> String -> ( Model, Cmd Msg )
@@ -17,10 +17,10 @@ handleHotkey model hotkey =
             ( model, focus Conf.ids.searchInput )
 
         "search-up" ->
-            ( model |> setNavbar (setSearch (setActive (\a -> a - 1))), scroll (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> setNavbar (setSearch (setActive (\a -> a - 1))), scrollTo (Conf.ids.searchInput ++ "-active") "end" )
 
         "search-down" ->
-            ( model |> setNavbar (setSearch (setActive (\a -> a + 1))), scroll (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> setNavbar (setSearch (setActive (\a -> a + 1))), scrollTo (Conf.ids.searchInput ++ "-active") "end" )
 
         "search-confirm" ->
             ( model, Cmd.batch [ mouseDown (Conf.ids.searchInput ++ "-active"), blur Conf.ids.searchInput ] )

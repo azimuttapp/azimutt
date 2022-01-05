@@ -10,7 +10,7 @@ import Libs.Task as T
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
-import Ports exposing (autofocus, trackPage)
+import Ports exposing (autofocusWithin, trackPage)
 import Request
 import Shared
 import Tracking
@@ -75,7 +75,7 @@ update req msg model =
             ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
 
         ModalOpen ->
-            ( { model | modalOpened = True }, autofocus Conf.ids.modal )
+            ( { model | modalOpened = True }, autofocusWithin Conf.ids.modal )
 
         ModalClose message ->
             ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )

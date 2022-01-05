@@ -28,28 +28,28 @@ window.addEventListener('load', function() {
         setTimeout(() => {
             // console.log('elm message', msg)
             switch (msg.kind) {
-                case 'Click':         click(msg.id); break;
-                case 'MouseDown':     mousedown(msg.id); break;
-                case 'Focus':         focus(msg.id); break;
-                case 'Blur':          blur(msg.id); break;
-                case 'Scroll':        scroll(msg.id, msg.position); break;
-                case 'Autofocus':     autofocus(msg.id); break;
-                case 'ShowModal':     showModal(msg.id); break;
-                case 'HideModal':     hideModal(msg.id); break;
-                case 'HideOffcanvas': hideOffcanvas(msg.id); break;
+                case 'Click':           click(msg.id); break;
+                case 'MouseDown':       mousedown(msg.id); break;
+                case 'Focus':           focus(msg.id); break;
+                case 'Blur':            blur(msg.id); break;
+                case 'ScrollTo':        scrollTo(msg.id, msg.position); break;
+                case 'AutofocusWithin': autofocusWithin(msg.id); break;
+                case 'ShowModal':       showModal(msg.id); break;
+                case 'HideModal':       hideModal(msg.id); break;
+                case 'HideOffcanvas':   hideOffcanvas(msg.id); break;
                 case 'ActivateTooltipsAndPopovers': activateTooltipsAndPopovers(); break;
-                case 'ShowToast':     showToast(msg.toast); break;
-                case 'LoadProjects':  loadProjects(); break;
-                case 'SaveProject':   saveProject(msg.project); break;
-                case 'DropProject':   dropProject(msg.project); break;
-                case 'GetLocalFile':  getLocalFile(msg.project, msg.source, msg.file); break;
-                case 'GetRemoteFile': getRemoteFile(msg.project, msg.source, msg.url, msg.sample); break;
-                case 'GetSourceId':   getSourceId(msg.src, msg.ref); break;
-                case 'ObserveSizes':  observeSizes(msg.ids); break;
-                case 'ListenKeys':    listenHotkeys(msg.keys); break;
-                case 'TrackPage':     analytics.then(a => a.trackPage(msg.name)); break;
-                case 'TrackEvent':    analytics.then(a => a.trackEvent(msg.name, msg.details)); break;
-                case 'TrackError':    analytics.then(a => a.trackError(msg.name, msg.details)); errorTracking.then(e => e.trackError(msg.name, msg.details)); break;
+                case 'ShowToast':       showToast(msg.toast); break;
+                case 'LoadProjects':    loadProjects(); break;
+                case 'SaveProject':     saveProject(msg.project); break;
+                case 'DropProject':     dropProject(msg.project); break;
+                case 'GetLocalFile':    getLocalFile(msg.project, msg.source, msg.file); break;
+                case 'GetRemoteFile':   getRemoteFile(msg.project, msg.source, msg.url, msg.sample); break;
+                case 'GetSourceId':     getSourceId(msg.src, msg.ref); break;
+                case 'ObserveSizes':    observeSizes(msg.ids); break;
+                case 'ListenKeys':      listenHotkeys(msg.keys); break;
+                case 'TrackPage':       analytics.then(a => a.trackPage(msg.name)); break;
+                case 'TrackEvent':      analytics.then(a => a.trackEvent(msg.name, msg.details)); break;
+                case 'TrackError':      analytics.then(a => a.trackError(msg.name, msg.details)); errorTracking.then(e => e.trackError(msg.name, msg.details)); break;
                 default: console.error('Unsupported Elm message', msg); break;
             }
         }, 100)
@@ -67,10 +67,10 @@ window.addEventListener('load', function() {
     function blur(id) {
         getElementById(id).blur()
     }
-    function scroll(id, position) {
+    function scrollTo(id, position) {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
-    function autofocus(id) {
+    function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()
     }
     function showModal(id) {
