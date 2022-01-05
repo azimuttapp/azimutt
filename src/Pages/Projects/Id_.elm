@@ -28,6 +28,7 @@ import PagesComponents.Projects.Id_.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
+import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
@@ -71,6 +72,7 @@ init shared req =
       , newLayout = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
+      , settings = Nothing
       , help = Nothing
       , openedDropdown = ""
       , dragging = Nothing
@@ -155,9 +157,6 @@ update req msg model =
         ResetCanvas ->
             ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )
 
-        HelpMsg message ->
-            model |> handleHelp message
-
         LayoutMsg message ->
             model |> handleLayout message
 
@@ -166,6 +165,12 @@ update req msg model =
 
         FindPathMsg message ->
             model |> handleFindPath message
+
+        ProjectSettingsMsg message ->
+            model |> handleProjectSettings message
+
+        HelpMsg message ->
+            model |> handleHelp message
 
         CursorMode mode ->
             ( { model | cursorMode = mode }, Cmd.none )

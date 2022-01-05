@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), Help, HelpMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), Help, HelpMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -35,6 +35,7 @@ type alias Model =
     , newLayout : Maybe LayoutName
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPath
+    , settings : Maybe ProjectSettingsModel
     , help : Maybe Help
 
     -- global attrs
@@ -60,6 +61,10 @@ type CursorMode
 
 type alias VirtualRelation =
     { src : Maybe ColumnRef, mouse : Position }
+
+
+type alias ProjectSettingsModel =
+    ()
 
 
 type alias Help =
@@ -94,6 +99,7 @@ type Msg
     | LayoutMsg LayoutMsg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
+    | ProjectSettingsMsg ProjectSettingsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
@@ -145,6 +151,11 @@ type FindPathMsg
     | FPToggleResult Int
     | FPSettingsUpdate FindPathSettings
     | FPClose
+
+
+type ProjectSettingsMsg
+    = PSOpen
+    | PSClose
 
 
 type HelpMsg

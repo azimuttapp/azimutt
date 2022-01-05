@@ -3,7 +3,6 @@ module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, Share
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Css
-import Dict exposing (Dict)
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
@@ -11,7 +10,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, div, h3, p, span, text)
 import Html.Styled.Attributes exposing (autofocus, css, id)
 import Html.Styled.Events exposing (onClick)
-import Libs.Dict as D
+import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, role)
 import Libs.Models exposing (Millis)
 import Libs.Models.Color as Color exposing (Color)
@@ -122,12 +121,12 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { isOpen : Dict String Bool }
+    { opened : String }
 
 
 initDocState : DocState
 initDocState =
-    { isOpen = Dict.empty }
+    { opened = "" }
 
 
 updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
@@ -140,8 +139,8 @@ component name buildComponent =
     ( name
     , \{ modalDocState } ->
         buildComponent
-            (modalDocState.isOpen |> D.getOrElse name False)
-            (\isOpen -> updateDocState (\s -> { s | isOpen = s.isOpen |> Dict.insert name isOpen }))
+            (modalDocState.opened == name)
+            (\isOpen -> updateDocState (\s -> { s | opened = B.cond isOpen name "" }))
     )
 
 
@@ -150,9 +149,9 @@ doc theme =
     Chapter.chapter "Modal"
         |> Chapter.renderStatefulComponentList
             [ component "confirm"
-                (\isOpen setIsOpen ->
+                (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ onClick (setIsOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
                             , color = Color.red
@@ -161,21 +160,21 @@ doc theme =
                             , message = text "Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
                             , confirm = "Deactivate"
                             , cancel = "Cancel"
-                            , onConfirm = setIsOpen False
-                            , onCancel = setIsOpen False
+                            , onConfirm = setOpen False
+                            , onCancel = setOpen False
                             }
                             isOpen
                         ]
                 )
             , component "modal"
-                (\isOpen setIsOpen ->
+                (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ onClick (setIsOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
                         , modal
                             { id = "modal"
                             , titleId = "modal-title"
                             , isOpen = isOpen
-                            , onBackgroundClick = setIsOpen False
+                            , onBackgroundClick = setOpen False
                             }
                             [ text "Hello!" ]
                         ]

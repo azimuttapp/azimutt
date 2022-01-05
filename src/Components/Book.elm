@@ -13,6 +13,7 @@ import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Feature as Feature
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
+import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Toast as Toast
 import Components.Molecules.Tooltip as Tooltip
 import Components.Organisms.Footer as Footer
@@ -45,6 +46,7 @@ type alias DocState =
     { dropdownDocState : Dropdown.DocState
     , modalDocState : Modal.DocState
     , navbarDocState : Navbar.DocState
+    , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
     , toastDocState : Toast.DocState
     }
@@ -55,6 +57,7 @@ init =
     { dropdownDocState = Dropdown.initDocState
     , modalDocState = Modal.initDocState
     , navbarDocState = Navbar.initDocState
+    , slideoverDocState = Slideover.initDocState
     , tableDocState = Table.initDocState
     , toastDocState = Toast.initDocState
     }
@@ -79,7 +82,7 @@ main =
             -- sorted alphabetically
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Kbd.doc, Link.doc theme, Markdown.doc ] )
-            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, ItemList.doc theme, Modal.doc theme, Toast.doc theme, Tooltip.doc ] )
+            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, ItemList.doc theme, Modal.doc theme, Slideover.doc theme, Toast.doc theme, Tooltip.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
             ]
