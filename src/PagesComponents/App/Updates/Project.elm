@@ -75,7 +75,7 @@ updateProject sourceInfo content project =
                         ((errors |> List.map toastError)
                             ++ (errors |> List.map (trackError "parse-schema"))
                             ++ [ toastInfo message
-                               , hideOffcanvas Conf.ids.settings
+                               , hideOffcanvas Conf.ids.settingsDialog
                                , saveProject updatedProject
                                , track event
                                ]

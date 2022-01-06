@@ -21,7 +21,7 @@ import Libs.Nel as Nel
 import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
-import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.FindPathState as FindPathState
@@ -34,27 +34,23 @@ import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewFindPath : Theme -> Bool -> Project -> FindPath -> Html Msg
+viewFindPath : Theme -> Bool -> Project -> FindPathDialog -> Html Msg
 viewFindPath theme opened project model =
     let
-        modalId : HtmlId
-        modalId =
-            Conf.ids.findPathModal
-
         titleId : HtmlId
         titleId =
-            modalId ++ "-title"
+            model.id ++ "-title"
     in
     Modal.modal
-        { id = modalId
+        { id = model.id
         , titleId = titleId
         , isOpen = opened
         , onBackgroundClick = ModalClose (FindPathMsg FPClose)
         }
         [ viewHeader theme titleId
         , viewAlert
-        , viewSettings modalId model.showSettings project.settings.findPath
-        , viewSearchForm modalId project.tables model.from model.to
+        , viewSettings model.id model.showSettings project.settings.findPath
+        , viewSearchForm model.id project.tables model.from model.to
         , viewPaths theme model
         , viewFooter theme project.settings.findPath model
         ]
@@ -159,7 +155,7 @@ viewSelectCard fieldId title description selectedValue buildMsg tables =
         ]
 
 
-viewPaths : Theme -> FindPath -> Html Msg
+viewPaths : Theme -> FindPathDialog -> Html Msg
 viewPaths theme model =
     case ( model.from, model.to, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
@@ -237,7 +233,7 @@ buildQuery table joins =
            )
 
 
-viewFooter : Theme -> FindPathSettings -> FindPath -> Html Msg
+viewFooter : Theme -> FindPathSettings -> FindPathDialog -> Html Msg
 viewFooter theme settings model =
     div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
         (case ( model.from, model.to, model.result ) of

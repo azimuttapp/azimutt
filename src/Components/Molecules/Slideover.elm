@@ -46,7 +46,7 @@ slideover model content =
             [ div [ onClick model.onClickOverlay, css [ Tw.absolute, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75, Tw.transition_opacity, Tw.ease_in_out, Tu.duration duration, B.cond model.isOpen Tw.opacity_100 Tw.opacity_0 ], ariaHidden True ] []
             , div [ css [ Tw.fixed, Tw.inset_y_0, Tw.right_0, Tw.pl_10, Tw.max_w_full, Tw.flex ] ]
                 [ div [ css [ Tw.w_screen, Tw.max_w_md, Tw.transform, Tw.transition, Tw.ease_in_out, Tu.duration duration, B.cond model.isOpen Tw.translate_x_0 Tw.translate_x_full ] ]
-                    [ div [ css [ Tw.h_full, Tw.flex, Tw.flex_col, Tw.bg_white, Tw.shadow_xl ] ]
+                    [ div [ id model.id, css [ Tw.h_full, Tw.flex, Tw.flex_col, Tw.bg_white, Tw.shadow_xl ] ]
                         [ header labelId model.title model.onClickClose
                         , div [ css [ Tw.flex_1, Tw.relative, Tw.overflow_y_scroll, Tw.px_4, Bp.sm [ Tw.px_6 ] ] ] [ content ]
                         ]

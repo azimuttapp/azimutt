@@ -83,7 +83,7 @@ removeElement model =
 cancelElement : Model -> Cmd Msg
 cancelElement model =
     T.send
-        ((model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.onConfirm)))
+        ((model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
             |> M.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
             |> M.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
             |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))

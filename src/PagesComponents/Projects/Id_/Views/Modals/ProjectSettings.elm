@@ -3,7 +3,6 @@ module PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewP
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Tooltip as Tooltip
-import Conf
 import Css
 import Dict
 import Html.Styled exposing (Attribute, Html, button, div, fieldset, input, label, legend, option, p, select, span, text)
@@ -22,16 +21,16 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsModel, ProjectSettingsMsg(..), confirm)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 import Time
 
 
-viewProjectSettings : Bool -> Time.Zone -> Project -> ProjectSettingsModel -> Html Msg
-viewProjectSettings opened zone project _ =
+viewProjectSettings : Time.Zone -> Bool -> Project -> ProjectSettingsDialog -> Html Msg
+viewProjectSettings zone opened project model =
     Slideover.slideover
-        { id = Conf.ids.settings
+        { id = model.id
         , title = "Project settings"
         , isOpen = opened
         , onClickClose = ModalClose (ProjectSettingsMsg PSClose)

@@ -1,24 +1,22 @@
 module PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
 
 import Components.Molecules.Modal as Modal
-import Conf
 import Html.Styled exposing (Html)
 import Libs.Task as T
-import PagesComponents.Projects.Id_.Models exposing (Msg(..))
-import Shared exposing (Confirm)
+import PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, Msg(..))
 
 
-viewConfirm : Bool -> Confirm Msg -> Html Msg
-viewConfirm opened confirm =
+viewConfirm : Bool -> ConfirmDialog -> Html Msg
+viewConfirm opened model =
     Modal.confirm
-        { id = Conf.ids.confirm
-        , icon = confirm.icon
-        , color = confirm.color
-        , title = confirm.title
-        , message = confirm.message
-        , confirm = confirm.confirm
-        , cancel = confirm.cancel
-        , onConfirm = ModalClose (ConfirmAnswer True confirm.onConfirm)
+        { id = model.id
+        , icon = model.content.icon
+        , color = model.content.color
+        , title = model.content.title
+        , message = model.content.message
+        , confirm = model.content.confirm
+        , cancel = model.content.cancel
+        , onConfirm = ModalClose (ConfirmAnswer True model.content.onConfirm)
         , onCancel = ModalClose (ConfirmAnswer False (T.send (Noop "confirm cancel")))
         }
         opened

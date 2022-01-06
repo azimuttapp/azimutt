@@ -149,7 +149,7 @@ viewModal model =
             |> Maybe.map
                 (\c ->
                     Modal.confirm
-                        { id = Conf.ids.confirm
+                        { id = Conf.ids.confirmDialog
                         , icon = c.icon
                         , color = c.color
                         , title = c.title

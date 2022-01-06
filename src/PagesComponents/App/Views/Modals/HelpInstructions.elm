@@ -10,10 +10,10 @@ import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, ariaLabelledby
 
 viewHelpModal : Html msg
 viewHelpModal =
-    bsModal Conf.ids.helpModal
+    bsModal Conf.ids.helpDialog
         "🎊 Hey! Welcome to Azimutt 🎊"
         [ p [] [ text "Let's dive into the features you might be interested in..." ]
-        , div [ class "accordion mb-3", id (Conf.ids.helpModal ++ "-accordion") ]
+        , div [ class "accordion mb-3", id (Conf.ids.helpDialog ++ "-accordion") ]
             (List.map sectionToAccordionItem
                 [ search
                 , canvasNavigation
@@ -174,7 +174,7 @@ sectionToAccordionItem section =
         [ h2 [ class "accordion-header", id (sectionId ++ "-heading") ]
             [ button [ class "accordion-button collapsed", type_ "button", bsToggle Collapse, bsTarget (sectionId ++ "-collapse"), ariaExpanded False, ariaControls (sectionId ++ "-collapse") ] [ text section.title ]
             ]
-        , div [ id (sectionId ++ "-collapse"), class "accordion-collapse collapse", bsParent (Conf.ids.helpModal ++ "-accordion"), ariaLabelledby (sectionId ++ "-heading") ]
+        , div [ id (sectionId ++ "-collapse"), class "accordion-collapse collapse", bsParent (Conf.ids.helpDialog ++ "-accordion"), ariaLabelledby (sectionId ++ "-heading") ]
             [ div [ class "accordion-body" ] section.body
             ]
         ]

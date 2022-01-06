@@ -1,12 +1,13 @@
 module PagesComponents.Projects.Id_.Updates.FindPath exposing (Model, handleFindPath)
 
+import Conf
 import Dict exposing (Dict)
 import Libs.Bool as B
 import Libs.Maybe as M
 import Libs.Nel as Nel
 import Libs.Task as T
 import Models.Project exposing (Project)
-import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
@@ -25,7 +26,7 @@ import Tracking
 type alias Model x =
     { x
         | project : Maybe Project
-        , findPath : Maybe FindPath
+        , findPath : Maybe FindPathDialog
     }
 
 
@@ -33,7 +34,7 @@ handleFindPath : FindPathMsg -> Model x -> ( Model x, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPOpen from to ->
-            ( { model | findPath = Just { from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ T.sendAfter 1 ModalOpen, track Tracking.events.openFindPath ] )
+            ( { model | findPath = Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), track Tracking.events.openFindPath ] )
 
         FPToggleSettings ->
             ( model |> setFindPath (\fp -> { fp | showSettings = not fp.showSettings }), Cmd.none )

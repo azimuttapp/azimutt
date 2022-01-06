@@ -208,7 +208,7 @@ update msg model =
             model |> handleSettings m
 
         OpenConfirm confirm ->
-            ( { model | confirm = confirm }, showModal Conf.ids.confirm )
+            ( { model | confirm = confirm }, showModal Conf.ids.confirmDialog )
 
         OnConfirm answer cmd ->
             ( { model | confirm = initConfirm }, B.cond answer cmd Cmd.none )

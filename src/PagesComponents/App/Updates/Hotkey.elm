@@ -48,7 +48,7 @@ handleHotkey model hotkey =
             model.virtualRelation |> M.mapOrElse (\_ -> [ send (VirtualRelationMsg VRCancel) ]) []
 
         "help" ->
-            [ showModal Conf.ids.helpModal ]
+            [ showModal Conf.ids.helpDialog ]
 
         other ->
             [ toastInfo ("Shortcut <b>" ++ other ++ "</b> is not implemented yet :(") ]

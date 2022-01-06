@@ -1,5 +1,6 @@
 module PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (Model, handleProjectSettings)
 
+import Conf
 import Dict
 import Libs.Bool as B
 import Libs.List as L
@@ -14,14 +15,14 @@ import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettin
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setLayout, setProject, setSettings)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsModel, ProjectSettingsMsg(..), toastInfo)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), toastInfo)
 import Ports exposing (observeTablesSize)
 
 
 type alias Model x =
     { x
         | project : Maybe Project
-        , settings : Maybe ProjectSettingsModel
+        , settings : Maybe ProjectSettingsDialog
     }
 
 
@@ -29,7 +30,7 @@ handleProjectSettings : ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
 handleProjectSettings msg model =
     case msg of
         PSOpen ->
-            ( { model | settings = Just () }, T.sendAfter 1 ModalOpen )
+            ( { model | settings = Just { id = Conf.ids.settingsDialog } }, T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog) )
 
         PSClose ->
             ( { model | settings = Nothing }, Cmd.none )

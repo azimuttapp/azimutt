@@ -1,5 +1,6 @@
 module PagesComponents.Projects.Id_.Updates.Layout exposing (Model, handleLayout)
 
+import Conf
 import Dict
 import Libs.Bool as B
 import Libs.Dict as D
@@ -9,7 +10,7 @@ import Models.Project exposing (Project)
 import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 import Ports exposing (observeTablesSize, track)
 import Time
 import Tracking
@@ -17,7 +18,7 @@ import Tracking
 
 type alias Model x =
     { x
-        | newLayout : Maybe LayoutName
+        | newLayout : Maybe LayoutDialog
         , project : Maybe Project
     }
 
@@ -26,10 +27,10 @@ handleLayout : LayoutMsg -> Model x -> ( Model x, Cmd Msg )
 handleLayout msg model =
     case msg of
         LOpen ->
-            ( { model | newLayout = Just "" }, T.sendAfter 1 ModalOpen )
+            ( { model | newLayout = Just { id = Conf.ids.newLayoutDialog, name = "" } }, T.sendAfter 1 (ModalOpen Conf.ids.newLayoutDialog) )
 
         LEdit name ->
-            ( { model | newLayout = Just name }, Cmd.none )
+            ( { model | newLayout = model.newLayout |> Maybe.map (\l -> { l | name = name }) }, Cmd.none )
 
         LCreate name ->
             { model | newLayout = Nothing } |> setProjectWithCmd (createLayout name)

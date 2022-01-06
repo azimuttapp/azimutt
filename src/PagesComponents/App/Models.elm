@@ -16,7 +16,7 @@ import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -39,7 +39,7 @@ type alias Model =
     , project : Maybe Project
     , search : Search
     , newLayout : Maybe LayoutName
-    , findPath : Maybe FindPath
+    , findPath : Maybe FindPathDialog
     , virtualRelation : Maybe VirtualRelation
     , confirm : Confirm
     , domInfos : Dict HtmlId DomInfo

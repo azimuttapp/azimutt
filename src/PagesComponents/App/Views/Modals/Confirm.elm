@@ -11,11 +11,11 @@ import PagesComponents.App.Models exposing (Confirm, Msg(..))
 
 viewConfirm : Confirm -> Html Msg
 viewConfirm confirm =
-    div [ id Conf.ids.confirm, class "modal fade", tabindex -1, bsBackdrop "static", bsKeyboard False, ariaLabelledby (Conf.ids.confirm ++ "-label"), ariaHidden True ]
+    div [ id Conf.ids.confirmDialog, class "modal fade", tabindex -1, bsBackdrop "static", bsKeyboard False, ariaLabelledby (Conf.ids.confirmDialog ++ "-label"), ariaHidden True ]
         [ div [ class "modal-dialog modal-dialog-centered" ]
             [ div [ class "modal-content" ]
                 [ div [ class "modal-header" ]
-                    [ h5 [ class "modal-title", id (Conf.ids.confirm ++ "-label") ] [ text "Confirm" ]
+                    [ h5 [ class "modal-title", id (Conf.ids.confirmDialog ++ "-label") ] [ text "Confirm" ]
                     , button [ type_ "button", class "btn-close", bsDismiss Modal, ariaLabel "Close", onClick (OnConfirm False confirm.cmd) ] []
                     ]
                 , div [ class "modal-body" ] [ confirm.content ]

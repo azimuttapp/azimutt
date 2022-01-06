@@ -7,7 +7,9 @@ import Conf
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, div)
-import Html.Styled.Attributes exposing (class, css, id)
+import Html.Styled.Attributes exposing (class, css)
+import Html.Styled.Keyed as Keyed
+import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
@@ -79,14 +81,17 @@ viewNotFound theme =
 
 viewModal : Theme -> Time.Zone -> Model -> Html Msg
 viewModal theme zone model =
-    div [ class "tw-modal", id Conf.ids.modal ]
-        [ (model.confirm |> Maybe.map (viewConfirm model.modalOpened))
-            |> M.orElse (model.newLayout |> Maybe.map (viewCreateLayout theme model.modalOpened))
-            |> M.orElse (model.findPath |> Maybe.map2 (viewFindPath theme model.modalOpened) model.project)
-            |> M.orElse (model.settings |> Maybe.map2 (viewProjectSettings model.modalOpened zone) model.project)
-            |> M.orElse (model.help |> Maybe.map (viewHelp theme model.modalOpened))
-            |> Maybe.withDefault (div [] [])
-        ]
+    Keyed.node "div"
+        [ class "tw-modals" ]
+        ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> L.has m.id) m ))
+         , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout theme (model.openedDialogs |> L.has m.id) m ))
+         , model.findPath |> Maybe.map2 (\p m -> ( m.id, viewFindPath theme (model.openedDialogs |> L.has m.id) p m )) model.project
+         , model.settings |> Maybe.map2 (\p m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> L.has m.id) p m )) model.project
+         , model.help |> Maybe.map (\m -> ( m.id, viewHelp theme (model.openedDialogs |> L.has m.id) m ))
+         ]
+            |> List.filterMap identity
+            |> List.sortBy (\( id, _ ) -> model.openedDialogs |> L.indexOf id |> Maybe.withDefault 0 |> negate)
+        )
 
 
 viewToasts : Theme -> List Toast.Model -> Html Msg

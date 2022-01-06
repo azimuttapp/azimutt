@@ -83,14 +83,14 @@ ids :
     , navProjectDropdown : HtmlId
     , navLayoutDropdown : HtmlId
     , menu : HtmlId
-    , settings : HtmlId
+    , settingsDialog : HtmlId
     , erd : HtmlId
     , selectionBox : HtmlId
     , projectSwitchModal : HtmlId
-    , newLayoutModal : HtmlId
-    , findPathModal : HtmlId
-    , helpModal : HtmlId
-    , confirm : HtmlId
+    , newLayoutDialog : HtmlId
+    , findPathDialog : HtmlId
+    , helpDialog : HtmlId
+    , confirmDialog : HtmlId
     , modal : HtmlId
     }
 ids =
@@ -99,14 +99,14 @@ ids =
     , navProjectDropdown = "navbar-project-dropdown"
     , navLayoutDropdown = "navbar-layout-dropdown"
     , menu = "menu"
-    , settings = "settings"
+    , settingsDialog = "settings-dialog"
     , erd = "erd"
     , selectionBox = "selection-box"
     , projectSwitchModal = "project-switch-modal"
-    , newLayoutModal = "new-layout-modal"
-    , findPathModal = "find-path-modal"
-    , helpModal = "help-modal"
-    , confirm = "confirm-modal"
+    , newLayoutDialog = "new-layout-dialog"
+    , findPathDialog = "find-path-dialog"
+    , helpDialog = "help-dialog"
+    , confirmDialog = "confirm-dialog"
     , modal = "modal"
     }
 

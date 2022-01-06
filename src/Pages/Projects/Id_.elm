@@ -79,7 +79,7 @@ init shared req =
       , toastIdx = 0
       , toasts = []
       , confirm = Nothing
-      , modalOpened = False
+      , openedDialogs = []
       }
     , Cmd.batch
         ((shared |> Shared.projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) [])
@@ -222,16 +222,16 @@ update req msg model =
             ( { model | toasts = model.toasts |> List.filter (\t -> t.key /= key) }, Cmd.none )
 
         ConfirmOpen confirm ->
-            ( { model | confirm = Just confirm }, T.sendAfter 1 ModalOpen )
+            ( { model | confirm = Just { id = Conf.ids.confirmDialog, content = confirm } }, T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
 
         ConfirmAnswer answer cmd ->
             ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
 
-        ModalOpen ->
-            ( { model | modalOpened = True }, autofocusWithin Conf.ids.modal )
+        ModalOpen id ->
+            ( { model | openedDialogs = id :: model.openedDialogs }, autofocusWithin id )
 
         ModalClose message ->
-            ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )
+            ( { model | openedDialogs = model.openedDialogs |> List.drop 1 }, T.sendAfter Modal.closeDuration message )
 
         JsMessage message ->
             model |> handleJsMessage req message

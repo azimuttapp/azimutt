@@ -5,7 +5,7 @@ import Dict exposing (Dict)
 import Libs.Maybe as M
 import Libs.Nel as Nel
 import Libs.Task exposing (sendAfter)
-import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
@@ -24,7 +24,7 @@ import Tracking exposing (events)
 
 type alias Model x y =
     { x
-        | findPath : Maybe FindPath
+        | findPath : Maybe FindPathDialog
         , project :
             Maybe
                 { y
@@ -39,7 +39,7 @@ handleFindPath : FindPathMsg -> Model x y -> ( Model x y, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPInit from to ->
-            ( { model | findPath = Just { from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ showModal Conf.ids.findPathModal, track events.openFindPath ] )
+            ( { model | findPath = Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ showModal Conf.ids.findPathDialog, track events.openFindPath ] )
 
         FPUpdateFrom from ->
             ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | from = from }) }, Cmd.none )

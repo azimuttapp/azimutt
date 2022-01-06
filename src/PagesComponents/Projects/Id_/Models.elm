@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), Help, HelpMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), DragState, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -15,7 +15,7 @@ import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Relation exposing (Relation)
@@ -34,19 +34,19 @@ type alias Model =
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
     , selectionBox : Maybe Area
-    , newLayout : Maybe LayoutName
+    , newLayout : Maybe LayoutDialog
     , virtualRelation : Maybe VirtualRelation
-    , findPath : Maybe FindPath
-    , settings : Maybe ProjectSettingsModel
-    , help : Maybe Help
+    , findPath : Maybe FindPathDialog
+    , settings : Maybe ProjectSettingsDialog
+    , help : Maybe HelpDialog
 
     -- global attrs
     , openedDropdown : HtmlId
     , dragging : Maybe DragState
     , toastIdx : Int
     , toasts : List Toast.Model
-    , confirm : Maybe (Confirm Msg)
-    , modalOpened : Bool
+    , confirm : Maybe ConfirmDialog
+    , openedDialogs : List HtmlId
     }
 
 
@@ -61,16 +61,24 @@ type CursorMode
     | CursorSelect
 
 
+type alias LayoutDialog =
+    { id : HtmlId, name : LayoutName }
+
+
 type alias VirtualRelation =
     { src : Maybe ColumnRef, mouse : Position }
 
 
-type alias ProjectSettingsModel =
-    ()
+type alias ProjectSettingsDialog =
+    { id : HtmlId }
 
 
-type alias Help =
-    { openedSection : String }
+type alias HelpDialog =
+    { id : HtmlId, openedSection : String }
+
+
+type alias ConfirmDialog =
+    { id : HtmlId, content : Confirm Msg }
 
 
 type alias DragState =
@@ -119,7 +127,7 @@ type Msg
     | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
-    | ModalOpen
+    | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
     | Noop String

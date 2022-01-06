@@ -14,24 +14,20 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind.Utilities as Tu
-import PagesComponents.Projects.Id_.Models exposing (Help, HelpMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewHelp : Theme -> Bool -> Help -> Html Msg
+viewHelp : Theme -> Bool -> HelpDialog -> Html Msg
 viewHelp theme opened model =
     let
-        modalId : HtmlId
-        modalId =
-            Conf.ids.helpModal
-
         titleId : HtmlId
         titleId =
-            modalId ++ "-title"
+            model.id ++ "-title"
     in
     Modal.modal
-        { id = modalId
+        { id = model.id
         , titleId = titleId
         , isOpen = opened
         , onBackgroundClick = ModalClose (HelpMsg HClose)

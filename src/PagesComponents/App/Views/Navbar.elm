@@ -36,7 +36,7 @@ viewNavbar search storedProjects project virtualRelation =
             , div [ class "collapse navbar-collapse", id "navbar-content" ]
                 ([ lazy2 viewSearchBar project search
                  , ul [ class "navbar-nav" ]
-                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal Conf.ids.helpModal ++ track events.openHelp) [ text "?" ] ]
+                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal Conf.ids.helpDialog ++ track events.openHelp) [ text "?" ] ]
                     ]
                  ]
                     ++ (project
@@ -141,7 +141,7 @@ viewResetButton selectedLayout { tables, hiddenTables, canvas } =
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
 viewLayoutButton usedLayout layouts =
     if Dict.isEmpty layouts then
-        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal Conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
+        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal Conf.ids.newLayoutDialog ++ track events.openSaveLayout) [ text "Save layout" ]
 
     else
         div [ class "btn-group me-2" ]
@@ -155,7 +155,7 @@ viewLayoutButton usedLayout layouts =
                     [ bsButton Secondary [ class "dropdown-toggle", bsToggle Dropdown, ariaExpanded False ] [ text "Layouts" ] ]
              )
                 ++ [ ul [ class "dropdown-menu dropdown-menu-end" ]
-                        ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal Conf.ids.newLayoutModal) [ viewIcon Icon.plus, text " Create new layout" ] ] ]
+                        ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal Conf.ids.newLayoutDialog) [ viewIcon Icon.plus, text " Create new layout" ] ] ]
                             ++ L.prependOn usedLayout
                                 (\cur -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg LUnload) ] [ viewIcon Icon.arrowLeft, text (" Stop using " ++ cur ++ " layout") ] ])
                                 (layouts
@@ -214,7 +214,7 @@ viewSpecialFeaturesButton virtualRelation =
 
 viewSettingsButton : Html Msg
 viewSettingsButton =
-    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas Conf.ids.settings ++ track events.openSettings) [ viewIcon Icon.cog ]
+    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas Conf.ids.settingsDialog ++ track events.openSettings) [ viewIcon Icon.cog ]
 
 
 type alias Suggestion =

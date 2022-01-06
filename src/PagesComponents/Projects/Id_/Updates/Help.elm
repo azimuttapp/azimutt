@@ -1,19 +1,20 @@
 module PagesComponents.Projects.Id_.Updates.Help exposing (Model, handleHelp)
 
+import Conf
 import Libs.Bool as B
 import Libs.Task as T
-import PagesComponents.Projects.Id_.Models exposing (Help, HelpMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
 
 
 type alias Model x =
-    { x | help : Maybe Help }
+    { x | help : Maybe HelpDialog }
 
 
 handleHelp : HelpMsg -> Model x -> ( Model x, Cmd Msg )
 handleHelp msg model =
     case msg of
         HOpen section ->
-            ( { model | help = Just { openedSection = section } }, T.sendAfter 1 ModalOpen )
+            ( { model | help = Just { id = Conf.ids.helpDialog, openedSection = section } }, T.sendAfter 1 (ModalOpen Conf.ids.helpDialog) )
 
         HClose ->
             ( { model | help = Nothing }, Cmd.none )
