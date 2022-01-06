@@ -69,12 +69,12 @@ viewTableList tables layout =
                 |> List.concatMap
                     (\( groupTitle, groupedTables ) ->
                         [ ( groupTitle
-                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> HtmlId.encode) ++ "-table-list"))
+                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle ++ "-table-list") |> HtmlId.from))
                                 [ text (groupTitle ++ " (" ++ (groupedTables |> List.length |> S.pluralize "table") ++ ")") ]
                           )
                         , ( groupTitle ++ "-collapse"
                           , Keyed.node "div"
-                                [ class "collapse show", id ((groupTitle |> HtmlId.encode) ++ "-table-list") ]
+                                [ class "collapse show", id ((groupTitle ++ "-table-list") |> HtmlId.from) ]
                                 (groupedTables
                                     |> List.map
                                         (\t ->

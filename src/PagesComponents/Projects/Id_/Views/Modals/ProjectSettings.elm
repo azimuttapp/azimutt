@@ -6,21 +6,23 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Css
 import Dict
-import Html.Styled exposing (Attribute, Html, br, button, div, fieldset, input, label, legend, option, p, select, small, span, text)
-import Html.Styled.Attributes exposing (checked, class, css, for, id, placeholder, selected, title, type_, value)
+import Html.Styled exposing (Attribute, Html, button, div, fieldset, input, label, legend, option, p, select, span, text)
+import Html.Styled.Attributes exposing (checked, class, css, for, id, placeholder, selected, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
 import Libs.DateTime exposing (formatDate, formatTime)
 import Libs.Html.Styled.Attributes exposing (ariaDescribedby)
 import Libs.List as L
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Tailwind.Utilities as Tu
 import Models.ColumnOrder as ColumnOrder
 import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsModel, ProjectSettingsMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsModel, ProjectSettingsMsg(..), confirm)
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 import Time
@@ -54,9 +56,27 @@ viewSourcesSection zone project =
 
 viewSource : ProjectId -> Time.Zone -> Source -> Html Msg
 viewSource _ zone source =
+    let
+        view : Icon -> Time.Posix -> String -> (Html Msg -> Html Msg) -> Html Msg
+        view =
+            \icon updatedAt labelTitle refreshButton ->
+                div [ css [ Tw.px_4, Tw.py_2 ] ]
+                    [ div [ css [ Tw.flex, Tw.justify_between ] ]
+                        [ viewCheckbox ("settings-source-" ++ SourceId.toString source.id) (span [] [ Icon.solid icon [ Tw.inline ], text source.name ] |> Tooltip.bottom labelTitle) source.enabled (ProjectSettingsMsg (ToggleSource source))
+                        , div []
+                            [ button [ type_ "button", onClick (confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?") (Noop "Delete source")) ] [ Icon.solid Trash [ Tw.inline ] ] |> Tooltip.bottomLeft "Delete this source"
+                            , refreshButton (Icon.solid Refresh [ Tw.inline ]) |> Tooltip.bottomLeft "Refresh this source"
+                            ]
+                        ]
+                    , div [ css [ Tw.flex, Tw.justify_between ] ]
+                        [ span [ css [ Tu.text_muted ] ] [ text ((source.tables |> Dict.size |> String.fromInt) ++ " tables & " ++ (source.relations |> List.length |> String.fromInt) ++ " relations") ]
+                        , span [ css [ Tu.text_muted ] ] [ text (formatDate zone updatedAt) ] |> Tooltip.topLeft ("at " ++ formatTime zone updatedAt)
+                        ]
+                    ]
+    in
     case source.kind of
         LocalFile path _ modified ->
-            viewSourceHtml zone DocumentText modified (path ++ " file") source (\html -> html {- viewFileLoader "" (Just project) (Just source.id) -})
+            view DocumentText modified (path ++ " file") (\html -> html {- viewFileLoader "" (Just project) (Just source.id) -})
 
         RemoteFile url _ ->
             let
@@ -67,40 +87,16 @@ viewSource _ zone source =
                         , cmd = send (SourceMsg (LoadRemoteFile (Just project) (Just source.id) url))
                         }"""
             in
-            viewSourceHtml zone CloudDownload source.updatedAt ("File from " ++ url) source (\html -> button [ type_ "button", class "link", onClick msg ] [ html ])
+            view CloudDownload source.updatedAt ("File from " ++ url) (\html -> button [ type_ "button", class "link", onClick msg ] [ html ])
 
         UserDefined ->
-            viewSourceHtml zone User source.updatedAt "Created by you" source (\_ -> span [] [])
-
-
-viewSourceHtml : Time.Zone -> Icon -> Time.Posix -> String -> Source -> (Html Msg -> Html Msg) -> Html Msg
-viewSourceHtml zone icon updatedAt labelTitle source refreshButton =
-    div [ class "list-group-item d-flex justify-content-between align-items-center" ]
-        [ label [ title labelTitle ]
-            [ input [ type_ "checkbox", class "form-check-input me-2", checked source.enabled, onClick (Noop "SourceMsg (ToggleSource source)"), css [ Tw.form_checkbox ] ] []
-            , Icon.solid icon []
-            , text (" " ++ source.name)
-            , br [] []
-            , small [ class "text-muted" ] [ text ((source.tables |> Dict.size |> String.fromInt) ++ " tables & " ++ (source.relations |> List.length |> String.fromInt) ++ " relations") ]
-            ]
-        , span []
-            [ small [ class "text-muted", title ("at " ++ formatTime zone updatedAt) ] [ text (formatDate zone updatedAt) ]
-            , button
-                [ type_ "button"
-                , class "link ms-2"
-                , title "remove this source"
-                , onClick (Noop """OpenConfirm { content = span [] [ text "Delete ", bText source.name, text " source?" ], cmd = send (SourceMsg (DeleteSource source)) }""")
-                ]
-                [ Icon.solid Trash [] ]
-            , span [ class "ms-2", title "refresh this source" ] [ refreshButton (Icon.solid Refresh []) ]
-            ]
-        ]
+            view User source.updatedAt "Created by you" (\_ -> span [] [])
 
 
 viewAddSource : ProjectId -> Html Msg
 viewAddSource _ =
     -- viewFileLoader "list-group-item list-group-item-action" (Just project) Nothing (small [] [ viewIcon Icon.plus, text " ", text "Add source" ])
-    small [] [ Icon.solid Plus [], text " ", text "Add source" ]
+    div [ css [ Tw.px_4, Tw.py_2 ] ] [ Icon.solid Plus [ Tw.inline ], text "Add source" ]
 
 
 viewSchemasSection : Project -> Html Msg
@@ -124,16 +120,6 @@ viewSchemasSection project =
 viewSchema : List SchemaName -> SchemaName -> Html Msg
 viewSchema removedSchemas schema =
     viewCheckbox ("settings-schema-" ++ schema) (text schema) (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (ToggleSchema schema))
-
-
-viewCheckbox : String -> Html msg -> Bool -> msg -> Html msg
-viewCheckbox fieldId fieldLabel value msg =
-    div [ css [ Tw.mt_3, Tw.relative, Tw.flex, Tw.items_start ] ]
-        [ div [ css [ Tw.flex, Tw.items_center, Tw.h_5 ] ]
-            [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, css [ Tw.form_checkbox, Tw.h_4, Tw.w_4, Tw.text_indigo_600, Tw.border_gray_300, Tw.rounded, Css.focus [ Tw.ring_indigo_500 ] ] ] []
-            ]
-        , div [ css [ Tw.ml_3, Tw.text_sm ] ] [ label [ for fieldId, css [ Tw.font_medium, Tw.text_gray_700 ] ] [ fieldLabel ] ]
-        ]
 
 
 viewDisplaySettingsSection : ProjectSettings -> Html Msg
@@ -184,6 +170,20 @@ viewDisplaySettingsSection settings =
                     )
                     (ColumnOrder.all |> List.map (\o -> option [ value (ColumnOrder.toString o), selected (o == settings.columnOrder) ] [ text (ColumnOrder.show o) ]))
             )
+        ]
+
+
+
+-- generic
+
+
+viewCheckbox : String -> Html msg -> Bool -> msg -> Html msg
+viewCheckbox fieldId fieldLabel value msg =
+    div [ css [ Tw.mt_3, Tw.relative, Tw.flex, Tw.items_start ] ]
+        [ div [ css [ Tw.flex, Tw.items_center, Tw.h_5 ] ]
+            [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, css [ Tw.form_checkbox, Tw.h_4, Tw.w_4, Tw.text_indigo_600, Tw.border_gray_300, Tw.rounded, Css.focus [ Tw.ring_indigo_500 ] ] ] []
+            ]
+        , div [ css [ Tw.ml_3, Tw.text_sm ] ] [ label [ for fieldId, css [ Tw.font_medium, Tw.text_gray_700 ] ] [ fieldLabel ] ]
         ]
 
 

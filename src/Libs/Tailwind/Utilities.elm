@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (bottom, cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, font, h, left, link, max_h, noStyle, right, scale, stroke_3, top, translate_x, translate_x_y, translate_y, underline_dotted, w, when, z, z_max)
+module Libs.Tailwind.Utilities exposing (bottom, cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, font, h, left, link, max_h, noStyle, right, scale, stroke_3, text_muted, top, translate_x, translate_x_y, translate_y, underline_dotted, w, when, z, z_max)
 
 import Css
 import Libs.Models exposing (Millis)
@@ -139,6 +139,11 @@ cursor_hand_drag =
 
 
 -- Generic styles
+
+
+text_muted : Css.Style
+text_muted =
+    Css.batch [ Tw.text_sm, Tw.text_gray_500 ]
 
 
 link : Css.Style

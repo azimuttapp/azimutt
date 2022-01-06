@@ -1,6 +1,7 @@
 module PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (Model, handleProjectSettings)
 
 import Dict
+import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Ned as Ned
@@ -13,7 +14,7 @@ import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettin
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setLayout, setProject, setSettings)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsModel, ProjectSettingsMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsModel, ProjectSettingsMsg(..), toastInfo)
 import Ports exposing (observeTablesSize)
 
 
@@ -32,6 +33,14 @@ handleProjectSettings msg model =
 
         PSClose ->
             ( { model | settings = Nothing }, Cmd.none )
+
+        ToggleSource source ->
+            ( model |> setProject (Project.updateSource source.id (\s -> { s | enabled = not s.enabled }))
+            , Cmd.batch
+                [ observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
+                , T.send (toastInfo ("Source " ++ source.name ++ " set to " ++ B.cond source.enabled "hidden" "visible" ++ "."))
+                ]
+            )
 
         ToggleSchema schema ->
             model |> updateSettingsAndComputeProject (\s -> { s | removedSchemas = s.removedSchemas |> L.toggle schema })

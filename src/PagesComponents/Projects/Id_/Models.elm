@@ -20,6 +20,7 @@ import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Ports exposing (JsMsg)
@@ -157,6 +158,7 @@ type FindPathMsg
 type ProjectSettingsMsg
     = PSOpen
     | PSClose
+    | ToggleSource Source
     | ToggleSchema SchemaName
     | ToggleRemoveViews
     | UpdateRemovedTables String
