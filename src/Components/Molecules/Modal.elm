@@ -1,4 +1,4 @@
-module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, SharedDocState, closeDuration, confirm, doc, initDocState, modal)
+module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, SharedDocState, closeDuration, confirm, doc, initDocState, modal, openDuration)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))

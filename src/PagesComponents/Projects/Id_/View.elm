@@ -23,6 +23,7 @@ import PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewP
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Shared exposing (StoredProjects(..))
 import Tailwind.Utilities as Tw
+import Time
 
 
 viewProject : Shared.Model -> Model -> List (Html Msg)
@@ -36,7 +37,7 @@ viewProject shared model =
 
         Loaded projects ->
             model.project |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
-    , viewModal shared.theme model
+    , viewModal shared.theme shared.zone model
     , viewToasts shared.theme model.toasts
     ]
 
@@ -76,13 +77,13 @@ viewNotFound theme =
         }
 
 
-viewModal : Theme -> Model -> Html Msg
-viewModal theme model =
+viewModal : Theme -> Time.Zone -> Model -> Html Msg
+viewModal theme zone model =
     div [ class "tw-modal", id Conf.ids.modal ]
         [ (model.confirm |> Maybe.map (viewConfirm model.modalOpened))
             |> M.orElse (model.newLayout |> Maybe.map (viewCreateLayout theme model.modalOpened))
             |> M.orElse (model.findPath |> Maybe.map2 (viewFindPath theme model.modalOpened) model.project)
-            |> M.orElse (model.settings |> Maybe.map2 (viewProjectSettings model.modalOpened) model.project)
+            |> M.orElse (model.settings |> Maybe.map2 (viewProjectSettings model.modalOpened zone) model.project)
             |> M.orElse (model.help |> Maybe.map (viewHelp theme model.modalOpened))
             |> Maybe.withDefault (div [] [])
         ]
