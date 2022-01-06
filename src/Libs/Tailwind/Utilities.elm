@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, font, h, left, link, max_h, noStyle, scale, stroke_3, top, translate_x_y, underline_dotted, w, when, z, z_max)
+module Libs.Tailwind.Utilities exposing (bottom, cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, font, h, left, link, max_h, noStyle, right, scale, stroke_3, top, translate_x, translate_x_y, translate_y, underline_dotted, w, when, z, z_max)
 
 import Css
 import Libs.Models exposing (Millis)
@@ -52,6 +52,16 @@ h height unit =
     Css.property "height" (String.fromFloat height ++ unit)
 
 
+translate_x : Float -> String -> Css.Style
+translate_x x unit =
+    Css.property "--tw-translate-x" (String.fromFloat x ++ unit)
+
+
+translate_y : Float -> String -> Css.Style
+translate_y y unit =
+    Css.property "--tw-translate-y" (String.fromFloat y ++ unit)
+
+
 translate_x_y : Float -> Float -> String -> Css.Style
 translate_x_y x y unit =
     Css.batch [ Css.property "--tw-translate-x" (String.fromFloat x ++ unit), Css.property "--tw-translate-y" (String.fromFloat y ++ unit) ]
@@ -62,14 +72,24 @@ scale factor =
     Css.batch [ Css.property "--tw-scale-x" (String.fromFloat factor), Css.property "--tw-scale-y" (String.fromFloat factor) ]
 
 
-left : Float -> String -> Css.Style
-left x unit =
-    Css.property "left" (String.fromFloat x ++ unit)
-
-
 top : Float -> String -> Css.Style
 top x unit =
     Css.property "top" (String.fromFloat x ++ unit)
+
+
+right : Float -> String -> Css.Style
+right x unit =
+    Css.property "right" (String.fromFloat x ++ unit)
+
+
+bottom : Float -> String -> Css.Style
+bottom x unit =
+    Css.property "bottom" (String.fromFloat x ++ unit)
+
+
+left : Float -> String -> Css.Style
+left x unit =
+    Css.property "left" (String.fromFloat x ++ unit)
 
 
 underline_dotted : Css.Style

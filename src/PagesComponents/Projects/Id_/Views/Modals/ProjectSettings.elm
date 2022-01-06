@@ -113,6 +113,7 @@ viewSchemasSection project =
     if List.length schemas > 1 then
         fieldset [ css [ Tw.mt_6 ] ]
             [ legend [ css [ Tw.font_medium, Tw.text_gray_900 ] ] [ text "Project schemas" ]
+            , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ] [ text "Allow you to enable or not SQL schemas in your project." ]
             , div [ class "list-group" ] (schemas |> List.map (viewSchema project.settings.removedSchemas))
             ]
 
@@ -122,16 +123,16 @@ viewSchemasSection project =
 
 viewSchema : List SchemaName -> SchemaName -> Html Msg
 viewSchema removedSchemas schema =
-    viewCheckbox ("settings-schema-" ++ schema) schema (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (ToggleSchema schema))
+    viewCheckbox ("settings-schema-" ++ schema) (text schema) (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (ToggleSchema schema))
 
 
-viewCheckbox : String -> String -> Bool -> msg -> Html msg
-viewCheckbox fieldId fieldText value msg =
+viewCheckbox : String -> Html msg -> Bool -> msg -> Html msg
+viewCheckbox fieldId fieldLabel value msg =
     div [ css [ Tw.mt_3, Tw.relative, Tw.flex, Tw.items_start ] ]
         [ div [ css [ Tw.flex, Tw.items_center, Tw.h_5 ] ]
             [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, css [ Tw.form_checkbox, Tw.h_4, Tw.w_4, Tw.text_indigo_600, Tw.border_gray_300, Tw.rounded, Css.focus [ Tw.ring_indigo_500 ] ] ] []
             ]
-        , div [ css [ Tw.ml_3, Tw.text_sm ] ] [ label [ for fieldId, css [ Tw.font_medium, Tw.text_gray_700 ] ] [ text fieldText ] ]
+        , div [ css [ Tw.ml_3, Tw.text_sm ] ] [ label [ for fieldId, css [ Tw.font_medium, Tw.text_gray_700 ] ] [ fieldLabel ] ]
         ]
 
 
@@ -139,13 +140,9 @@ viewDisplaySettingsSection : ProjectSettings -> Html Msg
 viewDisplaySettingsSection settings =
     fieldset [ css [ Tw.mt_6 ] ]
         [ legend [ css [ Tw.font_medium, Tw.text_gray_900 ] ] [ text "Display options" ]
-        , div [ css [ Tw.mt_3, Tw.relative, Tw.flex, Tw.items_start ] ]
-            [ div [ css [ Tw.flex, Tw.items_center, Tw.h_5 ] ]
-                [ input [ type_ "checkbox", id "settings-no-views", checked settings.removeViews, onClick (ProjectSettingsMsg ToggleRemoveViews), css [ Tw.form_checkbox, Tw.h_4, Tw.w_4, Tw.text_indigo_600, Tw.border_gray_300, Tw.rounded, Css.focus [ Tw.ring_indigo_500 ] ] ] []
-                ]
-            , div [ css [ Tw.ml_3, Tw.text_sm ] ] [ label [ for "settings-no-views", css [ Tw.font_medium, Tw.text_gray_700 ] ] [ text "Remove views" |> Tooltip.top "Check this if you don't want to have SQL views in Azimutt" ] ]
-            ]
-        , inputGroup "settings-removed-tables"
+        , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ] [ text "Configure global options for Azimutt ERD." ]
+        , viewCheckbox "settings-no-views" (text "Remove views" |> Tooltip.topRight "Check this if you don't want to have SQL views in Azimutt") settings.removeViews (ProjectSettingsMsg ToggleRemoveViews)
+        , viewInputGroup "settings-removed-tables"
             "Removed tables"
             "Some tables are not useful and can clutter search, find path or even UI. Remove them by name or even regex."
             (\attrs ->
@@ -160,7 +157,7 @@ viewDisplaySettingsSection settings =
                     )
                     []
             )
-        , inputGroup "settings-hidden-columns"
+        , viewInputGroup "settings-hidden-columns"
             "Hidden columns"
             "Some columns are less interesting, hide them by default when showing a table. Use name or regex."
             (\attrs ->
@@ -175,7 +172,7 @@ viewDisplaySettingsSection settings =
                     )
                     []
             )
-        , inputGroup "settings-columns-order"
+        , viewInputGroup "settings-columns-order"
             "Columns order"
             "Select the default column order for tables, will also update order of tables already shown."
             (\attrs ->
@@ -190,8 +187,8 @@ viewDisplaySettingsSection settings =
         ]
 
 
-inputGroup : HtmlId -> String -> String -> (List (Attribute msg) -> Html msg) -> Html msg
-inputGroup fieldId fieldLabel fieldHelp field =
+viewInputGroup : HtmlId -> String -> String -> (List (Attribute msg) -> Html msg) -> Html msg
+viewInputGroup fieldId fieldLabel fieldHelp field =
     div [ css [ Tw.mt_3 ] ]
         [ label [ for fieldId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700 ] ] [ text fieldLabel ]
         , div [ css [ Tw.mt_1 ] ]
