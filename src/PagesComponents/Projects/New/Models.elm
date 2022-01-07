@@ -5,8 +5,8 @@ import Libs.Models exposing (FileContent)
 import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.SourceInfo exposing (SourceInfo)
-import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 import Ports exposing (JsMsg)
+import Services.SourceParsing.Models exposing (ParsingMsg, ParsingState)
 
 
 type alias Model =
@@ -16,7 +16,7 @@ type alias Model =
     , selectedLocalFile : Maybe File
     , selectedSample : Maybe String
     , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
-    , parsedSchema : Maybe (ProjectParser.Model Msg)
+    , parsedSchema : Maybe (ParsingState Msg)
     , project : Maybe Project
     }
 
@@ -30,12 +30,10 @@ type Msg
     = SelectMenu String
     | ToggleMobileMenu
     | SelectTab Tab
-    | FileDragOver
-    | FileDragLeave
     | SelectLocalFile File
     | SelectSample String
     | FileLoaded ProjectId SourceInfo FileContent
-    | ParseMsg ProjectParser.Msg
+    | ParseMsg ParsingMsg
     | BuildProject
     | DropSchema
     | CreateProject Project

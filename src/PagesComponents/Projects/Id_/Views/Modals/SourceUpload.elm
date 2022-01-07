@@ -1,6 +1,8 @@
 module PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 
 import Components.Atoms.Button as Button
+import Components.Molecules.Divider as Divider
+import Components.Molecules.FileInput as FileInput
 import Components.Molecules.Modal as Modal
 import Conf
 import Html.Styled exposing (Html, br, div, h3, p, text)
@@ -18,7 +20,8 @@ import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind.Utilities as Tu
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsMsg(..), SourceUploadDialog)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), PSParsingMsg(..), ProjectSettingsMsg(..), SourceParsing, SourceUploadDialog)
+import Services.SourceParsing.Views
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 import Time
@@ -42,7 +45,7 @@ viewSourceUpload theme zone now opened model =
                 (\source ->
                     case source.kind of
                         LocalFile filename _ updatedAt ->
-                            localFileModal theme zone now titleId source filename updatedAt
+                            localFileModal theme zone now titleId source filename updatedAt model.parsing
 
                         RemoteFile url _ ->
                             remoteFileModal theme zone now titleId source url
@@ -54,8 +57,8 @@ viewSourceUpload theme zone now opened model =
         )
 
 
-localFileModal : Theme -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> List (Html Msg)
-localFileModal theme zone now titleId source fileName updatedAt =
+localFileModal : Theme -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SourceParsing Msg -> List (Html Msg)
+localFileModal theme zone now titleId source fileName updatedAt model =
     [ div [ css [ Tw.max_w_3xl, Tw.mx_6, Tw.mt_6 ] ]
         [ div [ css [ Tw.mt_3, Bp.sm [ Tw.mt_5 ] ] ]
             [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.text_center, Tw.font_medium, Tw.text_gray_900 ] ]
@@ -72,12 +75,22 @@ localFileModal theme zone now titleId source fileName updatedAt =
                     ]
                 ]
             ]
-        , p [ css [ Tw.mt_3 ] ]
-            [ text "Bla bla bla TODO FIXME"
-            ]
+        , FileInput.basic theme "file-upload" (PSSelectLocalFile >> PSParsingMsg >> ProjectSettingsMsg)
+        , div []
+            (((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample")))
+                |> Maybe.map2
+                    (\p sourceText ->
+                        [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.parsedSource |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                        , Services.SourceParsing.Views.viewLogs sourceText p
+                        , Services.SourceParsing.Views.viewErrorAlert p
+                        ]
+                    )
+                    model.parsedSchema
+                |> Maybe.withDefault []
+            )
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-        [ Button.primary3 theme.color [ onClick (Noop "Refresh source"), disabled True ] [ text "Refresh" ]
+        [ Button.primary3 theme.color (model.parsedSource |> M.mapOrElse (\s -> [ onClick (Noop ("Refresh source " ++ s.name)) ]) [ disabled True ]) [ text "Refresh" ]
         , Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]
         ]
     ]

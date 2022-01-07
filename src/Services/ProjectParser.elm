@@ -1,36 +1,14 @@
-module PagesComponents.Projects.New.Updates.ProjectParser exposing (Model, Msg(..), init, update)
+module Services.ProjectParser exposing (init, update)
 
-import DataSources.SqlParser.FileParser as FileParser exposing (SchemaError, SqlSchema)
-import DataSources.SqlParser.StatementParser exposing (Command)
-import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
-import Dict exposing (Dict)
+import DataSources.SqlParser.FileParser as FileParser
+import Dict
 import Libs.Dict as D
 import Libs.Maybe as M
-import Libs.Models exposing (FileContent, FileLineContent)
+import Libs.Models exposing (FileContent)
+import Services.SourceParsing.Models exposing (ParsingMsg(..), ParsingState)
 
 
-type alias Model msg =
-    { cpt : Int
-    , fileContent : FileContent
-    , lines : Maybe (List FileLineContent)
-    , statements : Maybe (Dict Int SqlStatement)
-    , commands : Maybe (Dict Int ( SqlStatement, Result (List ParseError) Command ))
-    , schemaIndex : Int
-    , schemaErrors : List (List SchemaError)
-    , schema : Maybe SqlSchema
-    , buildMsg : Msg -> msg
-    , buildProject : msg
-    }
-
-
-type Msg
-    = BuildLines
-    | BuildStatements
-    | BuildCommand
-    | EvolveSchema
-
-
-init : FileContent -> (Msg -> msg) -> msg -> Model msg
+init : FileContent -> (ParsingMsg -> msg) -> msg -> ParsingState msg
 init fileContent buildMsg buildProject =
     { cpt = 0
     , fileContent = fileContent
@@ -45,7 +23,7 @@ init fileContent buildMsg buildProject =
     }
 
 
-update : Msg -> Model msg -> ( Model msg, msg )
+update : ParsingMsg -> ParsingState msg -> ( ParsingState msg, msg )
 update msg model =
     (case msg of
         BuildLines ->
@@ -89,6 +67,6 @@ update msg model =
         |> Tuple.mapFirst incCpt
 
 
-incCpt : Model msg -> Model msg
+incCpt : ParsingState msg -> ParsingState msg
 incCpt model =
     { model | cpt = model.cpt + 1 }

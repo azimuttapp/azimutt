@@ -9,7 +9,7 @@ import Models.Project exposing (Project)
 import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Source exposing (Source)
-import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
+import Services.SourceParsing.Models exposing (ParsingState)
 
 
 
@@ -28,7 +28,8 @@ events :
     , openSaveLayout : TrackEvent
     , openFindPath : TrackEvent
     , findPathResult : FindPathResult -> TrackEvent
-    , parsedProject : ProjectParser.Model msg -> Project -> TrackEvent
+    , parsedProject : ParsingState msg -> Project -> TrackEvent
+    , parsedSource : ParsingState msg -> Source -> TrackEvent
     , createProject : Project -> TrackEvent
     , loadProject : Project -> TrackEvent
     , updateProject : Project -> TrackEvent
@@ -52,7 +53,8 @@ events =
     , openIncomingRelationsDropdown = { name = "open-incoming-relations-dropdown", details = [], enabled = True }
     , openSaveLayout = { name = "open-save-layout", details = [], enabled = True }
     , openFindPath = { name = "open-find-path", details = [], enabled = True }
-    , parsedProject = parserEvent "parse"
+    , parsedProject = parserProjectEvent "parse"
+    , parsedSource = parserSourceEvent "parse"
     , createProject = projectEvent "create"
     , loadProject = projectEvent "load"
     , updateProject = projectEvent "update"
@@ -68,14 +70,29 @@ events =
     }
 
 
-parserEvent : String -> ProjectParser.Model msg -> Project -> TrackEvent
-parserEvent eventName parser project =
+parserProjectEvent : String -> ParsingState msg -> Project -> TrackEvent
+parserProjectEvent eventName parser project =
     { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> M.toList) |> List.head |> M.mapOrElse (\_ -> "-sample") "") ++ "-project"
     , details =
         [ ( "lines-count", parser.lines |> M.mapOrElse List.length 0 |> String.fromInt )
         , ( "statements-count", parser.statements |> M.mapOrElse Dict.size 0 |> String.fromInt )
         , ( "table-count", project.tables |> Dict.size |> String.fromInt )
         , ( "relation-count", project.relations |> List.length |> String.fromInt )
+        , ( "parsing-errors", parser.commands |> M.mapOrElse (D.count (\_ ( _, r ) -> r |> R.isErr)) 0 |> String.fromInt )
+        , ( "schema-errors", parser.schemaErrors |> List.length |> String.fromInt )
+        ]
+    , enabled = True
+    }
+
+
+parserSourceEvent : String -> ParsingState msg -> Source -> TrackEvent
+parserSourceEvent eventName parser source =
+    { name = eventName ++ (source.fromSample |> M.mapOrElse (\_ -> "-sample") "") ++ "-source"
+    , details =
+        [ ( "lines-count", parser.lines |> M.mapOrElse List.length 0 |> String.fromInt )
+        , ( "statements-count", parser.statements |> M.mapOrElse Dict.size 0 |> String.fromInt )
+        , ( "table-count", source.tables |> Dict.size |> String.fromInt )
+        , ( "relation-count", source.relations |> List.length |> String.fromInt )
         , ( "parsing-errors", parser.commands |> M.mapOrElse (D.count (\_ ( _, r ) -> r |> R.isErr)) 0 |> String.fromInt )
         , ( "schema-errors", parser.schemaErrors |> List.length |> String.fromInt )
         ]

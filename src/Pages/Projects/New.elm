@@ -12,11 +12,12 @@ import Libs.Task as T
 import Models.Project as Project
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
-import PagesComponents.Projects.New.Updates.PortMsg exposing (handleJsMsg)
-import PagesComponents.Projects.New.Updates.ProjectParser as ProjectParser
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..), onJsMessage, readLocalFile, readRemoteFile, saveProject, track, trackPage)
 import Request
+import Services.ProjectParser as ProjectParser
+import Services.SourceParsing.Models exposing (ParsingMsg(..))
+import Services.SourceReader as SourceReader
 import Shared
 import Tracking
 import View exposing (View)
@@ -78,12 +79,6 @@ update req shared msg model =
         SelectTab tab ->
             ( { model | selectedTab = tab, selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, Cmd.none )
 
-        FileDragOver ->
-            ( model, Cmd.none )
-
-        FileDragLeave ->
-            ( model, Cmd.none )
-
         SelectLocalFile file ->
             ( { model | selectedLocalFile = Just file, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, readLocalFile Nothing Nothing file )
 
@@ -92,7 +87,7 @@ update req shared msg model =
 
         FileLoaded projectId sourceInfo fileContent ->
             ( { model | loadedFile = Just ( projectId, sourceInfo, fileContent ), parsedSchema = Just (ProjectParser.init fileContent ParseMsg BuildProject) }
-            , T.send (ParseMsg ProjectParser.BuildLines)
+            , T.send (ParseMsg BuildLines)
             )
 
         ParseMsg parseMsg ->
@@ -123,10 +118,23 @@ update req shared msg model =
             ( model, Cmd.batch [ saveProject project, track (Tracking.events.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
         JsMessage jsMsg ->
-            ( model, handleJsMsg jsMsg )
+            ( model, handleJsMessage jsMsg )
 
         Noop ->
             ( model, Cmd.none )
+
+
+handleJsMessage : JsMsg -> Cmd Msg
+handleJsMessage msg =
+    case msg of
+        GotLocalFile now projectId sourceId file content ->
+            T.send (FileLoaded |> SourceReader.local now projectId sourceId file content)
+
+        GotRemoteFile now projectId sourceId url content sample ->
+            T.send (FileLoaded |> SourceReader.remote now projectId sourceId url content sample)
+
+        _ ->
+            T.send Noop
 
 
 

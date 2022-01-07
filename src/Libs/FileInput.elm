@@ -3,10 +3,11 @@ module Libs.FileInput exposing (DropConfig, File, hiddenInputSingle, onDrop)
 -- variation of https://package.elm-lang.org/packages/mpizenberg/elm-file with Html.Styled.Attributes
 
 import Html.Styled exposing (Attribute, Html, input)
-import Html.Styled.Attributes as Attributes
+import Html.Styled.Attributes exposing (accept, id, style, type_)
 import Html.Styled.Events as Events
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Libs.Maybe as M
 import Time
 
 
@@ -20,25 +21,17 @@ type alias File =
 
 
 type alias DropConfig msg =
-    { onOver : File -> List File -> msg
-    , onDrop : File -> List File -> msg
+    { onDrop : File -> List File -> msg
+    , onOver : Maybe (File -> List File -> msg)
     , onLeave : Maybe { id : String, msg : msg }
     }
 
 
 onDrop : DropConfig msg -> List (Attribute msg)
 onDrop config =
-    filesOn "dragover" config.onOver
-        :: filesOn "drop" config.onDrop
-        :: (case config.onLeave of
-                Nothing ->
-                    []
-
-                Just { id, msg } ->
-                    [ Attributes.id id
-                    , onWithId id "dragleave" msg
-                    ]
-           )
+    filesOn "drop" config.onDrop
+        :: (config.onOver |> M.mapOrElse (\over -> [ filesOn "dragover" over ]) [])
+        ++ (config.onLeave |> M.mapOrElse (\leave -> [ id leave.id, onWithId leave.id "dragleave" leave.msg ]) [])
 
 
 hiddenInputSingle : String -> List String -> (File -> msg) -> Html msg
@@ -132,9 +125,9 @@ loadFile msgTag =
 
 
 inputAttributes : String -> List String -> List (Attribute msg)
-inputAttributes id mimes =
-    [ Attributes.id id
-    , Attributes.type_ "file"
-    , Attributes.style "display" "none"
-    , Attributes.accept (String.join "," mimes)
+inputAttributes fieldId mimes =
+    [ id fieldId
+    , type_ "file"
+    , style "display" "none"
+    , accept (String.join "," mimes)
     ]
