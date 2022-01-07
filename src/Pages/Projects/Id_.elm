@@ -73,6 +73,7 @@ init shared req =
       , virtualRelation = Nothing
       , findPath = Nothing
       , settings = Nothing
+      , sourceUpload = Nothing
       , help = Nothing
       , openedDropdown = ""
       , dragging = Nothing

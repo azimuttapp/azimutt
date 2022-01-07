@@ -6,7 +6,7 @@ import Libs.Maybe as M
 import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
 import Ports exposing (blur, focus, mouseDown, scrollTo)
 
 
@@ -88,6 +88,8 @@ cancelElement model =
             |> M.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
             |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
             |> M.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
+            |> M.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSSourceUploadClose)))
+            |> M.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
             |> M.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
             |> Maybe.withDefault (toastInfo "Nothing to cancel")
         )

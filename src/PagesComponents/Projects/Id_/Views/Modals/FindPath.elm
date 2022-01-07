@@ -211,7 +211,7 @@ viewPathStep s =
 
 viewPathStepDetails : String -> ColumnRef -> ColumnRef -> List (Html msg)
 viewPathStepDetails dir from to =
-    [ text " > ", span [ css [ Tw.underline ] ] [ text (TableId.show to.table) ] |> Tooltip.top (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to) ]
+    [ text " > ", span [ css [ Tw.underline ] ] [ text (TableId.show to.table) ] |> Tooltip.t (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to) ]
 
 
 buildQuery : TableId -> FindPathPath -> String

@@ -105,14 +105,14 @@ viewProjectCard zone project =
         [ div [ css [ Tw.p_6 ] ]
             [ h3 [ css [ Tw.text_lg, Tw.font_medium ] ] [ text project.name ]
             , ul [ css [ Tw.mt_1, Tw.text_gray_500, Tw.text_sm ] ]
-                [ li [] [ text ((project.tables |> Dict.size |> S.pluralize "table") ++ ", " ++ (project.layouts |> Dict.size |> S.pluralize "layout")) ]
+                [ li [] [ text ((project.tables |> S.pluralizeD "table") ++ ", " ++ (project.layouts |> S.pluralizeD "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]
                 ]
             ]
         , div [ css [ Tw.flex, Tw.divide_x, Tw.divide_gray_200 ] ]
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ Tw.flex_grow_0, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Tw.px_4, Css.hover [ Tw.text_gray_500 ] ] ]
                 [ Icon.outline Trash [ Tw.text_gray_400 ] ]
-                |> Tooltip.top "Delete this project"
+                |> Tooltip.t "Delete this project"
             , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ Tw.flex_grow, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Css.hover [ Tw.text_gray_500 ] ] ]
                 [ Icon.outline ArrowCircleRight [ Tw.text_gray_400 ], span [ css [ Tw.ml_3 ] ] [ text "Open project" ] ]
             ]

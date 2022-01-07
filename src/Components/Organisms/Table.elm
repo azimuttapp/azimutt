@@ -162,7 +162,7 @@ viewHeader model =
         ]
         [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), css [ Tw.flex_grow, Tw.text_center ] ]
             [ if model.isView then
-                span [ css [ textSize, Tw.italic, Tw.underline, Tu.underline_dotted ] ] [ text model.label ] |> Tooltip.top "This is a view"
+                span [ css [ textSize, Tw.italic, Tw.underline, Tu.underline_dotted ] ] [ text model.label ] |> Tooltip.t "This is a view"
 
               else
                 span [ css [ textSize ] ] [ text model.label ]
@@ -205,7 +205,7 @@ viewHiddenColumns model =
     else
         div [ css [ Tw.m_2, Tw.p_2, Tw.bg_gray_100, Tw.rounded_lg ] ]
             [ div [ onClick model.actions.clickHiddenColumns, css [ Tw.text_gray_400, Tw.uppercase, Tw.font_bold, Tw.text_sm ] ]
-                [ text (model.hiddenColumns |> List.length |> S.pluralize "hidden column") ]
+                [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
             , Keyed.node "div"
                 [ css [ Tw.rounded_lg, Tw.pt_2, Tu.when (not model.state.showHiddenColumns) [ Tw.hidden ] ] ]
                 (model.hiddenColumns |> List.map (\c -> ( c.name, viewColumn model False c )))
@@ -231,19 +231,19 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
-        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [] |> Tooltip.top ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [] |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.top "Primary key" ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.t "Primary key" ]
 
     else if column.uniques |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [] |> Tooltip.top ("Unique constraint in " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [] |> Tooltip.t ("Unique constraint in " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid SortDescending [] |> Tooltip.top ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid SortDescending [] |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Check [] |> Tooltip.top ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Check [] |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Empty [] ]
@@ -297,7 +297,7 @@ viewColumnIconDropdown model column icon =
                         ++ (column.inRelations
                                 |> List.filter (\r -> not r.tableShown)
                                 |> (\relations ->
-                                        [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> List.length |> S.pluralize "table") ++ ")") ] ]
+                                        [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> S.pluralizeL "table") ++ ")") ] ]
                                    )
                            )
                     )
@@ -326,7 +326,7 @@ viewColumnName column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Tooltip.top comment
+    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Tooltip.t comment
 
 
 viewColumnKind : Model msg -> Column -> Html msg
@@ -340,13 +340,13 @@ viewColumnKind model column =
         value =
             column.default
                 |> M.mapOrElse
-                    (\default -> span [ css [ opacity, Tw.underline ] ] [ text column.kind ] |> Tooltip.top ("default value: " ++ default))
+                    (\default -> span [ css [ opacity, Tw.underline ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
                     (span [ css [ opacity ] ] [ text column.kind ])
 
         nullable : List (Html msg)
         nullable =
             if column.nullable then
-                [ span [ css [ opacity ] ] [ text "?" ] |> Tooltip.top "nullable" ]
+                [ span [ css [ opacity ] ] [ text "?" ] |> Tooltip.t "nullable" ]
 
             else
                 []

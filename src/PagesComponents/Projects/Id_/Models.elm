@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), DragState, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), DragState, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -38,6 +38,7 @@ type alias Model =
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , settings : Maybe ProjectSettingsDialog
+    , sourceUpload : Maybe SourceUploadDialog
     , help : Maybe HelpDialog
 
     -- global attrs
@@ -71,6 +72,10 @@ type alias VirtualRelation =
 
 type alias ProjectSettingsDialog =
     { id : HtmlId }
+
+
+type alias SourceUploadDialog =
+    { id : HtmlId, source : Maybe Source }
 
 
 type alias HelpDialog =
@@ -166,12 +171,15 @@ type FindPathMsg
 type ProjectSettingsMsg
     = PSOpen
     | PSClose
-    | ToggleSource Source
-    | ToggleSchema SchemaName
-    | ToggleRemoveViews
-    | UpdateRemovedTables String
-    | UpdateHiddenColumns String
-    | UpdateColumnOrder ColumnOrder
+    | PSToggleSource Source
+    | PSDeleteSource Source
+    | PSSourceUploadOpen (Maybe Source)
+    | PSSourceUploadClose
+    | PSToggleSchema SchemaName
+    | PSToggleRemoveViews
+    | PSUpdateRemovedTables String
+    | PSUpdateHiddenColumns String
+    | PSUpdateColumnOrder ColumnOrder
 
 
 type HelpMsg

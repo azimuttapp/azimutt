@@ -22,6 +22,7 @@ import PagesComponents.Projects.Id_.Views.Modals.CreateLayout exposing (viewCrea
 import PagesComponents.Projects.Id_.Views.Modals.FindPath exposing (viewFindPath)
 import PagesComponents.Projects.Id_.Views.Modals.Help exposing (viewHelp)
 import PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
+import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Shared exposing (StoredProjects(..))
 import Tailwind.Utilities as Tw
@@ -39,7 +40,7 @@ viewProject shared model =
 
         Loaded projects ->
             model.project |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
-    , viewModal shared.theme shared.zone model
+    , viewModal shared.theme shared.zone shared.now model
     , viewToasts shared.theme model.toasts
     ]
 
@@ -79,14 +80,15 @@ viewNotFound theme =
         }
 
 
-viewModal : Theme -> Time.Zone -> Model -> Html Msg
-viewModal theme zone model =
+viewModal : Theme -> Time.Zone -> Time.Posix -> Model -> Html Msg
+viewModal theme zone now model =
     Keyed.node "div"
         [ class "tw-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> L.has m.id) m ))
          , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout theme (model.openedDialogs |> L.has m.id) m ))
          , model.findPath |> Maybe.map2 (\p m -> ( m.id, viewFindPath theme (model.openedDialogs |> L.has m.id) p m )) model.project
          , model.settings |> Maybe.map2 (\p m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> L.has m.id) p m )) model.project
+         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload theme zone now (model.openedDialogs |> L.has m.id) m ))
          , model.help |> Maybe.map (\m -> ( m.id, viewHelp theme (model.openedDialogs |> L.has m.id) m ))
          ]
             |> List.filterMap identity

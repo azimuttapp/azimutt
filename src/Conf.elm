@@ -84,6 +84,7 @@ ids :
     , navLayoutDropdown : HtmlId
     , menu : HtmlId
     , settingsDialog : HtmlId
+    , sourceUploadDialog : HtmlId
     , erd : HtmlId
     , selectionBox : HtmlId
     , projectSwitchModal : HtmlId
@@ -100,6 +101,7 @@ ids =
     , navLayoutDropdown = "navbar-layout-dropdown"
     , menu = "menu"
     , settingsDialog = "settings-dialog"
+    , sourceUploadDialog = "source-upload-dialog"
     , erd = "erd"
     , selectionBox = "selection-box"
     , projectSwitchModal = "project-switch-modal"

@@ -177,7 +177,7 @@ viewNavbarMobileMenu theme features usedLayout layout open =
 
 resetCanvasMsg : Msg
 resetCanvasMsg =
-    confirm "Reset canvas?" (text "You will loose your current canvas state.") ResetCanvas
+    ResetCanvas |> confirm "Reset canvas?" (text "You will loose your current canvas state.")
 
 
 canResetCanvas : Maybe LayoutName -> Layout -> Bool

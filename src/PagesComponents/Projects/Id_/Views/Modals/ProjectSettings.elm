@@ -12,6 +12,7 @@ import Libs.DateTime exposing (formatDate, formatTime)
 import Libs.Html.Styled.Attributes exposing (ariaDescribedby)
 import Libs.List as L
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Models.ColumnOrder as ColumnOrder
 import Models.Project exposing (Project)
@@ -56,46 +57,48 @@ viewSourcesSection zone project =
 viewSource : ProjectId -> Time.Zone -> Source -> Html Msg
 viewSource _ zone source =
     let
-        view : Icon -> Time.Posix -> String -> (Html Msg -> Html Msg) -> Html Msg
+        view : Icon -> Time.Posix -> String -> Html Msg
         view =
-            \icon updatedAt labelTitle refreshButton ->
+            \icon updatedAt labelTitle ->
                 div [ css [ Tw.px_4, Tw.py_2 ] ]
                     [ div [ css [ Tw.flex, Tw.justify_between ] ]
-                        [ viewCheckbox ("settings-source-" ++ SourceId.toString source.id) (span [] [ Icon.solid icon [ Tw.inline ], text source.name ] |> Tooltip.bottom labelTitle) source.enabled (ProjectSettingsMsg (ToggleSource source))
+                        [ viewCheckbox ("settings-source-" ++ SourceId.toString source.id)
+                            (span [] [ Icon.solid icon [ Tw.inline ], text source.name ]
+                                |> Tooltip.b labelTitle
+                            )
+                            source.enabled
+                            (ProjectSettingsMsg (PSToggleSource source))
                         , div []
-                            [ button [ type_ "button", onClick (confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?") (Noop "Delete source")) ] [ Icon.solid Trash [ Tw.inline ] ] |> Tooltip.bottomLeft "Delete this source"
-                            , refreshButton (Icon.solid Refresh [ Tw.inline ]) |> Tooltip.bottomLeft "Refresh this source"
+                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ Tu.when (source.kind == UserDefined) [ Tw.hidden ], Css.focus [ Tw.outline_none ] ] ]
+                                [ Icon.solid Refresh [ Tw.inline ] ]
+                                |> Tooltip.bl "Refresh this source"
+                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ Css.focus [ Tw.outline_none ] ] ]
+                                [ Icon.solid Trash [ Tw.inline ] ]
+                                |> Tooltip.bl "Delete this source"
                             ]
                         ]
                     , div [ css [ Tw.flex, Tw.justify_between ] ]
-                        [ span [ css [ Tu.text_muted ] ] [ text ((source.tables |> Dict.size |> String.fromInt) ++ " tables & " ++ (source.relations |> List.length |> String.fromInt) ++ " relations") ]
-                        , span [ css [ Tu.text_muted ] ] [ text (formatDate zone updatedAt) ] |> Tooltip.topLeft ("at " ++ formatTime zone updatedAt)
+                        [ span [ css [ Tu.text_muted ] ] [ text ((source.tables |> S.pluralizeD "table") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
+                        , span [ css [ Tu.text_muted ] ] [ text (formatDate zone updatedAt) ] |> Tooltip.lt ("at " ++ formatTime zone updatedAt)
                         ]
                     ]
     in
     case source.kind of
         LocalFile path _ modified ->
-            view DocumentText modified (path ++ " file") (\html -> html {- viewFileLoader "" (Just project) (Just source.id) -})
+            view DocumentText modified (path ++ " file")
 
         RemoteFile url _ ->
-            let
-                msg : Msg
-                msg =
-                    Noop """OpenConfirm
-                        { content = span [] [ text "Refresh ", bText source.name, text " source with ", bText url, text "?" ]
-                        , cmd = send (SourceMsg (LoadRemoteFile (Just project) (Just source.id) url))
-                        }"""
-            in
-            view CloudDownload source.updatedAt ("File from " ++ url) (\html -> button [ type_ "button", class "link", onClick msg ] [ html ])
+            view CloudDownload source.updatedAt ("File from " ++ url)
 
         UserDefined ->
-            view User source.updatedAt "Created by you" (\_ -> span [] [])
+            view User source.updatedAt "Created by you"
 
 
 viewAddSource : ProjectId -> Html Msg
 viewAddSource _ =
     -- viewFileLoader "list-group-item list-group-item-action" (Just project) Nothing (small [] [ viewIcon Icon.plus, text " ", text "Add source" ])
-    div [ css [ Tw.px_4, Tw.py_2 ] ] [ Icon.solid Plus [ Tw.inline ], text "Add source" ]
+    button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ Tw.px_4, Tw.py_2, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ]
+        [ Icon.solid Plus [ Tw.inline ], text "Add source" ]
 
 
 viewSchemasSection : Project -> Html Msg
@@ -118,7 +121,7 @@ viewSchemasSection project =
 
 viewSchema : List SchemaName -> SchemaName -> Html Msg
 viewSchema removedSchemas schema =
-    viewCheckbox ("settings-schema-" ++ schema) (text schema) (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (ToggleSchema schema))
+    viewCheckbox ("settings-schema-" ++ schema) (text schema) (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSToggleSchema schema))
 
 
 viewDisplaySettingsSection : ProjectSettings -> Html Msg
@@ -126,7 +129,7 @@ viewDisplaySettingsSection settings =
     fieldset [ css [ Tw.mt_6 ] ]
         [ legend [ css [ Tw.font_medium, Tw.text_gray_900 ] ] [ text "Display options" ]
         , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ] [ text "Configure global options for Azimutt ERD." ]
-        , viewCheckbox "settings-no-views" (text "Remove views" |> Tooltip.topRight "Check this if you don't want to have SQL views in Azimutt") settings.removeViews (ProjectSettingsMsg ToggleRemoveViews)
+        , viewCheckbox "settings-no-views" (text "Remove views" |> Tooltip.tr "Check this if you don't want to have SQL views in Azimutt") settings.removeViews (ProjectSettingsMsg PSToggleRemoveViews)
         , viewInputGroup "settings-removed-tables"
             "Removed tables"
             "Some tables are not useful and can clutter search, find path or even UI. Remove them by name or even regex."
@@ -135,7 +138,7 @@ viewDisplaySettingsSection settings =
                     ([ type_ "text"
                      , placeholder "Add technical tables, ex: flyway_schema_history..."
                      , value settings.removedTables
-                     , onInput (UpdateRemovedTables >> ProjectSettingsMsg)
+                     , onInput (PSUpdateRemovedTables >> ProjectSettingsMsg)
                      , css [ Tw.form_input, Tw.shadow_sm, Tw.block, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ]
                      ]
                         ++ attrs
@@ -150,7 +153,7 @@ viewDisplaySettingsSection settings =
                     ([ type_ "text"
                      , placeholder "Add technical columns, ex: created_at..."
                      , value settings.hiddenColumns
-                     , onInput (UpdateHiddenColumns >> ProjectSettingsMsg)
+                     , onInput (PSUpdateHiddenColumns >> ProjectSettingsMsg)
                      , css [ Tw.form_input, Tw.shadow_sm, Tw.block, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ]
                      ]
                         ++ attrs
@@ -162,7 +165,7 @@ viewDisplaySettingsSection settings =
             "Select the default column order for tables, will also update order of tables already shown."
             (\attrs ->
                 select
-                    ([ onInput (ColumnOrder.fromString >> UpdateColumnOrder >> ProjectSettingsMsg)
+                    ([ onInput (ColumnOrder.fromString >> PSUpdateColumnOrder >> ProjectSettingsMsg)
                      , css [ Tw.form_select, Tw.shadow_sm, Tw.block, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ]
                      ]
                         ++ attrs

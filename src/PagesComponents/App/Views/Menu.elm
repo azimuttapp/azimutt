@@ -70,7 +70,7 @@ viewTableList tables layout =
                     (\( groupTitle, groupedTables ) ->
                         [ ( groupTitle
                           , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle ++ "-table-list") |> HtmlId.from))
-                                [ text (groupTitle ++ " (" ++ (groupedTables |> List.length |> S.pluralize "table") ++ ")") ]
+                                [ text (groupTitle ++ " (" ++ (groupedTables |> S.pluralizeL "table") ++ ")") ]
                           )
                         , ( groupTitle ++ "-collapse"
                           , Keyed.node "div"

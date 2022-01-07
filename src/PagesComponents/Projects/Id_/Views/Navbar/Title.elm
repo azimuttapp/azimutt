@@ -93,12 +93,12 @@ viewLayouts theme openedDropdown project =
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
     span [ role "menuitem", tabindex -1, css [ Tw.flex, Dropdown.itemStyles ] ]
-        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Trash [ Tw.inline_block ] ] |> Tooltip.top "Delete this layout"
-        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ Tw.mx_2, Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Pencil [ Tw.inline_block ] ] |> Tooltip.top "Update layout with current one"
+        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Trash [ Tw.inline_block ] ] |> Tooltip.t "Delete this layout"
+        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ Tw.mx_2, Css.focus [ Tw.outline_none ] ] ] [ Icon.solid Pencil [ Tw.inline_block ] ] |> Tooltip.t "Update layout with current one"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ Tw.flex_grow, Tw.text_left, Css.focus [ Tw.outline_none ] ] ]
             [ text name
             , text " "
-            , small [] [ text ("(" ++ (layout.tables |> List.length |> S.pluralize "table") ++ ")") ]
+            , small [] [ text ("(" ++ (layout.tables |> S.pluralizeL "table") ++ ")") ]
             ]
         ]
 
@@ -115,7 +115,7 @@ confirmDeleteLayout layout name =
                 , bText name
                 , text " layout?"
                 , br [] []
-                , text ("It contains " ++ (layout.tables |> List.length |> S.pluralize "table") ++ ".")
+                , text ("It contains " ++ (layout.tables |> S.pluralizeL "table") ++ ".")
                 ]
         , confirm = "Delete " ++ name ++ " layout"
         , cancel = "Cancel"

@@ -15,7 +15,7 @@ import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettin
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Updates.Helpers exposing (setLayout, setProject, setSettings)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), toastInfo)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, toastInfo)
 import Ports exposing (observeTablesSize)
 
 
@@ -23,6 +23,7 @@ type alias Model x =
     { x
         | project : Maybe Project
         , settings : Maybe ProjectSettingsDialog
+        , sourceUpload : Maybe SourceUploadDialog
     }
 
 
@@ -35,7 +36,7 @@ handleProjectSettings msg model =
         PSClose ->
             ( { model | settings = Nothing }, Cmd.none )
 
-        ToggleSource source ->
+        PSToggleSource source ->
             ( model |> setProject (Project.updateSource source.id (\s -> { s | enabled = not s.enabled }))
             , Cmd.batch
                 [ observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
@@ -43,19 +44,28 @@ handleProjectSettings msg model =
                 ]
             )
 
-        ToggleSchema schema ->
+        PSDeleteSource source ->
+            ( model |> setProject (Project.deleteSource source.id), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
+
+        PSSourceUploadOpen source ->
+            ( { model | sourceUpload = Just { id = Conf.ids.sourceUploadDialog, source = source } }, T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+
+        PSSourceUploadClose ->
+            ( { model | sourceUpload = Nothing }, Cmd.none )
+
+        PSToggleSchema schema ->
             model |> updateSettingsAndComputeProject (\s -> { s | removedSchemas = s.removedSchemas |> L.toggle schema })
 
-        ToggleRemoveViews ->
+        PSToggleRemoveViews ->
             model |> updateSettingsAndComputeProject (\s -> { s | removeViews = not s.removeViews })
 
-        UpdateRemovedTables values ->
+        PSUpdateRemovedTables values ->
             model |> updateSettingsAndComputeProject (\s -> { s | removedTables = values })
 
-        UpdateHiddenColumns values ->
+        PSUpdateHiddenColumns values ->
             ( model |> setProject (\p -> p |> setSettings (\s -> { s | hiddenColumns = values }) |> setLayout (hideColumns (ProjectSettings.isColumnHidden values) p)), Cmd.none )
 
-        UpdateColumnOrder order ->
+        PSUpdateColumnOrder order ->
             ( model |> setProject (\p -> p |> setSettings (\s -> { s | columnOrder = order }) |> setLayout (sortColumns order p)), Cmd.none )
 
 

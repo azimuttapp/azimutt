@@ -1,4 +1,4 @@
-module Components.Molecules.Tooltip exposing (bottom, bottomLeft, bottomRight, doc, left, right, top, topLeft, topRight)
+module Components.Molecules.Tooltip exposing (b, bl, br, doc, l, lt, r, t, tr)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Styles as Styles
@@ -18,43 +18,43 @@ import Tailwind.Utilities as Tw
 -- see https://tailwindcomponents.com/component/tooltip
 
 
-top : String -> Html msg -> Html msg
-top =
+t : String -> Html msg -> Html msg
+t =
     tooltip [ Tw.bottom_full, Tw.mb_3, Tw.items_center ] [ Tw.top_full, Tu.translate_y -50 "%" ]
 
 
-topLeft : String -> Html msg -> Html msg
-topLeft =
+lt : String -> Html msg -> Html msg
+lt =
     tooltip [ Tw.bottom_full, Tw.mb_3, Tw.right_0, Tw.items_end ] [ Tw.top_full, Tu.translate_y -50 "%", Tw.mr_3 ]
 
 
-topRight : String -> Html msg -> Html msg
-topRight =
+tr : String -> Html msg -> Html msg
+tr =
     tooltip [ Tw.bottom_full, Tw.mb_3, Tw.left_0 ] [ Tw.top_full, Tu.translate_y -50 "%", Tw.ml_3 ]
 
 
-left : String -> Html msg -> Html msg
-left =
+l : String -> Html msg -> Html msg
+l =
     tooltip [ Tw.right_full, Tw.mr_3, Tu.top 50 "%", Tw.transform, Tu.translate_y -50 "%", Tw.items_end ] [ Tu.top 50 "%", Tu.translate_x_y 50 -50 "%" ]
 
 
-right : String -> Html msg -> Html msg
-right =
+r : String -> Html msg -> Html msg
+r =
     tooltip [ Tw.left_full, Tw.ml_3, Tu.top 50 "%", Tw.transform, Tu.translate_y -50 "%" ] [ Tu.top 50 "%", Tu.translate_x_y -50 -50 "%" ]
 
 
-bottom : String -> Html msg -> Html msg
-bottom =
+b : String -> Html msg -> Html msg
+b =
     tooltip [ Tw.top_full, Tw.mt_3, Tw.items_center ] [ Tw.top_0, Tu.translate_y -50 "%" ]
 
 
-bottomLeft : String -> Html msg -> Html msg
-bottomLeft =
+bl : String -> Html msg -> Html msg
+bl =
     tooltip [ Tw.top_full, Tw.mt_3, Tw.right_0, Tw.items_end ] [ Tw.top_0, Tu.translate_y -50 "%", Tw.mr_3 ]
 
 
-bottomRight : String -> Html msg -> Html msg
-bottomRight =
+br : String -> Html msg -> Html msg
+br =
     tooltip [ Tw.top_full, Tw.mt_3, Tw.left_0 ] [ Tw.top_0, Tu.translate_y -50 "%", Tw.ml_3 ]
 
 
@@ -79,14 +79,14 @@ doc =
         |> Chapter.renderComponentList
             [ ( "tooltip"
               , div []
-                    [ span [] [ Button.primary3 Color.indigo [] [ text "Top" ] |> top "Top aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Top left" ] |> topLeft "Top left aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Top right" ] |> topRight "Top right aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Left" ] |> left "Left aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Right" ] |> right "Right aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Bottom" ] |> bottom "Bottom aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Bottom left" ] |> bottomLeft "Bottom left aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Bottom right" ] |> bottomRight "Bottom right aligned tooltip with more text." ]
+                    [ span [] [ Button.primary3 Color.indigo [] [ text "Top" ] |> t "Top aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Top left" ] |> lt "Top left aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Top right" ] |> tr "Top right aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Left" ] |> l "Left aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Right" ] |> r "Right aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Bottom" ] |> b "Bottom aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Bottom left" ] |> bl "Bottom left aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Bottom right" ] |> br "Bottom right aligned tooltip with more text." ]
                     ]
               )
             , ( "global styles", div [] [ Styles.global, text "Global styles are needed for tooltip reveal" ] )

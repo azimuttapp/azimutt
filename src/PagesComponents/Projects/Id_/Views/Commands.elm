@@ -34,11 +34,11 @@ viewCommands theme openedDropdown cursorMode canvas =
     in
     div [ class "tw-commands", css [ Tw.absolute, Tw.bottom_0, Tw.right_0, Tw.p_3 ] ]
         [ span [ css [ Tw.relative, Tw.z_0, Tw.inline_flex, Tw.shadow_sm, Tw.rounded_md ] ]
-            [ button [ type_ "button", onClick FitContent, css [ Tw.rounded_l_md, Tw.rounded_r_md, buttonStyles, classic ] ] [ Icon.solid ArrowsExpand [] ] |> Tooltip.top "Fit content in view"
+            [ button [ type_ "button", onClick FitContent, css [ Tw.rounded_l_md, Tw.rounded_r_md, buttonStyles, classic ] ] [ Icon.solid ArrowsExpand [] ] |> Tooltip.t "Fit content in view"
             ]
         , span [ css [ Tw.relative, Tw.z_0, Tw.inline_flex, Tw.shadow_sm, Tw.rounded_md, Tw.ml_2 ] ]
-            [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ Tw.rounded_l_md, buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick [] ] |> Tooltip.top "Select tool"
-            , button [ type_ "button", onClick (CursorMode CursorDrag), css [ Tw.neg_ml_px, Tw.rounded_r_md, buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand [] ] |> Tooltip.top "Drag tool"
+            [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ Tw.rounded_l_md, buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick [] ] |> Tooltip.t "Select tool"
+            , button [ type_ "button", onClick (CursorMode CursorDrag), css [ Tw.neg_ml_px, Tw.rounded_r_md, buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand [] ] |> Tooltip.t "Drag tool"
             ]
         , span [ css [ Tw.relative, Tw.z_0, Tw.inline_flex, Tw.shadow_sm, Tw.rounded_md, Tw.ml_2 ] ]
             [ button [ type_ "button", onClick (Zoom (-canvas.zoom / 10)), css [ Tw.rounded_l_md, buttonStyles, classic ] ] [ Icon.solid Minus [] ]
