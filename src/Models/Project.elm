@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, addSource, addUserSource, compute, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
+module Models.Project exposing (Project, addSource, addUserSource, compute, create, decode, deleteSource, encode, new, refreshSource, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
 import Conf
 import Dict exposing (Dict)
@@ -85,6 +85,11 @@ updateSource id transform project =
             )
         )
         project
+
+
+refreshSource : Source -> Project -> Project
+refreshSource source project =
+    project |> updateSource source.id (Source.refreshWith source)
 
 
 addSource : Source -> Project -> Project

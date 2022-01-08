@@ -169,7 +169,7 @@ update req msg model =
             model |> handleFindPath message
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings message
+            model.project |> M.mapOrElse (\p -> handleProjectSettings message p model) ( model, Cmd.none )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -252,7 +252,7 @@ handleJsMessage req message model =
             ( model, Cmd.batch ((projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) []) ++ (errors |> List.concatMap (\( name, err ) -> [ T.send (toastError ("Unable to read project <b>" ++ name ++ "</b>:<br>" ++ D.errorToHtml err)), trackJsonError "decode-project" err ]))) )
 
         GotLocalFile now projectId sourceId file content ->
-            ( model, T.send ((PSFileLoaded |> SourceReader.local now projectId sourceId file content) |> PSParsingMsg |> ProjectSettingsMsg) )
+            ( model, T.send ((PSFileLoaded |> SourceReader.local now projectId sourceId file content) |> PSSourceParsingMsg |> ProjectSettingsMsg) )
 
         --GotRemoteFile now projectId sourceId url content sample ->
         --    -- send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content))

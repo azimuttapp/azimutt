@@ -1,4 +1,4 @@
-module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, path)
+module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, path, same)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -27,6 +27,22 @@ path sourceContent =
 
         UserDefined ->
             ""
+
+
+same : SourceKind -> SourceKind -> Bool
+same k2 k1 =
+    case ( k1, k2 ) of
+        ( LocalFile _ _ _, LocalFile _ _ _ ) ->
+            True
+
+        ( RemoteFile _ _, RemoteFile _ _ ) ->
+            True
+
+        ( UserDefined, UserDefined ) ->
+            True
+
+        _ ->
+            False
 
 
 encode : SourceKind -> Value

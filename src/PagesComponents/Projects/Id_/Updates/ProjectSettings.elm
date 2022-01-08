@@ -31,8 +31,8 @@ type alias Model x =
     }
 
 
-handleProjectSettings : ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
-handleProjectSettings msg model =
+handleProjectSettings : ProjectSettingsMsg -> Project -> Model x -> ( Model x, Cmd Msg )
+handleProjectSettings msg project model =
     case msg of
         PSOpen ->
             ( { model | settings = Just { id = Conf.ids.settingsDialog } }, T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog) )
@@ -52,13 +52,16 @@ handleProjectSettings msg model =
             ( model |> setProject (Project.deleteSource source.id), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
 
         PSSourceUploadOpen source ->
-            ( { model | sourceUpload = Just { id = Conf.ids.sourceUploadDialog, source = source, parsing = { selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing } } }, T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+            ( { model | sourceUpload = Just { id = Conf.ids.sourceUploadDialog, source = source, parsing = { projectId = project.id, sourceId = source |> Maybe.map .id, selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing } } }, T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
 
         PSSourceUploadClose ->
             ( { model | sourceUpload = Nothing }, Cmd.none )
 
-        PSParsingMsg message ->
-            model |> setParsingWithCmd (handleParsing message (PSParsingMsg >> ProjectSettingsMsg))
+        PSSourceParsingMsg message ->
+            model |> setParsingWithCmd (handleParsing message (PSSourceParsingMsg >> ProjectSettingsMsg))
+
+        PSSourceRefresh source ->
+            ( model |> setProject (Project.refreshSource source), T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) )
 
         PSToggleSchema schema ->
             model |> updateSettingsAndComputeProject (\s -> { s | removedSchemas = s.removedSchemas |> L.toggle schema })
@@ -81,7 +84,7 @@ handleParsing msg wrap model =
     -- FIXME: mutualize this with src/Pages/Projects/New.elm
     case msg of
         PSSelectLocalFile file ->
-            ( { model | selectedLocalFile = Just file }, readLocalFile Nothing Nothing file )
+            ( { model | selectedLocalFile = Just file }, readLocalFile (Just model.projectId) model.sourceId file )
 
         PSFileLoaded projectId sourceInfo fileContent ->
             ( { model

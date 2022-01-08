@@ -23,6 +23,7 @@ import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.SourceInfo exposing (SourceInfo)
@@ -86,7 +87,9 @@ type alias SourceUploadDialog =
 
 
 type alias SourceParsing msg =
-    { selectedLocalFile : Maybe File
+    { projectId : ProjectId
+    , sourceId : Maybe SourceId
+    , selectedLocalFile : Maybe File
     , selectedSample : Maybe String
     , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
     , parsedSchema : Maybe (ParsingState msg)
@@ -191,7 +194,8 @@ type ProjectSettingsMsg
     | PSDeleteSource Source
     | PSSourceUploadOpen (Maybe Source)
     | PSSourceUploadClose
-    | PSParsingMsg PSParsingMsg
+    | PSSourceParsingMsg PSParsingMsg
+    | PSSourceRefresh Source
     | PSToggleSchema SchemaName
     | PSToggleRemoveViews
     | PSUpdateRemovedTables String

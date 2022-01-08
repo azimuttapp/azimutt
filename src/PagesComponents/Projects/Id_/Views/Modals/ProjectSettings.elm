@@ -8,7 +8,7 @@ import Dict
 import Html.Styled exposing (Attribute, Html, button, div, fieldset, input, label, legend, option, p, select, span, text)
 import Html.Styled.Attributes exposing (checked, class, css, for, id, placeholder, selected, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
-import Libs.DateTime exposing (formatDate, formatTime)
+import Libs.DateTime as DateTime
 import Libs.Html.Styled.Attributes exposing (ariaDescribedby)
 import Libs.List as L
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -57,9 +57,9 @@ viewSourcesSection zone project =
 viewSource : ProjectId -> Time.Zone -> Source -> Html Msg
 viewSource _ zone source =
     let
-        view : Icon -> Time.Posix -> String -> Html Msg
+        view : Icon -> String -> Time.Posix -> String -> Html Msg
         view =
-            \icon updatedAt labelTitle ->
+            \icon updatedAtText updatedAt labelTitle ->
                 div [ css [ Tw.px_4, Tw.py_2 ] ]
                     [ div [ css [ Tw.flex, Tw.justify_between ] ]
                         [ viewCheckbox ("settings-source-" ++ SourceId.toString source.id)
@@ -79,24 +79,23 @@ viewSource _ zone source =
                         ]
                     , div [ css [ Tw.flex, Tw.justify_between ] ]
                         [ span [ css [ Tu.text_muted ] ] [ text ((source.tables |> S.pluralizeD "table") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
-                        , span [ css [ Tu.text_muted ] ] [ text (formatDate zone updatedAt) ] |> Tooltip.lt ("at " ++ formatTime zone updatedAt)
+                        , span [ css [ Tu.text_muted ] ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.lt (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
                         ]
                     ]
     in
     case source.kind of
         LocalFile path _ modified ->
-            view DocumentText modified (path ++ " file")
+            view DocumentText "File last modified on " modified (path ++ " file")
 
         RemoteFile url _ ->
-            view CloudDownload source.updatedAt ("File from " ++ url)
+            view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
 
         UserDefined ->
-            view User source.updatedAt "Created by you"
+            view User "Last edited on " source.updatedAt "Created by you"
 
 
 viewAddSource : ProjectId -> Html Msg
 viewAddSource _ =
-    -- viewFileLoader "list-group-item list-group-item-action" (Just project) Nothing (small [] [ viewIcon Icon.plus, text " ", text "Add source" ])
     button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ Tw.px_4, Tw.py_2, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ]
         [ Icon.solid Plus [ Tw.inline ], text "Add source" ]
 

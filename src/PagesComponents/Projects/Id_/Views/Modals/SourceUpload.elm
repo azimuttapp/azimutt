@@ -75,7 +75,7 @@ localFileModal theme zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , FileInput.basic theme "file-upload" (PSSelectLocalFile >> PSParsingMsg >> ProjectSettingsMsg)
+        , FileInput.basic theme "file-upload" (PSSelectLocalFile >> PSSourceParsingMsg >> ProjectSettingsMsg)
         , div []
             (((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample")))
                 |> Maybe.map2
@@ -90,7 +90,7 @@ localFileModal theme zone now titleId source fileName updatedAt model =
             )
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-        [ Button.primary3 theme.color (model.parsedSource |> M.mapOrElse (\s -> [ onClick (Noop ("Refresh source " ++ s.name)) ]) [ disabled True ]) [ text "Refresh" ]
+        [ Button.primary3 theme.color (model.parsedSource |> M.mapOrElse (\s -> [ onClick (ProjectSettingsMsg (PSSourceRefresh s)) ]) [ disabled True ]) [ text "Refresh" ]
         , Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]
         ]
     ]
