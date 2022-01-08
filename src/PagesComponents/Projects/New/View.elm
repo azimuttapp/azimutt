@@ -2,7 +2,6 @@ module PagesComponents.Projects.New.View exposing (viewNewProject)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
 import Conf
@@ -19,7 +18,7 @@ import Libs.Models.Theme exposing (Theme)
 import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
-import Services.SourceParsing.Views
+import Services.SourceParsing.Views exposing (viewSourceParsing)
 import Shared
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
@@ -80,14 +79,16 @@ viewTab theme selected tab =
 viewTabContent : Theme -> Model -> Html Msg
 viewTabContent theme model =
     div []
-        [ case model.selectedTab of
+        ([ case model.selectedTab of
             Schema ->
                 viewSchemaUpload theme
 
             Sample ->
                 viewSampleSelection theme model.selectedSample
-        , viewSchemaImport theme model
-        ]
+         , viewSourceParsing model
+         ]
+            ++ (model.project |> M.mapOrElse (\p -> [ viewActions theme p ]) [])
+        )
 
 
 viewSchemaUpload : Theme -> Html Msg
@@ -132,24 +133,6 @@ viewHeading title description =
         [ h2 [ css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text title ]
         , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text description ]
         ]
-
-
-viewSchemaImport : Theme -> Model -> Html Msg
-viewSchemaImport theme model =
-    div []
-        ((((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample")))
-            |> Maybe.map2
-                (\p source ->
-                    [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.project |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                    , Services.SourceParsing.Views.viewLogs source p
-                    , Services.SourceParsing.Views.viewErrorAlert p
-                    ]
-                )
-                model.parsedSchema
-            |> Maybe.withDefault []
-         )
-            ++ (model.project |> M.mapOrElse (\p -> [ viewActions theme p ]) [])
-        )
 
 
 viewActions : Theme -> Project -> Html Msg

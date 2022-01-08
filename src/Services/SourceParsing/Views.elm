@@ -1,21 +1,53 @@
-module Services.SourceParsing.Views exposing (viewErrorAlert, viewLogs)
+module Services.SourceParsing.Views exposing (Model, viewSourceParsing)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
+import Components.Molecules.Divider as Divider
 import Conf
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict
 import Html.Styled exposing (Html, div, p, text)
 import Html.Styled.Attributes exposing (css, href)
+import Libs.FileInput exposing (File)
 import Libs.Html.Styled exposing (bText)
 import Libs.Maybe as M
+import Libs.Models exposing (FileContent)
 import Libs.Models.Color as Color
 import Libs.Result as R
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.Source exposing (Source)
+import Models.SourceInfo exposing (SourceInfo)
 import Services.SourceParsing.Models exposing (ParsingState)
 import Tailwind.Utilities as Tw
 import Url exposing (percentEncode)
+
+
+type alias Model x msg =
+    { x
+        | selectedLocalFile : Maybe File
+        , selectedSample : Maybe String
+        , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
+        , parsedSchema : Maybe (ParsingState msg)
+        , parsedSource : Maybe Source
+    }
+
+
+viewSourceParsing : Model x msg -> Html msg
+viewSourceParsing model =
+    div []
+        (((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample")))
+            |> Maybe.map2
+                (\parsedSchema sourceText ->
+                    [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.parsedSource |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                    , viewLogs sourceText parsedSchema
+                    , viewErrorAlert parsedSchema
+                    ]
+                )
+                model.parsedSchema
+            |> Maybe.withDefault []
+        )
 
 
 viewLogs : String -> ParsingState msg -> Html msg

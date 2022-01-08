@@ -4,6 +4,7 @@ import FileValue exposing (File)
 import Libs.Models exposing (FileContent)
 import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.Source exposing (Source)
 import Models.SourceInfo exposing (SourceInfo)
 import Ports exposing (JsMsg)
 import Services.SourceParsing.Models exposing (ParsingMsg, ParsingState)
@@ -17,6 +18,7 @@ type alias Model =
     , selectedSample : Maybe String
     , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
     , parsedSchema : Maybe (ParsingState Msg)
+    , parsedSource : Maybe Source
     , project : Maybe Project
     }
 

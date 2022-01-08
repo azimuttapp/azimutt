@@ -69,7 +69,7 @@ viewSource _ zone source =
                             source.enabled
                             (ProjectSettingsMsg (PSToggleSource source))
                         , div []
-                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ Tu.when (source.kind == UserDefined) [ Tw.hidden ], Css.focus [ Tw.outline_none ] ] ]
+                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ Tu.when (source.kind == UserDefined || source.fromSample /= Nothing) [ Tw.hidden ], Css.focus [ Tw.outline_none ] ] ]
                                 [ Icon.solid Refresh [ Tw.inline ] ]
                                 |> Tooltip.bl "Refresh this source"
                             , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ Css.focus [ Tw.outline_none ] ] ]

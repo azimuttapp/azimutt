@@ -63,6 +63,9 @@ handleProjectSettings msg project model =
         PSSourceRefresh source ->
             ( model |> setProject (Project.refreshSource source), T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) )
 
+        PSSourceAdd source ->
+            ( model |> setProject (Project.addSource source), T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) )
+
         PSToggleSchema schema ->
             model |> updateSettingsAndComputeProject (\s -> { s | removedSchemas = s.removedSchemas |> L.toggle schema })
 

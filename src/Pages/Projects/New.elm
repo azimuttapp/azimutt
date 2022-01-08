@@ -54,6 +54,7 @@ init req =
       , selectedSample = Nothing
       , loadedFile = Nothing
       , parsedSchema = Nothing
+      , parsedSource = Nothing
       , project = Nothing
       }
     , Cmd.batch
@@ -77,13 +78,13 @@ update req shared msg model =
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
         SelectTab tab ->
-            ( { model | selectedTab = tab, selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, Cmd.none )
+            ( { model | selectedTab = tab, selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing, project = Nothing }, Cmd.none )
 
         SelectLocalFile file ->
-            ( { model | selectedLocalFile = Just file, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, readLocalFile Nothing Nothing file )
+            ( { model | selectedLocalFile = Just file, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing, project = Nothing }, readLocalFile Nothing Nothing file )
 
         SelectSample sample ->
-            ( { model | selectedLocalFile = Nothing, selectedSample = Just sample, loadedFile = Nothing, parsedSchema = Nothing, project = Nothing }, Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> readRemoteFile Nothing Nothing s.url (Just s.key)) |> Maybe.withDefault Cmd.none )
+            ( { model | selectedLocalFile = Nothing, selectedSample = Just sample, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing, project = Nothing }, Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> readRemoteFile Nothing Nothing s.url (Just s.key)) |> Maybe.withDefault Cmd.none )
 
         FileLoaded projectId sourceInfo fileContent ->
             ( { model | loadedFile = Just ( projectId, sourceInfo, fileContent ), parsedSchema = Just (ProjectParser.init fileContent ParseMsg BuildProject) }
@@ -106,9 +107,9 @@ update req shared msg model =
 
         BuildProject ->
             model.parsedSchema
-                |> Maybe.andThen (\p -> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, buildSourceFromSql sourceInfo lines schema, p )) model.loadedFile p.lines p.schema)
-                |> Maybe.map (\( projectId, source, parser ) -> ( Project.create projectId (S.unique (shared |> Shared.projects |> List.map .name) source.name) source, parser ))
-                |> Maybe.map (\( project, parser ) -> ( { model | project = Just project }, track (Tracking.events.parsedProject parser project) ))
+                |> Maybe.andThen (\parsedSchema -> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( parsedSchema, buildSourceFromSql sourceInfo lines schema, projectId )) model.loadedFile parsedSchema.lines parsedSchema.schema)
+                |> Maybe.map (\( parsedSchema, source, projectId ) -> ( parsedSchema, source, Project.create projectId (S.unique (shared |> Shared.projects |> List.map .name) source.name) source ))
+                |> Maybe.map (\( parsedSchema, source, project ) -> ( { model | parsedSource = Just source, project = Just project }, track (Tracking.events.parsedProject parsedSchema project) ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
         DropSchema ->

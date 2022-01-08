@@ -196,6 +196,7 @@ type ProjectSettingsMsg
     | PSSourceUploadClose
     | PSSourceParsingMsg PSParsingMsg
     | PSSourceRefresh Source
+    | PSSourceAdd Source
     | PSToggleSchema SchemaName
     | PSToggleRemoveViews
     | PSUpdateRemovedTables String
