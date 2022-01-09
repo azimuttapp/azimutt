@@ -37,7 +37,7 @@ viewSourceUpload theme zone now opened model =
         { id = model.id
         , titleId = titleId
         , isOpen = opened
-        , onBackgroundClick = ModalClose (ProjectSettingsMsg PSSourceUploadClose)
+        , onBackgroundClick = PSSourceUploadClose |> ProjectSettingsMsg |> ModalClose
         }
         (model.parsing.source
             |> M.mapOrElse
@@ -47,7 +47,7 @@ viewSourceUpload theme zone now opened model =
                             localFileModal theme zone now titleId source filename updatedAt model.parsing
 
                         RemoteFile url _ ->
-                            remoteFileModal theme zone now titleId source url
+                            remoteFileModal theme zone now titleId source url model.parsing
 
                         UserDefined ->
                             userDefinedModal theme titleId
@@ -78,14 +78,14 @@ localFileModal theme zone now titleId source fileName updatedAt model =
         , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-        [ Button.primary3 theme.color (model.parsedSource |> M.mapOrElse (\s -> [ onClick (ProjectSettingsMsg (PSSourceRefresh s)) ]) [ disabled True ]) [ text "Refresh" ]
-        , Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]
+        [ primaryBtn theme (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
+        , closeBtn
         ]
     ]
 
 
-remoteFileModal : Theme -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> List (Html Msg)
-remoteFileModal theme zone now titleId source fileUrl =
+remoteFileModal : Theme -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> SQLSource Msg -> List (Html Msg)
+remoteFileModal theme zone now titleId source fileUrl model =
     [ div [ css [ Tw.max_w_3xl, Tw.mx_6, Tw.mt_6 ] ]
         [ div [ css [ Tw.mt_3, Bp.sm [ Tw.mt_5 ] ] ]
             [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.text_center, Tw.font_medium, Tw.text_gray_900 ] ]
@@ -102,13 +102,14 @@ remoteFileModal theme zone now titleId source fileUrl =
                     ]
                 ]
             ]
-        , p [ css [ Tw.mt_3 ] ]
-            [ text "Bla bla bla TODO FIXME"
+        , div [ css [ Tw.mt_3, Tw.flex, Tw.justify_center ] ]
+            [ Button.primary5 theme.color [ onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
             ]
+        , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-        [ Button.primary3 theme.color [ onClick (Noop "Refresh source"), disabled True ] [ text "Refresh" ]
-        , Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]
+        [ primaryBtn theme (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
+        , closeBtn
         ]
     ]
 
@@ -131,7 +132,8 @@ userDefinedModal theme titleId =
             ]
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-        [ Button.primary3 theme.color [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ] ]
+        [ primaryBtn theme (PSSourceUploadClose |> ProjectSettingsMsg |> ModalClose |> Just) "Close"
+        ]
     ]
 
 
@@ -152,7 +154,21 @@ newSourceModal theme titleId model =
         , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-        [ Button.primary3 theme.color (model.parsedSource |> M.mapOrElse (\s -> [ onClick (ProjectSettingsMsg (PSSourceAdd s)) ]) [ disabled True ]) [ text "Add source" ]
-        , Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]
+        [ primaryBtn theme (model.parsedSource |> Maybe.map (PSSourceAdd >> ProjectSettingsMsg)) "Add source"
+        , closeBtn
         ]
     ]
+
+
+
+-- helpers
+
+
+primaryBtn : Theme -> Maybe Msg -> String -> Html Msg
+primaryBtn theme clicked label =
+    Button.primary3 theme.color (clicked |> M.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
+
+
+closeBtn : Html Msg
+closeBtn =
+    Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]

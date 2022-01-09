@@ -254,9 +254,9 @@ handleJsMessage req message model =
         GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SQLSource.gotLocalFile now projectId sourceId file content |> PSSQLSourceMsg |> ProjectSettingsMsg) )
 
-        --GotRemoteFile now projectId sourceId url content sample ->
-        --    -- send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content))
-        --    ( model, T.send (Noop "GotRemoteFile not handled") )
+        GotRemoteFile now projectId sourceId url content sample ->
+            ( model, T.send (SQLSource.gotRemoteFile now projectId sourceId url content sample |> PSSQLSourceMsg |> ProjectSettingsMsg) )
+
         GotSourceId now sourceId src ref ->
             ( model |> setProject (Project.addUserSource sourceId Dict.empty [ Relation.virtual src ref sourceId ] now), T.send (toastInfo "Created a user source to add the relation.") )
 
@@ -265,9 +265,6 @@ handleJsMessage req message model =
 
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message:<br>" ++ D.errorToHtml err)), trackJsonError "js-message" err ] )
-
-        _ ->
-            ( model, Cmd.none )
 
 
 

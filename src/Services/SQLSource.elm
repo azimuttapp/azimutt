@@ -41,6 +41,7 @@ type alias SQLSource msg =
     { project : Maybe Project
     , source : Maybe Source
     , selectedLocalFile : Maybe File
+    , selectedRemoteFile : Maybe FileUrl
     , selectedSample : Maybe String
     , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
     , parsedSchema : Maybe (SQLParsing msg)
@@ -64,6 +65,7 @@ type alias SQLParsing msg =
 
 type SQLSourceMsg
     = SelectLocalFile File
+    | SelectRemoteFile FileUrl
     | SelectSample String
     | FileLoaded ProjectId SourceInfo FileContent
     | ParseMsg ParsingMsg
@@ -86,6 +88,7 @@ init project source =
     { project = project
     , source = source
     , selectedLocalFile = Nothing
+    , selectedRemoteFile = Nothing
     , selectedSample = Nothing
     , loadedFile = Nothing
     , parsedSchema = Nothing
@@ -116,12 +119,17 @@ update : SQLSourceMsg -> (SQLSourceMsg -> msg) -> SQLSource msg -> ( SQLSource m
 update msg wrap model =
     case msg of
         SelectLocalFile file ->
-            ( { model | selectedLocalFile = Just file, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing }
+            ( init model.project model.source |> (\m -> { m | selectedLocalFile = Just file })
             , readLocalFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) file
             )
 
+        SelectRemoteFile url ->
+            ( init model.project model.source |> (\m -> { m | selectedRemoteFile = Just url })
+            , readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) url Nothing
+            )
+
         SelectSample sample ->
-            ( { model | selectedLocalFile = Nothing, selectedSample = Just sample, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing }
+            ( init model.project model.source |> (\m -> { m | selectedSample = Just sample })
             , Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) s.url (Just s.key)) |> Maybe.withDefault Cmd.none
             )
 
@@ -241,7 +249,10 @@ lastSegment path =
 viewParsing : SQLSource msg -> Html msg
 viewParsing model =
     div []
-        (((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample")))
+        (((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
+            |> M.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
+            |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample"))
+         )
             |> Maybe.map2
                 (\parsedSchema sourceText ->
                     [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.parsedSource |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
