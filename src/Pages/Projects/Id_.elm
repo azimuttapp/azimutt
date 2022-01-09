@@ -249,7 +249,7 @@ handleJsMessage req message model =
             model |> updateSizes sizes
 
         GotProjects ( errors, projects ) ->
-            ( model, Cmd.batch ((projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) []) ++ (errors |> List.concatMap (\( name, err ) -> [ T.send (toastError ("Unable to read project <b>" ++ name ++ "</b>:<br>" ++ D.errorToHtml err)), trackJsonError "decode-project" err ]))) )
+            ( model, Cmd.batch ((projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) []) ++ (errors |> List.concatMap (\( name, err ) -> [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ D.errorToHtml err)), trackJsonError "decode-project" err ]))) )
 
         GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SQLSource.gotLocalFile now projectId sourceId file content |> PSSQLSourceMsg |> ProjectSettingsMsg) )
@@ -264,7 +264,7 @@ handleJsMessage req message model =
             handleHotkey model hotkey
 
         Error err ->
-            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message:<br>" ++ D.errorToHtml err)), trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ D.errorToHtml err)), trackJsonError "js-message" err ] )
 
 
 

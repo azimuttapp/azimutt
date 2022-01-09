@@ -141,6 +141,7 @@ window.addEventListener('load', function() {
         if (localStorage.getItem(key) === null) { project.createdAt = now }
         try {
             localStorage.setItem(key, JSON.stringify(project))
+            loadProjects()
         } catch (e) {
             if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
                 showToast({kind: 'error', message: "Can't save project, storage quota exceeded. Use a smaller schema or clean unused projects."})

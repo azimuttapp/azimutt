@@ -1,6 +1,8 @@
 module PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 
 import Components.Atoms.Button as Button
+import Components.Atoms.Icon exposing (Icon(..))
+import Components.Molecules.Alert as Alert
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.Modal as Modal
 import Conf
@@ -74,7 +76,23 @@ localFileModal theme zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , FileInput.basic theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg)
+        , div [ css [ Tw.mt_3 ] ] [ FileInput.basic theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) ]
+        , case ( source.kind, model.parsedSource |> Maybe.map .kind ) of
+            ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
+                [ Just ("Your file name changed from " ++ name1 ++ " to " ++ name2) |> M.filter (\_ -> name1 /= name2)
+                , Just "You file is older than the previous one" |> M.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
+                ]
+                    |> List.filterMap identity
+                    |> (\warnings ->
+                            if warnings == [] then
+                                div [] []
+
+                            else
+                                div [ css [ Tw.mt_3 ] ] [ Alert.withList { color = Color.yellow, icon = Exclamation, title = "Found some strange things", items = warnings } ]
+                       )
+
+            _ ->
+                div [] []
         , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
@@ -150,7 +168,7 @@ newSourceModal theme titleId model =
                     ]
                 ]
             ]
-        , FileInput.basic theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg)
+        , div [ css [ Tw.mt_3 ] ] [ FileInput.basic theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) ]
         , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
