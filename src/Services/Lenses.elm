@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.Helpers exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayouts, setNavbar, setPosition, setProject, setProjectWithCmd, setRelations, setSearch, setSettings, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
+module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setSearch, setSettings, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -100,6 +100,26 @@ setPosition delta zoom item =
 setSettings : (s -> s) -> { item | settings : s } -> { item | settings : s }
 setSettings transform item =
     { item | settings = item.settings |> transform }
+
+
+setSourceUpload : (su -> su) -> { item | sourceUpload : Maybe su } -> { item | sourceUpload : Maybe su }
+setSourceUpload transform item =
+    { item | sourceUpload = item.sourceUpload |> Maybe.map transform }
+
+
+setSourceUploadWithCmd : (su -> ( su, Cmd msg )) -> { item | sourceUpload : Maybe su } -> ( { item | sourceUpload : Maybe su }, Cmd msg )
+setSourceUploadWithCmd transform item =
+    item.sourceUpload |> M.mapOrElse (transform >> Tuple.mapFirst (\su -> { item | sourceUpload = Just su })) ( item, Cmd.none )
+
+
+setParsing : (p -> p) -> { item | parsing : p } -> { item | parsing : p }
+setParsing transform item =
+    { item | parsing = transform item.parsing }
+
+
+setParsingWithCmd : (p -> ( p, Cmd msg )) -> { item | parsing : p } -> ( { item | parsing : p }, Cmd msg )
+setParsingWithCmd transform item =
+    item.parsing |> transform |> Tuple.mapFirst (\p -> { item | parsing = p })
 
 
 

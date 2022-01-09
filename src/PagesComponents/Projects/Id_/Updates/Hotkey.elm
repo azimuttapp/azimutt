@@ -5,9 +5,9 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.App.Updates.Helpers exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
 import Ports exposing (blur, focus, mouseDown, scrollTo)
+import Services.Lenses exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
 
 
 handleHotkey : Model -> String -> ( Model, Cmd Msg )

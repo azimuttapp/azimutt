@@ -15,8 +15,8 @@ import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Models exposing (CursorMode(..), DragState, Msg)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
 import Ports exposing (toastInfo)
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
 
 
 type alias Model x =

@@ -10,8 +10,8 @@ import Libs.Models.Size as Size
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setTableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setTableProps)
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )

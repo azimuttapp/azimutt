@@ -19,8 +19,8 @@ import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind.Utilities as Tu
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), PSParsingMsg(..), ProjectSettingsMsg(..), SourceParsing, SourceUploadDialog)
-import Services.SourceParsing.Views exposing (viewSourceParsing)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsMsg(..), SourceUploadDialog)
+import Services.SQLSource as SQLSource exposing (SQLSource, SQLSourceMsg(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 import Time
@@ -39,7 +39,7 @@ viewSourceUpload theme zone now opened model =
         , isOpen = opened
         , onBackgroundClick = ModalClose (ProjectSettingsMsg PSSourceUploadClose)
         }
-        (model.source
+        (model.parsing.source
             |> M.mapOrElse
                 (\source ->
                     case source.kind of
@@ -56,7 +56,7 @@ viewSourceUpload theme zone now opened model =
         )
 
 
-localFileModal : Theme -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SourceParsing Msg -> List (Html Msg)
+localFileModal : Theme -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SQLSource Msg -> List (Html Msg)
 localFileModal theme zone now titleId source fileName updatedAt model =
     [ div [ css [ Tw.max_w_3xl, Tw.mx_6, Tw.mt_6 ] ]
         [ div [ css [ Tw.mt_3, Bp.sm [ Tw.mt_5 ] ] ]
@@ -74,8 +74,8 @@ localFileModal theme zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , FileInput.basic theme "file-upload" (PSSelectLocalFile >> PSSourceParsingMsg >> ProjectSettingsMsg)
-        , viewSourceParsing model
+        , FileInput.basic theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg)
+        , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
         [ Button.primary3 theme.color (model.parsedSource |> M.mapOrElse (\s -> [ onClick (ProjectSettingsMsg (PSSourceRefresh s)) ]) [ disabled True ]) [ text "Refresh" ]
@@ -135,7 +135,7 @@ userDefinedModal theme titleId =
     ]
 
 
-newSourceModal : Theme -> HtmlId -> SourceParsing Msg -> List (Html Msg)
+newSourceModal : Theme -> HtmlId -> SQLSource Msg -> List (Html Msg)
 newSourceModal theme titleId model =
     [ div [ css [ Tw.max_w_3xl, Tw.mx_6, Tw.mt_6 ] ]
         [ div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_5 ] ] ]
@@ -148,8 +148,8 @@ newSourceModal theme titleId model =
                     ]
                 ]
             ]
-        , FileInput.basic theme "file-upload" (PSSelectLocalFile >> PSSourceParsingMsg >> ProjectSettingsMsg)
-        , viewSourceParsing model
+        , FileInput.basic theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg)
+        , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
         [ Button.primary3 theme.color (model.parsedSource |> M.mapOrElse (\s -> [ onClick (ProjectSettingsMsg (PSSourceAdd s)) ]) [ disabled True ]) [ text "Add source" ]

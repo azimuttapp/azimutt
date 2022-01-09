@@ -18,7 +18,6 @@ import PagesComponents.App.Updates exposing (updateSizes)
 import PagesComponents.App.Updates.Canvas exposing (fitCanvas, handleWheel, resetCanvas, zoomCanvas)
 import PagesComponents.App.Updates.Drag exposing (dragEnd, dragMove, dragStart)
 import PagesComponents.App.Updates.FindPath exposing (handleFindPath)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableInList, setTables, setTime)
 import PagesComponents.App.Updates.Layout exposing (handleLayout)
 import PagesComponents.App.Updates.PortMsg exposing (handleJsMsg)
 import PagesComponents.App.Updates.Project exposing (deleteProject, useProject)
@@ -30,6 +29,7 @@ import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Helpers as Helpers
 import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, hideOffcanvas, listenHotkeys, loadProjects, observeSize, onJsMessage, showModal, trackPage)
 import Request
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableInList, setTables, setTime)
 import Shared
 import Time
 import View exposing (View)

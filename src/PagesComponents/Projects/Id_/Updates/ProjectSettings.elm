@@ -1,7 +1,6 @@
 module PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (Model, handleProjectSettings)
 
 import Conf
-import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 import Dict
 import Libs.Bool as B
 import Libs.List as L
@@ -15,12 +14,10 @@ import Models.Project.Layout exposing (Layout)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.App.Updates.Helpers exposing (setLayout, setProject, setSettings)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), PSParsingMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceParsing, SourceUploadDialog, toastInfo)
-import Ports exposing (observeTablesSize, readLocalFile, track)
-import Services.ProjectParser as ProjectParser
-import Services.SourceParsing.Models exposing (ParsingMsg(..))
-import Tracking
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, toastInfo)
+import Ports exposing (observeTablesSize)
+import Services.Lenses exposing (setLayout, setParsingWithCmd, setProject, setSettings, setSourceUploadWithCmd)
+import Services.SQLSource as SQLSource
 
 
 type alias Model x =
@@ -31,8 +28,8 @@ type alias Model x =
     }
 
 
-handleProjectSettings : ProjectSettingsMsg -> Project -> Model x -> ( Model x, Cmd Msg )
-handleProjectSettings msg project model =
+handleProjectSettings : ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
+handleProjectSettings msg model =
     case msg of
         PSOpen ->
             ( { model | settings = Just { id = Conf.ids.settingsDialog } }, T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog) )
@@ -52,13 +49,13 @@ handleProjectSettings msg project model =
             ( model |> setProject (Project.deleteSource source.id), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
 
         PSSourceUploadOpen source ->
-            ( { model | sourceUpload = Just { id = Conf.ids.sourceUploadDialog, source = source, parsing = { projectId = project.id, sourceId = source |> Maybe.map .id, selectedLocalFile = Nothing, selectedSample = Nothing, loadedFile = Nothing, parsedSchema = Nothing, parsedSource = Nothing } } }, T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+            ( { model | sourceUpload = Just { id = Conf.ids.sourceUploadDialog, parsing = SQLSource.init model.project source } }, T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
 
         PSSourceUploadClose ->
             ( { model | sourceUpload = Nothing }, Cmd.none )
 
-        PSSourceParsingMsg message ->
-            model |> setParsingWithCmd (handleParsing message (PSSourceParsingMsg >> ProjectSettingsMsg))
+        PSSQLSourceMsg message ->
+            model |> setSourceUploadWithCmd (setParsingWithCmd (SQLSource.update message (PSSQLSourceMsg >> ProjectSettingsMsg)))
 
         PSSourceRefresh source ->
             ( model |> setProject (Project.refreshSource source), T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) )
@@ -80,47 +77,6 @@ handleProjectSettings msg project model =
 
         PSUpdateColumnOrder order ->
             ( model |> setProject (\p -> p |> setSettings (\s -> { s | columnOrder = order }) |> setLayout (sortColumns order p)), Cmd.none )
-
-
-handleParsing : PSParsingMsg -> (PSParsingMsg -> msg) -> SourceParsing msg -> ( SourceParsing msg, Cmd msg )
-handleParsing msg wrap model =
-    -- FIXME: mutualize this with src/Pages/Projects/New.elm
-    case msg of
-        PSSelectLocalFile file ->
-            ( { model | selectedLocalFile = Just file }, readLocalFile (Just model.projectId) model.sourceId file )
-
-        PSFileLoaded projectId sourceInfo fileContent ->
-            ( { model
-                | loadedFile = Just ( projectId, sourceInfo, fileContent )
-                , parsedSchema = Just (ProjectParser.init fileContent (PSParseMsg >> wrap) (PSBuildSource |> wrap))
-              }
-            , T.send (BuildLines |> PSParseMsg |> wrap)
-            )
-
-        PSParseMsg parseMsg ->
-            model.parsedSchema
-                |> Maybe.map
-                    (\p ->
-                        p
-                            |> ProjectParser.update parseMsg
-                            |> (\( parsed, message ) ->
-                                    ( { model | parsedSchema = Just parsed }
-                                    , B.cond ((parsed.cpt |> modBy 342) == 1) (T.sendAfter 1 message) (T.send message)
-                                    )
-                               )
-                    )
-                |> Maybe.withDefault ( model, Cmd.none )
-
-        PSBuildSource ->
-            model.parsedSchema
-                |> Maybe.andThen (\p -> p.schema |> Maybe.map3 (\( _, sourceInfo, _ ) lines schema -> ( buildSourceFromSql sourceInfo lines schema, p )) model.loadedFile p.lines)
-                |> Maybe.map (\( source, parser ) -> ( { model | parsedSource = Just source }, track (Tracking.events.parsedSource parser source) ))
-                |> Maybe.withDefault ( model, Cmd.none )
-
-
-setParsingWithCmd : (SourceParsing Msg -> ( SourceParsing Msg, Cmd Msg )) -> { item | sourceUpload : Maybe SourceUploadDialog } -> ( { item | sourceUpload : Maybe SourceUploadDialog }, Cmd Msg )
-setParsingWithCmd transform item =
-    item.sourceUpload |> M.mapOrElse (\su -> su.parsing |> transform |> Tuple.mapFirst (\parsing -> { item | sourceUpload = Just { su | parsing = parsing } })) ( item, Cmd.none )
 
 
 updateSettingsAndComputeProject : (ProjectSettings -> ProjectSettings) -> Model x -> ( Model x, Cmd Msg )

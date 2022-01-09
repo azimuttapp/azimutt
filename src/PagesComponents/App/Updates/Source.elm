@@ -6,9 +6,9 @@ import Libs.Bool as B
 import Libs.Maybe as M
 import Models.Project as Project
 import PagesComponents.App.Models exposing (Model, Msg(..), SourceMsg(..))
-import PagesComponents.App.Updates.Helpers exposing (setProject, setSwitch)
 import PagesComponents.App.Updates.Project exposing (createProject, updateProject)
 import Ports exposing (observeTablesSize, readLocalFile, readRemoteFile, toastError, toastInfo)
+import Services.Lenses exposing (setProject, setSwitch)
 
 
 handleSource : SourceMsg -> Model -> ( Model, Cmd Msg )

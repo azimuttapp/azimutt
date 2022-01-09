@@ -1,13 +1,12 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), DragState, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, PSParsingMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceParsing, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), DragState, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html.Styled exposing (Html)
 import Libs.Area exposing (Area)
-import Libs.FileInput exposing (File)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models exposing (FileContent, Millis, ZoomDelta)
+import Libs.Models exposing (Millis, ZoomDelta)
 import Libs.Models.Color as Color
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -19,16 +18,13 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import Models.SourceInfo exposing (SourceInfo)
 import Ports exposing (JsMsg)
-import Services.SourceParsing.Models exposing (ParsingMsg, ParsingState)
+import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
 import Shared exposing (Confirm)
 
 
@@ -80,21 +76,7 @@ type alias ProjectSettingsDialog =
 
 
 type alias SourceUploadDialog =
-    { id : HtmlId
-    , source : Maybe Source
-    , parsing : SourceParsing Msg
-    }
-
-
-type alias SourceParsing msg =
-    { projectId : ProjectId
-    , sourceId : Maybe SourceId
-    , selectedLocalFile : Maybe File
-    , selectedSample : Maybe String
-    , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
-    , parsedSchema : Maybe (ParsingState msg)
-    , parsedSource : Maybe Source
-    }
+    { id : HtmlId, parsing : SQLSource Msg }
 
 
 type alias HelpDialog =
@@ -194,7 +176,7 @@ type ProjectSettingsMsg
     | PSDeleteSource Source
     | PSSourceUploadOpen (Maybe Source)
     | PSSourceUploadClose
-    | PSSourceParsingMsg PSParsingMsg
+    | PSSQLSourceMsg SQLSourceMsg
     | PSSourceRefresh Source
     | PSSourceAdd Source
     | PSToggleSchema SchemaName
@@ -202,13 +184,6 @@ type ProjectSettingsMsg
     | PSUpdateRemovedTables String
     | PSUpdateHiddenColumns String
     | PSUpdateColumnOrder ColumnOrder
-
-
-type PSParsingMsg
-    = PSSelectLocalFile File
-    | PSFileLoaded ProjectId SourceInfo FileContent
-    | PSParseMsg ParsingMsg
-    | PSBuildSource
 
 
 type HelpMsg

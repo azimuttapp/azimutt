@@ -17,9 +17,9 @@ import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.App.Updates.Helpers exposing (setProject, setSettings)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import Ports exposing (track)
+import Services.Lenses exposing (setProject, setSettings)
 import Tracking
 
 

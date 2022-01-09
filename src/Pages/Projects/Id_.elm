@@ -19,8 +19,7 @@ import Libs.Task as T
 import Models.Project as Project
 import Models.Project.Relation as Relation
 import Page
-import PagesComponents.App.Updates.Helpers exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), PSParsingMsg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
@@ -34,7 +33,8 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..), autofocusWithin, listenHotkeys, observeSize, observeTablesSize, saveProject, track, trackJsonError, trackPage)
 import Request
-import Services.SourceReader as SourceReader
+import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
+import Services.SQLSource as SQLSource
 import Shared
 import Tracking
 import View exposing (View)
@@ -169,7 +169,7 @@ update req msg model =
             model |> handleFindPath message
 
         ProjectSettingsMsg message ->
-            model.project |> M.mapOrElse (\p -> handleProjectSettings message p model) ( model, Cmd.none )
+            model |> handleProjectSettings message
 
         HelpMsg message ->
             model |> handleHelp message
@@ -252,7 +252,7 @@ handleJsMessage req message model =
             ( model, Cmd.batch ((projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) []) ++ (errors |> List.concatMap (\( name, err ) -> [ T.send (toastError ("Unable to read project <b>" ++ name ++ "</b>:<br>" ++ D.errorToHtml err)), trackJsonError "decode-project" err ]))) )
 
         GotLocalFile now projectId sourceId file content ->
-            ( model, T.send ((PSFileLoaded |> SourceReader.local now projectId sourceId file content) |> PSSourceParsingMsg |> ProjectSettingsMsg) )
+            ( model, T.send (SQLSource.gotLocalFile now projectId sourceId file content |> PSSQLSourceMsg |> ProjectSettingsMsg) )
 
         --GotRemoteFile now projectId sourceId url content sample ->
         --    -- send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content))

@@ -12,8 +12,8 @@ import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettin
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Models exposing (Model, Msg, SettingsMsg(..))
-import PagesComponents.App.Updates.Helpers exposing (setLayout, setProject, setSettings)
 import Ports exposing (observeTablesSize)
+import Services.Lenses exposing (setLayout, setProject, setSettings)
 
 
 handleSettings : SettingsMsg -> Model -> ( Model, Cmd Msg )

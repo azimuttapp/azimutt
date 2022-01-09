@@ -6,8 +6,8 @@ import Models.Project as Project exposing (Project)
 import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.App.Models exposing (Model, Msg, VirtualRelation, VirtualRelationMsg(..))
-import PagesComponents.App.Updates.Helpers exposing (setProject)
 import Ports exposing (getSourceId, toastInfo)
+import Services.Lenses exposing (setProject)
 
 
 type alias Model x =

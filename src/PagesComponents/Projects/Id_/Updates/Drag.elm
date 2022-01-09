@@ -8,8 +8,8 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId
 import Models.Project.TableProps as TableProps
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setTableProps, setTables)
 import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setTableProps, setTables)
 
 
 handleDrag : DragState -> Bool -> Model -> Model

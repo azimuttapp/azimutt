@@ -17,8 +17,8 @@ import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..))
-import PagesComponents.App.Updates.Helpers exposing (setProject, setSettings)
 import Ports exposing (activateTooltipsAndPopovers, showModal, track)
+import Services.Lenses exposing (setProject, setSettings)
 import Tracking exposing (events)
 
 

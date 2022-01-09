@@ -15,7 +15,7 @@ import Models.Project exposing (Project, tablesArea, viewportArea, viewportSize)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setTables)
+import Services.Lenses exposing (setCanvas, setLayout, setTables)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps

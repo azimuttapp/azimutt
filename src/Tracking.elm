@@ -1,15 +1,17 @@
-module Tracking exposing (events)
+module Tracking exposing (SQLParsing, events)
 
-import Dict
+import DataSources.SqlParser.FileParser exposing (SchemaError)
+import DataSources.SqlParser.StatementParser exposing (Command)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
+import Dict exposing (Dict)
 import Libs.Dict as D
 import Libs.Maybe as M
-import Libs.Models exposing (TrackEvent)
+import Libs.Models exposing (FileLineContent, TrackEvent)
 import Libs.Result as R
 import Models.Project exposing (Project)
 import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Source exposing (Source)
-import Services.SourceParsing.Models exposing (ParsingState)
 
 
 
@@ -28,8 +30,7 @@ events :
     , openSaveLayout : TrackEvent
     , openFindPath : TrackEvent
     , findPathResult : FindPathResult -> TrackEvent
-    , parsedProject : ParsingState msg -> Project -> TrackEvent
-    , parsedSource : ParsingState msg -> Source -> TrackEvent
+    , parsedSource : SQLParsing msg -> Source -> TrackEvent
     , createProject : Project -> TrackEvent
     , loadProject : Project -> TrackEvent
     , updateProject : Project -> TrackEvent
@@ -53,8 +54,7 @@ events =
     , openIncomingRelationsDropdown = { name = "open-incoming-relations-dropdown", details = [], enabled = True }
     , openSaveLayout = { name = "open-save-layout", details = [], enabled = True }
     , openFindPath = { name = "open-find-path", details = [], enabled = True }
-    , parsedProject = parserProjectEvent "parse"
-    , parsedSource = parserSourceEvent "parse"
+    , parsedSource = parseSQLEvent
     , createProject = projectEvent "create"
     , loadProject = projectEvent "load"
     , updateProject = projectEvent "update"
@@ -70,24 +70,18 @@ events =
     }
 
 
-parserProjectEvent : String -> ParsingState msg -> Project -> TrackEvent
-parserProjectEvent eventName parser project =
-    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> M.toList) |> List.head |> M.mapOrElse (\_ -> "-sample") "") ++ "-project"
-    , details =
-        [ ( "lines-count", parser.lines |> M.mapOrElse List.length 0 |> String.fromInt )
-        , ( "statements-count", parser.statements |> M.mapOrElse Dict.size 0 |> String.fromInt )
-        , ( "table-count", project.tables |> Dict.size |> String.fromInt )
-        , ( "relation-count", project.relations |> List.length |> String.fromInt )
-        , ( "parsing-errors", parser.commands |> M.mapOrElse (D.count (\_ ( _, r ) -> r |> R.isErr)) 0 |> String.fromInt )
-        , ( "schema-errors", parser.schemaErrors |> List.length |> String.fromInt )
-        ]
-    , enabled = True
+type alias SQLParsing x =
+    { x
+        | lines : Maybe (List FileLineContent)
+        , statements : Maybe (Dict Int SqlStatement)
+        , commands : Maybe (Dict Int ( SqlStatement, Result (List ParseError) Command ))
+        , schemaErrors : List (List SchemaError)
     }
 
 
-parserSourceEvent : String -> ParsingState msg -> Source -> TrackEvent
-parserSourceEvent eventName parser source =
-    { name = eventName ++ (source.fromSample |> M.mapOrElse (\_ -> "-sample") "") ++ "-source"
+parseSQLEvent : SQLParsing msg -> Source -> TrackEvent
+parseSQLEvent parser source =
+    { name = "parse" ++ (source.fromSample |> M.mapOrElse (\_ -> "-sample") "") ++ "-sql-source"
     , details =
         [ ( "lines-count", parser.lines |> M.mapOrElse List.length 0 |> String.fromInt )
         , ( "statements-count", parser.statements |> M.mapOrElse Dict.size 0 |> String.fromInt )

@@ -9,9 +9,9 @@ import Libs.Task as T
 import Models.Project exposing (Project)
 import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 import Ports exposing (observeTablesSize, track)
+import Services.Lenses exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import Time
 import Tracking
 

@@ -6,9 +6,9 @@ import Libs.Task as T
 import Models.Project as Project exposing (Project)
 import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
-import PagesComponents.App.Updates.Helpers exposing (setProject)
 import PagesComponents.Projects.Id_.Models exposing (Msg, VirtualRelation, VirtualRelationMsg(..), toastInfo)
 import Ports exposing (getSourceId)
+import Services.Lenses exposing (setProject)
 
 
 type alias Model x =

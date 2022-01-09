@@ -16,8 +16,8 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.App.Models as Models exposing (Msg)
-import PagesComponents.App.Updates.Helpers exposing (setLayout)
 import Ports exposing (activateTooltipsAndPopovers, observeTableSize, observeTablesSize, toastError, toastInfo)
+import Services.Lenses exposing (setLayout)
 
 
 showTable : TableId -> Project -> ( Project, Cmd Msg )

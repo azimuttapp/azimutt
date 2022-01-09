@@ -12,13 +12,13 @@ import Html.Styled exposing (Html, a, aside, div, form, h2, nav, p, span, text)
 import Html.Styled.Attributes exposing (css, href)
 import Html.Styled.Events exposing (onClick)
 import Libs.Html.Styled.Attributes exposing (ariaCurrent)
-import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
-import Models.Project exposing (Project)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
-import Services.SourceParsing.Views exposing (viewSourceParsing)
+import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
 import Shared
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
@@ -84,10 +84,10 @@ viewTabContent theme model =
                 viewSchemaUpload theme
 
             Sample ->
-                viewSampleSelection theme model.selectedSample
-         , viewSourceParsing model
+                viewSampleSelection theme model.parsing.selectedSample
+         , SQLSource.viewParsing model.parsing
          ]
-            ++ (model.project |> M.mapOrElse (\p -> [ viewActions theme p ]) [])
+            ++ (model.parsing.parsedSource |> Maybe.map2 (\( projectId, _, _ ) source -> [ viewActions theme projectId source ]) model.parsing.loadedFile |> Maybe.withDefault [])
         )
 
 
@@ -98,7 +98,7 @@ viewSchemaUpload theme =
         , form []
             [ div [ css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_y_6, Tw.gap_x_4, Bp.sm [ Tw.grid_cols_6 ] ] ]
                 [ div [ css [ Bp.sm [ Tw.col_span_6 ] ] ]
-                    [ FileInput.basic theme "file-upload" SelectLocalFile
+                    [ FileInput.basic theme "file-upload" (SelectLocalFile >> SQLSourceMsg)
                     ]
                 ]
             ]
@@ -120,7 +120,7 @@ viewSampleSelection theme selectedSample =
                         , title = s.name ++ " (" ++ (s.tables |> String.fromInt) ++ " tables)"
                         , description = s.description
                         , active = selectedSample == Nothing || selectedSample == Just s.key
-                        , onClick = SelectSample s.key
+                        , onClick = SQLSourceMsg (SelectSample s.key)
                         }
                     )
             )
@@ -135,11 +135,11 @@ viewHeading title description =
         ]
 
 
-viewActions : Theme -> Project -> Html Msg
-viewActions theme project =
+viewActions : Theme -> ProjectId -> Source -> Html Msg
+viewActions theme projectId source =
     div [ css [ Tw.mt_6 ] ]
         [ div [ css [ Tw.flex, Tw.justify_end ] ]
             [ Button.white3 theme.color [ onClick DropSchema ] [ text "Trash this" ]
-            , Button.primary3 theme.color [ onClick (CreateProject project), css [ Tw.ml_3 ] ] [ text "Create project!" ]
+            , Button.primary3 theme.color [ onClick (CreateProject projectId source), css [ Tw.ml_3 ] ] [ text "Create project!" ]
             ]
         ]

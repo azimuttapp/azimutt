@@ -11,7 +11,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableProps as TableProps exposing (TableProps)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setTables)
+import Services.Lenses exposing (setCanvas, setTables)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps

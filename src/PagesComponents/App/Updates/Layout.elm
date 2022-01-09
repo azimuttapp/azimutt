@@ -8,8 +8,8 @@ import Models.Project exposing (Project)
 import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Model, Msg)
-import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import Ports exposing (activateTooltipsAndPopovers, observeTablesSize, saveProject, track)
+import Services.Lenses exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import Time
 import Tracking exposing (events)
 
