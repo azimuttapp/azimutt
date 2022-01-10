@@ -8,8 +8,8 @@ import Html.Styled exposing (Html, a, div, form, h2, p, text, time)
 import Html.Styled.Attributes exposing (css, datetime, href)
 import Libs.DateTime as DateTime
 import Libs.Maybe as M
-import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (bg_white, block, divide_gray_200, divide_y_2, font_black, font_bold, font_extrabold, font_semibold, gap_16, gap_5, gap_x_5, gap_y_12, grid, grid_cols_2, items_center, leading_none, max_w_7xl, max_w_lg, mt_1, mt_10, mt_2, mt_3, mt_4, mt_6, mx_auto, pb_20, pb_28, pt_10, pt_16, pt_24, px_4, px_6, px_8, relative, text_2xl, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_indigo_500, text_indigo_600, text_sm, text_xl, text_xs, tracking_tight, tracking_wide, uppercase)
+import Tailwind.Breakpoints as Bp
+import Tailwind.Utilities as Tw
 import Time
 
 
@@ -35,17 +35,17 @@ type alias Article =
 
 articleList : Model -> Html msg
 articleList model =
-    div [ css [ bg_white, pt_16, pb_20, px_4, lg [ pt_24, pb_28, px_8 ], sm [ px_6 ] ] ]
-        [ div [ css [ relative, max_w_lg, mx_auto, divide_y_2, divide_gray_200, lg [ max_w_7xl ] ] ]
+    div [ css [ Tw.bg_white, Tw.pt_16, Tw.pb_20, Tw.px_4, Bp.lg [ Tw.pt_24, Tw.pb_28, Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
+        [ div [ css [ Tw.relative, Tw.max_w_lg, Tw.mx_auto, Tw.divide_y_2, Tw.divide_gray_200, Bp.lg [ Tw.max_w_7xl ] ] ]
             [ div []
-                [ h2 [ css [ text_3xl, tracking_tight, font_extrabold, text_gray_900, sm [ text_4xl ] ] ] [ text model.title ]
-                , div [ css [ mt_3, lg [ grid, grid_cols_2, gap_5, items_center ], sm [ mt_4 ] ] ]
-                    ([ p [ css [ text_xl, text_gray_500 ] ] [ text model.headline ]
+                [ h2 [ css [ Tw.text_3xl, Tw.tracking_tight, Tw.font_extrabold, Tw.text_gray_900, Bp.sm [ Tw.text_4xl ] ] ] [ text model.title ]
+                , div [ css [ Tw.mt_3, Bp.lg [ Tw.grid, Tw.grid_cols_2, Tw.gap_5, Tw.items_center ], Bp.sm [ Tw.mt_4 ] ] ]
+                    ([ p [ css [ Tw.text_xl, Tw.text_gray_500 ] ] [ text model.headline ]
                      ]
                         ++ (model.newsletter |> M.mapOrElse (\form -> [ Newsletter.small form ]) [])
                     )
                 ]
-            , div [ css [ mt_6, pt_10, grid, gap_16, lg [ grid_cols_2, gap_x_5, gap_y_12 ] ] ] (model.articles |> List.map articleItem)
+            , div [ css [ Tw.mt_6, Tw.pt_10, Tw.grid, Tw.gap_16, Bp.lg [ Tw.grid_cols_2, Tw.gap_x_5, Tw.gap_y_12 ] ] ] (model.articles |> List.map articleItem)
             ]
         ]
 
@@ -53,27 +53,27 @@ articleList model =
 articleItem : Article -> Html msg
 articleItem model =
     div []
-        [ p [ css [ text_sm, text_gray_500 ] ]
+        [ p [ css [ Tw.text_sm, Tw.text_gray_500 ] ]
             [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd") ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ] ]
-        , a [ href model.link, css [ mt_2, block ] ]
-            [ p [ css [ text_xl, font_semibold, text_gray_900 ] ] [ text model.title ]
-            , p [ css [ mt_3, text_base, text_gray_500 ] ] [ text model.excerpt ]
+        , a [ href model.link, css [ Tw.mt_2, Tw.block ] ]
+            [ p [ css [ Tw.text_xl, Tw.font_semibold, Tw.text_gray_900 ] ] [ text model.title ]
+            , p [ css [ Tw.mt_3, Tw.text_base, Tw.text_gray_500 ] ] [ text model.excerpt ]
             ]
-        , div [ css [ mt_3 ] ]
-            [ a [ href model.link, css [ text_base, font_semibold, text_indigo_600, Css.hover [ text_indigo_500 ] ] ] [ text "Read full story" ] ]
+        , div [ css [ Tw.mt_3 ] ]
+            [ a [ href model.link, css [ Tw.text_base, Tw.font_semibold, Tw.text_indigo_600, Css.hover [ Tw.text_indigo_500 ] ] ] [ text "Read full story" ] ]
         ]
 
 
 article : Article -> Html msg
 article model =
     div []
-        [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), css [ uppercase, text_xs, text_gray_500, font_bold ] ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
-        , h2 [ css [ mt_1, text_2xl, tracking_tight, font_extrabold, text_gray_900, md [ text_3xl ], sm [ leading_none ] ] ]
+        [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), css [ Tw.uppercase, Tw.text_xs, Tw.text_gray_500, Tw.font_bold ] ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
+        , h2 [ css [ Tw.mt_1, Tw.text_2xl, Tw.tracking_tight, Tw.font_extrabold, Tw.text_gray_900, Bp.md [ Tw.text_3xl ], Bp.sm [ Tw.leading_none ] ] ]
             [ a [ href model.link ] [ text model.title ] ]
-        , div [ css [ mt_6 ] ]
+        , div [ css [ Tw.mt_6 ] ]
             [ p [] [ text model.excerpt ] ]
-        , div [ css [ mt_10 ] ]
-            [ a [ css [ text_indigo_600, uppercase, text_sm, tracking_wide, font_black ], href model.link ] [ text "Read full story →" ] ]
+        , div [ css [ Tw.mt_10 ] ]
+            [ a [ css [ Tw.text_indigo_600, Tw.uppercase, Tw.text_sm, Tw.tracking_wide, Tw.font_black ], href model.link ] [ text "Read full story →" ] ]
         ]
 
 

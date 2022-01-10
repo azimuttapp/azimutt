@@ -40,7 +40,7 @@ import ElmBook.ThemeOptions
 import Html.Styled exposing (Html, img, table, td, text, th, tr)
 import Html.Styled.Attributes exposing (alt, css, src)
 import Libs.Models.Color as Color exposing (Color, ColorLevel)
-import Tailwind.Utilities exposing (globalStyles, h_12, p_3)
+import Tailwind.Utilities as Tw
 
 
 type alias DocState =
@@ -74,8 +74,8 @@ main =
     ElmCSS.book "Azimutt Design System"
         |> ElmBook.withThemeOptions
             [ ElmBook.ThemeOptions.subtitle "v0.1.0"
-            , ElmBook.ThemeOptions.globals [ Global.global globalStyles ]
-            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ h_12 ] ] [])
+            , ElmBook.ThemeOptions.globals [ Global.global Tw.globalStyles ]
+            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ Tw.h_12 ] ] [])
             ]
         |> ElmBook.withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
         |> ElmBook.withStatefulOptions [ ElmBook.StatefulOptions.initialState init ]
@@ -113,4 +113,4 @@ colorsDoc =
 
 viewColorCell : Color -> ColorLevel -> Html msg
 viewColorCell color level =
-    td [ css [ p_3, Color.bg color level ] ] [ text (color |> Color.hex level) ]
+    td [ css [ Tw.p_3, Color.bg color level ] ] [ text (color |> Color.hex level) ]

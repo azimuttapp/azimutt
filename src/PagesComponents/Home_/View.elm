@@ -19,7 +19,7 @@ import Libs.Html.Styled.Attributes exposing (track)
 import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
 import Shared exposing (StoredProjects(..))
-import Tailwind.Utilities as Tw exposing (globalStyles, mt_3)
+import Tailwind.Utilities as Tw
 import Tracking exposing (events)
 
 
@@ -53,7 +53,7 @@ viewHome shared =
                 Loaded projects ->
                     projects |> List.head |> Maybe.map (\_ -> Route.Projects) |> Maybe.withDefault Route.Projects__New
     in
-    [ Global.global globalStyles
+    [ Global.global Tw.globalStyles
     , Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
@@ -92,7 +92,7 @@ viewHome shared =
             { title = "See what you need"
             , content =
                 [ text "Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how."
-                , div [ css [ mt_3 ] ] []
+                , div [ css [ Tw.mt_3 ] ] []
                 , Feature.checked { title = "search everywhere", description = Nothing }
                 , Feature.checked { title = "show, hide and organize tables", description = Nothing }
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
@@ -119,7 +119,7 @@ viewHome shared =
                 , text "Did you ever wanted to see what is on the other side of a relation ? With Azimutt, it's just one click away 🤩"
                 , br [] []
                 , text "And there's more, how do you see incoming relations ? Azimutt list all of them and is able to show one, many or all of them in just two clicks! 😍"
-                , div [ css [ mt_3 ] ] []
+                , div [ css [ Tw.mt_3 ] ] []
                 , Feature.checked { title = "outgoing relations", description = Nothing }
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]

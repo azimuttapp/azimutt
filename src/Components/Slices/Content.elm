@@ -8,8 +8,8 @@ import Html.Styled.Attributes exposing (alt, css, height, href, src, width)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
 import Libs.Maybe as M
-import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (absolute, bg_white, block, font_extrabold, font_semibold, h_full, hidden, inset_y_0, leading_8, max_w_prose, mt_2, mt_6, mt_8, mx_auto, overflow_hidden, prose, prose_indigo, prose_lg, px_4, px_6, px_8, py_16, relative, rounded_lg, text_3xl, text_4xl, text_base, text_center, text_gray_500, text_gray_900, text_indigo_600, text_lg, text_xl, tracking_tight, tracking_wide, uppercase, w_full)
+import Tailwind.Breakpoints as Bp
+import Tailwind.Utilities as Tw
 
 
 type alias CenteredModel msg =
@@ -23,10 +23,10 @@ type alias CenteredModel msg =
 
 centered : CenteredModel msg -> Html msg
 centered model =
-    div [ css [ relative, py_16, bg_white, overflow_hidden ] ]
+    div [ css [ Tw.relative, Tw.py_16, Tw.bg_white, Tw.overflow_hidden ] ]
         [ B.cond model.dots
-            (div [ css [ hidden, lg [ block, absolute, inset_y_0, h_full, w_full ] ] ]
-                [ div [ css [ relative, h_full, text_lg, max_w_prose, mx_auto ], ariaHidden True ]
+            (div [ css [ Tw.hidden, Bp.lg [ Tw.block, Tw.absolute, Tw.inset_y_0, Tw.h_full, Tw.w_full ] ] ]
+                [ div [ css [ Tw.relative, Tw.h_full, Tw.text_lg, Tw.max_w_prose, Tw.mx_auto ], ariaHidden True ]
                     [ Dots.dotsTopRight "74b3fd99-0a6f-4271-bef2-e80eeafdf357" 384
                     , Dots.dotsMiddleLeft "f210dbf6-a58d-4871-961e-36d5016a0f49" 384
                     , Dots.dotsBottomRight "d3eb07ae-5182-43e6-857d-35c643af9034" 384
@@ -34,16 +34,16 @@ centered model =
                 ]
             )
             (div [] [])
-        , div [ css [ relative, px_4, sm [ px_6 ], lg [ px_8 ] ] ]
-            [ div [ css [ text_lg, max_w_prose, mx_auto ] ]
+        , div [ css [ Tw.relative, Tw.px_4, Bp.sm [ Tw.px_6 ], Bp.lg [ Tw.px_8 ] ] ]
+            [ div [ css [ Tw.text_lg, Tw.max_w_prose, Tw.mx_auto ] ]
                 ([ h1 []
-                    [ span [ css [ block, text_base, text_center, text_indigo_600, font_semibold, tracking_wide, uppercase ] ] [ text model.section ]
-                    , span [ css [ mt_2, block, text_3xl, text_center, leading_8, font_extrabold, tracking_tight, text_gray_900, sm [ text_4xl ] ] ] [ text model.title ]
+                    [ span [ css [ Tw.block, Tw.text_base, Tw.text_center, Tw.text_indigo_600, Tw.font_semibold, Tw.tracking_wide, Tw.uppercase ] ] [ text model.section ]
+                    , span [ css [ Tw.mt_2, Tw.block, Tw.text_3xl, Tw.text_center, Tw.leading_8, Tw.font_extrabold, Tw.tracking_tight, Tw.text_gray_900, Bp.sm [ Tw.text_4xl ] ] ] [ text model.title ]
                     ]
                  ]
-                    ++ (model.introduction |> M.mapOrElse (\intro -> [ p [ css [ mt_8, text_xl, text_gray_500, leading_8 ] ] [ text intro ] ]) [])
+                    ++ (model.introduction |> M.mapOrElse (\intro -> [ p [ css [ Tw.mt_8, Tw.text_xl, Tw.text_gray_500, Tw.leading_8 ] ] [ text intro ] ]) [])
                 )
-            , div [ css [ mt_6, prose, prose_indigo, prose_lg, text_gray_500, mx_auto ] ] model.content
+            , div [ css [ Tw.mt_6, Tw.prose, Tw.prose_indigo, Tw.prose_lg, Tw.text_gray_500, Tw.mx_auto ] ] model.content
             ]
         ]
 
@@ -82,7 +82,7 @@ doc =
                         , blockquote [] [ p [] [ text "Sagittis scelerisque nulla cursus in enim consectetur quam. Dictum urna sed consectetur neque tristique pellentesque. Blandit amet, sed aenean erat arcu morbi." ] ]
                         , p [] [ text "Faucibus commodo massa rhoncus, volutpat. Dignissim sed eget risus enim. Mattis mauris semper sed amet vitae sed turpis id. Id dolor praesent donec est. Odio penatibus risus viverra tellus varius sit neque erat velit." ]
                         , figure []
-                            [ img [ css [ w_full, rounded_lg ], src "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&w=1310&h=873&q=80&facepad=3", alt "", width 1310, height 873 ] []
+                            [ img [ css [ Tw.w_full, Tw.rounded_lg ], src "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=facearea&w=1310&h=873&q=80&facepad=3", alt "", width 1310, height 873 ] []
                             , figcaption [] [ text "Sagittis scelerisque nulla cursus in enim consectetur quam." ]
                             ]
                         , h2 [] [ text "Everything you need to get up and running" ]

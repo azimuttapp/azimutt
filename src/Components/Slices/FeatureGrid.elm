@@ -6,19 +6,19 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
 import Html.Styled exposing (Html, a, br, div, h2, h3, p, span, text)
 import Html.Styled.Attributes exposing (class, css, href)
-import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (bg_clip_text, bg_gradient_to_r, bg_gray_50, bg_opacity_10, bg_white, flex, flow_root, font_extrabold, font_medium, font_semibold, from_green_600, from_green_800, gap_8, gap_x_6, gap_x_8, gap_y_12, gap_y_16, grid, grid_cols_1, grid_cols_2, grid_cols_3, h_12, inline_flex, items_center, justify_center, max_w_3xl, max_w_4xl, max_w_7xl, max_w_md, max_w_prose, mt_12, mt_16, mt_2, mt_4, mt_5, mt_6, mt_8, mx_auto, neg_mt_6, p_3, pb_24, pb_8, pt_20, pt_24, pt_6, px_4, px_6, px_8, py_16, py_24, py_32, relative, rounded_lg, rounded_md, shadow_lg, text_3xl, text_4xl, text_base, text_center, text_gray_500, text_gray_900, text_lg, text_purple_200, text_transparent, text_white, text_xl, to_indigo_600, to_indigo_700, tracking_tight, tracking_wider, uppercase, w_12)
+import Tailwind.Breakpoints as Bp
+import Tailwind.Utilities as Tw
 
 
 coloredSlice : Html msg
 coloredSlice =
-    div [ css [ bg_gradient_to_r, from_green_800, to_indigo_700 ] ]
-        [ div [ css [ max_w_4xl, mx_auto, px_4, py_16, sm [ px_6, pt_20, pb_24 ], lg [ max_w_7xl, pt_24, px_8 ] ] ]
-            [ h2 [ css [ text_3xl, font_extrabold, text_white, tracking_tight ] ]
+    div [ css [ Tw.bg_gradient_to_r, Tw.from_green_800, Tw.to_indigo_700 ] ]
+        [ div [ css [ Tw.max_w_4xl, Tw.mx_auto, Tw.px_4, Tw.py_16, Bp.sm [ Tw.px_6, Tw.pt_20, Tw.pb_24 ], Bp.lg [ Tw.max_w_7xl, Tw.pt_24, Tw.px_8 ] ] ]
+            [ h2 [ css [ Tw.text_3xl, Tw.font_extrabold, Tw.text_white, Tw.tracking_tight ] ]
                 [ text "Explore your SQL schema like never before" ]
-            , p [ css [ mt_4, max_w_3xl, text_lg, text_purple_200 ] ]
+            , p [ css [ Tw.mt_4, Tw.max_w_3xl, Tw.text_lg, Tw.text_purple_200 ] ]
                 [ text "Your new weapons to dig into your schema:" ]
-            , div [ css [ mt_12, grid, grid_cols_1, gap_x_6, gap_y_12, text_white, lg [ mt_16, grid_cols_3, gap_x_8, gap_y_16 ], sm [ grid_cols_2 ] ] ]
+            , div [ css [ Tw.mt_12, Tw.grid, Tw.grid_cols_1, Tw.gap_x_6, Tw.gap_y_12, Tw.text_white, Bp.lg [ Tw.mt_16, Tw.grid_cols_3, Tw.gap_x_8, Tw.gap_y_16 ], Bp.sm [ Tw.grid_cols_2 ] ] ]
                 [ item (Icon.outline Inbox [])
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
@@ -52,10 +52,10 @@ item : Html msg -> String -> List (Html msg) -> Html msg
 item icon title description =
     div []
         [ div []
-            [ span [ css [ flex, items_center, justify_center, h_12, w_12, rounded_md, bg_white, bg_opacity_10 ] ] [ icon ] ]
-        , div [ css [ mt_6 ] ]
-            [ h3 [ css [ text_lg, font_medium, text_white ] ] [ text title ]
-            , p [ css [ mt_2, text_base, text_purple_200 ] ] description
+            [ span [ css [ Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_md, Tw.bg_white, Tw.bg_opacity_10 ] ] [ icon ] ]
+        , div [ css [ Tw.mt_6 ] ]
+            [ h3 [ css [ Tw.text_lg, Tw.font_medium, Tw.text_white ] ] [ text title ]
+            , p [ css [ Tw.mt_2, Tw.text_base, Tw.text_purple_200 ] ] description
             ]
         ]
 
@@ -77,13 +77,13 @@ type alias CardItemModel msg =
 
 cardSlice : CardModel msg -> Html msg
 cardSlice model =
-    div [ css [ relative, bg_white, py_16, lg [ py_32 ], sm [ py_24 ] ] ]
-        [ div [ css [ mx_auto, max_w_md, px_4, text_center, lg [ px_8, max_w_7xl ], sm [ max_w_3xl, px_6 ] ] ]
-            [ h2 [ css [ text_base, font_semibold, tracking_wider, uppercase, bg_gradient_to_r, from_green_600, to_indigo_600, bg_clip_text, text_transparent ] ] [ text model.header ]
-            , p [ css [ mt_2, text_3xl, font_extrabold, text_gray_900, tracking_tight, sm [ text_4xl ] ] ] [ text model.title ]
-            , p [ css [ mt_5, max_w_prose, mx_auto, text_xl, text_gray_500 ] ] [ text model.description ]
-            , div [ css [ mt_12 ] ]
-                [ div [ css [ grid, grid_cols_1, gap_8, lg [ grid_cols_3 ], sm [ grid_cols_2 ] ] ]
+    div [ css [ Tw.relative, Tw.bg_white, Tw.py_16, Bp.lg [ Tw.py_32 ], Bp.sm [ Tw.py_24 ] ] ]
+        [ div [ css [ Tw.mx_auto, Tw.max_w_md, Tw.px_4, Tw.text_center, Bp.lg [ Tw.px_8, Tw.max_w_7xl ], Bp.sm [ Tw.max_w_3xl, Tw.px_6 ] ] ]
+            [ h2 [ css [ Tw.text_base, Tw.font_semibold, Tw.tracking_wider, Tw.uppercase, Tw.bg_gradient_to_r, Tw.from_green_600, Tw.to_indigo_600, Tw.bg_clip_text, Tw.text_transparent ] ] [ text model.header ]
+            , p [ css [ Tw.mt_2, Tw.text_3xl, Tw.font_extrabold, Tw.text_gray_900, Tw.tracking_tight, Bp.sm [ Tw.text_4xl ] ] ] [ text model.title ]
+            , p [ css [ Tw.mt_5, Tw.max_w_prose, Tw.mx_auto, Tw.text_xl, Tw.text_gray_500 ] ] [ text model.description ]
+            , div [ css [ Tw.mt_12 ] ]
+                [ div [ css [ Tw.grid, Tw.grid_cols_1, Tw.gap_8, Bp.lg [ Tw.grid_cols_3 ], Bp.sm [ Tw.grid_cols_2 ] ] ]
                     (model.cards |> List.map card)
                 ]
             ]
@@ -92,14 +92,14 @@ cardSlice model =
 
 card : CardItemModel msg -> Html msg
 card model =
-    div [ css [ pt_6 ] ]
-        [ div [ css [ flow_root, bg_gray_50, rounded_lg, px_6, pb_8 ] ]
-            [ div [ css [ neg_mt_6 ] ]
+    div [ css [ Tw.pt_6 ] ]
+        [ div [ css [ Tw.flow_root, Tw.bg_gray_50, Tw.rounded_lg, Tw.px_6, Tw.pb_8 ] ]
+            [ div [ css [ Tw.neg_mt_6 ] ]
                 [ div []
-                    [ span [ css [ inline_flex, items_center, justify_center, p_3, rounded_md, shadow_lg, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ Icon.outline model.icon [ text_white ] ]
+                    [ span [ css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_3, Tw.rounded_md, Tw.shadow_lg, Tw.bg_gradient_to_r, Tw.from_green_600, Tw.to_indigo_600 ] ] [ Icon.outline model.icon [ Tw.text_white ] ]
                     ]
-                , h3 [ css [ mt_8, text_lg, font_medium, text_gray_900, tracking_tight ] ] [ text model.title ]
-                , p [ css [ mt_5, text_base, text_gray_500 ] ] model.description
+                , h3 [ css [ Tw.mt_8, Tw.text_lg, Tw.font_medium, Tw.text_gray_900, Tw.tracking_tight ] ] [ text model.title ]
+                , p [ css [ Tw.mt_5, Tw.text_base, Tw.text_gray_500 ] ] model.description
                 ]
             ]
         ]

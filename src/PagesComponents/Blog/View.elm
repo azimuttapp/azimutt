@@ -10,27 +10,27 @@ import Html.Styled.Attributes exposing (css, style)
 import Libs.Html.Styled exposing (extLink)
 import PagesComponents.Blog.Models exposing (Model)
 import PagesComponents.Helpers as Helpers
-import Tailwind.Utilities exposing (bg_gray_100, font_black, globalStyles, max_w_prose, mb_24, mt_12, mt_16, mt_24, mt_6, mx_auto, my_12, text_4xl, text_center, text_indigo_600, text_lg, underline, w_full)
+import Tailwind.Utilities as Tw
 
 
 viewBlog : Model -> List (Html msg)
 viewBlog model =
-    [ Global.global globalStyles
+    [ Global.global Tw.globalStyles
     , Helpers.publicHeader
-    , div [ css [ mt_24, max_w_prose, mx_auto, text_center ] ]
-        [ h1 [ css [ text_4xl, font_black ] ]
+    , div [ css [ Tw.mt_24, Tw.max_w_prose, Tw.mx_auto, Tw.text_center ] ]
+        [ h1 [ css [ Tw.text_4xl, Tw.font_black ] ]
             [ text "Azimutt blog" ]
-        , p [ css [ text_lg, mt_6 ] ]
+        , p [ css [ Tw.text_lg, Tw.mt_6 ] ]
             [ text "Hi! We are "
-            , extLink "https://twitter.com/sbouaked" [ css [ text_indigo_600, Css.hover [ underline ] ] ] [ text "Samir" ]
+            , extLink "https://twitter.com/sbouaked" [ css [ Tw.text_indigo_600, Css.hover [ Tw.underline ] ] ] [ text "Samir" ]
             , text " and "
-            , extLink "https://twitter.com/loicknuchel" [ css [ text_indigo_600, Css.hover [ underline ] ] ] [ text "Loïc" ]
+            , extLink "https://twitter.com/loicknuchel" [ css [ Tw.text_indigo_600, Css.hover [ Tw.underline ] ] ] [ text "Loïc" ]
             , text ". We're building an application to empower developers understanding their relational databases. You can read about how we build it and how to use it on this blog."
             ]
         ]
-    , div [ css [ mt_12 ] ] [ Newsletter.centered Conf.newsletter ]
-    , hr [ css [ w_full, bg_gray_100, my_12 ], style "height" "1px" ] []
-    , div [ css [ mt_16, mb_24, max_w_prose, mx_auto ] ] (model.articles |> List.map Tuple.second |> List.map Blog.article |> List.intersperse (hr [ css [ w_full, bg_gray_100, my_12 ], style "height" "1px" ] []))
+    , div [ css [ Tw.mt_12 ] ] [ Newsletter.centered Conf.newsletter ]
+    , hr [ css [ Tw.w_full, Tw.bg_gray_100, Tw.my_12 ], style "height" "1px" ] []
+    , div [ css [ Tw.mt_16, Tw.mb_24, Tw.max_w_prose, Tw.mx_auto ] ] (model.articles |> List.map Tuple.second |> List.map Blog.article |> List.intersperse (hr [ css [ Tw.w_full, Tw.bg_gray_100, Tw.my_12 ], style "height" "1px" ] []))
 
     -- add it when out of initial page, Helpers.newsletterSection
     , Helpers.publicFooter
