@@ -4,6 +4,7 @@ import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Html.Styled as Styled
+import Libs.Maybe as M
 import Libs.String as S
 import Libs.Task as T
 import Models.Project as Project
@@ -15,6 +16,7 @@ import Request
 import Services.Lenses exposing (setParsingWithCmd)
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
 import Shared
+import Time
 import Tracking
 import View exposing (View)
 
@@ -23,7 +25,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init req
-        , update = update req shared
+        , update = update req
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -45,12 +47,15 @@ init : Request.With Params -> ( Model, Cmd Msg )
 init req =
     ( { selectedMenu = "New project"
       , mobileMenuOpen = False
+      , projects = []
       , selectedTab = req.query |> Dict.get "sample" |> Maybe.map (\_ -> Sample) |> Maybe.withDefault Schema
       , parsing = SQLSource.init Nothing Nothing
       }
     , Cmd.batch
-        ((req.query |> Dict.get "sample" |> Maybe.map (\sample -> [ T.send (sample |> SelectSample |> SQLSourceMsg) ]) |> Maybe.withDefault [])
-            ++ [ trackPage "new-project" ]
+        ([ Ports.loadProjects
+         , trackPage "new-project"
+         ]
+            ++ (req.query |> Dict.get "sample" |> M.mapOrElse (\sample -> [ T.send (sample |> SelectSample |> SQLSourceMsg) ]) [])
         )
     )
 
@@ -59,8 +64,8 @@ init req =
 -- UPDATE
 
 
-update : Request.With Params -> Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
-update req shared msg model =
+update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
+update req msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -78,29 +83,29 @@ update req shared msg model =
             ( { model | parsing = SQLSource.init Nothing Nothing }, Cmd.none )
 
         CreateProject projectId source ->
-            Project.create projectId (S.unique (shared |> Shared.projects |> List.map .name) source.name) source
+            Project.create projectId (S.unique (model.projects |> List.map .name) source.name) source
                 |> (\project ->
                         ( model, Cmd.batch [ saveProject project, track (Tracking.events.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
                    )
 
-        JsMessage jsMsg ->
-            ( model, handleJsMessage jsMsg )
-
-        Noop ->
-            ( model, Cmd.none )
+        JsMessage message ->
+            model |> handleJsMessage message
 
 
-handleJsMessage : JsMsg -> Cmd Msg
-handleJsMessage msg =
+handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage msg model =
     case msg of
+        GotProjects ( _, projects ) ->
+            ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }, Cmd.none )
+
         GotLocalFile now projectId sourceId file content ->
-            T.send (SQLSource.gotLocalFile now projectId sourceId file content |> SQLSourceMsg)
+            ( model, T.send (SQLSource.gotLocalFile now projectId sourceId file content |> SQLSourceMsg) )
 
         GotRemoteFile now projectId sourceId url content sample ->
-            T.send (SQLSource.gotRemoteFile now projectId sourceId url content sample |> SQLSourceMsg)
+            ( model, T.send (SQLSource.gotRemoteFile now projectId sourceId url content sample |> SQLSourceMsg) )
 
         _ ->
-            T.send Noop
+            ( model, Cmd.none )
 
 
 

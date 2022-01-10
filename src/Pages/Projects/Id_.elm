@@ -35,7 +35,8 @@ import Ports exposing (JsMsg(..), autofocusWithin, listenHotkeys, observeSize, o
 import Request
 import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
 import Services.SQLSource as SQLSource
-import Shared
+import Shared exposing (StoredProjects(..))
+import Time
 import Tracking
 import View exposing (View)
 
@@ -43,7 +44,7 @@ import View exposing (View)
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init shared req
+        { init = init
         , update = update req
         , view = view shared
         , subscriptions = subscriptions
@@ -62,10 +63,11 @@ type alias Msg =
 -- INIT
 
 
-init : Shared.Model -> Request.With Params -> ( Model, Cmd Msg )
-init shared req =
+init : ( Model, Cmd Msg )
+init =
     ( { navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , project = Nothing
+      , projects = Loading
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
@@ -84,11 +86,10 @@ init shared req =
       , openedDialogs = []
       }
     , Cmd.batch
-        ((shared |> Shared.projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) [])
-            ++ [ listenHotkeys Conf.hotkeys
-               , trackPage "app"
-               ]
-        )
+        [ Ports.loadProjects
+        , trackPage "app"
+        , listenHotkeys Conf.hotkeys
+        ]
     )
 
 
@@ -104,9 +105,6 @@ update req msg model =
 
         SearchUpdated search ->
             ( { model | navbar = model.navbar |> (\n -> { n | search = n.search |> (\s -> { s | text = search, active = 0 }) }) }, Cmd.none )
-
-        LoadProject project ->
-            ( { model | project = Just project }, Cmd.batch [ observeSize Conf.ids.erd, observeTablesSize (project.layout.tables |> List.map .id) ] )
 
         SaveProject ->
             ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ saveProject p, T.send (toastInfo "Project saved"), track (Tracking.events.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
@@ -249,7 +247,24 @@ handleJsMessage req message model =
             model |> updateSizes sizes
 
         GotProjects ( errors, projects ) ->
-            ( model, Cmd.batch ((projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (\p -> [ T.send (LoadProject p) ]) []) ++ (errors |> List.concatMap (\( name, err ) -> [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ D.errorToHtml err)), trackJsonError "decode-project" err ]))) )
+            ( { model
+                | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)))
+                , project = projects |> L.find (\p -> p.id == req.params.id)
+              }
+            , Cmd.batch
+                ([ observeSize Conf.ids.erd
+                 , observeTablesSize (projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (.layout >> .tables) [] |> List.map .id)
+                 ]
+                    ++ (errors
+                            |> List.concatMap
+                                (\( name, err ) ->
+                                    [ Ports.toastError ("Unable to read project " ++ name ++ ": " ++ D.errorToHtml err)
+                                    , Ports.trackJsonError "decode-project" err
+                                    ]
+                                )
+                       )
+                )
+            )
 
         GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SQLSource.gotLocalFile now projectId sourceId file content |> PSSQLSourceMsg |> ProjectSettingsMsg) )

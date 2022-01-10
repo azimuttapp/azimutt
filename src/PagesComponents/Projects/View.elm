@@ -35,23 +35,23 @@ viewProjects shared model =
         ToggleMobileMenu
         model
         [ text model.selectedMenu ]
-        [ viewContent shared ]
+        [ viewContent shared model ]
         [ viewModal model
         ]
 
 
-viewContent : Shared.Model -> Html Msg
-viewContent shared =
+viewContent : Shared.Model -> Model -> Html Msg
+viewContent shared model =
     div [ css [ Tw.p_8, Bp.sm [ Tw.p_6 ] ] ]
-        [ viewProjectList shared
+        [ viewProjectList shared model
         ]
 
 
-viewProjectList : Shared.Model -> Html Msg
-viewProjectList shared =
+viewProjectList : Shared.Model -> Model -> Html Msg
+viewProjectList shared model =
     div []
         [ h3 [ css [ Tw.text_lg, Tw.font_medium ] ] [ text "Projects" ]
-        , case shared.projects of
+        , case model.projects of
             Loading ->
                 div [ css [ Tw.mt_6 ] ] [ text "Loading..." ]
 
@@ -157,7 +157,7 @@ viewModal model =
                         , confirm = c.confirm
                         , cancel = c.cancel
                         , onConfirm = ModalClose (ConfirmAnswer True c.onConfirm)
-                        , onCancel = ModalClose (ConfirmAnswer False (T.send Noop))
+                        , onCancel = ModalClose (ConfirmAnswer False Cmd.none)
                         }
                         model.modalOpened
                 )

@@ -10,9 +10,10 @@ import Libs.Task as T
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
-import Ports exposing (autofocusWithin, trackPage)
+import Ports exposing (JsMsg(..), autofocusWithin, onJsMessage, trackPage)
 import Request
-import Shared
+import Shared exposing (StoredProjects(..))
+import Time
 import Tracking
 import View exposing (View)
 
@@ -43,12 +44,16 @@ init : ( Model, Cmd Msg )
 init =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
+      , projects = Loading
       , confirm = Nothing
       , modalOpened = False
       , toastCpt = 0
       , toasts = []
       }
-    , Cmd.batch [ trackPage "dashboard" ]
+    , Cmd.batch
+        [ Ports.loadProjects
+        , trackPage "dashboard"
+        ]
     )
 
 
@@ -83,7 +88,17 @@ update req msg model =
         NavigateTo url ->
             ( model, Navigation.pushUrl req.key url )
 
-        Noop ->
+        JsMessage message ->
+            model |> handleJsMessage message
+
+
+handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage msg model =
+    case msg of
+        GotProjects ( _, projects ) ->
+            ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
+
+        _ ->
             ( model, Cmd.none )
 
 
@@ -93,7 +108,7 @@ update req msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    onJsMessage JsMessage
 
 
 

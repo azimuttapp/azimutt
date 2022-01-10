@@ -2,7 +2,8 @@ module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
 import Components.Molecules.Toast as Toast
 import Models.Project exposing (Project)
-import Shared exposing (Confirm)
+import Ports exposing (JsMsg)
+import Shared exposing (Confirm, StoredProjects)
 
 
 
@@ -12,6 +13,7 @@ import Shared exposing (Confirm)
 type alias Model =
     { selectedMenu : String
     , mobileMenuOpen : Bool
+    , projects : StoredProjects
     , confirm : Maybe (Confirm Msg)
     , modalOpened : Bool
     , toastCpt : Int
@@ -28,4 +30,4 @@ type Msg
     | ModalOpen
     | ModalClose Msg
     | NavigateTo String
-    | Noop
+    | JsMessage JsMsg

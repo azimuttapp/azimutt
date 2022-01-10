@@ -34,7 +34,7 @@ viewProject shared model =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100, Tw.overflow_hidden ], Global.selector "body" [ Tw.h_full ] ]
     , Styles.global
-    , case shared.projects of
+    , case model.projects of
         Loading ->
             viewLoader shared.theme
 

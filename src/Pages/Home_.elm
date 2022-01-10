@@ -3,48 +3,83 @@ module Pages.Home_ exposing (Model, Msg, page)
 import Gen.Params.Home_ exposing (Params)
 import Html.Styled as Styled
 import Page
+import PagesComponents.Home_.Models as Models exposing (Msg(..))
 import PagesComponents.Home_.View exposing (viewHome)
-import Ports exposing (activateTooltipsAndPopovers, trackPage)
+import Ports exposing (JsMsg(..), onJsMessage, trackPage)
 import Request
 import Shared
+import Time
 import View exposing (View)
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model msg
-page shared _ =
+page : Shared.Model -> Request.With Params -> Page.With Model Msg
+page _ _ =
     Page.element
         { init = init
         , update = update
-        , view = view shared
+        , view = view
         , subscriptions = subscriptions
         }
 
 
 type alias Model =
-    ()
+    Models.Model
 
 
 type alias Msg =
-    ()
+    Models.Msg
+
+
+
+-- INIT
 
 
 init : ( Model, Cmd msg )
 init =
-    ( (), Cmd.batch [ trackPage "home", activateTooltipsAndPopovers ] )
+    ( { projects = [] }
+    , Cmd.batch
+        [ Ports.loadProjects
+        , trackPage "home"
+        ]
+    )
 
 
-update : msg -> Model -> ( Model, Cmd msg )
-update _ model =
-    ( model, Cmd.none )
+
+-- UPDATE
 
 
-view : Shared.Model -> Model -> View msg
-view shared _ =
-    { title = "Azimutt - Explore your database schema"
-    , body = viewHome shared |> List.map Styled.toUnstyled
-    }
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        JsMessage message ->
+            model |> handleJsMessage message
 
 
-subscriptions : Model -> Sub msg
+handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage msg model =
+    case msg of
+        GotProjects ( _, projects ) ->
+            ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }, Cmd.none )
+
+        _ ->
+            ( model, Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    onJsMessage JsMessage
+
+
+
+-- VIEW
+
+
+view : Model -> View msg
+view model =
+    { title = "Azimutt - Explore your database schema"
+    , body = viewHome model |> List.map Styled.toUnstyled
+    }

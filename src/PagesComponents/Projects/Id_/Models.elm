@@ -25,11 +25,12 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
-import Shared exposing (Confirm)
+import Shared exposing (Confirm, StoredProjects)
 
 
 type alias Model =
     { navbar : NavbarModel
+    , projects : StoredProjects
     , project : Maybe Project
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
@@ -94,7 +95,6 @@ type alias DragState =
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
-    | LoadProject Project
     | SaveProject
     | ShowTable TableId
     | ShowTables (List TableId)

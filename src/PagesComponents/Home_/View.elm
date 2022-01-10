@@ -16,42 +16,33 @@ import Html.Styled.Attributes exposing (css, href, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText, extLink)
 import Libs.Html.Styled.Attributes exposing (track)
+import Libs.Maybe as M
 import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
-import Shared exposing (StoredProjects(..))
+import PagesComponents.Home_.Models exposing (Model)
 import Tailwind.Utilities as Tw
 import Tracking exposing (events)
 
 
-viewHome : Shared.Model -> List (Html msg)
-viewHome shared =
+viewHome : Model -> List (Html msg)
+viewHome model =
     let
         heroCta : Html msg
         heroCta =
-            case shared.projects of
-                Loading ->
-                    Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ]
-
-                Loaded projects ->
-                    projects
-                        |> List.head
-                        |> Maybe.map
-                            (\p ->
-                                span []
-                                    [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (events.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
-                                    , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (events.openAppCta "dashboard")) [ text "Open Dashboard" ]
-                                    ]
-                            )
-                        |> Maybe.withDefault (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ])
+            model.projects
+                |> List.head
+                |> M.mapOrElse
+                    (\p ->
+                        div []
+                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (events.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (events.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                            ]
+                    )
+                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ])
 
         appRoute : Route.Route
         appRoute =
-            case shared.projects of
-                Loading ->
-                    Route.Projects
-
-                Loaded projects ->
-                    projects |> List.head |> Maybe.map (\_ -> Route.Projects) |> Maybe.withDefault Route.Projects__New
+            model.projects |> List.head |> M.mapOrElse (\_ -> Route.Projects) Route.Projects__New
     in
     [ Global.global Tw.globalStyles
     , Helpers.publicHeader
