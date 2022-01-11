@@ -6,11 +6,12 @@ import Components.Molecules.Alert as Alert
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.Modal as Modal
 import Conf
-import Html.Styled exposing (Html, br, div, h3, p, text)
+import Html.Styled exposing (Html, br, div, h3, li, p, text, ul)
 import Html.Styled.Attributes exposing (css, disabled, id)
 import Html.Styled.Events exposing (onClick)
 import Libs.DateTime as DateTime
 import Libs.Html.Styled exposing (bText, extLink)
+import Libs.Html.Styled.Attributes exposing (role)
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.FileName exposing (FileName)
@@ -77,10 +78,10 @@ localFileModal theme zone now titleId source fileName updatedAt model =
                 ]
             ]
         , div [ css [ Tw.mt_3 ] ] [ FileInput.basic theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) ]
-        , case ( source.kind, model.parsedSource |> Maybe.map .kind ) of
+        , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
-                [ Just ("Your file name changed from " ++ name1 ++ " to " ++ name2) |> M.filter (\_ -> name1 /= name2)
-                , Just "You file is older than the previous one" |> M.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
+                [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> M.filter (\_ -> name1 /= name2)
+                , Just [ text "You file is older than the previous one" ] |> M.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
                 ]
                     |> List.filterMap identity
                     |> (\warnings ->
@@ -88,7 +89,12 @@ localFileModal theme zone now titleId source fileName updatedAt model =
                                 div [] []
 
                             else
-                                div [ css [ Tw.mt_3 ] ] [ Alert.withList { color = Color.yellow, icon = Exclamation, title = "Found some strange things", items = warnings } ]
+                                div [ css [ Tw.mt_3 ] ]
+                                    [ Alert.withDescription { color = Color.yellow, icon = Exclamation, title = "Found some strange things" }
+                                        [ ul [ role "list", css [ Tw.list_disc, Tw.list_inside ] ]
+                                            (warnings |> List.map (\warning -> li [] warning))
+                                        ]
+                                    ]
                        )
 
             _ ->

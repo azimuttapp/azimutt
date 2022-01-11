@@ -28,7 +28,7 @@ withIcons theme items =
 
 withIcon : Theme -> IconItem msg -> Html msg
 withIcon theme item =
-    li [ css [ Tw.flow_root, Tu.when (not item.active) [ Tw.filter, Tw.grayscale ] ] ]
+    li [ css [ Tw.flow_root, Tu.unless item.active [ Tw.filter, Tw.grayscale ] ] ]
         [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, Tu.focusWithin [ Tw.ring_2, Color.ring theme.color 500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
             [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_16, Tw.w_16, Tw.rounded_lg, Color.bg item.color 500 ] ] [ Icon.outline item.icon [ Tw.text_white ] ]
             , div []

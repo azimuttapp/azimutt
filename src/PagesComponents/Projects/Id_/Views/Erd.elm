@@ -1,14 +1,19 @@
 module PagesComponents.Projects.Id_.Views.Erd exposing (Model, viewErd)
 
+import Components.Atoms.Badge as Badge
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
+import Css
 import Dict exposing (Dict)
-import Html.Styled exposing (Html, div, main_)
+import Html.Styled exposing (Html, button, div, h2, main_, p, text)
 import Html.Styled.Attributes exposing (class, classList, css, id)
+import Html.Styled.Events exposing (onClick)
 import Html.Styled.Keyed as Keyed
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Dict as D
-import Libs.Html.Styled.Events exposing (onPointerDownStopPropagation, onWheel)
+import Libs.Html.Styled exposing (bText, extLink, sendTweet)
+import Libs.Html.Styled.Events exposing (onWheel, stopPointerDown)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -18,6 +23,7 @@ import Libs.Models.Size as Size
 import Libs.Models.Theme exposing (Theme)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
+import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project exposing (Project)
@@ -30,9 +36,8 @@ import Models.RelationFull as RelationFull exposing (RelationFull)
 import Models.TableFull exposing (TableFull)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation)
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
-import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
+import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Projects.Id_.Views.Erd.Table exposing (viewTable)
-import Svg.Styled exposing (svg)
 import Tailwind.Utilities as Tw
 
 
@@ -49,7 +54,7 @@ type alias Model x =
 
 
 viewErd : Theme -> Model x -> Project -> Html Msg
-viewErd _ model project =
+viewErd theme model project =
     let
         layoutTables : Dict TableId TableFull
         layoutTables =
@@ -88,14 +93,19 @@ viewErd _ model project =
             ]
         , id Conf.ids.erd
         , onWheel OnWheel
-        , onPointerDownStopPropagation (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        , stopPointerDown (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y position.left position.top "px", Tu.scale project.layout.canvas.zoom ] ]
             [ layoutTables |> viewTables model project.layout.canvas.zoom shownRelations
             , shownRelations |> viewRelations model.dragging project.layout.canvas.zoom model.hoverColumn
-            , model.selectionBox |> M.mapOrElse viewSelectionBox (div [] [])
-            , virtualRelation |> M.mapOrElse viewVirtualRelation (svg [] [])
+            , model.selectionBox |> M.filter (\_ -> project.layout.tables |> L.nonEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
+            , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
+        , if project.layout.tables |> List.isEmpty then
+            viewEmptyState theme project.tables
+
+          else
+            div [] []
         ]
 
 
@@ -131,6 +141,46 @@ viewSelectionBox area =
             ]
         ]
         []
+
+
+viewEmptyState : Theme -> Dict TableId Table -> Html Msg
+viewEmptyState theme tables =
+    let
+        bestTables : List Table
+        bestTables =
+            tables
+                |> Dict.values
+                |> L.filterNot (\t -> (t.schema |> String.contains "_") || (t.name |> String.contains "_") || (t.schema |> String.contains "-") || (t.name |> String.contains "-"))
+                |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
+                |> List.take 10
+    in
+    div [ css [ Tw.flex, Tw.h_full, Tw.justify_center, Tw.items_center ] ]
+        [ div [ css [ Tw.max_w_prose, Tw.p_6, Tw.bg_white, Tw.border, Tw.border_gray_200, Tw.rounded_lg ] ]
+            [ div [ css [ Tw.text_center ] ]
+                [ Icon.outline Template [ Tw.w_12, Tw.h_12, Tw.mx_auto, Color.text theme.color 500 ]
+                , h2 [ css [ Tw.mt_2, Tw.text_lg, Tw.font_medium, Tw.text_gray_900 ] ]
+                    [ text "Hello from Azimutt 👋" ]
+                , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
+                    [ text "Azimutt let you explore your database schema as freely as possible. To start, just type what you are looking for in the "
+                    , button [ onClick (Focus Conf.ids.searchInput), css [ Tu.link, Css.focus [ Tw.outline_none ] ] ] [ text "search bar" ]
+                    , text ", and then look at column and follow relations. Also, you can save your current layout for later."
+                    ]
+                , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
+                    [ text "Your project has "
+                    , bText (tables |> S.pluralizeD "table")
+                    , text ". Here are some that could be interesting:"
+                    , div [] (bestTables |> List.map (\t -> Badge.basic theme.color [ onClick (ShowTable t.id), css [ Tw.m_1, Tw.cursor_pointer ] ] [ text (TableId.show t.id) ]))
+                    ]
+                , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
+                    [ text "If you like Azimutt, "
+                    , sendTweet Conf.constants.cheeringTweet [ css [ Tu.link ] ] [ text "come and say hi" ]
+                    , text ". We are eager to learn how you use it and for what. We also love "
+                    , extLink Conf.constants.azimuttFeatureRequests [ css [ Tu.link ] ] [ text "feedback and feature requests" ]
+                    , text "."
+                    ]
+                ]
+            ]
+        ]
 
 
 

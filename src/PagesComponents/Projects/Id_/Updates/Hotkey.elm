@@ -5,8 +5,8 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastInfo, toastWarning)
-import Ports exposing (blur, focus, mouseDown, scrollTo)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), resetCanvas, toastInfo, toastWarning)
+import Ports
 import Services.Lenses exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
 
 
@@ -14,16 +14,16 @@ handleHotkey : Model -> String -> ( Model, Cmd Msg )
 handleHotkey model hotkey =
     case hotkey of
         "search-open" ->
-            ( model, focus Conf.ids.searchInput )
+            ( model, Ports.focus Conf.ids.searchInput )
 
         "search-up" ->
-            ( model |> setNavbar (setSearch (setActive (\a -> a - 1))), scrollTo (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> setNavbar (setSearch (setActive (\a -> a - 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
 
         "search-down" ->
-            ( model |> setNavbar (setSearch (setActive (\a -> a + 1))), scrollTo (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> setNavbar (setSearch (setActive (\a -> a + 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
 
         "search-confirm" ->
-            ( model, Cmd.batch [ mouseDown (Conf.ids.searchInput ++ "-active"), blur Conf.ids.searchInput ] )
+            ( model, Cmd.batch [ Ports.mouseDown (Conf.ids.searchInput ++ "-active"), Ports.blur Conf.ids.searchInput ] )
 
         "remove" ->
             ( model, removeElement model )
@@ -77,6 +77,7 @@ removeElement : Model -> Cmd Msg
 removeElement model =
     (model.hoverColumn |> Maybe.map (HideColumn >> T.send))
         |> M.orElse (model.hoverTable |> Maybe.map (HideTable >> T.send))
+        |> M.orElse (model.project |> M.filter (\p -> p.layout.tables /= []) |> Maybe.map (\_ -> resetCanvas |> T.send))
         |> Maybe.withDefault (T.send (toastInfo "Can't find an element to remove :("))
 
 

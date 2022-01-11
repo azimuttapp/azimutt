@@ -101,7 +101,7 @@ alertDescription color content =
 alertList : Color -> List String -> Html msg
 alertList color items =
     div [ css [ Tw.mt_2, Tw.text_sm, Color.text color 700 ] ]
-        [ ul [ role "list", css [ Tw.list_disc, Tw.pl_5, Tw.space_y_1 ] ]
+        [ ul [ role "list", css [ Tw.list_disc, Tw.list_inside ] ]
             (items |> List.map (\item -> li [] [ text item ]))
         ]
 

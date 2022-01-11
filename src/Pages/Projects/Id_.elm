@@ -7,7 +7,7 @@ import Conf
 import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
-import Html.Styled as Styled exposing (text)
+import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
 import Libs.Json.Decode as D
@@ -19,7 +19,7 @@ import Libs.Task as T
 import Models.Project as Project
 import Models.Project.Relation as Relation
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastWarning)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
@@ -184,6 +184,9 @@ update req msg model =
         Zoom delta ->
             ( model |> setCurrentLayout (setCanvas (zoomCanvas delta)), Cmd.none )
 
+        Focus id ->
+            ( model, Ports.focus id )
+
         DropdownToggle id ->
             ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
 
@@ -236,8 +239,8 @@ update req msg model =
         JsMessage message ->
             model |> handleJsMessage req message
 
-        Noop text ->
-            ( model, T.send (toastSuccess ("Noop: " ++ text)) )
+        Noop _ ->
+            ( model, Cmd.none )
 
 
 handleJsMessage : Request.With Params -> JsMsg -> Model -> ( Model, Cmd Msg )

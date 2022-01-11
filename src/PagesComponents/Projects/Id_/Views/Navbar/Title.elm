@@ -48,7 +48,7 @@ viewProjectsDropdown theme openedDropdown storedProjects project =
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
                 [ span [] [ text project.name ]
-                , Icon.solid (B.cond m.isOpen ChevronUp ChevronDown) []
+                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
                 ]
         )
         (\_ ->
@@ -74,7 +74,7 @@ viewLayouts theme openedDropdown project =
             (\m ->
                 button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
                     [ span [] [ text (project.usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
-                    , Icon.solid (B.cond m.isOpen ChevronUp ChevronDown) []
+                    , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
                     ]
             )
             (\_ ->

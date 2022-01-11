@@ -103,7 +103,7 @@ modal model content =
             else
                 Css.batch [ Tw.transition_all, Tw.ease_out, Tu.duration closeDuration, Tw.opacity_0, Tw.translate_y_4, Bp.sm [ Tw.translate_y_0, Tw.scale_95 ] ]
     in
-    div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css [ Tw.fixed, Tu.z_max, Tw.inset_0, Tw.overflow_y_auto, Tu.when (not model.isOpen) [ Tw.pointer_events_none ] ] ]
+    div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css [ Tw.fixed, Tu.z_max, Tw.inset_0, Tw.overflow_y_auto, Tu.unless model.isOpen [ Tw.pointer_events_none ] ] ]
         [ div [ css [ Tw.flex, Tw.items_end, Tw.justify_center, Tw.min_h_screen, Tw.pt_4, Tw.px_4, Tw.pb_20, Tw.text_center, Bp.sm [ Tw.block, Tw.p_0 ] ] ]
             [ div [ ariaHidden True, onClick model.onBackgroundClick, css [ Tw.fixed, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75, backgroundOverlay ] ] []
             , {- This element is to trick the browser into centering the modal contents. -} span [ css [ Tw.hidden, Bp.sm [ Tw.inline_block, Tw.align_middle, Tw.h_screen ] ], ariaHidden True ] [ text "\u{200B}" ]

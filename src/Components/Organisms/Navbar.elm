@@ -165,7 +165,7 @@ adminProfile theme isOpen profile =
 
 adminMobileMenu : Theme -> AdminNavigation msg -> Maybe AdminNotifications -> Maybe (AdminProfile msg) -> AdminMobileMenu msg -> String -> Bool -> Html msg
 adminMobileMenu theme navigation notifications profile mobileMenu activeMenu isOpen =
-    div [ css [ Bp.lg [ Tw.hidden ], Tu.when (not isOpen) [ Tw.hidden ] ], id mobileMenu.id ]
+    div [ css [ Bp.lg [ Tw.hidden ], Tu.unless isOpen [ Tw.hidden ] ], id mobileMenu.id ]
         [ adminMobileNavigation theme navigation activeMenu
         , profile
             |> M.mapOrElse

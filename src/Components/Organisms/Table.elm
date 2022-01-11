@@ -207,7 +207,7 @@ viewHiddenColumns model =
             [ div [ onClick model.actions.clickHiddenColumns, css [ Tw.text_gray_400, Tw.uppercase, Tw.font_bold, Tw.text_sm ] ]
                 [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
             , Keyed.node "div"
-                [ css [ Tw.rounded_lg, Tw.pt_2, Tu.when (not model.state.showHiddenColumns) [ Tw.hidden ] ] ]
+                [ css [ Tw.rounded_lg, Tw.pt_2, Tu.unless model.state.showHiddenColumns [ Tw.hidden ] ] ]
                 (model.hiddenColumns |> List.map (\c -> ( c.name, viewColumn model False c )))
             ]
 

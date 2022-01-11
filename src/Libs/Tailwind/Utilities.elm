@@ -1,4 +1,4 @@
-module Libs.Tailwind.Utilities exposing (bottom, cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, font, h, left, link, max_h, noStyle, right, scale, stroke_3, text_muted, top, translate_x, translate_x_y, translate_y, underline_dotted, w, when, z, z_max)
+module Libs.Tailwind.Utilities exposing (bottom, cursor_cell, cursor_hand, cursor_hand_drag, duration, focusRing, focusWithin, focusWithinRing, font, h, left, link, max_h, noStyle, right, scale, stroke_3, text_muted, top, translate_x, translate_x_y, translate_y, underline_dotted, unless, w, when, z, z_max)
 
 import Css
 import Libs.Models exposing (Millis)
@@ -34,6 +34,17 @@ when cond styles =
 
          else
             []
+        )
+
+
+unless : Bool -> List Css.Style -> Css.Style
+unless cond styles =
+    Css.batch
+        (if cond then
+            []
+
+         else
+            styles
         )
 
 

@@ -2,9 +2,10 @@ module PagesComponents.Projects.Id_.Views.Navbar.Search exposing (Model, viewNav
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Conf
 import Css
 import Dict exposing (Dict)
-import Html.Styled exposing (Attribute, Html, button, div, input, label, span, text)
+import Html.Styled exposing (Attribute, Html, button, div, input, kbd, label, span, text)
 import Html.Styled.Attributes exposing (autocomplete, css, for, id, name, placeholder, tabindex, type_, value)
 import Html.Styled.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Libs.Bool as B
@@ -73,6 +74,17 @@ viewNavbarSearch theme openedDropdown model =
                                 ]
                             ]
                             []
+                        , Conf.hotkeys
+                            |> Dict.get "search-open"
+                            |> Maybe.andThen List.head
+                            |> M.mapOrElse
+                                (\h ->
+                                    div [ css [ Tw.absolute, Tw.inset_y_0, Tw.right_0, Tw.flex, Tw.py_1_dot_5, Tw.pr_1_dot_5 ] ]
+                                        [ kbd [ css [ Tw.inline_flex, Tw.items_center, Tw.border, Color.border theme.color 300, Tw.rounded, Tw.px_2, Tw.text_sm, Tw.font_sans, Tw.font_medium, Color.text theme.color 300 ] ]
+                                            [ text h.key ]
+                                        ]
+                                )
+                                (div [] [])
                         ]
                 )
                 (\m ->

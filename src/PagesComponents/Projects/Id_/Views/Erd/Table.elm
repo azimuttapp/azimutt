@@ -8,7 +8,7 @@ import Html.Styled exposing (Attribute, Html, div)
 import Html.Styled.Attributes exposing (css)
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
-import Libs.Html.Styled.Events exposing (onPointerDownStopPropagation)
+import Libs.Html.Styled.Events exposing (stopPointerDown)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -60,7 +60,7 @@ viewTable model zoom table tableRelations =
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (model.cursorMode == CursorDrag) [] [ onPointerDownStopPropagation (.position >> DragStart tableId) ]
+            B.cond (model.cursorMode == CursorDrag) [] [ stopPointerDown (.position >> DragStart tableId) ]
     in
     div (drag ++ [ css [ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px", Tu.z (Conf.canvas.zIndex.tables + table.index), Tu.when (table.props.size == Size.zero) [ Tw.invisible ] ] ])
         [ Table.table

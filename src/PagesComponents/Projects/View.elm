@@ -53,13 +53,13 @@ viewProjectList shared model =
         [ h3 [ css [ Tw.text_lg, Tw.font_medium ] ] [ text "Projects" ]
         , case model.projects of
             Loading ->
-                div [ css [ Tw.mt_6 ] ] [ text "Loading..." ]
+                div [ css [ Tw.mt_6 ] ] [ projectList [ viewProjectPlaceholder ] ]
 
             Loaded [] ->
                 viewNoProjects shared.theme
 
             Loaded projects ->
-                ul [ role "list", css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_6, Bp.lg [ Tw.grid_cols_4 ], Bp.md [ Tw.grid_cols_3 ], Bp.sm [ Tw.grid_cols_2 ] ] ] ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject shared.theme ])
+                div [ css [ Tw.mt_6 ] ] [ projectList ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject shared.theme ]) ]
         ]
 
 
@@ -99,9 +99,43 @@ viewFirstProject theme =
         ]
 
 
+projectList : List (Html msg) -> Html msg
+projectList content =
+    ul [ role "list", css [ Tw.grid, Tw.grid_cols_1, Tw.gap_6, Bp.lg [ Tw.grid_cols_4 ], Bp.md [ Tw.grid_cols_3 ], Bp.sm [ Tw.grid_cols_2 ] ] ] content
+
+
+viewProjectPlaceholder : Html msg
+viewProjectPlaceholder =
+    li [ class "tw-project-placeholder", css [ Tw.animate_pulse, Tw.col_span_1, Tw.flex, Tw.flex_col, Tw.border, Tw.border_gray_200, Tw.rounded_lg, Tw.divide_y, Tw.divide_gray_200, Css.hover [ Tw.shadow_lg ] ] ]
+        [ div [ css [ Tw.p_6 ] ]
+            [ h3 [ css [ Tw.text_lg, Tw.font_medium ] ] [ viewTextPlaceholder [ Tw.w_24, Tw.h_3 ] ]
+            , ul [ css [ Tw.mt_1, Tw.text_gray_500, Tw.text_sm ] ]
+                [ li [] [ viewTextPlaceholder [] ]
+                , li [] [ viewTextPlaceholder [] ]
+                ]
+            ]
+        , div [ css [ Tw.flex, Tw.divide_x, Tw.divide_gray_200 ] ]
+            [ button [ type_ "button", css [ Tw.flex_grow_0, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Tw.px_4, Css.hover [ Tw.text_gray_500 ] ] ]
+                [ viewIconPlaceholder [] ]
+            , a [ href "#", css [ Tw.flex_grow, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Css.hover [ Tw.text_gray_500 ] ] ]
+                [ viewIconPlaceholder [], viewTextPlaceholder [ Tw.ml_3, Tw.w_24 ] ]
+            ]
+        ]
+
+
+viewTextPlaceholder : List Css.Style -> Html msg
+viewTextPlaceholder styles =
+    span [ css ([ Tw.inline_block, Tw.w_full, Tw.max_w_full, Tw.h_2, Tw.bg_gray_300, Tw.rounded_full ] ++ styles) ] []
+
+
+viewIconPlaceholder : List Css.Style -> Html msg
+viewIconPlaceholder styles =
+    span [ css ([ Tw.h_6, Tw.w_6, Tw.rounded_full, Tw.bg_gray_300 ] ++ styles) ] []
+
+
 viewProjectCard : Time.Zone -> Project -> Html Msg
 viewProjectCard zone project =
-    li [ css [ Tw.col_span_1, Tw.flex, Tw.flex_col, Tw.border, Tw.border_gray_200, Tw.rounded_lg, Tw.divide_y, Tw.divide_gray_200, Css.hover [ Tw.shadow_lg ] ] ]
+    li [ class "tw-project", css [ Tw.col_span_1, Tw.flex, Tw.flex_col, Tw.border, Tw.border_gray_200, Tw.rounded_lg, Tw.divide_y, Tw.divide_gray_200, Css.hover [ Tw.shadow_lg ] ] ]
         [ div [ css [ Tw.p_6 ] ]
             [ h3 [ css [ Tw.text_lg, Tw.font_medium ] ] [ text project.name ]
             , ul [ css [ Tw.mt_1, Tw.text_gray_500, Tw.text_sm ] ]

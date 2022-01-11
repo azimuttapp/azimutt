@@ -10,7 +10,7 @@ import DataSources.SqlParser.ProjectAdapter as ProjectAdapter
 import DataSources.SqlParser.StatementParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
-import Html.Styled exposing (Html, div, p, text)
+import Html.Styled exposing (Html, div, li, p, span, text, ul)
 import Html.Styled.Attributes exposing (css, href)
 import Libs.Bool as B
 import Libs.Dict as D
@@ -22,13 +22,18 @@ import Libs.Models exposing (FileContent, FileLineContent)
 import Libs.Models.Color as Color
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Result as R
+import Libs.String as S
 import Libs.Task as T
 import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.Relation exposing (Relation)
+import Models.Project.RelationId as RelationId
 import Models.Project.SampleName exposing (SampleKey)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId
 import Models.SourceInfo exposing (SourceInfo)
 import Ports exposing (readLocalFile, readRemoteFile, track)
 import Tailwind.Utilities as Tw
@@ -258,6 +263,7 @@ viewParsing model =
                     [ div [ css [ Tw.mt_6 ] ] [ Divider.withLabel (model.parsedSource |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
                     , viewLogs sourceText parsedSchema
                     , viewErrorAlert parsedSchema
+                    , model.source |> Maybe.map2 viewSourceDiff model.parsedSource |> Maybe.withDefault (div [] [])
                     ]
                 )
                 model.parsedSchema
@@ -377,3 +383,58 @@ sendErrorReport parseErrors schemaErrors =
                    )
     in
     "mailto:" ++ email ++ "?subject=" ++ percentEncode subject ++ "&body=" ++ percentEncode body
+
+
+viewSourceDiff : Source -> Source -> Html msg
+viewSourceDiff newSource oldSource =
+    let
+        ( removedTables, existingTables, newTables ) =
+            L.zipBy .id (oldSource.tables |> Dict.values) (newSource.tables |> Dict.values)
+
+        updatedTables : List ( Table, Table )
+        updatedTables =
+            existingTables |> List.filter (\( oldTable, newTable ) -> oldTable /= newTable)
+
+        ( removedRelations, existingRelations, newRelations ) =
+            L.zipBy .id oldSource.relations newSource.relations
+
+        updatedRelations : List ( Relation, Relation )
+        updatedRelations =
+            existingRelations |> List.filter (\( oldRelation, newRelation ) -> oldRelation /= newRelation)
+    in
+    if L.nonEmpty updatedTables || L.nonEmpty newTables || L.nonEmpty removedTables || L.nonEmpty updatedRelations || L.nonEmpty newRelations || L.nonEmpty removedRelations then
+        div [ css [ Tw.mt_3 ] ]
+            [ Alert.withDescription { color = Color.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
+                [ ul [ css [ Tw.list_disc, Tw.list_inside ] ]
+                    ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( _, t ) -> TableId.show t.id))
+                     , viewSourceDiffItem "new table" (newTables |> List.map (\t -> TableId.show t.id))
+                     , viewSourceDiffItem "removed table" (removedTables |> List.map (\t -> TableId.show t.id))
+                     , viewSourceDiffItem "modified relation" (updatedRelations |> List.map (\( _, r ) -> RelationId.show r.id))
+                     , viewSourceDiffItem "new relation" (newRelations |> List.map (\r -> RelationId.show r.id))
+                     , viewSourceDiffItem "removed relation" (removedRelations |> List.map (\r -> RelationId.show r.id))
+                     ]
+                        |> List.filterMap identity
+                    )
+                ]
+            ]
+
+    else
+        div [ css [ Tw.mt_3 ] ]
+            [ Alert.withDescription { color = Color.green, icon = CheckCircle, title = "Source parsed" }
+                [ text "There is no differences but you can still refresh the source to change the last updated date." ]
+            ]
+
+
+viewSourceDiffItem : String -> List String -> Maybe (Html msg)
+viewSourceDiffItem label items =
+    items
+        |> List.head
+        |> Maybe.map
+            (\_ ->
+                li []
+                    [ bText (items |> S.pluralizeL label)
+                    , text " ("
+                    , span [] (items |> List.map (\item -> span [] [ text item ]) |> List.intersperse (text ", "))
+                    , text ")"
+                    ]
+            )

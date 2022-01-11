@@ -3,18 +3,19 @@ module PagesComponents.Projects.Id_.Views.Modals.CreateLayout exposing (viewCrea
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
+import Conf
 import Css
 import Html.Styled exposing (Html, div, h3, input, label, p, text)
 import Html.Styled.Attributes exposing (autofocus, css, for, id, name, tabindex, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
-import Libs.Html.Styled exposing (bText, extLink)
+import Libs.Html.Styled exposing (bText, sendTweet)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
+import Libs.Tailwind.Utilities as Tu
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
-import Url exposing (percentEncode)
 
 
 viewCreateLayout : Theme -> Bool -> LayoutDialog -> Html Msg
@@ -46,9 +47,9 @@ viewCreateLayout theme opened model =
                     , div [ css [ Tw.mt_1 ] ]
                         [ input [ type_ "text", name "layout-name", id inputId, value model.name, onInput (LEdit >> LayoutMsg), autofocus True, css [ Tw.form_input, Tw.shadow_sm, Tw.block, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ] ] []
                         ]
-                    , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ]
+                    , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
                         [ text "Do you like Azimutt ? Consider "
-                        , extLink (sendTweet "Hi @azimuttapp team, well done with your app, I really like it 👍") [ tabindex -1 ] [ text "sending us a tweet" ]
+                        , sendTweet Conf.constants.cheeringTweet [ tabindex -1, css [ Tu.link ] ] [ text "sending us a tweet" ]
                         , text ", it will help "
                         , bText "keep our motivation high"
                         , text " 🥰"
@@ -61,8 +62,3 @@ viewCreateLayout theme opened model =
             , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text "Cancel" ]
             ]
         ]
-
-
-sendTweet : String -> String
-sendTweet text =
-    "https://twitter.com/intent/tweet?text=" ++ percentEncode text

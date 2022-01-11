@@ -1,4 +1,4 @@
-module Libs.Html.Styled.Events exposing (PointerEvent, WheelEvent, onPointerDown, onPointerDownPreventDefault, onPointerDownStopPropagation, onPointerUp, onWheel)
+module Libs.Html.Styled.Events exposing (PointerEvent, WheelEvent, onPointerDown, onPointerUp, onWheel, preventPointerDown, stopClick, stopPointerDown)
 
 import Html.Events.Extra.Pointer as Pointer exposing (Event)
 import Html.Styled exposing (Attribute)
@@ -21,16 +21,6 @@ onPointerDown msg =
     Events.on "pointerdown" (pointerDecoder |> Decode.map msg)
 
 
-onPointerDownPreventDefault : (PointerEvent -> msg) -> Attribute msg
-onPointerDownPreventDefault msg =
-    Events.preventDefaultOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
-
-
-onPointerDownStopPropagation : (PointerEvent -> msg) -> Attribute msg
-onPointerDownStopPropagation msg =
-    Events.stopPropagationOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
-
-
 onPointerUp : (PointerEvent -> msg) -> Attribute msg
 onPointerUp msg =
     Events.on "pointerup" (pointerDecoder |> Decode.map msg)
@@ -48,6 +38,21 @@ onWheel callback =
             { message = msg, stopPropagation = True, preventDefault = True }
     in
     Events.custom "wheel" (Events.wheelDecoder |> Decode.map (callback >> preventDefaultAndStopPropagation))
+
+
+preventPointerDown : (PointerEvent -> msg) -> Attribute msg
+preventPointerDown msg =
+    Events.preventDefaultOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
+
+
+stopClick : (PointerEvent -> msg) -> Attribute msg
+stopClick msg =
+    Events.stopPropagationOn "click" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
+
+
+stopPointerDown : (PointerEvent -> msg) -> Attribute msg
+stopPointerDown msg =
+    Events.stopPropagationOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
 
 
 

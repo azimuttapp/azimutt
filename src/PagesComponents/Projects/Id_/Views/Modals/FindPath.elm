@@ -23,7 +23,7 @@ import Models.Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
-import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.FindPathState as FindPathState
 import Models.Project.FindPathStep exposing (FindPathStep)
 import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
@@ -84,10 +84,10 @@ viewAlert =
 
 
 viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
-viewSettings modalId opened settings =
+viewSettings modalId isOpen settings =
     div [ css [ Tw.px_6, Tw.mt_3 ] ]
         [ button [ onClick (FindPathMsg FPToggleSettings), css [ Tu.link ] ] [ text "Search settings" ]
-        , div [ css [ Tw.p_3, Tw.border, Tw.border_gray_300, Tw.bg_gray_50, Tw.rounded_md, Tw.shadow_sm, Tu.when (not opened) [ Tw.hidden ] ] ]
+        , div [ css [ Tw.p_3, Tw.border, Tw.border_gray_300, Tw.bg_gray_50, Tw.rounded_md, Tw.shadow_sm, Tu.unless isOpen [ Tw.hidden ] ] ]
             [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
                           Use the settings below to limit your search and keep the search correct.""" ]
@@ -108,7 +108,7 @@ viewSettings modalId opened settings =
                 "Max path length"
                 "ex: 3"
                 (String.fromInt settings.maxPathLength)
-                (\v -> String.toInt v |> M.mapOrElse (\l -> FindPathMsg (FPSettingsUpdate { settings | maxPathLength = l })) (Noop "Bad path length"))
+                (\v -> { settings | maxPathLength = v |> String.toInt |> Maybe.withDefault FindPathSettings.init.maxPathLength } |> FPSettingsUpdate |> FindPathMsg)
             ]
         ]
 

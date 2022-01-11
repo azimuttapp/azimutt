@@ -26,7 +26,7 @@ import Libs.Tailwind.Utilities as Tu
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Tailwind.Breakpoints as Bp
@@ -93,11 +93,7 @@ viewNavbarHelp theme =
 
 viewNavbarResetLayout : Theme -> Maybe LayoutName -> Layout -> Html Msg
 viewNavbarResetLayout theme usedLayout layout =
-    if canResetCanvas usedLayout layout then
-        Button.primary3 theme.color [ onClick resetCanvasMsg, css [ Tw.ml_auto ] ] [ text "Reset canvas" ]
-
-    else
-        div [] []
+    Button.primary3 theme.color [ onClick resetCanvas, css [ Tw.ml_auto, Tu.unless (canResetCanvas usedLayout layout) [ Tw.invisible ] ] ] [ text "Reset canvas" ]
 
 
 viewNavbarFeatures : Theme -> List (Btn Msg) -> HtmlId -> Html Msg
@@ -107,7 +103,7 @@ viewNavbarFeatures theme features openedDropdown =
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, Color.bg theme.color 600, Tw.p_1, Tw.rounded_full, Color.text theme.color 200, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
                 [ span [ css [ Tw.sr_only ] ] [ text "View features" ]
                 , Icon.outline LightningBolt []
-                , Icon.solid (B.cond (openedDropdown == m.id) ChevronUp ChevronDown) []
+                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
                 ]
         )
         (\_ ->
@@ -144,7 +140,7 @@ navbarMobileButton theme open =
 
 
 viewNavbarMobileMenu : Theme -> List (Btn Msg) -> Maybe LayoutName -> Layout -> Bool -> Html Msg
-viewNavbarMobileMenu theme features usedLayout layout open =
+viewNavbarMobileMenu theme features usedLayout layout isOpen =
     let
         groupSpace : Css.Style
         groupSpace =
@@ -158,8 +154,8 @@ viewNavbarMobileMenu theme features usedLayout layout open =
         btnStyle =
             Css.batch [ Color.text theme.color 100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ Color.bg theme.color 500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
     in
-    div [ css [ Bp.lg [ Tw.hidden ], Tu.when (not open) [ Tw.hidden ] ], id "mobile-menu" ]
-        ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvasMsg, css [ btnStyle ] ] [ text "Reset canvas" ] ] []
+    div [ css [ Bp.lg [ Tw.hidden ], Tu.unless isOpen [ Tw.hidden ] ], id "mobile-menu" ]
+        ([ B.cond (canResetCanvas usedLayout layout) [ button [ type_ "button", onClick resetCanvas, css [ btnStyle ] ] [ text "Reset canvas" ] ] []
          , features
             |> List.map
                 (\f ->
@@ -173,11 +169,6 @@ viewNavbarMobileMenu theme features usedLayout layout open =
             |> List.filter L.nonEmpty
             |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, Tu.when (i /= 0) [ groupBorder ] ] ] groupContent)
         )
-
-
-resetCanvasMsg : Msg
-resetCanvasMsg =
-    ResetCanvas |> confirm "Reset canvas?" (text "You will loose your current canvas state.")
 
 
 canResetCanvas : Maybe LayoutName -> Layout -> Bool

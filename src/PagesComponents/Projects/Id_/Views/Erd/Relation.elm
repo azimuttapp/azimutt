@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
+module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 
 import Components.Organisms.Relation as Relation
 import Conf
@@ -16,8 +16,8 @@ import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull exposing (RelationFull)
 import PagesComponents.Projects.Id_.Models exposing (DragState)
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
-import Svg.Styled exposing (Svg, svg, text)
-import Svg.Styled.Attributes exposing (class)
+import Svg.Styled exposing (Svg, svg)
+import Svg.Styled.Attributes exposing (class, height, width)
 
 
 viewRelation : Maybe DragState -> ZoomLevel -> Maybe ColumnRef -> RelationFull -> Svg msg
@@ -27,8 +27,8 @@ viewRelation dragging zoom hover { name, src, ref } =
         , ( ColumnRefFull.format src ++ " -> " ++ name ++ " -> " ++ ColumnRefFull.format ref, getColor hover src ref )
         )
     of
-        ( ( Nothing, Nothing ), ( label, _ ) ) ->
-            svg [ class "tw-erd-relation" ] [ text label ]
+        ( ( Nothing, Nothing ), _ ) ->
+            viewEmptyRelation
 
         ( ( Just ( sProps, sIndex, sSize ), Nothing ), ( label, color ) ) ->
             case { left = sProps.position.left + sSize.width, top = positionTop sProps src.column } of
@@ -59,7 +59,12 @@ viewVirtualRelation ( src, ref ) =
                 (Conf.canvas.zIndex.tables - 1)
 
         Nothing ->
-            svg [ class "tw-erd-relation" ] [ text "virtual relation" ]
+            viewEmptyRelation
+
+
+viewEmptyRelation : Svg msg
+viewEmptyRelation =
+    svg [ class "erd-relation", width "0px", height "0px" ] []
 
 
 computeProps : Maybe DragState -> ZoomLevel -> ColumnRefFull -> Maybe ( TableProps, Int, Size )

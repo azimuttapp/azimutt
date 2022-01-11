@@ -23,6 +23,10 @@ suite =
             [ test "replace a value" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" } ] |> L.replaceOrAppend .id { id = 2, name = "bb" } |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "bb" } ])
             , test "append a value" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" } ] |> L.replaceOrAppend .id { id = 3, name = "c" } |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "b" }, { id = 3, name = "c" } ])
             ]
+        , describe "zipBy"
+            [ test "empty lists" (\_ -> L.zipBy identity [] [] |> Expect.equal ( [], [], [] ))
+            , test "int lists" (\_ -> L.zipBy identity [ 1, 2, 3 ] [ 2, 4, 6 ] |> Expect.equal ( [ 1, 3 ], [ ( 2, 2 ) ], [ 4, 6 ] ))
+            ]
         , describe "dropWhile"
             [ test "drop items while its true" (\_ -> [ 1, 2, 3, 4, 5 ] |> L.dropWhile (\i -> i < 3) |> Expect.equal [ 3, 4, 5 ])
             ]

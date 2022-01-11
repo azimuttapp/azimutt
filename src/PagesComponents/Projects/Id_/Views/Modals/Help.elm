@@ -205,10 +205,10 @@ shortcuts =
 
 
 sectionToAccordionItem : Theme -> Bool -> Section Msg -> Html Msg
-sectionToAccordionItem theme opened section =
+sectionToAccordionItem theme isOpen section =
     div []
-        [ div [ onClick (HelpMsg (HToggle section.title)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when opened [ Color.bg theme.color 100, Color.text theme.color 700 ] ] ] [ text section.title ]
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Tu.when (not opened) [ Tw.hidden ] ] ] section.body
+        [ div [ onClick (HelpMsg (HToggle section.title)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when isOpen [ Color.bg theme.color 100, Color.text theme.color 700 ] ] ] [ text section.title ]
+        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Tu.unless isOpen [ Tw.hidden ] ] ] section.body
         ]
 
 

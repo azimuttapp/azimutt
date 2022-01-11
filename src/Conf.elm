@@ -21,9 +21,10 @@ constants :
     , azimuttDiscussionSearch : String
     , azimuttDiscussionCanvas : String
     , azimuttEmail : String
+    , cheeringTweet : String
     }
 constants =
-    { azimuttTwitter = "https://twitter.com/azimuttapp"
+    { azimuttTwitter = "https://twitter.com/" ++ twitter
     , azimuttGithub = github
     , azimuttDiscussions = github ++ "/discussions"
     , azimuttRoadmap = github ++ "/projects/1"
@@ -33,7 +34,13 @@ constants =
     , azimuttDiscussionSearch = github ++ "/discussions/8"
     , azimuttDiscussionCanvas = github ++ "/discussions/9"
     , azimuttEmail = "hey@azimutt.app"
+    , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     }
+
+
+twitter : String
+twitter =
+    "azimuttapp"
 
 
 github : String

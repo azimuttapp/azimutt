@@ -41,7 +41,7 @@ slideover model content =
         duration =
             B.cond model.isOpen Modal.openDuration Modal.closeDuration
     in
-    div [ css [ Tw.fixed, Tw.inset_0, Tw.overflow_hidden, Tu.z_max, Tu.when (not model.isOpen) [ Tw.pointer_events_none ] ], ariaLabelledby labelId, role "dialog", ariaModal True ]
+    div [ css [ Tw.fixed, Tw.inset_0, Tw.overflow_hidden, Tu.z_max, Tu.unless model.isOpen [ Tw.pointer_events_none ] ], ariaLabelledby labelId, role "dialog", ariaModal True ]
         [ div [ css [ Tw.absolute, Tw.inset_0, Tw.overflow_hidden ] ]
             [ div [ onClick model.onClickOverlay, css [ Tw.absolute, Tw.inset_0, Tw.bg_gray_500, Tw.bg_opacity_75, Tw.transition_opacity, Tw.ease_in_out, Tu.duration duration, B.cond model.isOpen Tw.opacity_100 Tw.opacity_0 ], ariaHidden True ] []
             , div [ css [ Tw.fixed, Tw.inset_y_0, Tw.right_0, Tw.pl_10, Tw.max_w_full, Tw.flex ] ]
