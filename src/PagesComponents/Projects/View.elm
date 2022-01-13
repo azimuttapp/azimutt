@@ -36,8 +36,7 @@ viewProjects shared model =
         model
         [ text model.selectedMenu ]
         [ viewContent shared model ]
-        [ viewModal model
-        ]
+        [ viewModal model ]
 
 
 viewContent : Shared.Model -> Model -> Html Msg

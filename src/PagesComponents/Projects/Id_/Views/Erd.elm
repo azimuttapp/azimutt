@@ -138,6 +138,8 @@ viewSelectionBox area =
             , Tw.border_2
             , Color.bg Color.teal 400
             , Tw.bg_opacity_25
+            , Tw.absolute
+            , Tu.z_max
             ]
         ]
         []

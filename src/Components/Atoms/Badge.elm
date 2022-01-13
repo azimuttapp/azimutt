@@ -1,6 +1,6 @@
 module Components.Atoms.Badge exposing (basic, doc, rounded)
 
-import ElmBook.Chapter exposing (chapter, renderComponentList)
+import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Attribute, Html, span, text)
 import Html.Styled.Attributes exposing (css)
@@ -25,8 +25,8 @@ rounded color attrs content =
 
 doc : Theme -> Chapter x
 doc theme =
-    chapter "Badge"
-        |> renderComponentList
+    Chapter.chapter "Badge"
+        |> Chapter.renderComponentList
             [ ( "basic", basic theme.color [] [ text "Badge" ] )
             , ( "rounded", rounded theme.color [] [ text "Badge" ] )
             ]

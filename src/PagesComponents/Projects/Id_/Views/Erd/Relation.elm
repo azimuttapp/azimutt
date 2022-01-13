@@ -2,6 +2,7 @@ module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelati
 
 import Components.Organisms.Relation as Relation
 import Conf
+import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color exposing (Color)
@@ -51,7 +52,9 @@ viewVirtualRelation ( src, ref ) =
     case src.props |> M.filter (\( p, _, _ ) -> p |> .columns |> List.member src.column.name) of
         Just ( props, _, size ) ->
             drawRelation
-                { left = props.position.left + size.width, top = positionTop props src.column }
+                { left = props.position.left + B.cond (ref.left < props.position.left + size.width / 2) 0 size.width
+                , top = positionTop props src.column
+                }
                 { left = ref.left, top = ref.top }
                 src.column.nullable
                 (Just props.color)

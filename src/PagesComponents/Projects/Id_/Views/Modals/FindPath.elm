@@ -8,10 +8,11 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Css
 import Dict exposing (Dict)
-import Html.Styled exposing (Html, br, button, div, h3, input, label, option, p, pre, select, small, span, text)
-import Html.Styled.Attributes exposing (css, disabled, for, id, placeholder, selected, title, type_, value)
+import Html.Styled exposing (Html, br, button, div, h2, h3, img, input, label, option, p, pre, select, small, span, text)
+import Html.Styled.Attributes exposing (alt, css, disabled, for, id, placeholder, selected, src, title, type_, value)
 import Html.Styled.Events exposing (onClick, onInput)
 import Libs.Html.Styled exposing (bText, extLink)
+import Libs.Html.Styled.Attributes exposing (ariaDescribedby)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -86,7 +87,7 @@ viewAlert =
 viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
 viewSettings modalId isOpen settings =
     div [ css [ Tw.px_6, Tw.mt_3 ] ]
-        [ button [ onClick (FindPathMsg FPToggleSettings), css [ Tu.link ] ] [ text "Search settings" ]
+        [ button [ onClick (FindPathMsg FPToggleSettings), css [ Tu.link, Css.focus [ Tw.outline_none ] ] ] [ text "Search settings" ]
         , div [ css [ Tw.p_3, Tw.border, Tw.border_gray_300, Tw.bg_gray_50, Tw.rounded_md, Tw.shadow_sm, Tu.unless isOpen [ Tw.hidden ] ] ]
             [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
@@ -95,30 +96,34 @@ viewSettings modalId isOpen settings =
                 "text"
                 "Ignored tables"
                 "ex: users, accounts..."
+                "Some columns does not have meaningful links so ignore them for better results."
                 (settings.ignoredTables |> List.map TableId.show |> String.join ", ")
                 (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map TableId.parse }))
             , viewSettingsInput (modalId ++ "-settings-ignored-columns")
                 "text"
                 "Ignored columns"
                 "ex: created_by, updated_by, owner..."
+                "Some tables are big hubs which leads to bad results and performance, ignore them."
                 (settings.ignoredColumns |> String.join ", ")
                 (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredColumns = v |> String.split "," |> List.map String.trim }))
             , viewSettingsInput (modalId ++ "-settings-path-max-length")
                 "number"
                 "Max path length"
                 "ex: 3"
+                "Limit paths in length to limit complexity and performance."
                 (String.fromInt settings.maxPathLength)
                 (\v -> { settings | maxPathLength = v |> String.toInt |> Maybe.withDefault FindPathSettings.init.maxPathLength } |> FPSettingsUpdate |> FindPathMsg)
             ]
         ]
 
 
-viewSettingsInput : String -> String -> String -> String -> String -> (String -> msg) -> Html msg
-viewSettingsInput fieldId fieldType fieldLabel sample fieldValue msg =
+viewSettingsInput : String -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg
+viewSettingsInput fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldValue msg =
     div [ css [ Bp.sm [ Tw.grid, Tw.grid_cols_4, Tw.gap_3, Tw.items_start, Tw.mt_3 ] ] ]
         [ label [ for fieldId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700, Bp.sm [ Tw.mt_px, Tw.pt_2 ] ] ] [ text fieldLabel ]
         , div [ css [ Tw.mt_1, Bp.sm [ Tw.mt_0, Tw.col_span_3 ] ] ]
-            [ input [ type_ fieldType, id fieldId, value fieldValue, onInput msg, placeholder sample, css [ Tw.form_input, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ] ] []
+            [ input [ type_ fieldType, id fieldId, value fieldValue, onInput msg, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ Tw.form_input, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ] ] []
+            , p [ id (fieldId ++ "-help"), css [ Tw.text_sm, Tw.text_gray_500 ] ] [ text fieldHelp ]
             ]
         ]
 
@@ -160,7 +165,10 @@ viewPaths theme model =
     case ( model.from, model.to, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
             if result.paths |> List.isEmpty then
-                div [ css [ Tw.px_6, Tw.mt_3 ] ] [ text "No path found" ]
+                div [ css [ Tw.px_6, Tw.mt_3, Tw.text_center ] ]
+                    [ h2 [ css [ Tw.mt_2, Tw.text_lg, Tw.font_medium, Tw.text_gray_900 ] ] [ text "No path found" ]
+                    , img [ src "/assets/images/closed-door.jpg", alt "Closed door", css [ Tw.h_96, Tw.inline_block, Tw.align_middle ] ] []
+                    ]
 
             else
                 div [ css [ Tw.px_6, Tw.mt_3, Tw.overflow_y_auto ] ]

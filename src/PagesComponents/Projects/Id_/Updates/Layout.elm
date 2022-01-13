@@ -9,7 +9,7 @@ import Libs.Task as T
 import Models.Project exposing (Project)
 import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..), toastSuccess)
 import Ports exposing (observeTablesSize, track)
 import Services.Lenses exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import Time
@@ -82,7 +82,7 @@ updateLayout name project =
     -- TODO check that layout name already exist
     { project | usedLayout = Just name }
         |> setLayouts (Dict.update name (\_ -> Just project.layout))
-        |> (\newSchema -> ( newSchema, track (Tracking.events.updateLayout project.layout) ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ T.send (toastSuccess ("Saved to " ++ name ++ " layout!")), track (Tracking.events.updateLayout project.layout) ] ))
 
 
 deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )

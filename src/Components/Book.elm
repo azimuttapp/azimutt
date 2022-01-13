@@ -4,6 +4,7 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
+import Components.Atoms.Input as Input
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
 import Components.Atoms.Markdown as Markdown
@@ -45,6 +46,7 @@ import Tailwind.Utilities as Tw
 
 type alias DocState =
     { dropdownDocState : Dropdown.DocState
+    , inputDocState : Input.DocState
     , modalDocState : Modal.DocState
     , navbarDocState : Navbar.DocState
     , slideoverDocState : Slideover.DocState
@@ -56,6 +58,7 @@ type alias DocState =
 init : DocState
 init =
     { dropdownDocState = Dropdown.initDocState
+    , inputDocState = Input.initDocState
     , modalDocState = Modal.initDocState
     , navbarDocState = Navbar.initDocState
     , slideoverDocState = Slideover.initDocState
@@ -82,7 +85,7 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Kbd.doc, Link.doc theme, Markdown.doc ] )
+            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Input.doc theme, Kbd.doc, Link.doc theme, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, FileInput.doc theme, ItemList.doc theme, Modal.doc theme, Slideover.doc theme, Toast.doc theme, Tooltip.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
