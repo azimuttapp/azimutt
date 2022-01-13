@@ -97,7 +97,7 @@ viewSource _ zone source =
 
 viewAddSource : ProjectId -> Html Msg
 viewAddSource _ =
-    button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ Tw.px_4, Tw.py_2, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ]
+    button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ Tw.inline_flex, Tw.items_center, Tw.px_3, Tw.py_2, Tw.w_full, Tw.text_left, Css.focus [ Tw.outline_none ] ] ]
         [ Icon.solid Plus [ Tw.inline ], text "Add source" ]
 
 
