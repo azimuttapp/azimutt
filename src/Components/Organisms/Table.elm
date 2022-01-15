@@ -218,7 +218,7 @@ viewColumn model isLast column =
         ([ onMouseEnter (model.actions.hoverColumn column.name True)
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
-         , css [ Tw.flex, Tw.items_center, Tw.justify_items_center, Tw.px_2, Tw.bg_white, Css.batch (B.cond (isColumnHover model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]), Tu.when isLast [ Tw.rounded_b_lg ] ]
+         , css [ Tw.items_center, Tw.flex, Tw.px_2, Tw.bg_white, Css.batch (B.cond (isColumnHover model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]), Tu.when isLast [ Tw.rounded_b_lg ] ]
          ]
             ++ (model.actions.clickColumn |> M.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
         )
@@ -231,22 +231,22 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
-        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [] |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [] |> Tooltip.t "Primary key" ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [ Tw.pt_2 ] |> Tooltip.t "Primary key" ]
 
     else if column.uniques |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [] |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [ Tw.pt_2 ] |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid SortDescending [] |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid SortDescending [ Tw.pt_2 ] |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Check [] |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Check [ Tw.pt_2 ] |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Empty [] ]
+        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Empty [ Tw.pt_2 ] ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
