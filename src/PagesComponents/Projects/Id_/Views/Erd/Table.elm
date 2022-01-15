@@ -12,7 +12,6 @@ import Libs.Html.Styled.Events exposing (stopPointerDown)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
@@ -28,7 +27,6 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationFull as RelationFull exposing (RelationFull)
 import Models.TableFull exposing (TableFull)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, FindPathMsg(..), Msg(..), VirtualRelation, VirtualRelationMsg(..))
-import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import Tailwind.Utilities as Tw
 
 
@@ -50,10 +48,6 @@ viewTable model zoom table tableRelations =
         tableId =
             TableId.toHtmlId table.id
 
-        position : Position
-        position =
-            model.dragging |> M.filter (\d -> d.id == tableId) |> M.mapOrElse (\d -> table.props.position |> Drag.move d zoom) table.props.position
-
         columns : Ned ColumnName Table.Column
         columns =
             table.table.columns |> Ned.map (\_ col -> buildColumn tableRelations table col)
@@ -62,7 +56,7 @@ viewTable model zoom table tableRelations =
         drag =
             B.cond (model.cursorMode == CursorDrag) [] [ stopPointerDown (.position >> DragStart tableId) ]
     in
-    div (drag ++ [ css [ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y position.left position.top "px", Tu.z (Conf.canvas.zIndex.tables + table.index), Tu.when (table.props.size == Size.zero) [ Tw.invisible ] ] ])
+    div (drag ++ [ css [ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y table.props.position.left table.props.position.top "px", Tu.z (Conf.canvas.zIndex.tables + table.index), Tu.when (table.props.size == Size.zero) [ Tw.invisible ] ] ])
         [ Table.table
             { id = tableId
             , ref = { schema = table.table.schema, table = table.table.name }

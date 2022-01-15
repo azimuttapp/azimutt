@@ -8,23 +8,19 @@ import Libs.Maybe as M
 import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
-import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.ColumnRefFull as ColumnRefFull exposing (ColumnRefFull)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull exposing (RelationFull)
-import PagesComponents.Projects.Id_.Models exposing (DragState)
-import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import Svg.Styled exposing (Svg, svg)
 import Svg.Styled.Attributes exposing (class, height, width)
 
 
-viewRelation : Maybe DragState -> ZoomLevel -> Maybe ColumnRef -> RelationFull -> Svg msg
-viewRelation dragging zoom hover { name, src, ref } =
+viewRelation : Maybe ColumnRef -> RelationFull -> Svg msg
+viewRelation hover { name, src, ref } =
     case
-        ( ( src |> computeProps dragging zoom, ref |> computeProps dragging zoom )
+        ( ( src |> computeProps, ref |> computeProps )
         , ( ColumnRefFull.format src ++ " -> " ++ name ++ " -> " ++ ColumnRefFull.format ref, getColor hover src ref )
         )
     of
@@ -70,11 +66,9 @@ viewEmptyRelation =
     svg [ class "erd-relation", width "0px", height "0px" ] []
 
 
-computeProps : Maybe DragState -> ZoomLevel -> ColumnRefFull -> Maybe ( TableProps, Int, Size )
-computeProps dragging zoom col =
-    col.props
-        |> M.filter (\( p, _, _ ) -> p |> .columns |> List.member col.column.name)
-        |> Maybe.map (\( p, i, s ) -> ( dragging |> M.filter (\d -> d.id == TableId.toHtmlId p.id) |> M.mapOrElse (\d -> { p | position = p.position |> Drag.move d zoom }) p, i, s ))
+computeProps : ColumnRefFull -> Maybe ( TableProps, Int, Size )
+computeProps col =
+    col.props |> M.filter (\( p, _, _ ) -> p |> .columns |> List.member col.column.name)
 
 
 drawRelation : Position -> Position -> Bool -> Maybe Color -> String -> Int -> Svg msg

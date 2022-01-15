@@ -27,11 +27,12 @@ import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project exposing (Project)
-import Models.Project.CanvasProps as CanvasProps
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull as RelationFull exposing (RelationFull)
 import Models.TableFull exposing (TableFull)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation)
@@ -56,19 +57,27 @@ type alias Model x =
 viewErd : Theme -> Model x -> Project -> Html Msg
 viewErd theme model project =
     let
-        layoutTables : Dict TableId TableFull
+        canvas : CanvasProps
+        canvas =
+            model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> project.layout.canvas |> Drag.moveCanvas d) project.layout.canvas
+
+        layoutTables : List TableProps
         layoutTables =
-            project.layout.tables |> List.reverse |> L.zipWithIndex |> List.filterMap (\( props, i ) -> project.tables |> Dict.get props.id |> Maybe.map (\t -> TableFull t.id i t props)) |> D.fromListMap .id
+            model.dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> project.layout.tables |> Drag.moveTables d canvas.zoom) project.layout.tables
 
         shownTables : Dict TableId TableFull
         shownTables =
-            layoutTables |> Dict.filter (\_ t -> t.props.size /= Size.zero)
+            layoutTables |> List.reverse |> L.zipWithIndex |> List.filterMap (\( props, i ) -> project.tables |> Dict.get props.id |> Maybe.map (\t -> TableFull t.id i t props)) |> D.fromListMap .id
 
-        shownRelations : List RelationFull
-        shownRelations =
+        displayedTables : Dict TableId TableFull
+        displayedTables =
+            shownTables |> Dict.filter (\_ t -> t.props.size /= Size.zero)
+
+        displayedRelations : List RelationFull
+        displayedRelations =
             project.relations
-                |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> shownTables |> Dict.member c.table))
-                |> List.filterMap (buildRelationFull project.tables shownTables)
+                |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedTables |> Dict.member c.table))
+                |> List.filterMap (buildRelationFull project.tables displayedTables)
 
         virtualRelation : Maybe ( ColumnRefFull, Position )
         virtualRelation =
@@ -76,13 +85,9 @@ viewErd theme model project =
                 |> Maybe.andThen
                     (\vr ->
                         vr.src
-                            |> Maybe.andThen (buildColumnRefFull project.tables shownTables)
-                            |> Maybe.map (\ref -> ( ref, vr.mouse |> CanvasProps.adapt project.layout.canvas Dict.empty ))
+                            |> Maybe.andThen (buildColumnRefFull project.tables displayedTables)
+                            |> Maybe.map (\ref -> ( ref, vr.mouse |> CanvasProps.adapt canvas Dict.empty ))
                     )
-
-        position : Position
-        position =
-            project.layout.canvas.position |> (\pos -> model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> pos |> Drag.move d 1) pos)
     in
     main_
         [ class "tw-erd"
@@ -95,13 +100,13 @@ viewErd theme model project =
         , onWheel OnWheel
         , stopPointerDown (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
-        [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y position.left position.top "px", Tu.scale project.layout.canvas.zoom ] ]
-            [ layoutTables |> viewTables model project.layout.canvas.zoom shownRelations
-            , shownRelations |> viewRelations model.dragging project.layout.canvas.zoom model.hoverColumn
-            , model.selectionBox |> M.filter (\_ -> project.layout.tables |> L.nonEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
+        [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y canvas.position.left canvas.position.top "px", Tu.scale canvas.zoom ] ]
+            [ shownTables |> viewTables model canvas.zoom displayedRelations
+            , displayedRelations |> viewRelations model.hoverColumn
+            , model.selectionBox |> M.filter (\_ -> layoutTables |> L.nonEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
             , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
-        , if project.layout.tables |> List.isEmpty then
+        , if layoutTables |> List.isEmpty then
             viewEmptyState theme project.tables
 
           else
@@ -120,9 +125,9 @@ viewTables model zoom relations tables =
         )
 
 
-viewRelations : Maybe DragState -> ZoomLevel -> Maybe ColumnRef -> List RelationFull -> Html Msg
-viewRelations dragging zoom hover relations =
-    Keyed.node "div" [ class "tw-relations" ] (relations |> List.map (\r -> ( r.name, viewRelation dragging zoom hover r )))
+viewRelations : Maybe ColumnRef -> List RelationFull -> Html Msg
+viewRelations hover relations =
+    Keyed.node "div" [ class "tw-relations" ] (relations |> List.map (\r -> ( r.name, viewRelation hover r )))
 
 
 viewSelectionBox : Area -> Html Msg

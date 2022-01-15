@@ -1,4 +1,4 @@
-module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setSearch, setSettings, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
+module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setSearch, setSettings, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -57,9 +57,14 @@ setCurrentLayout transform item =
     setProject (setLayout transform) item
 
 
+setLayoutTables : (t -> t) -> { m | project : Maybe { p | layout : { l | tables : t } } } -> { m | project : Maybe { p | layout : { l | tables : t } } }
+setLayoutTables transform item =
+    setProject (setLayout (setTables transform)) item
+
+
 setAllTableProps : ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
 setAllTableProps transform item =
-    setProject (setLayout (setTables (List.map transform))) item
+    setLayoutTables (List.map transform) item
 
 
 setTableProps : comparable -> ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }

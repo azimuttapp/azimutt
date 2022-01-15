@@ -1,15 +1,16 @@
-module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, move)
+module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, moveCanvas, moveTables)
 
 import Conf
 import Libs.Area as Area exposing (Area)
+import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.TableId as TableId
-import Models.Project.TableProps as TableProps
+import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setTableProps, setTables)
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setLayoutTables, setTables)
 
 
 handleDrag : DragState -> Bool -> Model -> Model
@@ -21,7 +22,7 @@ handleDrag drag isEnd model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd then
-            model |> setCurrentLayout (setCanvas (\c -> { c | position = c.position |> move drag 1 }))
+            model |> setCurrentLayout (setCanvas (moveCanvas drag))
 
         else
             model
@@ -39,10 +40,37 @@ handleDrag drag isEnd model =
                    )
 
     else if isEnd then
-        model |> setTableProps (TableId.fromHtmlId drag.id) (\t -> { t | position = t.position |> move drag canvas.zoom })
+        model |> setLayoutTables (moveTables drag canvas.zoom)
 
     else
         model
+
+
+moveCanvas : DragState -> CanvasProps -> CanvasProps
+moveCanvas drag canvas =
+    { canvas | position = canvas.position |> move drag 1 }
+
+
+moveTables : DragState -> ZoomLevel -> List TableProps -> List TableProps
+moveTables drag zoom tables =
+    let
+        tableId : TableId
+        tableId =
+            TableId.fromHtmlId drag.id
+
+        dragSelected : Bool
+        dragSelected =
+            tables |> L.findBy .id tableId |> M.mapOrElse .selected False
+    in
+    tables
+        |> List.map
+            (\p ->
+                if tableId == p.id || (dragSelected && p.selected) then
+                    { p | position = p.position |> move drag zoom }
+
+                else
+                    p
+            )
 
 
 move : DragState -> ZoomLevel -> Position -> Position
