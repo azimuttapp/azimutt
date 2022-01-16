@@ -34,6 +34,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull as RelationFull exposing (RelationFull)
+import Models.ScreenProps exposing (ScreenProps)
 import Models.TableFull exposing (TableFull)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation)
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
@@ -44,7 +45,8 @@ import Tailwind.Utilities as Tw
 
 type alias Model x =
     { x
-        | cursorMode : CursorMode
+        | screen : ScreenProps
+        , cursorMode : CursorMode
         , selectionBox : Maybe Area
         , virtualRelation : Maybe VirtualRelation
         , openedDropdown : HtmlId
@@ -86,7 +88,7 @@ viewErd theme model project =
                     (\vr ->
                         vr.src
                             |> Maybe.andThen (buildColumnRefFull project.tables displayedTables)
-                            |> Maybe.map (\ref -> ( ref, vr.mouse |> CanvasProps.adapt canvas Dict.empty ))
+                            |> Maybe.map (\ref -> ( ref, vr.mouse |> CanvasProps.adapt model.screen canvas ))
                     )
     in
     main_

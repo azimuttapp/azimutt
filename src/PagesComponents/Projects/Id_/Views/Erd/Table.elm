@@ -56,7 +56,18 @@ viewTable model zoom table tableRelations =
         drag =
             B.cond (model.cursorMode == CursorDrag) [] [ stopPointerDown (.position >> DragStart tableId) ]
     in
-    div (drag ++ [ css [ Tw.select_none, Tw.absolute, Tw.transform, Tu.translate_x_y table.props.position.left table.props.position.top "px", Tu.z (Conf.canvas.zIndex.tables + table.index), Tu.when (table.props.size == Size.zero) [ Tw.invisible ] ] ])
+    div
+        ([ css
+            [ Tw.select_none
+            , Tw.absolute
+            , Tw.transform
+            , Tu.translate_x_y table.props.position.left table.props.position.top "px"
+            , Tu.z (Conf.canvas.zIndex.tables + table.index)
+            , Tu.when (table.props.size == Size.zero) [ Tw.invisible ]
+            ]
+         ]
+            ++ drag
+        )
         [ Table.table
             { id = tableId
             , ref = { schema = table.table.schema, table = table.table.name }

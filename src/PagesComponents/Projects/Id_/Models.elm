@@ -23,6 +23,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.ScreenProps exposing (ScreenProps)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
 import Shared exposing (Confirm, StoredProjects)
@@ -30,6 +31,7 @@ import Shared exposing (Confirm, StoredProjects)
 
 type alias Model =
     { navbar : NavbarModel
+    , screen : ScreenProps
     , projects : StoredProjects
     , project : Maybe Project
     , hoverTable : Maybe TableId

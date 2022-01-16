@@ -1,7 +1,7 @@
-module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onClickConfirm, onDrag, placeAt, size, sizeAttr, withColumnName)
+module PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onClickConfirm, onDrag, placeAt, size, withColumnName)
 
 import Html exposing (Attribute, text)
-import Html.Attributes exposing (attribute, style)
+import Html.Attributes exposing (style)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse as Mouse
 import Libs.Models.DragId exposing (DragId)
@@ -28,11 +28,6 @@ size s =
 onDrag : DragId -> Attribute Msg
 onDrag id =
     Mouse.onDown (.pagePos >> Position.fromTuple >> DragStart id)
-
-
-sizeAttr : Size -> Attribute msg
-sizeAttr s =
-    attribute "data-size" (String.fromInt (round s.width) ++ "x" ++ String.fromInt (round s.height))
 
 
 onClickConfirm : String -> Msg -> Attribute Msg

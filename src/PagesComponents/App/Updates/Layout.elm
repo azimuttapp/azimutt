@@ -2,15 +2,12 @@ module PagesComponents.App.Updates.Layout exposing (handleLayout)
 
 import Dict
 import Libs.Bool as B
-import Libs.Dict as D
 import Libs.Maybe as M
 import Models.Project exposing (Project)
-import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Model, Msg)
 import Ports
 import Services.Lenses exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
-import Time
 import Track
 
 
@@ -79,6 +76,7 @@ updateLayout name project =
 
 deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 deleteLayout name project =
-    { project | usedLayout = B.cond (project.usedLayout == Just name) Nothing (Just name) }
-        |> setLayouts (Dict.update name (\_ -> Nothing))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.deleteLayout (project.layouts |> D.getOrElse name (Layout.init (Time.millisToPosix 0)))) ] ))
+    (project.layouts |> Dict.get name)
+        |> M.mapOrElse
+            (\l -> ( { project | usedLayout = project.usedLayout |> M.filter (\n -> n /= name) } |> setLayouts (Dict.remove name), Ports.track (Track.deleteLayout l) ))
+            ( project, Cmd.none )

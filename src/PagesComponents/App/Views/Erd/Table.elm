@@ -38,7 +38,7 @@ import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
-import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr)
+import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt)
 import Track
 
 
@@ -56,7 +56,7 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
         , id (TableId.toHtmlId table.id)
         , placeAt props.position
         , style "z-index" (String.fromInt (Conf.canvas.zIndex.tables + index))
-        , domInfo |> M.mapOrElse (\i -> sizeAttr i.size) (style "visibility" "hidden")
+        , domInfo |> M.mapOrElse (\_ -> style "" "") (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)
         , onDrag (TableId.toHtmlId table.id)

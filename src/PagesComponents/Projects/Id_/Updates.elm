@@ -11,7 +11,7 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setTableProps)
+import Services.Lenses exposing (setScreen, setTableProps)
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -22,10 +22,10 @@ updateSizes changes model =
 updateSize : SizeChange -> Model -> Model
 updateSize change model =
     if change.id == Conf.ids.erd then
-        model |> setCurrentLayout (setCanvas (\c -> { c | origin = change.position, size = change.size }))
+        model |> setScreen (\s -> { s | position = change.position, size = change.size })
 
     else
-        model |> setTableProps (TableId.fromHtmlId change.id) (updateTable (model.project |> M.mapOrElse (\p -> p.layout.canvas |> CanvasProps.viewport) Area.zero) change)
+        model |> setTableProps (TableId.fromHtmlId change.id) (updateTable (model.project |> M.mapOrElse (.layout >> .canvas >> CanvasProps.viewport model.screen) Area.zero) change)
 
 
 updateTable : Area -> SizeChange -> TableProps -> TableProps

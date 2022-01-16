@@ -4,7 +4,7 @@ import Expect exposing (Expectation, FloatingPointTolerance(..))
 import Fuzz exposing (tuple)
 import Libs.Area exposing (Area)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size as Size exposing (Size)
+import Libs.Models.Size exposing (Size)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import PagesComponents.App.Updates.Canvas exposing (computeFit, performZoom)
 import Test exposing (Test, describe, fuzz, test)
@@ -19,8 +19,8 @@ suite =
             [ fuzz (tuple ( position, canvasProps )) "no change" (\( pos, props ) -> props |> performZoom 0 pos |> Expect.equal props)
 
             -- , fuzz (tuple3 ( float, position, canvasProps )) "round trip" (\( delta, pos, props ) -> props |> performZoom delta pos |> performZoom -delta pos |> expectAlmost props)
-            , test "basic" (\_ -> CanvasProps Position.zero Size.zero Position.zero 1 |> performZoom 0.5 (Position 50 50) |> Expect.equal (CanvasProps Position.zero Size.zero (Position -25 -25) 1.5))
-            , test "basic round trip" (\_ -> CanvasProps Position.zero Size.zero Position.zero 1 |> performZoom 0.5 (Position 50 50) |> performZoom -0.5 (Position 50 50) |> expectAlmost (CanvasProps Position.zero Size.zero Position.zero 1))
+            , test "basic" (\_ -> CanvasProps Position.zero 1 |> performZoom 0.5 (Position 50 50) |> Expect.equal (CanvasProps (Position -25 -25) 1.5))
+            , test "basic round trip" (\_ -> CanvasProps Position.zero 1 |> performZoom 0.5 (Position 50 50) |> performZoom -0.5 (Position 50 50) |> expectAlmost (CanvasProps Position.zero 1))
             ]
         , describe "computeFit"
             [ test "no change" (\_ -> computeFit (Area Position.zero (Size 50 50)) 0 (Area Position.zero (Size 50 50)) 1 |> Expect.equal ( 1, Position.zero ))

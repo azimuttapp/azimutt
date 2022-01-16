@@ -9,6 +9,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
+import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
 import Services.Lenses exposing (setCanvas, setCurrentLayout, setLayoutTables, setTables)
 
@@ -33,7 +34,7 @@ handleDrag drag isEnd model =
 
         else
             drag
-                |> buildSelectionArea canvas
+                |> buildSelectionArea model.screen canvas
                 |> (\area ->
                         { model | selectionBox = Just area }
                             |> setCurrentLayout (setTables (List.map (\t -> { t | selected = Area.overlap area (t |> TableProps.area) })))
@@ -78,8 +79,8 @@ move drag zoom position =
     position |> Position.add ((drag.last |> Position.sub drag.init) |> Position.div zoom)
 
 
-buildSelectionArea : CanvasProps -> DragState -> Area
-buildSelectionArea canvas dragState =
+buildSelectionArea : ScreenProps -> CanvasProps -> DragState -> Area
+buildSelectionArea screen canvas dragState =
     Area.from dragState.init dragState.last
-        |> Area.move (canvas.origin |> Position.add canvas.position |> Position.negate)
+        |> Area.move (screen.position |> Position.add canvas.position |> Position.negate)
         |> Area.div canvas.zoom

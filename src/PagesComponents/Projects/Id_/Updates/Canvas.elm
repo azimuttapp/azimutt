@@ -11,6 +11,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableProps as TableProps exposing (TableProps)
+import Models.ScreenProps exposing (ScreenProps)
 import Services.Lenses exposing (setCanvas, setTables)
 
 
@@ -23,13 +24,13 @@ handleWheel event canvas =
         { canvas | position = event.delta |> Delta.negate |> Delta.adjust canvas.zoom |> Delta.move canvas.position }
 
 
-zoomCanvas : Float -> CanvasProps -> CanvasProps
-zoomCanvas delta canvas =
-    canvas |> performZoom delta (canvas |> CanvasProps.viewport |> Area.center)
+zoomCanvas : Float -> ScreenProps -> CanvasProps -> CanvasProps
+zoomCanvas delta screen canvas =
+    canvas |> performZoom delta (canvas |> CanvasProps.viewport screen |> Area.center)
 
 
-fitCanvas : Layout -> Layout
-fitCanvas layout =
+fitCanvas : ScreenProps -> Layout -> Layout
+fitCanvas screen layout =
     let
         selectedTables : List TableProps
         selectedTables =
@@ -48,7 +49,7 @@ fitCanvas layout =
             20
 
         ( newZoom, centerOffset ) =
-            computeFit (layout.canvas |> CanvasProps.viewport) padding tablesArea layout.canvas.zoom
+            computeFit (layout.canvas |> CanvasProps.viewport screen) padding tablesArea layout.canvas.zoom
     in
     layout
         |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })

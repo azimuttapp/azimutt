@@ -18,6 +18,7 @@ import Libs.Models.Position as Position
 import Libs.Task as T
 import Models.Project as Project
 import Models.Project.Relation as Relation
+import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastWarning)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
@@ -66,6 +67,7 @@ type alias Msg =
 init : ( Model, Cmd Msg )
 init =
     ( { navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
+      , screen = ScreenProps.zero
       , project = Nothing
       , projects = Loading
       , hoverTable = Nothing
@@ -176,13 +178,13 @@ update req msg model =
             ( { model | cursorMode = mode }, Cmd.none )
 
         FitContent ->
-            ( model |> setCurrentLayout fitCanvas, Cmd.none )
+            ( model |> setCurrentLayout (fitCanvas model.screen), Cmd.none )
 
         OnWheel event ->
             ( model |> setCurrentLayout (setCanvas (handleWheel event)), Cmd.none )
 
         Zoom delta ->
-            ( model |> setCurrentLayout (setCanvas (zoomCanvas delta)), Cmd.none )
+            ( model |> setCurrentLayout (setCanvas (zoomCanvas delta model.screen)), Cmd.none )
 
         Focus id ->
             ( model, Ports.focus id )

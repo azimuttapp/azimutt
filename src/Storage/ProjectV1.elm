@@ -11,13 +11,13 @@ import Libs.Models exposing (UID)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
-import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Time as Time
 import Models.ColumnOrder exposing (ColumnOrder(..))
 import Models.Project exposing (Project)
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps as CanvasProps
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
@@ -244,7 +244,7 @@ stringAsLayoutName name =
 
 initLayout : Time.Posix -> LayoutV1
 initLayout now =
-    { canvas = CanvasPropsV1 Position.zero 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
+    { canvas = CanvasProps.zero, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 defaultTime : Time.Posix
@@ -284,7 +284,7 @@ upgrade project =
 
 upgradeLayout : LayoutV1 -> Layout
 upgradeLayout layout =
-    { canvas = layout.canvas |> upgradeCanvasProps
+    { canvas = layout.canvas
     , tables = layout.tables |> List.map upgradeTableProps
     , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
     , createdAt = layout.createdAt
@@ -301,15 +301,6 @@ upgradeTableProps props =
     , columns = props.columns
     , selected = props.selected
     , hiddenColumns = False
-    }
-
-
-upgradeCanvasProps : CanvasPropsV1 -> CanvasProps
-upgradeCanvasProps props =
-    { origin = Position.zero
-    , size = Size.zero
-    , position = props.position
-    , zoom = props.zoom
     }
 
 
@@ -565,18 +556,11 @@ decodeSourceLine =
 decodeLayout : Decode.Decoder LayoutV1
 decodeLayout =
     Decode.map5 LayoutV1
-        (Decode.field "canvas" decodeCanvasProps)
+        (Decode.field "canvas" CanvasProps.decode)
         (Decode.field "tables" (Decode.list decodeTableProps))
         (D.defaultField "hiddenTables" (Decode.list decodeTableProps) [])
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
-
-
-decodeCanvasProps : Decode.Decoder CanvasPropsV1
-decodeCanvasProps =
-    Decode.map2 CanvasPropsV1
-        (Decode.field "position" Position.decode)
-        (Decode.field "zoom" ZoomLevel.decode)
 
 
 decodeTableProps : Decode.Decoder TablePropsV1

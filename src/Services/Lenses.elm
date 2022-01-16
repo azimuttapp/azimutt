@@ -1,4 +1,4 @@
-module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setSearch, setSettings, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
+module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setScreen, setSearch, setSettings, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -30,6 +30,11 @@ setActive transform item =
 setSwitch : (s -> s) -> { item | switch : s } -> { item | switch : s }
 setSwitch transform item =
     { item | switch = item.switch |> transform }
+
+
+setScreen : (s -> s) -> { item | screen : s } -> { item | screen : s }
+setScreen transform item =
+    { item | screen = item.screen |> transform }
 
 
 setProject : (p -> p) -> { item | project : Maybe p } -> { item | project : Maybe p }
