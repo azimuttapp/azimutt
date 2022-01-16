@@ -12,6 +12,7 @@ import Gen.Route as Route
 import Html.Styled exposing (Html, a, button, div, img, nav, span, text)
 import Html.Styled.Attributes exposing (alt, class, css, height, href, id, src, tabindex, type_, width)
 import Html.Styled.Events exposing (onClick)
+import Html.Styled.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Either as E
 import Libs.Hotkey as Hotkey exposing (Hotkey)
@@ -57,11 +58,11 @@ viewNavbar theme openedDropdown virtualRelation storedProjects project model =
             [ div [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Tw.h_16 ] ]
                 [ div [ css [ Tw.flex, Tw.items_center, Tw.px_2, Bp.lg [ Tw.px_0 ] ] ]
                     [ viewNavbarBrand
-                    , viewNavbarSearch theme openedDropdown { id = Conf.ids.searchInput, search = model.search.text, active = model.search.active, project = project }
-                    , viewNavbarHelp theme
+                    , Lazy.lazy3 viewNavbarSearch theme openedDropdown { id = Conf.ids.searchInput, search = model.search.text, active = model.search.active, project = project }
+                    , Lazy.lazy viewNavbarHelp theme
                     ]
                 , div [ css [ Tw.flex_1, Tw.flex, Tw.justify_center, Tw.px_2 ] ]
-                    [ viewNavbarTitle theme openedDropdown storedProjects project
+                    [ Lazy.lazy4 viewNavbarTitle theme openedDropdown storedProjects project
                     ]
                 , navbarMobileButton theme model.mobileMenuOpen
                 , div [ css [ Tw.hidden, Bp.lg [ Tw.block, Tw.ml_4 ] ] ]

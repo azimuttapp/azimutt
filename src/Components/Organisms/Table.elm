@@ -14,6 +14,7 @@ import Html.Styled exposing (Html, br, button, div, span, text)
 import Html.Styled.Attributes exposing (css, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Styled.Keyed as Keyed
+import Html.Styled.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role, track)
@@ -124,9 +125,9 @@ table model =
             {- , Tu.when model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] -}
             ]
         ]
-        [ model |> viewHeader
-        , model |> viewColumns
-        , model |> viewHiddenColumns
+        [ Lazy.lazy viewHeader model
+        , Lazy.lazy viewColumns model
+        , Lazy.lazy viewHiddenColumns model
         ]
 
 
@@ -194,7 +195,7 @@ viewColumns model =
         count =
             (model.columns |> List.length) + (model.hiddenColumns |> List.length)
     in
-    Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, viewColumn model (i + 1 == count) c )))
+    Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy3 viewColumn model (i + 1 == count) c )))
 
 
 viewHiddenColumns : Model msg -> Html msg
@@ -208,7 +209,7 @@ viewHiddenColumns model =
                 [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
             , Keyed.node "div"
                 [ css [ Tw.rounded_lg, Tw.pt_2, Tu.unless model.state.showHiddenColumns [ Tw.hidden ] ] ]
-                (model.hiddenColumns |> List.map (\c -> ( c.name, viewColumn model False c )))
+                (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
             ]
 
 

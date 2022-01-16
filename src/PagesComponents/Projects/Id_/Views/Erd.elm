@@ -9,6 +9,7 @@ import Html.Styled exposing (Html, button, div, h2, main_, p, text)
 import Html.Styled.Attributes exposing (class, classList, css, id)
 import Html.Styled.Events exposing (onClick)
 import Html.Styled.Keyed as Keyed
+import Html.Styled.Lazy as Lazy
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Dict as D
@@ -103,8 +104,8 @@ viewErd theme model project =
         , stopPointerDown (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y canvas.position.left canvas.position.top "px", Tu.scale canvas.zoom ] ]
-            [ shownTables |> viewTables model canvas.zoom displayedRelations
-            , displayedRelations |> viewRelations model.hoverColumn
+            [ Lazy.lazy4 viewTables model canvas.zoom displayedRelations shownTables
+            , Lazy.lazy2 viewRelations model.hoverColumn displayedRelations
             , model.selectionBox |> M.filter (\_ -> layoutTables |> L.nonEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
             , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
@@ -123,13 +124,13 @@ viewTables model zoom relations tables =
         (tables
             |> Dict.values
             |> L.zipWith (\table -> relations |> List.filter (RelationFull.hasTableLink table.id))
-            |> List.map (\( table, tableRelations ) -> ( TableId.toString table.id, viewTable model zoom table tableRelations ))
+            |> List.map (\( table, tableRelations ) -> ( TableId.toString table.id, Lazy.lazy4 viewTable model zoom table tableRelations ))
         )
 
 
 viewRelations : Maybe ColumnRef -> List RelationFull -> Html Msg
 viewRelations hover relations =
-    Keyed.node "div" [ class "tw-relations" ] (relations |> List.map (\r -> ( r.name, viewRelation hover r )))
+    Keyed.node "div" [ class "tw-relations" ] (relations |> List.map (\r -> ( r.name, Lazy.lazy2 viewRelation hover r )))
 
 
 viewSelectionBox : Area -> Html Msg

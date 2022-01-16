@@ -9,6 +9,7 @@ import Gen.Route as Route
 import Html.Styled exposing (Html, div)
 import Html.Styled.Attributes exposing (class, css)
 import Html.Styled.Keyed as Keyed
+import Html.Styled.Lazy as Lazy
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -40,17 +41,17 @@ viewProject shared model =
 
         Loaded projects ->
             model.project |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
-    , viewModal shared.theme shared.zone shared.now model
-    , viewToasts shared.theme model.toasts
+    , Lazy.lazy4 viewModal shared.theme shared.zone shared.now model
+    , Lazy.lazy2 viewToasts shared.theme model.toasts
     ]
 
 
 viewApp : Theme -> Model -> List Project -> Project -> Html Msg
 viewApp theme model storedProjects project =
     div [ class "tw-app" ]
-        [ viewNavbar theme model.openedDropdown model.virtualRelation storedProjects project model.navbar
-        , viewErd theme model project
-        , viewCommands theme model.openedDropdown model.cursorMode project.layout.canvas
+        [ Lazy.lazy6 viewNavbar theme model.openedDropdown model.virtualRelation storedProjects project model.navbar
+        , Lazy.lazy3 viewErd theme model project
+        , Lazy.lazy4 viewCommands theme model.openedDropdown model.cursorMode project.layout.canvas
         ]
 
 
