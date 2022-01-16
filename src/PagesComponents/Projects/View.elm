@@ -13,7 +13,7 @@ import Html.Styled.Attributes exposing (class, css, href, id, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html.Styled exposing (bText)
-import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
+import Libs.Html.Styled.Attributes exposing (ariaHidden, role, track)
 import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
 import Libs.String as S
@@ -26,6 +26,7 @@ import Shared exposing (StoredProjects(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 import Time
+import Track
 
 
 viewProjects : Shared.Model -> Model -> List (Html Msg)
@@ -146,7 +147,7 @@ viewProjectCard zone project =
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ Tw.flex_grow_0, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Tw.px_4, Css.hover [ Tw.text_gray_500 ] ] ]
                 [ Icon.outline Trash [ Tw.text_gray_400 ] ]
                 |> Tooltip.t "Delete this project"
-            , a [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ Tw.flex_grow, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Css.hover [ Tw.text_gray_500 ] ] ]
+            , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ Tw.flex_grow, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Css.hover [ Tw.text_gray_500 ] ] ] ++ track (Track.loadProject project))
                 [ Icon.outline ArrowCircleRight [ Tw.text_gray_400 ], span [ css [ Tw.ml_3 ] ] [ text "Open project" ] ]
             ]
         ]

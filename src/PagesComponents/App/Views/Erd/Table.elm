@@ -39,7 +39,7 @@ import Models.Project.Unique exposing (Unique)
 import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr)
-import Tracking exposing (events)
+import Track
 
 
 viewTable : Hover -> Maybe VirtualRelation -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
@@ -74,7 +74,7 @@ viewHeader zoom index table =
             (L.appendOn table.comment viewComment [ span (B.cond table.view [ title "This is a view" ] [] ++ tableNameSize zoom) [ text (TableId.show table.id) ] ])
         , bsDropdown (TableId.toHtmlId table.id ++ "-settings-dropdown")
             []
-            (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])
+            (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track Track.openTableSettings) [ viewIcon Icon.ellipsisV ])
             (\attrs ->
                 ul attrs
                     [ li [] [ button [ type_ "button", class "dropdown-item", onClick (HideTable table.id) ] [ text "Hide table" ] ]
@@ -187,7 +187,7 @@ viewColumnIcon table column columnRelations attrs =
 
         ( ( _, Just fk ), _ ) ->
             -- TODO: know fk table state to not put onClick when it's already shown (so Update.elm#showTable on Shown state could issue an error)
-            div (class "icon" :: onClick (ShowTable fk.ref.table.id) :: attrs ++ track events.showTableWithForeignKey) [ div [ title (formatFkTitle fk), bsToggle Tooltip ] [ viewIcon Icon.externalLinkAlt ] ]
+            div (class "icon" :: onClick (ShowTable fk.ref.table.id) :: attrs ++ track Track.showTableWithForeignKey) [ div [ title (formatFkTitle fk), bsToggle Tooltip ] [ viewIcon Icon.externalLinkAlt ] ]
 
         ( _, ( u :: us, _, _ ) ) ->
             div (class "icon" :: attrs) [ div [ title (formatUniqueTitle (u :: us)), bsToggle Tooltip ] [ viewIcon Icon.fingerprint ] ]
@@ -213,7 +213,7 @@ viewColumnDropdown columnRelations ref element =
             |> List.map
                 (\relation ->
                     li []
-                        [ button ([ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ] ++ track events.showTableWithIncomingRelationsDropdown)
+                        [ button ([ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ] ++ track Track.showTableWithIncomingRelationsDropdown)
                             [ viewIcon Icon.externalLinkAlt
                             , text " "
                             , b [] [ text (TableId.show relation.src.table.id) ]
@@ -229,7 +229,7 @@ viewColumnDropdown columnRelations ref element =
         items ->
             bsDropdown (columnRefAsHtmlId ref ++ "-relations-dropdown")
                 [ class "dropdown-menu-end" ]
-                (\attrs -> element (attrs ++ track events.openIncomingRelationsDropdown))
+                (\attrs -> element (attrs ++ track Track.openIncomingRelationsDropdown))
                 (\attrs -> ul attrs (items ++ viewShowAllOption columnRelations))
 
 

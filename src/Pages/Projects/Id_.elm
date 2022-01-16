@@ -37,7 +37,7 @@ import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, 
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Time
-import Tracking
+import Track
 import View exposing (View)
 
 
@@ -107,7 +107,7 @@ update req msg model =
             ( { model | navbar = model.navbar |> (\n -> { n | search = n.search |> (\s -> { s | text = search, active = 0 }) }) }, Cmd.none )
 
         SaveProject ->
-            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ saveProject p, T.send (toastInfo "Project saved"), track (Tracking.events.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ saveProject p, T.send (toastInfo "Project saved"), track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
         ShowTable id ->
             model |> setProjectWithCmd (showTable id)

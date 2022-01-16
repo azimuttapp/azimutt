@@ -21,7 +21,7 @@ import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Home_.Models exposing (Model)
 import Tailwind.Utilities as Tw
-import Tracking exposing (events)
+import Track
 
 
 viewHome : Model -> List (Html msg)
@@ -34,11 +34,11 @@ viewHome model =
                 |> M.mapOrElse
                     (\p ->
                         div []
-                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (events.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
-                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (events.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
                             ]
                     )
-                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (events.openAppCta "home-hero")) [ text "Explore your schema" ])
+                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
 
         appRoute : Route.Route
         appRoute =
@@ -67,7 +67,7 @@ viewHome model =
                 , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "Let's try it!", track = Just (events.openAppCta "home-explore-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "Let's try it!", track = Just (Track.openAppCta "home-explore-section") }
         , quote =
             Just
                 { text = "Using Azimutt is like having super powers!"
@@ -89,7 +89,7 @@ viewHome model =
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "Let me see...", track = Just (events.openAppCta "home-display-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "Let me see...", track = Just (Track.openAppCta "home-display-section") }
         , quote =
             Just
                 { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
@@ -115,7 +115,7 @@ viewHome model =
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "I can't resist, let's go!", track = Just (events.openAppCta "home-relations-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "I can't resist, let's go!", track = Just (Track.openAppCta "home-relations-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
@@ -131,7 +131,7 @@ viewHome model =
                 , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "That's enough, I'm in!", track = Just (events.openAppCta "home-layouts-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "That's enough, I'm in!", track = Just (Track.openAppCta "home-layouts-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
@@ -155,7 +155,7 @@ viewHome model =
                 , text ", just as you like!"
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "I'm hooked!", track = Just (events.openAppCta "home-find-path-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
         , quote = Nothing
         }
     , FeatureGrid.cardSlice

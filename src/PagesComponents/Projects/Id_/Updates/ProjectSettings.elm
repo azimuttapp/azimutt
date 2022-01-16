@@ -18,6 +18,7 @@ import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDia
 import Ports exposing (observeTablesSize)
 import Services.Lenses exposing (setLayout, setParsingWithCmd, setProject, setSettings, setSourceUploadWithCmd)
 import Services.SQLSource as SQLSource
+import Track
 
 
 type alias Model x =
@@ -32,7 +33,7 @@ handleProjectSettings : ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
 handleProjectSettings msg model =
     case msg of
         PSOpen ->
-            ( { model | settings = Just { id = Conf.ids.settingsDialog } }, T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog) )
+            ( { model | settings = Just { id = Conf.ids.settingsDialog } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog), Ports.track Track.openSettings ] )
 
         PSClose ->
             ( { model | settings = Nothing }, Cmd.none )
@@ -58,10 +59,10 @@ handleProjectSettings msg model =
             model |> setSourceUploadWithCmd (setParsingWithCmd (SQLSource.update message (PSSQLSourceMsg >> ProjectSettingsMsg)))
 
         PSSourceRefresh source ->
-            ( model |> setProject (Project.refreshSource source), T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) )
+            ( model |> setProject (Project.refreshSource source), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.refreshSource source) ] )
 
         PSSourceAdd source ->
-            ( model |> setProject (Project.addSource source), T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) )
+            ( model |> setProject (Project.addSource source), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.addSource source) ] )
 
         PSToggleSchema schema ->
             model |> updateSettingsAndComputeProject (\s -> { s | removedSchemas = s.removedSchemas |> L.toggle schema })

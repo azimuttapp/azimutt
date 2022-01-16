@@ -38,7 +38,7 @@ import Models.SourceInfo exposing (SourceInfo)
 import Ports exposing (readLocalFile, readRemoteFile, track)
 import Tailwind.Utilities as Tw
 import Time
-import Tracking
+import Track
 import Url exposing (percentEncode)
 
 
@@ -165,7 +165,7 @@ update msg wrap model =
         BuildSource ->
             model.parsedSchema
                 |> Maybe.andThen (\parsedSchema -> parsedSchema.schema |> Maybe.map3 (\( _, sourceInfo, _ ) lines schema -> ( parsedSchema, ProjectAdapter.buildSourceFromSql sourceInfo lines schema )) model.loadedFile parsedSchema.lines)
-                |> Maybe.map (\( parsedSchema, source ) -> ( { model | parsedSource = Just source }, track (Tracking.events.parsedSource parsedSchema source) ))
+                |> Maybe.map (\( parsedSchema, source ) -> ( { model | parsedSource = Just source }, track (Track.parsedSource parsedSchema source) ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
 

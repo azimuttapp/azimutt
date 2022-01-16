@@ -16,7 +16,7 @@ import Models.Project.SourceKind as SourceKind
 import Models.SourceInfo exposing (SourceInfo)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
 import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
-import Tracking exposing (events)
+import Track
 
 
 createProject : ProjectId -> SourceInfo -> FileContent -> Model -> ( Model, Cmd Msg )
@@ -38,7 +38,7 @@ createProject projectId sourceInfo content model =
      else
         ( [ "Invalid file (" ++ path ++ "), expected a .sql one" ], Nothing )
     )
-        |> loadProject events.createProject model
+        |> loadProject Track.createProject model
 
 
 updateProject : SourceInfo -> FileContent -> Project -> ( Project, Cmd Msg )
@@ -58,13 +58,13 @@ updateProject sourceInfo content project =
                         |> Maybe.map
                             (\oldSource ->
                                 ( project |> Project.updateSource newSource.id (\_ -> newSource)
-                                , events.refreshSource newSource
+                                , Track.refreshSource newSource
                                 , "Source <b>" ++ oldSource.name ++ "</b> updated with <b>" ++ newSource.name ++ "</b>."
                                 )
                             )
                         |> Maybe.withDefault
                             ( project |> Project.addSource newSource
-                            , events.addSource newSource
+                            , Track.addSource newSource
                             , "Source <b>" ++ newSource.name ++ "</b> added to project."
                             )
                 )
@@ -89,12 +89,12 @@ updateProject sourceInfo content project =
 
 useProject : Project -> Model -> ( Model, Cmd Msg )
 useProject project model =
-    ( [], Just project ) |> loadProject events.loadProject model
+    ( [], Just project ) |> loadProject Track.loadProject model
 
 
 deleteProject : Project -> Model -> ( Model, Cmd Msg )
 deleteProject project model =
-    ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, track (events.deleteProject project) ] )
+    ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, track (Track.deleteProject project) ] )
 
 
 loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )

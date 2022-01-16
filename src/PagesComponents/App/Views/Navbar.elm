@@ -22,21 +22,21 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
-import Tracking exposing (events)
+import Track
 
 
 viewNavbar : Search -> List Project -> Maybe Project -> Maybe VirtualRelation -> Html Msg
 viewNavbar search storedProjects project virtualRelation =
     nav [ id "navbar", class "navbar navbar-expand-md navbar-light bg-white shadow-sm" ]
         [ div [ class "container-fluid" ]
-            [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas Conf.ids.menu ++ track events.openMenu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
+            [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas Conf.ids.menu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
             , button ([ type_ "button", class "navbar-toggler", ariaLabel "Toggle navigation" ] ++ bsToggleCollapse "navbar-content")
                 [ span [ class "navbar-toggler-icon" ] []
                 ]
             , div [ class "collapse navbar-collapse", id "navbar-content" ]
                 ([ lazy2 viewSearchBar project search
                  , ul [ class "navbar-nav" ]
-                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal Conf.ids.helpDialog ++ track events.openHelp) [ text "?" ] ]
+                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal Conf.ids.helpDialog ++ track Track.openHelp) [ text "?" ] ]
                     ]
                  ]
                     ++ (project
@@ -141,7 +141,7 @@ viewResetButton selectedLayout { tables, hiddenTables, canvas } =
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
 viewLayoutButton usedLayout layouts =
     if Dict.isEmpty layouts then
-        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal Conf.ids.newLayoutDialog ++ track events.openSaveLayout) [ text "Save layout" ]
+        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal Conf.ids.newLayoutDialog ++ track Track.openSaveLayout) [ text "Save layout" ]
 
     else
         div [ class "btn-group me-2" ]
@@ -214,7 +214,7 @@ viewSpecialFeaturesButton virtualRelation =
 
 viewSettingsButton : Html Msg
 viewSettingsButton =
-    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas Conf.ids.settingsDialog ++ track events.openSettings) [ viewIcon Icon.cog ]
+    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas Conf.ids.settingsDialog ++ track Track.openSettings) [ viewIcon Icon.cog ]
 
 
 type alias Suggestion =

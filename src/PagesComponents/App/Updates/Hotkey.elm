@@ -6,7 +6,7 @@ import Libs.Task exposing (send)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..), VirtualRelationMsg(..))
 import PagesComponents.App.Updates exposing (moveTable, removeElement)
 import Ports exposing (click, saveProject, showModal, toastInfo, toastWarning, track)
-import Tracking exposing (events)
+import Track
 
 
 handleHotkey : Model -> String -> List (Cmd Msg)
@@ -41,7 +41,7 @@ handleHotkey model hotkey =
 
         "save" ->
             model.project
-                |> M.mapOrElse (\p -> [ saveProject p, toastInfo "Project saved", track (events.updateProject p) ])
+                |> M.mapOrElse (\p -> [ saveProject p, toastInfo "Project saved", track (Track.updateProject p) ])
                     [ toastWarning "No project to save" ]
 
         "cancel" ->

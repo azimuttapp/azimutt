@@ -17,7 +17,7 @@ import Services.Lenses exposing (setParsingWithCmd)
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
 import Shared
 import Time
-import Tracking
+import Track
 import View exposing (View)
 
 
@@ -85,7 +85,7 @@ update req msg model =
         CreateProject projectId source ->
             Project.create projectId (S.unique (model.projects |> List.map .name) source.name) source
                 |> (\project ->
-                        ( model, Cmd.batch [ saveProject project, track (Tracking.events.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+                        ( model, Cmd.batch [ saveProject project, track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
                    )
 
         JsMessage message ->

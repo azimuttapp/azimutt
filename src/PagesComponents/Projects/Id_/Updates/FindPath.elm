@@ -20,7 +20,7 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import Ports exposing (track)
 import Services.Lenses exposing (setProject, setSettings)
-import Tracking
+import Track
 
 
 type alias Model x =
@@ -34,7 +34,7 @@ handleFindPath : FindPathMsg -> Model x -> ( Model x, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPOpen from to ->
-            ( { model | findPath = Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), track Tracking.events.openFindPath ] )
+            ( { model | findPath = Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), track Track.openFindPath ] )
 
         FPToggleSettings ->
             ( model |> setFindPath (\fp -> { fp | showSettings = not fp.showSettings }), Cmd.none )
@@ -52,7 +52,7 @@ handleFindPath msg model =
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ track (Tracking.events.findPathResult result) ] ))
+            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ track (Track.findPathResult result) ] ))
 
         FPToggleResult index ->
             ( model |> setFindPath (setResult (\r -> { r | opened = B.cond (r.opened == Just index) Nothing (Just index) })), Cmd.none )

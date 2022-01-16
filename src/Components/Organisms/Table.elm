@@ -27,7 +27,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Tailwind.Utilities as Tw
-import Tracking
+import Track
 
 
 type alias Model msg =
@@ -177,7 +177,7 @@ viewHeader model =
                      , ariaHaspopup True
                      , css [ Tw.flex, Tw.text_sm, Tw.opacity_25, Css.focus [ Tw.outline_none ] ]
                      ]
-                        ++ track Tracking.events.openTableSettings
+                        ++ track Track.openTableSettings
                     )
                     [ span [ css [ Tw.sr_only ] ] [ text "Open table settings" ]
                     , Icon.solid DotsVertical []
@@ -231,7 +231,7 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
-        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Tracking.events.showTableWithForeignKey) [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey) [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
         div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [ Tw.pt_2 ] |> Tooltip.t "Primary key" ]
@@ -270,7 +270,7 @@ viewColumnIconDropdown model column icon =
                      , ariaHaspopup True
                      , css [ Css.focus [ Tw.outline_none ] ]
                      ]
-                        ++ track Tracking.events.openIncomingRelationsDropdown
+                        ++ track Track.openIncomingRelationsDropdown
                     )
                     [ icon ]
             )
@@ -313,7 +313,7 @@ viewColumnIconDropdownItem message content =
          , tabindex -1
          , css [ Tw.py_1, Tw.block, Tw.w_full, Tw.text_left, Dropdown.itemStyles, Css.focus [ Tw.outline_none ] ]
          ]
-            ++ track Tracking.events.showTableWithIncomingRelationsDropdown
+            ++ track Track.showTableWithIncomingRelationsDropdown
         )
         content
 

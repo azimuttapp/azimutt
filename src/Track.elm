@@ -1,4 +1,4 @@
-module Tracking exposing (SQLParsing, events)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, openAppCta, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSettings, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
@@ -18,56 +18,118 @@ import Models.Project.Source exposing (Source)
 -- all tracking events should be declared here to have a good overview of them
 
 
-events :
-    { openAppCta : String -> TrackEvent
-    , openMenu : TrackEvent
-    , openSettings : TrackEvent
-    , openHelp : TrackEvent
-    , openTableSettings : TrackEvent
-    , showTableWithForeignKey : TrackEvent
-    , showTableWithIncomingRelationsDropdown : TrackEvent
-    , openIncomingRelationsDropdown : TrackEvent
-    , openSaveLayout : TrackEvent
-    , openFindPath : TrackEvent
-    , findPathResult : FindPathResult -> TrackEvent
-    , parsedSource : SQLParsing msg -> Source -> TrackEvent
-    , createProject : Project -> TrackEvent
-    , loadProject : Project -> TrackEvent
-    , updateProject : Project -> TrackEvent
-    , deleteProject : Project -> TrackEvent
-    , addSource : Source -> TrackEvent
-    , refreshSource : Source -> TrackEvent
-    , createLayout : Layout -> TrackEvent
-    , loadLayout : Layout -> TrackEvent
-    , updateLayout : Layout -> TrackEvent
-    , deleteLayout : Layout -> TrackEvent
-    , externalLink : String -> TrackEvent
-    }
-events =
-    { openAppCta = \source -> { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
-    , openMenu = { name = "open-menu", details = [], enabled = True }
-    , openSettings = { name = "open-settings", details = [], enabled = True }
-    , openHelp = { name = "open-help", details = [], enabled = True }
-    , openTableSettings = { name = "open-table-settings", details = [], enabled = True }
-    , showTableWithForeignKey = { name = "show-table-with-foreign-key", details = [], enabled = True }
-    , showTableWithIncomingRelationsDropdown = { name = "show-table-with-incoming-relations-dropdown", details = [], enabled = True }
-    , openIncomingRelationsDropdown = { name = "open-incoming-relations-dropdown", details = [], enabled = True }
-    , openSaveLayout = { name = "open-save-layout", details = [], enabled = True }
-    , openFindPath = { name = "open-find-path", details = [], enabled = True }
-    , parsedSource = parseSQLEvent
-    , createProject = projectEvent "create"
-    , loadProject = projectEvent "load"
-    , updateProject = projectEvent "update"
-    , deleteProject = projectEvent "delete"
-    , addSource = sourceEvent "add"
-    , refreshSource = sourceEvent "refresh"
-    , createLayout = layoutEvent "create"
-    , loadLayout = layoutEvent "load"
-    , updateLayout = layoutEvent "update"
-    , deleteLayout = layoutEvent "delete"
-    , findPathResult = findPathResults
-    , externalLink = \url -> { name = "external-link", details = [ ( "url", url ) ], enabled = True }
-    }
+openAppCta : String -> TrackEvent
+openAppCta source =
+    { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
+
+
+openSettings : TrackEvent
+openSettings =
+    { name = "open-settings", details = [], enabled = True }
+
+
+openHelp : TrackEvent
+openHelp =
+    { name = "open-help", details = [], enabled = True }
+
+
+openTableSettings : TrackEvent
+openTableSettings =
+    { name = "open-table-settings", details = [], enabled = True }
+
+
+showTableWithForeignKey : TrackEvent
+showTableWithForeignKey =
+    { name = "show-table-with-foreign-key", details = [], enabled = True }
+
+
+showTableWithIncomingRelationsDropdown : TrackEvent
+showTableWithIncomingRelationsDropdown =
+    { name = "show-table-with-incoming-relations-dropdown", details = [], enabled = True }
+
+
+openIncomingRelationsDropdown : TrackEvent
+openIncomingRelationsDropdown =
+    { name = "open-incoming-relations-dropdown", details = [], enabled = True }
+
+
+openSaveLayout : TrackEvent
+openSaveLayout =
+    { name = "open-save-layout", details = [], enabled = True }
+
+
+parsedSource : SQLParsing msg -> Source -> TrackEvent
+parsedSource =
+    parseSQLEvent
+
+
+createProject : Project -> TrackEvent
+createProject =
+    projectEvent "create"
+
+
+loadProject : Project -> TrackEvent
+loadProject =
+    projectEvent "load"
+
+
+updateProject : Project -> TrackEvent
+updateProject =
+    projectEvent "update"
+
+
+deleteProject : Project -> TrackEvent
+deleteProject =
+    projectEvent "delete"
+
+
+addSource : Source -> TrackEvent
+addSource =
+    sourceEvent "add"
+
+
+refreshSource : Source -> TrackEvent
+refreshSource =
+    sourceEvent "refresh"
+
+
+createLayout : Layout -> TrackEvent
+createLayout =
+    layoutEvent "create"
+
+
+loadLayout : Layout -> TrackEvent
+loadLayout =
+    layoutEvent "load"
+
+
+updateLayout : Layout -> TrackEvent
+updateLayout =
+    layoutEvent "update"
+
+
+deleteLayout : Layout -> TrackEvent
+deleteLayout =
+    layoutEvent "delete"
+
+
+externalLink : String -> TrackEvent
+externalLink url =
+    { name = "external-link", details = [ ( "url", url ) ], enabled = True }
+
+
+openFindPath : TrackEvent
+openFindPath =
+    { name = "open-find-path", details = [], enabled = True }
+
+
+findPathResult : FindPathResult -> TrackEvent
+findPathResult =
+    findPathResults
+
+
+
+-- HELPERS
 
 
 type alias SQLParsing x =

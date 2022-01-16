@@ -14,7 +14,7 @@ import Ports exposing (JsMsg(..), autofocusWithin, onJsMessage, trackPage)
 import Request
 import Shared exposing (StoredProjects(..))
 import Time
-import Tracking
+import Track
 import View exposing (View)
 
 
@@ -71,7 +71,7 @@ update req msg model =
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
         DeleteProject project ->
-            ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Tracking.events.deleteProject project) ] )
+            ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
 
         ConfirmOpen confirm ->
             ( { model | confirm = Just confirm }, T.sendAfter 1 ModalOpen )

@@ -79,18 +79,18 @@ viewLayouts theme openedDropdown project =
             )
             (\_ ->
                 div [ css [ Tw.min_w_max, Tw.divide_y, Tw.divide_gray_100 ] ]
-                    ([ div [ role "none", css [ Tw.py_1 ] ]
-                        [ Dropdown.btn [] (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
-                     , div [ role "none", css [ Tw.py_1 ] ]
-                        (project.layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
-                     ]
-                        |> L.prependOn project.usedLayout
-                            (\l ->
-                                div [ role "none", css [ Tw.py_1 ] ]
-                                    [ Dropdown.btn [] (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
-                                    , Dropdown.btn [] (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
-                                    ]
-                            )
+                    (L.prependOn project.usedLayout
+                        (\l ->
+                            div [ role "none", css [ Tw.py_1 ] ]
+                                [ Dropdown.btn [] (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
+                                , Dropdown.btn [] (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
+                                ]
+                        )
+                        [ div [ role "none", css [ Tw.py_1 ] ]
+                            [ Dropdown.btn [] (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
+                        , div [ role "none", css [ Tw.py_1 ] ]
+                            (project.layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
+                        ]
                     )
             )
         ]
