@@ -5,7 +5,7 @@ import Html.Styled as Styled
 import Page
 import PagesComponents.Home_.Models as Models exposing (Msg(..))
 import PagesComponents.Home_.View exposing (viewHome)
-import Ports exposing (JsMsg(..), onJsMessage, trackPage)
+import Ports exposing (JsMsg(..))
 import Request
 import Shared
 import Time
@@ -39,7 +39,7 @@ init =
     ( { projects = [] }
     , Cmd.batch
         [ Ports.loadProjects
-        , trackPage "home"
+        , Ports.trackPage "home"
         ]
     )
 
@@ -71,7 +71,7 @@ handleJsMessage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    onJsMessage JsMessage
+    Ports.onJsMessage JsMessage
 
 
 

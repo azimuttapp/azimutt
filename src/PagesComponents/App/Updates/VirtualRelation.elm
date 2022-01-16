@@ -6,7 +6,7 @@ import Models.Project as Project exposing (Project)
 import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.App.Models exposing (Model, Msg, VirtualRelation, VirtualRelationMsg(..))
-import Ports exposing (getSourceId, toastInfo)
+import Ports
 import Services.Lenses exposing (setProject)
 
 
@@ -36,11 +36,11 @@ handleVirtualRelation msg model =
                         Just source ->
                             ( { model | virtualRelation = Nothing }
                                 |> setProject (Project.updateSource source.id (\s -> { s | relations = s.relations ++ [ Relation.virtual src ref source.id ] }))
-                            , toastInfo ("Relation added to <b>" ++ source.name ++ "</b> source.")
+                            , Ports.toastInfo ("Relation added to <b>" ++ source.name ++ "</b> source.")
                             )
 
                         Nothing ->
-                            ( { model | virtualRelation = Nothing }, getSourceId src ref )
+                            ( { model | virtualRelation = Nothing }, Ports.getSourceId src ref )
 
         VRMove pos ->
             ( { model | virtualRelation = model.virtualRelation |> Maybe.map (\vr -> { vr | mouse = pos }) }, Cmd.none )

@@ -8,7 +8,7 @@ import Models.Project exposing (Project)
 import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Model, Msg)
-import Ports exposing (activateTooltipsAndPopovers, observeTablesSize, saveProject, track)
+import Ports
 import Services.Lenses exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
 import Time
 import Track
@@ -48,7 +48,7 @@ createLayout name project =
     -- TODO check that layout name does not already exist
     { project | usedLayout = Just name }
         |> setLayouts (Dict.update name (\_ -> Just project.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (Track.createLayout project.layout) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.createLayout project.layout) ] ))
 
 
 loadLayout : LayoutName -> Project -> ( Project, Cmd Msg )
@@ -58,7 +58,7 @@ loadLayout name project =
         |> M.mapOrElse
             (\layout ->
                 ( { project | usedLayout = Just name } |> setLayout (\_ -> layout)
-                , Cmd.batch [ layout.tables |> List.map .id |> observeTablesSize, activateTooltipsAndPopovers, track (Track.loadLayout layout) ]
+                , Cmd.batch [ layout.tables |> List.map .id |> Ports.observeTablesSize, Ports.activateTooltipsAndPopovers, Ports.track (Track.loadLayout layout) ]
                 )
             )
             ( project, Cmd.none )
@@ -74,11 +74,11 @@ updateLayout name project =
     -- TODO check that layout name already exist
     { project | usedLayout = Just name }
         |> setLayouts (Dict.update name (\_ -> Just project.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (Track.updateLayout project.layout) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.updateLayout project.layout) ] ))
 
 
 deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 deleteLayout name project =
     { project | usedLayout = B.cond (project.usedLayout == Just name) Nothing (Just name) }
         |> setLayouts (Dict.update name (\_ -> Nothing))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (Track.deleteLayout (project.layouts |> D.getOrElse name (Layout.init (Time.millisToPosix 0)))) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.deleteLayout (project.layouts |> D.getOrElse name (Layout.init (Time.millisToPosix 0)))) ] ))

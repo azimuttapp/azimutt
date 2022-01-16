@@ -15,7 +15,7 @@ import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Models exposing (CursorMode(..), DragState, Msg)
-import Ports exposing (toastInfo)
+import Ports
 import Services.Lenses exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
 
 
@@ -102,4 +102,4 @@ tableArea table domInfos =
 
 badDrag : String -> Model x -> ( Model x, Cmd Msg )
 badDrag kind model =
-    ( model, toastInfo ("Can't " ++ kind ++ ", not in drag state") )
+    ( model, Ports.toastInfo ("Can't " ++ kind ++ ", not in drag state") )

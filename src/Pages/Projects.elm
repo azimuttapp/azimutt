@@ -10,7 +10,7 @@ import Libs.Task as T
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
-import Ports exposing (JsMsg(..), autofocusWithin, onJsMessage, trackPage)
+import Ports exposing (JsMsg(..))
 import Request
 import Shared exposing (StoredProjects(..))
 import Time
@@ -52,7 +52,7 @@ init =
       }
     , Cmd.batch
         [ Ports.loadProjects
-        , trackPage "dashboard"
+        , Ports.trackPage "dashboard"
         ]
     )
 
@@ -80,7 +80,7 @@ update req msg model =
             ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
 
         ModalOpen ->
-            ( { model | modalOpened = True }, autofocusWithin Conf.ids.modal )
+            ( { model | modalOpened = True }, Ports.autofocusWithin Conf.ids.modal )
 
         ModalClose message ->
             ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )
@@ -108,7 +108,7 @@ handleJsMessage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    onJsMessage JsMessage
+    Ports.onJsMessage JsMessage
 
 
 

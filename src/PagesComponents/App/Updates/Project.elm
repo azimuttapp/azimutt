@@ -15,7 +15,7 @@ import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SourceKind as SourceKind
 import Models.SourceInfo exposing (SourceInfo)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
-import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
+import Ports
 import Track
 
 
@@ -72,19 +72,19 @@ updateProject sourceInfo content project =
             |> (\( errors, ( updatedProject, event, message ) ) ->
                     ( updatedProject
                     , Cmd.batch
-                        ((errors |> List.map toastError)
-                            ++ (errors |> List.map (trackError "parse-schema"))
-                            ++ [ toastInfo message
-                               , hideOffcanvas Conf.ids.settingsDialog
-                               , saveProject updatedProject
-                               , track event
+                        ((errors |> List.map Ports.toastError)
+                            ++ (errors |> List.map (Ports.trackError "parse-schema"))
+                            ++ [ Ports.toastInfo message
+                               , Ports.hideOffcanvas Conf.ids.settingsDialog
+                               , Ports.saveProject updatedProject
+                               , Ports.track event
                                ]
                         )
                     )
                )
 
     else
-        ( project, toastError ("Invalid file (" ++ path ++ "), expected .sql") )
+        ( project, Ports.toastError ("Invalid file (" ++ path ++ "), expected .sql") )
 
 
 useProject : Project -> Model -> ( Model, Cmd Msg )
@@ -94,7 +94,7 @@ useProject project model =
 
 deleteProject : Project -> Model -> ( Model, Cmd Msg )
 deleteProject project model =
-    ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, track (Track.deleteProject project) ] )
+    ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
 
 
 loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
@@ -106,25 +106,25 @@ loadProject projectEvent model ( errors, project ) =
         , domInfos = model.domInfos |> Dict.filter (\id _ -> not (id |> String.startsWith "table-"))
       }
     , Cmd.batch
-        ((errors |> List.map toastError)
-            ++ (errors |> List.map (trackError "parse-project"))
+        ((errors |> List.map Ports.toastError)
+            ++ (errors |> List.map (Ports.trackError "parse-project"))
             ++ (project
                     |> M.mapOrElse
                         (\p ->
                             (if not (p.layout.tables |> List.isEmpty) then
-                                observeTablesSize (p.layout.tables |> List.map .id)
+                                Ports.observeTablesSize (p.layout.tables |> List.map .id)
 
                              else if Dict.size p.tables < Conf.canvas.showAllTablesThreshold then
                                 T.send ShowAllTables
 
                              else
-                                click Conf.ids.searchInput
+                                Ports.click Conf.ids.searchInput
                             )
-                                :: [ toastInfo ("<b>" ++ p.name ++ "</b> loaded.<br>Use the search bar to explore it")
-                                   , hideModal Conf.ids.projectSwitchModal
-                                   , saveProject p
-                                   , activateTooltipsAndPopovers
-                                   , track (projectEvent p)
+                                :: [ Ports.toastInfo ("<b>" ++ p.name ++ "</b> loaded.<br>Use the search bar to explore it")
+                                   , Ports.hideModal Conf.ids.projectSwitchModal
+                                   , Ports.saveProject p
+                                   , Ports.activateTooltipsAndPopovers
+                                   , Ports.track (projectEvent p)
                                    ]
                         )
                         []

@@ -5,7 +5,7 @@ import Libs.Maybe as M
 import Libs.Task exposing (send)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..), VirtualRelationMsg(..))
 import PagesComponents.App.Updates exposing (moveTable, removeElement)
-import Ports exposing (click, saveProject, showModal, toastInfo, toastWarning, track)
+import Ports
 import Track
 
 
@@ -13,7 +13,7 @@ handleHotkey : Model -> String -> List (Cmd Msg)
 handleHotkey model hotkey =
     case hotkey of
         "search-open" ->
-            [ click Conf.ids.searchInput ]
+            [ Ports.click Conf.ids.searchInput ]
 
         "remove" ->
             [ removeElement model.hover ]
@@ -41,14 +41,14 @@ handleHotkey model hotkey =
 
         "save" ->
             model.project
-                |> M.mapOrElse (\p -> [ saveProject p, toastInfo "Project saved", track (Track.updateProject p) ])
-                    [ toastWarning "No project to save" ]
+                |> M.mapOrElse (\p -> [ Ports.saveProject p, Ports.toastInfo "Project saved", Ports.track (Track.updateProject p) ])
+                    [ Ports.toastWarning "No project to save" ]
 
         "cancel" ->
             model.virtualRelation |> M.mapOrElse (\_ -> [ send (VirtualRelationMsg VRCancel) ]) []
 
         "help" ->
-            [ showModal Conf.ids.helpDialog ]
+            [ Ports.showModal Conf.ids.helpDialog ]
 
         other ->
-            [ toastInfo ("Shortcut <b>" ++ other ++ "</b> is not implemented yet :(") ]
+            [ Ports.toastInfo ("Shortcut <b>" ++ other ++ "</b> is not implemented yet :(") ]

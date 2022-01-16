@@ -11,7 +11,7 @@ import Models.Project as Project
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
-import Ports exposing (JsMsg(..), onJsMessage, saveProject, track, trackPage)
+import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (setParsingWithCmd)
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
@@ -53,7 +53,7 @@ init req =
       }
     , Cmd.batch
         ([ Ports.loadProjects
-         , trackPage "new-project"
+         , Ports.trackPage "new-project"
          ]
             ++ (req.query |> Dict.get "sample" |> M.mapOrElse (\sample -> [ T.send (sample |> SelectSample |> SQLSourceMsg) ]) [])
         )
@@ -85,7 +85,7 @@ update req msg model =
         CreateProject projectId source ->
             Project.create projectId (S.unique (model.projects |> List.map .name) source.name) source
                 |> (\project ->
-                        ( model, Cmd.batch [ saveProject project, track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+                        ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
                    )
 
         JsMessage message ->
@@ -114,7 +114,7 @@ handleJsMessage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    onJsMessage JsMessage
+    Ports.onJsMessage JsMessage
 
 
 

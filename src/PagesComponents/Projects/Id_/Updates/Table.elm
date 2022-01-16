@@ -17,7 +17,7 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
-import Ports exposing (observeTableSize, observeTablesSize)
+import Ports
 import Services.Lenses exposing (setLayout)
 
 
@@ -29,7 +29,7 @@ showTable id project =
                 ( project, T.send (toastInfo ("Table " ++ TableId.show id ++ " already shown")) )
 
             else
-                ( project |> performShowTable table, Cmd.batch [ observeTableSize id ] )
+                ( project |> performShowTable table, Cmd.batch [ Ports.observeTableSize id ] )
 
         Nothing ->
             ( project, T.send (toastError ("Can't show table " ++ TableId.show id ++ ": not found")) )
@@ -56,7 +56,7 @@ showTables ids project =
         |> (\( p, ( found, shown, notFound ) ) ->
                 ( p
                 , Cmd.batch
-                    (B.cond (found |> List.isEmpty) [] [ observeTablesSize found ]
+                    (B.cond (found |> List.isEmpty) [] [ Ports.observeTablesSize found ]
                         ++ B.cond (shown |> List.isEmpty) [] [ T.send (toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown")) ]
                         ++ B.cond (notFound |> List.isEmpty) [] [ T.send (toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them")) ]
                     )
@@ -76,7 +76,7 @@ showAllTables project =
                     |> List.map (TableProps.init project.settings project.relations)
     in
     ( project |> setLayout (\l -> { l | tables = (l.tables ++ l.hiddenTables ++ initProps l) |> L.uniqueBy .id, hiddenTables = [] })
-    , Cmd.batch [ observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))) ]
+    , Cmd.batch [ Ports.observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))) ]
     )
 
 

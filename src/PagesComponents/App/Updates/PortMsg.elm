@@ -14,7 +14,7 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.SourceInfo exposing (SourceInfo)
 import PagesComponents.App.Models exposing (Model, Msg(..), SourceMsg(..))
 import PagesComponents.App.Updates.Hotkey exposing (handleHotkey)
-import Ports exposing (JsMsg(..), toastError, trackJsonError)
+import Ports exposing (JsMsg(..))
 
 
 handleJsMsg : JsMsg -> Model -> Cmd Msg
@@ -24,7 +24,7 @@ handleJsMsg msg model =
             send (SizesChanged sizes)
 
         GotProjects ( errors, projects ) ->
-            Cmd.batch (send (ProjectsLoaded projects) :: (errors |> List.concatMap (\( name, err ) -> [ toastError ("Unable to read project <b>" ++ name ++ "</b>:<br>" ++ D.errorToHtml err), trackJsonError "decode-project" err ])))
+            Cmd.batch (send (ProjectsLoaded projects) :: (errors |> List.concatMap (\( name, err ) -> [ Ports.toastError ("Unable to read project <b>" ++ name ++ "</b>:<br>" ++ D.errorToHtml err), Ports.trackJsonError "decode-project" err ])))
 
         GotLocalFile now projectId sourceId file content ->
             send (SourceMsg (FileLoaded projectId (SourceInfo sourceId (lastSegment file.name) (localSource file) True Nothing now now) content))
@@ -39,7 +39,7 @@ handleJsMsg msg model =
             Cmd.batch (handleHotkey model hotkey)
 
         Error err ->
-            Cmd.batch [ toastError ("Unable to decode JavaScript message:<br>" ++ D.errorToHtml err), trackJsonError "js-message" err ]
+            Cmd.batch [ Ports.toastError ("Unable to decode JavaScript message:<br>" ++ D.errorToHtml err), Ports.trackJsonError "js-message" err ]
 
 
 localSource : File -> SourceKind

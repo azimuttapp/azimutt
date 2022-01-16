@@ -7,7 +7,7 @@ import Models.Project as Project exposing (Project)
 import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg, VirtualRelation, VirtualRelationMsg(..), toastInfo)
-import Ports exposing (getSourceId)
+import Ports
 import Services.Lenses exposing (setProject)
 
 
@@ -41,7 +41,7 @@ handleVirtualRelation msg model =
                             )
 
                         Nothing ->
-                            ( { model | virtualRelation = Nothing }, getSourceId src ref )
+                            ( { model | virtualRelation = Nothing }, Ports.getSourceId src ref )
 
         VRMove pos ->
             ( { model | virtualRelation = model.virtualRelation |> Maybe.map (\vr -> { vr | mouse = pos }) }, Cmd.none )

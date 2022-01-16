@@ -15,7 +15,7 @@ import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Commands.InitializeTable exposing (initializeTable)
 import PagesComponents.App.Models exposing (CursorMode(..), Hover, Model, Msg(..))
-import Ports exposing (toastInfo)
+import Ports
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -46,7 +46,7 @@ removeElement : Hover -> Cmd Msg
 removeElement hover =
     (hover.column |> Maybe.map (\c -> send (HideColumn c)))
         |> M.orElse (hover.table |> Maybe.map (\t -> send (HideTable t)))
-        |> Maybe.withDefault (toastInfo "Can't find an element to remove :(")
+        |> Maybe.withDefault (Ports.toastInfo "Can't find an element to remove :(")
 
 
 moveTable : Int -> Hover -> Layout -> Cmd Msg
@@ -64,4 +64,4 @@ moveTable delta hover layout =
             |> Maybe.andThen (\id -> layout.tables |> L.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
             |> Maybe.map (\( id, i ) -> send (TableOrder id (List.length layout.tables - 1 - i + delta)))
         )
-            |> Maybe.withDefault (toastInfo "Can't find an element to move :(")
+            |> Maybe.withDefault (Ports.toastInfo "Can't find an element to move :(")

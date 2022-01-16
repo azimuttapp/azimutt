@@ -15,7 +15,7 @@ import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettin
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, toastInfo)
-import Ports exposing (observeTablesSize)
+import Ports
 import Services.Lenses exposing (setLayout, setParsingWithCmd, setProject, setSettings, setSourceUploadWithCmd)
 import Services.SQLSource as SQLSource
 import Track
@@ -41,7 +41,7 @@ handleProjectSettings msg model =
         PSToggleSource source ->
             ( model |> setProject (Project.updateSource source.id (\s -> { s | enabled = not s.enabled }))
             , Cmd.batch
-                [ observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
+                [ Ports.observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
                 , T.send (toastInfo ("Source " ++ source.name ++ " set to " ++ B.cond source.enabled "hidden" "visible" ++ "."))
                 ]
             )
@@ -84,7 +84,7 @@ updateSettingsAndComputeProject : (ProjectSettings -> ProjectSettings) -> Model 
 updateSettingsAndComputeProject transform model =
     model
         |> setProject (setSettings transform >> Project.compute)
-        |> (\m -> ( m, observeTablesSize (m.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) []) ))
+        |> (\m -> ( m, Ports.observeTablesSize (m.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) []) ))
 
 
 hideColumns : (Column -> Bool) -> Project -> Layout -> Layout

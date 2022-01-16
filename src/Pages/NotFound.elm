@@ -7,7 +7,7 @@ import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
 import Html.Styled as Styled exposing (Html)
 import Page
-import Ports exposing (trackPage)
+import Ports
 import Request exposing (Request)
 import Shared
 import Tailwind.Utilities as Tw
@@ -39,7 +39,7 @@ type alias Msg =
 init : Request -> ( Model, Cmd Msg )
 init req =
     ( req.url.path |> addPrefixed "?" req.url.query |> addPrefixed "#" req.url.fragment
-    , trackPage "not-found"
+    , Ports.trackPage "not-found"
     )
 
 

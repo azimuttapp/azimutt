@@ -12,7 +12,7 @@ import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettin
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Models exposing (Model, Msg, SettingsMsg(..))
-import Ports exposing (observeTablesSize)
+import Ports
 import Services.Lenses exposing (setLayout, setProject, setSettings)
 
 
@@ -39,7 +39,7 @@ updateSettingsAndComputeProject : (ProjectSettings -> ProjectSettings) -> Model 
 updateSettingsAndComputeProject transform model =
     model
         |> setProject (setSettings transform >> Project.compute)
-        |> (\m -> ( m, observeTablesSize (m.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) []) ))
+        |> (\m -> ( m, Ports.observeTablesSize (m.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) []) ))
 
 
 hideColumns : (Column -> Bool) -> Project -> Layout -> Layout

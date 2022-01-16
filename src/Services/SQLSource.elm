@@ -35,7 +35,7 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId
 import Models.SourceInfo exposing (SourceInfo)
-import Ports exposing (readLocalFile, readRemoteFile, track)
+import Ports
 import Tailwind.Utilities as Tw
 import Time
 import Track
@@ -125,17 +125,17 @@ update msg wrap model =
     case msg of
         SelectLocalFile file ->
             ( init model.project model.source |> (\m -> { m | selectedLocalFile = Just file })
-            , readLocalFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) file
+            , Ports.readLocalFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) file
             )
 
         SelectRemoteFile url ->
             ( init model.project model.source |> (\m -> { m | selectedRemoteFile = Just url })
-            , readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) url Nothing
+            , Ports.readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) url Nothing
             )
 
         SelectSample sample ->
             ( init model.project model.source |> (\m -> { m | selectedSample = Just sample })
-            , Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) s.url (Just s.key)) |> Maybe.withDefault Cmd.none
+            , Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> Ports.readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) s.url (Just s.key)) |> Maybe.withDefault Cmd.none
             )
 
         FileLoaded projectId sourceInfo fileContent ->
@@ -165,7 +165,7 @@ update msg wrap model =
         BuildSource ->
             model.parsedSchema
                 |> Maybe.andThen (\parsedSchema -> parsedSchema.schema |> Maybe.map3 (\( _, sourceInfo, _ ) lines schema -> ( parsedSchema, ProjectAdapter.buildSourceFromSql sourceInfo lines schema )) model.loadedFile parsedSchema.lines)
-                |> Maybe.map (\( parsedSchema, source ) -> ( { model | parsedSource = Just source }, track (Track.parsedSource parsedSchema source) ))
+                |> Maybe.map (\( parsedSchema, source ) -> ( { model | parsedSource = Just source }, Ports.track (Track.parsedSource parsedSchema source) ))
                 |> Maybe.withDefault ( model, Cmd.none )
 
 

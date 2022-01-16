@@ -27,7 +27,7 @@ import PagesComponents.App.Updates.Table exposing (hideAllTables, hideColumn, hi
 import PagesComponents.App.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Helpers as Helpers
-import Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, hideOffcanvas, listenHotkeys, loadProjects, observeSize, onJsMessage, showModal, trackPage)
+import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableInList, setTables, setTime)
 import Shared
@@ -75,13 +75,13 @@ init =
       , hover = initHover
       }
     , Cmd.batch
-        [ observeSize Conf.ids.erd
-        , showModal Conf.ids.projectSwitchModal
-        , loadProjects
+        [ Ports.observeSize Conf.ids.erd
+        , Ports.showModal Conf.ids.projectSwitchModal
+        , Ports.loadProjects
         , getZone
         , getTime
-        , listenHotkeys Conf.hotkeys
-        , trackPage "app"
+        , Ports.listenHotkeys Conf.hotkeys
+        , Ports.trackPage "app"
         ]
     )
 
@@ -107,7 +107,7 @@ update msg model =
             model |> handleSource m
 
         ChangeProject ->
-            ( model, Cmd.batch [ hideOffcanvas Conf.ids.menu, showModal Conf.ids.projectSwitchModal, loadProjects ] )
+            ( model, Cmd.batch [ Ports.hideOffcanvas Conf.ids.menu, Ports.showModal Conf.ids.projectSwitchModal, Ports.loadProjects ] )
 
         ProjectsLoaded projects ->
             ( { model | storedProjects = projects }, Cmd.none )
@@ -154,16 +154,16 @@ update msg model =
             ( model |> hoverNextColumn table column |> setCurrentLayout (hideColumn table column), Cmd.none )
 
         ShowColumn { table, column } ->
-            ( model |> setCurrentLayout (showColumn table column), activateTooltipsAndPopovers )
+            ( model |> setCurrentLayout (showColumn table column), Ports.activateTooltipsAndPopovers )
 
         SortColumns id kind ->
-            ( model |> setProject (sortColumns id kind), activateTooltipsAndPopovers )
+            ( model |> setProject (sortColumns id kind), Ports.activateTooltipsAndPopovers )
 
         HideColumns id kind ->
             ( model |> setProject (hideColumns id kind), Cmd.none )
 
         ShowColumns id kind ->
-            ( model |> setProject (showColumns id kind), activateTooltipsAndPopovers )
+            ( model |> setProject (showColumns id kind), Ports.activateTooltipsAndPopovers )
 
         HoverTable t ->
             ( { model | hover = model.hover |> (\h -> { h | table = t }) }, Cmd.none )
@@ -181,7 +181,7 @@ update msg model =
             ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
 
         ResetCanvas ->
-            ( model |> setProject resetCanvas, click Conf.ids.searchInput )
+            ( model |> setProject resetCanvas, Ports.click Conf.ids.searchInput )
 
         DragStart id pos ->
             model |> dragStart id pos
@@ -208,7 +208,7 @@ update msg model =
             model |> handleSettings m
 
         OpenConfirm confirm ->
-            ( { model | confirm = confirm }, showModal Conf.ids.confirmDialog )
+            ( { model | confirm = confirm }, Ports.showModal Conf.ids.confirmDialog )
 
         OnConfirm answer cmd ->
             ( { model | confirm = initConfirm }, B.cond answer cmd Cmd.none )
@@ -228,7 +228,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         ([ Time.every (10 * 1000) TimeChanged
-         , onJsMessage JsMessage
+         , Ports.onJsMessage JsMessage
          ]
             ++ dragSubscriptions model.dragState
             ++ virtualRelationSubscription model.virtualRelation

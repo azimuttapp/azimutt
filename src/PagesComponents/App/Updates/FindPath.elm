@@ -17,7 +17,7 @@ import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..))
-import Ports exposing (activateTooltipsAndPopovers, showModal, track)
+import Ports
 import Services.Lenses exposing (setProject, setSettings)
 import Track
 
@@ -39,7 +39,7 @@ handleFindPath : FindPathMsg -> Model x y -> ( Model x y, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPInit from to ->
-            ( { model | findPath = Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ showModal Conf.ids.findPathDialog, track Track.openFindPath ] )
+            ( { model | findPath = Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ Ports.showModal Conf.ids.findPathDialog, Ports.track Track.openFindPath ] )
 
         FPUpdateFrom from ->
             ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | from = from }) }, Cmd.none )
@@ -54,7 +54,7 @@ handleFindPath msg model =
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ activateTooltipsAndPopovers, track (Track.findPathResult result) ] ))
+            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ Ports.activateTooltipsAndPopovers, Ports.track (Track.findPathResult result) ] ))
 
         FPSettingsUpdate settings ->
             ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )

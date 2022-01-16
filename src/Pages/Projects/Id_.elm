@@ -31,7 +31,7 @@ import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProj
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
-import Ports exposing (JsMsg(..), autofocusWithin, listenHotkeys, observeSize, observeTablesSize, saveProject, track, trackJsonError, trackPage)
+import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
 import Services.SQLSource as SQLSource
@@ -87,8 +87,8 @@ init =
       }
     , Cmd.batch
         [ Ports.loadProjects
-        , trackPage "app"
-        , listenHotkeys Conf.hotkeys
+        , Ports.trackPage "app"
+        , Ports.listenHotkeys Conf.hotkeys
         ]
     )
 
@@ -107,7 +107,7 @@ update req msg model =
             ( { model | navbar = model.navbar |> (\n -> { n | search = n.search |> (\s -> { s | text = search, active = 0 }) }) }, Cmd.none )
 
         SaveProject ->
-            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ saveProject p, T.send (toastInfo "Project saved"), track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastInfo "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
         ShowTable id ->
             model |> setProjectWithCmd (showTable id)
@@ -231,7 +231,7 @@ update req msg model =
             ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
 
         ModalOpen id ->
-            ( { model | openedDialogs = id :: model.openedDialogs }, autofocusWithin id )
+            ( { model | openedDialogs = id :: model.openedDialogs }, Ports.autofocusWithin id )
 
         ModalClose message ->
             ( { model | openedDialogs = model.openedDialogs |> List.drop 1 }, T.sendAfter Modal.closeDuration message )
@@ -257,8 +257,8 @@ handleJsMessage req message model =
             , Cmd.batch
                 ((model.project
                     |> M.mapOrElse (\_ -> [])
-                        [ observeSize Conf.ids.erd
-                        , observeTablesSize (projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (.layout >> .tables) [] |> List.map .id)
+                        [ Ports.observeSize Conf.ids.erd
+                        , Ports.observeTablesSize (projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (.layout >> .tables) [] |> List.map .id)
                         ]
                  )
                     ++ (errors
@@ -285,7 +285,7 @@ handleJsMessage req message model =
             handleHotkey model hotkey
 
         Error err ->
-            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ D.errorToHtml err)), trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ D.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
 
 
 
