@@ -78,7 +78,7 @@ updateLayout name project =
     -- TODO check that layout name already exist
     { project | usedLayout = Just name }
         |> setLayouts (Dict.update name (\_ -> Just project.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ T.send (toastSuccess ("Saved to " ++ name ++ " layout!")), Ports.track (Track.updateLayout project.layout) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ T.send (toastSuccess ("Saved to layout " ++ name)), Ports.track (Track.updateLayout project.layout) ] ))
 
 
 deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )

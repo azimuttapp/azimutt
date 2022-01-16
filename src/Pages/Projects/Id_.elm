@@ -20,7 +20,7 @@ import Models.Project as Project
 import Models.Project.Relation as Relation
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
@@ -109,7 +109,7 @@ update req msg model =
             ( { model | navbar = model.navbar |> (\n -> { n | search = n.search |> (\s -> { s | text = search, active = 0 }) }) }, Cmd.none )
 
         SaveProject ->
-            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastInfo "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
         ShowTable id ->
             model |> setProjectWithCmd (showTable id)
