@@ -23,34 +23,34 @@ window.addEventListener('load', function() {
         // console.log('js message', msg)
         app.ports.jsToElm.send(msg)
     }
-    app.ports && app.ports.elmToJs.subscribe(msg => {
+    app.ports && app.ports.elmToJs.subscribe(port => {
         // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
         setTimeout(() => {
             // console.log('elm message', msg)
-            switch (msg.kind) {
-                case 'Click':           click(msg.id); break;
-                case 'MouseDown':       mousedown(msg.id); break;
-                case 'Focus':           focus(msg.id); break;
-                case 'Blur':            blur(msg.id); break;
-                case 'ScrollTo':        scrollTo(msg.id, msg.position); break;
-                case 'AutofocusWithin': autofocusWithin(msg.id); break;
-                case 'ShowModal':       showModal(msg.id); break;
-                case 'HideModal':       hideModal(msg.id); break;
-                case 'HideOffcanvas':   hideOffcanvas(msg.id); break;
+            switch (port.kind) {
+                case 'Click':           click(port.id); break;
+                case 'MouseDown':       mousedown(port.id); break;
+                case 'Focus':           focus(port.id); break;
+                case 'Blur':            blur(port.id); break;
+                case 'ScrollTo':        scrollTo(port.id, port.position); break;
+                case 'AutofocusWithin': autofocusWithin(port.id); break;
+                case 'ShowModal':       showModal(port.id); break;
+                case 'HideModal':       hideModal(port.id); break;
+                case 'HideOffcanvas':   hideOffcanvas(port.id); break;
                 case 'ActivateTooltipsAndPopovers': activateTooltipsAndPopovers(); break;
-                case 'ShowToast':       showToast(msg.toast); break;
+                case 'ShowToast':       showToast(port.toast); break;
                 case 'LoadProjects':    loadProjects(); break;
-                case 'SaveProject':     saveProject(msg.project); break;
-                case 'DropProject':     dropProject(msg.project); break;
-                case 'GetLocalFile':    getLocalFile(msg.project, msg.source, msg.file); break;
-                case 'GetRemoteFile':   getRemoteFile(msg.project, msg.source, msg.url, msg.sample); break;
-                case 'GetSourceId':     getSourceId(msg.src, msg.ref); break;
-                case 'ObserveSizes':    observeSizes(msg.ids); break;
-                case 'ListenKeys':      listenHotkeys(msg.keys); break;
-                case 'TrackPage':       analytics.then(a => a.trackPage(msg.name)); break;
-                case 'TrackEvent':      analytics.then(a => a.trackEvent(msg.name, msg.details)); break;
-                case 'TrackError':      analytics.then(a => a.trackError(msg.name, msg.details)); errorTracking.then(e => e.trackError(msg.name, msg.details)); break;
-                default: console.error('Unsupported Elm message', msg); break;
+                case 'SaveProject':     saveProject(port.project); break;
+                case 'DropProject':     dropProject(port.project); break;
+                case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file); break;
+                case 'GetRemoteFile':   getRemoteFile(port.project, port.source, port.url, port.sample); break;
+                case 'GetSourceId':     getSourceId(port.src, port.ref); break;
+                case 'ObserveSizes':    observeSizes(port.ids); break;
+                case 'ListenKeys':      listenHotkeys(port.keys); break;
+                case 'TrackPage':       analytics.then(a => a.trackPage(port.name)); break;
+                case 'TrackEvent':      analytics.then(a => a.trackEvent(port.name, port.details)); break;
+                case 'TrackError':      analytics.then(a => a.trackError(port.name, port.details)); errorTracking.then(e => e.trackError(port.name, port.details)); break;
+                default: console.error('Unsupported Elm message', port); break;
             }
         }, 100)
     })

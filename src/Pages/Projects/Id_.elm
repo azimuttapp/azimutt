@@ -252,12 +252,15 @@ handleJsMessage req message model =
         GotProjects ( errors, projects ) ->
             ( { model
                 | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)))
-                , project = projects |> L.find (\p -> p.id == req.params.id)
+                , project = model.project |> M.orElse (projects |> L.find (\p -> p.id == req.params.id))
               }
             , Cmd.batch
-                ([ observeSize Conf.ids.erd
-                 , observeTablesSize (projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (.layout >> .tables) [] |> List.map .id)
-                 ]
+                ((model.project
+                    |> M.mapOrElse (\_ -> [])
+                        [ observeSize Conf.ids.erd
+                        , observeTablesSize (projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (.layout >> .tables) [] |> List.map .id)
+                        ]
+                 )
                     ++ (errors
                             |> List.concatMap
                                 (\( name, err ) ->
