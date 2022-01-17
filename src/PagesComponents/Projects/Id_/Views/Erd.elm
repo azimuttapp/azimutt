@@ -29,7 +29,7 @@ import Libs.Tailwind.Utilities as Tu
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -38,9 +38,11 @@ import Models.RelationFull as RelationFull exposing (RelationFull)
 import Models.ScreenProps exposing (ScreenProps)
 import Models.TableFull exposing (TableFull)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdTable, ErdTableProps)
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Projects.Id_.Views.Erd.Table exposing (viewTable)
+import PagesComponents.Projects.Id_.Views.Erd.Table2 exposing (viewTable2)
 import Tailwind.Utilities as Tw
 
 
@@ -57,9 +59,12 @@ type alias Model x =
     }
 
 
-viewErd : Theme -> Model x -> Project -> Html Msg
-viewErd theme model project =
+viewErd : Theme -> Model x -> Project -> Erd -> Html Msg
+viewErd theme model project erd =
     let
+        _ =
+            Debug.log "viewErd" ()
+
         canvas : CanvasProps
         canvas =
             model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> project.layout.canvas |> Drag.moveCanvas d) project.layout.canvas
@@ -67,6 +72,10 @@ viewErd theme model project =
         layoutTables : List TableProps
         layoutTables =
             model.dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> project.layout.tables |> Drag.moveTables d canvas.zoom) project.layout.tables
+
+        tableProps : Dict TableId ErdTableProps
+        tableProps =
+            model.dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> erd.props |> Drag.moveTables2 d canvas.zoom) erd.props
 
         shownTables : Dict TableId TableFull
         shownTables =
@@ -104,7 +113,8 @@ viewErd theme model project =
         , stopPointerDown (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y canvas.position.left canvas.position.top "px", Tu.scale canvas.zoom ] ]
-            [ Lazy.lazy4 viewTables model canvas.zoom displayedRelations shownTables
+            -- [ Lazy.lazy4 viewTables model canvas.zoom displayedRelations shownTables
+            [ Lazy.lazy5 viewTables2 model canvas.zoom tableProps erd.tables erd.shownTables
             , Lazy.lazy2 viewRelations model.hoverColumn displayedRelations
             , model.selectionBox |> M.filter (\_ -> layoutTables |> L.nonEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
             , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
@@ -125,6 +135,32 @@ viewTables model zoom relations tables =
             |> Dict.values
             |> L.zipWith (\table -> relations |> List.filter (RelationFull.hasTableLink table.id))
             |> List.map (\( table, tableRelations ) -> ( TableId.toString table.id, Lazy.lazy4 viewTable model zoom table tableRelations ))
+        )
+
+
+viewTables2 : Model x -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables2 model zoom tableProps tables shownTables =
+    Keyed.node "div"
+        [ class "tw-tables" ]
+        (shownTables
+            |> List.indexedMap (\index tableId -> ( index, tableId ))
+            |> List.filterMap (\( index, tableId ) -> Maybe.map2 (\table props -> ( index, table, props )) (tables |> Dict.get tableId) (tableProps |> Dict.get tableId))
+            |> List.map
+                (\( index, table, props ) ->
+                    ( TableId.toString table.id
+                    , viewTable2
+                        zoom
+                        model.cursorMode
+                        (model.hoverTable |> M.mapOrElse TableId.toString "")
+                        (model.hoverColumn |> M.mapOrElse ColumnRef.toString "")
+                        (model.dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
+                        model.openedDropdown
+                        (model.virtualRelation /= Nothing)
+                        index
+                        props
+                        table
+                    )
+                )
         )
 
 

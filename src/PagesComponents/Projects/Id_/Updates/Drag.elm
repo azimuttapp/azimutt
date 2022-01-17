@@ -1,6 +1,7 @@
-module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, moveCanvas, moveTables)
+module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, moveCanvas, moveTables, moveTables2)
 
 import Conf
+import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
 import Libs.List as L
 import Libs.Maybe as M
@@ -11,7 +12,8 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setLayoutTables, setTables)
+import PagesComponents.Projects.Id_.Models.Erd exposing (ErdTableProps)
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setErd, setLayoutTables, setProps, setTables)
 
 
 handleDrag : DragState -> Bool -> Model -> Model
@@ -41,7 +43,9 @@ handleDrag drag isEnd model =
                    )
 
     else if isEnd then
-        model |> setLayoutTables (moveTables drag canvas.zoom)
+        model
+            |> setLayoutTables (moveTables drag canvas.zoom)
+            |> setErd (setProps (moveTables2 drag canvas.zoom))
 
     else
         model
@@ -67,6 +71,28 @@ moveTables drag zoom tables =
         |> List.map
             (\p ->
                 if tableId == p.id || (dragSelected && p.selected) then
+                    { p | position = p.position |> move drag zoom }
+
+                else
+                    p
+            )
+
+
+moveTables2 : DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+moveTables2 drag zoom tables =
+    let
+        tableId : TableId
+        tableId =
+            TableId.fromHtmlId drag.id
+
+        dragSelected : Bool
+        dragSelected =
+            tables |> Dict.get tableId |> M.mapOrElse .selected False
+    in
+    tables
+        |> Dict.map
+            (\id p ->
+                if tableId == id || (dragSelected && p.selected) then
                     { p | position = p.position |> move drag zoom }
 
                 else

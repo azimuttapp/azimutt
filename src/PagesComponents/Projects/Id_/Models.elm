@@ -24,6 +24,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
 import Shared exposing (Confirm, StoredProjects)
@@ -34,6 +35,7 @@ type alias Model =
     , screen : ScreenProps
     , projects : StoredProjects
     , project : Maybe Project
+    , erd : Maybe Erd
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode

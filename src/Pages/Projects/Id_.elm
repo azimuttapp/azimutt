@@ -10,6 +10,7 @@ import Html.Events.Extra.Mouse as Mouse
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
+import Libs.Debug as Debug
 import Libs.Json.Decode as D
 import Libs.List as L
 import Libs.Maybe as M
@@ -21,6 +22,7 @@ import Models.Project.Relation as Relation
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
@@ -68,8 +70,9 @@ init : ( Model, Cmd Msg )
 init =
     ( { navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
-      , project = Nothing
       , projects = Loading
+      , project = Nothing
+      , erd = Nothing
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
@@ -255,6 +258,7 @@ handleJsMessage req message model =
             ( { model
                 | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)))
                 , project = model.project |> M.orElse (projects |> L.find (\p -> p.id == req.params.id))
+                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map (Debug.timed1 "buildErd" Erd.fromProject))
               }
             , Cmd.batch
                 ((model.project

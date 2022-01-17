@@ -443,4 +443,19 @@ window.addEventListener('load', function() {
             return this.indexOf(search, start) !== -1;
         };
     }
+
+    // empower Elm for time measurements (inspired from https://ellie-app.com/g7kpM8n9Z6Ka1)
+    const consoleLog = console.log
+    console.log = (...args) => {
+        const msg = args[0]
+        if (msg.startsWith('[elm-time')) {
+            if (msg.startsWith('[elm-time-end]')) {
+                console.timeEnd(msg.slice(15, -4))
+            } else {
+                console.time(msg.slice(11, -4))
+            }
+        } else {
+            consoleLog(...args)
+        }
+    }
 })

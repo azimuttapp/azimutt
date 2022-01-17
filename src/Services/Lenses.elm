@@ -1,4 +1,4 @@
-module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setScreen, setSearch, setSettings, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
+module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setErd, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setProps, setRelations, setScreen, setSearch, setSettings, setSizes, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -20,6 +20,21 @@ setNavbar transform item =
 setSearch : (s -> s) -> { item | search : s } -> { item | search : s }
 setSearch transform item =
     { item | search = item.search |> transform }
+
+
+setErd : (e -> e) -> { item | erd : Maybe e } -> { item | erd : Maybe e }
+setErd transform item =
+    { item | erd = item.erd |> Maybe.map transform }
+
+
+setSizes : (s -> s) -> { item | sizes : s } -> { item | sizes : s }
+setSizes transform item =
+    { item | sizes = item.sizes |> transform }
+
+
+setProps : (s -> s) -> { item | props : s } -> { item | props : s }
+setProps transform item =
+    { item | props = item.props |> transform }
 
 
 setActive : (a -> a) -> { item | active : a } -> { item | active : a }
