@@ -20,6 +20,9 @@ import Tailwind.Utilities as Tw
 viewCommands : Theme -> String -> CursorMode -> CanvasProps -> Html Msg
 viewCommands theme openedDropdown cursorMode canvas =
     let
+        _ =
+            Debug.log "viewCommands" ()
+
         buttonStyles : Css.Style
         buttonStyles =
             Css.batch [ Tw.relative, Tw.inline_flex, Tw.items_center, Tw.p_2, Tw.border, Tw.border_gray_300, Tw.text_sm, Tw.font_medium, Css.focus [ Tw.z_10, Tw.outline_none, Tw.ring_1, Color.ring theme.color 500, Color.border theme.color 500 ] ]

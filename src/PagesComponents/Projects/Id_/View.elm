@@ -11,11 +11,11 @@ import Html.Styled.Attributes exposing (class, css)
 import Html.Styled.Keyed as Keyed
 import Html.Styled.Lazy as Lazy
 import Libs.List as L
-import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.Theme exposing (Theme)
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 import PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 import PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
@@ -40,23 +40,31 @@ viewProject shared model =
             viewLoader shared.theme
 
         Loaded projects ->
-            model.project |> M.mapOrElse (viewApp shared.theme model projects) (viewNotFound shared.theme)
+            Maybe.map2 (viewApp shared.theme model projects) model.project model.erd |> Maybe.withDefault (Lazy.lazy viewNotFound shared.theme)
     , Lazy.lazy4 viewModal shared.theme shared.zone shared.now model
     , Lazy.lazy2 viewToasts shared.theme model.toasts
     ]
 
 
-viewApp : Theme -> Model -> List Project -> Project -> Html Msg
-viewApp theme model storedProjects project =
+viewApp : Theme -> Model -> List Project -> Project -> Erd -> Html Msg
+viewApp theme model storedProjects project erd =
+    let
+        _ =
+            Debug.log "viewApp" ()
+    in
     div [ class "tw-app" ]
         [ Lazy.lazy6 viewNavbar theme model.openedDropdown model.virtualRelation storedProjects project model.navbar
-        , Lazy.lazy3 viewErd theme model project
+        , Lazy.lazy4 viewErd theme model project erd
         , Lazy.lazy4 viewCommands theme model.openedDropdown model.cursorMode project.layout.canvas
         ]
 
 
 viewLoader : Theme -> Html msg
 viewLoader theme =
+    let
+        _ =
+            Debug.log "viewLoader" ()
+    in
     div [ class "tw-loader", css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.h_screen ] ]
         [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, Color.border theme.color 500 ] ] []
         ]
@@ -64,6 +72,10 @@ viewLoader theme =
 
 viewNotFound : Theme -> Html msg
 viewNotFound theme =
+    let
+        _ =
+            Debug.log "viewNotFound" ()
+    in
     NotFound.simple theme
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }

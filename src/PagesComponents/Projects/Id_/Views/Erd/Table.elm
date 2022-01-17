@@ -48,6 +48,10 @@ viewTable model zoom table tableRelations =
         tableId =
             TableId.toHtmlId table.id
 
+        _ =
+            -- TODO: re-work model so only modified tables are updated
+            Debug.log "viewTable" tableId
+
         columns : Ned ColumnName Table.Column
         columns =
             table.table.columns |> Ned.map (\_ col -> buildColumn tableRelations table col)
@@ -110,7 +114,7 @@ viewTable model zoom table tableRelations =
                 , hover = model.hoverTable |> Maybe.map (\( schemaName, tableName ) -> { schema = schemaName, table = tableName })
                 , hoverColumn = model.hoverColumn |> Maybe.map (\ref -> { schema = ref.table |> Tuple.first, table = ref.table |> Tuple.second, column = ref.column })
                 , selected = table.props.selected
-                , dragging = model.dragging |> M.filter (\d -> d.id == tableId && d.init /= d.last) |> M.isJust
+                , dragging = model.dragging |> M.any (\d -> d.id == tableId && d.init /= d.last)
                 , openedDropdown = model.openedDropdown
                 , showHiddenColumns = table.props.hiddenColumns
                 }

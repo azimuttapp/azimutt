@@ -1,6 +1,7 @@
 module PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 
 import Conf
+import Dict
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
 import Libs.Maybe as M
@@ -11,7 +12,7 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
-import Services.Lenses exposing (setScreen, setTableProps)
+import Services.Lenses exposing (setErd, setProps, setScreen, setTableProps)
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -25,7 +26,12 @@ updateSize change model =
         model |> setScreen (\s -> { s | position = change.position, size = change.size })
 
     else
-        model |> setTableProps (TableId.fromHtmlId change.id) (updateTable (model.project |> M.mapOrElse (.layout >> .canvas >> CanvasProps.viewport model.screen) Area.zero) change)
+        TableId.fromHtmlId change.id
+            |> (\tableId ->
+                    model
+                        |> setTableProps tableId (updateTable (model.project |> M.mapOrElse (.layout >> .canvas >> CanvasProps.viewport model.screen) Area.zero) change)
+                        |> setErd (setProps (Dict.update tableId (Maybe.map (\p -> { p | size = change.size }))))
+               )
 
 
 updateTable : Area -> SizeChange -> TableProps -> TableProps
