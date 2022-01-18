@@ -1,6 +1,6 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 
-import Dict
+import Dict exposing (Dict)
 import Libs.Bool as B
 import Libs.List as L
 import Libs.Maybe as M
@@ -17,8 +17,10 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdColumnRelation, ErdTable, ErdTableProps)
 import Ports
 import Services.Lenses exposing (setLayout)
+import Set
 
 
 showTable : TableId -> Project -> ( Project, Cmd Msg )
@@ -191,6 +193,47 @@ sortColumns id kind project =
                 |> List.map .name
         )
         project
+
+
+hoverTable : TableId -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+hoverTable table enter props =
+    props
+        |> Dict.map
+            (\id p ->
+                if id == table && p.isHover /= enter then
+                    { p | isHover = enter }
+
+                else if id /= table && p.isHover then
+                    { p | isHover = False }
+
+                else
+                    p
+            )
+
+
+hoverColumn : ColumnRef -> Bool -> Erd -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+hoverColumn column enter erd props =
+    props
+        |> Dict.map
+            (\id p ->
+                (if enter then
+                    (erd.tables |> Dict.get id)
+                        |> (\table ->
+                                p.columns
+                                    |> List.filter (\c -> (column.table == id && column.column == c) || (getRelations table c |> List.any (\r -> r.ref == column)))
+                                    |> Set.fromList
+                           )
+
+                 else
+                    Set.empty
+                )
+                    |> (\hoverColumns -> B.cond (p.hoverColumns == hoverColumns) p { p | hoverColumns = hoverColumns })
+            )
+
+
+getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRelation
+getRelations table name =
+    table |> Maybe.andThen (\t -> t.columns |> Ned.get name) |> M.mapOrElse (\c -> c.outRelations ++ c.inRelations) []
 
 
 performShowTable : Table -> Project -> Project

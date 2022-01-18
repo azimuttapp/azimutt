@@ -29,20 +29,19 @@ import Libs.Tailwind.Utilities as Tu
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
-import Models.RelationFull as RelationFull exposing (RelationFull)
+import Models.RelationFull exposing (RelationFull)
 import Models.ScreenProps exposing (ScreenProps)
 import Models.TableFull exposing (TableFull)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdTable, ErdTableProps)
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
-import PagesComponents.Projects.Id_.Views.Erd.Table exposing (viewTable)
-import PagesComponents.Projects.Id_.Views.Erd.Table2 exposing (viewTable2)
+import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable)
 import Tailwind.Utilities as Tw
 
 
@@ -113,8 +112,7 @@ viewErd theme model project erd =
         , stopPointerDown (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y canvas.position.left canvas.position.top "px", Tu.scale canvas.zoom ] ]
-            -- [ Lazy.lazy4 viewTables model canvas.zoom displayedRelations shownTables
-            [ Lazy.lazy5 viewTables2 model canvas.zoom tableProps erd.tables erd.shownTables
+            [ Lazy.lazy5 viewTables model canvas.zoom tableProps erd.tables erd.shownTables
             , Lazy.lazy2 viewRelations model.hoverColumn displayedRelations
             , model.selectionBox |> M.filter (\_ -> layoutTables |> L.nonEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
             , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
@@ -127,19 +125,8 @@ viewErd theme model project erd =
         ]
 
 
-viewTables : Model x -> ZoomLevel -> List RelationFull -> Dict TableId TableFull -> Html Msg
-viewTables model zoom relations tables =
-    Keyed.node "div"
-        [ class "tw-tables" ]
-        (tables
-            |> Dict.values
-            |> L.zipWith (\table -> relations |> List.filter (RelationFull.hasTableLink table.id))
-            |> List.map (\( table, tableRelations ) -> ( TableId.toString table.id, Lazy.lazy4 viewTable model zoom table tableRelations ))
-        )
-
-
-viewTables2 : Model x -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
-viewTables2 model zoom tableProps tables shownTables =
+viewTables : Model x -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables model zoom tableProps tables shownTables =
     Keyed.node "div"
         [ class "tw-tables" ]
         (shownTables
@@ -148,14 +135,14 @@ viewTables2 model zoom tableProps tables shownTables =
             |> List.map
                 (\( index, table, props ) ->
                     ( TableId.toString table.id
-                    , viewTable2
+                    , Lazy.lazy6 viewTable
                         zoom
                         model.cursorMode
-                        (model.hoverTable |> M.mapOrElse TableId.toString "")
-                        (model.hoverColumn |> M.mapOrElse ColumnRef.toString "")
-                        (model.dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
-                        model.openedDropdown
-                        (model.virtualRelation /= Nothing)
+                        (Table.argsToString
+                            model.openedDropdown
+                            (model.dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
+                            (model.virtualRelation /= Nothing)
+                        )
                         index
                         props
                         table
