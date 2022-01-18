@@ -45,7 +45,7 @@ viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdT
 viewTable zoom cursorMode args index props table =
     let
         _ =
-            Debug.log ("viewTable " ++ table.htmlId) args
+            Debug.log "viewTable" table.htmlId
 
         ( openedDropdown, dragging, virtualRelation ) =
             stringToArgs args

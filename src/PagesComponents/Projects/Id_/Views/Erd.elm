@@ -139,7 +139,7 @@ viewTables model zoom tableProps tables shownTables =
                         zoom
                         model.cursorMode
                         (Table.argsToString
-                            model.openedDropdown
+                            (B.cond (model.openedDropdown |> String.startsWith table.htmlId) model.openedDropdown "")
                             (model.dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (model.virtualRelation /= Nothing)
                         )

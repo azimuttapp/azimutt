@@ -19,25 +19,33 @@ import Svg.Styled.Attributes exposing (class, height, width)
 
 viewRelation : Maybe ColumnRef -> RelationFull -> Svg msg
 viewRelation hover { name, src, ref } =
-    case
-        ( ( src |> computeProps, ref |> computeProps )
-        , ( ColumnRefFull.format src ++ " -> " ++ name ++ " -> " ++ ColumnRefFull.format ref, getColor hover src ref )
-        )
-    of
-        ( ( Nothing, Nothing ), _ ) ->
+    let
+        label : String
+        label =
+            ColumnRefFull.format src ++ " -> " ++ name ++ " -> " ++ ColumnRefFull.format ref
+
+        color : Maybe Color
+        color =
+            getColor hover src ref
+
+        _ =
+            Debug.log "viewRelation" label
+    in
+    case ( src |> computeProps, ref |> computeProps ) of
+        ( Nothing, Nothing ) ->
             viewEmptyRelation
 
-        ( ( Just ( sProps, sIndex, sSize ), Nothing ), ( label, color ) ) ->
+        ( Just ( sProps, sIndex, sSize ), Nothing ) ->
             case { left = sProps.position.left + sSize.width, top = positionTop sProps src.column } of
                 srcPos ->
                     drawRelation srcPos { left = srcPos.left + 20, top = srcPos.top } src.column.nullable color label (Conf.canvas.zIndex.tables + sIndex)
 
-        ( ( Nothing, Just ( rProps, rIndex, _ ) ), ( label, color ) ) ->
+        ( Nothing, Just ( rProps, rIndex, _ ) ) ->
             case { left = rProps.position.left, top = positionTop rProps ref.column } of
                 refPos ->
                     drawRelation { left = refPos.left - 20, top = refPos.top } refPos src.column.nullable color label (Conf.canvas.zIndex.tables + rIndex)
 
-        ( ( Just ( sProps, _, sSize ), Just ( rProps, _, rSize ) ), ( label, color ) ) ->
+        ( Just ( sProps, _, sSize ), Just ( rProps, _, rSize ) ) ->
             case ( positionLeft ( sProps, sSize ) ( rProps, rSize ), ( positionTop sProps src.column, positionTop rProps ref.column ) ) of
                 ( ( srcX, refX ), ( srcY, refY ) ) ->
                     drawRelation { left = srcX, top = srcY } { left = refX, top = refY } src.column.nullable color label (Conf.canvas.zIndex.tables - 1)
