@@ -48,7 +48,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = \msg model -> Debug.timed (Debug.toString msg |> String.left 100) (\_ -> update req msg model)
+        , update = \msg model -> Debug.timed ("\n\n" ++ Debug.toString msg |> String.left 100) (\_ -> update req msg model)
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -142,7 +142,7 @@ update req msg model =
             ( model |> setProject (hideColumns id kind), Cmd.none )
 
         ToggleHiddenColumns id ->
-            ( model |> setTableProps id (\t -> { t | hiddenColumns = not t.hiddenColumns }), Cmd.none )
+            ( model |> setTableProps id (\t -> { t | hiddenColumns = not t.hiddenColumns }) |> setErd (setProps (Dict.update id (Maybe.map (\p -> { p | hiddenColumns = not p.hiddenColumns })))), Cmd.none )
 
         SelectTable id ctrl ->
             ( model |> setAllTableProps (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }), Cmd.none )
