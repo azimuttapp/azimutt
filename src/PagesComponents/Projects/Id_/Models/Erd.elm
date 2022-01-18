@@ -41,6 +41,7 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
+import Set exposing (Set)
 import Time
 
 
@@ -290,8 +291,10 @@ buildRelation relation =
 type alias ErdTableProps =
     { size : Size
     , position : Position
+    , isHover : Bool
     , color : Color
     , columns : List ColumnName
+    , hoverColumns : Set ColumnName
     , selected : Bool
     , hiddenColumns : Bool
     , relatedTables : Dict TableId ErdRelationProps
@@ -302,8 +305,10 @@ buildErdTableProps : List Relation -> List TableProps -> TableProps -> ErdTableP
 buildErdTableProps tableRelations shownTables props =
     { size = props.size
     , position = props.position
+    , isHover = False
     , color = props.color
     , columns = props.columns
+    , hoverColumns = Set.empty
     , selected = props.selected
     , hiddenColumns = props.hiddenColumns
     , relatedTables =

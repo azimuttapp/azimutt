@@ -27,6 +27,7 @@ import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
+import Set exposing (Set)
 import Tailwind.Utilities as Tw
 import Track
 
@@ -87,8 +88,8 @@ type alias CheckConstraint =
 
 type alias State =
     { color : Color
-    , hover : Maybe TableRef
-    , hoverColumn : Maybe ColumnRef
+    , isHover : Bool
+    , hoverColumns : Set String
     , selected : Bool
     , dragging : Bool
     , openedDropdown : HtmlId
@@ -119,7 +120,7 @@ table model =
             , Tw.bg_white
             , Tw.rounded_lg
             , Tw.cursor_pointer
-            , B.cond (isTableHover model) Tw.shadow_lg Tw.shadow_md
+            , B.cond model.state.isHover Tw.shadow_lg Tw.shadow_md
             , Tu.when model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ]
 
             {- , Tu.when model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] -}
@@ -158,7 +159,7 @@ viewHeader model =
             , Color.border model.state.color 500
             , Tw.border_b
             , Color.border_b Color.default 200
-            , Color.bg (B.cond (isTableHover model) model.state.color Color.default) 50
+            , Color.bg (B.cond model.state.isHover model.state.color Color.default) 50
             ]
         ]
         [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), css [ Tw.flex_grow, Tw.text_center ] ]
@@ -373,20 +374,9 @@ formatColumnRef ref =
         ref.schema ++ "." ++ ref.table ++ "." ++ ref.column
 
 
-isTableHover : Model msg -> Bool
-isTableHover model =
-    model.state.hover |> M.has model.ref
-
-
 isColumnHover : Model msg -> Column -> Bool
 isColumnHover model column =
-    model.state.hoverColumn
-        |> M.any
-            (\c ->
-                (c == { schema = model.ref.schema, table = model.ref.table, column = column.name })
-                    || (column.inRelations |> List.any (\r -> r.column == c))
-                    || (column.outRelations |> List.any (\r -> r.column == c))
-            )
+    model.state.hoverColumns |> Set.member column.name
 
 
 
@@ -443,8 +433,8 @@ sample =
         ]
     , state =
         { color = Color.indigo
-        , hover = Nothing
-        , hoverColumn = Nothing
+        , isHover = False
+        , hoverColumns = Set.empty
         , selected = False
         , dragging = False
         , openedDropdown = ""
@@ -475,8 +465,8 @@ doc =
                             | hiddenColumns = [ { sampleColumn | name = "created", kind = "timestamp without time zone" } ]
                             , state = tableDocState
                             , actions =
-                                { hoverTable = \h -> sample.ref |> (\ref -> updateDocState (\s -> { s | hover = B.cond h (Just ref) Nothing }))
-                                , hoverColumn = \c h -> { schema = sample.ref.schema, table = sample.ref.table, column = c } |> (\ref -> updateDocState (\s -> { s | hoverColumn = B.cond h (Just ref) Nothing }))
+                                { hoverTable = \h -> updateDocState (\s -> { s | isHover = h })
+                                , hoverColumn = \c h -> updateDocState (\s -> { s | hoverColumns = B.cond h (Set.fromList [ c ]) Set.empty })
                                 , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , clickColumn = Nothing
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
@@ -490,8 +480,8 @@ doc =
               , \_ ->
                     div [ css [ Tw.flex, Tw.flex_wrap, Tw.gap_6 ] ]
                         ([ { sample | id = "View", isView = True }
-                         , { sample | id = "Hover table", state = sample.state |> (\s -> { s | hover = Just sample.ref }) }
-                         , { sample | id = "Hover column", state = sample.state |> (\s -> { s | hover = Just sample.ref, hoverColumn = Just { schema = sample.ref.schema, table = sample.ref.table, column = "name" } }) }
+                         , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }
+                         , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, hoverColumns = Set.fromList [ "name" ] }) }
                          , { sample | id = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
                          , { sample | id = "Dragging", state = sample.state |> (\s -> { s | dragging = True }) }
                          , { sample | id = "Settings", state = sample.state |> (\s -> { s | openedDropdown = "Settings-settings" }) }

@@ -31,12 +31,12 @@ import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverNextColumn, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setLayout, setProject, setProjectWithCmd, setTableProps, setTables)
+import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setErd, setLayout, setProject, setProjectWithCmd, setProps, setTableProps, setTables)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Time
@@ -48,7 +48,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = update req
+        , update = \msg model -> Debug.timed (Debug.toString msg |> String.left 100) (\_ -> update req msg model)
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -154,10 +154,10 @@ update req msg model =
             ( model |> setProject (sortColumns id kind), Cmd.none )
 
         ToggleHoverTable table on ->
-            ( { model | hoverTable = B.cond on (Just table) Nothing }, Cmd.none )
+            ( { model | hoverTable = B.cond on (Just table) Nothing } |> setErd (setProps (hoverTable table on)), Cmd.none )
 
         ToggleHoverColumn column on ->
-            ( { model | hoverColumn = B.cond on (Just column) Nothing }, Cmd.none )
+            ( { model | hoverColumn = B.cond on (Just column) Nothing } |> setErd (\e -> e |> setProps (hoverColumn column on e)), Cmd.none )
 
         ResetCanvas ->
             ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )
@@ -258,7 +258,7 @@ handleJsMessage req message model =
             ( { model
                 | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)))
                 , project = model.project |> M.orElse (projects |> L.find (\p -> p.id == req.params.id))
-                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map (Debug.timed1 "buildErd" Erd.fromProject))
+                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map Erd.fromProject)
               }
             , Cmd.batch
                 ((model.project
