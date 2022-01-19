@@ -10,7 +10,6 @@ import Html.Events.Extra.Mouse as Mouse
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
-import Libs.Debug as Debug
 import Libs.Json.Decode as D
 import Libs.List as L
 import Libs.Maybe as M
@@ -22,7 +21,7 @@ import Models.Project.Relation as Relation
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
-import PagesComponents.Projects.Id_.Models.Erd as Erd
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (setErdTablePropsSelected)
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
@@ -36,7 +35,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setErd, setLayout, setProject, setProjectWithCmd, setProps, setTableProps, setTables)
+import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setErd, setLayout, setProject, setProjectWithCmd, setTableProp, setTableProps, setTables)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Time
@@ -48,7 +47,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = \msg model -> Debug.timed ("\n\n" ++ Debug.toString msg |> String.left 100) (\_ -> update req msg model)
+        , update = update req
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -142,10 +141,14 @@ update req msg model =
             ( model |> setProject (hideColumns id kind), Cmd.none )
 
         ToggleHiddenColumns id ->
-            ( model |> setTableProps id (\t -> { t | hiddenColumns = not t.hiddenColumns }) |> setErd (setProps (Dict.update id (Maybe.map (\p -> { p | hiddenColumns = not p.hiddenColumns })))), Cmd.none )
+            ( model |> setTableProp id (\p -> { p | hiddenColumns = not p.hiddenColumns }) |> setErd (setTableProps (Dict.update id (Maybe.map (\p -> { p | hiddenColumns = not p.hiddenColumns })))), Cmd.none )
 
-        SelectTable id ctrl ->
-            ( model |> setAllTableProps (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }), Cmd.none )
+        SelectTable tableId ctrl ->
+            ( model
+                |> setAllTableProps (\p -> { p | selected = B.cond (p.id == tableId) (not p.selected) (B.cond ctrl p.selected False) })
+                |> setErd (setTableProps (Dict.map (\id p -> p |> setErdTablePropsSelected (B.cond (id == tableId) (not p.selected) (B.cond ctrl p.selected False)))))
+            , Cmd.none
+            )
 
         TableOrder id index ->
             ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
@@ -154,10 +157,10 @@ update req msg model =
             ( model |> setProject (sortColumns id kind), Cmd.none )
 
         ToggleHoverTable table on ->
-            ( { model | hoverTable = B.cond on (Just table) Nothing } |> setErd (setProps (hoverTable table on)), Cmd.none )
+            ( { model | hoverTable = B.cond on (Just table) Nothing } |> setErd (setTableProps (hoverTable table on)), Cmd.none )
 
         ToggleHoverColumn column on ->
-            ( { model | hoverColumn = B.cond on (Just column) Nothing } |> setErd (\e -> e |> setProps (hoverColumn column on e)), Cmd.none )
+            ( { model | hoverColumn = B.cond on (Just column) Nothing } |> setErd (\e -> e |> setTableProps (hoverColumn column on e)), Cmd.none )
 
         ResetCanvas ->
             ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )

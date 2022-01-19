@@ -17,7 +17,7 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
-import PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdColumnRelation, ErdTable, ErdTableProps)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdColumnRef, ErdTable, ErdTableProps, setErdTablePropsHighlightedColumns)
 import Ports
 import Services.Lenses exposing (setLayout)
 import Set
@@ -219,21 +219,26 @@ hoverColumn column enter erd props =
                 (if enter then
                     (erd.tables |> Dict.get id)
                         |> (\table ->
-                                p.columns
-                                    |> List.filter (\c -> (column.table == id && column.column == c) || (getRelations table c |> List.any (\r -> r.ref == column)))
+                                p.shownColumns
+                                    |> List.filter (\c -> (column.table == id && column.column == c) || (getRelations table c |> List.any (isSame column)))
                                     |> Set.fromList
                            )
 
                  else
                     Set.empty
                 )
-                    |> (\hoverColumns -> B.cond (p.hoverColumns == hoverColumns) p { p | hoverColumns = hoverColumns })
+                    |> (\highlightedColumns -> p |> setErdTablePropsHighlightedColumns highlightedColumns)
             )
 
 
-getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRelation
+getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRef
 getRelations table name =
     table |> Maybe.andThen (\t -> t.columns |> Ned.get name) |> M.mapOrElse (\c -> c.outRelations ++ c.inRelations) []
+
+
+isSame : ColumnRef -> ErdColumnRef -> Bool
+isSame ref erdRef =
+    ref.table == erdRef.table && ref.column == erdRef.column
 
 
 performShowTable : Table -> Project -> Project

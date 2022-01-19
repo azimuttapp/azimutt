@@ -1,4 +1,4 @@
-module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setErd, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setProps, setRelations, setScreen, setSearch, setSettings, setSizes, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
+module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setErd, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setScreen, setSearch, setSettings, setSizes, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProp, setTableProps, setTables, setTime)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -32,9 +32,9 @@ setSizes transform item =
     { item | sizes = item.sizes |> transform }
 
 
-setProps : (s -> s) -> { item | props : s } -> { item | props : s }
-setProps transform item =
-    { item | props = item.props |> transform }
+setTableProps : (s -> s) -> { item | tableProps : s } -> { item | tableProps : s }
+setTableProps transform item =
+    { item | tableProps = item.tableProps |> transform }
 
 
 setActive : (a -> a) -> { item | active : a } -> { item | active : a }
@@ -87,8 +87,8 @@ setAllTableProps transform item =
     setLayoutTables (List.map transform) item
 
 
-setTableProps : comparable -> ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
-setTableProps id transform item =
+setTableProp : comparable -> ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
+setTableProp id transform item =
     setProject (setLayout (setTableInList .id id transform)) item
 
 

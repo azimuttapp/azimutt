@@ -41,9 +41,6 @@ type alias Btn msg =
 viewNavbar : Theme -> HtmlId -> Maybe VirtualRelation -> List Project -> Project -> NavbarModel -> Html Msg
 viewNavbar theme openedDropdown virtualRelation storedProjects project model =
     let
-        _ =
-            Debug.log "viewNavbar" ()
-
         features : List (Btn Msg)
         features =
             [ { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
