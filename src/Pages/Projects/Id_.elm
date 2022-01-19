@@ -21,7 +21,8 @@ import Models.Project.Relation as Relation
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
-import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (setErdTablePropsSelected)
+import PagesComponents.Projects.Id_.Models.Erd as Erd
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
@@ -146,7 +147,7 @@ update req msg model =
         SelectTable tableId ctrl ->
             ( model
                 |> setAllTableProps (\p -> { p | selected = B.cond (p.id == tableId) (not p.selected) (B.cond ctrl p.selected False) })
-                |> setErd (setTableProps (Dict.map (\id p -> p |> setErdTablePropsSelected (B.cond (id == tableId) (not p.selected) (B.cond ctrl p.selected False)))))
+                |> setErd (setTableProps (Dict.map (\id p -> p |> ErdTableProps.setSelected (B.cond (id == tableId) (not p.selected) (B.cond ctrl p.selected False)))))
             , Cmd.none
             )
 
@@ -261,7 +262,7 @@ handleJsMessage req message model =
             ( { model
                 | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)))
                 , project = model.project |> M.orElse (projects |> L.find (\p -> p.id == req.params.id))
-                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map Erd.fromProject)
+                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map Erd.create)
               }
             , Cmd.batch
                 ((model.project

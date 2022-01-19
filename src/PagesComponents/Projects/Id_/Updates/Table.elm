@@ -17,7 +17,10 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
-import PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdColumnRef, ErdTable, ErdTableProps, setErdTablePropsHighlightedColumns)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
 import Services.Lenses exposing (setLayout)
 import Set
@@ -227,7 +230,7 @@ hoverColumn column enter erd props =
                  else
                     Set.empty
                 )
-                    |> (\highlightedColumns -> p |> setErdTablePropsHighlightedColumns highlightedColumns)
+                    |> (\highlightedColumns -> p |> ErdTableProps.setHighlightedColumns highlightedColumns)
             )
 
 

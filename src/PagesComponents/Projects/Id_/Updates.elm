@@ -12,7 +12,7 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
-import PagesComponents.Projects.Id_.Models.Erd exposing (setErdTablePropsSize)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps
 import Services.Lenses exposing (setErd, setScreen, setTableProp, setTableProps)
 
 
@@ -31,7 +31,7 @@ updateSize change model =
             |> (\tableId ->
                     model
                         |> setTableProp tableId (updateTable (model.project |> M.mapOrElse (.layout >> .canvas >> CanvasProps.viewport model.screen) Area.zero) change)
-                        |> setErd (setTableProps (Dict.update tableId (Maybe.map (setErdTablePropsSize change.size))))
+                        |> setErd (setTableProps (Dict.update tableId (Maybe.map (ErdTableProps.setSize change.size))))
                )
 
 
