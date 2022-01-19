@@ -38,24 +38,24 @@ viewRelation hover { name, src, ref } =
         ( Just ( sProps, sIndex, sSize ), Nothing ) ->
             case { left = sProps.position.left + sSize.width, top = positionTop sProps src.column } of
                 srcPos ->
-                    drawRelation srcPos { left = srcPos.left + 20, top = srcPos.top } src.column.nullable color label (Conf.canvas.zIndex.tables + sIndex)
+                    Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } src.column.nullable color label (Conf.canvas.zIndex.tables + sIndex)
 
         ( Nothing, Just ( rProps, rIndex, _ ) ) ->
             case { left = rProps.position.left, top = positionTop rProps ref.column } of
                 refPos ->
-                    drawRelation { left = refPos.left - 20, top = refPos.top } refPos src.column.nullable color label (Conf.canvas.zIndex.tables + rIndex)
+                    Relation.line { left = refPos.left - 20, top = refPos.top } refPos src.column.nullable color label (Conf.canvas.zIndex.tables + rIndex)
 
         ( Just ( sProps, _, sSize ), Just ( rProps, _, rSize ) ) ->
             case ( positionLeft ( sProps, sSize ) ( rProps, rSize ), ( positionTop sProps src.column, positionTop rProps ref.column ) ) of
                 ( ( srcX, refX ), ( srcY, refY ) ) ->
-                    drawRelation { left = srcX, top = srcY } { left = refX, top = refY } src.column.nullable color label (Conf.canvas.zIndex.tables - 1)
+                    Relation.line { left = srcX, top = srcY } { left = refX, top = refY } src.column.nullable color label (Conf.canvas.zIndex.tables - 1)
 
 
 viewVirtualRelation : ( ColumnRefFull, Position ) -> Svg msg
 viewVirtualRelation ( src, ref ) =
     case src.props |> M.filter (\( p, _, _ ) -> p |> .columns |> List.member src.column.name) of
         Just ( props, _, size ) ->
-            drawRelation
+            Relation.line
                 { left = props.position.left + B.cond (ref.left < props.position.left + size.width / 2) 0 size.width
                 , top = positionTop props src.column
                 }
@@ -77,18 +77,6 @@ viewEmptyRelation =
 computeProps : ColumnRefFull -> Maybe ( TableProps, Int, Size )
 computeProps col =
     col.props |> M.filter (\( p, _, _ ) -> p |> .columns |> List.member col.column.name)
-
-
-drawRelation : Position -> Position -> Bool -> Maybe Color -> String -> Int -> Svg msg
-drawRelation src ref nullable color label index =
-    Relation.relation
-        { src = src
-        , ref = ref
-        , nullable = nullable
-        , color = color
-        , label = label
-        , index = index
-        }
 
 
 getColor : Maybe ColumnRef -> ColumnRefFull -> ColumnRefFull -> Maybe Color
