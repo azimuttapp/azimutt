@@ -12,7 +12,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
-import PagesComponents.Projects.Id_.Models.Erd exposing (ErdTableProps, setErdTablePropsPosition)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Services.Lenses exposing (setCanvas, setCurrentLayout, setErd, setLayoutTables, setTableProps, setTables)
 
 
@@ -93,7 +93,7 @@ moveTables2 drag zoom tables =
         |> Dict.map
             (\id p ->
                 if tableId == id || (dragSelected && p.selected) then
-                    p |> setErdTablePropsPosition (p.position |> move drag zoom)
+                    p |> ErdTableProps.setPosition (p.position |> move drag zoom)
 
                 else
                     p

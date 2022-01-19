@@ -18,7 +18,10 @@ import Libs.Nel as Nel
 import Libs.Tailwind.Utilities as Tu
 import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
-import PagesComponents.Projects.Id_.Models.Erd exposing (ErdColumn, ErdColumnRef, ErdTable, ErdTableProps)
+import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import Tailwind.Utilities as Tw
 
 
@@ -44,9 +47,6 @@ stringToArgs args =
 viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
 viewTable zoom cursorMode args index props table =
     let
-        _ =
-            table.htmlId
-
         ( openedDropdown, dragging, virtualRelation ) =
             stringToArgs args
 

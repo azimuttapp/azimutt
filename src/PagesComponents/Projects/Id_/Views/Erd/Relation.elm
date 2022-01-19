@@ -8,7 +8,9 @@ import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Models.Project.ColumnRef as ColumnRef
-import PagesComponents.Projects.Id_.Models.Erd exposing (ErdColumn, ErdColumnProps, ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import Svg.Styled exposing (Svg, svg)
 import Svg.Styled.Attributes exposing (class, height, width)
 
