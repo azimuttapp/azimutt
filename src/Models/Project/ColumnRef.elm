@@ -1,4 +1,4 @@
-module Models.Project.ColumnRef exposing (ColumnRef, decode, encode, fromString, show, toString)
+module Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike, decode, encode, fromString, show, toString)
 
 import Conf
 import Json.Decode as Decode
@@ -12,9 +12,13 @@ type alias ColumnRef =
     { table : TableId, column : ColumnName }
 
 
-show : ColumnRef -> String
-show ref =
-    TableId.show ref.table ++ "." ++ ref.column
+type alias ColumnRefLike x =
+    { x | table : TableId, column : ColumnName }
+
+
+show : ColumnRefLike x -> String
+show { table, column } =
+    TableId.show table |> ColumnName.withName column
 
 
 toString : ColumnRef -> String

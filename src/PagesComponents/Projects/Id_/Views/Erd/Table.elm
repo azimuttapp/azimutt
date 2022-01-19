@@ -18,7 +18,7 @@ import Libs.Nel as Nel
 import Libs.Tailwind.Utilities as Tu
 import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
-import PagesComponents.Projects.Id_.Models.Erd exposing (ErdColumn, ErdColumnRelation, ErdTable, ErdTableProps)
+import PagesComponents.Projects.Id_.Models.Erd exposing (ErdColumn, ErdColumnRef, ErdTable, ErdTableProps)
 import Tailwind.Utilities as Tw
 
 
@@ -45,13 +45,13 @@ viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdT
 viewTable zoom cursorMode args index props table =
     let
         _ =
-            Debug.log "viewTable" table.htmlId
+            table.htmlId
 
         ( openedDropdown, dragging, virtualRelation ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Ned.values |> Nel.map (buildColumn props) |> Nel.partition (\c -> props.columns |> List.any (\col -> c.name == col))
+            table.columns |> Ned.values |> Nel.map (buildColumn props) |> Nel.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
 
         drag : List (Attribute Msg)
         drag =
@@ -74,7 +74,7 @@ viewTable zoom cursorMode args index props table =
             , ref = { schema = table.schema, table = table.name }
             , label = table.label
             , isView = table.view
-            , columns = columns
+            , columns = columns |> List.sortBy (\c -> props.shownColumns |> L.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
                 [ { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
@@ -109,9 +109,7 @@ viewTable zoom cursorMode args index props table =
             , state =
                 { color = props.color
                 , isHover = props.isHover
-
-                -- , hoverColumn = B.maybe (hoverColumn /= "") (ColumnRef.fromString hoverColumn |> (\ref -> { schema = ref.table |> Tuple.first, table = ref.table |> Tuple.second, column = ref.column }))
-                , hoverColumns = props.hoverColumns
+                , highlightedColumns = props.highlightedColumns
                 , selected = props.selected
                 , dragging = dragging
                 , openedDropdown = openedDropdown
@@ -122,7 +120,7 @@ viewTable zoom cursorMode args index props table =
                 , hoverColumn = \col -> ToggleHoverColumn { table = table.id, column = col }
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
-                , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.columns |> L.has col) HideColumn ShowColumn
+                , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> L.has col) HideColumn ShowColumn
                 , clickRelations =
                     \cols ->
                         case cols of
@@ -159,9 +157,9 @@ buildColumn props column =
     }
 
 
-buildColumnRelation : ErdTableProps -> ErdColumnRelation -> Table.Relation
+buildColumnRelation : ErdTableProps -> ErdColumnRef -> Table.Relation
 buildColumnRelation props relation =
-    { column = { schema = relation.ref.table |> Tuple.first, table = relation.ref.table |> Tuple.second, column = relation.ref.column }
-    , nullable = relation.refNullable
-    , tableShown = props.relatedTables |> Dict.get relation.ref.table |> M.mapOrElse .shown False
+    { column = { schema = relation.table |> Tuple.first, table = relation.table |> Tuple.second, column = relation.column }
+    , nullable = relation.nullable
+    , tableShown = props.relatedTables |> Dict.get relation.table |> M.mapOrElse .shown False
     }

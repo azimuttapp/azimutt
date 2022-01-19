@@ -48,10 +48,6 @@ viewProject shared model =
 
 viewApp : Theme -> Model -> List Project -> Project -> Erd -> Html Msg
 viewApp theme model storedProjects project erd =
-    let
-        _ =
-            Debug.log "viewApp" ()
-    in
     div [ class "tw-app" ]
         [ Lazy.lazy6 viewNavbar theme model.openedDropdown model.virtualRelation storedProjects project model.navbar
         , Lazy.lazy4 viewErd theme model project erd
@@ -61,10 +57,6 @@ viewApp theme model storedProjects project erd =
 
 viewLoader : Theme -> Html msg
 viewLoader theme =
-    let
-        _ =
-            Debug.log "viewLoader" ()
-    in
     div [ class "tw-loader", css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.h_screen ] ]
         [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, Color.border theme.color 500 ] ] []
         ]
@@ -72,10 +64,6 @@ viewLoader theme =
 
 viewNotFound : Theme -> Html msg
 viewNotFound theme =
-    let
-        _ =
-            Debug.log "viewNotFound" ()
-    in
     NotFound.simple theme
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }

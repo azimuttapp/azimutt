@@ -89,7 +89,7 @@ type alias CheckConstraint =
 type alias State =
     { color : Color
     , isHover : Bool
-    , hoverColumns : Set String
+    , highlightedColumns : Set String
     , selected : Bool
     , dragging : Bool
     , openedDropdown : HtmlId
@@ -220,7 +220,7 @@ viewColumn model isLast column =
         ([ onMouseEnter (model.actions.hoverColumn column.name True)
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
-         , css [ Tw.items_center, Tw.flex, Tw.px_2, Tw.bg_white, Css.batch (B.cond (isColumnHover model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]), Tu.when isLast [ Tw.rounded_b_lg ] ]
+         , css [ Tw.items_center, Tw.flex, Tw.px_2, Tw.bg_white, Css.batch (B.cond (isHighlightedColumn model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]), Tu.when isLast [ Tw.rounded_b_lg ] ]
          ]
             ++ (model.actions.clickColumn |> M.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
         )
@@ -336,7 +336,7 @@ viewColumnKind model column =
     let
         opacity : Css.Style
         opacity =
-            B.cond (isColumnHover model column) Tw.opacity_100 Tw.opacity_25
+            B.cond (isHighlightedColumn model column) Tw.opacity_100 Tw.opacity_25
 
         value : Html msg
         value =
@@ -374,9 +374,9 @@ formatColumnRef ref =
         ref.schema ++ "." ++ ref.table ++ "." ++ ref.column
 
 
-isColumnHover : Model msg -> Column -> Bool
-isColumnHover model column =
-    model.state.hoverColumns |> Set.member column.name
+isHighlightedColumn : Model msg -> Column -> Bool
+isHighlightedColumn model column =
+    model.state.highlightedColumns |> Set.member column.name
 
 
 
@@ -434,7 +434,7 @@ sample =
     , state =
         { color = Color.indigo
         , isHover = False
-        , hoverColumns = Set.empty
+        , highlightedColumns = Set.empty
         , selected = False
         , dragging = False
         , openedDropdown = ""
@@ -466,7 +466,7 @@ doc =
                             , state = tableDocState
                             , actions =
                                 { hoverTable = \h -> updateDocState (\s -> { s | isHover = h })
-                                , hoverColumn = \c h -> updateDocState (\s -> { s | hoverColumns = B.cond h (Set.fromList [ c ]) Set.empty })
+                                , hoverColumn = \c h -> updateDocState (\s -> { s | highlightedColumns = B.cond h (Set.fromList [ c ]) Set.empty })
                                 , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , clickColumn = Nothing
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
@@ -481,7 +481,7 @@ doc =
                     div [ css [ Tw.flex, Tw.flex_wrap, Tw.gap_6 ] ]
                         ([ { sample | id = "View", isView = True }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }
-                         , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, hoverColumns = Set.fromList [ "name" ] }) }
+                         , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, highlightedColumns = Set.fromList [ "name" ] }) }
                          , { sample | id = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
                          , { sample | id = "Dragging", state = sample.state |> (\s -> { s | dragging = True }) }
                          , { sample | id = "Settings", state = sample.state |> (\s -> { s | openedDropdown = "Settings-settings" }) }

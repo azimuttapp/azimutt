@@ -26,7 +26,7 @@ type alias Column =
 
 withName : Column -> String -> String
 withName column text =
-    text ++ "." ++ column.name
+    ColumnName.withName column.name text
 
 
 withNullable : Column -> String -> String

@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdColumn, ErdColumnRelation, ErdRelation, ErdRelationProps, ErdTable, ErdTableProps, fromProject, toProject)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, ErdColumn, ErdColumnProps, ErdColumnRef, ErdRelation, ErdRelationProps, ErdTable, ErdTableProps, fromProject, getColumn, getColumnProps, setErdTablePropsColor, setErdTablePropsHighlightedColumns, setErdTablePropsPosition, setErdTablePropsSelected, setErdTablePropsSize, toProject)
 
 import Dict exposing (Dict)
 import Libs.Dict as D
@@ -52,9 +52,9 @@ type alias Erd =
     , projectUpdatedAt : Time.Posix
     , canvas : CanvasProps
     , tables : Dict TableId ErdTable
-    , props : Dict TableId ErdTableProps
-    , shownTables : List TableId
     , relations : List ErdRelation
+    , tableProps : Dict TableId ErdTableProps
+    , shownTables : List TableId
     , usedLayout : Maybe LayoutName
     , layouts : Dict LayoutName Layout
     , sources : List Source
@@ -90,9 +90,9 @@ fromProject project =
     , projectUpdatedAt = project.updatedAt
     , canvas = project.layout.canvas
     , tables = project.tables |> Dict.map (\id -> buildErdTable project.tables (relationsByTable |> D.getOrElse id []))
-    , props = layoutProps |> List.map (\p -> ( p.id, buildErdTableProps (relationsByTable |> D.getOrElse p.id []) project.layout.tables p )) |> Dict.fromList
+    , relations = project.relations |> List.map (buildErdRelation project.tables)
+    , tableProps = layoutProps |> List.map (\p -> ( p.id, buildErdTableProps (relationsByTable |> D.getOrElse p.id []) project.layout.tables p )) |> Dict.fromList
     , shownTables = project.layout.tables |> List.map .id
-    , relations = project.relations |> List.map buildErdRelation
     , usedLayout = project.usedLayout
     , layouts = project.layouts
     , sources = project.sources
@@ -104,7 +104,7 @@ toProject : Erd -> Project
 toProject erd =
     let
         ( shownTables, hiddenTables ) =
-            erd.props |> Dict.keys |> List.partition (\id -> erd.shownTables |> List.member id)
+            erd.tableProps |> Dict.keys |> List.partition (\id -> erd.shownTables |> List.member id)
     in
     { id = erd.projectId
     , name = erd.projectName
@@ -113,8 +113,8 @@ toProject erd =
     , relations = erd.relations |> List.map buildRelation
     , layout =
         { canvas = erd.canvas
-        , tables = shownTables |> List.filterMap (buildTableProps erd.props)
-        , hiddenTables = hiddenTables |> List.filterMap (buildTableProps erd.props)
+        , tables = shownTables |> List.filterMap (buildTableProps erd.tableProps)
+        , hiddenTables = hiddenTables |> List.filterMap (buildTableProps erd.tableProps)
         , createdAt = Time.millisToPosix 0
         , updatedAt = Time.millisToPosix 0
         }
@@ -124,6 +124,16 @@ toProject erd =
     , createdAt = erd.projectCreatedAt
     , updatedAt = erd.projectUpdatedAt
     }
+
+
+getColumn : TableId -> ColumnName -> Erd -> Maybe ErdColumn
+getColumn table column erd =
+    erd.tables |> Dict.get table |> Maybe.andThen (\t -> t.columns |> Ned.get column)
+
+
+getColumnProps : TableId -> ColumnName -> Erd -> Maybe ErdColumnProps
+getColumnProps table column erd =
+    erd.tableProps |> Dict.get table |> Maybe.andThen (\t -> t.columnProps |> Dict.get column)
 
 
 type alias ErdTable =
@@ -207,8 +217,8 @@ type alias ErdColumn =
     , default : Maybe ColumnValue
     , comment : Maybe Comment
     , isPrimaryKey : Bool
-    , inRelations : List ErdColumnRelation
-    , outRelations : List ErdColumnRelation
+    , inRelations : List ErdColumnRef
+    , outRelations : List ErdColumnRef
     , uniques : List UniqueName
     , indexes : List IndexName
     , checks : List CheckName
@@ -246,34 +256,21 @@ buildColumn column =
     }
 
 
-type alias ErdColumnRelation =
-    { ref : ColumnRef
-    , refNullable : Bool
-    }
-
-
-buildErdColumnRelation : Dict TableId Table -> ColumnRef -> ErdColumnRelation
-buildErdColumnRelation tables ref =
-    { ref = ref
-    , refNullable = tables |> Dict.get ref.table |> Maybe.andThen (.columns >> Ned.get ref.column) |> M.mapOrElse .nullable False
-    }
-
-
 type alias ErdRelation =
     { id : RelationId
     , name : RelationName
-    , src : ColumnRef
-    , ref : ColumnRef
+    , src : ErdColumnRef
+    , ref : ErdColumnRef
     , origins : List Origin
     }
 
 
-buildErdRelation : Relation -> ErdRelation
-buildErdRelation relation =
+buildErdRelation : Dict TableId Table -> Relation -> ErdRelation
+buildErdRelation tables relation =
     { id = relation.id
     , name = relation.name
-    , src = relation.src
-    , ref = relation.ref
+    , src = relation.src |> buildErdColumnRelation tables
+    , ref = relation.ref |> buildErdColumnRelation tables
     , origins = relation.origins
     }
 
@@ -282,19 +279,41 @@ buildRelation : ErdRelation -> Relation
 buildRelation relation =
     { id = relation.id
     , name = relation.name
-    , src = relation.src
-    , ref = relation.ref
+    , src = relation.src |> buildColumnRef
+    , ref = relation.ref |> buildColumnRef
     , origins = relation.origins
     }
 
 
+type alias ErdColumnRef =
+    { table : TableId
+    , column : ColumnName
+    , nullable : Bool
+    }
+
+
+buildErdColumnRelation : Dict TableId Table -> ColumnRef -> ErdColumnRef
+buildErdColumnRelation tables ref =
+    { table = ref.table
+    , column = ref.column
+    , nullable = tables |> Dict.get ref.table |> Maybe.andThen (.columns >> Ned.get ref.column) |> M.mapOrElse .nullable False
+    }
+
+
+buildColumnRef : ErdColumnRef -> ColumnRef
+buildColumnRef ref =
+    { table = ref.table, column = ref.column }
+
+
 type alias ErdTableProps =
-    { size : Size
+    { id : TableId
     , position : Position
+    , size : Size
     , isHover : Bool
     , color : Color
-    , columns : List ColumnName
-    , hoverColumns : Set ColumnName
+    , shownColumns : List ColumnName
+    , highlightedColumns : Set ColumnName
+    , columnProps : Dict ColumnName ErdColumnProps
     , selected : Bool
     , hiddenColumns : Bool
     , relatedTables : Dict TableId ErdRelationProps
@@ -303,12 +322,14 @@ type alias ErdTableProps =
 
 buildErdTableProps : List Relation -> List TableProps -> TableProps -> ErdTableProps
 buildErdTableProps tableRelations shownTables props =
-    { size = props.size
+    { id = props.id
     , position = props.position
+    , size = props.size
     , isHover = False
     , color = props.color
-    , columns = props.columns
-    , hoverColumns = Set.empty
+    , shownColumns = props.columns
+    , highlightedColumns = Set.empty
+    , columnProps = props.columns |> buildErdColumnProps props.color props.size props.position props.selected Set.empty
     , selected = props.selected
     , hiddenColumns = props.hiddenColumns
     , relatedTables =
@@ -338,11 +359,101 @@ buildTableProps props id =
                 , position = prop.position
                 , size = prop.size
                 , color = prop.color
-                , columns = prop.columns
+                , columns = prop.shownColumns
                 , selected = prop.selected
                 , hiddenColumns = prop.hiddenColumns
                 }
             )
+
+
+setErdTablePropsPosition : Position -> ErdTableProps -> ErdTableProps
+setErdTablePropsPosition position props =
+    if props.position == position then
+        props
+
+    else
+        { props | position = position, columnProps = props.columnProps |> Dict.map (\_ p -> { p | position = position }) }
+
+
+setErdTablePropsSize : Size -> ErdTableProps -> ErdTableProps
+setErdTablePropsSize size props =
+    if props.size == size then
+        props
+
+    else
+        { props | size = size, columnProps = props.columnProps |> Dict.map (\_ p -> { p | size = size }) }
+
+
+setErdTablePropsColor : Color -> ErdTableProps -> ErdTableProps
+setErdTablePropsColor color props =
+    if props.color == color then
+        props
+
+    else
+        { props | color = color, columnProps = props.columnProps |> Dict.map (\_ p -> { p | color = color }) }
+
+
+setErdTablePropsHighlightedColumns : Set ColumnName -> ErdTableProps -> ErdTableProps
+setErdTablePropsHighlightedColumns highlightedColumns props =
+    if props.highlightedColumns == highlightedColumns then
+        props
+
+    else
+        { props
+            | highlightedColumns = highlightedColumns
+            , columnProps =
+                props.columnProps
+                    |> Dict.map
+                        (\c p ->
+                            (highlightedColumns |> Set.member c)
+                                |> (\highlighted ->
+                                        if p.highlighted == highlighted then
+                                            p
+
+                                        else
+                                            { p | highlighted = highlighted }
+                                   )
+                        )
+        }
+
+
+setErdTablePropsSelected : Bool -> ErdTableProps -> ErdTableProps
+setErdTablePropsSelected selected props =
+    if props.selected == selected then
+        props
+
+    else
+        { props | selected = selected, columnProps = props.columnProps |> Dict.map (\_ p -> { p | selected = selected }) }
+
+
+type alias ErdColumnProps =
+    { column : ColumnName
+    , index : Int
+    , position : Position
+    , size : Size
+    , color : Color
+    , highlighted : Bool
+    , selected : Bool
+    }
+
+
+buildErdColumnProps : Color -> Size -> Position -> Bool -> Set ColumnName -> List ColumnName -> Dict ColumnName ErdColumnProps
+buildErdColumnProps color size position selected highlightedColumns columns =
+    columns
+        |> List.indexedMap
+            (\i c ->
+                ( c
+                , { column = c
+                  , index = i
+                  , position = position
+                  , size = size
+                  , color = color
+                  , highlighted = highlightedColumns |> Set.member c
+                  , selected = selected
+                  }
+                )
+            )
+        |> Dict.fromList
 
 
 type alias ErdRelationProps =

@@ -12,8 +12,8 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
-import PagesComponents.Projects.Id_.Models.Erd exposing (ErdTableProps)
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setErd, setLayoutTables, setProps, setTables)
+import PagesComponents.Projects.Id_.Models.Erd exposing (ErdTableProps, setErdTablePropsPosition)
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setErd, setLayoutTables, setTableProps, setTables)
 
 
 handleDrag : DragState -> Bool -> Model -> Model
@@ -45,7 +45,7 @@ handleDrag drag isEnd model =
     else if isEnd then
         model
             |> setLayoutTables (moveTables drag canvas.zoom)
-            |> setErd (setProps (moveTables2 drag canvas.zoom))
+            |> setErd (setTableProps (moveTables2 drag canvas.zoom))
 
     else
         model
@@ -93,7 +93,7 @@ moveTables2 drag zoom tables =
         |> Dict.map
             (\id p ->
                 if tableId == id || (dragSelected && p.selected) then
-                    { p | position = p.position |> move drag zoom }
+                    p |> setErdTablePropsPosition (p.position |> move drag zoom)
 
                 else
                     p
