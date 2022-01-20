@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), DragState, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -24,6 +24,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
@@ -90,10 +91,6 @@ type alias HelpDialog =
 
 type alias ConfirmDialog =
     { id : HtmlId, content : Confirm Msg }
-
-
-type alias DragState =
-    { id : DragId, init : Position, last : Position }
 
 
 type Msg

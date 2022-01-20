@@ -7,7 +7,7 @@ import Libs.Task as T
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), resetCanvas, toastInfo, toastWarning)
 import Ports
-import Services.Lenses exposing (setActive, setCurrentLayout, setNavbar, setSearch, setTables)
+import Services.Lenses exposing (mapActive, mapNavbar, mapProjectMLayout, mapSearch, mapTables, setSelected)
 
 
 handleHotkey : Model -> String -> ( Model, Cmd Msg )
@@ -17,10 +17,10 @@ handleHotkey model hotkey =
             ( model, Ports.focus Conf.ids.searchInput )
 
         "search-up" ->
-            ( model |> setNavbar (setSearch (setActive (\a -> a - 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> mapNavbar (mapSearch (mapActive (\a -> a - 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
 
         "search-down" ->
-            ( model |> setNavbar (setSearch (setActive (\a -> a + 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> mapNavbar (mapSearch (mapActive (\a -> a + 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
 
         "search-confirm" ->
             ( model, Cmd.batch [ Ports.mouseDown (Conf.ids.searchInput ++ "-active"), Ports.blur Conf.ids.searchInput ] )
@@ -44,7 +44,7 @@ handleHotkey model hotkey =
             ( model, moveTables -1000 model )
 
         "select-all" ->
-            ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = True }))), Cmd.none )
+            ( model |> mapProjectMLayout (mapTables (List.map (setSelected True))), Cmd.none )
 
         "save-layout" ->
             ( model, T.send (LayoutMsg LOpen) )

@@ -22,7 +22,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (setLayout)
+import Services.Lenses exposing (mapColumns, mapHiddenTables, mapLayout, mapTables, setHiddenTables, setHoverColumn, setTables)
 import Set
 
 
@@ -80,32 +80,31 @@ showAllTables project =
                     |> List.filter (\t -> not ((l.tables |> L.memberBy .id t.id) && (l.hiddenTables |> L.memberBy .id t.id)))
                     |> List.map (TableProps.init project.settings project.relations)
     in
-    ( project |> setLayout (\l -> { l | tables = (l.tables ++ l.hiddenTables ++ initProps l) |> L.uniqueBy .id, hiddenTables = [] })
+    ( project |> mapLayout (\l -> l |> setTables ((l.tables ++ l.hiddenTables ++ initProps l) |> L.uniqueBy .id) |> setHiddenTables [])
     , Cmd.batch [ Ports.observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))) ]
     )
 
 
 hideTable : TableId -> Layout -> Layout
 hideTable id layout =
-    { layout
-        | tables = layout.tables |> List.filter (\t -> not (t.id == id))
-        , hiddenTables = ((layout.tables |> L.findBy .id id |> M.toList) ++ layout.hiddenTables) |> L.uniqueBy .id
-    }
+    layout
+        |> mapTables (List.filter (\t -> not (t.id == id)))
+        |> setHiddenTables (((layout.tables |> L.findBy .id id |> M.toList) ++ layout.hiddenTables) |> L.uniqueBy .id)
 
 
 hideAllTables : Layout -> Layout
 hideAllTables layout =
-    { layout | tables = [], hiddenTables = (layout.tables ++ layout.hiddenTables) |> L.uniqueBy .id }
+    layout |> setTables [] |> setHiddenTables ((layout.tables ++ layout.hiddenTables) |> L.uniqueBy .id)
 
 
 showColumn : TableId -> ColumnName -> Layout -> Layout
 showColumn table column layout =
-    { layout | tables = layout.tables |> L.updateBy .id table (\t -> { t | columns = t.columns |> L.addAt column (t.columns |> List.length) }) }
+    layout |> mapTables (L.updateBy .id table (mapColumns (\columns -> columns |> L.addAt column (columns |> List.length))))
 
 
 hideColumn : TableId -> ColumnName -> Layout -> Layout
 hideColumn table column layout =
-    { layout | tables = layout.tables |> L.updateBy .id table (\t -> { t | columns = t.columns |> List.filter (\c -> not (c == column)) }) }
+    layout |> mapTables (L.updateBy .id table (mapColumns (List.filter (\c -> not (c == column)))))
 
 
 hoverNextColumn : TableId -> ColumnName -> Model -> Model
@@ -117,7 +116,7 @@ hoverNextColumn table column model =
                 |> Maybe.andThen (\p -> p.layout.tables |> L.findBy .id table)
                 |> Maybe.andThen (\t -> t.columns |> L.dropUntil (\c -> c == column) |> List.drop 1 |> List.head)
     in
-    { model | hoverColumn = nextColumn |> Maybe.map (ColumnRef table) }
+    model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
 
 
 showColumns : TableId -> String -> Project -> Project
@@ -204,10 +203,10 @@ hoverTable table enter props =
         |> Dict.map
             (\id p ->
                 if id == table && p.isHover /= enter then
-                    { p | isHover = enter }
+                    p |> ErdTableProps.setHover enter
 
                 else if id /= table && p.isHover then
-                    { p | isHover = False }
+                    p |> ErdTableProps.setHover False
 
                 else
                     p
@@ -247,12 +246,11 @@ isSame ref erdRef =
 performShowTable : Table -> Project -> Project
 performShowTable table project =
     project
-        |> setLayout
+        |> mapLayout
             (\layout ->
-                { layout
-                    | tables = (getTableProps project layout table :: layout.tables) |> L.uniqueBy .id
-                    , hiddenTables = layout.hiddenTables |> L.removeBy .id table.id
-                }
+                layout
+                    |> mapTables (\tables -> (getTableProps project layout table :: tables) |> L.uniqueBy .id)
+                    |> mapHiddenTables (L.removeBy .id table.id)
             )
 
 
@@ -267,4 +265,4 @@ updateColumns : TableId -> (Table -> List ColumnName -> List ColumnName) -> Proj
 updateColumns id update project =
     project.tables
         |> Dict.get id
-        |> M.mapOrElse (\table -> project |> setLayout (\l -> { l | tables = l.tables |> L.updateBy .id id (\t -> { t | columns = t.columns |> update table }) })) project
+        |> M.mapOrElse (\table -> project |> mapLayout (mapTables (\tables -> tables |> L.updateBy .id id (mapColumns (update table))))) project

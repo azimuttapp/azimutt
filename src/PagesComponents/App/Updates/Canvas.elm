@@ -15,7 +15,7 @@ import Models.Project exposing (Project, tablesArea, viewportArea, viewportSize)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableProps exposing (TableProps)
-import Services.Lenses exposing (setCanvas, setLayout, setTables)
+import Services.Lenses exposing (mapCanvas, mapLayout, mapPosition, mapTables, setCanvas, setHiddenTables, setPosition, setTables, setUsedLayout, setZoom)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
@@ -58,8 +58,8 @@ fitCanvas domInfos layout =
                         computeFit viewport padding contentArea layout.canvas.zoom
                 in
                 layout
-                    |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })
-                    |> setTables (\tables -> tables |> List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
+                    |> mapCanvas (setPosition Position.zero >> setZoom newZoom)
+                    |> mapTables (List.map (mapPosition (Position.add centerOffset)))
             )
             layout
 
@@ -75,7 +75,7 @@ performMove left top canvas =
         newTop =
             canvas.position.top - (top * canvas.zoom)
     in
-    { canvas | position = Position newLeft newTop }
+    canvas |> setPosition (Position newLeft newTop)
 
 
 performZoom : Float -> Position -> CanvasProps -> CanvasProps
@@ -99,7 +99,7 @@ performZoom delta center canvas =
         newTop =
             canvas.position.top - ((center.top - canvas.position.top) * (zoomFactor - 1))
     in
-    { canvas | position = Position newLeft newTop, zoom = newZoom }
+    { position = Position newLeft newTop, zoom = newZoom }
 
 
 computeFit : Area -> Float -> Area -> ZoomLevel -> ( ZoomLevel, Position )
@@ -152,5 +152,6 @@ computeZoom viewport padding content zoom =
 
 resetCanvas : Project -> Project
 resetCanvas project =
-    { project | usedLayout = Nothing }
-        |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = project.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })
+    project
+        |> setUsedLayout Nothing
+        |> mapLayout (setTables [] >> setHiddenTables [] >> setCanvas { position = { left = 0, top = 0 }, zoom = 1 })

@@ -8,7 +8,7 @@ import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg, VirtualRelation, VirtualRelationMsg(..), toastInfo)
 import Ports
-import Services.Lenses exposing (setProject)
+import Services.Lenses exposing (mapProjectM, mapRelations, mapVirtualRelation, setMouse, setVirtualRelation)
 
 
 type alias Model x =
@@ -22,29 +22,30 @@ handleVirtualRelation : VirtualRelationMsg -> Model x -> ( Model x, Cmd Msg )
 handleVirtualRelation msg model =
     case msg of
         VRCreate ->
-            ( { model | virtualRelation = Just { src = Nothing, mouse = Position.zero } }, Cmd.none )
+            ( model |> setVirtualRelation (Just { src = Nothing, mouse = Position.zero }), Cmd.none )
 
         VRUpdate ref pos ->
-            case model.virtualRelation |> Maybe.map (\{ src } -> src) of
+            case model.virtualRelation |> Maybe.map .src of
                 Nothing ->
                     ( model, Cmd.none )
 
                 Just Nothing ->
-                    ( { model | virtualRelation = Just { src = Just ref, mouse = pos } }, Cmd.none )
+                    ( model |> setVirtualRelation (Just { src = Just ref, mouse = pos }), Cmd.none )
 
                 Just (Just src) ->
                     case model.project |> Maybe.andThen (\p -> p.sources |> L.find (\s -> s.kind == UserDefined)) of
                         Just source ->
-                            ( { model | virtualRelation = Nothing }
-                                |> setProject (Project.updateSource source.id (\s -> { s | relations = s.relations ++ [ Relation.virtual src ref source.id ] }))
+                            ( model
+                                |> setVirtualRelation Nothing
+                                |> mapProjectM (Project.updateSource source.id (mapRelations (\relations -> relations ++ [ Relation.virtual src ref source.id ])))
                             , T.send (toastInfo ("Relation added to " ++ source.name ++ " source."))
                             )
 
                         Nothing ->
-                            ( { model | virtualRelation = Nothing }, Ports.getSourceId src ref )
+                            ( model |> setVirtualRelation Nothing, Ports.getSourceId src ref )
 
         VRMove pos ->
-            ( { model | virtualRelation = model.virtualRelation |> Maybe.map (\vr -> { vr | mouse = pos }) }, Cmd.none )
+            ( model |> mapVirtualRelation (Maybe.map (setMouse pos)), Cmd.none )
 
         VRCancel ->
-            ( { model | virtualRelation = Nothing }, Cmd.none )
+            ( model |> setVirtualRelation Nothing, Cmd.none )

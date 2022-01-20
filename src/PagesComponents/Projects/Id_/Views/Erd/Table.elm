@@ -113,7 +113,7 @@ viewTable zoom cursorMode args index props table =
                 , selected = props.selected
                 , dragging = dragging
                 , openedDropdown = openedDropdown
-                , showHiddenColumns = props.hiddenColumns
+                , showHiddenColumns = props.showHiddenColumns
                 }
             , actions =
                 { hoverTable = ToggleHoverTable table.id

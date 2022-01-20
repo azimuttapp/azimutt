@@ -8,7 +8,7 @@ import Models.Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..), toastSuccess)
 import Ports
-import Services.Lenses exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
+import Services.Lenses exposing (mapLayouts, mapNewLayout, mapProjectM, mapProjectMCmd, mapUsedLayout, setLayout, setName, setNewLayout, setUsedLayout)
 import Track
 
 
@@ -23,35 +23,36 @@ handleLayout : LayoutMsg -> Model x -> ( Model x, Cmd Msg )
 handleLayout msg model =
     case msg of
         LOpen ->
-            ( { model | newLayout = Just { id = Conf.ids.newLayoutDialog, name = "" } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.newLayoutDialog), Ports.track Track.openSaveLayout ] )
+            ( model |> setNewLayout (Just { id = Conf.ids.newLayoutDialog, name = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.newLayoutDialog), Ports.track Track.openSaveLayout ] )
 
         LEdit name ->
-            ( { model | newLayout = model.newLayout |> Maybe.map (\l -> { l | name = name }) }, Cmd.none )
+            ( model |> mapNewLayout (Maybe.map (setName name)), Cmd.none )
 
         LCreate name ->
-            { model | newLayout = Nothing } |> setProjectWithCmd (createLayout name)
+            model |> setNewLayout Nothing |> mapProjectMCmd (createLayout name)
 
         LCancel ->
-            ( { model | newLayout = Nothing }, Cmd.none )
+            ( model |> setNewLayout Nothing, Cmd.none )
 
         LLoad name ->
-            model |> setProjectWithCmd (loadLayout name)
+            model |> mapProjectMCmd (loadLayout name)
 
         LUnload ->
-            ( model |> setProject unloadLayout, Cmd.none )
+            ( model |> mapProjectM unloadLayout, Cmd.none )
 
         LUpdate name ->
-            model |> setProjectWithCmd (updateLayout name)
+            model |> mapProjectMCmd (updateLayout name)
 
         LDelete name ->
-            model |> setProjectWithCmd (deleteLayout name)
+            model |> mapProjectMCmd (deleteLayout name)
 
 
 createLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 createLayout name project =
     -- TODO check that layout name does not already exist
-    { project | usedLayout = Just name }
-        |> setLayouts (Dict.update name (\_ -> Just project.layout))
+    project
+        |> setUsedLayout (Just name)
+        |> mapLayouts (Dict.update name (\_ -> Just project.layout))
         |> (\newSchema -> ( newSchema, Ports.track (Track.createLayout project.layout) ))
 
 
@@ -61,7 +62,7 @@ loadLayout name project =
         |> Dict.get name
         |> M.mapOrElse
             (\layout ->
-                ( { project | usedLayout = Just name } |> setLayout (\_ -> layout)
+                ( project |> setUsedLayout (Just name) |> setLayout layout
                 , Cmd.batch [ layout.tables |> List.map .id |> Ports.observeTablesSize, Ports.track (Track.loadLayout layout) ]
                 )
             )
@@ -70,14 +71,15 @@ loadLayout name project =
 
 unloadLayout : Project -> Project
 unloadLayout project =
-    { project | usedLayout = Nothing }
+    project |> setUsedLayout Nothing
 
 
 updateLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 updateLayout name project =
     -- TODO check that layout name already exist
-    { project | usedLayout = Just name }
-        |> setLayouts (Dict.update name (\_ -> Just project.layout))
+    project
+        |> setUsedLayout (Just name)
+        |> mapLayouts (Dict.update name (\_ -> Just project.layout))
         |> (\newSchema -> ( newSchema, Cmd.batch [ T.send (toastSuccess ("Saved to layout " ++ name)), Ports.track (Track.updateLayout project.layout) ] ))
 
 
@@ -85,5 +87,5 @@ deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 deleteLayout name project =
     (project.layouts |> Dict.get name)
         |> M.mapOrElse
-            (\l -> ( { project | usedLayout = project.usedLayout |> M.filter (\n -> n /= name) } |> setLayouts (Dict.remove name), Ports.track (Track.deleteLayout l) ))
+            (\l -> ( project |> mapUsedLayout (M.filter (\n -> n /= name)) |> mapLayouts (Dict.remove name), Ports.track (Track.deleteLayout l) ))
             ( project, Cmd.none )
