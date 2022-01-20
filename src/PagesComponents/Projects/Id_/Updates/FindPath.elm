@@ -11,7 +11,7 @@ import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
-import Models.Project.FindPathState exposing (FindPathState(..))
+import Models.Project.FindPathState as FindPathState exposing (FindPathState(..))
 import Models.Project.FindPathStep exposing (FindPathStep)
 import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
 import Models.Project.Relation exposing (Relation)
@@ -19,7 +19,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import Ports
-import Services.Lenses exposing (setProject, setSettings)
+import Services.Lenses exposing (mapFindPath, mapOpened, mapProjectM, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
 import Track
 
 
@@ -34,34 +34,34 @@ handleFindPath : FindPathMsg -> Model x -> ( Model x, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPOpen from to ->
-            ( { model | findPath = Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty } }, Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ] )
+            ( model |> setFindPath (Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ] )
 
         FPToggleSettings ->
-            ( model |> setFindPath (\fp -> { fp | showSettings = not fp.showSettings }), Cmd.none )
+            ( model |> mapFindPath (Maybe.map (mapShowSettings not)), Cmd.none )
 
         FPUpdateFrom from ->
-            ( model |> setFindPath (\fp -> { fp | from = from }), Cmd.none )
+            ( model |> mapFindPath (Maybe.map (setFrom from)), Cmd.none )
 
         FPUpdateTo to ->
-            ( model |> setFindPath (\fp -> { fp | to = to }), Cmd.none )
+            ( model |> mapFindPath (Maybe.map (setTo to)), Cmd.none )
 
         FPSearch ->
             model.findPath
                 |> Maybe.andThen (\fp -> M.zip3 model.project fp.from fp.to)
-                |> M.mapOrElse (\( p, from, to ) -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Searching }) }, T.sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
+                |> M.mapOrElse (\( p, from, to ) -> ( model |> mapFindPath (Maybe.map (setResult Searching)), T.sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( { model | findPath = model.findPath |> Maybe.map (\m -> { m | result = Found result }) }, Cmd.batch [ Ports.track (Track.findPathResult result) ] ))
+            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPath (Maybe.map (setResult (Found result))), Cmd.batch [ Ports.track (Track.findPathResult result) ] ))
 
         FPToggleResult index ->
-            ( model |> setFindPath (setResult (\r -> { r | opened = B.cond (r.opened == Just index) Nothing (Just index) })), Cmd.none )
+            ( model |> mapFindPath (Maybe.map (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index)))))), Cmd.none )
 
         FPSettingsUpdate settings ->
-            ( model |> setProject (setSettings (\s -> { s | findPath = settings })), Cmd.none )
+            ( model |> mapProjectM (mapSettings (setFindPath settings)), Cmd.none )
 
         FPClose ->
-            ( { model | findPath = Nothing }, Cmd.none )
+            ( model |> setFindPath Nothing, Cmd.none )
 
 
 computeFindPath : Dict TableId Table -> List Relation -> TableId -> TableId -> FindPathSettings -> FindPathResult
@@ -114,18 +114,3 @@ buildPaths tables relations settings tableId isDone curPath =
                            )
             )
             []
-
-
-setFindPath : (fp -> fp) -> { item | findPath : Maybe fp } -> { item | findPath : Maybe fp }
-setFindPath transform item =
-    { item | findPath = item.findPath |> Maybe.map transform }
-
-
-setResult : (FindPathResult -> FindPathResult) -> { item | result : FindPathState } -> { item | result : FindPathState }
-setResult transform item =
-    case item.result of
-        Found result ->
-            { item | result = Found (transform result) }
-
-        _ ->
-            item

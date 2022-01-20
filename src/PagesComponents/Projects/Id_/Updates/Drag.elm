@@ -11,9 +11,10 @@ import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.ScreenProps exposing (ScreenProps)
-import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
+import PagesComponents.Projects.Id_.Models exposing (Model)
+import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setErd, setLayoutTables, setTableProps, setTables)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapProjectMLayout, mapProjectMLayoutTables, mapTableProps, mapTables, setSelected)
 
 
 handleDrag : DragState -> Bool -> Model -> Model
@@ -25,7 +26,7 @@ handleDrag drag isEnd model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd then
-            model |> setCurrentLayout (setCanvas (moveCanvas drag))
+            model |> mapProjectMLayout (mapCanvas (moveCanvas drag))
 
         else
             model
@@ -39,13 +40,13 @@ handleDrag drag isEnd model =
                 |> buildSelectionArea model.screen canvas
                 |> (\area ->
                         { model | selectionBox = Just area }
-                            |> setCurrentLayout (setTables (List.map (\t -> { t | selected = Area.overlap area (t |> TableProps.area) })))
+                            |> mapProjectMLayout (mapTables (List.map (\t -> t |> setSelected (Area.overlap area (t |> TableProps.area)))))
                    )
 
     else if isEnd then
         model
-            |> setLayoutTables (moveTables drag canvas.zoom)
-            |> setErd (setTableProps (moveTables2 drag canvas.zoom))
+            |> mapProjectMLayoutTables (moveTables drag canvas.zoom)
+            |> mapErdM (mapTableProps (moveTables2 drag canvas.zoom))
 
     else
         model

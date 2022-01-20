@@ -13,7 +13,7 @@ import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (setParsingWithCmd)
+import Services.Lenses exposing (mapParsingCmd)
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
 import Shared
 import Time
@@ -77,7 +77,7 @@ update req msg model =
             ( { model | selectedTab = tab, parsing = SQLSource.init Nothing Nothing }, Cmd.none )
 
         SQLSourceMsg message ->
-            model |> setParsingWithCmd (SQLSource.update message SQLSourceMsg)
+            model |> mapParsingCmd (SQLSource.update message SQLSourceMsg)
 
         DropSchema ->
             ( { model | parsing = SQLSource.init Nothing Nothing }, Cmd.none )

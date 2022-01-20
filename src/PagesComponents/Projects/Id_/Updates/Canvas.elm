@@ -12,7 +12,7 @@ import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.ScreenProps exposing (ScreenProps)
-import Services.Lenses exposing (setCanvas, setTables)
+import Services.Lenses exposing (mapCanvas, mapPosition, mapTables, setPosition, setZoom)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
@@ -52,8 +52,8 @@ fitCanvas screen layout =
             computeFit (layout.canvas |> CanvasProps.viewport screen) padding tablesArea layout.canvas.zoom
     in
     layout
-        |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })
-        |> setTables (List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
+        |> mapCanvas (setPosition Position.zero >> setZoom newZoom)
+        |> mapTables (List.map (mapPosition (Position.add centerOffset)))
 
 
 performZoom : Float -> Position -> CanvasProps -> CanvasProps
@@ -77,7 +77,7 @@ performZoom delta center canvas =
         newTop =
             canvas.position.top - ((center.top - canvas.position.top) * (zoomFactor - 1))
     in
-    { canvas | position = Position newLeft newTop, zoom = newZoom }
+    { position = Position newLeft newTop, zoom = newZoom }
 
 
 computeFit : Area -> Float -> Area -> ZoomLevel -> ( ZoomLevel, Position )

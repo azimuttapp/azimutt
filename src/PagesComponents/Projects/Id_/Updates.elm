@@ -13,7 +13,7 @@ import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps
-import Services.Lenses exposing (setErd, setScreen, setTableProp, setTableProps)
+import Services.Lenses exposing (mapErdM, mapProjectMLayoutTable, mapScreen, mapTableProps, setPosition, setSize)
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -24,14 +24,14 @@ updateSizes changes model =
 updateSize : SizeChange -> Model -> Model
 updateSize change model =
     if change.id == Conf.ids.erd then
-        model |> setScreen (\s -> { s | position = change.position, size = change.size })
+        model |> mapScreen (setPosition change.position >> setSize change.size)
 
     else
         TableId.fromHtmlId change.id
             |> (\tableId ->
                     model
-                        |> setTableProp tableId (updateTable (model.project |> M.mapOrElse (.layout >> .canvas >> CanvasProps.viewport model.screen) Area.zero) change)
-                        |> setErd (setTableProps (Dict.update tableId (Maybe.map (ErdTableProps.setSize change.size))))
+                        |> mapProjectMLayoutTable tableId (updateTable (model.project |> M.mapOrElse (.layout >> .canvas >> CanvasProps.viewport model.screen) Area.zero) change)
+                        |> mapErdM (mapTableProps (Dict.update tableId (Maybe.map (ErdTableProps.setSize change.size))))
                )
 
 

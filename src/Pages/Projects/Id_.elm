@@ -21,6 +21,7 @@ import Models.Project.Relation as Relation
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps
 import PagesComponents.Projects.Id_.Updates exposing (updateSizes)
@@ -36,7 +37,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (setAllTableProps, setCanvas, setCurrentLayout, setErd, setLayout, setProject, setProjectWithCmd, setTableProp, setTableProps, setTables)
+import Services.Lenses exposing (mapCanvas, mapEachProjectMLayoutTables, mapErdM, mapHiddenColumns, mapLayout, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapSearch, mapSelected, mapShowHiddenColumns, mapTableProps, mapTables, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setHiddenTables, setIsOpen, setTables, setText, setToastIdx, setUsedLayout)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Time
@@ -106,65 +107,65 @@ update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
 update req msg model =
     case msg of
         ToggleMobileMenu ->
-            ( { model | navbar = model.navbar |> (\n -> { n | mobileMenuOpen = not n.mobileMenuOpen }) }, Cmd.none )
+            ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
 
         SearchUpdated search ->
-            ( { model | navbar = model.navbar |> (\n -> { n | search = n.search |> (\s -> { s | text = search, active = 0 }) }) }, Cmd.none )
+            ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SaveProject ->
             ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
         ShowTable id ->
-            model |> setProjectWithCmd (showTable id)
+            model |> mapProjectMCmd (showTable id)
 
         ShowTables ids ->
-            model |> setProjectWithCmd (showTables ids)
+            model |> mapProjectMCmd (showTables ids)
 
         ShowAllTables ->
-            model |> setProjectWithCmd showAllTables
+            model |> mapProjectMCmd showAllTables
 
         HideTable id ->
-            ( model |> setCurrentLayout (hideTable id), Cmd.none )
+            ( model |> mapProjectMLayout (hideTable id), Cmd.none )
 
         HideAllTables ->
-            ( model |> setCurrentLayout hideAllTables, Cmd.none )
+            ( model |> mapProjectMLayout hideAllTables, Cmd.none )
 
         ShowColumn { table, column } ->
-            ( model |> setCurrentLayout (showColumn table column), Cmd.none )
+            ( model |> mapProjectMLayout (showColumn table column), Cmd.none )
 
         HideColumn { table, column } ->
-            ( model |> setCurrentLayout (hideColumn table column) |> hoverNextColumn table column, Cmd.none )
+            ( model |> mapProjectMLayout (hideColumn table column) |> hoverNextColumn table column, Cmd.none )
 
         ShowColumns id kind ->
-            ( model |> setProject (showColumns id kind), Cmd.none )
+            ( model |> mapProjectM (showColumns id kind), Cmd.none )
 
         HideColumns id kind ->
-            ( model |> setProject (hideColumns id kind), Cmd.none )
+            ( model |> mapProjectM (hideColumns id kind), Cmd.none )
 
         ToggleHiddenColumns id ->
-            ( model |> setTableProp id (\p -> { p | hiddenColumns = not p.hiddenColumns }) |> setErd (setTableProps (Dict.update id (Maybe.map (\p -> { p | hiddenColumns = not p.hiddenColumns })))), Cmd.none )
+            ( model |> mapProjectMLayoutTable id (mapHiddenColumns not) |> mapErdM (mapTableProps (Dict.update id (Maybe.map (mapShowHiddenColumns not)))), Cmd.none )
 
         SelectTable tableId ctrl ->
             ( model
-                |> setAllTableProps (\p -> { p | selected = B.cond (p.id == tableId) (not p.selected) (B.cond ctrl p.selected False) })
-                |> setErd (setTableProps (Dict.map (\id p -> p |> ErdTableProps.setSelected (B.cond (id == tableId) (not p.selected) (B.cond ctrl p.selected False)))))
+                |> mapEachProjectMLayoutTables (\p -> p |> mapSelected (\s -> B.cond (p.id == tableId) (not s) (B.cond ctrl s False)))
+                |> mapErdM (mapTableProps (Dict.map (\id p -> p |> ErdTableProps.setSelected (B.cond (id == tableId) (not p.selected) (B.cond ctrl p.selected False)))))
             , Cmd.none
             )
 
         TableOrder id index ->
-            ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
+            ( model |> mapProjectMLayout (mapTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
 
         SortColumns id kind ->
-            ( model |> setProject (sortColumns id kind), Cmd.none )
+            ( model |> mapProjectM (sortColumns id kind), Cmd.none )
 
         ToggleHoverTable table on ->
-            ( { model | hoverTable = B.cond on (Just table) Nothing } |> setErd (setTableProps (hoverTable table on)), Cmd.none )
+            ( { model | hoverTable = B.cond on (Just table) Nothing } |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
 
         ToggleHoverColumn column on ->
-            ( { model | hoverColumn = B.cond on (Just column) Nothing } |> setErd (\e -> e |> setTableProps (hoverColumn column on e)), Cmd.none )
+            ( { model | hoverColumn = B.cond on (Just column) Nothing } |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
         ResetCanvas ->
-            ( model |> setProject (\p -> { p | usedLayout = Nothing } |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = p.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })), Cmd.none )
+            ( model |> mapProjectM (setUsedLayout Nothing >> mapLayout (setTables [] >> setHiddenTables [] >> setCanvas { position = { left = 0, top = 0 }, zoom = 1 })), Cmd.none )
 
         LayoutMsg message ->
             model |> handleLayout message
@@ -182,68 +183,68 @@ update req msg model =
             model |> handleHelp message
 
         CursorMode mode ->
-            ( { model | cursorMode = mode }, Cmd.none )
+            ( model |> setCursorMode mode, Cmd.none )
 
         FitContent ->
-            ( model |> setCurrentLayout (fitCanvas model.screen), Cmd.none )
+            ( model |> mapProjectMLayout (fitCanvas model.screen), Cmd.none )
 
         OnWheel event ->
-            ( model |> setCurrentLayout (setCanvas (handleWheel event)), Cmd.none )
+            ( model |> mapProjectMLayout (mapCanvas (handleWheel event)), Cmd.none )
 
         Zoom delta ->
-            ( model |> setCurrentLayout (setCanvas (zoomCanvas delta model.screen)), Cmd.none )
+            ( model |> mapProjectMLayout (mapCanvas (zoomCanvas delta model.screen)), Cmd.none )
 
         Focus id ->
             ( model, Ports.focus id )
 
         DropdownToggle id ->
-            ( { model | openedDropdown = B.cond (model.openedDropdown == id) "" id }, Cmd.none )
+            ( model |> mapOpenedDropdown (\d -> B.cond (d == id) "" id), Cmd.none )
 
         DragStart id pos ->
             model.dragging
                 |> M.mapOrElse (\d -> ( model, T.send (toastInfo ("Already dragging " ++ d.id)) ))
-                    ( { id = id, init = pos, last = pos } |> (\d -> { model | dragging = Just d } |> handleDrag d False), Cmd.none )
+                    ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag d False), Cmd.none )
 
         DragMove pos ->
             ( model.dragging
-                |> Maybe.map (\d -> B.cond ((d.init |> Position.distance pos) > 10) { d | last = pos } { d | last = d.init })
-                |> M.mapOrElse (\d -> { model | dragging = Just d } |> handleDrag d False) model
+                |> Maybe.map (DragState.setLast pos)
+                |> M.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag d False) model
             , Cmd.none
             )
 
         DragEnd pos ->
             ( model.dragging
-                |> Maybe.map (\d -> B.cond ((d.init |> Position.distance pos) > 10) { d | last = pos } { d | last = d.init })
-                |> M.mapOrElse (\d -> { model | dragging = Nothing } |> handleDrag d True) model
+                |> Maybe.map (DragState.setLast pos)
+                |> M.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag d True) model
             , Cmd.none
             )
 
         DragCancel ->
-            ( { model | dragging = Nothing }, Cmd.none )
+            ( model |> setDragging Nothing, Cmd.none )
 
         ToastAdd millis toast ->
-            model.toastIdx |> String.fromInt |> (\key -> ( { model | toastIdx = model.toastIdx + 1, toasts = { key = key, content = toast, isOpen = False } :: model.toasts }, T.sendAfter 1 (ToastShow millis key) ))
+            model.toastIdx |> String.fromInt |> (\key -> ( model |> setToastIdx (model.toastIdx + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (ToastShow millis key) ))
 
         ToastShow millis key ->
-            ( { model | toasts = model.toasts |> List.map (\t -> B.cond (t.key == key) { t | isOpen = True } t) }, millis |> M.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
+            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> M.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
 
         ToastHide key ->
-            ( { model | toasts = model.toasts |> List.map (\t -> B.cond (t.key == key) { t | isOpen = False } t) }, T.sendAfter 300 (ToastRemove key) )
+            ( model |> mapToasts (mapList .key key (setIsOpen False)), T.sendAfter 300 (ToastRemove key) )
 
         ToastRemove key ->
-            ( { model | toasts = model.toasts |> List.filter (\t -> t.key /= key) }, Cmd.none )
+            ( model |> mapToasts (List.filter (\t -> t.key /= key)), Cmd.none )
 
         ConfirmOpen confirm ->
-            ( { model | confirm = Just { id = Conf.ids.confirmDialog, content = confirm } }, T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
+            ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
 
         ConfirmAnswer answer cmd ->
-            ( { model | confirm = Nothing }, B.cond answer cmd Cmd.none )
+            ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none )
 
         ModalOpen id ->
-            ( { model | openedDialogs = id :: model.openedDialogs }, Ports.autofocusWithin id )
+            ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id )
 
         ModalClose message ->
-            ( { model | openedDialogs = model.openedDialogs |> List.drop 1 }, T.sendAfter Modal.closeDuration message )
+            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Modal.closeDuration message )
 
         JsMessage message ->
             model |> handleJsMessage req message
@@ -289,7 +290,7 @@ handleJsMessage req message model =
             ( model, T.send (SQLSource.gotRemoteFile now projectId sourceId url content sample |> PSSQLSourceMsg |> ProjectSettingsMsg) )
 
         GotSourceId now sourceId src ref ->
-            ( model |> setProject (Project.addUserSource sourceId Dict.empty [ Relation.virtual src ref sourceId ] now), T.send (toastInfo "Created a user source to add the relation.") )
+            ( model |> mapProjectM (Project.addUserSource sourceId Dict.empty [ Relation.virtual src ref sourceId ] now), T.send (toastInfo "Created a user source to add the relation.") )
 
         GotHotkey hotkey ->
             handleHotkey model hotkey
