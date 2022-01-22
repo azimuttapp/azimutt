@@ -37,7 +37,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapEachProjectMLayoutTables, mapErdM, mapHiddenColumns, mapLayout, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapSearch, mapSelected, mapShowHiddenColumns, mapTableProps, mapTables, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setHiddenTables, setIsOpen, setTables, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapEachProjectMLayoutTables, mapErdM, mapErdMCmd, mapHiddenColumns, mapLayout, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectM, mapProjectMLayout, mapProjectMLayoutTable, mapSearch, mapSelected, mapShowHiddenColumns, mapTableProps, mapTables, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setHiddenTables, setIsOpen, setTables, setText, setToastIdx, setUsedLayout)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Time
@@ -113,16 +113,16 @@ update req msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SaveProject ->
-            ( model, Cmd.batch (model.project |> M.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+            ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> M.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
         ShowTable id ->
-            model |> mapProjectMCmd (showTable id)
+            model |> mapErdMCmd (showTable id)
 
         ShowTables ids ->
-            model |> mapProjectMCmd (showTables ids)
+            model |> mapErdMCmd (showTables ids)
 
         ShowAllTables ->
-            model |> mapProjectMCmd showAllTables
+            model |> mapErdMCmd showAllTables
 
         HideTable id ->
             ( model |> mapProjectMLayout (hideTable id), Cmd.none )

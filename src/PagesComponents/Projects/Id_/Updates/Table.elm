@@ -2,8 +2,9 @@ module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideC
 
 import Dict exposing (Dict)
 import Libs.Bool as B
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.Dict as Dict
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Task as T
@@ -15,73 +16,72 @@ import Models.Project.Layout exposing (Layout)
 import Models.Project.Relation as Relation
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
-import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapColumns, mapHiddenTables, mapLayout, mapTables, setHiddenTables, setHoverColumn, setTables)
+import Services.Lenses exposing (mapColumns, mapLayout, mapShownTables, mapTableProps, mapTables, setHiddenTables, setHoverColumn, setTables)
 import Set
 
 
-showTable : TableId -> Project -> ( Project, Cmd Msg )
-showTable id project =
-    case project.tables |> Dict.get id of
+showTable : TableId -> Erd -> ( Erd, Cmd Msg )
+showTable id erd =
+    case erd.tables |> Dict.get id of
         Just table ->
-            if project.layout.tables |> L.memberBy .id id then
-                ( project, T.send (toastInfo ("Table " ++ TableId.show id ++ " already shown")) )
+            if erd |> Erd.isShown id then
+                ( erd, T.send (toastInfo ("Table " ++ TableId.show id ++ " already shown")) )
 
             else
-                ( project |> performShowTable table, Cmd.batch [ Ports.observeTableSize id ] )
+                ( erd |> performShowTable table, Cmd.batch [ Ports.observeTableSize id ] )
 
         Nothing ->
-            ( project, T.send (toastError ("Can't show table " ++ TableId.show id ++ ": not found")) )
+            ( erd, T.send (toastError ("Can't show table " ++ TableId.show id ++ ": not found")) )
 
 
-showTables : List TableId -> Project -> ( Project, Cmd Msg )
-showTables ids project =
+showTables : List TableId -> Erd -> ( Erd, Cmd Msg )
+showTables ids erd =
     ids
-        |> L.zipWith (\id -> project.tables |> Dict.get id)
+        |> List.zipWith (\id -> erd.tables |> Dict.get id)
         |> List.foldr
-            (\( id, maybeTable ) ( p, ( found, shown, notFound ) ) ->
+            (\( id, maybeTable ) ( e, ( found, shown, notFound ) ) ->
                 case maybeTable of
                     Just table ->
-                        if project.layout.tables |> L.memberBy .id id then
-                            ( p, ( found, id :: shown, notFound ) )
+                        if erd |> Erd.isShown id then
+                            ( e, ( found, id :: shown, notFound ) )
 
                         else
-                            ( p |> performShowTable table, ( id :: found, shown, notFound ) )
+                            ( e |> performShowTable table, ( id :: found, shown, notFound ) )
 
                     Nothing ->
-                        ( p, ( found, shown, id :: notFound ) )
+                        ( e, ( found, shown, id :: notFound ) )
             )
-            ( project, ( [], [], [] ) )
-        |> (\( p, ( found, shown, notFound ) ) ->
-                ( p
+            ( erd, ( [], [], [] ) )
+        |> (\( e, ( found, shown, notFound ) ) ->
+                ( e
                 , Cmd.batch
-                    (B.cond (found |> List.isEmpty) [] [ Ports.observeTablesSize found ]
-                        ++ B.cond (shown |> List.isEmpty) [] [ T.send (toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown")) ]
-                        ++ B.cond (notFound |> List.isEmpty) [] [ T.send (toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them")) ]
-                    )
+                    [ Ports.observeTablesSize found
+                    , B.cond (shown |> List.isEmpty) Cmd.none (T.send (toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown")))
+                    , B.cond (notFound |> List.isEmpty) Cmd.none (T.send (toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them")))
+                    ]
                 )
            )
 
 
-showAllTables : Project -> ( Project, Cmd Msg )
-showAllTables project =
+showAllTables : Erd -> ( Erd, Cmd Msg )
+showAllTables erd =
     let
-        initProps : Layout -> List TableProps
-        initProps =
-            \l ->
-                project.tables
-                    |> Dict.values
-                    |> List.filter (\t -> not ((l.tables |> L.memberBy .id t.id) && (l.hiddenTables |> L.memberBy .id t.id)))
-                    |> List.map (TableProps.init project.settings project.relations)
+        tablesToInit : Dict TableId ErdTableProps
+        tablesToInit =
+            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ t -> erd |> Erd.initTable t)
+
+        tablesHidden : List TableId
+        tablesHidden =
+            erd.tables |> Dict.keys |> List.filter (\id -> (erd.tableProps |> Dict.member id) && (erd.shownTables |> List.notMember id))
     in
-    ( project |> mapLayout (\l -> l |> setTables ((l.tables ++ l.hiddenTables ++ initProps l) |> L.uniqueBy .id) |> setHiddenTables [])
-    , Cmd.batch [ Ports.observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))) ]
+    ( erd |> mapTableProps (tablesToInit |> Dict.union) |> mapShownTables (\tables -> (tablesToInit |> Dict.keys) ++ tablesHidden ++ tables)
+    , Cmd.batch [ Ports.observeTablesSize ((tablesToInit |> Dict.keys) ++ tablesHidden) ]
     )
 
 
@@ -89,22 +89,22 @@ hideTable : TableId -> Layout -> Layout
 hideTable id layout =
     layout
         |> mapTables (List.filter (\t -> not (t.id == id)))
-        |> setHiddenTables (((layout.tables |> L.findBy .id id |> M.toList) ++ layout.hiddenTables) |> L.uniqueBy .id)
+        |> setHiddenTables (((layout.tables |> List.findBy .id id |> Maybe.toList) ++ layout.hiddenTables) |> List.uniqueBy .id)
 
 
 hideAllTables : Layout -> Layout
 hideAllTables layout =
-    layout |> setTables [] |> setHiddenTables ((layout.tables ++ layout.hiddenTables) |> L.uniqueBy .id)
+    layout |> setTables [] |> setHiddenTables ((layout.tables ++ layout.hiddenTables) |> List.uniqueBy .id)
 
 
 showColumn : TableId -> ColumnName -> Layout -> Layout
 showColumn table column layout =
-    layout |> mapTables (L.updateBy .id table (mapColumns (\columns -> columns |> L.addAt column (columns |> List.length))))
+    layout |> mapTables (List.updateBy .id table (mapColumns (\columns -> columns |> List.addAt column (columns |> List.length))))
 
 
 hideColumn : TableId -> ColumnName -> Layout -> Layout
 hideColumn table column layout =
-    layout |> mapTables (L.updateBy .id table (mapColumns (List.filter (\c -> not (c == column)))))
+    layout |> mapTables (List.updateBy .id table (mapColumns (List.filter (\c -> not (c == column)))))
 
 
 hoverNextColumn : TableId -> ColumnName -> Model -> Model
@@ -113,8 +113,8 @@ hoverNextColumn table column model =
         nextColumn : Maybe ColumnName
         nextColumn =
             model.project
-                |> Maybe.andThen (\p -> p.layout.tables |> L.findBy .id table)
-                |> Maybe.andThen (\t -> t.columns |> L.dropUntil (\c -> c == column) |> List.drop 1 |> List.head)
+                |> Maybe.andThen (\p -> p.layout.tables |> List.findBy .id table)
+                |> Maybe.andThen (\t -> t.columns |> List.dropUntil (\c -> c == column) |> List.drop 1 |> List.head)
     in
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
 
@@ -137,7 +137,7 @@ showColumns id kind project =
                                                     True
 
                                                 "relations" ->
-                                                    tableRelations |> Relation.withLink id column.name |> L.nonEmpty
+                                                    tableRelations |> Relation.withLink id column.name |> List.nonEmpty
 
                                                 _ ->
                                                     False
@@ -157,18 +157,18 @@ hideColumns id kind project =
                 |> Relation.withTableLink id
                 |> (\tableRelations ->
                         columns
-                            |> L.zipWith (\name -> table.columns |> Ned.get name)
+                            |> List.zipWith (\name -> table.columns |> Ned.get name)
                             |> List.filter
                                 (\( name, col ) ->
                                     case ( kind, col ) of
                                         ( "relations", Just _ ) ->
-                                            tableRelations |> Relation.withLink id name |> L.nonEmpty
+                                            tableRelations |> Relation.withLink id name |> List.nonEmpty
 
                                         ( "regular", Just _ ) ->
-                                            (name |> Table.inPrimaryKey table |> M.isJust)
-                                                || (tableRelations |> Relation.withLink id name |> L.nonEmpty)
-                                                || (name |> Table.inUniques table |> L.nonEmpty)
-                                                || (name |> Table.inIndexes table |> L.nonEmpty)
+                                            (name |> Table.inPrimaryKey table |> Maybe.isJust)
+                                                || (tableRelations |> Relation.withLink id name |> List.nonEmpty)
+                                                || (name |> Table.inUniques table |> List.nonEmpty)
+                                                || (name |> Table.inIndexes table |> List.nonEmpty)
 
                                         ( "nullable", Just c ) ->
                                             not c.nullable
@@ -235,7 +235,7 @@ hoverColumn column enter erd props =
 
 getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRef
 getRelations table name =
-    table |> Maybe.andThen (\t -> t.columns |> Ned.get name) |> M.mapOrElse (\c -> c.outRelations ++ c.inRelations) []
+    table |> Maybe.andThen (\t -> t.columns |> Ned.get name) |> Maybe.mapOrElse (\c -> c.outRelations ++ c.inRelations) []
 
 
 isSame : ColumnRef -> ErdColumnRef -> Bool
@@ -243,26 +243,15 @@ isSame ref erdRef =
     ref.table == erdRef.table && ref.column == erdRef.column
 
 
-performShowTable : Table -> Project -> Project
-performShowTable table project =
-    project
-        |> mapLayout
-            (\layout ->
-                layout
-                    |> mapTables (\tables -> (getTableProps project layout table :: tables) |> L.uniqueBy .id)
-                    |> mapHiddenTables (L.removeBy .id table.id)
-            )
-
-
-getTableProps : Project -> Layout -> Table -> TableProps
-getTableProps project layout table =
-    (layout.tables |> L.findBy .id table.id)
-        |> M.orElse (layout.hiddenTables |> L.findBy .id table.id)
-        |> Maybe.withDefault (TableProps.init project.settings project.relations table)
+performShowTable : ErdTable -> Erd -> Erd
+performShowTable table erd =
+    erd
+        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (erd |> Erd.initTable table))))
+        |> mapShownTables (\t -> B.cond (t |> List.member table.id) t (table.id :: t))
 
 
 updateColumns : TableId -> (Table -> List ColumnName -> List ColumnName) -> Project -> Project
 updateColumns id update project =
     project.tables
         |> Dict.get id
-        |> M.mapOrElse (\table -> project |> mapLayout (mapTables (\tables -> tables |> L.updateBy .id id (mapColumns (update table))))) project
+        |> Maybe.mapOrElse (\table -> project |> mapLayout (mapTables (\tables -> tables |> List.updateBy .id id (mapColumns (update table))))) project
