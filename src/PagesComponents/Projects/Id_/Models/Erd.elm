@@ -9,8 +9,6 @@ import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectId exposing (ProjectId)
-import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
@@ -21,14 +19,12 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnPro
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Time
 
 
 type alias Erd =
-    { projectId : ProjectId
-    , projectName : ProjectName
-    , projectCreatedAt : Time.Posix
-    , projectUpdatedAt : Time.Posix
+    { project : ProjectInfo
     , canvas : CanvasProps
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
@@ -38,11 +34,12 @@ type alias Erd =
     , layouts : Dict LayoutName Layout
     , sources : List Source
     , settings : ProjectSettings
+    , otherProjects : List ProjectInfo
     }
 
 
-create : Project -> Erd
-create project =
+create : List Project -> Project -> Erd
+create allProjects project =
     let
         layoutProps : List TableProps
         layoutProps =
@@ -63,10 +60,7 @@ create project =
                     )
                     Dict.empty
     in
-    { projectId = project.id
-    , projectName = project.name
-    , projectCreatedAt = project.createdAt
-    , projectUpdatedAt = project.updatedAt
+    { project = ProjectInfo.create project
     , canvas = project.layout.canvas
     , tables = project.tables |> Dict.map (\id -> ErdTable.create project.tables (relationsByTable |> D.getOrElse id []))
     , relations = project.relations |> List.map (ErdRelation.create project.tables)
@@ -76,6 +70,7 @@ create project =
     , layouts = project.layouts
     , sources = project.sources
     , settings = project.settings
+    , otherProjects = allProjects |> List.filter (\p -> p.id /= project.id) |> List.map ProjectInfo.create |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
     }
 
 
@@ -85,8 +80,8 @@ unpack erd =
         ( shownTables, hiddenTables ) =
             erd.tableProps |> Dict.keys |> List.partition (\id -> erd.shownTables |> List.member id)
     in
-    { id = erd.projectId
-    , name = erd.projectName
+    { id = erd.project.id
+    , name = erd.project.name
     , sources = erd.sources
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = erd.relations |> List.map ErdRelation.unpack
@@ -100,8 +95,8 @@ unpack erd =
     , usedLayout = erd.usedLayout
     , layouts = erd.layouts
     , settings = erd.settings
-    , createdAt = erd.projectCreatedAt
-    , updatedAt = erd.projectUpdatedAt
+    , createdAt = erd.project.createdAt
+    , updatedAt = erd.project.updatedAt
     }
 
 

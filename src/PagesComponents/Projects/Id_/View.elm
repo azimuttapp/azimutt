@@ -12,7 +12,9 @@ import Html.Styled.Keyed as Keyed
 import Html.Styled.Lazy as Lazy
 import Libs.List as L
 import Libs.Models.Color as Color
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
+import Libs.String as String
 import Models.Project exposing (Project)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -39,19 +41,19 @@ viewProject shared model =
         Loading ->
             viewLoader shared.theme
 
-        Loaded projects ->
-            Maybe.map2 (viewApp shared.theme model projects) model.project model.erd |> Maybe.withDefault (Lazy.lazy viewNotFound shared.theme)
+        Loaded _ ->
+            Maybe.map2 (viewApp shared.theme model "app") model.project model.erd |> Maybe.withDefault (Lazy.lazy viewNotFound shared.theme)
     , Lazy.lazy4 viewModal shared.theme shared.zone shared.now model
     , Lazy.lazy2 viewToasts shared.theme model.toasts
     ]
 
 
-viewApp : Theme -> Model -> List Project -> Project -> Erd -> Html Msg
-viewApp theme model storedProjects project erd =
+viewApp : Theme -> Model -> HtmlId -> Project -> Erd -> Html Msg
+viewApp theme model htmlId project erd =
     div [ class "tw-app" ]
-        [ Lazy.lazy6 viewNavbar theme model.openedDropdown model.virtualRelation storedProjects project model.navbar
+        [ Lazy.lazy6 viewNavbar theme model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
         , Lazy.lazy4 viewErd theme model project erd
-        , Lazy.lazy4 viewCommands theme model.openedDropdown model.cursorMode project.layout.canvas
+        , Lazy.lazy5 viewCommands theme model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
         ]
 
 

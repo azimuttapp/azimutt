@@ -22,7 +22,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapColumns, mapLayout, mapShownTables, mapTableProps, mapTables, setHiddenTables, setHoverColumn, setTables)
+import Services.Lenses exposing (mapColumns, mapLayout, mapShownTables, mapTableProps, mapTables, setHoverColumn, setShownTables)
 import Set
 
 
@@ -85,16 +85,14 @@ showAllTables erd =
     )
 
 
-hideTable : TableId -> Layout -> Layout
-hideTable id layout =
-    layout
-        |> mapTables (List.filter (\t -> not (t.id == id)))
-        |> setHiddenTables (((layout.tables |> List.findBy .id id |> Maybe.toList) ++ layout.hiddenTables) |> List.uniqueBy .id)
+hideTable : TableId -> Erd -> Erd
+hideTable id erd =
+    erd |> mapShownTables (List.filter (\t -> t /= id))
 
 
-hideAllTables : Layout -> Layout
-hideAllTables layout =
-    layout |> setTables [] |> setHiddenTables ((layout.tables ++ layout.hiddenTables) |> List.uniqueBy .id)
+hideAllTables : Erd -> Erd
+hideAllTables erd =
+    erd |> setShownTables []
 
 
 showColumn : TableId -> ColumnName -> Layout -> Layout

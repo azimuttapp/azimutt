@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Navbar.Search exposing (Model, viewNavbarSearch)
+module PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
@@ -18,31 +18,21 @@ import Libs.Models.Theme exposing (Theme)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Tailwind.Utilities as Tu
-import Models.Project exposing (Project)
-import Models.Project.Column exposing (Column)
-import Models.Project.Layout exposing (Layout)
-import Models.Project.Relation exposing (Relation)
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel)
+import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-type alias Model =
-    { id : HtmlId
-    , search : String
-    , active : Int
-    , project : Project
-    }
-
-
-viewNavbarSearch : Theme -> HtmlId -> Model -> Html Msg
-viewNavbarSearch theme openedDropdown model =
+viewNavbarSearch : Theme -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch theme search tables relations shownTables htmlId openedDropdown =
     div [ css [ Tw.ml_6 ] ]
         [ div [ css [ Tw.max_w_lg, Tw.w_full, Bp.lg [ Tw.max_w_xs ] ] ]
-            [ label [ for model.id, css [ Tw.sr_only ] ] [ text "Search" ]
-            , Dropdown.dropdown { id = model.id, direction = BottomRight, isOpen = openedDropdown == model.id }
+            [ label [ for htmlId, css [ Tw.sr_only ] ] [ text "Search" ]
+            , Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
                 (\m ->
                     div []
                         [ div [ css [ Tw.pointer_events_none, Tw.absolute, Tw.inset_y_0, Tw.left_0, Tw.pl_3, Tw.flex, Tw.items_center ] ] [ Icon.solid Search [ Color.text theme.color 200 ] ]
@@ -52,7 +42,7 @@ viewNavbarSearch theme openedDropdown model =
                             , id m.id
                             , placeholder "Search"
                             , autocomplete False
-                            , value model.search
+                            , value search.text
                             , onInput SearchUpdated
                             , onFocus (DropdownToggle m.id)
                             , onBlur (DropdownToggle m.id)
@@ -88,14 +78,14 @@ viewNavbarSearch theme openedDropdown model =
                         ]
                 )
                 (\m ->
-                    if model.search == "" then
+                    if search.text == "" then
                         div []
                             [ span [ role "menuitem", tabindex -1, css [ Tw.flex, Tw.w_full, Tw.items_center, Dropdown.itemDisabledStyles ] ]
                                 [ text "Type to search into tables (", Icon.solid Icon.Table [], text "), columns (", Icon.solid Tag [], text ") and relations (", Icon.solid ExternalLink [], text ")" ]
                             ]
 
                     else
-                        performSearch model.project.tables model.project.relations model.search
+                        performSearch tables relations search.text
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
@@ -105,7 +95,7 @@ viewNavbarSearch theme openedDropdown model =
 
                                     else
                                         div [ css [ Tu.max_h 600 "px", Tw.overflow_y_auto ] ]
-                                            (results |> List.indexedMap (viewSearchResult theme m.id model.project.layout (model.active |> modBy (results |> List.length))))
+                                            (results |> List.indexedMap (viewSearchResult theme m.id shownTables (search.active |> modBy (results |> List.length))))
                                )
                 )
             ]
@@ -113,18 +103,14 @@ viewNavbarSearch theme openedDropdown model =
 
 
 type SearchResult
-    = FoundTable Table
-    | FoundColumn Table Column
-    | FoundRelation Relation
+    = FoundTable ErdTable
+    | FoundColumn ErdTable ErdColumn
+    | FoundRelation ErdRelation
 
 
-viewSearchResult : Theme -> HtmlId -> Layout -> Int -> Int -> SearchResult -> Html Msg
-viewSearchResult theme searchId layout active index res =
+viewSearchResult : Theme -> HtmlId -> List TableId -> Int -> Int -> SearchResult -> Html Msg
+viewSearchResult theme searchId shownTables active index res =
     let
-        shownTables : List TableId
-        shownTables =
-            layout.tables |> List.map .id
-
         viewItem : msg -> Icon -> List (Html msg) -> Bool -> Html msg
         viewItem =
             \msg icon content disabled ->
@@ -163,7 +149,7 @@ viewSearchResult theme searchId layout active index res =
                 viewItem (ShowTable relation.src.table) ExternalLink [ text relation.name ] True
 
 
-performSearch : Dict TableId Table -> List Relation -> String -> List SearchResult
+performSearch : Dict TableId ErdTable -> List ErdRelation -> String -> List SearchResult
 performSearch tables relations query =
     let
         maxResults : Int
@@ -193,7 +179,7 @@ performSearch tables relations query =
     (tableResults ++ columnResults ++ relationResults) |> List.sortBy (\( r, _ ) -> negate r) |> List.take maxResults |> List.map Tuple.second
 
 
-tableMatch : String -> Table -> Maybe ( Float, SearchResult )
+tableMatch : String -> ErdTable -> Maybe ( Float, SearchResult )
 tableMatch query table =
     if table.name == query then
         Just ( 10, FoundTable table )
@@ -217,7 +203,7 @@ tableMatch query table =
         Nothing
 
 
-columnMatch : String -> Table -> Column -> Maybe ( Float, SearchResult )
+columnMatch : String -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
 columnMatch query table column =
     if column.name == query then
         Just ( 1, FoundColumn table column )
@@ -239,7 +225,7 @@ columnMatch query table column =
         Nothing
 
 
-relationMatch : String -> Relation -> Maybe ( Float, SearchResult )
+relationMatch : String -> ErdRelation -> Maybe ( Float, SearchResult )
 relationMatch query relation =
     if relation.name == query then
         Just ( 0.1, FoundRelation relation )

@@ -125,10 +125,10 @@ update req msg model =
             model |> mapErdMCmd showAllTables
 
         HideTable id ->
-            ( model |> mapProjectMLayout (hideTable id), Cmd.none )
+            ( model |> mapErdM (hideTable id), Cmd.none )
 
         HideAllTables ->
-            ( model |> mapProjectMLayout hideAllTables, Cmd.none )
+            ( model |> mapErdM hideAllTables, Cmd.none )
 
         ShowColumn { table, column } ->
             ( model |> mapProjectMLayout (showColumn table column), Cmd.none )
@@ -263,7 +263,7 @@ handleJsMessage req message model =
             ( { model
                 | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)))
                 , project = model.project |> M.orElse (projects |> L.find (\p -> p.id == req.params.id))
-                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map Erd.create)
+                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map (Erd.create projects))
               }
             , Cmd.batch
                 ((model.project
