@@ -142,7 +142,7 @@ viewTable zoom cursorMode args index props table =
 
 buildColumn : ErdTableProps -> ErdColumn -> Table.Column
 buildColumn props column =
-    { index = column.sqlIndex
+    { index = column.index
     , name = column.name
     , kind = column.kind
     , nullable = column.nullable

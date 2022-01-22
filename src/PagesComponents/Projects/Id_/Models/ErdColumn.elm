@@ -21,7 +21,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnRef as ErdColumnRef exposing
 
 
 type alias ErdColumn =
-    { sqlIndex : ColumnIndex
+    { index : ColumnIndex
     , name : ColumnName
     , kind : ColumnType
     , nullable : Bool
@@ -39,7 +39,7 @@ type alias ErdColumn =
 
 create : Dict TableId Table -> List Relation -> Table -> Column -> ErdColumn
 create tables columnRelations table column =
-    { sqlIndex = column.index
+    { index = column.index
     , name = column.name
     , kind = column.kind
     , nullable = column.nullable
@@ -57,7 +57,7 @@ create tables columnRelations table column =
 
 unpack : ErdColumn -> Column
 unpack column =
-    { index = column.sqlIndex
+    { index = column.index
     , name = column.name
     , kind = column.kind
     , nullable = column.nullable

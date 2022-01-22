@@ -11,11 +11,11 @@ import Html.Styled.Attributes exposing (class, css)
 import Html.Styled.Keyed as Keyed
 import Html.Styled.Lazy as Lazy
 import Libs.List as L
+import Libs.Maybe as Maybe
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.String as String
-import Models.Project exposing (Project)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
@@ -37,22 +37,21 @@ viewProject shared model =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100, Tw.overflow_hidden ], Global.selector "body" [ Tw.h_full ] ]
     , Styles.global
-    , case model.projects of
-        Loading ->
-            viewLoader shared.theme
+    , if model.loaded then
+        model.erd |> Maybe.mapOrElse (viewApp shared.theme model "app") (Lazy.lazy viewNotFound shared.theme)
 
-        Loaded _ ->
-            Maybe.map2 (viewApp shared.theme model "app") model.project model.erd |> Maybe.withDefault (Lazy.lazy viewNotFound shared.theme)
+      else
+        viewLoader shared.theme
     , Lazy.lazy4 viewModal shared.theme shared.zone shared.now model
     , Lazy.lazy2 viewToasts shared.theme model.toasts
     ]
 
 
-viewApp : Theme -> Model -> HtmlId -> Project -> Erd -> Html Msg
-viewApp theme model htmlId project erd =
+viewApp : Theme -> Model -> HtmlId -> Erd -> Html Msg
+viewApp theme model htmlId erd =
     div [ class "tw-app" ]
         [ Lazy.lazy6 viewNavbar theme model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
-        , Lazy.lazy4 viewErd theme model project erd
+        , Lazy.lazy3 viewErd theme model erd
         , Lazy.lazy5 viewCommands theme model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
         ]
 

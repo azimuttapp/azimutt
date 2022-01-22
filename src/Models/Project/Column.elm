@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, decode, encode, merge, withName, withNullable)
+module Models.Project.Column exposing (Column, ColumnLike, decode, encode, merge, withName, withNullable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -24,12 +24,24 @@ type alias Column =
     }
 
 
-withName : Column -> String -> String
+type alias ColumnLike x =
+    { x
+        | index : ColumnIndex
+        , name : ColumnName
+        , kind : ColumnType
+        , nullable : Bool
+        , default : Maybe ColumnValue
+        , comment : Maybe Comment
+        , origins : List Origin
+    }
+
+
+withName : ColumnLike x -> String -> String
 withName column text =
     ColumnName.withName column.name text
 
 
-withNullable : Column -> String -> String
+withNullable : ColumnLike x -> String -> String
 withNullable column text =
     if column.nullable then
         text ++ "?"

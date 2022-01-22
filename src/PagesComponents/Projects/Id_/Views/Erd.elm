@@ -25,10 +25,8 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
-import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..), VirtualRelation)
@@ -59,12 +57,12 @@ type alias Model x =
     }
 
 
-viewErd : Theme -> Model x -> Project -> Erd -> Html Msg
-viewErd theme model project erd =
+viewErd : Theme -> Model x -> Erd -> Html Msg
+viewErd theme model erd =
     let
         canvas : CanvasProps
         canvas =
-            model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> project.layout.canvas |> Drag.moveCanvas d) project.layout.canvas
+            model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
 
         tableProps : Dict TableId ErdTableProps
         tableProps =
@@ -114,7 +112,7 @@ viewErd theme model project erd =
             , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
         , if tableProps |> Dict.isEmpty then
-            viewEmptyState theme project.tables
+            viewEmptyState theme erd.tables
 
           else
             div [] []
@@ -180,10 +178,10 @@ viewSelectionBox area =
         []
 
 
-viewEmptyState : Theme -> Dict TableId Table -> Html Msg
+viewEmptyState : Theme -> Dict TableId ErdTable -> Html Msg
 viewEmptyState theme tables =
     let
-        bestTables : List Table
+        bestTables : List ErdTable
         bestTables =
             tables
                 |> Dict.values

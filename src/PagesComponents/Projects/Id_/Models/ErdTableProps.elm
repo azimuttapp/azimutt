@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, init, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
+module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, init, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -148,10 +148,15 @@ setShownColumns shownColumns props =
             | shownColumns = shownColumns
             , columnProps =
                 shownColumns
-                    |> ErdColumnProps.createAll props.position props.size props.color Set.empty props.selected
+                    |> ErdColumnProps.createAll props.position props.size props.color props.highlightedColumns props.selected
                     -- if the recomputed version is the same as the existing one, keep the older to preserve referential equality
                     |> Dict.map (\c p -> props.columnProps |> Dict.get c |> M.mapOrElse (\prev -> B.cond (p == prev) prev p) p)
         }
+
+
+mapShownColumns : (List ColumnName -> List ColumnName) -> ErdTableProps -> ErdTableProps
+mapShownColumns transform props =
+    setShownColumns (transform props.shownColumns) props
 
 
 setHighlightedColumns : Set ColumnName -> ErdTableProps -> ErdTableProps
