@@ -1,4 +1,4 @@
-module Libs.Dict exposing (count, fromIndexedList, fromListMap, getOrElse, getResult, merge, nonEmpty, notMember)
+module Libs.Dict exposing (alter, count, fromIndexedList, fromListMap, getOrElse, getResult, merge, nonEmpty, notMember)
 
 import Dict exposing (Dict)
 
@@ -60,6 +60,11 @@ count predicate dict =
                     cpt
             )
             0
+
+
+alter : comparable -> (v -> v) -> Dict comparable v -> Dict comparable v
+alter key transform dict =
+    Dict.update key (Maybe.map transform) dict
 
 
 merge : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a

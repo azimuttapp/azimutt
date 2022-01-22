@@ -95,12 +95,12 @@ hideAllTables erd =
 
 showColumn : TableId -> ColumnName -> Erd -> Erd
 showColumn table column erd =
-    erd |> mapTableProps (Dict.update table (Maybe.map (ErdTableProps.mapShownColumns (\columns -> (columns |> List.filter (\c -> c /= column)) ++ [ column ]))))
+    erd |> mapTableProps (Dict.alter table (ErdTableProps.mapShownColumns (\columns -> (columns |> List.filter (\c -> c /= column)) ++ [ column ])))
 
 
 hideColumn : TableId -> ColumnName -> Erd -> Erd
 hideColumn table column erd =
-    erd |> mapTableProps (Dict.update table (Maybe.map (ErdTableProps.mapShownColumns (List.filter (\c -> c /= column)))))
+    erd |> mapTableProps (Dict.alter table (ErdTableProps.mapShownColumns (List.filter (\c -> c /= column))))
 
 
 hoverNextColumn : TableId -> ColumnName -> Model -> Model
@@ -250,4 +250,4 @@ updateColumns : TableId -> (ErdTable -> List ColumnName -> List ColumnName) -> E
 updateColumns id update erd =
     erd.tables
         |> Dict.get id
-        |> Maybe.mapOrElse (\table -> erd |> mapTableProps (Dict.update id (Maybe.map (ErdTableProps.mapShownColumns (update table))))) erd
+        |> Maybe.mapOrElse (\table -> erd |> mapTableProps (Dict.alter id (ErdTableProps.mapShownColumns (update table)))) erd

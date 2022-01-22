@@ -8,7 +8,7 @@ import Models.Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..), toastSuccess)
 import Ports
-import Services.Lenses exposing (mapLayouts, mapNewLayout, mapProjectM, mapProjectMCmd, mapUsedLayout, setLayout, setName, setNewLayout, setUsedLayout)
+import Services.Lenses exposing (mapLayouts, mapNewLayoutM, mapProjectM, mapProjectMCmd, mapUsedLayout, setLayout, setName, setNewLayout, setUsedLayout)
 import Track
 
 
@@ -26,7 +26,7 @@ handleLayout msg model =
             ( model |> setNewLayout (Just { id = Conf.ids.newLayoutDialog, name = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.newLayoutDialog), Ports.track Track.openSaveLayout ] )
 
         LEdit name ->
-            ( model |> mapNewLayout (Maybe.map (setName name)), Cmd.none )
+            ( model |> mapNewLayoutM (setName name), Cmd.none )
 
         LCreate name ->
             model |> setNewLayout Nothing |> mapProjectMCmd (createLayout name)
@@ -52,7 +52,7 @@ createLayout name project =
     -- TODO check that layout name does not already exist
     project
         |> setUsedLayout (Just name)
-        |> mapLayouts (Dict.update name (\_ -> Just project.layout))
+        |> mapLayouts (Dict.insert name project.layout)
         |> (\newSchema -> ( newSchema, Ports.track (Track.createLayout project.layout) ))
 
 
@@ -79,7 +79,7 @@ updateLayout name project =
     -- TODO check that layout name already exist
     project
         |> setUsedLayout (Just name)
-        |> mapLayouts (Dict.update name (\_ -> Just project.layout))
+        |> mapLayouts (Dict.insert name project.layout)
         |> (\newSchema -> ( newSchema, Cmd.batch [ T.send (toastSuccess ("Saved to layout " ++ name)), Ports.track (Track.updateLayout project.layout) ] ))
 
 

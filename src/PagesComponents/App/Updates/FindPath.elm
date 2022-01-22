@@ -18,7 +18,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Model, Msg(..))
 import Ports
-import Services.Lenses exposing (mapFindPath, mapProjectM, mapSettings, setFindPath, setFrom, setResult, setTo)
+import Services.Lenses exposing (mapFindPathM, mapProjectM, mapSettings, setFindPath, setFrom, setResult, setTo)
 import Track
 
 
@@ -42,19 +42,19 @@ handleFindPath msg model =
             ( model |> setFindPath (Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty }), Cmd.batch [ Ports.showModal Conf.ids.findPathDialog, Ports.track Track.openFindPath ] )
 
         FPUpdateFrom from ->
-            ( model |> mapFindPath (Maybe.map (setFrom from)), Cmd.none )
+            ( model |> mapFindPathM (setFrom from), Cmd.none )
 
         FPUpdateTo to ->
-            ( model |> mapFindPath (Maybe.map (setTo to)), Cmd.none )
+            ( model |> mapFindPathM (setTo to), Cmd.none )
 
         FPSearch ->
             model.findPath
                 |> Maybe.andThen (\fp -> Maybe.map3 (\p from to -> ( p, from, to )) model.project fp.from fp.to)
-                |> M.mapOrElse (\( p, from, to ) -> ( model |> mapFindPath (Maybe.map (setResult Searching)), sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
+                |> M.mapOrElse (\( p, from, to ) -> ( model |> mapFindPathM (setResult Searching), sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPath (Maybe.map (setResult (Found result))), Cmd.batch [ Ports.activateTooltipsAndPopovers, Ports.track (Track.findPathResult result) ] ))
+            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPathM (setResult (Found result)), Cmd.batch [ Ports.activateTooltipsAndPopovers, Ports.track (Track.findPathResult result) ] ))
 
         FPSettingsUpdate settings ->
             ( model |> mapProjectM (mapSettings (setFindPath settings)), Cmd.none )

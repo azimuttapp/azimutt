@@ -8,7 +8,7 @@ import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg, VirtualRelation, VirtualRelationMsg(..), toastInfo)
 import Ports
-import Services.Lenses exposing (mapProjectM, mapRelations, mapVirtualRelation, setMouse, setVirtualRelation)
+import Services.Lenses exposing (mapProjectM, mapRelations, mapVirtualRelationM, setMouse, setVirtualRelation)
 
 
 type alias Model x =
@@ -45,7 +45,7 @@ handleVirtualRelation msg model =
                             ( model |> setVirtualRelation Nothing, Ports.getSourceId src ref )
 
         VRMove pos ->
-            ( model |> mapVirtualRelation (Maybe.map (setMouse pos)), Cmd.none )
+            ( model |> mapVirtualRelationM (setMouse pos), Cmd.none )
 
         VRCancel ->
             ( model |> setVirtualRelation Nothing, Cmd.none )
