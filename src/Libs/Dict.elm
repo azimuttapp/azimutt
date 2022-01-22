@@ -1,4 +1,4 @@
-module Libs.Dict exposing (count, fromIndexedList, fromListMap, get, getOrElse, merge)
+module Libs.Dict exposing (count, fromIndexedList, fromListMap, getOrElse, getResult, merge, notMember)
 
 import Dict exposing (Dict)
 
@@ -18,9 +18,19 @@ getOrElse key default dict =
     dict |> Dict.get key |> Maybe.withDefault default
 
 
-get : String -> Dict String a -> Result String a
-get key dict =
+getResult : String -> Dict String a -> Result String a
+getResult key dict =
     dict |> Dict.get key |> Result.fromMaybe ("Missing key '" ++ key ++ "'")
+
+
+notMember : comparable -> Dict comparable v -> Bool
+notMember key dict =
+    case Dict.get key dict of
+        Just _ ->
+            False
+
+        Nothing ->
+            True
 
 
 filterMap : (comparable -> a -> Maybe b) -> Dict comparable a -> Dict comparable b

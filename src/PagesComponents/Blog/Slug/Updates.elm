@@ -37,9 +37,9 @@ parseContent slug content =
                                 , body = (mdStart :: mdRest) |> String.join "---\n" |> String.trim |> extendMarkdown slug
                                 }
                             )
-                            (props |> D.get "title")
-                            (props |> D.get "author" |> Result.andThen (\author -> authors |> Dict.get author |> Result.fromMaybe ("Can't find '" ++ author ++ "' author")))
-                            (props |> D.get "published" |> Result.andThen DateTime.parse)
+                            (props |> D.getResult "title")
+                            (props |> D.getResult "author" |> Result.andThen (\author -> authors |> Dict.get author |> Result.fromMaybe ("Can't find '" ++ author ++ "' author")))
+                            (props |> D.getResult "published" |> Result.andThen DateTime.parse)
                     )
 
         _ :: _ :: _ :: _ ->

@@ -12,7 +12,7 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
-import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Services.Lenses exposing (mapErdM, mapProjectMLayoutTable, mapScreen, mapTableProps, setPosition, setSize)
 
 
@@ -31,7 +31,7 @@ updateSize change model =
             |> (\tableId ->
                     model
                         |> mapProjectMLayoutTable tableId (updateTable (model.project |> M.mapOrElse (.layout >> .canvas >> CanvasProps.viewport model.screen) Area.zero) change)
-                        |> mapErdM (mapTableProps (Dict.update tableId (Maybe.map (ErdTableProps.setSize change.size))))
+                        |> mapErdM (mapTableProps (Dict.update tableId (Maybe.map (updateTable2 (model.erd |> M.mapOrElse (.canvas >> CanvasProps.viewport model.screen) Area.zero) change))))
                )
 
 
@@ -51,3 +51,21 @@ updateTable viewport change props =
 
     else
         { props | size = change.size }
+
+
+updateTable2 : Area -> SizeChange -> ErdTableProps -> ErdTableProps
+updateTable2 viewport change props =
+    if props.size == Size.zero && props.position == Position.zero then
+        let
+            left : Float
+            left =
+                viewport.position.left + change.seeds.left * max 0 (viewport.size.width - change.size.width)
+
+            top : Float
+            top =
+                viewport.position.top + change.seeds.top * max 0 (viewport.size.height - change.size.height)
+        in
+        props |> ErdTableProps.setSize change.size |> ErdTableProps.setPosition (Position left top)
+
+    else
+        props |> ErdTableProps.setSize change.size

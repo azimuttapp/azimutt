@@ -140,7 +140,11 @@ observeTablesSize ids =
 
 observeSizes : List HtmlId -> Cmd msg
 observeSizes ids =
-    messageToJs (ObserveSizes ids)
+    if ids |> List.isEmpty then
+        Cmd.none
+
+    else
+        messageToJs (ObserveSizes ids)
 
 
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg

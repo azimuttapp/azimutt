@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -83,6 +83,11 @@ indexedFilter p xs =
     xs |> List.indexedMap (\i a -> B.cond (p i a) (Just a) Nothing) |> List.filterMap identity
 
 
+notMember : a -> List a -> Bool
+notMember x xs =
+    List.all (\a -> a /= x) xs
+
+
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> M.isJust
@@ -111,11 +116,6 @@ hasNot item xs =
 filterZip : (a -> Maybe b) -> List a -> List ( a, b )
 filterZip f xs =
     List.filterMap (\a -> f a |> Maybe.map (\b -> ( a, b ))) xs
-
-
-filterMap : (a -> Bool) -> (a -> b) -> List a -> List b
-filterMap predicate transform list =
-    list |> List.foldr (\a res -> B.lazyCond (predicate a) (\_ -> transform a :: res) (\_ -> res)) []
 
 
 move : Int -> Int -> List a -> List a

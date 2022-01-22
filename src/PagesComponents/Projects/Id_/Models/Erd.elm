@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, getColumn, getColumnProps, unpack)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, getColumn, getColumnProps, initTable, isShown, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as D
@@ -70,7 +70,7 @@ create project =
     , canvas = project.layout.canvas
     , tables = project.tables |> Dict.map (\id -> ErdTable.create project.tables (relationsByTable |> D.getOrElse id []))
     , relations = project.relations |> List.map (ErdRelation.create project.tables)
-    , tableProps = layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> D.getOrElse p.id []) project.layout.tables p )) |> Dict.fromList
+    , tableProps = layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> D.getOrElse p.id []) (project.layout.tables |> List.map .id) p )) |> Dict.fromList
     , shownTables = project.layout.tables |> List.map .id
     , usedLayout = project.usedLayout
     , layouts = project.layouts
@@ -113,3 +113,13 @@ getColumn table column erd =
 getColumnProps : TableId -> ColumnName -> Erd -> Maybe ErdColumnProps
 getColumnProps table column erd =
     erd.tableProps |> Dict.get table |> Maybe.andThen (\t -> t.columnProps |> Dict.get column)
+
+
+isShown : TableId -> Erd -> Bool
+isShown table erd =
+    erd.shownTables |> List.member table
+
+
+initTable : ErdTable -> Erd -> ErdTableProps
+initTable table erd =
+    ErdTableProps.init erd.settings erd.relations erd.shownTables table

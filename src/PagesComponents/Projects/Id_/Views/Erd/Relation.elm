@@ -40,7 +40,7 @@ viewRelation srcProps refProps relation =
 
         ( Just src, Just ref ) ->
             ( positionLeft src.position src.size ref.position ref.size, ( positionTop src.position src.index, positionTop ref.position ref.index ) )
-                |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables - 1))
+                |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables + min src.index ref.index))
 
 
 viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg msg

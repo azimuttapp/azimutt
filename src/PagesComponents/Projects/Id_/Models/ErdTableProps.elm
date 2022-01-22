@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
+module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, init, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -7,11 +7,15 @@ import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableProps exposing (TableProps)
+import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdRelationProps as ErdRelationProps exposing (ErdRelationProps)
+import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
 import Services.Lenses exposing (setHighlighted)
 import Set exposing (Set)
 
@@ -38,7 +42,7 @@ type alias ErdTableProps =
     }
 
 
-create : List Relation -> List TableProps -> TableProps -> ErdTableProps
+create : List Relation -> List TableId -> TableProps -> ErdTableProps
 create tableRelations shownTables props =
     { id = props.id
     , position = props.position
@@ -82,6 +86,20 @@ unpack props id =
                 , hiddenColumns = prop.showHiddenColumns
                 }
             )
+
+
+init : ProjectSettings -> List ErdRelation -> List TableId -> ErdTable -> ErdTableProps
+init settings erdRelations shownTables erdTable =
+    let
+        relations : List Relation
+        relations =
+            erdRelations |> List.map ErdRelation.unpack
+
+        table : Table
+        table =
+            erdTable |> ErdTable.unpack
+    in
+    TableProps.init settings relations table |> create relations shownTables
 
 
 setPosition : Position -> ErdTableProps -> ErdTableProps

@@ -126,6 +126,7 @@ viewTables model zoom tableProps tables shownTables =
     Keyed.node "div"
         [ class "tw-tables" ]
         (shownTables
+            |> List.reverse
             |> List.indexedMap (\index tableId -> ( index, tableId ))
             |> List.filterMap (\( index, tableId ) -> Maybe.map2 (\table props -> ( index, table, props )) (tables |> Dict.get tableId) (tableProps |> Dict.get tableId))
             |> List.map
