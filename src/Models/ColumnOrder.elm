@@ -4,9 +4,9 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.List as L
 import Libs.Maybe as M
-import Models.Project.Column as Column exposing (Column)
-import Models.Project.Relation as Relation exposing (Relation)
-import Models.Project.Table as Table exposing (Table)
+import Models.Project.Column as Column exposing (ColumnLike)
+import Models.Project.Relation as Relation exposing (RelationLike)
+import Models.Project.Table as Table exposing (TableLike)
 
 
 type ColumnOrder
@@ -37,10 +37,10 @@ show order =
             "By type"
 
 
-sortBy : ColumnOrder -> Table -> List Relation -> List Column -> List Column
+sortBy : ColumnOrder -> TableLike a b -> List (RelationLike c d) -> List (ColumnLike e) -> List (ColumnLike e)
 sortBy order table relations columns =
     let
-        tableRelations : List Relation
+        tableRelations : List (RelationLike c d)
         tableRelations =
             relations |> Relation.withTableSrc table.id
     in

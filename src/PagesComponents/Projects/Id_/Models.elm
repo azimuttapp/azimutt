@@ -34,11 +34,12 @@ import Shared exposing (Confirm, StoredProjects)
 type alias Model =
     { navbar : NavbarModel
     , screen : ScreenProps
-    , projects : StoredProjects
-    , project : Maybe Project
+    , projects : StoredProjects -- TODO remove
+    , project : Maybe Project -- TODO remove
+    , loaded : Bool
     , erd : Maybe Erd
-    , hoverTable : Maybe TableId
-    , hoverColumn : Maybe ColumnRef
+    , hoverTable : Maybe TableId -- TODO remove?
+    , hoverColumn : Maybe ColumnRef -- TODO remove?
     , cursorMode : CursorMode
     , selectionBox : Maybe Area
     , newLayout : Maybe LayoutDialog

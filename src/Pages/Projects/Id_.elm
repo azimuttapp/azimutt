@@ -40,7 +40,6 @@ import Request
 import Services.Lenses exposing (mapCanvas, mapEachProjectMLayoutTables, mapErdM, mapErdMCmd, mapHiddenColumns, mapLayout, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectM, mapProjectMLayout, mapProjectMLayoutTable, mapSearch, mapSelected, mapShowHiddenColumns, mapTableProps, mapTables, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setHiddenTables, setIsOpen, setTables, setText, setToastIdx, setUsedLayout)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
-import Time
 import Track
 import View exposing (View)
 
@@ -73,6 +72,7 @@ init =
       , screen = ScreenProps.zero
       , projects = Loading
       , project = Nothing
+      , loaded = False
       , erd = Nothing
       , hoverTable = Nothing
       , hoverColumn = Nothing
@@ -131,16 +131,16 @@ update req msg model =
             ( model |> mapErdM hideAllTables, Cmd.none )
 
         ShowColumn { table, column } ->
-            ( model |> mapProjectMLayout (showColumn table column), Cmd.none )
+            ( model |> mapErdM (showColumn table column), Cmd.none )
 
         HideColumn { table, column } ->
-            ( model |> mapProjectMLayout (hideColumn table column) |> hoverNextColumn table column, Cmd.none )
+            ( model |> mapErdM (hideColumn table column) |> hoverNextColumn table column, Cmd.none )
 
         ShowColumns id kind ->
-            ( model |> mapProjectM (showColumns id kind), Cmd.none )
+            ( model |> mapErdM (showColumns id kind), Cmd.none )
 
         HideColumns id kind ->
-            ( model |> mapProjectM (hideColumns id kind), Cmd.none )
+            ( model |> mapErdM (hideColumns id kind), Cmd.none )
 
         ToggleHiddenColumns id ->
             ( model |> mapProjectMLayoutTable id (mapHiddenColumns not) |> mapErdM (mapTableProps (Dict.update id (Maybe.map (mapShowHiddenColumns not)))), Cmd.none )
@@ -156,7 +156,7 @@ update req msg model =
             ( model |> mapProjectMLayout (mapTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
 
         SortColumns id kind ->
-            ( model |> mapProjectM (sortColumns id kind), Cmd.none )
+            ( model |> mapErdM (sortColumns id kind), Cmd.none )
 
         ToggleHoverTable table on ->
             ( { model | hoverTable = B.cond on (Just table) Nothing } |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
@@ -260,13 +260,9 @@ handleJsMessage req message model =
             model |> updateSizes sizes
 
         GotProjects ( errors, projects ) ->
-            ( { model
-                | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)))
-                , project = model.project |> M.orElse (projects |> L.find (\p -> p.id == req.params.id))
-                , erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map (Erd.create projects))
-              }
+            ( { model | loaded = True, erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map (Erd.create projects)) }
             , Cmd.batch
-                ((model.project
+                ((model.erd
                     |> M.mapOrElse (\_ -> [])
                         [ Ports.observeSize Conf.ids.erd
                         , Ports.observeTablesSize (projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (.layout >> .tables) [] |> List.map .id)
@@ -342,6 +338,6 @@ targetIdDecoder =
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    { title = model.project |> M.mapOrElse (\p -> p.name ++ " - Azimutt") "Azimutt - Explore your database schema"
+    { title = model.erd |> M.mapOrElse (\e -> e.project.name ++ " - Azimutt") "Azimutt - Explore your database schema"
     , body = model |> viewProject shared |> List.map Styled.toUnstyled
     }

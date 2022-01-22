@@ -9,12 +9,10 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
-import Models.Project exposing (Project)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.Layout exposing (Layout)
 import Models.Project.Relation as Relation
-import Models.Project.Table as Table exposing (Table)
+import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -22,7 +20,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapColumns, mapLayout, mapShownTables, mapTableProps, mapTables, setHoverColumn, setShownTables)
+import Services.Lenses exposing (mapShownTables, mapTableProps, setHoverColumn, setShownTables)
 import Set
 
 
@@ -95,14 +93,14 @@ hideAllTables erd =
     erd |> setShownTables []
 
 
-showColumn : TableId -> ColumnName -> Layout -> Layout
-showColumn table column layout =
-    layout |> mapTables (List.updateBy .id table (mapColumns (\columns -> columns |> List.addAt column (columns |> List.length))))
+showColumn : TableId -> ColumnName -> Erd -> Erd
+showColumn table column erd =
+    erd |> mapTableProps (Dict.update table (Maybe.map (ErdTableProps.mapShownColumns (\columns -> (columns |> List.filter (\c -> c /= column)) ++ [ column ]))))
 
 
-hideColumn : TableId -> ColumnName -> Layout -> Layout
-hideColumn table column layout =
-    layout |> mapTables (List.updateBy .id table (mapColumns (List.filter (\c -> not (c == column)))))
+hideColumn : TableId -> ColumnName -> Erd -> Erd
+hideColumn table column erd =
+    erd |> mapTableProps (Dict.update table (Maybe.map (ErdTableProps.mapShownColumns (List.filter (\c -> c /= column)))))
 
 
 hoverNextColumn : TableId -> ColumnName -> Model -> Model
@@ -110,24 +108,24 @@ hoverNextColumn table column model =
     let
         nextColumn : Maybe ColumnName
         nextColumn =
-            model.project
-                |> Maybe.andThen (\p -> p.layout.tables |> List.findBy .id table)
-                |> Maybe.andThen (\t -> t.columns |> List.dropUntil (\c -> c == column) |> List.drop 1 |> List.head)
+            model.erd
+                |> Maybe.andThen (\e -> e.tableProps |> Dict.get table)
+                |> Maybe.andThen (\p -> p.shownColumns |> List.dropUntil (\c -> c == column) |> List.drop 1 |> List.head)
     in
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
 
 
-showColumns : TableId -> String -> Project -> Project
-showColumns id kind project =
+showColumns : TableId -> String -> Erd -> Erd
+showColumns id kind erd =
     updateColumns id
         (\table columns ->
-            project.relations
+            erd.relations
                 |> Relation.withTableLink id
                 |> (\tableRelations ->
                         columns
                             ++ (table.columns
                                     |> Ned.values
-                                    |> Nel.filter (\c -> not (columns |> List.member c.name))
+                                    |> Nel.filter (\c -> columns |> List.notMember c.name)
                                     |> List.filter
                                         (\column ->
                                             case kind of
@@ -144,14 +142,14 @@ showColumns id kind project =
                                )
                    )
         )
-        project
+        erd
 
 
-hideColumns : TableId -> String -> Project -> Project
-hideColumns id kind project =
+hideColumns : TableId -> String -> Erd -> Erd
+hideColumns id kind erd =
     updateColumns id
         (\table columns ->
-            project.relations
+            erd.relations
                 |> Relation.withTableLink id
                 |> (\tableRelations ->
                         columns
@@ -180,19 +178,19 @@ hideColumns id kind project =
                             |> List.map Tuple.first
                    )
         )
-        project
+        erd
 
 
-sortColumns : TableId -> ColumnOrder -> Project -> Project
-sortColumns id kind project =
+sortColumns : TableId -> ColumnOrder -> Erd -> Erd
+sortColumns id kind erd =
     updateColumns id
         (\table columns ->
             columns
                 |> List.filterMap (\name -> table.columns |> Ned.get name)
-                |> ColumnOrder.sortBy kind table project.relations
+                |> ColumnOrder.sortBy kind table erd.relations
                 |> List.map .name
         )
-        project
+        erd
 
 
 hoverTable : TableId -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
@@ -248,8 +246,8 @@ performShowTable table erd =
         |> mapShownTables (\t -> B.cond (t |> List.member table.id) t (table.id :: t))
 
 
-updateColumns : TableId -> (Table -> List ColumnName -> List ColumnName) -> Project -> Project
-updateColumns id update project =
-    project.tables
+updateColumns : TableId -> (ErdTable -> List ColumnName -> List ColumnName) -> Erd -> Erd
+updateColumns id update erd =
+    erd.tables
         |> Dict.get id
-        |> Maybe.mapOrElse (\table -> project |> mapLayout (mapTables (\tables -> tables |> List.updateBy .id id (mapColumns (update table))))) project
+        |> Maybe.mapOrElse (\table -> erd |> mapTableProps (Dict.update id (Maybe.map (ErdTableProps.mapShownColumns (update table))))) erd
