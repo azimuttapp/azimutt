@@ -17,6 +17,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Task as T
 import Models.Project as Project
+import Models.Project.CanvasProps as CanvasProps
 import Models.Project.Relation as Relation
 import Models.ScreenProps as ScreenProps
 import Page
@@ -37,7 +38,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapEachProjectMLayoutTables, mapErdM, mapErdMCmd, mapHiddenColumns, mapLayout, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectM, mapProjectMLayout, mapProjectMLayoutTable, mapSearch, mapSelected, mapShowHiddenColumns, mapTableProps, mapTables, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setHiddenTables, setIsOpen, setTables, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectM, mapProjectMLayout, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Track
@@ -143,17 +144,13 @@ update req msg model =
             ( model |> mapErdM (hideColumns id kind), Cmd.none )
 
         ToggleHiddenColumns id ->
-            ( model |> mapProjectMLayoutTable id (mapHiddenColumns not) |> mapErdM (mapTableProps (Dict.update id (Maybe.map (mapShowHiddenColumns not)))), Cmd.none )
+            ( model |> mapErdM (mapTableProps (Dict.update id (Maybe.map (ErdTableProps.mapShowHiddenColumns not)))), Cmd.none )
 
         SelectTable tableId ctrl ->
-            ( model
-                |> mapEachProjectMLayoutTables (\p -> p |> mapSelected (\s -> B.cond (p.id == tableId) (not s) (B.cond ctrl s False)))
-                |> mapErdM (mapTableProps (Dict.map (\id p -> p |> ErdTableProps.setSelected (B.cond (id == tableId) (not p.selected) (B.cond ctrl p.selected False)))))
-            , Cmd.none
-            )
+            ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
 
         TableOrder id index ->
-            ( model |> mapProjectMLayout (mapTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
+            ( model |> mapErdM (mapShownTables (\tables -> tables |> L.move id (List.length tables - 1 - index))), Cmd.none )
 
         SortColumns id kind ->
             ( model |> mapErdM (sortColumns id kind), Cmd.none )
@@ -165,7 +162,7 @@ update req msg model =
             ( { model | hoverColumn = B.cond on (Just column) Nothing } |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
         ResetCanvas ->
-            ( model |> mapProjectM (setUsedLayout Nothing >> mapLayout (setTables [] >> setHiddenTables [] >> setCanvas { position = { left = 0, top = 0 }, zoom = 1 })), Cmd.none )
+            ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )
 
         LayoutMsg message ->
             model |> handleLayout message
