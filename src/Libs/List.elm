@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -118,14 +118,19 @@ filterZip f xs =
     List.filterMap (\a -> f a |> Maybe.map (\b -> ( a, b ))) xs
 
 
-move : Int -> Int -> List a -> List a
-move from to list =
+moveIndex : Int -> Int -> List a -> List a
+moveIndex from to list =
     list |> get from |> M.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
+
+
+move : a -> Int -> List a -> List a
+move value position list =
+    list |> findIndex (\a -> a == value) |> M.mapOrElse (\index -> list |> moveIndex index position) list
 
 
 moveBy : (a -> b) -> b -> Int -> List a -> List a
 moveBy matcher value position list =
-    list |> findIndexBy matcher value |> M.mapOrElse (\index -> list |> move index position) list
+    list |> findIndexBy matcher value |> M.mapOrElse (\index -> list |> moveIndex index position) list
 
 
 removeAt : Int -> List a -> List a

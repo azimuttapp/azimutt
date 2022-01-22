@@ -17,7 +17,7 @@ suite =
             , test "bad 2" (\_ -> [ "a", "b" ] |> L.addAt "c" -2 |> Expect.equal [ "c", "a", "b" ])
             ]
         , describe "move"
-            [ test "move an item from a position to an other" (\_ -> [ 1, 2, 3, 4, 5 ] |> L.move 0 2 |> Expect.equal [ 2, 3, 1, 4, 5 ])
+            [ test "move an item from a position to an other" (\_ -> [ 1, 2, 3, 4, 5 ] |> L.moveIndex 0 2 |> Expect.equal [ 2, 3, 1, 4, 5 ])
             ]
         , describe "replaceOrAppend"
             [ test "replace a value" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" } ] |> L.replaceOrAppend .id { id = 2, name = "bb" } |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "bb" } ])

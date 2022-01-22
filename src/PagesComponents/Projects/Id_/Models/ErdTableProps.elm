@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, init, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
+module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, init, mapSelected, mapShowHiddenColumns, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -180,6 +180,11 @@ setSelected selected props =
         { props | selected = selected, columnProps = props.columnProps |> Dict.map (\_ p -> { p | selected = selected }) }
 
 
+mapSelected : (Bool -> Bool) -> ErdTableProps -> ErdTableProps
+mapSelected transform props =
+    setSelected (transform props.selected) props
+
+
 setShowHiddenColumns : Bool -> ErdTableProps -> ErdTableProps
 setShowHiddenColumns showHiddenColumns props =
     if props.showHiddenColumns == showHiddenColumns then
@@ -187,3 +192,8 @@ setShowHiddenColumns showHiddenColumns props =
 
     else
         { props | showHiddenColumns = showHiddenColumns }
+
+
+mapShowHiddenColumns : (Bool -> Bool) -> ErdTableProps -> ErdTableProps
+mapShowHiddenColumns transform props =
+    setShowHiddenColumns (transform props.showHiddenColumns) props
