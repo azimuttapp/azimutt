@@ -3,13 +3,13 @@ module PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Components.Molecules.Tooltip as Tooltip
-import Conf
 import Css
-import Dict
+import Dict exposing (Dict)
 import Gen.Route as Route
 import Html.Styled exposing (Html, br, button, div, small, span, text)
 import Html.Styled.Attributes exposing (css, id, tabindex, type_)
 import Html.Styled.Events exposing (onClick)
+import Html.Styled.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Html.Styled exposing (bText)
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role)
@@ -18,33 +18,27 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Libs.String as S
+import Libs.String as String
 import Libs.Tailwind.Utilities as Tu
 import Libs.Task as T
-import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Tailwind.Utilities as Tw
-import Time
 
 
-viewNavbarTitle : Theme -> HtmlId -> List Project -> Project -> Html Msg
-viewNavbarTitle theme openedDropdown storedProjects project =
+viewNavbarTitle : Theme -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarTitle theme otherProjects project usedLayout layouts htmlId openedDropdown =
     div [ css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.text_white ] ]
-        ([ viewProjectsDropdown theme openedDropdown storedProjects project ]
-            ++ viewLayouts theme openedDropdown project
+        ([ Lazy.lazy5 viewProjectsDropdown theme otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects")) ]
+            ++ viewLayoutsMaybe theme usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
 
 
-viewProjectsDropdown : Theme -> HtmlId -> List Project -> Project -> Html Msg
-viewProjectsDropdown theme openedDropdown storedProjects project =
-    let
-        projects : List Project
-        projects =
-            storedProjects |> List.filter (\p -> p.id /= project.id) |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
-    in
-    Dropdown.dropdown { id = Conf.ids.navProjectDropdown, direction = BottomRight, isOpen = openedDropdown == Conf.ids.navProjectDropdown }
+viewProjectsDropdown : Theme -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown theme otherProjects project htmlId openedDropdown =
+    Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
                 [ span [] [ text project.name ]
@@ -54,7 +48,7 @@ viewProjectsDropdown theme openedDropdown storedProjects project =
         (\_ ->
             div [ css [ Tw.divide_y, Tw.divide_gray_100 ] ]
                 (([ [ Dropdown.btn [] SaveProject [ text "Save project" ] ] ]
-                    ++ B.cond (List.isEmpty projects) [] [ projects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
+                    ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
                     ++ [ [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )
                     |> L.filterNot List.isEmpty
@@ -63,37 +57,42 @@ viewProjectsDropdown theme openedDropdown storedProjects project =
         )
 
 
-viewLayouts : Theme -> HtmlId -> Project -> List (Html Msg)
-viewLayouts theme openedDropdown project =
-    if project.layouts |> Dict.isEmpty then
+viewLayoutsMaybe : Theme -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
+viewLayoutsMaybe theme usedLayout layouts htmlId openedDropdown =
+    if layouts |> Dict.isEmpty then
         []
 
     else
         [ Icon.slash [ Color.text theme.color 300 ]
-        , Dropdown.dropdown { id = Conf.ids.navLayoutDropdown, direction = BottomLeft, isOpen = openedDropdown == Conf.ids.navLayoutDropdown }
-            (\m ->
-                button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
-                    [ span [] [ text (project.usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
-                    , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
-                    ]
-            )
-            (\_ ->
-                div [ css [ Tw.min_w_max, Tw.divide_y, Tw.divide_gray_100 ] ]
-                    (L.prependOn project.usedLayout
-                        (\l ->
-                            div [ role "none", css [ Tw.py_1 ] ]
-                                [ Dropdown.btn [] (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
-                                , Dropdown.btn [] (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
-                                ]
-                        )
-                        [ div [ role "none", css [ Tw.py_1 ] ]
-                            [ Dropdown.btn [] (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
-                        , div [ role "none", css [ Tw.py_1 ] ]
-                            (project.layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
-                        ]
-                    )
-            )
+        , Lazy.lazy5 viewLayouts theme usedLayout layouts htmlId openedDropdown
         ]
+
+
+viewLayouts : Theme -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
+viewLayouts theme usedLayout layouts htmlId openedDropdown =
+    Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
+        (\m ->
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
+                [ span [] [ text (usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
+                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
+                ]
+        )
+        (\_ ->
+            div [ css [ Tw.min_w_max, Tw.divide_y, Tw.divide_gray_100 ] ]
+                (L.prependOn usedLayout
+                    (\l ->
+                        div [ role "none", css [ Tw.py_1 ] ]
+                            [ Dropdown.btn [] (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
+                            , Dropdown.btn [] (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
+                            ]
+                    )
+                    [ div [ role "none", css [ Tw.py_1 ] ]
+                        [ Dropdown.btn [] (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
+                    , div [ role "none", css [ Tw.py_1 ] ]
+                        (layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
+                    ]
+                )
+        )
 
 
 viewLayoutItem : LayoutName -> Layout -> Html Msg
@@ -104,7 +103,7 @@ viewLayoutItem name layout =
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ Tw.flex_grow, Tw.text_left, Css.focus [ Tw.outline_none ] ] ]
             [ text name
             , text " "
-            , small [] [ text ("(" ++ (layout.tables |> S.pluralizeL "table") ++ ")") ]
+            , small [] [ text ("(" ++ (layout.tables |> String.pluralizeL "table") ++ ")") ]
             ]
         ]
 
@@ -121,7 +120,7 @@ confirmDeleteLayout layout name =
                 , bText name
                 , text " layout?"
                 , br [] []
-                , text ("It contains " ++ (layout.tables |> S.pluralizeL "table") ++ ".")
+                , text ("It contains " ++ (layout.tables |> String.pluralizeL "table") ++ ".")
                 ]
         , confirm = "Delete " ++ name ++ " layout"
         , cancel = "Cancel"

@@ -11,14 +11,15 @@ import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup)
 import Libs.Models.Color as Color
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 import Tailwind.Utilities as Tw
 
 
-viewCommands : Theme -> String -> CursorMode -> CanvasProps -> Html Msg
-viewCommands theme openedDropdown cursorMode canvas =
+viewCommands : Theme -> CursorMode -> ZoomLevel -> HtmlId -> HtmlId -> Html Msg
+viewCommands theme cursorMode canvasZoom htmlId openedDropdown =
     let
         buttonStyles : Css.Style
         buttonStyles =
@@ -41,23 +42,23 @@ viewCommands theme openedDropdown cursorMode canvas =
             , button [ type_ "button", onClick (CursorMode CursorDrag), css [ Tw.neg_ml_px, Tw.rounded_r_md, buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand [] ] |> Tooltip.t "Drag tool"
             ]
         , span [ css [ Tw.relative, Tw.z_0, Tw.inline_flex, Tw.shadow_sm, Tw.rounded_md, Tw.ml_2 ] ]
-            [ button [ type_ "button", onClick (Zoom (-canvas.zoom / 10)), css [ Tw.rounded_l_md, buttonStyles, classic ] ] [ Icon.solid Minus [] ]
-            , Dropdown.dropdown { id = "choose-zoom", direction = TopLeft, isOpen = openedDropdown == "choose-zoom" }
+            [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ Tw.rounded_l_md, buttonStyles, classic ] ] [ Icon.solid Minus [] ]
+            , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
                 (\m ->
                     button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.neg_ml_px, buttonStyles, classic ] ]
-                        [ text (String.fromInt (round (canvas.zoom * 100)) ++ " %") ]
+                        [ text (String.fromInt (round (canvasZoom * 100)) ++ " %") ]
                 )
                 (\_ ->
                     div []
-                        [ Dropdown.btn [] (Zoom (Conf.canvas.zoom.min - canvas.zoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
-                        , Dropdown.btn [] (Zoom (0.25 - canvas.zoom)) [ text "25%" ]
-                        , Dropdown.btn [] (Zoom (0.5 - canvas.zoom)) [ text "50%" ]
-                        , Dropdown.btn [] (Zoom (1 - canvas.zoom)) [ text "100%" ]
-                        , Dropdown.btn [] (Zoom (1.5 - canvas.zoom)) [ text "150%" ]
-                        , Dropdown.btn [] (Zoom (2 - canvas.zoom)) [ text "200%" ]
-                        , Dropdown.btn [] (Zoom (Conf.canvas.zoom.max - canvas.zoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
+                        [ Dropdown.btn [] (Zoom (Conf.canvas.zoom.min - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
+                        , Dropdown.btn [] (Zoom (0.25 - canvasZoom)) [ text "25%" ]
+                        , Dropdown.btn [] (Zoom (0.5 - canvasZoom)) [ text "50%" ]
+                        , Dropdown.btn [] (Zoom (1 - canvasZoom)) [ text "100%" ]
+                        , Dropdown.btn [] (Zoom (1.5 - canvasZoom)) [ text "150%" ]
+                        , Dropdown.btn [] (Zoom (2 - canvasZoom)) [ text "200%" ]
+                        , Dropdown.btn [] (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
                         ]
                 )
-            , button [ type_ "button", onClick (Zoom (canvas.zoom / 10)), css [ Tw.neg_ml_px, Tw.rounded_r_md, buttonStyles, classic ] ] [ Icon.solid Plus [] ]
+            , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ Tw.neg_ml_px, Tw.rounded_r_md, buttonStyles, classic ] ] [ Icon.solid Plus [] ]
             ]
         ]

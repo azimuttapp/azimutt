@@ -1,6 +1,11 @@
-module Libs.Dict exposing (count, fromIndexedList, fromListMap, getOrElse, getResult, merge, notMember)
+module Libs.Dict exposing (count, fromIndexedList, fromListMap, getOrElse, getResult, merge, nonEmpty, notMember)
 
 import Dict exposing (Dict)
+
+
+nonEmpty : Dict k a -> Bool
+nonEmpty dict =
+    not (Dict.isEmpty dict)
 
 
 fromIndexedList : List a -> Dict Int a
