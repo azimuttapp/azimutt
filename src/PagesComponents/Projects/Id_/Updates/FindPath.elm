@@ -19,7 +19,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import Ports
-import Services.Lenses exposing (mapFindPath, mapOpened, mapProjectM, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
+import Services.Lenses exposing (mapFindPathM, mapOpened, mapProjectM, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
 import Track
 
 
@@ -37,25 +37,25 @@ handleFindPath msg model =
             ( model |> setFindPath (Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ] )
 
         FPToggleSettings ->
-            ( model |> mapFindPath (Maybe.map (mapShowSettings not)), Cmd.none )
+            ( model |> mapFindPathM (mapShowSettings not), Cmd.none )
 
         FPUpdateFrom from ->
-            ( model |> mapFindPath (Maybe.map (setFrom from)), Cmd.none )
+            ( model |> mapFindPathM (setFrom from), Cmd.none )
 
         FPUpdateTo to ->
-            ( model |> mapFindPath (Maybe.map (setTo to)), Cmd.none )
+            ( model |> mapFindPathM (setTo to), Cmd.none )
 
         FPSearch ->
             model.findPath
                 |> Maybe.andThen (\fp -> M.zip3 model.project fp.from fp.to)
-                |> M.mapOrElse (\( p, from, to ) -> ( model |> mapFindPath (Maybe.map (setResult Searching)), T.sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
+                |> M.mapOrElse (\( p, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
-            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPath (Maybe.map (setResult (Found result))), Cmd.batch [ Ports.track (Track.findPathResult result) ] ))
+            computeFindPath tables relations from to settings |> (\result -> ( model |> mapFindPathM (setResult (Found result)), Cmd.batch [ Ports.track (Track.findPathResult result) ] ))
 
         FPToggleResult index ->
-            ( model |> mapFindPath (Maybe.map (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index)))))), Cmd.none )
+            ( model |> mapFindPathM (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index))))), Cmd.none )
 
         FPSettingsUpdate settings ->
             ( model |> mapProjectM (mapSettings (setFindPath settings)), Cmd.none )

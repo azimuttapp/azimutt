@@ -1,4 +1,4 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPath, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayout, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsing, mapParsingCmd, mapPosition, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelation, setActive, setCanvas, setColumn, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIsOpen, setLast, setLayout, setLayouts, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setParsing, setPosition, setProject, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSettings, setShowSettings, setShownColumns, setShownTables, setSize, setSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
+module Services.Lenses exposing (mapActive, mapCanvas, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsing, mapParsingCmd, mapPosition, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIsOpen, setLast, setLayout, setLayouts, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setParsing, setPosition, setProject, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSettings, setShowSettings, setShownColumns, setShownTables, setSize, setSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -105,9 +105,9 @@ setFindPath =
     set .findPath (\value item -> { item | findPath = value })
 
 
-mapFindPath : (v -> v) -> { item | findPath : v } -> { item | findPath : v }
-mapFindPath =
-    map .findPath setFindPath
+mapFindPathM : (v -> v) -> { item | findPath : Maybe v } -> { item | findPath : Maybe v }
+mapFindPathM =
+    mapM .findPath setFindPath
 
 
 setFrom : v -> { item | from : v } -> { item | from : v }
@@ -225,9 +225,9 @@ setNewLayout =
     set .newLayout (\value item -> { item | newLayout = value })
 
 
-mapNewLayout : (v -> v) -> { item | newLayout : v } -> { item | newLayout : v }
-mapNewLayout =
-    map .newLayout setNewLayout
+mapNewLayoutM : (v -> v) -> { item | newLayout : Maybe v } -> { item | newLayout : Maybe v }
+mapNewLayoutM =
+    mapM .newLayout setNewLayout
 
 
 setNow : v -> { item | now : v } -> { item | now : v }
@@ -540,9 +540,9 @@ setVirtualRelation =
     set .virtualRelation (\value item -> { item | virtualRelation = value })
 
 
-mapVirtualRelation : (v -> v) -> { item | virtualRelation : v } -> { item | virtualRelation : v }
-mapVirtualRelation =
-    map .virtualRelation setVirtualRelation
+mapVirtualRelationM : (v -> v) -> { item | virtualRelation : Maybe v } -> { item | virtualRelation : Maybe v }
+mapVirtualRelationM =
+    mapM .virtualRelation setVirtualRelation
 
 
 setZoom : v -> { item | zoom : v } -> { item | zoom : v }

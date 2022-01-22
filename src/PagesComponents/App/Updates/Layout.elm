@@ -45,7 +45,7 @@ createLayout name project =
     -- TODO check that layout name does not already exist
     project
         |> setUsedLayout (Just name)
-        |> mapLayouts (Dict.update name (\_ -> Just project.layout))
+        |> mapLayouts (Dict.insert name project.layout)
         |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.createLayout project.layout) ] ))
 
 
@@ -72,7 +72,7 @@ updateLayout name project =
     -- TODO check that layout name already exist
     project
         |> setUsedLayout (Just name)
-        |> mapLayouts (Dict.update name (\_ -> Just project.layout))
+        |> mapLayouts (Dict.insert name project.layout)
         |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.updateLayout project.layout) ] ))
 
 

@@ -194,7 +194,7 @@ updateTable : SqlStatement -> SqlTableId -> (SqlTable -> Result (List SchemaErro
 updateTable statement id transform tables =
     tables
         |> Dict.get id
-        |> M.mapOrElse (\table -> transform table |> Result.map (\newTable -> tables |> Dict.update id (Maybe.map (\_ -> newTable))))
+        |> M.mapOrElse (transform >> Result.map (\newTable -> tables |> Dict.insert id newTable))
             (Err [ "Table " ++ id ++ " does not exist (in '" ++ buildRawSql statement ++ "')" ])
 
 

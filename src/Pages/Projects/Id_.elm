@@ -10,6 +10,7 @@ import Html.Events.Extra.Mouse as Mouse
 import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
+import Libs.Dict as Dict
 import Libs.Json.Decode as D
 import Libs.List as L
 import Libs.Maybe as M
@@ -144,7 +145,7 @@ update req msg model =
             ( model |> mapErdM (hideColumns id kind), Cmd.none )
 
         ToggleHiddenColumns id ->
-            ( model |> mapErdM (mapTableProps (Dict.update id (Maybe.map (ErdTableProps.mapShowHiddenColumns not)))), Cmd.none )
+            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapShowHiddenColumns not))), Cmd.none )
 
         SelectTable tableId ctrl ->
             ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
