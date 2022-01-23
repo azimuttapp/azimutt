@@ -10,7 +10,7 @@ import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.Column exposing (Column)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table exposing (TableLike)
 
 
 type alias ProjectSettings =
@@ -34,7 +34,7 @@ init =
     }
 
 
-isTableRemoved : String -> (Table -> Bool)
+isTableRemoved : String -> (TableLike x y -> Bool)
 isTableRemoved removedTables =
     let
         values : List String
@@ -56,7 +56,7 @@ isColumnHidden hiddenColumns =
 
 encode : ProjectSettings -> ProjectSettings -> Value
 encode default value =
-    E.object
+    E.notNullObject
         [ ( "findPath", value.findPath |> E.withDefaultDeep FindPathSettings.encode default.findPath )
         , ( "removedSchemas", value.removedSchemas |> E.withDefault (Encode.list SchemaName.encode) default.removedSchemas )
         , ( "removeViews", value.removeViews |> E.withDefault Encode.bool default.removeViews )

@@ -49,7 +49,7 @@ encode : SourceKind -> Value
 encode value =
     case value of
         LocalFile name size modified ->
-            E.object
+            E.notNullObject
                 [ ( "kind", "LocalFile" |> Encode.string )
                 , ( "name", name |> FileName.encode )
                 , ( "size", size |> FileSize.encode )
@@ -57,14 +57,14 @@ encode value =
                 ]
 
         RemoteFile name size ->
-            E.object
+            E.notNullObject
                 [ ( "kind", "RemoteFile" |> Encode.string )
                 , ( "url", name |> FileUrl.encode )
                 , ( "size", size |> FileSize.encode )
                 ]
 
         UserDefined ->
-            E.object [ ( "kind", "UserDefined" |> Encode.string ) ]
+            E.notNullObject [ ( "kind", "UserDefined" |> Encode.string ) ]
 
 
 decode : Decode.Decoder SourceKind

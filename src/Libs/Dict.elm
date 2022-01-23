@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, count, fromIndexedList, fromListMap, getOrElse, getResult, merge, nonEmpty, notMember)
+module Libs.Dict exposing (alter, count, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember)
 
 import Dict exposing (Dict)
 
@@ -67,6 +67,6 @@ alter key transform dict =
     Dict.update key (Maybe.map transform) dict
 
 
-merge : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a
-merge mergeValue d1 d2 =
+fuse : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a
+fuse mergeValue d1 d2 =
     Dict.merge Dict.insert (\k a1 a2 acc -> Dict.insert k (mergeValue a1 a2) acc) Dict.insert d1 d2 Dict.empty

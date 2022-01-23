@@ -30,7 +30,7 @@ viewport screen canvas =
 
 encode : CanvasProps -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "position", value.position |> Position.encode )
         , ( "zoom", value.zoom |> ZoomLevel.encode )
         ]

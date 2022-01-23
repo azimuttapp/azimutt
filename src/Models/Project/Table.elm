@@ -79,20 +79,23 @@ hasColumn column columns =
 
 merge : Table -> Table -> Table
 merge t1 t2 =
-    { t1
-        | columns = Ned.merge Column.merge t1.columns t2.columns
-        , primaryKey = M.merge PrimaryKey.merge t1.primaryKey t2.primaryKey
-        , uniques = L.merge .name Unique.merge t1.uniques t2.uniques
-        , indexes = L.merge .name Index.merge t1.indexes t2.indexes
-        , checks = L.merge .name Check.merge t1.checks t2.checks
-        , comment = M.merge Comment.merge t1.comment t2.comment
-        , origins = t1.origins ++ t2.origins
+    { id = t1.id
+    , schema = t1.schema
+    , name = t1.name
+    , view = t1.view
+    , columns = Ned.merge Column.merge t1.columns t2.columns
+    , primaryKey = M.merge PrimaryKey.merge t1.primaryKey t2.primaryKey
+    , uniques = L.merge .name Unique.merge t1.uniques t2.uniques
+    , indexes = L.merge .name Index.merge t1.indexes t2.indexes
+    , checks = L.merge .name Check.merge t1.checks t2.checks
+    , comment = M.merge Comment.merge t1.comment t2.comment
+    , origins = t1.origins ++ t2.origins
     }
 
 
 encode : Table -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "schema", value.schema |> SchemaName.encode )
         , ( "table", value.name |> TableName.encode )
         , ( "view", value.view |> E.withDefault Encode.bool False )

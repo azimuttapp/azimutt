@@ -61,7 +61,7 @@ distance to from =
 
 encode : Position -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "left", value.left |> Encode.float )
         , ( "top", value.top |> Encode.float )
         ]

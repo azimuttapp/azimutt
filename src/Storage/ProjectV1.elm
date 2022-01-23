@@ -409,7 +409,7 @@ decodeProject =
         (Decode.field "name" Decode.string)
         (Decode.field "sources" (D.nel decodeProjectSource))
         (Decode.field "schema" decodeSchema)
-        (D.defaultField "layouts" (D.dict stringAsLayoutName decodeLayout) Dict.empty)
+        (D.defaultField "layouts" (D.customDict stringAsLayoutName decodeLayout) Dict.empty)
         (D.maybeField "currentLayout" Decode.string)
         (D.defaultFieldDeep "settings" decodeProjectSettings defaultProjectSettings)
         (D.defaultField "createdAt" Time.decode defaultTime)

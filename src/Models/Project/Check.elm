@@ -11,20 +11,25 @@ import Models.Project.Origin as Origin exposing (Origin)
 
 
 type alias Check =
-    { name : CheckName, columns : List ColumnName, predicate : String, origins : List Origin }
+    { name : CheckName
+    , columns : List ColumnName
+    , predicate : String
+    , origins : List Origin
+    }
 
 
 merge : Check -> Check -> Check
 merge c1 c2 =
-    { c1
-        | columns = L.merge identity ColumnName.merge c1.columns c2.columns
-        , origins = c1.origins ++ c2.origins
+    { name = c1.name
+    , columns = L.merge identity ColumnName.merge c1.columns c2.columns
+    , predicate = c1.predicate
+    , origins = c1.origins ++ c2.origins
     }
 
 
 encode : Check -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "name", value.name |> CheckName.encode )
         , ( "columns", value.columns |> E.withDefault (Encode.list ColumnName.encode) [] )
         , ( "predicate", value.predicate |> Encode.string )

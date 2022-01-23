@@ -1,10 +1,11 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, initTable, isShown, unpack, unpackLayout)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, initTable, isShown, mapSource, mapSources, setSources, unpack, unpackLayout)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Ned as Ned
-import Models.Project exposing (Project)
+import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Layout exposing (Layout)
@@ -12,6 +13,8 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -44,18 +47,7 @@ create allProjects project =
     let
         relationsByTable : Dict TableId (List Relation)
         relationsByTable =
-            project.relations
-                |> List.foldr
-                    (\rel dict ->
-                        if rel.src.table == rel.ref.table then
-                            dict |> Dict.update rel.src.table (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
-
-                        else
-                            dict
-                                |> Dict.update rel.src.table (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
-                                |> Dict.update rel.ref.table (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
-                    )
-                    Dict.empty
+            buildRelationsByTable project.relations
 
         ( canvas, tableProps, shownTables ) =
             createLayout relationsByTable project.layout
@@ -73,6 +65,7 @@ create allProjects project =
     , settings = project.settings
     , otherProjects = allProjects |> List.filter (\p -> p.id /= project.id) |> List.map ProjectInfo.create |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
     }
+        |> computeSchema
 
 
 unpack : Erd -> Project
@@ -140,3 +133,65 @@ isShown table erd =
 initTable : ErdTable -> Erd -> ErdTableProps
 initTable table erd =
     ErdTableProps.init erd.settings erd.relations erd.shownTables table
+
+
+computeSchema : Erd -> Erd
+computeSchema erd =
+    let
+        tables : Dict TableId Table
+        tables =
+            erd.sources |> Project.computeTables erd.settings
+
+        relations : List Relation
+        relations =
+            erd.sources |> Project.computeRelations
+
+        relationsByTable : Dict TableId (List Relation)
+        relationsByTable =
+            buildRelationsByTable relations
+
+        tableProps : Dict TableId ErdTableProps
+        tableProps =
+            erd.tableProps |> Dict.map (\_ p -> { p | relatedTables = ErdTableProps.buildRelatedTables (relationsByTable |> Dict.getOrElse p.id []) erd.shownTables p.id })
+    in
+    { erd
+        | tables = tables |> Dict.map (\id -> ErdTable.create tables (relationsByTable |> Dict.getOrElse id []))
+        , relations = relations |> List.map (ErdRelation.create tables)
+        , relationsByTable = relationsByTable
+        , tableProps = tableProps
+    }
+
+
+buildRelationsByTable : List Relation -> Dict TableId (List Relation)
+buildRelationsByTable relations =
+    relations
+        |> List.foldr
+            (\rel dict ->
+                if rel.src.table == rel.ref.table then
+                    dict |> Dict.update rel.src.table (Maybe.mapOrElse (\rels -> rel :: rels) [ rel ] >> Just)
+
+                else
+                    dict
+                        |> Dict.update rel.src.table (Maybe.mapOrElse (\rels -> rel :: rels) [ rel ] >> Just)
+                        |> Dict.update rel.ref.table (Maybe.mapOrElse (\rels -> rel :: rels) [ rel ] >> Just)
+            )
+            Dict.empty
+
+
+setSources : List Source -> Erd -> Erd
+setSources sources erd =
+    if erd.sources == sources then
+        erd
+
+    else
+        { erd | sources = sources } |> computeSchema
+
+
+mapSources : (List Source -> List Source) -> Erd -> Erd
+mapSources transform erd =
+    setSources (transform erd.sources) erd
+
+
+mapSource : SourceId -> (Source -> Source) -> Erd -> Erd
+mapSource id transform erd =
+    setSources (List.updateBy .id id transform erd.sources) erd

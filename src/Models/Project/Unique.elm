@@ -11,20 +11,25 @@ import Models.Project.UniqueName as UniqueName exposing (UniqueName)
 
 
 type alias Unique =
-    { name : UniqueName, columns : Nel ColumnName, definition : String, origins : List Origin }
+    { name : UniqueName
+    , columns : Nel ColumnName
+    , definition : String
+    , origins : List Origin
+    }
 
 
 merge : Unique -> Unique -> Unique
 merge u1 u2 =
-    { u1
-        | columns = Nel.merge identity ColumnName.merge u1.columns u2.columns
-        , origins = u1.origins ++ u2.origins
+    { name = u1.name
+    , columns = Nel.merge identity ColumnName.merge u1.columns u2.columns
+    , definition = u1.definition
+    , origins = u1.origins ++ u2.origins
     }
 
 
 encode : Unique -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "name", value.name |> UniqueName.encode )
         , ( "columns", value.columns |> E.nel ColumnName.encode )
         , ( "definition", value.definition |> Encode.string )

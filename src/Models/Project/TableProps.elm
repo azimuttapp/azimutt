@@ -79,7 +79,7 @@ area props =
 
 encode : TableProps -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "id", value.id |> TableId.encode )
         , ( "position", value.position |> Position.encode )
 

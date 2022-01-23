@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, init, mapSelected, mapShowHiddenColumns, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
+module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, buildRelatedTables, create, init, mapSelected, mapShowHiddenColumns, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -54,21 +54,25 @@ create tableRelations shownTables props =
     , columnProps = props.columns |> ErdColumnProps.createAll props.position props.size props.color Set.empty props.selected
     , selected = props.selected
     , showHiddenColumns = props.hiddenColumns
-    , relatedTables =
-        tableRelations
-            |> List.filterMap
-                (\r ->
-                    if r.src.table == props.id then
-                        Just ( r.ref.table, ErdRelationProps.create shownTables r.ref.table )
-
-                    else if r.ref.table == props.id then
-                        Just ( r.src.table, ErdRelationProps.create shownTables r.src.table )
-
-                    else
-                        Nothing
-                )
-            |> Dict.fromList
+    , relatedTables = buildRelatedTables tableRelations shownTables props.id
     }
+
+
+buildRelatedTables : List Relation -> List TableId -> TableId -> Dict TableId ErdRelationProps
+buildRelatedTables tableRelations shownTables table =
+    tableRelations
+        |> List.filterMap
+            (\r ->
+                if r.src.table == table then
+                    Just ( r.ref.table, ErdRelationProps.create shownTables r.ref.table )
+
+                else if r.ref.table == table then
+                    Just ( r.src.table, ErdRelationProps.create shownTables r.src.table )
+
+                else
+                    Nothing
+            )
+        |> Dict.fromList
 
 
 unpack : Dict TableId ErdTableProps -> TableId -> Maybe TableProps

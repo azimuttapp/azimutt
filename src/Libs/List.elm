@@ -100,7 +100,15 @@ indexOf item xs =
 
 updateBy : (a -> b) -> b -> (a -> a) -> List a -> List a
 updateBy matcher value transform list =
-    list |> List.map (\a -> B.cond (matcher a == value) (transform a) a)
+    list
+        |> List.map
+            (\a ->
+                if matcher a == value then
+                    transform a
+
+                else
+                    a
+            )
 
 
 has : a -> List a -> Bool

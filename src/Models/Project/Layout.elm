@@ -26,7 +26,7 @@ init now =
 
 encode : Layout -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "canvas", value.canvas |> CanvasProps.encode )
         , ( "tables", value.tables |> Encode.list TableProps.encode )
         , ( "hiddenTables", value.hiddenTables |> E.withDefault (Encode.list TableProps.encode) [] )

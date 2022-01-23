@@ -1,19 +1,19 @@
 module PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (Model, handleVirtualRelation)
 
-import Libs.List as L
+import Libs.List as List
 import Libs.Models.Position as Position
 import Libs.Task as T
-import Models.Project as Project exposing (Project)
 import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg, VirtualRelation, VirtualRelationMsg(..), toastInfo)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
-import Services.Lenses exposing (mapProjectM, mapRelations, mapVirtualRelationM, setMouse, setVirtualRelation)
+import Services.Lenses exposing (mapErdM, mapRelations, mapVirtualRelationM, setMouse, setVirtualRelation)
 
 
 type alias Model x =
     { x
-        | project : Maybe Project
+        | erd : Maybe Erd
         , virtualRelation : Maybe VirtualRelation
     }
 
@@ -33,11 +33,11 @@ handleVirtualRelation msg model =
                     ( model |> setVirtualRelation (Just { src = Just ref, mouse = pos }), Cmd.none )
 
                 Just (Just src) ->
-                    case model.project |> Maybe.andThen (\p -> p.sources |> L.find (\s -> s.kind == UserDefined)) of
+                    case model.erd |> Maybe.andThen (\p -> p.sources |> List.find (\s -> s.kind == UserDefined)) of
                         Just source ->
                             ( model
                                 |> setVirtualRelation Nothing
-                                |> mapProjectM (Project.updateSource source.id (mapRelations (\relations -> relations ++ [ Relation.virtual src ref source.id ])))
+                                |> mapErdM (Erd.mapSource source.id (mapRelations (\relations -> relations ++ [ Relation.virtual src ref source.id ])))
                             , T.send (toastInfo ("Relation added to " ++ source.name ++ " source."))
                             )
 

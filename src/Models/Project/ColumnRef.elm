@@ -41,7 +41,7 @@ fromString id =
 
 encode : ColumnRef -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "table", value.table |> TableId.encode )
         , ( "column", value.column |> ColumnName.encode )
         ]
