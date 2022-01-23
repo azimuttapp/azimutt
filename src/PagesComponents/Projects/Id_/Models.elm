@@ -18,14 +18,14 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
 import Shared exposing (Confirm, StoredProjects)
@@ -170,7 +170,7 @@ type FindPathMsg
     | FPUpdateFrom (Maybe TableId)
     | FPUpdateTo (Maybe TableId)
     | FPSearch
-    | FPCompute (Dict TableId Table) (List Relation) TableId TableId FindPathSettings
+    | FPCompute (Dict TableId ErdTable) (List ErdRelation) TableId TableId FindPathSettings
     | FPToggleResult Int
     | FPSettingsUpdate FindPathSettings
     | FPClose

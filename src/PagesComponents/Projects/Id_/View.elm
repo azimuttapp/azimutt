@@ -88,8 +88,8 @@ viewModal theme zone now model =
         [ class "tw-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> L.has m.id) m ))
          , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout theme (model.openedDialogs |> L.has m.id) m ))
-         , model.findPath |> Maybe.map2 (\p m -> ( m.id, viewFindPath theme (model.openedDialogs |> L.has m.id) p m )) model.project
-         , model.settings |> Maybe.map2 (\p m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> L.has m.id) p m )) model.project
+         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath theme (model.openedDialogs |> L.has m.id) e.tables e.settings.findPath m )) model.erd
+         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> L.has m.id) e m )) model.erd
          , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload theme zone now (model.openedDialogs |> L.has m.id) m ))
          , model.help |> Maybe.map (\m -> ( m.id, viewHelp theme (model.openedDialogs |> L.has m.id) m ))
          ]
