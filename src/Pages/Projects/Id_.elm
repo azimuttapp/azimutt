@@ -42,6 +42,7 @@ import Request
 import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectM, mapProjectMLayout, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
+import Time
 import Track
 import View exposing (View)
 
@@ -50,7 +51,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = update req
+        , update = update req shared.now
         , view = view shared
         , subscriptions = subscriptions
         }
@@ -105,8 +106,8 @@ init =
 -- UPDATE
 
 
-update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
-update req msg model =
+update : Request.With Params -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update req now msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -166,7 +167,7 @@ update req msg model =
             ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )
 
         LayoutMsg message ->
-            model |> handleLayout message
+            model |> handleLayout now message
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message

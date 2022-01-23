@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, openAppCta, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSettings, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, notFoundLayout, openAppCta, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSettings, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
@@ -11,6 +11,7 @@ import Libs.Result as R
 import Models.Project exposing (Project)
 import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.Layout exposing (Layout)
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Source exposing (Source)
 
 
@@ -111,6 +112,11 @@ updateLayout =
 deleteLayout : Layout -> TrackEvent
 deleteLayout =
     layoutEvent "delete"
+
+
+notFoundLayout : LayoutName -> TrackEvent
+notFoundLayout _ =
+    { name = "not-found-layout", details = [], enabled = True }
 
 
 externalLink : String -> TrackEvent
