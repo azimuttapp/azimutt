@@ -19,7 +19,7 @@ init =
 
 encode : FindPathSettings -> FindPathSettings -> Value
 encode default value =
-    E.object
+    E.notNullObject
         [ ( "maxPathLength", value.maxPathLength |> E.withDefault Encode.int default.maxPathLength )
         , ( "ignoredTables", value.ignoredTables |> E.withDefault (Encode.list TableId.encode) default.ignoredTables )
         , ( "ignoredColumns", value.ignoredColumns |> E.withDefault (Encode.list ColumnName.encode) default.ignoredColumns )

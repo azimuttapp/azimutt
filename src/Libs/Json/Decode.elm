@@ -1,4 +1,4 @@
-module Libs.Json.Decode exposing (defaultField, defaultFieldDeep, dict, errorToHtml, filter, map10, map11, map12, map9, matchOn, maybeField, maybeWithDefault, ned, nel, tuple)
+module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, filter, map10, map11, map12, map9, matchOn, maybeField, maybeWithDefault, nel, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -27,8 +27,8 @@ tuple aDecoder bDecoder =
         (Decode.index 1 bDecoder)
 
 
-dict : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Dict comparable a)
-dict buildKey decoder =
+customDict : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Dict comparable a)
+customDict buildKey decoder =
     Decode.dict decoder |> Decode.map (\d -> d |> Dict.toList |> List.map (\( k, a ) -> ( buildKey k, a )) |> Dict.fromList)
 
 
@@ -37,9 +37,9 @@ nel decoder =
     Decode.oneOrMore Nel decoder
 
 
-ned : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Ned comparable a)
-ned buildKey decoder =
-    dict buildKey decoder |> Decode.andThen (\d -> d |> Ned.fromDict |> M.mapOrElse Decode.succeed (Decode.fail "Non empty dict can't be empty"))
+customNed : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Ned comparable a)
+customNed buildKey decoder =
+    customDict buildKey decoder |> Decode.andThen (\d -> d |> Ned.fromDict |> M.mapOrElse Decode.succeed (Decode.fail "Non empty dict can't be empty"))
 
 
 maybeField : String -> Decoder a -> Decoder (Maybe a)

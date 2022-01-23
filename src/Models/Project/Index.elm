@@ -11,20 +11,25 @@ import Models.Project.Origin as Origin exposing (Origin)
 
 
 type alias Index =
-    { name : IndexName, columns : Nel ColumnName, definition : String, origins : List Origin }
+    { name : IndexName
+    , columns : Nel ColumnName
+    , definition : String
+    , origins : List Origin
+    }
 
 
 merge : Index -> Index -> Index
 merge i1 i2 =
-    { i1
-        | columns = Nel.merge identity ColumnName.merge i1.columns i2.columns
-        , origins = i1.origins ++ i2.origins
+    { name = i1.name
+    , columns = Nel.merge identity ColumnName.merge i1.columns i2.columns
+    , definition = i1.definition
+    , origins = i1.origins ++ i2.origins
     }
 
 
 encode : Index -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "name", value.name |> IndexName.encode )
         , ( "columns", value.columns |> E.nel ColumnName.encode )
         , ( "definition", value.definition |> Encode.string )

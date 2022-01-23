@@ -14,11 +14,22 @@ import Models.Project.TableId exposing (TableId)
 
 
 type alias Relation =
-    { id : RelationId, name : RelationName, src : ColumnRef, ref : ColumnRef, origins : List Origin }
+    { id : RelationId
+    , name : RelationName
+    , src : ColumnRef
+    , ref : ColumnRef
+    , origins : List Origin
+    }
 
 
 type alias RelationLike x y =
-    { x | id : RelationId, name : RelationName, src : ColumnRefLike y, ref : ColumnRefLike y, origins : List Origin }
+    { x
+        | id : RelationId
+        , name : RelationName
+        , src : ColumnRefLike y
+        , ref : ColumnRefLike y
+        , origins : List Origin
+    }
 
 
 new : RelationName -> ColumnRef -> ColumnRef -> List Origin -> Relation
@@ -66,14 +77,19 @@ withLink table column relations =
     relations |> List.filter (\r -> (r.src.table == table && r.src.column == column) || (r.ref.table == table && r.ref.column == column))
 
 
-merge : RelationLike x y -> RelationLike x y -> RelationLike x y
+merge : Relation -> Relation -> Relation
 merge r1 r2 =
-    { r1 | origins = r1.origins ++ r2.origins }
+    { id = r1.id
+    , name = r1.name
+    , src = r1.src
+    , ref = r1.ref
+    , origins = r1.origins ++ r2.origins
+    }
 
 
 encode : Relation -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "name", value.name |> RelationName.encode )
         , ( "src", value.src |> ColumnRef.encode )
         , ( "ref", value.ref |> ColumnRef.encode )

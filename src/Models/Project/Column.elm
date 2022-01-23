@@ -52,17 +52,19 @@ withNullable column text =
 
 merge : Column -> Column -> Column
 merge c1 c2 =
-    { c1
-        | nullable = c1.nullable && c2.nullable
-        , default = M.merge ColumnValue.merge c1.default c2.default
-        , comment = M.merge Comment.merge c1.comment c2.comment
-        , origins = c1.origins ++ c2.origins
+    { index = c1.index
+    , name = c1.name
+    , kind = c1.kind
+    , nullable = c1.nullable && c2.nullable
+    , default = M.merge ColumnValue.merge c1.default c2.default
+    , comment = M.merge Comment.merge c1.comment c2.comment
+    , origins = c1.origins ++ c2.origins
     }
 
 
 encode : Column -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "name", value.name |> ColumnName.encode )
         , ( "type", value.kind |> ColumnType.encode )
         , ( "nullable", value.nullable |> E.withDefault Encode.bool False )

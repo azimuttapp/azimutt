@@ -59,7 +59,7 @@ refreshWith new current =
 
 encode : Source -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "id", value.id |> SourceId.encode )
         , ( "name", value.name |> SourceName.encode )
         , ( "kind", value.kind |> SourceKind.encode )

@@ -8,17 +8,21 @@ import Models.Project.Origin as Origin exposing (Origin)
 
 
 type alias Comment =
-    { text : String, origins : List Origin }
+    { text : String
+    , origins : List Origin
+    }
 
 
 merge : Comment -> Comment -> Comment
 merge c1 c2 =
-    { c1 | origins = c1.origins ++ c2.origins }
+    { text = c1.text
+    , origins = c1.origins ++ c2.origins
+    }
 
 
 encode : Comment -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "text", value.text |> Encode.string )
         , ( "origins", value.origins |> E.withDefault (Encode.list Origin.encode) [] )
         ]

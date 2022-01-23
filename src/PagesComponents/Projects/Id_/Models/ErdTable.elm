@@ -1,8 +1,8 @@
 module PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable, create, unpack)
 
 import Dict exposing (Dict)
-import Libs.Dict as D
-import Libs.Maybe as M
+import Libs.Dict as Dict
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned exposing (Ned)
 import Models.Project.Check exposing (Check)
@@ -47,14 +47,14 @@ create tables tableRelations table =
                     (\rel dict ->
                         if rel.src.table == table.id && rel.ref.table == table.id then
                             dict
-                                |> Dict.update rel.src.column (M.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
-                                |> Dict.update rel.ref.column (M.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                                |> Dict.update rel.src.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                                |> Dict.update rel.ref.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
 
                         else if rel.src.table == table.id then
-                            dict |> Dict.update rel.src.column (M.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                            dict |> Dict.update rel.src.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
 
                         else if rel.ref.table == table.id then
-                            dict |> Dict.update rel.ref.column (M.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
+                            dict |> Dict.update rel.ref.column (Maybe.mapOrElse (\relations -> rel :: relations) [ rel ] >> Just)
 
                         else
                             dict
@@ -67,7 +67,7 @@ create tables tableRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Ned.map (\name -> ErdColumn.create tables (relationsByColumn |> D.getOrElse name []) table)
+    , columns = table.columns |> Ned.map (\name -> ErdColumn.create tables (relationsByColumn |> Dict.getOrElse name []) table)
     , primaryKey = table.primaryKey
     , uniques = table.uniques
     , indexes = table.indexes
