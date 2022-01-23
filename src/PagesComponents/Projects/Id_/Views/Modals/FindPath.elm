@@ -19,8 +19,8 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Nel as Nel
+import Libs.String as String
 import Libs.Tailwind.Utilities as Tu
-import Models.Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
@@ -28,15 +28,15 @@ import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSet
 import Models.Project.FindPathState as FindPathState
 import Models.Project.FindPathStep exposing (FindPathStep)
 import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewFindPath : Theme -> Bool -> Project -> FindPathDialog -> Html Msg
-viewFindPath theme opened project model =
+viewFindPath : Theme -> Bool -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFindPath theme opened tables settings model =
     let
         titleId : HtmlId
         titleId =
@@ -50,10 +50,10 @@ viewFindPath theme opened project model =
         }
         [ viewHeader theme titleId
         , viewAlert
-        , viewSettings model.id model.showSettings project.settings.findPath
-        , viewSearchForm model.id project.tables model.from model.to
+        , viewSettings model.id model.showSettings settings
+        , viewSearchForm model.id tables model.from model.to
         , viewPaths theme model
-        , viewFooter theme project.settings.findPath model
+        , viewFooter theme settings model
         ]
 
 
@@ -98,14 +98,14 @@ viewSettings modalId isOpen settings =
                 "ex: users, accounts..."
                 "Some columns does not have meaningful links so ignore them for better results."
                 (settings.ignoredTables |> List.map TableId.show |> String.join ", ")
-                (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map TableId.parse }))
+                (\v -> { settings | ignoredTables = v |> stringList |> List.map TableId.parse } |> FPSettingsUpdate |> FindPathMsg)
             , viewSettingsInput (modalId ++ "-settings-ignored-columns")
                 "text"
                 "Ignored columns"
                 "ex: created_by, updated_by, owner..."
                 "Some tables are big hubs which leads to bad results and performance, ignore them."
                 (settings.ignoredColumns |> String.join ", ")
-                (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredColumns = v |> String.split "," |> List.map String.trim }))
+                (\v -> { settings | ignoredColumns = v |> stringList } |> FPSettingsUpdate |> FindPathMsg)
             , viewSettingsInput (modalId ++ "-settings-path-max-length")
                 "number"
                 "Max path length"
@@ -115,6 +115,11 @@ viewSettings modalId isOpen settings =
                 (\v -> { settings | maxPathLength = v |> String.toInt |> Maybe.withDefault FindPathSettings.init.maxPathLength } |> FPSettingsUpdate |> FindPathMsg)
             ]
         ]
+
+
+stringList : String -> List String
+stringList str =
+    str |> String.split "," |> List.map String.trim |> List.filter String.nonEmpty
 
 
 viewSettingsInput : String -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg
@@ -128,7 +133,7 @@ viewSettingsInput fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldV
         ]
 
 
-viewSearchForm : HtmlId -> Dict TableId Table -> Maybe TableId -> Maybe TableId -> Html Msg
+viewSearchForm : HtmlId -> Dict TableId ErdTable -> Maybe TableId -> Maybe TableId -> Html Msg
 viewSearchForm modalId tables from to =
     div [ css [ Tw.px_6, Tw.mt_3, Tw.flex, Tw.space_x_3 ] ]
         [ viewSelectCard (modalId ++ "-from") "From" "Starting table for the path" from (FPUpdateFrom >> FindPathMsg) tables
@@ -136,7 +141,7 @@ viewSearchForm modalId tables from to =
         ]
 
 
-viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId Table -> Html Msg
+viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId ErdTable -> Html Msg
 viewSelectCard fieldId title description selectedValue buildMsg tables =
     div [ css [ Tw.flex_grow, Tw.p_3, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Bp.sm [ Tw.col_span_3 ] ] ]
         [ label [ for fieldId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700 ] ] [ text title ]

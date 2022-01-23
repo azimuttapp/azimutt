@@ -6,7 +6,6 @@ import Libs.Bool as B
 import Libs.Maybe as M
 import Libs.Nel as Nel
 import Libs.Task as T
-import Models.Project exposing (Project)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathResult exposing (FindPathResult)
@@ -14,18 +13,19 @@ import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.FindPathState as FindPathState exposing (FindPathState(..))
 import Models.Project.FindPathStep exposing (FindPathStep)
 import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
-import Models.Project.Relation exposing (Relation)
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Ports
-import Services.Lenses exposing (mapFindPathM, mapOpened, mapProjectM, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
+import Services.Lenses exposing (mapErdM, mapFindPathM, mapOpened, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
 import Track
 
 
 type alias Model x =
     { x
-        | project : Maybe Project
+        | erd : Maybe Erd
         , findPath : Maybe FindPathDialog
     }
 
@@ -47,8 +47,8 @@ handleFindPath msg model =
 
         FPSearch ->
             model.findPath
-                |> Maybe.andThen (\fp -> M.zip3 model.project fp.from fp.to)
-                |> M.mapOrElse (\( p, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute p.tables p.relations from to p.settings.findPath)) ))
+                |> Maybe.andThen (\fp -> M.zip3 model.erd fp.from fp.to)
+                |> M.mapOrElse (\( e, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute e.tables e.relations from to e.settings.findPath)) ))
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
@@ -58,18 +58,18 @@ handleFindPath msg model =
             ( model |> mapFindPathM (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index))))), Cmd.none )
 
         FPSettingsUpdate settings ->
-            ( model |> mapProjectM (mapSettings (setFindPath settings)), Cmd.none )
+            ( model |> mapErdM (mapSettings (setFindPath settings)), Cmd.none )
 
         FPClose ->
             ( model |> setFindPath Nothing, Cmd.none )
 
 
-computeFindPath : Dict TableId Table -> List Relation -> TableId -> TableId -> FindPathSettings -> FindPathResult
+computeFindPath : Dict TableId ErdTable -> List ErdRelation -> TableId -> TableId -> FindPathSettings -> FindPathResult
 computeFindPath tables relations from to settings =
     { from = from, to = to, paths = buildPaths tables (filterRelations settings relations) settings from (\t -> t.id == to) [], opened = Nothing, settings = settings }
 
 
-filterRelations : FindPathSettings -> List Relation -> List Relation
+filterRelations : FindPathSettings -> List ErdRelation -> List ErdRelation
 filterRelations settings relations =
     -- ugly hack to keep computing low
     relations
@@ -84,7 +84,7 @@ filterRelations settings relations =
             )
 
 
-buildPaths : Dict TableId Table -> List Relation -> FindPathSettings -> TableId -> (Table -> Bool) -> List FindPathStep -> List FindPathPath
+buildPaths : Dict TableId ErdTable -> List ErdRelation -> FindPathSettings -> TableId -> (ErdTable -> Bool) -> List FindPathStep -> List FindPathPath
 buildPaths tables relations settings tableId isDone curPath =
     -- FIXME improve algo complexity
     tables
@@ -106,10 +106,10 @@ buildPaths tables relations settings tableId isDone curPath =
                                         |> List.concatMap
                                             (\r ->
                                                 if r.src.table == tableId then
-                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.ref.table isDone (curPath ++ [ { relation = r, direction = Right } ])
+                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.ref.table isDone (curPath ++ [ { relation = ErdRelation.unpack r, direction = Right } ])
 
                                                 else
-                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.src.table isDone (curPath ++ [ { relation = r, direction = Left } ])
+                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.src.table isDone (curPath ++ [ { relation = ErdRelation.unpack r, direction = Left } ])
                                             )
                            )
             )
