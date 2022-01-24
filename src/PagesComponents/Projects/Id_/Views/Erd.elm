@@ -66,7 +66,7 @@ viewErd theme model erd =
 
         tableProps : Dict TableId ErdTableProps
         tableProps =
-            model.dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> erd.tableProps |> Drag.moveTables2 d canvas.zoom) erd.tableProps
+            model.dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> erd.tableProps |> Drag.moveTables d canvas.zoom) erd.tableProps
 
         displayedTables : Dict TableId ErdTableProps
         displayedTables =

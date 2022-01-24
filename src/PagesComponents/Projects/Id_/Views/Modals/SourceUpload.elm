@@ -81,7 +81,7 @@ localFileModal theme zone now titleId source fileName updatedAt model =
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> M.filter (\_ -> name1 /= name2)
-                , Just [ text "You file is older than the previous one" ] |> M.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
+                , Just [ text "You file is ", bText "older", text " than the previous one" ] |> M.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
                 ]
                     |> List.filterMap identity
                     |> (\warnings ->

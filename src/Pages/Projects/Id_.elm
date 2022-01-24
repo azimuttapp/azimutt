@@ -39,7 +39,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProjectMLayout, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Time
@@ -73,8 +73,6 @@ init : ( Model, Cmd Msg )
 init =
     ( { navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
-      , projects = Loading
-      , project = Nothing
       , loaded = False
       , erd = Nothing
       , hoverTable = Nothing
@@ -185,13 +183,13 @@ update req now msg model =
             ( model |> setCursorMode mode, Cmd.none )
 
         FitContent ->
-            ( model |> mapProjectMLayout (fitCanvas model.screen), Cmd.none )
+            ( model |> mapErdM (fitCanvas model.screen), Cmd.none )
 
         OnWheel event ->
-            ( model |> mapProjectMLayout (mapCanvas (handleWheel event)), Cmd.none )
+            ( model |> mapErdM (mapCanvas (handleWheel event)), Cmd.none )
 
         Zoom delta ->
-            ( model |> mapProjectMLayout (mapCanvas (zoomCanvas delta model.screen)), Cmd.none )
+            ( model |> mapErdM (mapCanvas (zoomCanvas delta model.screen)), Cmd.none )
 
         Focus id ->
             ( model, Ports.focus id )

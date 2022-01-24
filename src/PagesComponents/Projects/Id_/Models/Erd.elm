@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, initTable, isShown, mapSource, mapSources, setSources, unpack, unpackLayout)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, initTable, isShown, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, unpackLayout)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -108,8 +108,8 @@ unpackLayout canvas tableProps shownTables createdAt updatedAt =
             tableProps |> Dict.keys |> List.partition (\id -> shownTables |> List.member id)
     in
     { canvas = canvas
-    , tables = tables |> List.filterMap (ErdTableProps.unpack tableProps)
-    , hiddenTables = hiddenTables |> List.filterMap (ErdTableProps.unpack tableProps)
+    , tables = tables |> List.filterMap (\id -> tableProps |> Dict.get id |> Maybe.map ErdTableProps.unpack)
+    , hiddenTables = hiddenTables |> List.filterMap (\id -> tableProps |> Dict.get id |> Maybe.map ErdTableProps.unpack)
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
@@ -195,3 +195,17 @@ mapSources transform erd =
 mapSource : SourceId -> (Source -> Source) -> Erd -> Erd
 mapSource id transform erd =
     setSources (List.updateBy .id id transform erd.sources) erd
+
+
+setSettings : ProjectSettings -> Erd -> Erd
+setSettings settings erd =
+    if erd.settings == settings then
+        erd
+
+    else
+        { erd | settings = settings } |> computeSchema
+
+
+mapSettings : (ProjectSettings -> ProjectSettings) -> Erd -> Erd
+mapSettings transform erd =
+    setSettings (transform erd.settings) erd

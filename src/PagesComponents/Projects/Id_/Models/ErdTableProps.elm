@@ -1,6 +1,7 @@
-module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, buildRelatedTables, create, init, mapSelected, mapShowHiddenColumns, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
+module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, area, buildRelatedTables, create, init, mapPosition, mapSelected, mapShowHiddenColumns, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
 
 import Dict exposing (Dict)
+import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Maybe as M
 import Libs.Models.Color exposing (Color)
@@ -75,21 +76,16 @@ buildRelatedTables tableRelations shownTables table =
         |> Dict.fromList
 
 
-unpack : Dict TableId ErdTableProps -> TableId -> Maybe TableProps
-unpack props id =
-    props
-        |> Dict.get id
-        |> Maybe.map
-            (\prop ->
-                { id = id
-                , position = prop.position
-                , size = prop.size
-                , color = prop.color
-                , columns = prop.shownColumns
-                , selected = prop.selected
-                , hiddenColumns = prop.showHiddenColumns
-                }
-            )
+unpack : ErdTableProps -> TableProps
+unpack props =
+    { id = props.id
+    , position = props.position
+    , size = props.size
+    , color = props.color
+    , columns = props.shownColumns
+    , selected = props.selected
+    , hiddenColumns = props.showHiddenColumns
+    }
 
 
 init : ProjectSettings -> List ErdRelation -> List TableId -> ErdTable -> ErdTableProps
@@ -106,6 +102,11 @@ init settings erdRelations shownTables erdTable =
     TableProps.init settings relations table |> create relations shownTables
 
 
+area : ErdTableProps -> Area
+area props =
+    { position = props.position, size = props.size }
+
+
 setPosition : Position -> ErdTableProps -> ErdTableProps
 setPosition position props =
     if props.position == position then
@@ -113,6 +114,11 @@ setPosition position props =
 
     else
         { props | position = position, columnProps = props.columnProps |> Dict.map (\_ p -> { p | position = position }) }
+
+
+mapPosition : (Position -> Position) -> ErdTableProps -> ErdTableProps
+mapPosition transform props =
+    setPosition (transform props.position) props
 
 
 setSize : Size -> ErdTableProps -> ErdTableProps

@@ -299,7 +299,11 @@ viewColumnIconDropdown model column icon =
                         ++ (column.inRelations
                                 |> List.filter (\r -> not r.tableShown)
                                 |> (\relations ->
-                                        [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> S.pluralizeL "table") ++ ")") ] ]
+                                        if List.length relations > 1 then
+                                            [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> S.pluralizeL "table") ++ ")") ] ]
+
+                                        else
+                                            []
                                    )
                            )
                     )

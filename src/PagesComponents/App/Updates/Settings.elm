@@ -7,6 +7,7 @@ import Libs.Ned as Ned
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project as Project exposing (Project)
 import Models.Project.Column exposing (Column)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Table exposing (Table)
@@ -42,7 +43,7 @@ updateSettingsAndComputeProject transform model =
         |> (\m -> ( m, Ports.observeTablesSize (m.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) []) ))
 
 
-hideColumns : (Column -> Bool) -> Project -> Layout -> Layout
+hideColumns : (ColumnName -> Bool) -> Project -> Layout -> Layout
 hideColumns isColumnHidden project layout =
     layout
         |> mapTables (List.map (hideTableColumns isColumnHidden project))
@@ -56,9 +57,9 @@ sortColumns order project layout =
         |> mapHiddenTables (List.map (sortTableColumns order project))
 
 
-hideTableColumns : (Column -> Bool) -> Project -> TableProps -> TableProps
+hideTableColumns : (ColumnName -> Bool) -> Project -> TableProps -> TableProps
 hideTableColumns isColumnHidden project props =
-    updateProps (\_ -> L.filterNot isColumnHidden) project props
+    updateProps (\_ -> L.filterNot (\c -> isColumnHidden c.name)) project props
 
 
 sortTableColumns : ColumnOrder -> Project -> TableProps -> TableProps

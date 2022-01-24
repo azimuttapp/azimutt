@@ -7,7 +7,7 @@ import Libs.Json.Encode as E
 import Libs.List as L
 import Libs.Regex as R
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
-import Models.Project.Column exposing (Column)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (TableLike)
@@ -44,14 +44,14 @@ isTableRemoved removedTables =
     \t -> values |> List.any (\n -> t.name == n || R.contains ("^" ++ n ++ "$") t.name)
 
 
-isColumnHidden : String -> (Column -> Bool)
-isColumnHidden hiddenColumns =
+isColumnHidden : String -> (ColumnName -> Bool)
+isColumnHidden hiddenColumnsInput =
     let
-        values : List String
-        values =
-            hiddenColumns |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
+        hiddenColumnNames : List String
+        hiddenColumnNames =
+            hiddenColumnsInput |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
     in
-    \c -> values |> List.any (\n -> c.name == n || R.contains ("^" ++ n ++ "$") c.name)
+    \columnName -> hiddenColumnNames |> List.any (\n -> columnName == n || R.contains ("^" ++ n ++ "$") columnName)
 
 
 encode : ProjectSettings -> ProjectSettings -> Value
