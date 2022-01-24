@@ -15,11 +15,11 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
+page _ req =
     Page.element
         { init = init req
         , update = update
-        , view = view shared
+        , view = view
         , subscriptions = subscriptions
         }
 
@@ -75,18 +75,18 @@ subscriptions _ =
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
+view : Model -> View Msg
+view model =
     { title = "Page not found - Azimutt"
-    , body = model |> viewNotFound shared |> List.map Styled.toUnstyled
+    , body = model |> viewNotFound |> List.map Styled.toUnstyled
     }
 
 
-viewNotFound : Shared.Model -> Model -> List (Html msg)
-viewNotFound shared _ =
+viewNotFound : Model -> List (Html msg)
+viewNotFound _ =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full ], Global.selector "body" [ Tw.h_full ] ]
-    , NotFound.simple shared.theme
+    , NotFound.simple Conf.theme
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
             , link = { url = Route.toHref Route.Home_, text = "Azimutt" }

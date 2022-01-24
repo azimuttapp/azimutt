@@ -23,7 +23,6 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.String as String
 import Libs.Tailwind.Utilities as Tu
 import Models.Project.CanvasProps as CanvasProps
@@ -39,8 +38,8 @@ type alias Btn msg =
     { action : Either String msg, content : Html msg, hotkey : Maybe Hotkey }
 
 
-viewNavbar : Theme -> Maybe VirtualRelation -> Erd -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
-viewNavbar theme virtualRelation erd model htmlId openedDropdown =
+viewNavbar : Maybe VirtualRelation -> Erd -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
+viewNavbar virtualRelation erd model htmlId openedDropdown =
     let
         features : List (Btn Msg)
         features =
@@ -58,28 +57,28 @@ viewNavbar theme virtualRelation erd model htmlId openedDropdown =
         canResetCanvas =
             erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
     in
-    nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, Color.bg theme.color 600 ] ]
+    nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, Color.bg Conf.theme.color 600 ] ]
         [ div [ css [ Tw.mx_auto, Tw.px_2, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_4 ] ] ]
             [ div [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Tw.h_16 ] ]
                 [ div [ css [ Tw.flex, Tw.items_center, Tw.px_2, Bp.lg [ Tw.px_0 ] ] ]
                     [ viewNavbarBrand
-                    , Lazy.lazy7 viewNavbarSearch theme model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
-                    , Lazy.lazy viewNavbarHelp theme
+                    , Lazy.lazy6 viewNavbarSearch model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
+                    , viewNavbarHelp
                     ]
                 , div [ css [ Tw.flex_1, Tw.flex, Tw.justify_center, Tw.px_2 ] ]
-                    [ Lazy.lazy7 viewNavbarTitle theme erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
+                    [ Lazy.lazy6 viewNavbarTitle erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
-                , navbarMobileButton theme model.mobileMenuOpen
+                , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ Tw.hidden, Bp.lg [ Tw.block, Tw.ml_4 ] ] ]
                     [ div [ css [ Tw.flex, Tw.items_center ] ]
-                        [ viewNavbarResetLayout theme canResetCanvas
-                        , viewNavbarFeatures theme features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
-                        , viewNavbarSettings theme
+                        [ viewNavbarResetLayout canResetCanvas
+                        , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
+                        , viewNavbarSettings
                         ]
                     ]
                 ]
             ]
-        , Lazy.lazy4 viewNavbarMobileMenu theme features canResetCanvas model.mobileMenuOpen
+        , Lazy.lazy3 viewNavbarMobileMenu features canResetCanvas model.mobileMenuOpen
         ]
 
 
@@ -91,22 +90,22 @@ viewNavbarBrand =
         ]
 
 
-viewNavbarHelp : Theme -> Html Msg
-viewNavbarHelp theme =
-    button [ onClick (HelpMsg (HOpen "")), css [ Tw.ml_3, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
-        [ Icon.solid QuestionMarkCircle [ Color.text theme.color 300 ] ]
+viewNavbarHelp : Html Msg
+viewNavbarHelp =
+    button [ onClick (HelpMsg (HOpen "")), css [ Tw.ml_3, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ] ]
+        [ Icon.solid QuestionMarkCircle [ Color.text Conf.theme.color 300 ] ]
 
 
-viewNavbarResetLayout : Theme -> Bool -> Html Msg
-viewNavbarResetLayout theme canResetCanvas =
-    Button.primary3 theme.color [ onClick resetCanvas, css [ Tw.ml_auto, Tu.unless canResetCanvas [ Tw.invisible ] ] ] [ text "Reset canvas" ]
+viewNavbarResetLayout : Bool -> Html Msg
+viewNavbarResetLayout canResetCanvas =
+    Button.primary3 Conf.theme.color [ onClick resetCanvas, css [ Tw.ml_auto, Tu.unless canResetCanvas [ Tw.invisible ] ] ] [ text "Reset canvas" ]
 
 
-viewNavbarFeatures : Theme -> List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
-viewNavbarFeatures theme features htmlId openedDropdown =
+viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
+viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, Color.bg theme.color 600, Tw.p_1, Tw.rounded_full, Color.text theme.color 200, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, Color.bg Conf.theme.color 600, Tw.p_1, Tw.rounded_full, Color.text Conf.theme.color 200, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
                 [ span [ css [ Tw.sr_only ] ] [ text "View features" ]
                 , Icon.outline LightningBolt []
                 , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
@@ -126,18 +125,18 @@ viewNavbarFeatures theme features htmlId openedDropdown =
         )
 
 
-viewNavbarSettings : Theme -> Html Msg
-viewNavbarSettings theme =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ Tw.ml_3, Tw.flex_shrink_0, Color.bg theme.color 600, Tw.p_1, Tw.rounded_full, Color.text theme.color 200, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
+viewNavbarSettings : Html Msg
+viewNavbarSettings =
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ Tw.ml_3, Tw.flex_shrink_0, Color.bg Conf.theme.color 600, Tw.p_1, Tw.rounded_full, Color.text Conf.theme.color 200, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
         [ span [ css [ Tw.sr_only ] ] [ text "View settings" ]
         , Icon.outline Cog []
         ]
 
 
-navbarMobileButton : Theme -> Bool -> Html Msg
-navbarMobileButton theme open =
+navbarMobileButton : Bool -> Html Msg
+navbarMobileButton open =
     div [ css [ Tw.flex, Bp.lg [ Tw.hidden ] ] ]
-        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_2, Tw.rounded_md, Color.text theme.color 200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_white ], Css.hover [ Tw.text_white, Color.bg theme.color 500 ] ] ]
+        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_2, Tw.rounded_md, Color.text Conf.theme.color 200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_white ], Css.hover [ Tw.text_white, Color.bg Conf.theme.color 500 ] ] ]
             [ span [ css [ Tw.sr_only ] ] [ text "Open main menu" ]
             , Icon.outline Menu [ B.cond open Tw.hidden Tw.block ]
             , Icon.outline X [ B.cond open Tw.block Tw.hidden ]
@@ -145,8 +144,8 @@ navbarMobileButton theme open =
         ]
 
 
-viewNavbarMobileMenu : Theme -> List (Btn Msg) -> Bool -> Bool -> Html Msg
-viewNavbarMobileMenu theme features canResetCanvas isOpen =
+viewNavbarMobileMenu : List (Btn Msg) -> Bool -> Bool -> Html Msg
+viewNavbarMobileMenu features canResetCanvas isOpen =
     let
         groupSpace : Css.Style
         groupSpace =
@@ -154,11 +153,11 @@ viewNavbarMobileMenu theme features canResetCanvas isOpen =
 
         groupBorder : Css.Style
         groupBorder =
-            Css.batch [ Tw.border_t, Color.border theme.color 500 ]
+            Css.batch [ Tw.border_t, Color.border Conf.theme.color 500 ]
 
         btnStyle : Css.Style
         btnStyle =
-            Css.batch [ Color.text theme.color 100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ Color.bg theme.color 500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
+            Css.batch [ Color.text Conf.theme.color 100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ Color.bg Conf.theme.color 500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
     in
     div [ css [ Bp.lg [ Tw.hidden ], Tu.unless isOpen [ Tw.hidden ] ], id "mobile-menu" ]
         ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, css [ btnStyle ] ] [ text "Reset canvas" ] ] []

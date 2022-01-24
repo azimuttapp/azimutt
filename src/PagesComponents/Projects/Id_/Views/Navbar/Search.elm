@@ -14,7 +14,6 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Tailwind.Utilities as Tu
@@ -27,15 +26,15 @@ import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewNavbarSearch : Theme -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
-viewNavbarSearch theme search tables relations shownTables htmlId openedDropdown =
+viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
     div [ css [ Tw.ml_6 ] ]
         [ div [ css [ Tw.max_w_lg, Tw.w_full, Bp.lg [ Tw.max_w_xs ] ] ]
             [ label [ for htmlId, css [ Tw.sr_only ] ] [ text "Search" ]
             , Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
                 (\m ->
                     div []
-                        [ div [ css [ Tw.pointer_events_none, Tw.absolute, Tw.inset_y_0, Tw.left_0, Tw.pl_3, Tw.flex, Tw.items_center ] ] [ Icon.solid Search [ Color.text theme.color 200 ] ]
+                        [ div [ css [ Tw.pointer_events_none, Tw.absolute, Tw.inset_y_0, Tw.left_0, Tw.pl_3, Tw.flex, Tw.items_center ] ] [ Icon.solid Search [ Color.text Conf.theme.color 200 ] ]
                         , input
                             [ type_ "search"
                             , name "search"
@@ -56,10 +55,10 @@ viewNavbarSearch theme search tables relations shownTables htmlId openedDropdown
                                 , Tw.border_transparent
                                 , Tw.rounded_md
                                 , Tw.leading_5
-                                , Color.bg theme.color 500
-                                , Color.text theme.color 100
-                                , Color.placeholder theme.color 200
-                                , Css.focus [ Tw.outline_none, Tw.bg_white, Tw.border_white, Tw.ring_white, Color.text theme.color 900, Color.placeholder theme.color 400 ]
+                                , Color.bg Conf.theme.color 500
+                                , Color.text Conf.theme.color 100
+                                , Color.placeholder Conf.theme.color 200
+                                , Css.focus [ Tw.outline_none, Tw.bg_white, Tw.border_white, Tw.ring_white, Color.text Conf.theme.color 900, Color.placeholder Conf.theme.color 400 ]
                                 , Bp.sm [ Tw.text_sm ]
                                 ]
                             ]
@@ -70,7 +69,7 @@ viewNavbarSearch theme search tables relations shownTables htmlId openedDropdown
                             |> M.mapOrElse
                                 (\h ->
                                     div [ css [ Tw.absolute, Tw.inset_y_0, Tw.right_0, Tw.flex, Tw.py_1_dot_5, Tw.pr_1_dot_5 ] ]
-                                        [ kbd [ css [ Tw.inline_flex, Tw.items_center, Tw.border, Color.border theme.color 300, Tw.rounded, Tw.px_2, Tw.text_sm, Tw.font_sans, Tw.font_medium, Color.text theme.color 300 ] ]
+                                        [ kbd [ css [ Tw.inline_flex, Tw.items_center, Tw.border, Color.border Conf.theme.color 300, Tw.rounded, Tw.px_2, Tw.text_sm, Tw.font_sans, Tw.font_medium, Color.text Conf.theme.color 300 ] ]
                                             [ text h.key ]
                                         ]
                                 )
@@ -95,7 +94,7 @@ viewNavbarSearch theme search tables relations shownTables htmlId openedDropdown
 
                                     else
                                         div [ css [ Tu.max_h 600 "px", Tw.overflow_y_auto ] ]
-                                            (results |> List.indexedMap (viewSearchResult theme m.id shownTables (search.active |> modBy (results |> List.length))))
+                                            (results |> List.indexedMap (viewSearchResult m.id shownTables (search.active |> modBy (results |> List.length))))
                                )
                 )
             ]
@@ -108,8 +107,8 @@ type SearchResult
     | FoundRelation ErdRelation
 
 
-viewSearchResult : Theme -> HtmlId -> List TableId -> Int -> Int -> SearchResult -> Html Msg
-viewSearchResult theme searchId shownTables active index res =
+viewSearchResult : HtmlId -> List TableId -> Int -> Int -> SearchResult -> Html Msg
+viewSearchResult searchId shownTables active index res =
     let
         viewItem : msg -> Icon -> List (Html msg) -> Bool -> Html msg
         viewItem =
@@ -124,11 +123,11 @@ viewSearchResult theme searchId shownTables active index res =
                         Css.batch [ Tw.flex, Tw.w_full, Tw.items_center ]
                 in
                 if disabled then
-                    span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, Tu.when (active == index) [ Color.text theme.color 400 ] ] ])
+                    span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, Tu.when (active == index) [ Color.text Conf.theme.color 400 ] ] ])
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, Css.focus [ Tw.outline_none ], Tu.when (active == index) [ Color.bg theme.color 600, Tw.text_white ] ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, Css.focus [ Tw.outline_none ], Tu.when (active == index) [ Color.bg Conf.theme.color 600, Tw.text_white ] ] ])
                         ([ Icon.solid icon [ Tw.mr_3 ] ] ++ content)
     in
     case res of

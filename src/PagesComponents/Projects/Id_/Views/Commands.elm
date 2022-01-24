@@ -12,18 +12,17 @@ import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 import Tailwind.Utilities as Tw
 
 
-viewCommands : Theme -> CursorMode -> ZoomLevel -> HtmlId -> HtmlId -> Html Msg
-viewCommands theme cursorMode canvasZoom htmlId openedDropdown =
+viewCommands : CursorMode -> ZoomLevel -> HtmlId -> HtmlId -> Html Msg
+viewCommands cursorMode canvasZoom htmlId openedDropdown =
     let
         buttonStyles : Css.Style
         buttonStyles =
-            Css.batch [ Tw.relative, Tw.inline_flex, Tw.items_center, Tw.p_2, Tw.border, Tw.border_gray_300, Tw.text_sm, Tw.font_medium, Css.focus [ Tw.z_10, Tw.outline_none, Tw.ring_1, Color.ring theme.color 500, Color.border theme.color 500 ] ]
+            Css.batch [ Tw.relative, Tw.inline_flex, Tw.items_center, Tw.p_2, Tw.border, Tw.border_gray_300, Tw.text_sm, Tw.font_medium, Css.focus [ Tw.z_10, Tw.outline_none, Tw.ring_1, Color.ring Conf.theme.color 500, Color.border Conf.theme.color 500 ] ]
 
         classic : Css.Style
         classic =
