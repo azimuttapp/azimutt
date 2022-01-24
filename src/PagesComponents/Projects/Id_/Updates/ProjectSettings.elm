@@ -1,29 +1,29 @@
 module PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (Model, handleProjectSettings)
 
 import Conf
-import Dict
+import Dict exposing (Dict)
 import Libs.Bool as B
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Ned as Ned
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
-import Models.Project as Project exposing (Project)
-import Models.Project.Column exposing (Column)
-import Models.Project.Layout exposing (Layout)
-import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
-import Models.Project.Table exposing (Table)
-import Models.Project.TableProps exposing (TableProps)
+import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.ProjectSettings as ProjectSettings
+import Models.Project.Source as Source
+import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, toastInfo)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapEnabled, mapHiddenTables, mapLayout, mapParsingCmd, mapProjectM, mapRemoveViews, mapRemovedSchemas, mapSettings, mapSourceUploadMCmd, mapTables, setColumnOrder, setHiddenColumns, setRemovedTables, setSettings, setSourceUpload)
+import Services.Lenses exposing (mapEnabled, mapErdM, mapParsingCmd, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setHiddenColumns, setRemovedTables, setSettings, setSourceUpload)
 import Services.SQLSource as SQLSource
 import Track
 
 
 type alias Model x =
     { x
-        | project : Maybe Project
+        | erd : Maybe Erd
         , settings : Maybe ProjectSettingsDialog
         , sourceUpload : Maybe SourceUploadDialog
     }
@@ -39,18 +39,18 @@ handleProjectSettings msg model =
             ( model |> setSettings Nothing, Cmd.none )
 
         PSToggleSource source ->
-            ( model |> mapProjectM (Project.updateSource source.id (mapEnabled not))
+            ( model |> mapErdM (Erd.mapSource source.id (mapEnabled not))
             , Cmd.batch
-                [ Ports.observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
+                [ Ports.observeTablesSize (model.erd |> Maybe.mapOrElse .shownTables [])
                 , T.send (toastInfo ("Source " ++ source.name ++ " set to " ++ B.cond source.enabled "hidden" "visible" ++ "."))
                 ]
             )
 
         PSDeleteSource source ->
-            ( model |> mapProjectM (Project.deleteSource source.id), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
+            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
 
         PSSourceUploadOpen source ->
-            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SQLSource.init model.project source }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SQLSource.init (model.erd |> Maybe.map (\p -> p.project.id)) source }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
 
         PSSourceUploadClose ->
             ( model |> setSourceUpload Nothing, Cmd.none )
@@ -59,70 +59,48 @@ handleProjectSettings msg model =
             model |> mapSourceUploadMCmd (mapParsingCmd (SQLSource.update message (PSSQLSourceMsg >> ProjectSettingsMsg)))
 
         PSSourceRefresh source ->
-            ( model |> mapProjectM (Project.refreshSource source), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.refreshSource source) ] )
+            ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.refreshSource source) ] )
 
         PSSourceAdd source ->
-            ( model |> mapProjectM (Project.addSource source), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.addSource source) ] )
+            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ source ])), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.addSource source) ] )
 
         PSToggleSchema schema ->
-            model |> updateSettingsAndComputeProject (mapRemovedSchemas (L.toggle schema))
+            model |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSToggleRemoveViews ->
-            model |> updateSettingsAndComputeProject (mapRemoveViews not)
+            model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSUpdateRemovedTables values ->
-            model |> updateSettingsAndComputeProject (setRemovedTables values)
+            model |> mapErdM (Erd.mapSettings (setRemovedTables values)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSUpdateHiddenColumns values ->
-            ( model |> mapProjectM (\p -> p |> mapSettings (setHiddenColumns values) |> mapLayout (hideColumns (ProjectSettings.isColumnHidden values) p)), Cmd.none )
+            ( model |> mapErdM (\e -> e |> Erd.mapSettings (setHiddenColumns values) |> mapTableProps (hideColumns (ProjectSettings.isColumnHidden values))), Cmd.none )
 
         PSUpdateColumnOrder order ->
-            ( model |> mapProjectM (\p -> p |> mapSettings (setColumnOrder order) |> mapLayout (sortColumns order p)), Cmd.none )
+            ( model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order) |> mapTableProps (sortColumns order e)), Cmd.none )
 
 
-updateSettingsAndComputeProject : (ProjectSettings -> ProjectSettings) -> Model x -> ( Model x, Cmd Msg )
-updateSettingsAndComputeProject transform model =
-    model
-        |> mapProjectM (mapSettings transform >> Project.compute)
-        |> (\m -> ( m, Ports.observeTablesSize (m.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) []) ))
+hideColumns : (ColumnName -> Bool) -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+hideColumns isColumnHidden tableProps =
+    tableProps |> Dict.map (\_ -> ErdTableProps.mapShownColumns (List.filterNot isColumnHidden))
 
 
-hideColumns : (Column -> Bool) -> Project -> Layout -> Layout
-hideColumns isColumnHidden project layout =
-    layout
-        |> mapTables (List.map (hideTableColumns isColumnHidden project))
-        |> mapHiddenTables (List.map (hideTableColumns isColumnHidden project))
-
-
-sortColumns : ColumnOrder -> Project -> Layout -> Layout
-sortColumns order project layout =
-    layout
-        |> mapTables (List.map (sortTableColumns order project))
-        |> mapHiddenTables (List.map (sortTableColumns order project))
-
-
-hideTableColumns : (Column -> Bool) -> Project -> TableProps -> TableProps
-hideTableColumns isColumnHidden project props =
-    updateProps (\_ -> L.filterNot isColumnHidden) project props
-
-
-sortTableColumns : ColumnOrder -> Project -> TableProps -> TableProps
-sortTableColumns order project props =
-    updateProps (\table -> ColumnOrder.sortBy order table (project.relations |> List.filter (\r -> r.src.table == table.id))) project props
-
-
-updateProps : (Table -> List Column -> List Column) -> Project -> TableProps -> TableProps
-updateProps transform project props =
-    project.tables
-        |> Dict.get props.id
-        |> M.mapOrElse
-            (\table ->
-                { props
-                    | columns =
-                        props.columns
-                            |> List.filterMap (\c -> table.columns |> Ned.get c)
-                            |> transform table
-                            |> List.map .name
-                }
+sortColumns : ColumnOrder -> Erd -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+sortColumns order erd tableProps =
+    tableProps
+        |> Dict.map
+            (\id ->
+                ErdTableProps.mapShownColumns
+                    (\columnNames ->
+                        (erd.tables |> Dict.get id)
+                            |> Maybe.mapOrElse
+                                (\table ->
+                                    ColumnOrder.sortBy order
+                                        table
+                                        (erd.relations |> List.filter (\r -> r.src.table == id))
+                                        (columnNames |> List.filterMap (\c -> table.columns |> Ned.get c))
+                                        |> List.map .name
+                                )
+                                columnNames
+                    )
             )
-            props

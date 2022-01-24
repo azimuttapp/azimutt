@@ -24,7 +24,6 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Result as R
 import Libs.String as S
 import Libs.Task as T
-import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId
@@ -43,7 +42,7 @@ import Url exposing (percentEncode)
 
 
 type alias SQLSource msg =
-    { project : Maybe Project
+    { project : Maybe ProjectId
     , source : Maybe Source
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe FileUrl
@@ -88,7 +87,7 @@ type ParsingMsg
 -- INIT
 
 
-init : Maybe Project -> Maybe Source -> SQLSource msg
+init : Maybe ProjectId -> Maybe Source -> SQLSource msg
 init project source =
     { project = project
     , source = source
@@ -125,17 +124,17 @@ update msg wrap model =
     case msg of
         SelectLocalFile file ->
             ( init model.project model.source |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) file
+            , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file
             )
 
         SelectRemoteFile url ->
             ( init model.project model.source |> (\m -> { m | selectedRemoteFile = Just url })
-            , Ports.readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) url Nothing
+            , Ports.readRemoteFile model.project (model.source |> Maybe.map .id) url Nothing
             )
 
         SelectSample sample ->
             ( init model.project model.source |> (\m -> { m | selectedSample = Just sample })
-            , Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> Ports.readRemoteFile (model.project |> Maybe.map .id) (model.source |> Maybe.map .id) s.url (Just s.key)) |> Maybe.withDefault Cmd.none
+            , Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> Ports.readRemoteFile model.project (model.source |> Maybe.map .id) s.url (Just s.key)) |> Maybe.withDefault Cmd.none
             )
 
         FileLoaded projectId sourceInfo fileContent ->

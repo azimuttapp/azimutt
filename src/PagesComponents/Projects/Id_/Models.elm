@@ -13,7 +13,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
-import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
@@ -28,14 +27,12 @@ import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
-import Shared exposing (Confirm, StoredProjects)
+import Shared exposing (Confirm)
 
 
 type alias Model =
     { navbar : NavbarModel
     , screen : ScreenProps
-    , projects : StoredProjects -- TODO remove
-    , project : Maybe Project -- TODO remove
     , loaded : Bool
     , erd : Maybe Erd
     , hoverTable : Maybe TableId -- TODO remove?

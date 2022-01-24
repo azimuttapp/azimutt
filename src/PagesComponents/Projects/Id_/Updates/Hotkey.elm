@@ -1,13 +1,14 @@
 module PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 
 import Conf
-import Libs.List as L
-import Libs.Maybe as M
+import Dict
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Task as T
-import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), resetCanvas, toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapActive, mapNavbar, mapProjectMLayout, mapSearch, mapTables, setSelected)
+import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapSearch, mapTableProps)
 
 
 handleHotkey : Model -> String -> ( Model, Cmd Msg )
@@ -44,16 +45,16 @@ handleHotkey model hotkey =
             ( model, moveTables -1000 model )
 
         "select-all" ->
-            ( model |> mapProjectMLayout (mapTables (List.map (setSelected True))), Cmd.none )
+            ( model |> mapErdM (mapTableProps (Dict.map (\_ -> ErdTableProps.setSelected True))), Cmd.none )
 
         "save-layout" ->
             ( model, T.send (LayoutMsg LOpen) )
 
         "create-virtual-relation" ->
-            ( model, T.send (VirtualRelationMsg (model.virtualRelation |> M.mapOrElse (\_ -> VRCancel) VRCreate)) )
+            ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) VRCreate)) )
 
         "find-path" ->
-            ( model, T.send (FindPathMsg (model.findPath |> M.mapOrElse (\_ -> FPClose) (FPOpen model.hoverTable Nothing))) )
+            ( model, T.send (FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen model.hoverTable Nothing))) )
 
         "undo" ->
             -- FIXME
@@ -67,7 +68,7 @@ handleHotkey model hotkey =
             ( model, cancelElement model )
 
         "help" ->
-            ( model, T.send (HelpMsg (model.help |> M.mapOrElse (\_ -> HClose) (HOpen ""))) )
+            ( model, T.send (HelpMsg (model.help |> Maybe.mapOrElse (\_ -> HClose) (HOpen ""))) )
 
         _ ->
             ( model, T.send (toastWarning ("Unhandled hotkey '" ++ hotkey ++ "'")) )
@@ -76,8 +77,8 @@ handleHotkey model hotkey =
 removeElement : Model -> Cmd Msg
 removeElement model =
     (model.hoverColumn |> Maybe.map (HideColumn >> T.send))
-        |> M.orElse (model.hoverTable |> Maybe.map (HideTable >> T.send))
-        |> M.orElse (model.project |> M.filter (\p -> p.layout.tables /= []) |> Maybe.map (\_ -> resetCanvas |> T.send))
+        |> Maybe.orElse (model.hoverTable |> Maybe.map (HideTable >> T.send))
+        |> Maybe.orElse (model.erd |> Maybe.filter (\e -> e.shownTables |> List.nonEmpty) |> Maybe.map (\_ -> resetCanvas |> T.send))
         |> Maybe.withDefault (T.send (toastInfo "Can't find an element to remove :("))
 
 
@@ -85,13 +86,13 @@ cancelElement : Model -> Cmd Msg
 cancelElement model =
     T.send
         ((model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
-            |> M.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
-            |> M.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
-            |> M.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
-            |> M.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
-            |> M.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSSourceUploadClose)))
-            |> M.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
-            |> M.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
+            |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
+            |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
+            |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
+            |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
+            |> Maybe.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSSourceUploadClose)))
+            |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
+            |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
             |> Maybe.withDefault (toastInfo "Nothing to cancel")
         )
 
@@ -99,20 +100,20 @@ cancelElement model =
 moveTables : Int -> Model -> Cmd Msg
 moveTables delta model =
     let
-        tables : List TableProps
+        tables : List ErdTableProps
         tables =
-            model.project |> M.mapOrElse (\p -> p.layout.tables) []
+            model.erd |> Maybe.mapOrElse (\e -> e.shownTables |> List.filterMap (\id -> e.tableProps |> Dict.get id)) []
 
-        selectedTables : List ( Int, TableProps )
+        selectedTables : List ( Int, ErdTableProps )
         selectedTables =
             tables |> List.indexedMap (\i t -> ( i, t )) |> List.filter (\( _, t ) -> t.selected)
     in
-    if L.nonEmpty selectedTables then
+    if List.nonEmpty selectedTables then
         Cmd.batch (selectedTables |> List.map (\( i, t ) -> T.send (TableOrder t.id (List.length tables - 1 - i + delta))))
 
     else
         (model.hoverTable
-            |> Maybe.andThen (\id -> tables |> L.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
+            |> Maybe.andThen (\id -> tables |> List.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
             |> Maybe.map (\( id, i ) -> T.send (TableOrder id (List.length tables - 1 - i + delta)))
         )
             |> Maybe.withDefault (T.send (toastInfo "Can't find an element to move :("))
