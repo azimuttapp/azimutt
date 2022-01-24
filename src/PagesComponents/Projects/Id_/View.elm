@@ -14,7 +14,6 @@ import Libs.List as L
 import Libs.Maybe as Maybe
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.String as String
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -38,34 +37,34 @@ viewProject shared model =
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100, Tw.overflow_hidden ], Global.selector "body" [ Tw.h_full ] ]
     , Styles.global
     , if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp shared.theme model "app") (Lazy.lazy viewNotFound shared.theme)
+        model.erd |> Maybe.mapOrElse (viewApp model "app") viewNotFound
 
       else
-        viewLoader shared.theme
-    , Lazy.lazy4 viewModal shared.theme shared.zone shared.now model
-    , Lazy.lazy2 viewToasts shared.theme model.toasts
+        viewLoader
+    , Lazy.lazy3 viewModal shared.zone shared.now model
+    , Lazy.lazy viewToasts model.toasts
     ]
 
 
-viewApp : Theme -> Model -> HtmlId -> Erd -> Html Msg
-viewApp theme model htmlId erd =
+viewApp : Model -> HtmlId -> Erd -> Html Msg
+viewApp model htmlId erd =
     div [ class "tw-app" ]
-        [ Lazy.lazy6 viewNavbar theme model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
-        , Lazy.lazy3 viewErd theme model erd
-        , Lazy.lazy5 viewCommands theme model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+        [ Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+        , Lazy.lazy7 viewErd model.screen erd model.cursorMode model.selectionBox model.virtualRelation model.openedDropdown model.dragging
+        , Lazy.lazy4 viewCommands model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
         ]
 
 
-viewLoader : Theme -> Html msg
-viewLoader theme =
+viewLoader : Html msg
+viewLoader =
     div [ class "tw-loader", css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.h_screen ] ]
-        [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, Color.border theme.color 500 ] ] []
+        [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, Color.border Conf.theme.color 500 ] ] []
         ]
 
 
-viewNotFound : Theme -> Html msg
-viewNotFound theme =
-    NotFound.simple theme
+viewNotFound : Html msg
+viewNotFound =
+    NotFound.simple Conf.theme
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
             , link = { url = Route.toHref Route.Home_, text = "Azimutt" }
@@ -82,22 +81,22 @@ viewNotFound theme =
         }
 
 
-viewModal : Theme -> Time.Zone -> Time.Posix -> Model -> Html Msg
-viewModal theme zone now model =
+viewModal : Time.Zone -> Time.Posix -> Model -> Html Msg
+viewModal zone now model =
     Keyed.node "div"
         [ class "tw-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> L.has m.id) m ))
-         , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout theme (model.openedDialogs |> L.has m.id) m ))
-         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath theme (model.openedDialogs |> L.has m.id) e.tables e.settings.findPath m )) model.erd
+         , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout (model.openedDialogs |> L.has m.id) m ))
+         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> L.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> L.has m.id) e m )) model.erd
-         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload theme zone now (model.openedDialogs |> L.has m.id) m ))
-         , model.help |> Maybe.map (\m -> ( m.id, viewHelp theme (model.openedDialogs |> L.has m.id) m ))
+         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload zone now (model.openedDialogs |> L.has m.id) m ))
+         , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> L.has m.id) m ))
          ]
             |> List.filterMap identity
             |> List.sortBy (\( id, _ ) -> model.openedDialogs |> L.indexOf id |> Maybe.withDefault 0 |> negate)
         )
 
 
-viewToasts : Theme -> List Toast.Model -> Html Msg
-viewToasts theme toasts =
-    div [ class "tw-toasts" ] [ Toast.container theme toasts ToastHide ]
+viewToasts : List Toast.Model -> Html Msg
+viewToasts toasts =
+    div [ class "tw-toasts" ] [ Toast.container Conf.theme toasts ToastHide ]

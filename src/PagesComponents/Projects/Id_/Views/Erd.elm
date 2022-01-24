@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Erd exposing (Model, viewErd)
+module PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -20,13 +20,11 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
-import Libs.Models.Theme exposing (Theme)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..), VirtualRelation)
@@ -44,29 +42,16 @@ import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable
 import Tailwind.Utilities as Tw
 
 
-type alias Model x =
-    { x
-        | screen : ScreenProps
-        , cursorMode : CursorMode
-        , selectionBox : Maybe Area
-        , virtualRelation : Maybe VirtualRelation
-        , openedDropdown : HtmlId
-        , dragging : Maybe DragState
-        , hoverTable : Maybe TableId
-        , hoverColumn : Maybe ColumnRef
-    }
-
-
-viewErd : Theme -> Model x -> Erd -> Html Msg
-viewErd theme model erd =
+viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> Html Msg
+viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown dragging =
     let
         canvas : CanvasProps
         canvas =
-            model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
+            dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
 
         tableProps : Dict TableId ErdTableProps
         tableProps =
-            model.dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> erd.tableProps |> Drag.moveTables d canvas.zoom) erd.tableProps
+            dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> erd.tableProps |> Drag.moveTables d canvas.zoom) erd.tableProps
 
         displayedTables : Dict TableId ErdTableProps
         displayedTables =
@@ -76,9 +61,9 @@ viewErd theme model erd =
         displayedRelations =
             erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedTables |> Dict.member c.table))
 
-        virtualRelation : Maybe ( ( Maybe ErdColumnProps, ErdColumn ), Position )
-        virtualRelation =
-            model.virtualRelation
+        virtualRelationInfo : Maybe ( ( Maybe ErdColumnProps, ErdColumn ), Position )
+        virtualRelationInfo =
+            virtualRelation
                 |> Maybe.andThen
                     (\vr ->
                         vr.src
@@ -88,7 +73,7 @@ viewErd theme model erd =
                                         |> Maybe.map
                                             (\ref ->
                                                 ( ( erd |> Erd.getColumnProps src.table src.column, ref )
-                                                , vr.mouse |> CanvasProps.adapt model.screen canvas
+                                                , vr.mouse |> CanvasProps.adapt screen canvas
                                                 )
                                             )
                                 )
@@ -97,30 +82,30 @@ viewErd theme model erd =
     main_
         [ class "tw-erd"
         , classList
-            [ ( "tw-cursor-hand", model.cursorMode == CursorDrag && model.dragging == Nothing && model.virtualRelation == Nothing )
-            , ( "tw-cursor-hand-drag", model.cursorMode == CursorDrag && model.dragging /= Nothing && model.virtualRelation == Nothing )
-            , ( "tw-cursor-cross", model.virtualRelation /= Nothing )
+            [ ( "tw-cursor-hand", cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing )
+            , ( "tw-cursor-hand-drag", cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing )
+            , ( "tw-cursor-cross", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
         , onWheel OnWheel
-        , stopPointerDown (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        , stopPointerDown (.position >> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y canvas.position.left canvas.position.top "px", Tu.scale canvas.zoom ] ]
-            [ Lazy.lazy5 viewTables model canvas.zoom tableProps erd.tables erd.shownTables
+            [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
             , Lazy.lazy2 viewRelations displayedTables displayedRelations
-            , model.selectionBox |> M.filterNot (\_ -> tableProps |> Dict.isEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
-            , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
+            , selectionBox |> M.filterNot (\_ -> tableProps |> Dict.isEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
+            , virtualRelationInfo |> M.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
         , if tableProps |> Dict.isEmpty then
-            viewEmptyState theme erd.tables
+            viewEmptyState erd.tables
 
           else
             div [] []
         ]
 
 
-viewTables : Model x -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
-viewTables model zoom tableProps tables shownTables =
+viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps tables shownTables =
     Keyed.node "div"
         [ class "tw-tables" ]
         (shownTables
@@ -132,11 +117,11 @@ viewTables model zoom tableProps tables shownTables =
                     ( TableId.toString table.id
                     , Lazy.lazy6 viewTable
                         zoom
-                        model.cursorMode
+                        cursorMode
                         (Table.argsToString
-                            (B.cond (model.openedDropdown |> String.startsWith table.htmlId) model.openedDropdown "")
-                            (model.dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
-                            (model.virtualRelation /= Nothing)
+                            (B.cond (openedDropdown |> String.startsWith table.htmlId) openedDropdown "")
+                            (dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
+                            (virtualRelation /= Nothing)
                         )
                         index
                         props
@@ -178,8 +163,8 @@ viewSelectionBox area =
         []
 
 
-viewEmptyState : Theme -> Dict TableId ErdTable -> Html Msg
-viewEmptyState theme tables =
+viewEmptyState : Dict TableId ErdTable -> Html Msg
+viewEmptyState tables =
     let
         bestTables : List ErdTable
         bestTables =
@@ -192,7 +177,7 @@ viewEmptyState theme tables =
     div [ css [ Tw.flex, Tw.h_full, Tw.justify_center, Tw.items_center ] ]
         [ div [ css [ Tw.max_w_prose, Tw.p_6, Tw.bg_white, Tw.border, Tw.border_gray_200, Tw.rounded_lg ] ]
             [ div [ css [ Tw.text_center ] ]
-                [ Icon.outline Template [ Tw.w_12, Tw.h_12, Tw.mx_auto, Color.text theme.color 500 ]
+                [ Icon.outline Template [ Tw.w_12, Tw.h_12, Tw.mx_auto, Color.text Conf.theme.color 500 ]
                 , h2 [ css [ Tw.mt_2, Tw.text_lg, Tw.font_medium, Tw.text_gray_900 ] ]
                     [ text "Hello from Azimutt 👋" ]
                 , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
@@ -204,7 +189,7 @@ viewEmptyState theme tables =
                     [ text "Your project has "
                     , bText (tables |> S.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic theme.color [ onClick (ShowTable t.id), css [ Tw.m_1, Tw.cursor_pointer ] ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Conf.theme.color [ onClick (ShowTable t.id), css [ Tw.m_1, Tw.cursor_pointer ] ] [ text (TableId.show t.id) ]))
                     ]
                 , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
                     [ text "If you like Azimutt, "

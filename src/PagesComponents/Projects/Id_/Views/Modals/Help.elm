@@ -12,15 +12,14 @@ import Html.Styled.Events exposing (onClick)
 import Libs.Html.Styled exposing (extLink)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind.Utilities as Tu
 import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewHelp : Theme -> Bool -> HelpDialog -> Html Msg
-viewHelp theme opened model =
+viewHelp : Bool -> HelpDialog -> Html Msg
+viewHelp opened model =
     let
         titleId : HtmlId
         titleId =
@@ -42,7 +41,7 @@ viewHelp theme opened model =
                     ]
                 ]
             , div [ css [ Tw.mt_3, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Tw.divide_y, Tw.divide_gray_300 ] ]
-                (List.map (\s -> sectionToAccordionItem theme (s.title == model.openedSection) s)
+                (List.map (\s -> sectionToAccordionItem (s.title == model.openedSection) s)
                     [ search
                     , canvasNavigation
                     , partialDisplay
@@ -59,7 +58,7 @@ viewHelp theme opened model =
                 ]
             ]
         , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-            [ Button.primary3 theme.color [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
+            [ Button.primary3 Conf.theme.color [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
         ]
 
 
@@ -204,10 +203,10 @@ shortcuts =
     }
 
 
-sectionToAccordionItem : Theme -> Bool -> Section Msg -> Html Msg
-sectionToAccordionItem theme isOpen section =
+sectionToAccordionItem : Bool -> Section Msg -> Html Msg
+sectionToAccordionItem isOpen section =
     div []
-        [ div [ onClick (HelpMsg (HToggle section.title)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when isOpen [ Color.bg theme.color 100, Color.text theme.color 700 ] ] ] [ text section.title ]
+        [ div [ onClick (HelpMsg (HToggle section.title)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when isOpen [ Color.bg Conf.theme.color 100, Color.text Conf.theme.color 700 ] ] ] [ text section.title ]
         , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Tu.unless isOpen [ Tw.hidden ] ] ] section.body
         ]
 

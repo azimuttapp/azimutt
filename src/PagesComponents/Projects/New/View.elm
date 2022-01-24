@@ -13,26 +13,22 @@ import Html.Styled.Attributes exposing (css, href)
 import Html.Styled.Events exposing (onClick)
 import Libs.Html.Styled.Attributes exposing (ariaCurrent)
 import Libs.Models.Color as Color
-import Libs.Models.Theme exposing (Theme)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
-import Shared
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewNewProject : Shared.Model -> Model -> List (Html Msg)
-viewNewProject shared model =
-    appShell shared.theme
-        (\link -> SelectMenu link.text)
+viewNewProject : Model -> List (Html Msg)
+viewNewProject model =
+    appShell (\link -> SelectMenu link.text)
         ToggleMobileMenu
         model
         [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft [ Tw.inline_block ], text " ", text model.selectedMenu ] ]
-        [ viewContent shared.theme
-            model
+        [ viewContent model
             { tabs =
                 [ { tab = Schema, icon = DocumentText, text = "From SQL schema" }
                 , { tab = Sample, icon = Collection, text = "From sample" }
@@ -51,21 +47,21 @@ type alias TabModel tab =
     { tab : tab, icon : Icon, text : String }
 
 
-viewContent : Theme -> Model -> PageModel -> Html Msg
-viewContent theme model page =
+viewContent : Model -> PageModel -> Html Msg
+viewContent model page =
     div [ css [ Tw.divide_y, Bp.lg [ Tw.grid, Tw.grid_cols_12, Tw.divide_x ] ] ]
         [ aside [ css [ Tw.py_6, Bp.lg [ Tw.col_span_3 ] ] ]
-            [ nav [ css [ Tw.space_y_1 ] ] (page.tabs |> List.map (viewTab theme model.selectedTab)) ]
+            [ nav [ css [ Tw.space_y_1 ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
         , div [ css [ Tw.px_4, Tw.py_6, Bp.sm [ Tw.p_6 ], Bp.lg [ Tw.pb_8, Tw.col_span_9, Tw.rounded_r_lg ] ] ]
-            [ viewTabContent theme model ]
+            [ viewTabContent model ]
         ]
 
 
-viewTab : Theme -> Tab -> TabModel Tab -> Html Msg
-viewTab theme selected tab =
+viewTab : Tab -> TabModel Tab -> Html Msg
+viewTab selected tab =
     if tab.tab == selected then
-        a [ href "", css [ Color.bg theme.color 50, Color.border theme.color 500, Color.text theme.color 700, Tw.border_l_4, Tw.px_3, Tw.py_2, Tw.flex, Tw.items_center, Tw.text_sm, Tw.font_medium, Css.hover [ Color.bg theme.color 50, Color.text theme.color 700 ] ], ariaCurrent "page" ]
-            [ Icon.outline tab.icon [ Color.text theme.color 500, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ]
+        a [ href "", css [ Color.bg Conf.theme.color 50, Color.border Conf.theme.color 500, Color.text Conf.theme.color 700, Tw.border_l_4, Tw.px_3, Tw.py_2, Tw.flex, Tw.items_center, Tw.text_sm, Tw.font_medium, Css.hover [ Color.bg Conf.theme.color 50, Color.text Conf.theme.color 700 ] ], ariaCurrent "page" ]
+            [ Icon.outline tab.icon [ Color.text Conf.theme.color 500, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ]
             , span [ css [ Tw.truncate ] ] [ text tab.text ]
             ]
 
@@ -76,40 +72,40 @@ viewTab theme selected tab =
             ]
 
 
-viewTabContent : Theme -> Model -> Html Msg
-viewTabContent theme model =
+viewTabContent : Model -> Html Msg
+viewTabContent model =
     div []
         ([ case model.selectedTab of
             Schema ->
-                viewSchemaUpload theme
+                viewSchemaUpload
 
             Sample ->
-                viewSampleSelection theme model.parsing.selectedSample
+                viewSampleSelection model.parsing.selectedSample
          , SQLSource.viewParsing model.parsing
          ]
-            ++ (model.parsing.parsedSource |> Maybe.map2 (\( projectId, _, _ ) source -> [ viewActions theme projectId source ]) model.parsing.loadedFile |> Maybe.withDefault [])
+            ++ (model.parsing.parsedSource |> Maybe.map2 (\( projectId, _, _ ) source -> [ viewActions projectId source ]) model.parsing.loadedFile |> Maybe.withDefault [])
         )
 
 
-viewSchemaUpload : Theme -> Html Msg
-viewSchemaUpload theme =
+viewSchemaUpload : Html Msg
+viewSchemaUpload =
     div []
         [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
         , form []
             [ div [ css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_y_6, Tw.gap_x_4, Bp.sm [ Tw.grid_cols_6 ] ] ]
                 [ div [ css [ Bp.sm [ Tw.col_span_6 ] ] ]
-                    [ FileInput.basic theme "file-upload" (SelectLocalFile >> SQLSourceMsg)
+                    [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> SQLSourceMsg)
                     ]
                 ]
             ]
         ]
 
 
-viewSampleSelection : Theme -> Maybe String -> Html Msg
-viewSampleSelection theme selectedSample =
+viewSampleSelection : Maybe String -> Html Msg
+viewSampleSelection selectedSample =
     div []
         [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
-        , ItemList.withIcons theme
+        , ItemList.withIcons Conf.theme
             (Conf.schemaSamples
                 |> Dict.values
                 |> List.sortBy .tables
@@ -135,11 +131,11 @@ viewHeading title description =
         ]
 
 
-viewActions : Theme -> ProjectId -> Source -> Html Msg
-viewActions theme projectId source =
+viewActions : ProjectId -> Source -> Html Msg
+viewActions projectId source =
     div [ css [ Tw.mt_6 ] ]
         [ div [ css [ Tw.flex, Tw.justify_end ] ]
-            [ Button.white3 theme.color [ onClick DropSchema ] [ text "Trash this" ]
-            , Button.primary3 theme.color [ onClick (CreateProject projectId source), css [ Tw.ml_3 ] ] [ text "Create project!" ]
+            [ Button.white3 Conf.theme.color [ onClick DropSchema ] [ text "Trash this" ]
+            , Button.primary3 Conf.theme.color [ onClick (CreateProject projectId source), css [ Tw.ml_3 ] ] [ text "Create project!" ]
             ]
         ]

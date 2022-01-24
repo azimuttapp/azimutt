@@ -3,6 +3,7 @@ module PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Components.Molecules.Tooltip as Tooltip
+import Conf
 import Css
 import Dict exposing (Dict)
 import Gen.Route as Route
@@ -17,7 +18,6 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.String as String
 import Libs.Tailwind.Utilities as Tu
 import Libs.Task as T
@@ -28,19 +28,19 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Tailwind.Utilities as Tw
 
 
-viewNavbarTitle : Theme -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarTitle theme otherProjects project usedLayout layouts htmlId openedDropdown =
+viewNavbarTitle : List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarTitle otherProjects project usedLayout layouts htmlId openedDropdown =
     div [ css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.text_white ] ]
-        ([ Lazy.lazy5 viewProjectsDropdown theme otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects")) ]
-            ++ viewLayoutsMaybe theme usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
+        ([ Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects")) ]
+            ++ viewLayoutsMaybe usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
 
 
-viewProjectsDropdown : Theme -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown theme otherProjects project htmlId openedDropdown =
+viewProjectsDropdown : List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown otherProjects project htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ] ]
                 [ span [] [ text project.name ]
                 , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
                 ]
@@ -57,22 +57,22 @@ viewProjectsDropdown theme otherProjects project htmlId openedDropdown =
         )
 
 
-viewLayoutsMaybe : Theme -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
-viewLayoutsMaybe theme usedLayout layouts htmlId openedDropdown =
+viewLayoutsMaybe : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
+viewLayoutsMaybe usedLayout layouts htmlId openedDropdown =
     if layouts |> Dict.isEmpty then
         []
 
     else
-        [ Icon.slash [ Color.text theme.color 300 ]
-        , Lazy.lazy5 viewLayouts theme usedLayout layouts htmlId openedDropdown
+        [ Icon.slash [ Color.text Conf.theme.color 300 ]
+        , Lazy.lazy4 viewLayouts usedLayout layouts htmlId openedDropdown
         ]
 
 
-viewLayouts : Theme -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewLayouts theme usedLayout layouts htmlId openedDropdown =
+viewLayouts : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
+viewLayouts usedLayout layouts htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( theme.color, 600 ) ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.p_1, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ] ]
                 [ span [] [ text (usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
                 , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
                 ]

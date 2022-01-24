@@ -22,11 +22,11 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
+page _ req =
     Page.element
         { init = init req
         , update = update req
-        , view = view shared
+        , view = view
         , subscriptions = subscriptions
         }
 
@@ -121,8 +121,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
+view : Model -> View Msg
+view model =
     { title = "Azimutt - Explore your database schema"
-    , body = model |> viewNewProject shared |> List.map Styled.toUnstyled
+    , body = model |> viewNewProject |> List.map Styled.toUnstyled
     }

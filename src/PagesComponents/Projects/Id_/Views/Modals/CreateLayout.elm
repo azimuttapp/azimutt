@@ -11,15 +11,14 @@ import Html.Styled.Events exposing (onClick, onInput)
 import Libs.Html.Styled exposing (bText, sendTweet)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind.Utilities as Tu
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewCreateLayout : Theme -> Bool -> LayoutDialog -> Html Msg
-viewCreateLayout theme opened model =
+viewCreateLayout : Bool -> LayoutDialog -> Html Msg
+viewCreateLayout opened model =
     let
         titleId : HtmlId
         titleId =
@@ -36,8 +35,8 @@ viewCreateLayout theme opened model =
         , onBackgroundClick = ModalClose (LayoutMsg LCancel)
         }
         [ div [ css [ Tw.px_6, Tw.pt_6, Bp.sm [ Tw.flex, Tw.items_start ] ] ]
-            [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg theme.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
-                [ Icon.outline Template [ Color.text theme.color 600 ]
+            [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg Conf.theme.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
+                [ Icon.outline Template [ Color.text Conf.theme.color 600 ]
                 ]
             , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
                 [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ]
@@ -58,7 +57,7 @@ viewCreateLayout theme opened model =
                 ]
             ]
         , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_6, Tw.flex, Tw.items_center, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-            [ Button.primary3 theme.color [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text "Save layout" ]
+            [ Button.primary3 Conf.theme.color [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ text "Save layout" ]
             , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ text "Cancel" ]
             ]
         ]
