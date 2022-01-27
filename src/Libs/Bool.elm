@@ -32,7 +32,7 @@ toString : Bool -> String
 toString bool =
     case bool of
         True ->
-            "true"
+            "True"
 
         False ->
-            "false"
+            "False"

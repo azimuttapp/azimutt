@@ -12,7 +12,7 @@ import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (Model)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
-import Services.Lenses exposing (mapCanvas, mapErdM, mapTableProps)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapPosition, mapTableProps, setSelectionBox)
 
 
 handleDrag : DragState -> Bool -> Model -> Model
@@ -31,13 +31,14 @@ handleDrag drag isEnd model =
 
     else if drag.id == Conf.ids.selectionBox then
         if isEnd then
-            { model | selectionBox = Nothing }
+            model |> setSelectionBox Nothing
 
         else
             drag
                 |> buildSelectionArea model.screen canvas
                 |> (\area ->
-                        { model | selectionBox = Just area }
+                        model
+                            |> setSelectionBox (Just area)
                             |> mapErdM (mapTableProps (Dict.map (\_ p -> p |> ErdTableProps.setSelected (Area.overlap area (p |> ErdTableProps.area)))))
                    )
 
@@ -50,7 +51,7 @@ handleDrag drag isEnd model =
 
 moveCanvas : DragState -> CanvasProps -> CanvasProps
 moveCanvas drag canvas =
-    { canvas | position = canvas.position |> move drag 1 }
+    canvas |> mapPosition (move drag 1)
 
 
 moveTables : DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
