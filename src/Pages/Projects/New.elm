@@ -4,6 +4,7 @@ import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Html.Styled as Styled
+import Libs.Bool as B
 import Libs.Maybe as M
 import Libs.String as S
 import Libs.Task as T
@@ -47,6 +48,7 @@ init : Request.With Params -> ( Model, Cmd Msg )
 init req =
     ( { selectedMenu = "New project"
       , mobileMenuOpen = False
+      , openedCollapse = ""
       , projects = []
       , selectedTab = req.query |> Dict.get "sample" |> Maybe.map (\_ -> Sample) |> Maybe.withDefault Schema
       , parsing = SQLSource.init Nothing Nothing
@@ -73,6 +75,9 @@ update req msg model =
         ToggleMobileMenu ->
             ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
 
+        ToggleCollapse id ->
+            ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
+
         SelectTab tab ->
             ( { model | selectedTab = tab, parsing = SQLSource.init Nothing Nothing }, Cmd.none )
 
@@ -90,6 +95,9 @@ update req msg model =
 
         JsMessage message ->
             model |> handleJsMessage message
+
+        Noop ->
+            ( model, Cmd.none )
 
 
 handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )

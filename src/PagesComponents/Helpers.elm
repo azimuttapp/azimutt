@@ -13,8 +13,10 @@ import Html exposing (Html, div)
 import Html.Attributes exposing (class, id)
 import Html.Styled as S
 import Html.Styled.Attributes as SA
+import Libs.Html.Styled as S
 import Libs.Models exposing (Link)
 import Libs.Models.Color as Color
+import Libs.Tailwind.Utilities as Tu
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
@@ -95,7 +97,7 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
             ]
         ]
     ]
-        ++ footer
+        ++ (viewOldApp :: footer)
 
 
 viewHeader : List (S.Html msg) -> S.Html msg
@@ -103,5 +105,22 @@ viewHeader content =
     S.header [ SA.css [ Tw.py_10 ] ]
         [ S.div [ SA.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
             [ S.h1 [ SA.css [ Tw.text_3xl, Tw.font_bold, Tw.text_white ] ] content
+            ]
+        ]
+
+
+viewOldApp : S.Html msg
+viewOldApp =
+    S.footer []
+        [ S.div [ SA.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.py_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.md [ Tw.flex, Tw.items_center, Tw.justify_between ], Bp.sm [ Tw.px_6 ] ] ]
+            [ S.div [ SA.css [ Tw.mt_8, Bp.md [ Tw.mt_0, Tw.order_1 ] ] ]
+                [ S.p [ SA.css [ Tw.text_center, Tw.text_base, Tw.text_gray_400 ] ]
+                    [ S.text "This new Azimutt version is in trial, please give "
+                    , S.extLink Conf.constants.azimuttBugReport [ SA.css [ Tu.link ] ] [ S.text "any feedback" ]
+                    , S.text " you may have. You can still access the previous version "
+                    , S.a [ SA.href (Route.toHref Route.App), SA.css [ Tu.link ] ] [ S.text "here" ]
+                    , S.text "."
+                    ]
+                ]
             ]
         ]

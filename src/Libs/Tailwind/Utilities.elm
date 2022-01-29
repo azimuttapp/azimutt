@@ -159,4 +159,4 @@ text_muted =
 
 link : Css.Style
 link =
-    Css.batch [ Tw.underline ]
+    Css.batch [ Tw.underline, Tw.cursor_pointer ]

@@ -130,7 +130,7 @@ window.addEventListener('load', function() {
     function loadProjects() {
         const values = Object.keys(localStorage)
             .filter(key => key.startsWith(projectPrefix))
-            .map(key => [key.replace(projectPrefix, ''), JSON.parse(localStorage.getItem(key))])
+            .map(key => [key.replace(projectPrefix, ''), safeParse(localStorage.getItem(key))])
         sendToElm({kind: 'GotProjects', projects: values})
     }
     function saveProject(project) {
@@ -412,6 +412,14 @@ window.addEventListener('load', function() {
             return findParent(elt.parentElement, predicate)
         } else {
             return undefined
+        }
+    }
+
+    function safeParse(text) {
+        try {
+            return JSON.parse(text)
+        } catch (e) {
+            return text
         }
     }
 

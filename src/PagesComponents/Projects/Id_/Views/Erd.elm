@@ -181,9 +181,9 @@ viewEmptyState tables =
                 , h2 [ css [ Tw.mt_2, Tw.text_lg, Tw.font_medium, Tw.text_gray_900 ] ]
                     [ text "Hello from Azimutt 👋" ]
                 , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
-                    [ text "Azimutt let you explore your database schema as freely as possible. To start, just type what you are looking for in the "
+                    [ text "Azimutt let you freely explore your database schema. To start, just type what you are looking for in the "
                     , button [ onClick (Focus Conf.ids.searchInput), css [ Tu.link, Css.focus [ Tw.outline_none ] ] ] [ text "search bar" ]
-                    , text ", and then look at column and follow relations. Also, you can save your current layout for later."
+                    , text ", and then look at columns and follow relations. Once you have interesting layout, you can save it for later."
                     ]
                 , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
                     [ text "Your project has "
@@ -192,7 +192,7 @@ viewEmptyState tables =
                     , div [] (bestTables |> List.map (\t -> Badge.basic Conf.theme.color [ onClick (ShowTable t.id), css [ Tw.m_1, Tw.cursor_pointer ] ] [ text (TableId.show t.id) ]))
                     ]
                 , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
-                    [ text "If you like Azimutt, "
+                    [ text "If you ♥️ Azimutt, "
                     , sendTweet Conf.constants.cheeringTweet [ css [ Tu.link ] ] [ text "come and say hi" ]
                     , text ". We are eager to learn how you use it and for what. We also love "
                     , extLink Conf.constants.azimuttFeatureRequests [ css [ Tu.link ] ] [ text "feedback and feature requests" ]

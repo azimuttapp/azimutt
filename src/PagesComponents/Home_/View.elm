@@ -38,11 +38,7 @@ viewHome model =
                             , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
                             ]
                     )
-                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
-
-        appRoute : Route.Route
-        appRoute =
-            model.projects |> List.head |> M.mapOrElse (\_ -> Route.Projects) Route.Projects__New
+                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
     in
     [ Global.global Tw.globalStyles
     , Helpers.publicHeader
@@ -67,7 +63,7 @@ viewHome model =
                 , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "Let's try it!", track = Just (Track.openAppCta "home-explore-section") }
+        , cta = Just { url = Route.toHref Route.Projects, text = "Let's try it!", track = Just (Track.openAppCta "home-explore-section") }
         , quote =
             Just
                 { text = "Using Azimutt is like having super powers!"
@@ -89,7 +85,7 @@ viewHome model =
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "Let me see...", track = Just (Track.openAppCta "home-display-section") }
+        , cta = Just { url = Route.toHref Route.Projects, text = "Let me see...", track = Just (Track.openAppCta "home-display-section") }
         , quote =
             Just
                 { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
@@ -115,7 +111,7 @@ viewHome model =
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "I can't resist, let's go!", track = Just (Track.openAppCta "home-relations-section") }
+        , cta = Just { url = Route.toHref Route.Projects, text = "I can't resist, let's go!", track = Just (Track.openAppCta "home-relations-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
@@ -131,7 +127,7 @@ viewHome model =
                 , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "That's enough, I'm in!", track = Just (Track.openAppCta "home-layouts-section") }
+        , cta = Just { url = Route.toHref Route.Projects, text = "That's enough, I'm in!", track = Just (Track.openAppCta "home-layouts-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
@@ -155,7 +151,7 @@ viewHome model =
                 , text ", just as you like!"
                 ]
             }
-        , cta = Just { url = Route.toHref appRoute, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
+        , cta = Just { url = Route.toHref Route.Projects, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
         , quote = Nothing
         }
     , FeatureGrid.cardSlice

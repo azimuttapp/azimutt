@@ -1,4 +1,4 @@
-module Components.Organisms.Relation exposing (Model, doc, line)
+module Components.Organisms.Relation exposing (doc, line)
 
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
@@ -10,16 +10,6 @@ import Libs.Tailwind.Utilities as Tu
 import Svg.Styled as Svg exposing (Svg, svg, text)
 import Svg.Styled.Attributes exposing (class, css, height, strokeDasharray, width, x1, x2, y1, y2)
 import Tailwind.Utilities as Tw
-
-
-type alias Model =
-    { src : Position
-    , ref : Position
-    , nullable : Bool
-    , color : Maybe Color
-    , label : String
-    , index : Int
-    }
 
 
 line : Position -> Position -> Bool -> Maybe Color -> String -> Int -> Svg msg
