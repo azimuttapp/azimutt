@@ -25,7 +25,7 @@ line src ref nullable color label index =
             { left = min src.left ref.left - padding, top = min src.top ref.top - padding }
     in
     svg
-        [ class "tw-relation"
+        [ class "tw-relation2"
         , width (String.fromFloat (abs (src.left - ref.left) + (padding * 2)))
         , height (String.fromFloat (abs (src.top - ref.top) + (padding * 2)))
         , style ("position: absolute; left: " ++ String.fromFloat origin.left ++ "px; top: " ++ String.fromFloat origin.top ++ "px; z-index: " ++ String.fromInt index ++ ";")
