@@ -16,7 +16,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Models exposing (CursorMode(..), DragState, Msg)
 import Ports
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
+import Services.Lenses exposing (mapCanvas, mapEachTable, mapProjectMLayout, mapTables, setDragState, setSelected, setSelection, updatePosition)
 
 
 type alias Model x =
@@ -59,8 +59,10 @@ dragAction dragState model =
                 area =
                     computeSelectedArea model.domInfos canvas dragState
             in
-            { model | dragState = Just dragState, selection = Just area }
-                |> setCurrentLayout (setTables (List.map (\t -> { t | selected = overlap area (tableArea t model.domInfos) })))
+            model
+                |> setDragState (Just dragState)
+                |> setSelection (Just area)
+                |> mapProjectMLayout (mapTables (List.map (\t -> t |> setSelected (overlap area (tableArea t model.domInfos)))))
 
         ( Select, id, canvas ) ->
             let
@@ -72,10 +74,10 @@ dragAction dragState model =
                 selected =
                     model.project |> Maybe.andThen (\p -> p.layout.tables |> L.findBy .id tableId |> Maybe.map .selected) |> Maybe.withDefault False
             in
-            { model | dragState = Just dragState } |> setCurrentLayout (setTableList (\t -> t.id == tableId || (selected && t.selected)) (setPosition dragState.delta canvas.zoom))
+            model |> setDragState (Just dragState) |> mapProjectMLayout (mapEachTable (\t -> t.id == tableId || (selected && t.selected)) (updatePosition dragState.delta canvas.zoom))
 
         ( Drag, "erd", _ ) ->
-            { model | dragState = Just dragState } |> setCurrentLayout (setCanvas (setPosition dragState.delta 1))
+            model |> setDragState (Just dragState) |> mapProjectMLayout (mapCanvas (updatePosition dragState.delta 1))
 
         ( Drag, _, _ ) ->
             model

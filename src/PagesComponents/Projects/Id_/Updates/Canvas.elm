@@ -1,6 +1,7 @@
 module PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 
 import Conf
+import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
 import Libs.Delta as Delta
@@ -9,10 +10,11 @@ import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.Layout exposing (Layout)
-import Models.Project.TableProps as TableProps exposing (TableProps)
+import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
-import Services.Lenses exposing (setCanvas, setTables)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import Services.Lenses exposing (mapCanvas, mapTableProps, setPosition, setZoom)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
@@ -29,31 +31,31 @@ zoomCanvas delta screen canvas =
     canvas |> performZoom delta (canvas |> CanvasProps.viewport screen |> Area.center)
 
 
-fitCanvas : ScreenProps -> Layout -> Layout
-fitCanvas screen layout =
+fitCanvas : ScreenProps -> Erd -> Erd
+fitCanvas screen erd =
     let
-        selectedTables : List TableProps
+        selectedTables : Dict TableId ErdTableProps
         selectedTables =
-            layout.tables |> List.filter .selected
+            erd.tableProps |> Dict.filter (\_ p -> p.selected)
 
-        tables : List TableProps
+        tables : Dict TableId ErdTableProps
         tables =
-            B.cond (selectedTables |> List.isEmpty) layout.tables selectedTables
+            B.cond (selectedTables |> Dict.isEmpty) erd.tableProps selectedTables
 
         tablesArea : Area
         tablesArea =
-            tables |> List.map TableProps.area |> Area.merge |> Maybe.withDefault Area.zero
+            tables |> Dict.values |> List.map ErdTableProps.area |> Area.merge |> Maybe.withDefault Area.zero
 
         padding : Float
         padding =
             20
 
         ( newZoom, centerOffset ) =
-            computeFit (layout.canvas |> CanvasProps.viewport screen) padding tablesArea layout.canvas.zoom
+            computeFit (erd.canvas |> CanvasProps.viewport screen) padding tablesArea erd.canvas.zoom
     in
-    layout
-        |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })
-        |> setTables (List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
+    erd
+        |> mapCanvas (setPosition Position.zero >> setZoom newZoom)
+        |> mapTableProps (Dict.map (\_ -> ErdTableProps.mapPosition (Position.add centerOffset)))
 
 
 performZoom : Float -> Position -> CanvasProps -> CanvasProps
@@ -77,7 +79,7 @@ performZoom delta center canvas =
         newTop =
             canvas.position.top - ((center.top - canvas.position.top) * (zoomFactor - 1))
     in
-    { canvas | position = Position newLeft newTop, zoom = newZoom }
+    { position = Position newLeft newTop, zoom = newZoom }
 
 
 computeFit : Area -> Float -> Area -> ZoomLevel -> ( ZoomLevel, Position )

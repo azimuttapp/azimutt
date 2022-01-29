@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, decode, encode, merge, withName, withNullable)
+module Models.Project.Column exposing (Column, ColumnLike, decode, encode, merge, withName, withNullable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -24,12 +24,24 @@ type alias Column =
     }
 
 
-withName : Column -> String -> String
+type alias ColumnLike x =
+    { x
+        | index : ColumnIndex
+        , name : ColumnName
+        , kind : ColumnType
+        , nullable : Bool
+        , default : Maybe ColumnValue
+        , comment : Maybe Comment
+        , origins : List Origin
+    }
+
+
+withName : ColumnLike x -> String -> String
 withName column text =
-    text ++ "." ++ column.name
+    ColumnName.withName column.name text
 
 
-withNullable : Column -> String -> String
+withNullable : ColumnLike x -> String -> String
 withNullable column text =
     if column.nullable then
         text ++ "?"
@@ -40,17 +52,19 @@ withNullable column text =
 
 merge : Column -> Column -> Column
 merge c1 c2 =
-    { c1
-        | nullable = c1.nullable && c2.nullable
-        , default = M.merge ColumnValue.merge c1.default c2.default
-        , comment = M.merge Comment.merge c1.comment c2.comment
-        , origins = c1.origins ++ c2.origins
+    { index = c1.index
+    , name = c1.name
+    , kind = c1.kind
+    , nullable = c1.nullable && c2.nullable
+    , default = M.merge ColumnValue.merge c1.default c2.default
+    , comment = M.merge Comment.merge c1.comment c2.comment
+    , origins = c1.origins ++ c2.origins
     }
 
 
 encode : Column -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "name", value.name |> ColumnName.encode )
         , ( "type", value.kind |> ColumnType.encode )
         , ( "nullable", value.nullable |> E.withDefault Encode.bool False )

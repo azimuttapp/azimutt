@@ -1,4 +1,4 @@
-module Models.ColumnRefFull exposing (ColumnRefFull, format)
+module Models.ColumnRefFull exposing (ColumnRefFull, show)
 
 import Libs.Models.Size exposing (Size)
 import Models.Project.Column as Column exposing (Column)
@@ -13,6 +13,6 @@ type alias ColumnRefFull =
     { ref : ColumnRef, table : Table, column : Column, props : Maybe ( TableProps, Int, Size ) }
 
 
-format : ColumnRefFull -> String
-format { table, column } =
+show : ColumnRefFull -> String
+show { table, column } =
     TableId.show table.id |> Column.withName column

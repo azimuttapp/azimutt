@@ -1,9 +1,23 @@
-module Libs.String exposing (hashCode, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
+module Libs.String exposing (filterStartsWith, hashCode, nonEmpty, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
 
 import Bitwise
 import Dict exposing (Dict)
 import Libs.Maybe as M
 import Libs.Regex as R
+
+
+nonEmpty : String -> Bool
+nonEmpty string =
+    string /= ""
+
+
+filterStartsWith : String -> String -> String
+filterStartsWith prefix str =
+    if str |> String.startsWith prefix then
+        str
+
+    else
+        ""
 
 
 wordSplit : String -> List String

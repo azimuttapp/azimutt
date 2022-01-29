@@ -1,4 +1,4 @@
-module Libs.Json.Encode exposing (maybe, ned, nel, object, withDefault, withDefaultDeep)
+module Libs.Json.Encode exposing (maybe, ned, nel, notNullObject, withDefault, withDefaultDeep)
 
 import Json.Encode as Encode exposing (Value)
 import Libs.Maybe as M
@@ -6,9 +6,9 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 
 
-object : List ( String, Encode.Value ) -> Encode.Value
-object attrs =
-    Encode.object (attrs |> List.filter (\( _, value ) -> not (value == Encode.null)))
+notNullObject : List ( String, Encode.Value ) -> Encode.Value
+notNullObject attrs =
+    Encode.object (attrs |> List.filter (\( _, value ) -> value /= Encode.null))
 
 
 maybe : (a -> Value) -> Maybe a -> Value

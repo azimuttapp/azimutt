@@ -17,10 +17,9 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Nel as Nel
+import Libs.String as String
 import Libs.Tailwind.Utilities as Tu
-import Models.Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
@@ -28,15 +27,15 @@ import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSet
 import Models.Project.FindPathState as FindPathState
 import Models.Project.FindPathStep exposing (FindPathStep)
 import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
-viewFindPath : Theme -> Bool -> Project -> FindPathDialog -> Html Msg
-viewFindPath theme opened project model =
+viewFindPath : Bool -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFindPath opened tables settings model =
     let
         titleId : HtmlId
         titleId =
@@ -48,20 +47,20 @@ viewFindPath theme opened project model =
         , isOpen = opened
         , onBackgroundClick = ModalClose (FindPathMsg FPClose)
         }
-        [ viewHeader theme titleId
+        [ viewHeader titleId
         , viewAlert
-        , viewSettings model.id model.showSettings project.settings.findPath
-        , viewSearchForm model.id project.tables model.from model.to
-        , viewPaths theme model
-        , viewFooter theme project.settings.findPath model
+        , viewSettings model.id model.showSettings settings
+        , viewSearchForm model.id tables model.from model.to
+        , viewPaths model
+        , viewFooter settings model
         ]
 
 
-viewHeader : Theme -> String -> Html msg
-viewHeader theme titleId =
+viewHeader : String -> Html msg
+viewHeader titleId =
     div [ css [ Tw.pt_6, Tw.px_6, Bp.sm [ Tw.flex, Tw.items_start ] ] ]
-        [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg theme.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
-            [ Icon.outline LocationMarker [ Color.text theme.color 600 ]
+        [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg Conf.theme.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
+            [ Icon.outline LocationMarker [ Color.text Conf.theme.color 600 ]
             ]
         , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
             [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text "Find a path between tables" ]
@@ -98,14 +97,14 @@ viewSettings modalId isOpen settings =
                 "ex: users, accounts..."
                 "Some columns does not have meaningful links so ignore them for better results."
                 (settings.ignoredTables |> List.map TableId.show |> String.join ", ")
-                (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredTables = v |> String.split "," |> List.map String.trim |> List.map TableId.parse }))
+                (\v -> { settings | ignoredTables = v |> stringList |> List.map TableId.parse } |> FPSettingsUpdate |> FindPathMsg)
             , viewSettingsInput (modalId ++ "-settings-ignored-columns")
                 "text"
                 "Ignored columns"
                 "ex: created_by, updated_by, owner..."
                 "Some tables are big hubs which leads to bad results and performance, ignore them."
                 (settings.ignoredColumns |> String.join ", ")
-                (\v -> FindPathMsg (FPSettingsUpdate { settings | ignoredColumns = v |> String.split "," |> List.map String.trim }))
+                (\v -> { settings | ignoredColumns = v |> stringList } |> FPSettingsUpdate |> FindPathMsg)
             , viewSettingsInput (modalId ++ "-settings-path-max-length")
                 "number"
                 "Max path length"
@@ -115,6 +114,11 @@ viewSettings modalId isOpen settings =
                 (\v -> { settings | maxPathLength = v |> String.toInt |> Maybe.withDefault FindPathSettings.init.maxPathLength } |> FPSettingsUpdate |> FindPathMsg)
             ]
         ]
+
+
+stringList : String -> List String
+stringList str =
+    str |> String.split "," |> List.map String.trim |> List.filter String.nonEmpty
 
 
 viewSettingsInput : String -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg
@@ -128,7 +132,7 @@ viewSettingsInput fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldV
         ]
 
 
-viewSearchForm : HtmlId -> Dict TableId Table -> Maybe TableId -> Maybe TableId -> Html Msg
+viewSearchForm : HtmlId -> Dict TableId ErdTable -> Maybe TableId -> Maybe TableId -> Html Msg
 viewSearchForm modalId tables from to =
     div [ css [ Tw.px_6, Tw.mt_3, Tw.flex, Tw.space_x_3 ] ]
         [ viewSelectCard (modalId ++ "-from") "From" "Starting table for the path" from (FPUpdateFrom >> FindPathMsg) tables
@@ -136,7 +140,7 @@ viewSearchForm modalId tables from to =
         ]
 
 
-viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId Table -> Html Msg
+viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId ErdTable -> Html Msg
 viewSelectCard fieldId title description selectedValue buildMsg tables =
     div [ css [ Tw.flex_grow, Tw.p_3, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Bp.sm [ Tw.col_span_3 ] ] ]
         [ label [ for fieldId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700 ] ] [ text title ]
@@ -160,8 +164,8 @@ viewSelectCard fieldId title description selectedValue buildMsg tables =
         ]
 
 
-viewPaths : Theme -> FindPathDialog -> Html Msg
-viewPaths theme model =
+viewPaths : FindPathDialog -> Html Msg
+viewPaths model =
     case ( model.from, model.to, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
             if result.paths |> List.isEmpty then
@@ -183,7 +187,7 @@ viewPaths theme model =
                             |> L.appendIf ((result.paths |> List.length) > 100) (small [ css [ Tw.text_gray_500 ] ] [ text "Too much results ? Check 'Search settings' above to ignore some table or columns" ])
                         )
                     , div [ css [ Tw.mt_3, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Tw.divide_y, Tw.divide_gray_300 ] ]
-                        (result.paths |> List.sortBy Nel.length |> List.indexedMap (viewPath theme result.opened from))
+                        (result.paths |> List.sortBy Nel.length |> List.indexedMap (viewPath result.opened from))
                     , small [ css [ Tw.text_gray_500 ] ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                     , div [ css [ Tw.mt_3 ] ]
                         [ text "We hope your like this feature. If you have a few minutes, please write us "
@@ -196,12 +200,12 @@ viewPaths theme model =
             div [] []
 
 
-viewPath : Theme -> Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
-viewPath theme opened from i path =
+viewPath : Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
+viewPath opened from i path =
     div []
-        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when (opened == Just i) [ Color.bg theme.color 100, Color.text theme.color 700 ] ] ]
+        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when (opened == Just i) [ Color.bg Conf.theme.color 100, Color.text Conf.theme.color 700 ] ] ]
             (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep))
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Color.text theme.color 700, Tu.when (opened /= Just i) [ Tw.hidden ] ] ]
+        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Color.text Conf.theme.color 700, Tu.when (opened /= Just i) [ Tw.hidden ] ] ]
             [ pre [] [ text (buildQuery from path) ]
             ]
         ]
@@ -241,23 +245,23 @@ buildQuery table joins =
            )
 
 
-viewFooter : Theme -> FindPathSettings -> FindPathDialog -> Html Msg
-viewFooter theme settings model =
+viewFooter : FindPathSettings -> FindPathDialog -> Html Msg
+viewFooter settings model =
     div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
         (case ( model.from, model.to, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
-                    [ Button.primary3 theme.color [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
+                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
 
                 else
-                    [ Button.primary3 theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
+                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
 
             ( Just _, Just _, FindPathState.Searching ) ->
-                [ Button.primary3 theme.color [ disabled True ] [ Icon.loading [ Tw.neg_ml_1, Tw.mr_2, Tw.animate_spin ], text "Searching..." ] ]
+                [ Button.primary3 Conf.theme.color [ disabled True ] [ Icon.loading [ Tw.neg_ml_1, Tw.mr_2, Tw.animate_spin ], text "Searching..." ] ]
 
             ( Just _, Just _, FindPathState.Empty ) ->
-                [ Button.primary3 theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
+                [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
 
             _ ->
-                [ Button.primary3 theme.color [ disabled True ] [ text "Search" ] ]
+                [ Button.primary3 Conf.theme.color [ disabled True ] [ text "Search" ] ]
         )

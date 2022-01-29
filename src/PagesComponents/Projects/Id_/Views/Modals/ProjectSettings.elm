@@ -15,7 +15,6 @@ import Libs.List as L
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
 import Models.ColumnOrder as ColumnOrder
-import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -23,12 +22,13 @@ import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import Tailwind.Utilities as Tw
 import Time
 
 
-viewProjectSettings : Time.Zone -> Bool -> Project -> ProjectSettingsDialog -> Html Msg
-viewProjectSettings zone opened project model =
+viewProjectSettings : Time.Zone -> Bool -> Erd -> ProjectSettingsDialog -> Html Msg
+viewProjectSettings zone opened erd model =
     Slideover.slideover
         { id = model.id
         , title = "Project settings"
@@ -37,19 +37,19 @@ viewProjectSettings zone opened project model =
         , onClickOverlay = ModalClose (ProjectSettingsMsg PSClose)
         }
         (div []
-            [ viewSourcesSection zone project
-            , viewSchemasSection project
-            , viewDisplaySettingsSection project
+            [ viewSourcesSection zone erd
+            , viewSchemasSection erd
+            , viewDisplaySettingsSection erd
             ]
         )
 
 
-viewSourcesSection : Time.Zone -> Project -> Html Msg
-viewSourcesSection zone project =
+viewSourcesSection : Time.Zone -> Erd -> Html Msg
+viewSourcesSection zone erd =
     fieldset []
         [ legend [ css [ Tw.font_medium, Tw.text_gray_900 ] ] [ text "Project sources" ]
         , div [ css [ Tw.mt_1, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Tw.divide_y, Tw.divide_gray_300 ] ]
-            ((project.sources |> List.map (viewSource project.id zone)) ++ [ viewAddSource project.id ])
+            ((erd.sources |> List.map (viewSource erd.project.id zone)) ++ [ viewAddSource erd.project.id ])
         ]
 
 
@@ -101,18 +101,18 @@ viewAddSource _ =
         [ Icon.solid Plus [ Tw.inline ], text "Add source" ]
 
 
-viewSchemasSection : Project -> Html Msg
-viewSchemasSection project =
+viewSchemasSection : Erd -> Html Msg
+viewSchemasSection erd =
     let
         schemas : List ( SchemaName, List Table )
         schemas =
-            project.sources |> List.concatMap (.tables >> Dict.values) |> L.groupBy .schema |> Dict.toList |> List.map (\( name, tables ) -> ( name, tables )) |> List.sortBy Tuple.first
+            erd.sources |> List.concatMap (.tables >> Dict.values) |> L.groupBy .schema |> Dict.toList |> List.map (\( name, tables ) -> ( name, tables )) |> List.sortBy Tuple.first
     in
     if List.length schemas > 1 then
         fieldset [ css [ Tw.mt_6 ] ]
             [ legend [ css [ Tw.font_medium, Tw.text_gray_900 ] ] [ text "Project schemas" ]
             , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ] [ text "Allow you to enable or not SQL schemas in your project." ]
-            , div [ class "list-group" ] (schemas |> List.map (viewSchema project.settings.removedSchemas))
+            , div [ class "list-group" ] (schemas |> List.map (viewSchema erd.settings.removedSchemas))
             ]
 
     else
@@ -128,12 +128,12 @@ viewSchema removedSchemas ( schema, tables ) =
     viewCheckbox [] ("settings-schema-" ++ schema) [ bText schema, text (" (" ++ (realTables |> S.pluralizeL "table") ++ " & " ++ (views |> S.pluralizeL "views") ++ ")") ] (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSToggleSchema schema))
 
 
-viewDisplaySettingsSection : Project -> Html Msg
-viewDisplaySettingsSection project =
+viewDisplaySettingsSection : Erd -> Html Msg
+viewDisplaySettingsSection erd =
     let
         viewsCount : Int
         viewsCount =
-            project.sources |> List.concatMap (.tables >> Dict.values) |> List.filter .view |> List.length
+            erd.sources |> List.concatMap (.tables >> Dict.values) |> List.filter .view |> List.length
     in
     fieldset [ css [ Tw.mt_6 ] ]
         [ legend [ css [ Tw.font_medium, Tw.text_gray_900 ] ] [ text "Display options" ]
@@ -143,7 +143,7 @@ viewDisplaySettingsSection project =
             [ bText "Remove views" |> Tooltip.tr "Check this if you don't want to have SQL views in Azimutt"
             , text (" (" ++ (viewsCount |> S.pluralize "view") ++ ")")
             ]
-            project.settings.removeViews
+            erd.settings.removeViews
             (ProjectSettingsMsg PSToggleRemoveViews)
         , Input.textWithLabelAndHelp [ Tw.mt_3 ]
             "settings-removed-tables"
@@ -151,7 +151,7 @@ viewDisplaySettingsSection project =
             "Removed tables"
             "Add technical tables, ex: flyway_schema_history..."
             "Some tables are not useful and can clutter search, find path or even UI. Remove them by name or even regex."
-            project.settings.removedTables
+            erd.settings.removedTables
             (PSUpdateRemovedTables >> ProjectSettingsMsg)
         , Input.textWithLabelAndHelp [ Tw.mt_3 ]
             "settings-hidden-columns"
@@ -159,14 +159,14 @@ viewDisplaySettingsSection project =
             "Hidden columns"
             "Add technical columns, ex: created_at..."
             "Some columns are less interesting, hide them by default when showing a table. Use name or regex."
-            project.settings.hiddenColumns
+            erd.settings.hiddenColumns
             (PSUpdateHiddenColumns >> ProjectSettingsMsg)
         , Input.selectWithLabelAndHelp [ Tw.mt_3 ]
             "settings-columns-order"
             "Columns order"
             "Select the default column order for tables, will also update order of tables already shown."
             (ColumnOrder.all |> List.map (\o -> ( ColumnOrder.toString o, ColumnOrder.show o )))
-            (ColumnOrder.toString project.settings.columnOrder)
+            (ColumnOrder.toString erd.settings.columnOrder)
             (ColumnOrder.fromString >> PSUpdateColumnOrder >> ProjectSettingsMsg)
         ]
 

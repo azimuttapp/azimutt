@@ -29,7 +29,7 @@ import Review.Rule as Rule exposing (Rule)
 
 config : List Rule
 config =
-    [ NoDebug.Log.rule
+    [ NoDebug.Log.rule |> Rule.ignoreErrorsForFiles [ "src/Libs/Debug.elm" ]
     , NoDebug.TodoOrToString.rule
     , NoExposingEverything.rule |> Rule.ignoreErrorsForDirectories [ "tests" ]
     , NoMissingSubscriptionsCall.rule

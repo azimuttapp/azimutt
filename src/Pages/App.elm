@@ -29,7 +29,7 @@ import PagesComponents.App.View exposing (viewApp)
 import PagesComponents.Helpers as Helpers
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setProject, setProjectWithCmd, setTableInList, setTables, setTime)
+import Services.Lenses exposing (mapCanvas, mapHover, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapTableInList, mapTables, mapTime, setColumn, setNow, setPosition, setSelected, setTable, setZone)
 import Shared
 import Time
 import View exposing (View)
@@ -95,10 +95,10 @@ update msg model =
     case msg of
         -- each case should be one line or call a function in Update file
         TimeChanged time ->
-            ( model |> setTime (\t -> { t | now = time }), Cmd.none )
+            ( model |> mapTime (setNow time), Cmd.none )
 
         ZoneChanged zone ->
-            ( model |> setTime (\t -> { t | zone = zone }), Cmd.none )
+            ( model |> mapTime (setZone zone), Cmd.none )
 
         SizesChanged sizes ->
             model |> updateSizes sizes
@@ -122,66 +122,66 @@ update msg model =
             ( { model | search = search }, Cmd.none )
 
         SelectTable id ctrl ->
-            ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False) }))), Cmd.none )
+            ( model |> mapProjectMLayout (mapTables (List.map (\t -> t |> setSelected (B.cond (t.id == id) (not t.selected) (B.cond ctrl t.selected False))))), Cmd.none )
 
         SelectAllTables ->
-            ( model |> setCurrentLayout (setTables (List.map (\t -> { t | selected = True }))), Cmd.none )
+            ( model |> mapProjectMLayout (mapTables (List.map (setSelected True))), Cmd.none )
 
         HideTable id ->
-            ( model |> setCurrentLayout (hideTable id), Cmd.none )
+            ( model |> mapProjectMLayout (hideTable id), Cmd.none )
 
         ShowTable id ->
-            model |> setProjectWithCmd (showTable id)
+            model |> mapProjectMCmd (showTable id)
 
         TableOrder id index ->
-            ( model |> setCurrentLayout (setTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
+            ( model |> mapProjectMLayout (mapTables (\tables -> tables |> L.moveBy .id id (List.length tables - 1 - index))), Cmd.none )
 
         ShowTables ids ->
-            model |> setProjectWithCmd (showTables ids)
+            model |> mapProjectMCmd (showTables ids)
 
         --HideTables ids ->
         --    ( model |> setCurrentLayout (hideTables ids), Cmd.none )
         InitializedTable id position ->
-            ( model |> setCurrentLayout (setTableInList .id id (\t -> { t | position = position })), Cmd.none )
+            ( model |> mapProjectMLayout (mapTableInList .id id (setPosition position)), Cmd.none )
 
         HideAllTables ->
-            ( model |> setCurrentLayout hideAllTables, Cmd.none )
+            ( model |> mapProjectMLayout hideAllTables, Cmd.none )
 
         ShowAllTables ->
-            model |> setProjectWithCmd showAllTables
+            model |> mapProjectMCmd showAllTables
 
         HideColumn { table, column } ->
-            ( model |> hoverNextColumn table column |> setCurrentLayout (hideColumn table column), Cmd.none )
+            ( model |> hoverNextColumn table column |> mapProjectMLayout (hideColumn table column), Cmd.none )
 
         ShowColumn { table, column } ->
-            ( model |> setCurrentLayout (showColumn table column), Ports.activateTooltipsAndPopovers )
+            ( model |> mapProjectMLayout (showColumn table column), Ports.activateTooltipsAndPopovers )
 
         SortColumns id kind ->
-            ( model |> setProject (sortColumns id kind), Ports.activateTooltipsAndPopovers )
+            ( model |> mapProjectM (sortColumns id kind), Ports.activateTooltipsAndPopovers )
 
         HideColumns id kind ->
-            ( model |> setProject (hideColumns id kind), Cmd.none )
+            ( model |> mapProjectM (hideColumns id kind), Cmd.none )
 
         ShowColumns id kind ->
-            ( model |> setProject (showColumns id kind), Ports.activateTooltipsAndPopovers )
+            ( model |> mapProjectM (showColumns id kind), Ports.activateTooltipsAndPopovers )
 
         HoverTable t ->
-            ( { model | hover = model.hover |> (\h -> { h | table = t }) }, Cmd.none )
+            ( model |> mapHover (setTable t), Cmd.none )
 
         HoverColumn c ->
-            ( { model | hover = model.hover |> (\h -> { h | column = c }) }, Cmd.none )
+            ( model |> mapHover (setColumn c), Cmd.none )
 
         OnWheel event ->
-            ( model |> setCurrentLayout (setCanvas (handleWheel event)), Cmd.none )
+            ( model |> mapProjectMLayout (mapCanvas (handleWheel event)), Cmd.none )
 
         Zoom delta ->
-            ( model |> setCurrentLayout (setCanvas (zoomCanvas model.domInfos delta)), Cmd.none )
+            ( model |> mapProjectMLayout (mapCanvas (zoomCanvas model.domInfos delta)), Cmd.none )
 
         FitContent ->
-            ( model |> setCurrentLayout (fitCanvas model.domInfos), Cmd.none )
+            ( model |> mapProjectMLayout (fitCanvas model.domInfos), Cmd.none )
 
         ResetCanvas ->
-            ( model |> setProject resetCanvas, Ports.click Conf.ids.searchInput )
+            ( model |> mapProjectM resetCanvas, Ports.click Conf.ids.searchInput )
 
         DragStart id pos ->
             model |> dragStart id pos

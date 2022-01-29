@@ -13,7 +13,6 @@ import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S
 import Models.ColumnOrder as ColumnOrder
-import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
@@ -47,7 +46,7 @@ init settings relations table =
 computeColumns : ProjectSettings -> List Relation -> Table -> List ColumnName -> List ColumnName
 computeColumns settings relations table columns =
     let
-        isColumnHidden : Column -> Bool
+        isColumnHidden : ColumnName -> Bool
         isColumnHidden =
             settings.hiddenColumns |> ProjectSettings.isColumnHidden
 
@@ -57,7 +56,7 @@ computeColumns settings relations table columns =
     in
     columns
         |> List.filterMap (\c -> table.columns |> Ned.get c)
-        |> L.filterNot isColumnHidden
+        |> L.filterNot (\c -> isColumnHidden c.name)
         |> ColumnOrder.sortBy settings.columnOrder table tableRelations
         |> List.map .name
 
@@ -79,7 +78,7 @@ area props =
 
 encode : TableProps -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "id", value.id |> TableId.encode )
         , ( "position", value.position |> Position.encode )
 

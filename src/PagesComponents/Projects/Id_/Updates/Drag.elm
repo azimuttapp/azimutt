@@ -1,17 +1,18 @@
 module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, moveCanvas, moveTables)
 
 import Conf
+import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
-import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.ScreenProps exposing (ScreenProps)
-import PagesComponents.Projects.Id_.Models exposing (DragState, Model)
-import Services.Lenses exposing (setCanvas, setCurrentLayout, setLayoutTables, setTables)
+import PagesComponents.Projects.Id_.Models exposing (Model)
+import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapPosition, mapTableProps, setSelectionBox)
 
 
 handleDrag : DragState -> Bool -> Model -> Model
@@ -19,29 +20,30 @@ handleDrag drag isEnd model =
     let
         canvas : CanvasProps
         canvas =
-            model.project |> M.mapOrElse (.layout >> .canvas) CanvasProps.zero
+            model.erd |> M.mapOrElse .canvas CanvasProps.zero
     in
     if drag.id == Conf.ids.erd then
         if isEnd then
-            model |> setCurrentLayout (setCanvas (moveCanvas drag))
+            model |> mapErdM (mapCanvas (moveCanvas drag))
 
         else
             model
 
     else if drag.id == Conf.ids.selectionBox then
         if isEnd then
-            { model | selectionBox = Nothing }
+            model |> setSelectionBox Nothing
 
         else
             drag
                 |> buildSelectionArea model.screen canvas
                 |> (\area ->
-                        { model | selectionBox = Just area }
-                            |> setCurrentLayout (setTables (List.map (\t -> { t | selected = Area.overlap area (t |> TableProps.area) })))
+                        model
+                            |> setSelectionBox (Just area)
+                            |> mapErdM (mapTableProps (Dict.map (\_ p -> p |> ErdTableProps.setSelected (Area.overlap area (p |> ErdTableProps.area)))))
                    )
 
     else if isEnd then
-        model |> setLayoutTables (moveTables drag canvas.zoom)
+        model |> mapErdM (mapTableProps (moveTables drag canvas.zoom))
 
     else
         model
@@ -49,10 +51,10 @@ handleDrag drag isEnd model =
 
 moveCanvas : DragState -> CanvasProps -> CanvasProps
 moveCanvas drag canvas =
-    { canvas | position = canvas.position |> move drag 1 }
+    canvas |> mapPosition (move drag 1)
 
 
-moveTables : DragState -> ZoomLevel -> List TableProps -> List TableProps
+moveTables : DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
 moveTables drag zoom tables =
     let
         tableId : TableId
@@ -61,13 +63,13 @@ moveTables drag zoom tables =
 
         dragSelected : Bool
         dragSelected =
-            tables |> L.findBy .id tableId |> M.mapOrElse .selected False
+            tables |> Dict.get tableId |> M.mapOrElse .selected False
     in
     tables
-        |> List.map
-            (\p ->
-                if tableId == p.id || (dragSelected && p.selected) then
-                    { p | position = p.position |> move drag zoom }
+        |> Dict.map
+            (\id p ->
+                if tableId == id || (dragSelected && p.selected) then
+                    p |> ErdTableProps.setPosition (p.position |> move drag zoom)
 
                 else
                     p

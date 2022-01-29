@@ -17,7 +17,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.App.Models as Models exposing (Msg)
 import Ports
-import Services.Lenses exposing (setLayout)
+import Services.Lenses exposing (mapLayout)
 
 
 showTable : TableId -> Project -> ( Project, Cmd Msg )
@@ -65,7 +65,7 @@ showTables ids project =
 
 showAllTables : Project -> ( Project, Cmd Msg )
 showAllTables project =
-    ( project |> setLayout (\layout -> { layout | tables = project.tables |> Dict.values |> List.map (getTableProps project layout), hiddenTables = [] })
+    ( project |> mapLayout (\layout -> { layout | tables = project.tables |> Dict.values |> List.map (getTableProps project layout), hiddenTables = [] })
     , Cmd.batch [ Ports.observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))), Ports.activateTooltipsAndPopovers ]
     )
 
@@ -188,13 +188,13 @@ updateColumns : TableId -> (Table -> List ColumnName -> List ColumnName) -> Proj
 updateColumns id update project =
     project.tables
         |> Dict.get id
-        |> M.mapOrElse (\table -> project |> setLayout (\l -> { l | tables = l.tables |> L.updateBy .id id (\t -> { t | columns = t.columns |> update table }) })) project
+        |> M.mapOrElse (\table -> project |> mapLayout (\l -> { l | tables = l.tables |> L.updateBy .id id (\t -> { t | columns = t.columns |> update table }) })) project
 
 
 performShowTable : Table -> Project -> Project
 performShowTable table project =
     project
-        |> setLayout
+        |> mapLayout
             (\layout ->
                 { layout
                     | tables = (getTableProps project layout table :: layout.tables) |> L.uniqueBy .id

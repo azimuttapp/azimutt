@@ -13,7 +13,7 @@ type alias Origin =
 
 encode : Origin -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "id", value.id |> SourceId.encode )
         , ( "lines", value.lines |> Encode.list FileLineIndex.encode )
         ]

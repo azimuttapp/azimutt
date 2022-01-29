@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -83,6 +83,11 @@ indexedFilter p xs =
     xs |> List.indexedMap (\i a -> B.cond (p i a) (Just a) Nothing) |> List.filterMap identity
 
 
+notMember : a -> List a -> Bool
+notMember x xs =
+    List.all (\a -> a /= x) xs
+
+
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> M.isJust
@@ -95,7 +100,15 @@ indexOf item xs =
 
 updateBy : (a -> b) -> b -> (a -> a) -> List a -> List a
 updateBy matcher value transform list =
-    list |> List.map (\a -> B.cond (matcher a == value) (transform a) a)
+    list
+        |> List.map
+            (\a ->
+                if matcher a == value then
+                    transform a
+
+                else
+                    a
+            )
 
 
 has : a -> List a -> Bool
@@ -113,19 +126,19 @@ filterZip f xs =
     List.filterMap (\a -> f a |> Maybe.map (\b -> ( a, b ))) xs
 
 
-filterMap : (a -> Bool) -> (a -> b) -> List a -> List b
-filterMap predicate transform list =
-    list |> List.foldr (\a res -> B.lazyCond (predicate a) (\_ -> transform a :: res) (\_ -> res)) []
-
-
-move : Int -> Int -> List a -> List a
-move from to list =
+moveIndex : Int -> Int -> List a -> List a
+moveIndex from to list =
     list |> get from |> M.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
+
+
+move : a -> Int -> List a -> List a
+move value position list =
+    list |> findIndex (\a -> a == value) |> M.mapOrElse (\index -> list |> moveIndex index position) list
 
 
 moveBy : (a -> b) -> b -> Int -> List a -> List a
 moveBy matcher value position list =
-    list |> findIndexBy matcher value |> M.mapOrElse (\index -> list |> move index position) list
+    list |> findIndexBy matcher value |> M.mapOrElse (\index -> list |> moveIndex index position) list
 
 
 removeAt : Int -> List a -> List a

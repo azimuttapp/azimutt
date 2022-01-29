@@ -7,60 +7,59 @@ import Libs.Ned as Ned
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project as Project exposing (Project)
 import Models.Project.Column exposing (Column)
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.App.Models exposing (Model, Msg, SettingsMsg(..))
 import Ports
-import Services.Lenses exposing (setLayout, setProject, setSettings)
+import Services.Lenses exposing (mapHiddenTables, mapLayout, mapProjectM, mapRemoveViews, mapRemovedSchemas, mapSettings, mapTables, setColumnOrder, setHiddenColumns, setRemovedTables)
 
 
 handleSettings : SettingsMsg -> Model -> ( Model, Cmd Msg )
 handleSettings msg model =
     case msg of
         ToggleSchema schema ->
-            model |> updateSettingsAndComputeProject (\s -> { s | removedSchemas = s.removedSchemas |> L.toggle schema })
+            model |> updateSettingsAndComputeProject (mapRemovedSchemas (L.toggle schema))
 
         ToggleRemoveViews ->
-            model |> updateSettingsAndComputeProject (\s -> { s | removeViews = not s.removeViews })
+            model |> updateSettingsAndComputeProject (mapRemoveViews not)
 
         UpdateRemovedTables values ->
-            model |> updateSettingsAndComputeProject (\s -> { s | removedTables = values })
+            model |> updateSettingsAndComputeProject (setRemovedTables values)
 
         UpdateHiddenColumns values ->
-            ( model |> setProject (\p -> p |> setSettings (\s -> { s | hiddenColumns = values }) |> setLayout (hideColumns (ProjectSettings.isColumnHidden values) p)), Cmd.none )
+            ( model |> mapProjectM (\p -> p |> mapSettings (setHiddenColumns values) |> mapLayout (hideColumns (ProjectSettings.isColumnHidden values) p)), Cmd.none )
 
         UpdateColumnOrder order ->
-            ( model |> setProject (\p -> p |> setSettings (\s -> { s | columnOrder = order }) |> setLayout (sortColumns order p)), Cmd.none )
+            ( model |> mapProjectM (\p -> p |> mapSettings (setColumnOrder order) |> mapLayout (sortColumns order p)), Cmd.none )
 
 
 updateSettingsAndComputeProject : (ProjectSettings -> ProjectSettings) -> Model -> ( Model, Cmd Msg )
 updateSettingsAndComputeProject transform model =
     model
-        |> setProject (setSettings transform >> Project.compute)
+        |> mapProjectM (mapSettings transform >> Project.compute)
         |> (\m -> ( m, Ports.observeTablesSize (m.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) []) ))
 
 
-hideColumns : (Column -> Bool) -> Project -> Layout -> Layout
+hideColumns : (ColumnName -> Bool) -> Project -> Layout -> Layout
 hideColumns isColumnHidden project layout =
-    { layout
-        | tables = layout.tables |> List.map (hideTableColumns isColumnHidden project)
-        , hiddenTables = layout.hiddenTables |> List.map (hideTableColumns isColumnHidden project)
-    }
+    layout
+        |> mapTables (List.map (hideTableColumns isColumnHidden project))
+        |> mapHiddenTables (List.map (hideTableColumns isColumnHidden project))
 
 
 sortColumns : ColumnOrder -> Project -> Layout -> Layout
 sortColumns order project layout =
-    { layout
-        | tables = layout.tables |> List.map (sortTableColumns order project)
-        , hiddenTables = layout.hiddenTables |> List.map (sortTableColumns order project)
-    }
+    layout
+        |> mapTables (List.map (sortTableColumns order project))
+        |> mapHiddenTables (List.map (sortTableColumns order project))
 
 
-hideTableColumns : (Column -> Bool) -> Project -> TableProps -> TableProps
+hideTableColumns : (ColumnName -> Bool) -> Project -> TableProps -> TableProps
 hideTableColumns isColumnHidden project props =
-    updateProps (\_ -> L.filterNot isColumnHidden) project props
+    updateProps (\_ -> L.filterNot (\c -> isColumnHidden c.name)) project props
 
 
 sortTableColumns : ColumnOrder -> Project -> TableProps -> TableProps

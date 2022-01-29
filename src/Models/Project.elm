@@ -1,16 +1,16 @@
-module Models.Project exposing (Project, addSource, addUserSource, compute, create, decode, deleteSource, encode, new, refreshSource, setSources, tablesArea, updateSource, viewportArea, viewportSize)
+module Models.Project exposing (Project, addSource, compute, computeRelations, computeTables, create, decode, deleteSource, encode, new, refreshSource, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
 import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Area as Area exposing (Area)
-import Libs.Dict as D
+import Libs.Dict as Dict
 import Libs.DomInfo exposing (DomInfo)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
@@ -97,11 +97,6 @@ addSource source project =
     setSources (\sources -> sources ++ [ source ]) project
 
 
-addUserSource : SourceId -> Dict TableId Table -> List Relation -> Time.Posix -> Project -> Project
-addUserSource id tables relations now project =
-    setSources (\sources -> sources ++ [ Source.user id tables relations now ]) project
-
-
 deleteSource : SourceId -> Project -> Project
 deleteSource id project =
     setSources (List.filter (\s -> s.id /= id)) project
@@ -120,7 +115,7 @@ computeTables settings sources =
     sources
         |> List.filter .enabled
         |> List.map (\s -> s.tables |> Dict.filter (\_ -> shouldDisplayTable settings))
-        |> List.foldr (D.merge Table.merge) Dict.empty
+        |> List.foldr (Dict.fuse Table.merge) Dict.empty
 
 
 shouldDisplayTable : ProjectSettings -> Table -> Bool
@@ -143,7 +138,7 @@ shouldDisplayTable settings table =
 
 computeRelations : List Source -> List Relation
 computeRelations sources =
-    sources |> List.filter .enabled |> List.map .relations |> List.foldr (L.merge .id Relation.merge) []
+    sources |> List.filter .enabled |> List.map .relations |> List.foldr (List.merge .id Relation.merge) []
 
 
 viewportSize : Dict HtmlId DomInfo -> Maybe Size
@@ -163,7 +158,7 @@ tablesArea domInfos tables =
     let
         positions : List ( TableProps, Size )
         positions =
-            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> M.mapOrElse .size Size.zero)
+            tables |> List.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> Maybe.mapOrElse .size Size.zero)
 
         left : Float
         left =
@@ -192,14 +187,14 @@ currentVersion =
 
 encode : Project -> Value
 encode value =
-    E.object
+    Encode.notNullObject
         [ ( "id", value.id |> ProjectId.encode )
         , ( "name", value.name |> ProjectName.encode )
         , ( "sources", value.sources |> Encode.list Source.encode )
         , ( "layout", value.layout |> Layout.encode )
-        , ( "usedLayout", value.usedLayout |> E.maybe LayoutName.encode )
+        , ( "usedLayout", value.usedLayout |> Encode.maybe LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
-        , ( "settings", value.settings |> E.withDefaultDeep ProjectSettings.encode ProjectSettings.init )
+        , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode ProjectSettings.init )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         , ( "version", currentVersion |> Encode.int )
@@ -208,13 +203,13 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    D.map9 new
+    Decode.map9 new
         (Decode.field "id" ProjectId.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.field "sources" (Decode.list Source.decode))
-        (D.defaultField "layout" Layout.decode (Layout.init (Time.millisToPosix 0)))
-        (D.maybeField "usedLayout" LayoutName.decode)
-        (D.defaultField "layouts" (D.dict LayoutName.fromString Layout.decode) Dict.empty)
-        (D.defaultFieldDeep "settings" ProjectSettings.decode ProjectSettings.init)
-        (D.defaultField "createdAt" Time.decode (Time.millisToPosix 0))
-        (D.defaultField "updatedAt" Time.decode (Time.millisToPosix 0))
+        (Decode.defaultField "layout" Layout.decode (Layout.init (Time.millisToPosix 0)))
+        (Decode.maybeField "usedLayout" LayoutName.decode)
+        (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
+        (Decode.defaultFieldDeep "settings" ProjectSettings.decode ProjectSettings.init)
+        (Decode.defaultField "createdAt" Time.decode (Time.millisToPosix 0))
+        (Decode.defaultField "updatedAt" Time.decode (Time.millisToPosix 0))

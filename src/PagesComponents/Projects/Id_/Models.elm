@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), DragState, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -13,29 +13,30 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
-import Models.Project exposing (Project)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
-import Shared exposing (Confirm, StoredProjects)
+import Shared exposing (Confirm)
 
 
 type alias Model =
     { navbar : NavbarModel
     , screen : ScreenProps
-    , projects : StoredProjects
-    , project : Maybe Project
-    , hoverTable : Maybe TableId
-    , hoverColumn : Maybe ColumnRef
+    , loaded : Bool
+    , erd : Maybe Erd
+    , hoverTable : Maybe TableId -- TODO remove?
+    , hoverColumn : Maybe ColumnRef -- TODO remove?
     , cursorMode : CursorMode
     , selectionBox : Maybe Area
     , newLayout : Maybe LayoutDialog
@@ -57,8 +58,12 @@ type alias Model =
 
 type alias NavbarModel =
     { mobileMenuOpen : Bool
-    , search : { text : String, active : Int }
+    , search : SearchModel
     }
+
+
+type alias SearchModel =
+    { text : String, active : Int }
 
 
 type CursorMode
@@ -88,10 +93,6 @@ type alias HelpDialog =
 
 type alias ConfirmDialog =
     { id : HtmlId, content : Confirm Msg }
-
-
-type alias DragState =
-    { id : DragId, init : Position, last : Position }
 
 
 type Msg
@@ -166,7 +167,7 @@ type FindPathMsg
     | FPUpdateFrom (Maybe TableId)
     | FPUpdateTo (Maybe TableId)
     | FPSearch
-    | FPCompute (Dict TableId Table) (List Relation) TableId TableId FindPathSettings
+    | FPCompute (Dict TableId ErdTable) (List ErdRelation) TableId TableId FindPathSettings
     | FPToggleResult Int
     | FPSettingsUpdate FindPathSettings
     | FPClose

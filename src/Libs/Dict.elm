@@ -1,6 +1,11 @@
-module Libs.Dict exposing (count, fromIndexedList, fromListMap, get, getOrElse, merge)
+module Libs.Dict exposing (alter, count, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember)
 
 import Dict exposing (Dict)
+
+
+nonEmpty : Dict k a -> Bool
+nonEmpty dict =
+    not (Dict.isEmpty dict)
 
 
 fromIndexedList : List a -> Dict Int a
@@ -18,9 +23,19 @@ getOrElse key default dict =
     dict |> Dict.get key |> Maybe.withDefault default
 
 
-get : String -> Dict String a -> Result String a
-get key dict =
+getResult : String -> Dict String a -> Result String a
+getResult key dict =
     dict |> Dict.get key |> Result.fromMaybe ("Missing key '" ++ key ++ "'")
+
+
+notMember : comparable -> Dict comparable v -> Bool
+notMember key dict =
+    case Dict.get key dict of
+        Just _ ->
+            False
+
+        Nothing ->
+            True
 
 
 filterMap : (comparable -> a -> Maybe b) -> Dict comparable a -> Dict comparable b
@@ -47,6 +62,11 @@ count predicate dict =
             0
 
 
-merge : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a
-merge mergeValue d1 d2 =
+alter : comparable -> (v -> v) -> Dict comparable v -> Dict comparable v
+alter key transform dict =
+    Dict.update key (Maybe.map transform) dict
+
+
+fuse : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a
+fuse mergeValue d1 d2 =
     Dict.merge Dict.insert (\k a1 a2 acc -> Dict.insert k (mergeValue a1 a2) acc) Dict.insert d1 d2 Dict.empty

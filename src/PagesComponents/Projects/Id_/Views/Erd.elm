@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Erd exposing (Model, viewErd)
+module PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -12,7 +12,6 @@ import Html.Styled.Keyed as Keyed
 import Html.Styled.Lazy as Lazy
 import Libs.Area exposing (Area)
 import Libs.Bool as B
-import Libs.Dict as D
 import Libs.Html.Styled exposing (bText, extLink, sendTweet)
 import Libs.Html.Styled.Events exposing (onWheel, stopPointerDown)
 import Libs.List as L
@@ -21,116 +20,127 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
-import Libs.Models.Theme exposing (Theme)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.String as S
 import Libs.Tailwind.Utilities as Tu
-import Models.ColumnRefFull exposing (ColumnRefFull)
-import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
-import Models.Project.ColumnRef exposing (ColumnRef)
-import Models.Project.Relation exposing (Relation)
-import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableProps exposing (TableProps)
-import Models.RelationFull as RelationFull exposing (RelationFull)
 import Models.ScreenProps exposing (ScreenProps)
-import Models.TableFull exposing (TableFull)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), DragState, Msg(..), VirtualRelation)
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..), VirtualRelation)
+import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
-import PagesComponents.Projects.Id_.Views.Erd.Table exposing (viewTable)
+import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable)
 import Tailwind.Utilities as Tw
 
 
-type alias Model x =
-    { x
-        | screen : ScreenProps
-        , cursorMode : CursorMode
-        , selectionBox : Maybe Area
-        , virtualRelation : Maybe VirtualRelation
-        , openedDropdown : HtmlId
-        , dragging : Maybe DragState
-        , hoverTable : Maybe TableId
-        , hoverColumn : Maybe ColumnRef
-    }
-
-
-viewErd : Theme -> Model x -> Project -> Html Msg
-viewErd theme model project =
+viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> Html Msg
+viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown dragging =
     let
         canvas : CanvasProps
         canvas =
-            model.dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> project.layout.canvas |> Drag.moveCanvas d) project.layout.canvas
+            dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
 
-        layoutTables : List TableProps
-        layoutTables =
-            model.dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> project.layout.tables |> Drag.moveTables d canvas.zoom) project.layout.tables
+        tableProps : Dict TableId ErdTableProps
+        tableProps =
+            dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> erd.tableProps |> Drag.moveTables d canvas.zoom) erd.tableProps
 
-        shownTables : Dict TableId TableFull
-        shownTables =
-            layoutTables |> List.reverse |> L.zipWithIndex |> List.filterMap (\( props, i ) -> project.tables |> Dict.get props.id |> Maybe.map (\t -> TableFull t.id i t props)) |> D.fromListMap .id
-
-        displayedTables : Dict TableId TableFull
+        displayedTables : Dict TableId ErdTableProps
         displayedTables =
-            shownTables |> Dict.filter (\_ t -> t.props.size /= Size.zero)
+            tableProps |> Dict.filter (\_ t -> t.size /= Size.zero && (erd.shownTables |> List.member t.id))
 
-        displayedRelations : List RelationFull
+        displayedRelations : List ErdRelation
         displayedRelations =
-            project.relations
-                |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedTables |> Dict.member c.table))
-                |> List.filterMap (buildRelationFull project.tables displayedTables)
+            erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedTables |> Dict.member c.table))
 
-        virtualRelation : Maybe ( ColumnRefFull, Position )
-        virtualRelation =
-            model.virtualRelation
+        virtualRelationInfo : Maybe ( ( Maybe ErdColumnProps, ErdColumn ), Position )
+        virtualRelationInfo =
+            virtualRelation
                 |> Maybe.andThen
                     (\vr ->
                         vr.src
-                            |> Maybe.andThen (buildColumnRefFull project.tables displayedTables)
-                            |> Maybe.map (\ref -> ( ref, vr.mouse |> CanvasProps.adapt model.screen canvas ))
+                            |> Maybe.andThen
+                                (\src ->
+                                    (erd |> Erd.getColumn src.table src.column)
+                                        |> Maybe.map
+                                            (\ref ->
+                                                ( ( erd |> Erd.getColumnProps src.table src.column, ref )
+                                                , vr.mouse |> CanvasProps.adapt screen canvas
+                                                )
+                                            )
+                                )
                     )
     in
     main_
         [ class "tw-erd"
         , classList
-            [ ( "tw-cursor-hand", model.cursorMode == CursorDrag && model.dragging == Nothing && model.virtualRelation == Nothing )
-            , ( "tw-cursor-hand-drag", model.cursorMode == CursorDrag && model.dragging /= Nothing && model.virtualRelation == Nothing )
-            , ( "tw-cursor-cross", model.virtualRelation /= Nothing )
+            [ ( "tw-cursor-hand", cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing )
+            , ( "tw-cursor-hand-drag", cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing )
+            , ( "tw-cursor-cross", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
         , onWheel OnWheel
-        , stopPointerDown (.position >> DragStart (B.cond (model.cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        , stopPointerDown (.position >> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y canvas.position.left canvas.position.top "px", Tu.scale canvas.zoom ] ]
-            [ Lazy.lazy4 viewTables model canvas.zoom displayedRelations shownTables
-            , Lazy.lazy2 viewRelations model.hoverColumn displayedRelations
-            , model.selectionBox |> M.filter (\_ -> layoutTables |> L.nonEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
-            , virtualRelation |> M.mapOrElse viewVirtualRelation viewEmptyRelation
+            [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
+            , Lazy.lazy2 viewRelations displayedTables displayedRelations
+            , selectionBox |> M.filterNot (\_ -> tableProps |> Dict.isEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
+            , virtualRelationInfo |> M.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
-        , if layoutTables |> List.isEmpty then
-            viewEmptyState theme project.tables
+        , if tableProps |> Dict.isEmpty then
+            viewEmptyState erd.tables
 
           else
             div [] []
         ]
 
 
-viewTables : Model x -> ZoomLevel -> List RelationFull -> Dict TableId TableFull -> Html Msg
-viewTables model zoom relations tables =
+viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps tables shownTables =
     Keyed.node "div"
         [ class "tw-tables" ]
-        (tables
-            |> Dict.values
-            |> L.zipWith (\table -> relations |> List.filter (RelationFull.hasTableLink table.id))
-            |> List.map (\( table, tableRelations ) -> ( TableId.toString table.id, Lazy.lazy4 viewTable model zoom table tableRelations ))
+        (shownTables
+            |> List.reverse
+            |> List.indexedMap (\index tableId -> ( index, tableId ))
+            |> List.filterMap (\( index, tableId ) -> Maybe.map2 (\table props -> ( index, table, props )) (tables |> Dict.get tableId) (tableProps |> Dict.get tableId))
+            |> List.map
+                (\( index, table, props ) ->
+                    ( TableId.toString table.id
+                    , Lazy.lazy6 viewTable
+                        zoom
+                        cursorMode
+                        (Table.argsToString
+                            (B.cond (openedDropdown |> String.startsWith table.htmlId) openedDropdown "")
+                            (dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
+                            (virtualRelation /= Nothing)
+                        )
+                        index
+                        props
+                        table
+                    )
+                )
         )
 
 
-viewRelations : Maybe ColumnRef -> List RelationFull -> Html Msg
-viewRelations hover relations =
-    Keyed.node "div" [ class "tw-relations" ] (relations |> List.map (\r -> ( r.name, Lazy.lazy2 viewRelation hover r )))
+viewRelations : Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
+viewRelations tableProps relations =
+    let
+        getColumnProps : ErdColumnRef -> Maybe ErdColumnProps
+        getColumnProps ref =
+            tableProps |> Dict.get ref.table |> Maybe.andThen (\t -> t.columnProps |> Dict.get ref.column)
+    in
+    Keyed.node "div"
+        [ class "tw-relations" ]
+        (relations |> List.map (\r -> ( r.name, Lazy.lazy3 viewRelation (getColumnProps r.src) (getColumnProps r.ref) r )))
 
 
 viewSelectionBox : Area -> Html Msg
@@ -153,10 +163,10 @@ viewSelectionBox area =
         []
 
 
-viewEmptyState : Theme -> Dict TableId Table -> Html Msg
-viewEmptyState theme tables =
+viewEmptyState : Dict TableId ErdTable -> Html Msg
+viewEmptyState tables =
     let
-        bestTables : List Table
+        bestTables : List ErdTable
         bestTables =
             tables
                 |> Dict.values
@@ -167,7 +177,7 @@ viewEmptyState theme tables =
     div [ css [ Tw.flex, Tw.h_full, Tw.justify_center, Tw.items_center ] ]
         [ div [ css [ Tw.max_w_prose, Tw.p_6, Tw.bg_white, Tw.border, Tw.border_gray_200, Tw.rounded_lg ] ]
             [ div [ css [ Tw.text_center ] ]
-                [ Icon.outline Template [ Tw.w_12, Tw.h_12, Tw.mx_auto, Color.text theme.color 500 ]
+                [ Icon.outline Template [ Tw.w_12, Tw.h_12, Tw.mx_auto, Color.text Conf.theme.color 500 ]
                 , h2 [ css [ Tw.mt_2, Tw.text_lg, Tw.font_medium, Tw.text_gray_900 ] ]
                     [ text "Hello from Azimutt 👋" ]
                 , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
@@ -179,7 +189,7 @@ viewEmptyState theme tables =
                     [ text "Your project has "
                     , bText (tables |> S.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic theme.color [ onClick (ShowTable t.id), css [ Tw.m_1, Tw.cursor_pointer ] ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Conf.theme.color [ onClick (ShowTable t.id), css [ Tw.m_1, Tw.cursor_pointer ] ] [ text (TableId.show t.id) ]))
                     ]
                 , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
                     [ text "If you like Azimutt, "
@@ -191,27 +201,3 @@ viewEmptyState theme tables =
                 ]
             ]
         ]
-
-
-
--- HELPERS
-
-
-buildRelationFull : Dict TableId Table -> Dict TableId TableFull -> Relation -> Maybe RelationFull
-buildRelationFull allTables shownTables rel =
-    Maybe.map2 (\src ref -> { name = rel.name, src = src, ref = ref, origins = rel.origins })
-        (rel.src |> buildColumnRefFull allTables shownTables)
-        (rel.ref |> buildColumnRefFull allTables shownTables)
-
-
-buildColumnRefFull : Dict TableId Table -> Dict TableId TableFull -> ColumnRef -> Maybe ColumnRefFull
-buildColumnRefFull allTables shownTables ref =
-    (allTables |> Dict.get ref.table |> M.andThenZip (\table -> table.columns |> Ned.get ref.column))
-        |> Maybe.map
-            (\( table, column ) ->
-                { ref = ref
-                , table = table
-                , column = column
-                , props = (shownTables |> Dict.get ref.table) |> Maybe.map (\t -> ( t.props, t.index, t.props.size ))
-                }
-            )

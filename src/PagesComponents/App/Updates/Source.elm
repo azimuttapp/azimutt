@@ -8,7 +8,7 @@ import Models.Project as Project
 import PagesComponents.App.Models exposing (Model, Msg(..), SourceMsg(..))
 import PagesComponents.App.Updates.Project exposing (createProject, updateProject)
 import Ports
-import Services.Lenses exposing (setProject, setSwitch)
+import Services.Lenses exposing (mapEnabled, mapProjectM, mapSwitch, setLoading)
 
 
 handleSource : SourceMsg -> Model -> ( Model, Cmd Msg )
@@ -21,7 +21,7 @@ handleSource msg model =
             ( model, Cmd.none )
 
         LoadLocalFile project source file ->
-            ( model |> setSwitch (\s -> { s | loading = True }), Ports.readLocalFile project source file )
+            ( model |> mapSwitch (setLoading True), Ports.readLocalFile project source file )
 
         LoadRemoteFile project source url ->
             ( model, Ports.readRemoteFile project source url Nothing )
@@ -37,7 +37,7 @@ handleSource msg model =
                     (model |> createProject projectId sourceInfo content)
 
         ToggleSource source ->
-            ( model |> setProject (Project.updateSource source.id (\s -> { s | enabled = not s.enabled }))
+            ( model |> mapProjectM (Project.updateSource source.id (mapEnabled not))
             , Cmd.batch
                 [ Ports.observeTablesSize (model.project |> M.mapOrElse (\p -> p.layout.tables |> List.map .id) [])
                 , Ports.toastInfo ("Source <b>" ++ source.name ++ "</b> set to " ++ B.cond source.enabled "hidden" "visible" ++ ".")
@@ -45,7 +45,7 @@ handleSource msg model =
             )
 
         CreateSource source message ->
-            ( model |> setProject (Project.addSource source), Ports.toastInfo message )
+            ( model |> mapProjectM (Project.addSource source), Ports.toastInfo message )
 
         DeleteSource source ->
-            ( model |> setProject (Project.deleteSource source.id), Ports.toastInfo ("Source <b>" ++ source.name ++ "</b> has been deleted from project.") )
+            ( model |> mapProjectM (Project.deleteSource source.id), Ports.toastInfo ("Source <b>" ++ source.name ++ "</b> has been deleted from project.") )

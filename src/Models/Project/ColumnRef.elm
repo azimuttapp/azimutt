@@ -1,5 +1,6 @@
-module Models.Project.ColumnRef exposing (ColumnRef, decode, encode, show)
+module Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike, decode, encode, fromString, show, toString)
 
+import Conf
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Libs.Json.Encode as E
@@ -11,14 +12,36 @@ type alias ColumnRef =
     { table : TableId, column : ColumnName }
 
 
-show : ColumnRef -> String
-show ref =
-    TableId.show ref.table ++ "." ++ ref.column
+type alias ColumnRefLike x =
+    { x | table : TableId, column : ColumnName }
+
+
+show : ColumnRefLike x -> String
+show { table, column } =
+    TableId.show table |> ColumnName.withName column
+
+
+toString : ColumnRef -> String
+toString ref =
+    (ref.table |> Tuple.first) ++ "." ++ (ref.table |> Tuple.second) ++ "." ++ ref.column
+
+
+fromString : String -> ColumnRef
+fromString id =
+    case String.split "." id of
+        schema :: table :: column :: [] ->
+            { table = ( schema, table ), column = column }
+
+        table :: column :: [] ->
+            { table = ( Conf.schema.default, table ), column = column }
+
+        _ ->
+            { table = ( Conf.schema.default, id ), column = "" }
 
 
 encode : ColumnRef -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "table", value.table |> TableId.encode )
         , ( "column", value.column |> ColumnName.encode )
         ]

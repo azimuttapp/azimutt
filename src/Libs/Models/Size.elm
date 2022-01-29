@@ -46,7 +46,7 @@ ratio a b =
 
 encode : Size -> Value
 encode value =
-    E.object
+    E.notNullObject
         [ ( "width", value.width |> Encode.float )
         , ( "height", value.height |> Encode.float )
         ]

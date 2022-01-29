@@ -13,7 +13,7 @@ import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (setParsingWithCmd)
+import Services.Lenses exposing (mapParsingCmd)
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
 import Shared
 import Time
@@ -22,11 +22,11 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
+page _ req =
     Page.element
         { init = init req
         , update = update req
-        , view = view shared
+        , view = view
         , subscriptions = subscriptions
         }
 
@@ -77,7 +77,7 @@ update req msg model =
             ( { model | selectedTab = tab, parsing = SQLSource.init Nothing Nothing }, Cmd.none )
 
         SQLSourceMsg message ->
-            model |> setParsingWithCmd (SQLSource.update message SQLSourceMsg)
+            model |> mapParsingCmd (SQLSource.update message SQLSourceMsg)
 
         DropSchema ->
             ( { model | parsing = SQLSource.init Nothing Nothing }, Cmd.none )
@@ -121,8 +121,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
+view : Model -> View Msg
+view model =
     { title = "Azimutt - Explore your database schema"
-    , body = model |> viewNewProject shared |> List.map Styled.toUnstyled
+    , body = model |> viewNewProject |> List.map Styled.toUnstyled
     }

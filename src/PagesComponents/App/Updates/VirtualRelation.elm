@@ -7,7 +7,7 @@ import Models.Project.Relation as Relation
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.App.Models exposing (Model, Msg, VirtualRelation, VirtualRelationMsg(..))
 import Ports
-import Services.Lenses exposing (setProject)
+import Services.Lenses exposing (mapProjectM)
 
 
 type alias Model x =
@@ -35,7 +35,7 @@ handleVirtualRelation msg model =
                     case model.project |> Maybe.andThen (\p -> p.sources |> L.find (\s -> s.kind == UserDefined)) of
                         Just source ->
                             ( { model | virtualRelation = Nothing }
-                                |> setProject (Project.updateSource source.id (\s -> { s | relations = s.relations ++ [ Relation.virtual src ref source.id ] }))
+                                |> mapProjectM (Project.updateSource source.id (\s -> { s | relations = s.relations ++ [ Relation.virtual src ref source.id ] }))
                             , Ports.toastInfo ("Relation added to <b>" ++ source.name ++ "</b> source.")
                             )
 

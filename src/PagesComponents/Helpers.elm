@@ -15,7 +15,6 @@ import Html.Styled as S
 import Html.Styled.Attributes as SA
 import Libs.Models exposing (Link)
 import Libs.Models.Color as Color
-import Libs.Models.Theme exposing (Theme)
 import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
@@ -61,20 +60,19 @@ publicFooter =
 
 
 appShell :
-    Theme
-    -> (Link -> msg)
+    (Link -> msg)
     -> msg
     -> { x | selectedMenu : String, mobileMenuOpen : Bool }
     -> List (S.Html msg)
     -> List (S.Html msg)
     -> List (S.Html msg)
     -> List (S.Html msg)
-appShell theme onNavigationClick onMobileMenuClick model title content footer =
+appShell onNavigationClick onMobileMenuClick model title content footer =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100 ], Global.selector "body" [ Tw.h_full ] ]
     , Styles.global
-    , S.div [ SA.css [ Color.bg theme.color 600, Tw.pb_32 ] ]
-        [ Navbar.admin theme
+    , S.div [ SA.css [ Color.bg Conf.theme.color 600, Tw.pb_32 ] ]
+        [ Navbar.admin Conf.theme
             { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
             , navigation =
                 { links = [ { url = Route.toHref Route.Projects, text = "Dashboard" } ]
