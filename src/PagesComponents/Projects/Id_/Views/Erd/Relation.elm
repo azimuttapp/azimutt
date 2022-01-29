@@ -11,11 +11,12 @@ import Models.Project.ColumnRef as ColumnRef
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
-import Svg.Styled exposing (Svg, svg)
-import Svg.Styled.Attributes exposing (class, height, width)
+import Svg exposing (Svg, svg)
+import Svg.Attributes exposing (class, height, width)
+import Svg.Styled
 
 
-viewRelation : Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg msg
+viewRelation : Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg.Styled.Svg msg
 viewRelation srcProps refProps relation =
     let
         label : String
@@ -26,9 +27,9 @@ viewRelation srcProps refProps relation =
         color =
             getColor srcProps refProps
     in
-    case ( srcProps, refProps ) of
+    (case ( srcProps, refProps ) of
         ( Nothing, Nothing ) ->
-            viewEmptyRelation
+            emptyRelation
 
         ( Just { index, position, size }, Nothing ) ->
             { left = position.left + size.width, top = positionTop position index }
@@ -41,11 +42,13 @@ viewRelation srcProps refProps relation =
         ( Just src, Just ref ) ->
             ( positionLeft src.position src.size ref.position ref.size, ( positionTop src.position src.index, positionTop ref.position ref.index ) )
                 |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables + min src.index ref.index))
+    )
+        |> Svg.Styled.fromUnstyled
 
 
-viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg msg
+viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg.Styled.Svg msg
 viewVirtualRelation ( ( maybeProps, column ), position ) =
-    case maybeProps of
+    (case maybeProps of
         Just props ->
             Relation.line
                 { left = props.position.left + B.cond (position.left < props.position.left + props.size.width / 2) 0 props.size.width
@@ -58,11 +61,18 @@ viewVirtualRelation ( ( maybeProps, column ), position ) =
                 (Conf.canvas.zIndex.tables - 1)
 
         Nothing ->
-            viewEmptyRelation
+            emptyRelation
+    )
+        |> Svg.Styled.fromUnstyled
 
 
-viewEmptyRelation : Svg msg
+viewEmptyRelation : Svg.Styled.Svg msg
 viewEmptyRelation =
+    emptyRelation |> Svg.Styled.fromUnstyled
+
+
+emptyRelation : Svg msg
+emptyRelation =
     svg [ class "erd-relation", width "0px", height "0px" ] []
 
 
