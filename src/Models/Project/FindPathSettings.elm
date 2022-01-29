@@ -1,4 +1,4 @@
-module Models.Project.FindPathSettings exposing (FindPathSettings, decode, encode)
+module Models.Project.FindPathSettings exposing (FindPathSettings, decode, encode, init)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -10,6 +10,11 @@ import Models.Project.TableId as TableId exposing (TableId)
 
 type alias FindPathSettings =
     { maxPathLength : Int, ignoredTables : List TableId, ignoredColumns : List ColumnName }
+
+
+init : FindPathSettings
+init =
+    FindPathSettings 3 [] []
 
 
 encode : FindPathSettings -> FindPathSettings -> Value

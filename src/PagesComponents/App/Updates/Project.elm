@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.Project exposing (createProject, deleteProject, updateProject, useProject)
 
-import Conf exposing (conf)
+import Conf
 import DataSources.SqlParser.FileParser exposing (parseSchema)
 import DataSources.SqlParser.ProjectAdapter exposing (buildSourceFromSql)
 import Dict
@@ -15,8 +15,8 @@ import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SourceKind as SourceKind
 import Models.SourceInfo exposing (SourceInfo)
 import PagesComponents.App.Models exposing (Errors, Model, Msg(..), initSwitch)
-import Ports exposing (activateTooltipsAndPopovers, click, dropProject, hideModal, hideOffcanvas, observeTablesSize, saveProject, toastError, toastInfo, track, trackError)
-import Tracking exposing (events)
+import Ports
+import Track
 
 
 createProject : ProjectId -> SourceInfo -> FileContent -> Model -> ( Model, Cmd Msg )
@@ -38,7 +38,7 @@ createProject projectId sourceInfo content model =
      else
         ( [ "Invalid file (" ++ path ++ "), expected a .sql one" ], Nothing )
     )
-        |> loadProject events.createProject model
+        |> loadProject Track.createProject model
 
 
 updateProject : SourceInfo -> FileContent -> Project -> ( Project, Cmd Msg )
@@ -58,13 +58,13 @@ updateProject sourceInfo content project =
                         |> Maybe.map
                             (\oldSource ->
                                 ( project |> Project.updateSource newSource.id (\_ -> newSource)
-                                , events.refreshSource newSource
+                                , Track.refreshSource newSource
                                 , "Source <b>" ++ oldSource.name ++ "</b> updated with <b>" ++ newSource.name ++ "</b>."
                                 )
                             )
                         |> Maybe.withDefault
                             ( project |> Project.addSource newSource
-                            , events.addSource newSource
+                            , Track.addSource newSource
                             , "Source <b>" ++ newSource.name ++ "</b> added to project."
                             )
                 )
@@ -72,29 +72,29 @@ updateProject sourceInfo content project =
             |> (\( errors, ( updatedProject, event, message ) ) ->
                     ( updatedProject
                     , Cmd.batch
-                        ((errors |> List.map toastError)
-                            ++ (errors |> List.map (trackError "parse-schema"))
-                            ++ [ toastInfo message
-                               , hideOffcanvas conf.ids.settings
-                               , saveProject updatedProject
-                               , track event
+                        ((errors |> List.map Ports.toastError)
+                            ++ (errors |> List.map (Ports.trackError "parse-schema"))
+                            ++ [ Ports.toastInfo message
+                               , Ports.hideOffcanvas Conf.ids.settingsDialog
+                               , Ports.saveProject updatedProject
+                               , Ports.track event
                                ]
                         )
                     )
                )
 
     else
-        ( project, toastError ("Invalid file (" ++ path ++ "), expected .sql") )
+        ( project, Ports.toastError ("Invalid file (" ++ path ++ "), expected .sql") )
 
 
 useProject : Project -> Model -> ( Model, Cmd Msg )
 useProject project model =
-    ( [], Just project ) |> loadProject events.loadProject model
+    ( [], Just project ) |> loadProject Track.loadProject model
 
 
 deleteProject : Project -> Model -> ( Model, Cmd Msg )
 deleteProject project model =
-    ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ dropProject project, track (events.deleteProject project) ] )
+    ( { model | storedProjects = model.storedProjects |> List.filter (\p -> not (p.id == project.id)) }, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
 
 
 loadProject : (Project -> TrackEvent) -> Model -> ( Errors, Maybe Project ) -> ( Model, Cmd Msg )
@@ -106,25 +106,25 @@ loadProject projectEvent model ( errors, project ) =
         , domInfos = model.domInfos |> Dict.filter (\id _ -> not (id |> String.startsWith "table-"))
       }
     , Cmd.batch
-        ((errors |> List.map toastError)
-            ++ (errors |> List.map (trackError "parse-project"))
+        ((errors |> List.map Ports.toastError)
+            ++ (errors |> List.map (Ports.trackError "parse-project"))
             ++ (project
                     |> M.mapOrElse
                         (\p ->
                             (if not (p.layout.tables |> List.isEmpty) then
-                                observeTablesSize (p.layout.tables |> List.map .id)
+                                Ports.observeTablesSize (p.layout.tables |> List.map .id)
 
-                             else if Dict.size p.tables < 10 then
+                             else if Dict.size p.tables < Conf.canvas.showAllTablesThreshold then
                                 T.send ShowAllTables
 
                              else
-                                click conf.ids.searchInput
+                                Ports.click Conf.ids.searchInput
                             )
-                                :: [ toastInfo ("<b>" ++ p.name ++ "</b> loaded.<br>Use the search bar to explore it")
-                                   , hideModal conf.ids.projectSwitchModal
-                                   , saveProject p
-                                   , activateTooltipsAndPopovers
-                                   , track (projectEvent p)
+                                :: [ Ports.toastInfo ("<b>" ++ p.name ++ "</b> loaded.<br>Use the search bar to explore it")
+                                   , Ports.hideModal Conf.ids.projectSwitchModal
+                                   , Ports.saveProject p
+                                   , Ports.activateTooltipsAndPopovers
+                                   , Ports.track (projectEvent p)
                                    ]
                         )
                         []

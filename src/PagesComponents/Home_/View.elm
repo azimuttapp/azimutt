@@ -1,33 +1,56 @@
 module PagesComponents.Home_.View exposing (viewHome)
 
 import Components.Atoms.Badge as Badge
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon exposing (Icon(..))
+import Components.Atoms.Link as Link
 import Components.Molecules.Feature as Feature
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
-import Conf exposing (constants)
+import Conf
 import Css.Global as Global
 import Gen.Route as Route
 import Html.Styled exposing (Html, b, br, div, span, text)
-import Html.Styled.Attributes exposing (css, title)
+import Html.Styled.Attributes exposing (css, href, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText, extLink)
+import Libs.Html.Styled.Attributes exposing (track)
+import Libs.Maybe as M
+import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
-import Tailwind.Utilities exposing (bg_red_100, globalStyles, mt_3, text_red_800, text_white)
-import Tracking exposing (events)
+import PagesComponents.Home_.Models exposing (Model)
+import Tailwind.Utilities as Tw
+import Track
 
 
-viewHome : List (Html msg)
-viewHome =
-    [ Global.global globalStyles
+viewHome : Model -> List (Html msg)
+viewHome model =
+    let
+        heroCta : Html msg
+        heroCta =
+            model.projects
+                |> List.head
+                |> M.mapOrElse
+                    (\p ->
+                        div []
+                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                            ]
+                    )
+                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects__New) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
+
+        appRoute : Route.Route
+        appRoute =
+            model.projects |> List.head |> M.mapOrElse (\_ -> Route.Projects) Route.Projects__New
+    in
+    [ Global.global Tw.globalStyles
     , Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your database SQL schema"
         , content = [ bText "Did you ever find yourself lost in your database?", br [] [], bText "Discover how Azimutt will help you understand it." ]
-        , cta = { url = Route.toHref Route.App, text = "Explore your schema", track = Just (events.openAppCta "home-hero") }
+        , cta = heroCta
         }
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
         { image = { src = "/assets/images/basic-schema.png", alt = "Basic schema by Azimutt" }
@@ -44,7 +67,7 @@ viewHome =
                 , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "Let's try it!", track = Just (events.openAppCta "home-explore-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "Let's try it!", track = Just (Track.openAppCta "home-explore-section") }
         , quote =
             Just
                 { text = "Using Azimutt is like having super powers!"
@@ -55,18 +78,18 @@ viewHome =
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-light.png", alt = "Gospeak.io minimal schema by Azimutt" }
         { image = { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
         , imagePosition = Left
-        , icon = Just (Icon.sparkles 6 [ text_white ])
+        , icon = Just Sparkles
         , description =
             { title = "See what you need"
             , content =
                 [ text "Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how."
-                , div [ css [ mt_3 ] ] []
+                , div [ css [ Tw.mt_3 ] ] []
                 , Feature.checked { title = "search everywhere", description = Nothing }
                 , Feature.checked { title = "show, hide and organize tables", description = Nothing }
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "Let me see...", track = Just (events.openAppCta "home-display-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "Let me see...", track = Just (Track.openAppCta "home-display-section") }
         , quote =
             Just
                 { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
@@ -78,7 +101,7 @@ viewHome =
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-incoming-relation.jpg", alt = "Gospeak.io incoming relations by Azimutt" }
         , imagePosition = Right
-        , icon = Just (Icon.lightBulb 6 [ text_white ]) -- arrows-expand / light-bulb / lightning-bolt
+        , icon = Just LightBulb -- arrows-expand / light-bulb / lightning-bolt
         , description =
             { title = "Follow your mind"
             , content =
@@ -87,18 +110,18 @@ viewHome =
                 , text "Did you ever wanted to see what is on the other side of a relation ? With Azimutt, it's just one click away 🤩"
                 , br [] []
                 , text "And there's more, how do you see incoming relations ? Azimutt list all of them and is able to show one, many or all of them in just two clicks! 😍"
-                , div [ css [ mt_3 ] ] []
+                , div [ css [ Tw.mt_3 ] ] []
                 , Feature.checked { title = "outgoing relations", description = Nothing }
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "I can't resist, let's go!", track = Just (events.openAppCta "home-relations-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "I can't resist, let's go!", track = Just (Track.openAppCta "home-relations-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-layouts.jpg", alt = "Gospeak.io layouts by Azimutt" }
         , imagePosition = Left
-        , icon = Just (Icon.colorSwatch 6 [ text_white ]) -- chat-alt-2 / collection / color-swatch
+        , icon = Just ColorSwatch -- chat-alt-2 / collection / color-swatch
         , description =
             { title = "Context switch like a pro"
             , content =
@@ -108,13 +131,13 @@ viewHome =
                 , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "That's enough, I'm in!", track = Just (events.openAppCta "home-layouts-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "That's enough, I'm in!", track = Just (Track.openAppCta "home-layouts-section") }
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-find-path.png", alt = "Gospeak.io find path with Azimutt" }
         , imagePosition = Right
-        , icon = Just (Icon.beaker 6 [ text_white ])
+        , icon = Just Beaker
         , description =
             { title = "Relax"
             , content =
@@ -126,13 +149,13 @@ viewHome =
                 , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
                 , br [] []
-                , Badge.basic [ bg_red_100, text_red_800 ] "soon"
+                , Badge.basic Color.red [] [ text "soon" ]
                 , text " It will make you a "
                 , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
                 , text ", just as you like!"
                 ]
             }
-        , cta = Just { url = Route.toHref Route.App, text = "I'm hooked!", track = Just (events.openAppCta "home-find-path-section") }
+        , cta = Just { url = Route.toHref appRoute, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
         , quote = Nothing
         }
     , FeatureGrid.cardSlice
@@ -140,13 +163,13 @@ viewHome =
         , title = "What more can you want ?"
         , description = "If you are still not convinced, here are my last words. Azimutt is awesome, built with awesome technology and supports your awesome use cases. See below..."
         , cards =
-            [ { icon = Icon.arrowCircleDown 6 [ text_white ], title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at your fingertips. Whatever happens." ] }
-            , { icon = Icon.shieldCheck 6 [ text_white ], title = "Everything is local", description = [ text "Don't worry about privacy, everything stays on your computer, this is your data! #localStorage" ] }
-            , { icon = Icon.github 6 [ text_white ]
+            [ { icon = ArrowCircleDown, title = "PWA ready", description = [ text "Install Azimutt on your PC so your schema will always be at your fingertips. Whatever happens." ] }
+            , { icon = ShieldCheck, title = "Everything is local", description = [ text "Don't worry about privacy, everything stays on your computer, this is your data! #localStorage" ] }
+            , { icon = DocumentSearch
               , title = "Fully open source"
               , description =
                     [ text "Want to have a look? Everything is on "
-                    , b [] [ extLink constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
+                    , b [] [ extLink Conf.constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
                     , text ", awesomely built with Elm. Come a let's discuss!"
                     ]
               }

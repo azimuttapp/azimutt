@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, decode, encode, merge, withNullableInfo)
+module Models.Project.Column exposing (Column, decode, encode, merge, withName, withNullable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -24,9 +24,14 @@ type alias Column =
     }
 
 
-withNullableInfo : Bool -> String -> String
-withNullableInfo nullable text =
-    if nullable then
+withName : Column -> String -> String
+withName column text =
+    text ++ "." ++ column.name
+
+
+withNullable : Column -> String -> String
+withNullable column text =
+    if column.nullable then
         text ++ "?"
 
     else

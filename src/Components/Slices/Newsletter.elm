@@ -1,12 +1,14 @@
 module Components.Slices.Newsletter exposing (Form, Model, basicSlice, centered, doc, formDoc, small)
 
-import Css exposing (focus, hover)
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, button, div, form, h2, input, label, p, text)
 import Html.Styled.Attributes exposing (action, attribute, css, for, href, id, method, name, placeholder, rel, required, target, type_)
-import Tailwind.Breakpoints exposing (lg, sm)
-import Tailwind.Utilities exposing (appearance_none, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_white, border, border_blue_300, border_gray_300, border_indigo_500, border_transparent, duration_150, ease_in_out, flex, flex_1, flex_col, flex_row, flex_shrink_0, font_extrabold, font_medium, inline_flex, items_center, justify_center, justify_end, leading_6, max_w_3xl, max_w_7xl, max_w_prose, max_w_xs, ml_3, ml_8, mt_0, mt_2, mt_3, mt_6, mt_8, mx_auto, outline_none, placeholder_gray_400, placeholder_gray_500, px_4, px_5, px_6, px_8, py_2, py_24, py_3, py_32, ring_1, ring_2, ring_indigo_500, ring_offset_2, rounded_md, shadow, shadow_sm, sr_only, text_3xl, text_4xl, text_base, text_gray_500, text_gray_900, text_lg, text_sm, text_white, transition, underline, w_0, w_auto, w_full)
+import Libs.Models.Color as Color
+import Libs.Tailwind.Utilities as Tu
+import Tailwind.Breakpoints as Bp
+import Tailwind.Utilities as Tw
 
 
 type alias Model msg =
@@ -27,22 +29,22 @@ type alias Form =
 
 basicSlice : Model msg -> Html msg
 basicSlice model =
-    div [ css [ bg_white ] ]
-        [ div [ css [ max_w_7xl, mx_auto, py_24, px_4, lg [ py_32, px_8, flex, items_center ], sm [ px_6 ] ] ]
-            [ div [ css [ lg [ w_0, flex_1 ] ] ]
-                [ h2 [ css [ text_3xl, font_extrabold, text_gray_900, sm [ text_4xl ] ] ] [ text model.title ]
-                , p [ css [ mt_3, max_w_3xl, text_lg, text_gray_500 ] ] [ text model.description ]
+    div [ css [ Tw.bg_white ] ]
+        [ div [ css [ Tw.max_w_7xl, Tw.mx_auto, Tw.py_24, Tw.px_4, Bp.lg [ Tw.py_32, Tw.px_8, Tw.flex, Tw.items_center ], Bp.sm [ Tw.px_6 ] ] ]
+            [ div [ css [ Bp.lg [ Tw.w_0, Tw.flex_1 ] ] ]
+                [ h2 [ css [ Tw.text_3xl, Tw.font_extrabold, Tw.text_gray_900, Bp.sm [ Tw.text_4xl ] ] ] [ text model.title ]
+                , p [ css [ Tw.mt_3, Tw.max_w_3xl, Tw.text_lg, Tw.text_gray_500 ] ] [ text model.description ]
                 ]
-            , div [ css [ mt_8, lg [ mt_0, ml_8 ] ] ]
-                [ form [ method model.form.method, action model.form.url, target "_blank", rel "noopener", css [ sm [ flex ] ] ]
-                    [ label [ for "newsletter-email", css [ sr_only ] ] [ text model.form.placeholder ]
-                    , input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.form.placeholder, attribute "autocomplete" "email", required True, css [ w_full, px_5, py_3, border, border_gray_300, shadow_sm, placeholder_gray_400, rounded_md, Css.focus [ ring_1, ring_indigo_500, border_indigo_500 ], sm [ max_w_xs ] ] ] []
-                    , div [ css [ mt_3, rounded_md, shadow, sm [ mt_0, ml_3, flex_shrink_0 ] ] ]
-                        [ button [ type_ "submit", css [ w_full, flex, items_center, justify_center, py_3, px_5, border, border_transparent, text_base, font_medium, rounded_md, text_white, bg_indigo_600, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ bg_indigo_700 ] ] ]
+            , div [ css [ Tw.mt_8, Bp.lg [ Tw.mt_0, Tw.ml_8 ] ] ]
+                [ form [ method model.form.method, action model.form.url, target "_blank", rel "noopener", css [ Bp.sm [ Tw.flex ] ] ]
+                    [ label [ for "newsletter-email", css [ Tw.sr_only ] ] [ text model.form.placeholder ]
+                    , input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.form.placeholder, attribute "autocomplete" "email", required True, css [ Tw.w_full, Tw.px_5, Tw.py_3, Tw.border, Tw.border_gray_300, Tw.shadow_sm, Tw.placeholder_gray_400, Tw.rounded_md, Css.focus [ Tw.ring_1, Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.max_w_xs ] ] ] []
+                    , div [ css [ Tw.mt_3, Tw.rounded_md, Tw.shadow, Bp.sm [ Tw.mt_0, Tw.ml_3, Tw.flex_shrink_0 ] ] ]
+                        [ button [ type_ "submit", css [ Tw.w_full, Tw.flex, Tw.items_center, Tw.justify_center, Tw.py_3, Tw.px_5, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.text_white, Tw.bg_indigo_600, Tu.focusRing ( Color.indigo, 500 ) ( Color.white, 500 ), Css.hover [ Tw.bg_indigo_700 ] ] ]
                             [ text model.form.cta ]
                         ]
                     ]
-                , p [ css [ mt_3, text_sm, text_gray_500 ] ] model.legalText
+                , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ] model.legalText
                 ]
             ]
         ]
@@ -50,11 +52,11 @@ basicSlice model =
 
 centered : Form -> Html msg
 centered model =
-    div [ css [ max_w_prose, mx_auto ] ]
-        [ form [ method model.method, action model.url, target "_blank", rel "noopener", css [ justify_center, sm [ flex ] ] ]
-            [ input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.placeholder, attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_5, py_3, border, border_gray_300, text_base, leading_6, rounded_md, text_gray_900, bg_white, placeholder_gray_500, transition, duration_150, ease_in_out, focus [ outline_none, border_blue_300 ], sm [ max_w_xs ] ] ] []
-            , div [ css [ mt_3, rounded_md, shadow, sm [ mt_0, ml_3, flex_shrink_0 ] ] ]
-                [ button [ css [ w_full, flex, items_center, justify_center, px_5, py_3, border, border_transparent, text_base, leading_6, font_medium, rounded_md, text_white, bg_indigo_600, transition, duration_150, ease_in_out, focus [ outline_none ], hover [ bg_indigo_500 ] ] ]
+    div [ css [ Tw.max_w_prose, Tw.mx_auto ] ]
+        [ form [ method model.method, action model.url, target "_blank", rel "noopener", css [ Tw.justify_center, Bp.sm [ Tw.flex ] ] ]
+            [ input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.placeholder, attribute "autocomplete" "email", required True, css [ Tw.appearance_none, Tw.w_full, Tw.px_5, Tw.py_3, Tw.border, Tw.border_gray_300, Tw.text_base, Tw.leading_6, Tw.rounded_md, Tw.text_gray_900, Tw.bg_white, Tw.placeholder_gray_500, Tw.transition, Tw.duration_150, Tw.ease_in_out, Css.focus [ Tw.outline_none, Tw.border_blue_300 ], Bp.sm [ Tw.max_w_xs ] ] ] []
+            , div [ css [ Tw.mt_3, Tw.rounded_md, Tw.shadow, Bp.sm [ Tw.mt_0, Tw.ml_3, Tw.flex_shrink_0 ] ] ]
+                [ button [ css [ Tw.w_full, Tw.flex, Tw.items_center, Tw.justify_center, Tw.px_5, Tw.py_3, Tw.border, Tw.border_transparent, Tw.text_base, Tw.leading_6, Tw.font_medium, Tw.rounded_md, Tw.text_white, Tw.bg_indigo_600, Tw.transition, Tw.duration_150, Tw.ease_in_out, Css.focus [ Tw.outline_none ], Css.hover [ Tw.bg_indigo_500 ] ] ]
                     [ text model.cta ]
                 ]
             ]
@@ -63,13 +65,13 @@ centered model =
 
 small : Form -> Html msg
 small model =
-    form [ method model.method, action model.url, target "_blank", rel "noopener", css [ mt_6, flex, flex_col, lg [ mt_0, justify_end ], sm [ flex_row ] ] ]
+    form [ method model.method, action model.url, target "_blank", rel "noopener", css [ Tw.mt_6, Tw.flex, Tw.flex_col, Bp.lg [ Tw.mt_0, Tw.justify_end ], Bp.sm [ Tw.flex_row ] ] ]
         [ div []
-            [ label [ for "newsletter-email", css [ sr_only ] ] [ text model.placeholder ]
-            , input [ type_ "email", name "member[email]", id "newsletter-email", attribute "autocomplete" "email", required True, css [ appearance_none, w_full, px_4, py_2, border, border_gray_300, text_base, rounded_md, text_gray_900, bg_white, placeholder_gray_500, focus [ outline_none, ring_indigo_500, border_indigo_500 ], lg [ max_w_xs ] ], placeholder model.placeholder ] []
+            [ label [ for "newsletter-email", css [ Tw.sr_only ] ] [ text model.placeholder ]
+            , input [ type_ "email", name "member[email]", id "newsletter-email", attribute "autocomplete" "email", required True, css [ Tw.appearance_none, Tw.w_full, Tw.px_4, Tw.py_2, Tw.border, Tw.border_gray_300, Tw.text_base, Tw.rounded_md, Tw.text_gray_900, Tw.bg_white, Tw.placeholder_gray_500, Css.focus [ Tw.outline_none, Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.lg [ Tw.max_w_xs ] ], placeholder model.placeholder ] []
             ]
-        , div [ css [ mt_2, flex_shrink_0, w_full, flex, rounded_md, shadow_sm, sm [ mt_0, ml_3, w_auto, inline_flex ] ] ]
-            [ button [ type_ "submit", css [ w_full, bg_indigo_600, px_4, py_2, border, border_transparent, rounded_md, flex, items_center, justify_center, text_base, font_medium, text_white, focus [ outline_none, ring_2, ring_offset_2, ring_indigo_500 ], hover [ bg_indigo_700 ], sm [ w_auto, inline_flex ] ] ]
+        , div [ css [ Tw.mt_2, Tw.flex_shrink_0, Tw.w_full, Tw.flex, Tw.rounded_md, Tw.shadow_sm, Bp.sm [ Tw.mt_0, Tw.ml_3, Tw.w_auto, Tw.inline_flex ] ] ]
+            [ button [ type_ "submit", css [ Tw.w_full, Tw.bg_indigo_600, Tw.px_4, Tw.py_2, Tw.border, Tw.border_transparent, Tw.rounded_md, Tw.flex, Tw.items_center, Tw.justify_center, Tw.text_base, Tw.font_medium, Tw.text_white, Tu.focusRing ( Color.indigo, 500 ) ( Color.white, 500 ), Css.hover [ Tw.bg_indigo_700 ], Bp.sm [ Tw.w_auto, Tw.inline_flex ] ] ]
                 [ text model.cta ]
             ]
         ]
@@ -89,7 +91,7 @@ modelDoc =
     { form = formDoc
     , title = "Sign up for our newsletter"
     , description = "Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui Lorem cupidatat commodo. Elit sunt amet fugiat veniam occaecat fugiat."
-    , legalText = [ text "We care about the protection of your data. Read our ", a [ href "#", css [ font_medium, underline ] ] [ text "Privacy Policy." ] ]
+    , legalText = [ text "We care about the protection of your data. Read our ", a [ href "#", css [ Tw.font_medium, Tw.underline ] ] [ text "Privacy Policy." ] ]
     }
 
 

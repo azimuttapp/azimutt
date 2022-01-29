@@ -1,7 +1,7 @@
 module Components.Slices.FeatureSideBySide exposing (Description, Model, Position(..), Quote, doc, imageSlice, imageSwapSlice)
 
-import Components.Atoms.Icon as Icon
-import Css exposing (Style, hover)
+import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
@@ -10,14 +10,14 @@ import Html.Styled.Attributes exposing (alt, class, css, href, src)
 import Libs.Html.Styled.Attributes exposing (track)
 import Libs.Maybe as M
 import Libs.Models exposing (Image, TrackedLink)
-import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (absolute, bg_gradient_to_r, border, border_gray_200, border_t, border_transparent, col_start_1, col_start_2, flex, flex_shrink_0, font_extrabold, font_medium, from_green_600, from_green_700, gap_24, grid, grid_cols_2, grid_flow_col_dense, h_12, h_6, h_full, inline_flex, items_center, justify_center, left_0, m_0, max_w_7xl, max_w_none, max_w_xl, mt_0, mt_12, mt_16, mt_3, mt_4, mt_6, mt_8, mx_0, mx_auto, neg_ml_16, neg_ml_48, neg_mr_16, neg_mr_48, overflow_hidden, pb_32, pl_4, pl_6, pr_4, pr_6, pt_6, px_0, px_4, px_6, px_8, py_2, py_32, relative, right_0, ring_1, ring_black, ring_opacity_5, rounded_full, rounded_md, rounded_xl, shadow_sm, shadow_xl, space_x_3, text_3xl, text_base, text_gray_500, text_gray_700, text_gray_900, text_lg, text_white, to_indigo_600, to_indigo_700, tracking_tight, w_12, w_6, w_auto, w_full)
+import Tailwind.Breakpoints as Bp
+import Tailwind.Utilities as Tw
 
 
 type alias Model msg =
     { image : Image
     , imagePosition : Position
-    , icon : Maybe (Html msg)
+    , icon : Maybe Icon
     , description : Description msg
     , cta : Maybe TrackedLink
     , quote : Maybe Quote
@@ -47,65 +47,65 @@ imageSwapSlice swap model =
     slice model (imageLeftSwap swap) (imageRightSwap swap)
 
 
-slice : Model msg -> (Style -> Image -> Html msg) -> (Style -> Image -> Html msg) -> Html msg
+slice : Model msg -> (Css.Style -> Image -> Html msg) -> (Css.Style -> Image -> Html msg) -> Html msg
 slice model buildImageLeft buildImageRight =
-    div [ css [ pb_32, relative, overflow_hidden ] ]
-        [ div [ css [ lg [ mx_auto, max_w_7xl, px_8, grid, grid_cols_2, grid_flow_col_dense, gap_24 ] ] ]
+    div [ css [ Tw.pb_32, Tw.relative, Tw.overflow_hidden ] ]
+        [ div [ css [ Bp.lg [ Tw.mx_auto, Tw.max_w_7xl, Tw.px_8, Tw.grid, Tw.grid_cols_2, Tw.grid_flow_col_dense, Tw.gap_24 ] ] ]
             (case model.imagePosition of
                 Left ->
-                    [ details col_start_2 model, buildImageLeft col_start_1 model.image ]
+                    [ details Tw.col_start_2 model, buildImageLeft Tw.col_start_1 model.image ]
 
                 Right ->
-                    [ details col_start_1 model, buildImageRight col_start_2 model.image ]
+                    [ details Tw.col_start_1 model, buildImageRight Tw.col_start_2 model.image ]
             )
         ]
 
 
-imageLeft : Style -> Image -> Html msg
+imageLeft : Css.Style -> Image -> Html msg
 imageLeft position image =
-    div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
-        [ div [ css [ pr_4, neg_ml_48, sm [ pr_6 ], md [ neg_ml_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
-            [ img [ css [ w_full, rounded_xl, shadow_xl, ring_1, ring_black, ring_opacity_5, lg [ absolute, right_0, h_full, w_auto, max_w_none ] ], src image.src, alt image.alt ] []
+    div [ css [ Tw.mt_12, Bp.sm [ Tw.mt_16 ], Bp.lg [ Tw.mt_0, position ] ] ]
+        [ div [ css [ Tw.pr_4, Tw.neg_ml_48, Bp.sm [ Tw.pr_6 ], Bp.md [ Tw.neg_ml_16 ], Bp.lg [ Tw.px_0, Tw.m_0, Tw.relative, Tw.h_full ] ] ]
+            [ img [ css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.right_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ], src image.src, alt image.alt ] []
             ]
         ]
 
 
-imageRight : Style -> Image -> Html msg
+imageRight : Css.Style -> Image -> Html msg
 imageRight position image =
-    div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
-        [ div [ css [ pl_4, neg_mr_48, sm [ pl_6 ], md [ neg_mr_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
-            [ img [ css [ w_full, rounded_xl, shadow_xl, ring_1, ring_black, ring_opacity_5, lg [ absolute, left_0, h_full, w_auto, max_w_none ] ], src image.src, alt image.alt ] []
+    div [ css [ Tw.mt_12, Bp.sm [ Tw.mt_16 ], Bp.lg [ Tw.mt_0, position ] ] ]
+        [ div [ css [ Tw.pl_4, Tw.neg_mr_48, Bp.sm [ Tw.pl_6 ], Bp.md [ Tw.neg_mr_16 ], Bp.lg [ Tw.px_0, Tw.m_0, Tw.relative, Tw.h_full ] ] ]
+            [ img [ css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.left_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ], src image.src, alt image.alt ] []
             ]
         ]
 
 
-imageLeftSwap : Image -> Style -> Image -> Html msg
+imageLeftSwap : Image -> Css.Style -> Image -> Html msg
 imageLeftSwap swap position base =
-    div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
-        [ div [ css [ pr_4, neg_ml_48, sm [ pr_6 ], md [ neg_ml_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
+    div [ css [ Tw.mt_12, Bp.sm [ Tw.mt_16 ], Bp.lg [ Tw.mt_0, position ] ] ]
+        [ div [ css [ Tw.pr_4, Tw.neg_ml_48, Bp.sm [ Tw.pr_6 ], Bp.md [ Tw.neg_ml_16 ], Bp.lg [ Tw.px_0, Tw.m_0, Tw.relative, Tw.h_full ] ] ]
             [ span [ class "img-swipe" ]
-                [ img [ css [ w_full, rounded_xl, shadow_xl, ring_1, ring_black, ring_opacity_5, lg [ absolute, right_0, h_full, w_auto, max_w_none ] ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ css [ w_full, rounded_xl, shadow_xl, ring_1, ring_black, ring_opacity_5, lg [ absolute, right_0, h_full, w_auto, max_w_none ] ], src swap.src, alt swap.alt, class "img-hover" ] []
+                [ img [ css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.right_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ], src base.src, alt base.alt, class "img-default" ] []
+                , img [ css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.right_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ], src swap.src, alt swap.alt, class "img-hover" ] []
                 ]
             ]
         ]
 
 
-imageRightSwap : Image -> Style -> Image -> Html msg
+imageRightSwap : Image -> Css.Style -> Image -> Html msg
 imageRightSwap swap position base =
-    div [ css [ mt_12, sm [ mt_16 ], lg [ mt_0, position ] ] ]
-        [ div [ css [ pl_4, neg_mr_48, sm [ pl_6 ], md [ neg_mr_16 ], lg [ px_0, m_0, relative, h_full ] ] ]
+    div [ css [ Tw.mt_12, Bp.sm [ Tw.mt_16 ], Bp.lg [ Tw.mt_0, position ] ] ]
+        [ div [ css [ Tw.pl_4, Tw.neg_mr_48, Bp.sm [ Tw.pl_6 ], Bp.md [ Tw.neg_mr_16 ], Bp.lg [ Tw.px_0, Tw.m_0, Tw.relative, Tw.h_full ] ] ]
             [ span [ class "img-swipe" ]
-                [ img [ css [ w_full, rounded_xl, shadow_xl, ring_1, ring_black, ring_opacity_5, lg [ absolute, left_0, h_full, w_auto, max_w_none ] ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ css [ w_full, rounded_xl, shadow_xl, ring_1, ring_black, ring_opacity_5, lg [ absolute, left_0, h_full, w_auto, max_w_none ] ], src swap.src, alt swap.alt, class "img-hover" ] []
+                [ img [ css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.left_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ], src base.src, alt base.alt, class "img-default" ] []
+                , img [ css [ Tw.w_full, Tw.rounded_xl, Tw.shadow_xl, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Bp.lg [ Tw.absolute, Tw.left_0, Tw.h_full, Tw.w_auto, Tw.max_w_none ] ], src swap.src, alt swap.alt, class "img-hover" ] []
                 ]
             ]
         ]
 
 
-details : Style -> Model msg -> Html msg
+details : Css.Style -> Model msg -> Html msg
 details position model =
-    div [ css [ px_4, max_w_xl, mx_auto, sm [ px_6 ], lg [ py_32, max_w_none, mx_0, px_0, position ] ] ]
+    div [ css [ Tw.px_4, Tw.max_w_xl, Tw.mx_auto, Bp.sm [ Tw.px_6 ], Bp.lg [ Tw.py_32, Tw.max_w_none, Tw.mx_0, Tw.px_0, position ] ] ]
         (List.filterMap identity
             [ model.icon |> Maybe.map featureIcon
             , Just model.description |> Maybe.map featureDescription
@@ -115,25 +115,25 @@ details position model =
         )
 
 
-featureIcon : Html msg -> Html msg
+featureIcon : Icon -> Html msg
 featureIcon icon =
-    span [ css [ h_12, w_12, rounded_md, flex, items_center, justify_center, bg_gradient_to_r, from_green_600, to_indigo_600 ] ] [ icon ]
+    span [ css [ Tw.h_12, Tw.w_12, Tw.rounded_md, Tw.flex, Tw.items_center, Tw.justify_center, Tw.bg_gradient_to_r, Tw.from_green_600, Tw.to_indigo_600 ] ] [ Icon.outline icon [ Tw.text_white ] ]
 
 
 featureDescription : Description msg -> Html msg
 featureDescription d =
-    div [ css [ mt_6 ] ]
-        [ h2 [ css [ text_3xl, font_extrabold, tracking_tight, text_gray_900 ] ] [ text d.title ]
-        , p [ css [ mt_4, text_lg, text_gray_500 ] ] d.content
+    div [ css [ Tw.mt_6 ] ]
+        [ h2 [ css [ Tw.text_3xl, Tw.font_extrabold, Tw.tracking_tight, Tw.text_gray_900 ] ] [ text d.title ]
+        , p [ css [ Tw.mt_4, Tw.text_lg, Tw.text_gray_500 ] ] d.content
         ]
 
 
 featureCta : TrackedLink -> Html msg
 featureCta cta =
-    div [ css [ mt_6 ] ]
+    div [ css [ Tw.mt_6 ] ]
         [ a
             ([ href cta.url
-             , css [ inline_flex, px_4, py_2, border, border_transparent, text_base, font_medium, rounded_md, shadow_sm, text_white, bg_gradient_to_r, from_green_600, to_indigo_600, hover [ text_white, from_green_700, to_indigo_700 ] ]
+             , css [ Tw.inline_flex, Tw.px_4, Tw.py_2, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.shadow_sm, Tw.text_white, Tw.bg_gradient_to_r, Tw.from_green_600, Tw.to_indigo_600, Css.hover [ Tw.text_white, Tw.from_green_700, Tw.to_indigo_700 ] ]
              ]
                 ++ (cta.track |> M.mapOrElse track [])
             )
@@ -143,17 +143,17 @@ featureCta cta =
 
 featureQuote : Quote -> Html msg
 featureQuote quote =
-    div [ css [ mt_8, border_t, border_gray_200, pt_6 ] ]
+    div [ css [ Tw.mt_8, Tw.border_t, Tw.border_gray_200, Tw.pt_6 ] ]
         [ blockquote []
             [ div []
-                [ p [ css [ text_base, text_gray_500 ] ]
+                [ p [ css [ Tw.text_base, Tw.text_gray_500 ] ]
                     [ text ("“" ++ quote.text ++ "”") ]
                 ]
-            , footer [ css [ mt_3 ] ]
-                [ div [ css [ flex, items_center, space_x_3 ] ]
-                    [ div [ css [ flex_shrink_0 ] ]
-                        [ img [ src quote.avatar.src, alt quote.avatar.alt, css [ h_6, w_6, rounded_full ] ] [] ]
-                    , div [ css [ text_base, font_medium, text_gray_700 ] ]
+            , footer [ css [ Tw.mt_3 ] ]
+                [ div [ css [ Tw.flex, Tw.items_center, Tw.space_x_3 ] ]
+                    [ div [ css [ Tw.flex_shrink_0 ] ]
+                        [ img [ src quote.avatar.src, alt quote.avatar.alt, css [ Tw.h_6, Tw.w_6, Tw.rounded_full ] ] [] ]
+                    , div [ css [ Tw.text_base, Tw.font_medium, Tw.text_gray_700 ] ]
                         [ text quote.author ]
                     ]
                 ]
@@ -169,7 +169,7 @@ dsModelFull : Model msg
 dsModelFull =
     { image = { src = "https://tailwindui.com/img/component-images/inbox-app-screenshot-2.jpg", alt = "Customer profile user interface" }
     , imagePosition = Right
-    , icon = Just (Icon.sparkles 6 [ text_white ])
+    , icon = Just Sparkles
     , description =
         { title = "Better understand your customers"
         , content = [ text "Semper curabitur ullamcorper posuere nunc sed. Ornare iaculis bibendum malesuada faucibus lacinia porttitor. Pulvinar laoreet sagittis viverra duis. In venenatis sem arcu pretium pharetra at. Lectus viverra dui tellus ornare pharetra." ]

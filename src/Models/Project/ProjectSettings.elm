@@ -25,7 +25,7 @@ type alias ProjectSettings =
 
 init : ProjectSettings
 init =
-    { findPath = FindPathSettings 3 [] []
+    { findPath = FindPathSettings.init
     , removedSchemas = []
     , removeViews = False
     , removedTables = ""

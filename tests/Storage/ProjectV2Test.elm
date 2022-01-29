@@ -4,7 +4,9 @@ import Array
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Dict as D
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Color as Color
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size as Size
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Models.ColumnOrder exposing (ColumnOrder(..))
@@ -103,9 +105,9 @@ project1 =
     , sources = [ Source src1 "source 1" (LocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
     , tables = tables1
     , relations = []
-    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
+    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) Size.zero Color.red [ "id" ] True False ] [] (time 1200) (time 1201)
     , usedLayout = Nothing
-    , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) ) ]
+    , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
     , settings = ProjectSettings (FindPathSettings 4 [] []) [] False "" "" SqlOrder
     , createdAt = time 1000
     , updatedAt = time 1001
@@ -204,12 +206,12 @@ project2 =
         ]
     , tables = tables2
     , relations = relations2
-    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) "red" [ "id" ] True ] [] (time 1200) (time 1201)
+    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) Size.zero Color.red [ "id" ] True False ] [] (time 1200) (time 1201)
     , usedLayout = Just "users"
     , layouts =
         Dict.fromList
-            [ ( "empty", Layout (CanvasProps (Position 0 0) 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) "red" [ "id", "name" ] True ] [] (time 1202) (time 1203) )
+            [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
+            , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) Size.zero Color.red [ "id", "name" ] True False ] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ]) [] False "" "" SqlOrder
     , createdAt = time 1000

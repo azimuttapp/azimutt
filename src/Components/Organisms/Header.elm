@@ -1,15 +1,16 @@
 module Components.Organisms.Header exposing (Brand, ExtLink, LeftLinksModel, LeftLinksTheme, RightLinksModel, RightLinksTheme, doc, leftLinks, leftLinksIndigo, leftLinksWhite, rightLinks, rightLinksIndigo, rightLinksWhite)
 
-import Css exposing (hover)
-import ElmBook.Chapter exposing (chapter, renderComponentList)
+import Css
+import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, a, div, header, img, nav, span, text)
 import Html.Styled.Attributes exposing (alt, css, href, src)
 import Libs.Html.Styled exposing (extLink)
 import Libs.Html.Styled.Attributes exposing (ariaLabel)
 import Libs.Models exposing (Image, Link)
-import Tailwind.Breakpoints exposing (lg, md, sm)
-import Tailwind.Utilities exposing (bg_indigo_50, bg_indigo_500, bg_indigo_600, bg_indigo_700, bg_opacity_75, bg_white, block, border, border_b, border_indigo_500, border_none, border_transparent, flex, flex_1, flex_wrap, font_medium, h_10, h_8, hidden, inline_block, items_center, justify_between, justify_center, justify_start, max_w_7xl, ml_10, ml_3, mx_auto, px_4, px_6, px_8, py_2, py_4, py_6, rounded_md, space_x_10, space_x_4, space_x_6, space_x_8, sr_only, text_2xl, text_base, text_gray_500, text_gray_900, text_indigo_50, text_indigo_600, text_white, w_0, w_auto, w_full)
+import Libs.Tailwind.Utilities as Tu
+import Tailwind.Breakpoints as Bp
+import Tailwind.Utilities as Tw
 
 
 type alias RightLinksModel msg =
@@ -27,36 +28,36 @@ type alias ExtLink msg =
 
 
 type alias RightLinksTheme =
-    { bg : Css.Style, text : List Css.Style }
+    { bg : Css.Style, text : Css.Style }
 
 
 rightLinksWhite : RightLinksModel msg -> Html msg
 rightLinksWhite model =
-    rightLinks { bg = bg_white, text = [ text_gray_500, hover [ text_gray_900 ] ] } model
+    rightLinks { bg = Tw.bg_white, text = Css.batch [ Tw.text_gray_500, Css.hover [ Tw.text_gray_900 ] ] } model
 
 
 rightLinksIndigo : RightLinksModel msg -> Html msg
 rightLinksIndigo model =
-    rightLinks { bg = bg_indigo_600, text = [ text_white, hover [ text_indigo_50 ] ] } model
+    rightLinks { bg = Tw.bg_indigo_600, text = Css.batch [ Tw.text_white, Css.hover [ Tw.text_indigo_50 ] ] } model
 
 
 rightLinks : RightLinksTheme -> RightLinksModel msg -> Html msg
 rightLinks theme model =
     header [ css [ theme.bg ] ]
-        [ div [ css [ flex, justify_between, items_center, max_w_7xl, mx_auto, px_4, py_6, lg [ px_8 ], md [ justify_start, space_x_10 ], sm [ px_6 ] ] ]
-            [ a [ href model.brand.link.url, css [ flex, justify_start, items_center, font_medium, lg [ w_0, flex_1 ] ] ]
-                [ img [ src model.brand.img.src, alt model.brand.img.alt, css [ h_8, w_auto, sm [ h_10 ] ] ] []
-                , span [ css ([ ml_3, text_2xl ] ++ theme.text) ] [ text model.brand.link.text ]
+        [ div [ css [ Tw.flex, Tw.justify_between, Tw.items_center, Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Tw.py_6, Bp.lg [ Tw.px_8 ], Bp.md [ Tw.justify_start, Tw.space_x_10 ], Bp.sm [ Tw.px_6 ] ] ]
+            [ a [ href model.brand.link.url, css [ Tw.flex, Tw.justify_start, Tw.items_center, Tw.font_medium, Bp.lg [ Tw.w_0, Tw.flex_1 ] ] ]
+                [ img [ src model.brand.img.src, alt model.brand.img.alt, css [ Tw.h_8, Tw.w_auto, Bp.sm [ Tw.h_10 ] ] ] []
+                , span [ css [ Tw.ml_3, Tw.text_2xl, theme.text ] ] [ text model.brand.link.text ]
                 ]
-            , nav [ css [ hidden, space_x_10, md [ flex ] ] ]
+            , nav [ css [ Tw.hidden, Tw.space_x_10, Bp.md [ Tw.flex ] ] ]
                 (model.links
                     |> List.map
                         (\l ->
                             if l.external then
-                                extLink l.url [ css ([ text_base, font_medium ] ++ theme.text) ] l.content
+                                extLink l.url [ css [ Tw.text_base, Tw.font_medium, theme.text ] ] l.content
 
                             else
-                                a [ href l.url, css ([ text_base, font_medium ] ++ theme.text) ] l.content
+                                a [ href l.url, css [ Tw.text_base, Tw.font_medium, theme.text ] ] l.content
                         )
                 )
             ]
@@ -72,36 +73,36 @@ type alias LeftLinksModel =
 
 
 type alias LeftLinksTheme =
-    { bg : Css.Style, links : List Css.Style, primary : List Css.Style, secondary : List Css.Style }
+    { bg : Css.Style, links : Css.Style, primary : Css.Style, secondary : Css.Style }
 
 
 leftLinksIndigo : LeftLinksModel -> Html msg
 leftLinksIndigo model =
-    leftLinks { bg = bg_indigo_600, links = [ text_white, hover [ text_indigo_50 ] ], secondary = [ text_white, bg_indigo_500, hover [ bg_opacity_75 ] ], primary = [ text_indigo_600, bg_white, hover [ bg_indigo_50 ] ] } model
+    leftLinks { bg = Tw.bg_indigo_600, links = Css.batch [ Tw.text_white, Css.hover [ Tw.text_indigo_50 ] ], secondary = Css.batch [ Tw.text_white, Tw.bg_indigo_500, Css.hover [ Tw.bg_opacity_75 ] ], primary = Css.batch [ Tw.text_indigo_600, Tw.bg_white, Css.hover [ Tw.bg_indigo_50 ] ] } model
 
 
 leftLinksWhite : LeftLinksModel -> Html msg
 leftLinksWhite model =
-    leftLinks { bg = bg_white, links = [ text_gray_500, hover [ text_gray_900 ] ], secondary = [ text_gray_500, hover [ text_gray_900 ] ], primary = [ text_white, bg_indigo_600, hover [ bg_indigo_700 ] ] } model
+    leftLinks { bg = Tw.bg_white, links = Css.batch [ Tw.text_gray_500, Css.hover [ Tw.text_gray_900 ] ], secondary = Css.batch [ Tw.text_gray_500, Css.hover [ Tw.text_gray_900 ] ], primary = Css.batch [ Tw.text_white, Tw.bg_indigo_600, Css.hover [ Tw.bg_indigo_700 ] ] } model
 
 
 leftLinks : LeftLinksTheme -> LeftLinksModel -> Html msg
 leftLinks theme model =
     header [ css [ theme.bg ] ]
-        [ nav [ css [ max_w_7xl, mx_auto, px_4, lg [ px_8 ], sm [ px_6 ] ], ariaLabel "Top" ]
-            [ div [ css [ w_full, py_6, flex, items_center, justify_between, border_b, border_indigo_500, lg [ border_none ] ] ]
-                [ div [ css [ flex, items_center ] ]
-                    [ a [ href model.brand.link.url ] [ span [ css [ sr_only ] ] [ text model.brand.link.text ], img [ css [ h_10, w_auto ], src model.brand.img.src, alt model.brand.img.alt ] [] ]
-                    , div [ css [ hidden, ml_10, space_x_8, lg [ block ] ] ]
-                        (model.links |> List.map (\link -> a [ href link.url, css ([ text_base, font_medium ] ++ theme.links) ] [ text link.text ]))
+        [ nav [ css [ Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ], ariaLabel "Top" ]
+            [ div [ css [ Tw.w_full, Tw.py_6, Tw.flex, Tw.items_center, Tw.justify_between, Tw.border_b, Tw.border_indigo_500, Bp.lg [ Tw.border_none ] ] ]
+                [ div [ css [ Tw.flex, Tw.items_center ] ]
+                    [ a [ href model.brand.link.url ] [ span [ css [ Tw.sr_only ] ] [ text model.brand.link.text ], img [ css [ Tw.h_10, Tw.w_auto ], src model.brand.img.src, alt model.brand.img.alt ] [] ]
+                    , div [ css [ Tw.hidden, Tw.ml_10, Tw.space_x_8, Bp.lg [ Tw.block ] ] ]
+                        (model.links |> List.map (\link -> a [ href link.url, css [ Tw.text_base, Tw.font_medium, theme.links ] ] [ text link.text ]))
                     ]
-                , div [ css [ ml_10, space_x_4 ] ]
-                    [ a [ href model.secondary.url, css ([ inline_block, py_2, px_4, border, border_transparent, rounded_md, text_base, font_medium ] ++ theme.secondary) ] [ text model.secondary.text ]
-                    , a [ href model.primary.url, css ([ inline_block, py_2, px_4, border, border_transparent, rounded_md, text_base, font_medium ] ++ theme.primary) ] [ text model.primary.text ]
+                , div [ css [ Tw.ml_10, Tw.space_x_4 ] ]
+                    [ a [ href model.secondary.url, css [ Tw.inline_block, Tw.py_2, Tw.px_4, Tw.border, Tw.border_transparent, Tw.rounded_md, Tw.text_base, Tw.font_medium, theme.secondary ] ] [ text model.secondary.text ]
+                    , a [ href model.primary.url, css [ Tw.inline_block, Tw.py_2, Tw.px_4, Tw.border, Tw.border_transparent, Tw.rounded_md, Tw.text_base, Tw.font_medium, theme.primary ] ] [ text model.primary.text ]
                     ]
                 ]
-            , div [ css [ py_4, flex, flex_wrap, justify_center, space_x_6, lg [ hidden ] ] ]
-                (model.links |> List.map (\link -> a [ href link.url, css ([ text_base, font_medium ] ++ theme.links) ] [ text link.text ]))
+            , div [ css [ Tw.py_4, Tw.flex, Tw.flex_wrap, Tw.justify_center, Tw.space_x_6, Bp.lg [ Tw.hidden ] ] ]
+                (model.links |> List.map (\link -> a [ href link.url, css [ Tw.text_base, Tw.font_medium, theme.links ] ] [ text link.text ]))
             ]
         ]
 
@@ -148,12 +149,12 @@ leftLinksModel img =
 
 doc : Chapter x
 doc =
-    chapter "Header"
-        |> renderComponentList
-            [ ( "rightLinksIndigo", rightLinksIndigo (rightLinksModel logoWhite) )
-            , ( "rightLinksWhite", rightLinksWhite (rightLinksModel logoIndigo) )
-            , ( "rightLinks", rightLinks { bg = bg_white, text = [] } (rightLinksModel logoIndigo) )
-            , ( "leftLinksIndigo", leftLinksIndigo (leftLinksModel logoWhite) )
-            , ( "leftLinksWhite", leftLinksWhite (leftLinksModel logoIndigo) )
-            , ( "leftLinks", leftLinks { bg = bg_white, links = [], secondary = [], primary = [] } (leftLinksModel logoIndigo) )
+    Chapter.chapter "Header"
+        |> Chapter.renderStatefulComponentList
+            [ ( "rightLinksIndigo", \_ -> rightLinksIndigo (rightLinksModel logoWhite) )
+            , ( "rightLinksWhite", \_ -> rightLinksWhite (rightLinksModel logoIndigo) )
+            , ( "rightLinks", \_ -> rightLinks { bg = Tw.bg_white, text = Tu.noStyle } (rightLinksModel logoIndigo) )
+            , ( "leftLinksIndigo", \_ -> leftLinksIndigo (leftLinksModel logoWhite) )
+            , ( "leftLinksWhite", \_ -> leftLinksWhite (leftLinksModel logoIndigo) )
+            , ( "leftLinks", \_ -> leftLinks { bg = Tw.bg_white, links = Tu.noStyle, secondary = Tu.noStyle, primary = Tu.noStyle } (leftLinksModel logoIndigo) )
             ]

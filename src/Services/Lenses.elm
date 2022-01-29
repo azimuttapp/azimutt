@@ -1,6 +1,5 @@
-module PagesComponents.App.Updates.Helpers exposing (decodeErrorToHtml, setCanvas, setCurrentLayout, setLayout, setLayouts, setPosition, setProject, setProjectWithCmd, setRelations, setSettings, setSwitch, setTableInList, setTableList, setTables, setTime)
+module Services.Lenses exposing (setActive, setAllTableProps, setCanvas, setCurrentLayout, setLayout, setLayoutTables, setLayouts, setNavbar, setParsing, setParsingWithCmd, setPosition, setProject, setProjectWithCmd, setRelations, setScreen, setSearch, setSettings, setSourceUpload, setSourceUploadWithCmd, setSwitch, setTableInList, setTableList, setTableProps, setTables, setTime)
 
-import Json.Decode as Decode
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
 import Libs.Maybe as M
@@ -13,9 +12,29 @@ setTime transform item =
     { item | time = item.time |> transform }
 
 
+setNavbar : (n -> n) -> { item | navbar : n } -> { item | navbar : n }
+setNavbar transform item =
+    { item | navbar = item.navbar |> transform }
+
+
+setSearch : (s -> s) -> { item | search : s } -> { item | search : s }
+setSearch transform item =
+    { item | search = item.search |> transform }
+
+
+setActive : (a -> a) -> { item | active : a } -> { item | active : a }
+setActive transform item =
+    { item | active = item.active |> transform }
+
+
 setSwitch : (s -> s) -> { item | switch : s } -> { item | switch : s }
 setSwitch transform item =
     { item | switch = item.switch |> transform }
+
+
+setScreen : (s -> s) -> { item | screen : s } -> { item | screen : s }
+setScreen transform item =
+    { item | screen = item.screen |> transform }
 
 
 setProject : (p -> p) -> { item | project : Maybe p } -> { item | project : Maybe p }
@@ -41,6 +60,21 @@ setLayout transform item =
 setCurrentLayout : (l -> l) -> { m | project : Maybe { p | layout : l } } -> { m | project : Maybe { p | layout : l } }
 setCurrentLayout transform item =
     setProject (setLayout transform) item
+
+
+setLayoutTables : (t -> t) -> { m | project : Maybe { p | layout : { l | tables : t } } } -> { m | project : Maybe { p | layout : { l | tables : t } } }
+setLayoutTables transform item =
+    setProject (setLayout (setTables transform)) item
+
+
+setAllTableProps : ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
+setAllTableProps transform item =
+    setLayoutTables (List.map transform) item
+
+
+setTableProps : comparable -> ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
+setTableProps id transform item =
+    setProject (setLayout (setTableInList .id id transform)) item
 
 
 setCanvas : (l -> l) -> { item | canvas : l } -> { item | canvas : l }
@@ -78,9 +112,24 @@ setSettings transform item =
     { item | settings = item.settings |> transform }
 
 
-decodeErrorToHtml : Decode.Error -> String
-decodeErrorToHtml error =
-    "<pre>" ++ Decode.errorToString error ++ "</pre>"
+setSourceUpload : (su -> su) -> { item | sourceUpload : Maybe su } -> { item | sourceUpload : Maybe su }
+setSourceUpload transform item =
+    { item | sourceUpload = item.sourceUpload |> Maybe.map transform }
+
+
+setSourceUploadWithCmd : (su -> ( su, Cmd msg )) -> { item | sourceUpload : Maybe su } -> ( { item | sourceUpload : Maybe su }, Cmd msg )
+setSourceUploadWithCmd transform item =
+    item.sourceUpload |> M.mapOrElse (transform >> Tuple.mapFirst (\su -> { item | sourceUpload = Just su })) ( item, Cmd.none )
+
+
+setParsing : (p -> p) -> { item | parsing : p } -> { item | parsing : p }
+setParsing transform item =
+    { item | parsing = transform item.parsing }
+
+
+setParsingWithCmd : (p -> ( p, Cmd msg )) -> { item | parsing : p } -> ( { item | parsing : p }, Cmd msg )
+setParsingWithCmd transform item =
+    item.parsing |> transform |> Tuple.mapFirst (\p -> { item | parsing = p })
 
 
 

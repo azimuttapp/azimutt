@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.FindPath exposing (viewFindPathModal)
 
-import Conf exposing (conf, constants)
+import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, abbr, b, br, button, code, div, h2, input, label, option, pre, select, small, span, text)
 import Html.Attributes as Attributes exposing (class, disabled, for, id, placeholder, selected, title, type_, value)
@@ -13,7 +13,7 @@ import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
-import Models.Project.FindPath exposing (FindPath)
+import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.FindPathState exposing (FindPathState(..))
@@ -24,14 +24,14 @@ import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Msg(..))
 
 
-viewFindPathModal : Dict TableId Table -> FindPathSettings -> FindPath -> Html Msg
+viewFindPathModal : Dict TableId Table -> FindPathSettings -> FindPathDialog -> Html Msg
 viewFindPathModal tables settings model =
-    bsModal conf.ids.findPathModal
+    bsModal model.id
         "Find path"
         ([ viewAlert ]
-            ++ [ viewSettings conf.ids.findPathModal settings ]
-            ++ [ viewSearchForm tables model.from model.to ]
-            ++ viewPaths conf.ids.findPathModal model
+            ++ [ viewSettings model.id settings ]
+            ++ [ viewSearchForm tables model ]
+            ++ viewPaths model.id model
         )
         (viewFooter settings model)
 
@@ -110,30 +110,30 @@ viewSettings idPrefix settings =
         ]
 
 
-viewSearchForm : Dict TableId Table -> Maybe TableId -> Maybe TableId -> Html Msg
-viewSearchForm tables from to =
+viewSearchForm : Dict TableId Table -> FindPathDialog -> Html Msg
+viewSearchForm tables model =
     div [ class "row mt-3" ]
-        [ div [ class "col" ] [ viewSelectCard "from" "From" "Starting table for the path" from (FPUpdateFrom >> FindPathMsg) tables ]
-        , div [ class "col" ] [ viewSelectCard "to" "To" "Table you want to go to" to (FPUpdateTo >> FindPathMsg) tables ]
+        [ div [ class "col" ] [ viewSelectCard (model.id ++ "-from") "From" "Starting table for the path" model.from (FPUpdateFrom >> FindPathMsg) tables ]
+        , div [ class "col" ] [ viewSelectCard (model.id ++ "-to") "To" "Table you want to go to" model.to (FPUpdateTo >> FindPathMsg) tables ]
         ]
 
 
-viewSelectCard : String -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId Table -> Html Msg
-viewSelectCard ref title description selectedValue buildMsg tables =
+viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId Table -> Html Msg
+viewSelectCard fieldId title description selectedValue buildMsg tables =
     div [ class "card" ]
         [ div [ class "card-body" ]
-            [ label [ for (conf.ids.findPathModal ++ "-" ++ ref), class "form-label card-title h5" ] [ text title ]
-            , viewSelectInput ref selectedValue buildMsg tables
-            , div [ id (conf.ids.findPathModal ++ "-" ++ ref ++ "-help"), class "form-text" ] [ text description ]
+            [ label [ for fieldId, class "form-label card-title h5" ] [ text title ]
+            , viewSelectInput fieldId selectedValue buildMsg tables
+            , div [ id (fieldId ++ "-help"), class "form-text" ] [ text description ]
             ]
         ]
 
 
 viewSelectInput : String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId Table -> Html Msg
-viewSelectInput ref selectedValue buildMsg tables =
+viewSelectInput fieldId selectedValue buildMsg tables =
     select
         [ class "form-select"
-        , id (conf.ids.findPathModal ++ "-" ++ ref)
+        , id fieldId
         , onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg)
         ]
         (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
@@ -143,7 +143,7 @@ viewSelectInput ref selectedValue buildMsg tables =
                         (\t ->
                             option
                                 [ value (TableId.toString t.id)
-                                , selected (selectedValue |> M.contains t.id)
+                                , selected (selectedValue |> M.has t.id)
                                 ]
                                 [ text (TableId.show t.id) ]
                         )
@@ -151,7 +151,7 @@ viewSelectInput ref selectedValue buildMsg tables =
         )
 
 
-viewPaths : HtmlId -> FindPath -> List (Html msg)
+viewPaths : HtmlId -> FindPathDialog -> List (Html msg)
 viewPaths idPrefix model =
     case ( model.from, model.to, model.result ) of
         ( Just from, Just to, Found result ) ->
@@ -174,7 +174,7 @@ viewPaths idPrefix model =
                 , small [ class "text-muted" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                 , div [ class "mt-3" ]
                     [ text "We hope your like this feature. If you have a few minutes, please write us "
-                    , extLink (constants.azimuttGithub ++ "/discussions/7") [] [ text "a quick feedback" ]
+                    , extLink Conf.constants.azimuttDiscussionFindPath [] [ text "a quick feedback" ]
                     , text " about it and your use case so we can continue to improve 🚀"
                     ]
                 ]
@@ -241,7 +241,7 @@ buildQuery table joins =
            )
 
 
-viewFooter : FindPathSettings -> FindPath -> List (Html Msg)
+viewFooter : FindPathSettings -> FindPathDialog -> List (Html Msg)
 viewFooter settings model =
     case ( model.from, model.to, model.result ) of
         ( Just from, Just to, Found res ) ->

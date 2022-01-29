@@ -5,6 +5,7 @@ import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Dict as D
 import Libs.Fuzz as F exposing (listN)
+import Libs.Models.Size as Size
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
@@ -32,7 +33,7 @@ import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
-import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SampleName exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -145,7 +146,7 @@ canvasProps =
 
 tableProps : Fuzzer TableProps
 tableProps =
-    Fuzz.map5 TableProps tableId position color (listSmall columnName) Fuzz.bool
+    F.map6 (\id p c cols s h -> TableProps id p Size.zero c cols s h) tableId position color (listSmall columnName) Fuzz.bool Fuzz.bool
 
 
 projectSettings : Fuzzer ProjectSettings
@@ -243,6 +244,6 @@ layoutName =
     identifier
 
 
-sampleName : Fuzzer (Maybe SampleName)
+sampleName : Fuzzer (Maybe SampleKey)
 sampleName =
     Fuzz.oneOf [ Fuzz.constant (Just "basic"), Fuzz.constant Nothing ]

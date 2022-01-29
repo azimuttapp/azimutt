@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Erd exposing (viewErd)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (class, classList, id, style)
@@ -14,23 +14,22 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
-import Libs.Models.Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Models.ColumnRefFull exposing (ColumnRefFull)
-import Models.Project exposing (Project, viewportSize)
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project exposing (Project)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
 import Models.RelationFull exposing (RelationFull)
-import PagesComponents.App.Helpers exposing (pagePosToCanvasPos)
+import Models.ScreenProps as ScreenProps exposing (ScreenProps)
 import PagesComponents.App.Models exposing (CursorMode(..), DragState, Hover, Msg(..), VirtualRelation)
 import PagesComponents.App.Views.Erd.Relation exposing (viewRelation, viewVirtualRelation)
 import PagesComponents.App.Views.Erd.Table exposing (viewTable)
-import PagesComponents.App.Views.Helpers exposing (onDrag, placeAt, size, sizeAttr)
+import PagesComponents.App.Views.Helpers exposing (onDrag, placeAt, size)
 
 
 viewErd : Hover -> CursorMode -> Maybe DragState -> Maybe VirtualRelation -> Maybe Area -> Dict HtmlId DomInfo -> Maybe Project -> Html Msg
@@ -42,12 +41,11 @@ viewErd hover cursorMode dragState virtualRelation selection domInfos project =
             , ( "cursor-hand-drag", cursorMode == Drag && dragState /= Nothing && virtualRelation == Nothing )
             , ( "cursor-cross", virtualRelation /= Nothing )
             ]
-        , id conf.ids.erd
-        , sizeAttr (viewportSize domInfos |> Maybe.withDefault (Size 0 0))
+        , id Conf.ids.erd
         , onWheel OnWheel
-        , onDrag conf.ids.erd
+        , onDrag Conf.ids.erd
         ]
-        [ div [ class "canvas", placeAndZoom (project |> M.mapOrElse (.layout >> .canvas) (CanvasProps (Position 0 0) 1)) ]
+        [ div [ class "canvas", placeAndZoom (project |> M.mapOrElse (.layout >> .canvas) CanvasProps.zero) ]
             (project |> M.mapOrElse (\p -> viewErdContent hover virtualRelation selection domInfos p) [])
         ]
 
@@ -55,6 +53,10 @@ viewErd hover cursorMode dragState virtualRelation selection domInfos project =
 viewErdContent : Hover -> Maybe VirtualRelation -> Maybe Area -> Dict HtmlId DomInfo -> Project -> List (Html Msg)
 viewErdContent hover virtualRelation selection domInfos project =
     let
+        screen : ScreenProps
+        screen =
+            domInfos |> Dict.get Conf.ids.erd |> Maybe.withDefault ScreenProps.zero
+
         layoutTablesDict : Dict TableId ( TableProps, Int )
         layoutTablesDict =
             project.layout.tables |> L.zipWithIndex |> D.fromListMap (\( t, _ ) -> t.id)
@@ -76,7 +78,7 @@ viewErdContent hover virtualRelation selection domInfos project =
                     (\vr ->
                         vr.src
                             |> Maybe.andThen (buildColumnRefFull project.tables layoutTablesDict layoutTablesDictSize domInfos)
-                            |> Maybe.map (\ref -> ( ref, vr.mouse |> pagePosToCanvasPos domInfos project.layout.canvas ))
+                            |> Maybe.map (\ref -> ( ref, vr.mouse |> CanvasProps.adapt screen project.layout.canvas ))
                     )
     in
     [ lazy7 viewTables hover virtualRelation domInfos project.layout.canvas.zoom project.layout.tables shownRelations project.tables

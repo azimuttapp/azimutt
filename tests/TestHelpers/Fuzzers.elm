@@ -1,14 +1,14 @@
 module TestHelpers.Fuzzers exposing (..)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as F
-import Libs.Models.Color exposing (Color)
+import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
-import Libs.Models.FileModified exposing (FileModified)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileSize exposing (FileSize)
+import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
@@ -52,19 +52,19 @@ fileLineIndex =
     intPos
 
 
-fileModified : Fuzzer FileModified
+fileModified : Fuzzer FileUpdatedAt
 fileModified =
     posix
 
 
 zoomLevel : Fuzzer ZoomLevel
 zoomLevel =
-    Fuzz.floatRange conf.zoom.min conf.zoom.max
+    Fuzz.floatRange Conf.canvas.zoom.min Conf.canvas.zoom.max
 
 
 color : Fuzzer Color
 color =
-    Fuzz.oneOf (conf.colors |> List.map Fuzz.constant)
+    Fuzz.oneOf (Color.list |> List.map Fuzz.constant)
 
 
 

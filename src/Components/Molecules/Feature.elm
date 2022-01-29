@@ -1,11 +1,11 @@
 module Components.Molecules.Feature exposing (CheckedModel, checked, doc)
 
-import Components.Atoms.Icon as Icon
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html.Styled exposing (Html, dd, div, dt, p, text)
 import Html.Styled.Attributes exposing (css)
-import Tailwind.Utilities exposing (absolute, font_medium, leading_6, ml_9, mt_2, relative, text_base, text_gray_500, text_gray_900, text_green_500, text_lg)
+import Tailwind.Utilities as Tw
 
 
 type alias CheckedModel =
@@ -14,10 +14,10 @@ type alias CheckedModel =
 
 checked : CheckedModel -> Html msg
 checked model =
-    div [ css [ relative ] ]
+    div [ css [ Tw.relative ] ]
         (List.filterMap identity
-            [ Just (dt [] [ Icon.check 6 [ absolute, text_green_500 ], p [ css [ ml_9, text_lg, leading_6, font_medium, text_gray_900 ] ] [ text model.title ] ])
-            , model.description |> Maybe.map (\desc -> dd [ css [ mt_2, ml_9, text_base, text_gray_500 ] ] [ text desc ])
+            [ Just (dt [] [ Icon.outline Check [ Tw.absolute, Tw.text_green_500 ], p [ css [ Tw.ml_9, Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text model.title ] ])
+            , model.description |> Maybe.map (\desc -> dd [ css [ Tw.mt_2, Tw.ml_9, Tw.text_base, Tw.text_gray_500 ] ] [ text desc ])
             ]
         )
 

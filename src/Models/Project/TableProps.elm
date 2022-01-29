@@ -1,13 +1,14 @@
-module Models.Project.TableProps exposing (TableProps, decode, encode, init)
+module Models.Project.TableProps exposing (TableProps, area, decode, encode, init)
 
-import Conf exposing (conf)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Area exposing (Area)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.List as L
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size as Size exposing (Size)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S
@@ -15,22 +16,31 @@ import Models.ColumnOrder as ColumnOrder
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation exposing (Relation)
+import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 
 
 type alias TableProps =
-    { id : TableId, position : Position, color : Color, columns : List ColumnName, selected : Bool }
+    { id : TableId
+    , position : Position
+    , size : Size
+    , color : Color
+    , columns : List ColumnName
+    , selected : Bool
+    , hiddenColumns : Bool
+    }
 
 
 init : ProjectSettings -> List Relation -> Table -> TableProps
 init settings relations table =
     { id = table.id
-    , position = Position 0 0
+    , position = Position.zero
+    , size = Size.zero
     , color = computeColor table.id
-    , selected = False
     , columns = table.columns |> Ned.values |> Nel.toList |> List.map .name |> computeColumns settings relations table
+    , selected = False
+    , hiddenColumns = False
     }
 
 
@@ -43,7 +53,7 @@ computeColumns settings relations table columns =
 
         tableRelations : List Relation
         tableRelations =
-            relations |> List.filter (\r -> r.src.table == table.id)
+            relations |> Relation.withTableSrc table.id
     in
     columns
         |> List.filterMap (\c -> table.columns |> Ned.get c)
@@ -57,9 +67,14 @@ computeColor ( _, table ) =
     S.wordSplit table
         |> List.head
         |> Maybe.map S.hashCode
-        |> Maybe.map (modBy (List.length conf.colors))
-        |> Maybe.andThen (\index -> conf.colors |> L.get index)
-        |> Maybe.withDefault conf.default.color
+        |> Maybe.map (modBy (List.length Color.list))
+        |> Maybe.andThen (\index -> Color.list |> L.get index)
+        |> Maybe.withDefault Color.default
+
+
+area : TableProps -> Area
+area props =
+    { position = props.position, size = props.size }
 
 
 encode : TableProps -> Value
@@ -67,17 +82,22 @@ encode value =
     E.object
         [ ( "id", value.id |> TableId.encode )
         , ( "position", value.position |> Position.encode )
+
+        -- , ( "size", value.size |> Size.encode ) do not store size, it should be re-computed
         , ( "color", value.color |> Color.encode )
         , ( "columns", value.columns |> E.withDefault (Encode.list ColumnName.encode) [] )
         , ( "selected", value.selected |> E.withDefault Encode.bool False )
+        , ( "hiddenColumns", value.hiddenColumns |> E.withDefault Encode.bool False )
         ]
 
 
 decode : Decode.Decoder TableProps
 decode =
-    Decode.map5 TableProps
+    Decode.map7 TableProps
         (Decode.field "id" TableId.decode)
         (Decode.field "position" Position.decode)
+        (D.defaultField "size" Size.decode Size.zero)
         (Decode.field "color" Color.decode)
         (D.defaultField "columns" (Decode.list ColumnName.decode) [])
         (D.defaultField "selected" Decode.bool False)
+        (D.defaultField "hiddenColumns" Decode.bool False)

@@ -1,7 +1,7 @@
 module Storage.ProjectV1 exposing (CanvasPropsV1, CheckNameV1, CheckV1, ColumnIndexV1, ColumnNameV1, ColumnRefV1, ColumnTypeV1, ColumnV1, ColumnValueV1, CommentV1, FindPathSettingsV1, IndexNameV1, IndexV1, LayoutNameV1, LayoutV1, PrimaryKeyNameV1, PrimaryKeyV1, ProjectIdV1, ProjectNameV1, ProjectSettingsV1, ProjectSourceContentV1(..), ProjectSourceIdV1, ProjectSourceNameV1, ProjectSourceV1, ProjectV1, RelationNameV1, RelationV1, SampleNameV1, SchemaNameV1, SchemaV1, SourceLineV1, SourceV1, TableIdV1, TableNameV1, TablePropsV1, TableV1, UniqueNameV1, UniqueV1, decodeProject, defaultProjectSettings, upgrade)
 
 import Array
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Dict as D
@@ -10,16 +10,19 @@ import Libs.Maybe as M
 import Libs.Models exposing (UID)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
+import Libs.Models.Size as Size
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Time as Time
 import Models.ColumnOrder exposing (ColumnOrder(..))
 import Models.Project exposing (Project)
+import Models.Project.CanvasProps as CanvasProps
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.Index exposing (Index)
+import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
@@ -28,6 +31,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
+import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Time
 
@@ -230,7 +234,7 @@ stringAsTableId id =
             ( schema, table )
 
         _ ->
-            ( conf.default.schema, id )
+            ( Conf.schema.default, id )
 
 
 stringAsLayoutName : String -> LayoutNameV1
@@ -240,7 +244,7 @@ stringAsLayoutName name =
 
 initLayout : Time.Posix -> LayoutV1
 initLayout now =
-    { canvas = CanvasPropsV1 (Position 0 0) 1, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
+    { canvas = CanvasProps.zero, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 defaultTime : Time.Posix
@@ -269,12 +273,34 @@ upgrade project =
     , sources = project.sources |> Nel.toList |> List.map (upgradeProjectSource project.schema.tables project.schema.relations project.fromSample)
     , tables = project.schema.tables |> Dict.map (\_ -> upgradeTable)
     , relations = project.schema.relations |> List.map upgradeRelation
-    , layout = project.schema.layout
+    , layout = project.schema.layout |> upgradeLayout
     , usedLayout = project.currentLayout
-    , layouts = project.layouts
+    , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)
     , settings = ProjectSettings project.settings.findPath [] False "" "" SqlOrder
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
+    }
+
+
+upgradeLayout : LayoutV1 -> Layout
+upgradeLayout layout =
+    { canvas = layout.canvas
+    , tables = layout.tables |> List.map upgradeTableProps
+    , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
+    , createdAt = layout.createdAt
+    , updatedAt = layout.updatedAt
+    }
+
+
+upgradeTableProps : TablePropsV1 -> TableProps
+upgradeTableProps props =
+    { id = props.id
+    , position = props.position
+    , size = Size.zero
+    , color = props.color
+    , columns = props.columns
+    , selected = props.selected
+    , hiddenColumns = False
     }
 
 
@@ -530,18 +556,11 @@ decodeSourceLine =
 decodeLayout : Decode.Decoder LayoutV1
 decodeLayout =
     Decode.map5 LayoutV1
-        (Decode.field "canvas" decodeCanvasProps)
+        (Decode.field "canvas" CanvasProps.decode)
         (Decode.field "tables" (Decode.list decodeTableProps))
         (D.defaultField "hiddenTables" (Decode.list decodeTableProps) [])
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
-
-
-decodeCanvasProps : Decode.Decoder CanvasPropsV1
-decodeCanvasProps =
-    Decode.map2 CanvasPropsV1
-        (Decode.field "position" Position.decode)
-        (Decode.field "zoom" ZoomLevel.decode)
 
 
 decodeTableProps : Decode.Decoder TablePropsV1

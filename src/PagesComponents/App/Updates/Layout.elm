@@ -2,16 +2,13 @@ module PagesComponents.App.Updates.Layout exposing (handleLayout)
 
 import Dict
 import Libs.Bool as B
-import Libs.Dict as D
 import Libs.Maybe as M
 import Models.Project exposing (Project)
-import Models.Project.Layout as Layout
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.App.Models exposing (LayoutMsg(..), Model, Msg)
-import PagesComponents.App.Updates.Helpers exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
-import Ports exposing (activateTooltipsAndPopovers, observeTablesSize, saveProject, track)
-import Time
-import Tracking exposing (events)
+import Ports
+import Services.Lenses exposing (setLayout, setLayouts, setProject, setProjectWithCmd)
+import Track
 
 
 type alias Model x =
@@ -48,7 +45,7 @@ createLayout name project =
     -- TODO check that layout name does not already exist
     { project | usedLayout = Just name }
         |> setLayouts (Dict.update name (\_ -> Just project.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.createLayout project.layout) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.createLayout project.layout) ] ))
 
 
 loadLayout : LayoutName -> Project -> ( Project, Cmd Msg )
@@ -58,7 +55,7 @@ loadLayout name project =
         |> M.mapOrElse
             (\layout ->
                 ( { project | usedLayout = Just name } |> setLayout (\_ -> layout)
-                , Cmd.batch [ layout.tables |> List.map .id |> observeTablesSize, activateTooltipsAndPopovers, track (events.loadLayout layout) ]
+                , Cmd.batch [ layout.tables |> List.map .id |> Ports.observeTablesSize, Ports.activateTooltipsAndPopovers, Ports.track (Track.loadLayout layout) ]
                 )
             )
             ( project, Cmd.none )
@@ -74,11 +71,12 @@ updateLayout name project =
     -- TODO check that layout name already exist
     { project | usedLayout = Just name }
         |> setLayouts (Dict.update name (\_ -> Just project.layout))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.updateLayout project.layout) ] ))
+        |> (\newSchema -> ( newSchema, Cmd.batch [ Ports.saveProject newSchema, Ports.track (Track.updateLayout project.layout) ] ))
 
 
 deleteLayout : LayoutName -> Project -> ( Project, Cmd Msg )
 deleteLayout name project =
-    { project | usedLayout = B.cond (project.usedLayout == Just name) Nothing (Just name) }
-        |> setLayouts (Dict.update name (\_ -> Nothing))
-        |> (\newSchema -> ( newSchema, Cmd.batch [ saveProject newSchema, track (events.deleteLayout (project.layouts |> D.getOrElse name (Layout.init (Time.millisToPosix 0)))) ] ))
+    (project.layouts |> Dict.get name)
+        |> M.mapOrElse
+            (\l -> ( { project | usedLayout = project.usedLayout |> M.filter (\n -> n /= name) } |> setLayouts (Dict.remove name), Ports.track (Track.deleteLayout l) ))
+            ( project, Cmd.none )

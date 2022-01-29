@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Modals.SchemaSwitch exposing (viewFileLoader, viewSchemaSwitchModal)
 
-import Conf exposing (conf, constants, schemaSamples)
+import Conf
 import Dict
 import FileValue exposing (hiddenInputSingle)
 import FontAwesome.Icon exposing (viewIcon)
@@ -9,6 +9,7 @@ import Html exposing (Html, br, button, div, h5, label, li, p, small, span, text
 import Html.Attributes exposing (class, for, id, style, title, type_)
 import Html.Events exposing (onClick)
 import Libs.Bootstrap exposing (BsColor(..), Toggle(..), bsButton, bsModal, bsToggle, bsToggleCollapse)
+import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText, codeText, divIf, extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaLabelledby, role)
 import Libs.String as S
@@ -16,13 +17,13 @@ import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import PagesComponents.App.Models exposing (Msg(..), SourceMsg(..), Switch, TimeInfo)
-import PagesComponents.App.Views.Helpers exposing (formatDate, onClickConfirm)
+import PagesComponents.App.Views.Helpers exposing (onClickConfirm)
 import Time
 
 
 viewSchemaSwitchModal : TimeInfo -> Switch -> String -> List Project -> Html Msg
 viewSchemaSwitchModal time switch title storedProjects =
-    bsModal conf.ids.projectSwitchModal
+    bsModal Conf.ids.projectSwitchModal
         title
         [ viewSavedProjects time storedProjects
         , viewFileUpload switch
@@ -37,24 +38,24 @@ viewSavedProjects time storedProjects =
     divIf (List.length storedProjects > 0)
         [ class "row row-cols-1 row-cols-sm-2 row-cols-lg-3" ]
         (storedProjects
-            |> List.sortBy (\s -> negate (Time.posixToMillis s.updatedAt))
+            |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
             |> List.map
-                (\prj ->
+                (\project ->
                     div [ class "col" ]
                         [ div [ class "card h-100" ]
                             [ div [ class "card-body" ]
-                                [ h5 [ class "card-title" ] [ text prj.name ]
+                                [ h5 [ class "card-title" ] [ text project.name ]
                                 , p [ class "card-text" ]
                                     [ small [ class "text-muted" ]
-                                        [ text (S.plural (Dict.size prj.layouts) "No saved layout" "1 saved layout" "saved layouts")
+                                        [ text (project.layouts |> Dict.size |> S.plural "No saved layout" "1 saved layout" "saved layouts")
                                         , br [] []
-                                        , text ("Updated on " ++ formatDate time prj.createdAt)
+                                        , text ("Updated on " ++ formatDate time.zone project.createdAt)
                                         ]
                                     ]
                                 ]
                             , div [ class "card-footer d-flex" ]
-                                [ button [ type_ "button", class "link link-secondary me-auto", title "Delete this project", bsToggle Tooltip, onClickConfirm ("You you really want to delete " ++ prj.name ++ " project ?") (DeleteProject prj) ] [ viewIcon Icon.trash ]
-                                , bsButton Primary [ onClick (UseProject prj) ] [ text "Use this project" ]
+                                [ button [ type_ "button", class "link link-secondary me-auto", title "Delete this project", bsToggle Tooltip, onClickConfirm ("You you really want to delete " ++ project.name ++ " project ?") (DeleteProject project) ] [ viewIcon Icon.trash ]
+                                , bsButton Primary [ onClick (UseProject project) ] [ text "Use this project" ]
                                 ]
                             ]
                         ]
@@ -102,10 +103,10 @@ viewSampleSchemas =
         , div [ class "dropdown", style "display" "inline-block" ]
             [ button [ type_ "button", class "link link-primary", id "schema-samples", bsToggle Dropdown, ariaExpanded False ] [ text "an example" ]
             , ul [ class "dropdown-menu", ariaLabelledby "schema-samples" ]
-                (schemaSamples
-                    |> Dict.toList
-                    |> List.sortBy (\( _, ( tables, _ ) ) -> tables)
-                    |> List.map (\( name, ( tables, _ ) ) -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample name)) ] [ text (name ++ " (" ++ String.fromInt tables ++ " tables)") ] ])
+                (Conf.schemaSamples
+                    |> Dict.values
+                    |> List.sortBy .tables
+                    |> List.map (\sample -> li [] [ button [ type_ "button", class "dropdown-item", onClick (SourceMsg (LoadSample sample.key)) ] [ text (sample.name ++ " (" ++ String.fromInt sample.tables ++ " tables)") ] ])
                 )
             ]
         ]
@@ -148,6 +149,6 @@ viewFooter =
     p [ class "fw-lighter fst-italic text-muted" ]
         [ bText "Azimutt"
         , text " is "
-        , extLink constants.azimuttGithub [] [ text "open source" ]
+        , extLink Conf.constants.azimuttGithub [] [ text "open source" ]
         , text ", feel free to report bugs, ask questions or request features in github issues."
         ]

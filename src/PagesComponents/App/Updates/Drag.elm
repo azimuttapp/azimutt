@@ -1,22 +1,22 @@
 module PagesComponents.App.Updates.Drag exposing (Model, dragEnd, dragMove, dragStart)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area, overlap)
 import Libs.Delta as Delta
 import Libs.DomInfo exposing (DomInfo)
 import Libs.List as L
 import Libs.Maybe as M
+import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size exposing (Size)
 import Models.Project exposing (Project)
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.App.Models exposing (CursorMode(..), DragId, DragState, Msg)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
-import Ports exposing (toastInfo)
+import PagesComponents.App.Models exposing (CursorMode(..), DragState, Msg)
+import Ports
+import Services.Lenses exposing (setCanvas, setCurrentLayout, setPosition, setTableList, setTables)
 
 
 type alias Model x =
@@ -52,7 +52,7 @@ dragEnd _ model =
 
 dragAction : DragState -> Model x -> Model x
 dragAction dragState model =
-    case ( model.cursorMode, dragState.id, model.project |> M.mapOrElse (.layout >> .canvas) (CanvasProps (Position 0 0) 1) ) of
+    case ( model.cursorMode, dragState.id, model.project |> M.mapOrElse (.layout >> .canvas) CanvasProps.zero ) of
         ( Select, "erd", canvas ) ->
             let
                 area : Area
@@ -86,27 +86,20 @@ computeSelectedArea domInfos canvas dragState =
     let
         erdPos : Position
         erdPos =
-            domInfos |> Dict.get conf.ids.erd |> M.mapOrElse .position (Position 0 0)
-
-        position : Position
-        position =
-            dragState.init |> Position.sub erdPos |> Position.sub canvas.position
-
-        size : Size
-        size =
-            Size (dragState.last.left - dragState.init.left) (dragState.last.top - dragState.init.top)
+            domInfos |> Dict.get Conf.ids.erd |> M.mapOrElse .position Position.zero
     in
-    Area position size |> Area.div canvas.zoom |> Area.normalize
+    Area.from dragState.init dragState.last
+        |> Area.move (erdPos |> Position.add canvas.position |> Position.negate)
+        |> Area.div canvas.zoom
 
 
 tableArea : TableProps -> Dict HtmlId DomInfo -> Area
 tableArea table domInfos =
     domInfos
         |> Dict.get (TableId.toHtmlId table.id)
-        |> M.mapOrElse (\domInfo -> { position = table.position, size = domInfo.size })
-            { position = Position 0 0, size = Size 0 0 }
+        |> M.mapOrElse (\domInfo -> Area table.position domInfo.size) Area.zero
 
 
 badDrag : String -> Model x -> ( Model x, Cmd Msg )
 badDrag kind model =
-    ( model, toastInfo ("Can't " ++ kind ++ ", not in drag state") )
+    ( model, Ports.toastInfo ("Can't " ++ kind ++ ", not in drag state") )

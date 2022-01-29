@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterMap, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, nonEmpty, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -76,6 +76,11 @@ findIndexBy matcher value list =
 filterNot : (a -> Bool) -> List a -> List a
 filterNot predicate list =
     list |> List.filter (\a -> not (predicate a))
+
+
+indexedFilter : (Int -> a -> Bool) -> List a -> List a
+indexedFilter p xs =
+    xs |> List.indexedMap (\i a -> B.cond (p i a) (Just a) Nothing) |> List.filterMap identity
 
 
 memberBy : (a -> b) -> b -> List a -> Bool
@@ -219,6 +224,27 @@ replaceOrAppend id item list =
 zipWith : (a -> b) -> List a -> List ( a, b )
 zipWith transform list =
     list |> List.map (\a -> ( a, transform a ))
+
+
+zipBy : (a -> comparable) -> List a -> List a -> ( List a, List ( a, a ), List a )
+zipBy getKey list1 list2 =
+    let
+        dict1 : Dict comparable a
+        dict1 =
+            list1 |> List.map (\a -> ( getKey a, a )) |> Dict.fromList
+
+        dict2 : Dict comparable a
+        dict2 =
+            list2 |> List.map (\a -> ( getKey a, a )) |> Dict.fromList
+
+        ( only1, both ) =
+            list1 |> List.foldr (\a1 ( r1, r ) -> dict2 |> Dict.get (getKey a1) |> Maybe.map (\a2 -> ( r1, ( a1, a2 ) :: r )) |> Maybe.withDefault ( a1 :: r1, r )) ( [], [] )
+
+        only2 : List a
+        only2 =
+            list2 |> List.filter (\a2 -> dict1 |> Dict.member (getKey a2) |> not)
+    in
+    ( only1, both, only2 )
 
 
 zipWithIndex : List a -> List ( a, Int )

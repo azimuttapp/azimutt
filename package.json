@@ -1,6 +1,6 @@
 {
   "devDependencies": {
-    "elm-coverage": "github:marc136/elm-coverage",
+    "elm-coverage": "^0.4.0",
     "elm-review": "^2.5.5",
     "elm-test": "^0.19.1-revision7"
   }

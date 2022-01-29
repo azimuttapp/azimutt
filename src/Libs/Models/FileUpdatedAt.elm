@@ -1,4 +1,4 @@
-module Libs.Models.FileModified exposing (FileModified, decode, encode)
+module Libs.Models.FileUpdatedAt exposing (FileUpdatedAt, decode, encode)
 
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
@@ -6,15 +6,15 @@ import Libs.Time as Time
 import Time
 
 
-type alias FileModified =
+type alias FileUpdatedAt =
     Time.Posix
 
 
-encode : FileModified -> Value
+encode : FileUpdatedAt -> Value
 encode value =
     Time.encode value
 
 
-decode : Decode.Decoder FileModified
+decode : Decode.Decoder FileUpdatedAt
 decode =
     Time.decode

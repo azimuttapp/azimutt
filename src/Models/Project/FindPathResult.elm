@@ -9,5 +9,6 @@ type alias FindPathResult =
     { from : TableId
     , to : TableId
     , paths : List FindPathPath
+    , opened : Maybe Int
     , settings : FindPathSettings
     }

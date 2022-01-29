@@ -1,4 +1,4 @@
-module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, sub, toTuple)
+module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, sub, toTuple, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -7,6 +7,11 @@ import Libs.Json.Encode as E
 
 type alias Size =
     { width : Float, height : Float }
+
+
+zero : Size
+zero =
+    { width = 0, height = 0 }
 
 
 fromTuple : ( Float, Float ) -> Size

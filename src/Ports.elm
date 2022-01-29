@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, click, dropProject, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, autofocusWithin, blur, click, dropProject, focus, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -16,7 +16,7 @@ import Libs.Models.Size as Size
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
-import Models.Project.SampleName exposing (SampleName)
+import Models.Project.SampleName exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Storage.ProjectV2 exposing (decodeProject)
@@ -26,6 +26,31 @@ import Time
 click : HtmlId -> Cmd msg
 click id =
     messageToJs (Click id)
+
+
+mouseDown : HtmlId -> Cmd msg
+mouseDown id =
+    messageToJs (MouseDown id)
+
+
+focus : HtmlId -> Cmd msg
+focus id =
+    messageToJs (Focus id)
+
+
+blur : HtmlId -> Cmd msg
+blur id =
+    messageToJs (Blur id)
+
+
+scrollTo : HtmlId -> String -> Cmd msg
+scrollTo id position =
+    messageToJs (ScrollTo id position)
+
+
+autofocusWithin : HtmlId -> Cmd msg
+autofocusWithin id =
+    messageToJs (AutofocusWithin id)
 
 
 showModal : HtmlId -> Cmd msg
@@ -88,7 +113,7 @@ readLocalFile project source file =
     messageToJs (GetLocalFile project source file)
 
 
-readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleName -> Cmd msg
+readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleKey -> Cmd msg
 readRemoteFile project source url sample =
     messageToJs (GetRemoteFile project source url sample)
 
@@ -149,6 +174,11 @@ trackError name error =
 
 type ElmMsg
     = Click HtmlId
+    | MouseDown HtmlId
+    | Focus HtmlId
+    | Blur HtmlId
+    | ScrollTo HtmlId String
+    | AutofocusWithin HtmlId
     | ShowModal HtmlId
     | HideModal HtmlId
     | HideOffcanvas HtmlId
@@ -158,7 +188,7 @@ type ElmMsg
     | SaveProject Project
     | DropProject Project
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
-    | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleName)
+    | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
     | GetSourceId ColumnRef ColumnRef
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
@@ -171,7 +201,7 @@ type JsMsg
     = GotSizes (List SizeChange)
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
-    | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleName)
+    | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
     | Error Decode.Error
@@ -204,6 +234,21 @@ elmEncoder elm =
     case elm of
         Click id ->
             Encode.object [ ( "kind", "Click" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        MouseDown id ->
+            Encode.object [ ( "kind", "MouseDown" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        Focus id ->
+            Encode.object [ ( "kind", "Focus" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        Blur id ->
+            Encode.object [ ( "kind", "Blur" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        ScrollTo id position ->
+            Encode.object [ ( "kind", "ScrollTo" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
+
+        AutofocusWithin id ->
+            Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
         ShowModal id ->
             Encode.object [ ( "kind", "ShowModal" |> Encode.string ), ( "id", id |> Encode.string ) ]
@@ -266,10 +311,11 @@ jsDecoder =
             case kind of
                 "GotSizes" ->
                     Decode.field "sizes"
-                        (Decode.map3 SizeChange
+                        (Decode.map4 SizeChange
                             (Decode.field "id" Decode.string)
                             (Decode.field "position" Position.decode)
                             (Decode.field "size" Size.decode)
+                            (Decode.field "seeds" Position.decode)
                             |> Decode.list
                         )
                         |> Decode.map GotSizes

@@ -16,8 +16,8 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import PagesComponents.App.Models as Models exposing (Msg)
-import PagesComponents.App.Updates.Helpers exposing (setLayout)
-import Ports exposing (activateTooltipsAndPopovers, observeTableSize, observeTablesSize, toastError, toastInfo)
+import Ports
+import Services.Lenses exposing (setLayout)
 
 
 showTable : TableId -> Project -> ( Project, Cmd Msg )
@@ -25,13 +25,13 @@ showTable id project =
     case project.tables |> Dict.get id of
         Just table ->
             if project.layout.tables |> L.memberBy .id id then
-                ( project, toastInfo ("Table <b>" ++ TableId.show id ++ "</b> already shown") )
+                ( project, Ports.toastInfo ("Table <b>" ++ TableId.show id ++ "</b> already shown") )
 
             else
-                ( project |> performShowTable table, Cmd.batch [ observeTableSize id, activateTooltipsAndPopovers ] )
+                ( project |> performShowTable table, Cmd.batch [ Ports.observeTableSize id, Ports.activateTooltipsAndPopovers ] )
 
         Nothing ->
-            ( project, toastError ("Can't show table <b>" ++ TableId.show id ++ "</b>: not found") )
+            ( project, Ports.toastError ("Can't show table <b>" ++ TableId.show id ++ "</b>: not found") )
 
 
 showTables : List TableId -> Project -> ( Project, Cmd Msg )
@@ -55,9 +55,9 @@ showTables ids project =
         |> (\( p, ( found, shown, notFound ) ) ->
                 ( p
                 , Cmd.batch
-                    (cond (found |> List.isEmpty) [] [ observeTablesSize found, activateTooltipsAndPopovers ]
-                        ++ cond (shown |> List.isEmpty) [] [ toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are ealready shown") ]
-                        ++ cond (notFound |> List.isEmpty) [] [ toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them") ]
+                    (cond (found |> List.isEmpty) [] [ Ports.observeTablesSize found, Ports.activateTooltipsAndPopovers ]
+                        ++ cond (shown |> List.isEmpty) [] [ Ports.toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown") ]
+                        ++ cond (notFound |> List.isEmpty) [] [ Ports.toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them") ]
                     )
                 )
            )
@@ -66,7 +66,7 @@ showTables ids project =
 showAllTables : Project -> ( Project, Cmd Msg )
 showAllTables project =
     ( project |> setLayout (\layout -> { layout | tables = project.tables |> Dict.values |> List.map (getTableProps project layout), hiddenTables = [] })
-    , Cmd.batch [ observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))), activateTooltipsAndPopovers ]
+    , Cmd.batch [ Ports.observeTablesSize (project.tables |> Dict.keys |> List.filter (\id -> not (project.layout.tables |> L.memberBy .id id))), Ports.activateTooltipsAndPopovers ]
     )
 
 

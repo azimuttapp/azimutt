@@ -1,4 +1,4 @@
-module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta)
+module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta)
 
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -8,6 +8,10 @@ import Libs.Models.Size exposing (Size)
 
 type alias UID =
     String
+
+
+type alias ListIndex =
+    Int
 
 
 type alias Text =
@@ -31,7 +35,7 @@ type alias ZoomDelta =
 
 
 type alias SizeChange =
-    { id : HtmlId, position : Position, size : Size }
+    { id : HtmlId, position : Position, size : Size, seeds : Position }
 
 
 type alias Millis =

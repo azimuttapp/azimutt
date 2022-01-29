@@ -1,6 +1,11 @@
-module Libs.Dict exposing (fromListMap, get, getOrElse, merge)
+module Libs.Dict exposing (count, fromIndexedList, fromListMap, get, getOrElse, merge)
 
 import Dict exposing (Dict)
+
+
+fromIndexedList : List a -> Dict Int a
+fromIndexedList list =
+    list |> List.indexedMap (\i a -> ( i, a )) |> Dict.fromList
 
 
 fromListMap : (a -> comparable) -> List a -> Dict comparable a
@@ -26,6 +31,20 @@ filterMap f dict =
 filterZip : (comparable -> a -> Maybe b) -> Dict comparable a -> Dict comparable ( a, b )
 filterZip f dict =
     dict |> Dict.toList |> List.filterMap (\( k, a ) -> f k a |> Maybe.map (\b -> ( k, ( a, b ) ))) |> Dict.fromList
+
+
+count : (comparable -> a -> Bool) -> Dict comparable a -> Int
+count predicate dict =
+    dict
+        |> Dict.foldl
+            (\k v cpt ->
+                if predicate k v then
+                    cpt + 1
+
+                else
+                    cpt
+            )
+            0
 
 
 merge : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a

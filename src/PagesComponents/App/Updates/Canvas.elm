@@ -1,6 +1,6 @@
 module PagesComponents.App.Updates.Canvas exposing (computeFit, fitCanvas, handleWheel, performZoom, resetCanvas, zoomCanvas)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
@@ -15,16 +15,16 @@ import Models.Project exposing (Project, tablesArea, viewportArea, viewportSize)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.TableProps exposing (TableProps)
-import PagesComponents.App.Updates.Helpers exposing (setCanvas, setLayout, setTables)
+import Services.Lenses exposing (setCanvas, setLayout, setTables)
 
 
 handleWheel : WheelEvent -> CanvasProps -> CanvasProps
 handleWheel event canvas =
-    if event.keys.ctrl then
-        canvas |> performZoom (-event.delta.y * conf.zoom.speed) (Position event.mouse.x event.mouse.y)
+    if event.ctrl then
+        canvas |> performZoom (-event.delta.dy * Conf.canvas.zoom.speed) event.position
 
     else
-        canvas |> performMove event.delta.x event.delta.y
+        canvas |> performMove event.delta.dx event.delta.dy
 
 
 zoomCanvas : Dict HtmlId DomInfo -> Float -> CanvasProps -> CanvasProps
@@ -58,7 +58,7 @@ fitCanvas domInfos layout =
                         computeFit viewport padding contentArea layout.canvas.zoom
                 in
                 layout
-                    |> setCanvas (\c -> { c | position = Position 0 0, zoom = newZoom })
+                    |> setCanvas (\c -> { c | position = Position.zero, zoom = newZoom })
                     |> setTables (\tables -> tables |> List.map (\t -> { t | position = t.position |> Position.add centerOffset }))
             )
             layout
@@ -84,7 +84,7 @@ performZoom delta center canvas =
     let
         newZoom : ZoomLevel
         newZoom =
-            (canvas.zoom + delta) |> clamp conf.zoom.min conf.zoom.max
+            (canvas.zoom + delta) |> clamp Conf.canvas.zoom.min Conf.canvas.zoom.max
 
         zoomFactor : Float
         zoomFactor =
@@ -145,7 +145,7 @@ computeZoom viewport padding content zoom =
 
         newZoom : ZoomLevel
         newZoom =
-            (zoom * min grow.width grow.height) |> clamp conf.zoom.min 1
+            (zoom * min grow.width grow.height) |> clamp Conf.canvas.zoom.min 1
     in
     newZoom
 
@@ -153,4 +153,4 @@ computeZoom viewport padding content zoom =
 resetCanvas : Project -> Project
 resetCanvas project =
     { project | usedLayout = Nothing }
-        |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = { position = { left = 0, top = 0 }, zoom = 1 } })
+        |> setLayout (\l -> { l | tables = [], hiddenTables = [], canvas = project.layout.canvas |> (\c -> { c | position = { left = 0, top = 0 }, zoom = 1 }) })

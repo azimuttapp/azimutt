@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Navbar exposing (viewNavbar)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
@@ -22,21 +22,21 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.App.Models exposing (FindPathMsg(..), LayoutMsg(..), Msg(..), Search, VirtualRelation, VirtualRelationMsg(..))
-import Tracking exposing (events)
+import Track
 
 
 viewNavbar : Search -> List Project -> Maybe Project -> Maybe VirtualRelation -> Html Msg
 viewNavbar search storedProjects project virtualRelation =
     nav [ id "navbar", class "navbar navbar-expand-md navbar-light bg-white shadow-sm" ]
         [ div [ class "container-fluid" ]
-            [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas conf.ids.menu ++ track events.openMenu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
+            [ button ([ type_ "button", class "link navbar-brand" ] ++ bsToggleOffcanvas Conf.ids.menu) [ img [ src "/logo.png", alt "logo", height 24, class "d-inline-block align-text-top" ] [], text " Azimutt" ]
             , button ([ type_ "button", class "navbar-toggler", ariaLabel "Toggle navigation" ] ++ bsToggleCollapse "navbar-content")
                 [ span [ class "navbar-toggler-icon" ] []
                 ]
             , div [ class "collapse navbar-collapse", id "navbar-content" ]
                 ([ lazy2 viewSearchBar project search
                  , ul [ class "navbar-nav" ]
-                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal conf.ids.helpModal ++ track events.openHelp) [ text "?" ] ]
+                    [ li [ class "nav-item" ] [ button ([ type_ "button", class "link nav-link" ] ++ bsToggleModal Conf.ids.helpDialog ++ track Track.openHelp) [ text "?" ] ]
                     ]
                  ]
                     ++ (project
@@ -63,7 +63,7 @@ viewSearchBar project search =
             (\p ->
                 form [ class "d-flex" ]
                     [ div [ class "dropdown" ]
-                        [ input ([ type_ "text", class "form-control", value search, placeholder "Search", ariaLabel "Search", autocomplete False, onInput ChangedSearch, attribute "data-bs-auto-close" "false" ] ++ bsToggleDropdown conf.ids.searchInput) []
+                        [ input ([ type_ "text", class "form-control", value search, placeholder "Search", ariaLabel "Search", autocomplete False, onInput ChangedSearch, attribute "data-bs-auto-close" "false" ] ++ bsToggleDropdown Conf.ids.searchInput) []
                         , ul [ class "dropdown-menu" ]
                             (buildSuggestions p.tables p.layout search
                                 |> List.map (\suggestion -> li [] [ button [ type_ "button", class "dropdown-item", onClick suggestion.msg ] suggestion.content ])
@@ -73,7 +73,7 @@ viewSearchBar project search =
             )
             (form [ class "d-flex" ]
                 [ div []
-                    [ input [ type_ "text", class "form-control", value search, placeholder "Search", ariaLabel "Search", autocomplete False, onInput ChangedSearch, attribute "data-bs-auto-close" "false", id conf.ids.searchInput ] []
+                    [ input [ type_ "text", class "form-control", value search, placeholder "Search", ariaLabel "Search", autocomplete False, onInput ChangedSearch, attribute "data-bs-auto-close" "false", id Conf.ids.searchInput ] []
                     , ul [ class "dropdown-menu" ] []
                     ]
                 ]
@@ -86,8 +86,8 @@ viewTitle storedProjects project =
         [ ol [ class "breadcrumb my-auto" ]
             ([ li [ class "breadcrumb-item" ]
                 [ div [ class "dropdown d-inline-block" ]
-                    [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navProjectDropdown, title (String.fromInt (Dict.size project.tables) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text project.name ]
-                    , ul [ class "dropdown-menu", ariaLabelledby conf.ids.navProjectDropdown ]
+                    [ button [ type_ "button", class "link dropdown-toggle", id Conf.ids.navProjectDropdown, title (String.fromInt (Dict.size project.tables) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text project.name ]
+                    , ul [ class "dropdown-menu", ariaLabelledby Conf.ids.navProjectDropdown ]
                         (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
                             [ storedProjects
                                 |> List.filter (\p -> p.name /= project.name)
@@ -102,8 +102,8 @@ viewTitle storedProjects project =
                     (\usedLayout ->
                         li [ class "breadcrumb-item" ]
                             [ div [ class "dropdown d-inline-block" ]
-                                [ button [ type_ "button", class "link dropdown-toggle", id conf.ids.navLayoutDropdown, title (String.fromInt (tablesInLayout project usedLayout) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text usedLayout ]
-                                , ul [ class "dropdown-menu", ariaLabelledby conf.ids.navLayoutDropdown ]
+                                [ button [ type_ "button", class "link dropdown-toggle", id Conf.ids.navLayoutDropdown, title (String.fromInt (tablesInLayout project usedLayout) ++ " tables"), bsToggle Dropdown, ariaExpanded False ] [ text usedLayout ]
+                                , ul [ class "dropdown-menu", ariaLabelledby Conf.ids.navLayoutDropdown ]
                                     (intersperse (li [] [ hr [ class "dropdown-divider" ] [] ])
                                         [ project.layouts
                                             |> Dict.keys
@@ -130,8 +130,8 @@ tablesInLayout project layout =
 
 
 viewResetButton : Maybe LayoutName -> Layout -> Html Msg
-viewResetButton selectedLayout layout =
-    if selectedLayout /= Nothing || not ((layout.tables == []) && (layout.hiddenTables == []) && layout.canvas == { position = { left = 0, top = 0 }, zoom = 1 }) then
+viewResetButton selectedLayout { tables, hiddenTables, canvas } =
+    if selectedLayout /= Nothing || not ((tables == []) && (hiddenTables == []) && canvas.position == { left = 0, top = 0 } && canvas.zoom == 1) then
         bsButton Secondary [ class "me-2", onClick ResetCanvas ] [ text "Reset layout" ]
 
     else
@@ -141,7 +141,7 @@ viewResetButton selectedLayout layout =
 viewLayoutButton : Maybe LayoutName -> Dict LayoutName Layout -> Html Msg
 viewLayoutButton usedLayout layouts =
     if Dict.isEmpty layouts then
-        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal conf.ids.newLayoutModal ++ track events.openSaveLayout) [ text "Save layout" ]
+        bsButton Secondary ([ class "me-2", title "Save your current layout to reload it later" ] ++ bsToggleModal Conf.ids.newLayoutDialog ++ track Track.openSaveLayout) [ text "Save layout" ]
 
     else
         div [ class "btn-group me-2" ]
@@ -155,7 +155,7 @@ viewLayoutButton usedLayout layouts =
                     [ bsButton Secondary [ class "dropdown-toggle", bsToggle Dropdown, ariaExpanded False ] [ text "Layouts" ] ]
              )
                 ++ [ ul [ class "dropdown-menu dropdown-menu-end" ]
-                        ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal conf.ids.newLayoutModal) [ viewIcon Icon.plus, text " Create new layout" ] ] ]
+                        ([ li [] [ button ([ type_ "button", class "dropdown-item" ] ++ bsToggleModal Conf.ids.newLayoutDialog) [ viewIcon Icon.plus, text " Create new layout" ] ] ]
                             ++ L.prependOn usedLayout
                                 (\cur -> li [] [ button [ type_ "button", class "dropdown-item", onClick (LayoutMsg LUnload) ] [ viewIcon Icon.arrowLeft, text (" Stop using " ++ cur ++ " layout") ] ])
                                 (layouts
@@ -184,8 +184,8 @@ viewLayoutButton usedLayout layouts =
 viewSpecialFeaturesButton : Maybe VirtualRelation -> Html Msg
 viewSpecialFeaturesButton virtualRelation =
     div [ class "dropdown me-2" ]
-        [ button [ type_ "button", class "link link-secondary dropdown-toggle", id conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
-        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledby conf.ids.navFeaturesDropdown ]
+        [ button [ type_ "button", class "link link-secondary dropdown-toggle", id Conf.ids.navFeaturesDropdown, bsToggle Dropdown, ariaExpanded False ] [ viewIcon Icon.handSparkles ]
+        , ul [ class "dropdown-menu dropdown-menu-end", ariaLabelledby Conf.ids.navFeaturesDropdown ]
             [ li []
                 [ div [ class "btn-group w-100" ]
                     [ button [ type_ "button", class "dropdown-item", onClick ShowAllTables ] [ text "Show all tables" ]
@@ -214,7 +214,7 @@ viewSpecialFeaturesButton virtualRelation =
 
 viewSettingsButton : Html Msg
 viewSettingsButton =
-    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas conf.ids.settings ++ track events.openSettings) [ viewIcon Icon.cog ]
+    button ([ type_ "button", class "link link-secondary me-2" ] ++ bsToggleOffcanvas Conf.ids.settingsDialog ++ track Track.openSettings) [ viewIcon Icon.cog ]
 
 
 type alias Suggestion =

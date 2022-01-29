@@ -1,26 +1,32 @@
-module Components.Atoms.Badge exposing (basic, doc)
+module Components.Atoms.Badge exposing (basic, doc, rounded)
 
-import Css exposing (Style)
-import ElmBook.Chapter exposing (chapter, renderComponentList)
+import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, span, text)
+import Html.Styled exposing (Attribute, Html, span, text)
 import Html.Styled.Attributes exposing (css)
-import Tailwind.Utilities exposing (bg_gray_100, bg_red_100, font_medium, inline_flex, items_center, px_2_dot_5, py_0_dot_5, rounded_full, text_gray_800, text_red_800, text_xs)
+import Libs.Models.Color as Color exposing (Color)
+import Libs.Models.Theme exposing (Theme)
+import Tailwind.Utilities as Tw
 
 
-basic : List Style -> String -> Html msg
-basic styles label =
-    span [ css ([ inline_flex, items_center, px_2_dot_5, py_0_dot_5, rounded_full, text_xs, font_medium, bg_gray_100, text_gray_800 ] ++ styles) ] [ text label ]
+basic : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+basic color attrs content =
+    span ([ css [ Tw.inline_flex, Tw.items_center, Tw.px_2_dot_5, Tw.py_0_dot_5, Tw.rounded_full, Tw.text_xs, Tw.font_medium, Color.bg color 100, Color.text color 800 ] ] ++ attrs) content
+
+
+rounded : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+rounded color attrs content =
+    span ([ css [ Tw.inline_flex, Tw.items_center, Tw.px_2, Tw.py_0_dot_5, Tw.rounded, Tw.text_xs, Tw.font_medium, Color.bg color 100, Color.text color 800 ] ] ++ attrs) content
 
 
 
 -- DOCUMENTATION
 
 
-doc : Chapter x
-doc =
-    chapter "Badge"
-        |> renderComponentList
-            [ ( "basic", basic [] "Badge" )
-            , ( "basic, red", basic [ bg_red_100, text_red_800 ] "Badge" )
+doc : Theme -> Chapter x
+doc theme =
+    Chapter.chapter "Badge"
+        |> Chapter.renderComponentList
+            [ ( "basic", basic theme.color [] [ text "Badge" ] )
+            , ( "rounded", rounded theme.color [] [ text "Badge" ] )
             ]

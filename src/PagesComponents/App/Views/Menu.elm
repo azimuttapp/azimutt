@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Menu exposing (viewMenu)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Solid as Icon
@@ -16,7 +16,7 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId as HtmlId
 import Libs.Ned as Ned
-import Libs.String as S exposing (plural)
+import Libs.String as S
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Table exposing (Table)
@@ -26,9 +26,9 @@ import PagesComponents.App.Models exposing (Msg(..))
 
 viewMenu : Maybe Project -> Html Msg
 viewMenu project =
-    div [ id conf.ids.menu, class "offcanvas offcanvas-start", bsScroll True, bsBackdrop "false", ariaLabelledby (conf.ids.menu ++ "-label"), tabindex -1 ]
+    div [ id Conf.ids.menu, class "offcanvas offcanvas-start", bsScroll True, bsBackdrop "false", ariaLabelledby (Conf.ids.menu ++ "-label"), tabindex -1 ]
         [ div [ class "offcanvas-header" ]
-            [ h5 [ class "offcanvas-title", id (conf.ids.menu ++ "-label") ] [ text (project |> M.mapOrElse (\_ -> "Table list") "Menu") ]
+            [ h5 [ class "offcanvas-title", id (Conf.ids.menu ++ "-label") ] [ text (project |> M.mapOrElse (\_ -> "Table list") "Menu") ]
             , button [ type_ "button", class "btn-close text-reset", bsDismiss Offcanvas, ariaLabel "Close" ] []
             ]
         , div [ class "offcanvas-body" ]
@@ -69,12 +69,12 @@ viewTableList tables layout =
                 |> List.concatMap
                     (\( groupTitle, groupedTables ) ->
                         [ ( groupTitle
-                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle |> HtmlId.encode) ++ "-table-list"))
-                                [ text (groupTitle ++ " (" ++ plural (List.length groupedTables) "" "1 table" "tables" ++ ")") ]
+                          , button ([ class "list-group-item list-group-item-secondary text-start" ] ++ bsToggleCollapse ((groupTitle ++ "-table-list") |> HtmlId.from))
+                                [ text (groupTitle ++ " (" ++ (groupedTables |> S.pluralizeL "table") ++ ")") ]
                           )
                         , ( groupTitle ++ "-collapse"
                           , Keyed.node "div"
-                                [ class "collapse show", id ((groupTitle |> HtmlId.encode) ++ "-table-list") ]
+                                [ class "collapse show", id ((groupTitle ++ "-table-list") |> HtmlId.from) ]
                                 (groupedTables
                                     |> List.map
                                         (\t ->

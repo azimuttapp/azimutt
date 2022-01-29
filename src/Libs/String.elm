@@ -1,6 +1,7 @@
-module Libs.String exposing (hashCode, plural, unique, wordSplit)
+module Libs.String exposing (hashCode, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
 
 import Bitwise
+import Dict exposing (Dict)
 import Libs.Maybe as M
 import Libs.Regex as R
 
@@ -39,8 +40,8 @@ unique takenIds id =
         id
 
 
-plural : Int -> String -> String -> String -> String
-plural count none one many =
+plural : String -> String -> String -> Int -> String
+plural none one many count =
     if count == 0 then
         none
 
@@ -49,3 +50,19 @@ plural count none one many =
 
     else
         String.fromInt count ++ " " ++ many
+
+
+pluralize : String -> Int -> String
+pluralize word =
+    -- trivial pluralize that works only for "regular" words, use `plural` for more flexibility
+    plural ("0 " ++ word) ("1 " ++ word) (word ++ "s")
+
+
+pluralizeL : String -> List a -> String
+pluralizeL word list =
+    list |> List.length |> pluralize word
+
+
+pluralizeD : String -> Dict k a -> String
+pluralizeD word list =
+    list |> Dict.size |> pluralize word

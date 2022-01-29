@@ -1,12 +1,12 @@
-module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlComment, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildLines, buildStatements, parseSchema, splitLines)
+module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlComment, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildSqlLines, buildStatements, evolve, parseCommand, parseLines, parseSchema, parseStatements)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView)
 import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..))
-import DataSources.SqlParser.StatementParser exposing (Command(..), parseStatement)
+import DataSources.SqlParser.StatementParser as StatementParser exposing (Command(..))
 import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, defaultCheckName, defaultFkName, defaultPkName)
-import DataSources.SqlParser.Utils.Types exposing (SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Dict exposing (Dict)
 import Libs.List as L
 import Libs.Maybe as M
@@ -81,19 +81,37 @@ defaultSchema =
     "public"
 
 
+parseLines : FileContent -> List FileLineContent
+parseLines fileContent =
+    fileContent
+        |> String.replace "\u{000D}\n" "\n"
+        |> String.replace "\u{000D}" "\n"
+        |> String.split "\n"
+
+
+parseStatements : List FileLineContent -> List SqlStatement
+parseStatements lines =
+    lines |> buildSqlLines |> buildStatements
+
+
+parseCommand : SqlStatement -> Result (List ParseError) Command
+parseCommand statement =
+    statement |> StatementParser.parse |> Result.map (\( _, c ) -> c)
+
+
 parseSchema : FileContent -> ( List SchemaError, ( List FileLineContent, SqlSchema ) )
 parseSchema fileContent =
     let
         lines : List FileLineContent
         lines =
-            splitLines fileContent
+            parseLines fileContent
     in
     lines
-        |> buildLines
+        |> buildSqlLines
         |> buildStatements
         |> List.foldl
             (\statement ( errs, schema ) ->
-                case statement |> parseStatement |> Result.andThen (\command -> schema |> evolve command) of
+                case statement |> StatementParser.parse |> Result.andThen (\command -> schema |> evolve command) of
                     Ok newSchema ->
                         ( errs, newSchema )
 
@@ -429,13 +447,6 @@ statementIsEmpty statement =
     statement.head.text == ";"
 
 
-buildLines : List String -> List SqlLine
-buildLines lines =
+buildSqlLines : List FileLineContent -> List SqlLine
+buildSqlLines lines =
     lines |> List.indexedMap (\i line -> { line = i, text = line })
-
-
-splitLines : FileContent -> List FileLineContent
-splitLines fileContent =
-    fileContent
-        |> String.replace "\u{000D}" "\n"
-        |> String.split "\n"

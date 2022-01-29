@@ -9,12 +9,12 @@ import Libs.Http as H
 import Libs.Nel as Nel
 import PagesComponents.Blog.Slug.Models exposing (Model(..))
 import PagesComponents.Helpers as Helpers
-import Tailwind.Utilities exposing (globalStyles)
+import Tailwind.Utilities as Tw
 
 
 viewArticle : Model -> List (Html msg)
 viewArticle model =
-    [ Global.global globalStyles
+    [ Global.global Tw.globalStyles
     , Helpers.publicHeader
     , case model of
         Loading ->

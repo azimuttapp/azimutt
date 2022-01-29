@@ -4,12 +4,13 @@ window.addEventListener('load', function() {
     const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics'))
     const analytics = initAnalytics(isProd && !skipAnalytics)
     const errorTracking = initErrorTracking(isProd)
-    const app = Elm.Main.init()
+    const flags = {now: Date.now()}
+    const app = Elm.Main.init({flags})
 
 
     /* PWA service worker */
 
-    if ('serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator && isProd) {
         navigator.serviceWorker.register("/service-worker.js")
             // .then(reg => console.log('service-worker registered!', reg))
             // .catch(err => console.log('service-worker failed to register!', err))
@@ -22,35 +23,55 @@ window.addEventListener('load', function() {
         // console.log('js message', msg)
         app.ports.jsToElm.send(msg)
     }
-    app.ports && app.ports.elmToJs.subscribe(msg => {
+    app.ports && app.ports.elmToJs.subscribe(port => {
         // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
         setTimeout(() => {
             // console.log('elm message', msg)
-            switch (msg.kind) {
-                case 'Click':         click(msg.id); break;
-                case 'ShowModal':     showModal(msg.id); break;
-                case 'HideModal':     hideModal(msg.id); break;
-                case 'HideOffcanvas': hideOffcanvas(msg.id); break;
+            switch (port.kind) {
+                case 'Click':           click(port.id); break;
+                case 'MouseDown':       mousedown(port.id); break;
+                case 'Focus':           focus(port.id); break;
+                case 'Blur':            blur(port.id); break;
+                case 'ScrollTo':        scrollTo(port.id, port.position); break;
+                case 'AutofocusWithin': autofocusWithin(port.id); break;
+                case 'ShowModal':       showModal(port.id); break;
+                case 'HideModal':       hideModal(port.id); break;
+                case 'HideOffcanvas':   hideOffcanvas(port.id); break;
                 case 'ActivateTooltipsAndPopovers': activateTooltipsAndPopovers(); break;
-                case 'ShowToast':     showToast(msg.toast); break;
-                case 'LoadProjects':  loadProjects(); break;
-                case 'SaveProject':   saveProject(msg.project); break;
-                case 'DropProject':   dropProject(msg.project); break;
-                case 'GetLocalFile':  getLocalFile(msg.project, msg.source, msg.file); break;
-                case 'GetRemoteFile': getRemoteFile(msg.project, msg.source, msg.url, msg.sample); break;
-                case 'GetSourceId':   getSourceId(msg.src, msg.ref); break;
-                case 'ObserveSizes':  observeSizes(msg.ids); break;
-                case 'ListenKeys':    listenHotkeys(msg.keys); break;
-                case 'TrackPage':     analytics.then(a => a.trackPage(msg.name)); break;
-                case 'TrackEvent':    analytics.then(a => a.trackEvent(msg.name, msg.details)); break;
-                case 'TrackError':    analytics.then(a => a.trackError(msg.name, msg.details)); errorTracking.then(e => e.trackError(msg.name, msg.details)); break;
-                default: console.error('Unsupported Elm message', msg); break;
+                case 'ShowToast':       showToast(port.toast); break;
+                case 'LoadProjects':    loadProjects(); break;
+                case 'SaveProject':     saveProject(port.project); break;
+                case 'DropProject':     dropProject(port.project); break;
+                case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file); break;
+                case 'GetRemoteFile':   getRemoteFile(port.project, port.source, port.url, port.sample); break;
+                case 'GetSourceId':     getSourceId(port.src, port.ref); break;
+                case 'ObserveSizes':    observeSizes(port.ids); break;
+                case 'ListenKeys':      listenHotkeys(port.keys); break;
+                case 'TrackPage':       analytics.then(a => a.trackPage(port.name)); break;
+                case 'TrackEvent':      analytics.then(a => a.trackEvent(port.name, port.details)); break;
+                case 'TrackError':      analytics.then(a => a.trackError(port.name, port.details)); errorTracking.then(e => e.trackError(port.name, port.details)); break;
+                default: console.error('Unsupported Elm message', port); break;
             }
         }, 100)
     })
 
     function click(id) {
         getElementById(id).click()
+    }
+    function mousedown(id) {
+        getElementById(id).dispatchEvent(new Event('mousedown'))
+    }
+    function focus(id) {
+        getElementById(id).focus()
+    }
+    function blur(id) {
+        getElementById(id).blur()
+    }
+    function scrollTo(id, position) {
+        maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
+    }
+    function autofocusWithin(id) {
+        getElementById(id).querySelector('[autofocus]')?.focus()
     }
     function showModal(id) {
         bootstrap.Modal.getOrCreateInstance(getElementById(id)).show()
@@ -120,6 +141,7 @@ window.addEventListener('load', function() {
         if (localStorage.getItem(key) === null) { project.createdAt = now }
         try {
             localStorage.setItem(key, JSON.stringify(project))
+            loadProjects()
         } catch (e) {
             if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
                 showToast({kind: 'error', message: "Can't save project, storage quota exceeded. Use a smaller schema or clean unused projects."})
@@ -133,6 +155,7 @@ window.addEventListener('load', function() {
     }
     function dropProject(project) {
         localStorage.removeItem(projectPrefix + project.id)
+        loadProjects()
     }
 
     function getLocalFile(maybeProjectId, maybeSourceId, file) {
@@ -176,6 +199,10 @@ window.addEventListener('load', function() {
             size: {
                 width: entry.contentRect.width,
                 height: entry.contentRect.height
+            },
+            seeds: {
+                left: Math.random(),
+                top: Math.random()
             }
         }))
         sendToElm({kind: 'GotSizes', sizes: sizes})
@@ -187,27 +214,33 @@ window.addEventListener('load', function() {
     const hotkeys = {}
     // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
     document.addEventListener('keydown', e => {
-        Object.entries(hotkeys).forEach(([id, alternatives]) => {
-            alternatives.forEach(hotkey => {
-                if ((!hotkey.key || hotkey.key === e.key) &&
-                    (!hotkey.ctrl || e.ctrlKey) &&
-                    (!hotkey.shift || e.shiftKey) &&
-                    (!hotkey.alt || e.altKey) &&
-                    (!hotkey.meta || e.metaKey) &&
-                    ((!hotkey.target && (hotkey.onInput || e.target.localName !== 'input')) || (hotkey.target &&
-                        (!hotkey.target.id || hotkey.target.id === e.target.id) &&
-                        (!hotkey.target.class || e.target.className.split(' ').includes(hotkey.target.class)) &&
-                        (!hotkey.target.tag || hotkey.target.tag === e.target.localName)))) {
-                    if (hotkey.preventDefault) {
-                        e.preventDefault()
-                    }
-                    sendToElm({kind: 'GotHotkey', id: id})
-                }
-            })
+        const matches = (hotkeys[e.key] || []).filter(hotkey =>
+            (hotkey.ctrl === e.ctrlKey) &&
+            (!hotkey.shift || e.shiftKey) &&
+            (hotkey.alt === e.altKey) &&
+            (hotkey.meta === e.metaKey) &&
+            ((!hotkey.target && (hotkey.onInput || e.target.localName !== 'input')) ||
+                (hotkey.target &&
+                    (!hotkey.target.id || hotkey.target.id === e.target.id) &&
+                    (!hotkey.target.class || e.target.className.split(' ').includes(hotkey.target.class)) &&
+                    (!hotkey.target.tag || hotkey.target.tag === e.target.localName)))
+        )
+        matches.map(hotkey => {
+            if (hotkey.preventDefault) { e.preventDefault() }
+            sendToElm({kind: 'GotHotkey', id: hotkey.id})
         })
+        if(matches.length === 0 && e.key === "Escape" && e.target.localName === 'input') { e.target.blur() }
     })
     function listenHotkeys(keys) {
-        Object.assign(hotkeys, keys)
+        Object.keys(hotkeys).forEach(key => hotkeys[key] = [])
+        Object.entries(keys).forEach(([id, alternatives]) => {
+            alternatives.forEach(hotkey => {
+                if (!hotkeys[hotkey.key]) {
+                    hotkeys[hotkey.key] = []
+                }
+                hotkeys[hotkey.key].push({...hotkey, id})
+            })
+        })
     }
 
     // listen at every click to handle tracked events

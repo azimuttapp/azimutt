@@ -1,4 +1,4 @@
-module Libs.Maybe exposing (andThenZip, contains, exist, filter, filterNot, isJust, mapOrElse, merge, orElse, resultSeq, toList, zip, zip3)
+module Libs.Maybe exposing (andThenZip, any, filter, filterNot, has, isJust, mapOrElse, merge, orElse, resultSeq, toList, zip, zip3)
 
 import Libs.Bool as B
 
@@ -28,14 +28,14 @@ filterNot predicate maybe =
     maybe |> Maybe.andThen (\a -> B.cond (predicate a) Nothing maybe)
 
 
-exist : (a -> Bool) -> Maybe a -> Bool
-exist predicate maybe =
+any : (a -> Bool) -> Maybe a -> Bool
+any predicate maybe =
     maybe |> mapOrElse predicate False
 
 
-contains : a -> Maybe a -> Bool
-contains v maybe =
-    maybe |> mapOrElse (\a -> a == v) False
+has : a -> Maybe a -> Bool
+has value maybe =
+    maybe |> mapOrElse (\a -> a == value) False
 
 
 isNothing : Maybe a -> Bool

@@ -1,6 +1,6 @@
-module Models.Project exposing (Project, addSource, compute, create, decode, deleteSource, encode, new, setSources, tablesArea, updateSource, viewportArea, viewportSize)
+module Models.Project exposing (Project, addSource, addUserSource, compute, create, decode, deleteSource, encode, new, refreshSource, setSources, tablesArea, updateSource, viewportArea, viewportSize)
 
-import Conf exposing (conf)
+import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -13,7 +13,7 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size exposing (Size)
+import Libs.Models.Size as Size exposing (Size)
 import Libs.Time as Time
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout as Layout exposing (Layout)
@@ -87,9 +87,19 @@ updateSource id transform project =
         project
 
 
+refreshSource : Source -> Project -> Project
+refreshSource source project =
+    project |> updateSource source.id (Source.refreshWith source)
+
+
 addSource : Source -> Project -> Project
 addSource source project =
     setSources (\sources -> sources ++ [ source ]) project
+
+
+addUserSource : SourceId -> Dict TableId Table -> List Relation -> Time.Posix -> Project -> Project
+addUserSource id tables relations now project =
+    setSources (\sources -> sources ++ [ Source.user id tables relations now ]) project
 
 
 deleteSource : SourceId -> Project -> Project
@@ -138,11 +148,13 @@ computeRelations sources =
 
 viewportSize : Dict HtmlId DomInfo -> Maybe Size
 viewportSize domInfos =
-    domInfos |> Dict.get conf.ids.erd |> Maybe.map .size
+    -- TODO remove, used to inject into viewportArea most of the time
+    domInfos |> Dict.get Conf.ids.erd |> Maybe.map .size
 
 
 viewportArea : Size -> CanvasProps -> Area
 viewportArea size canvas =
+    -- TODO use CanvasProps.viewport instead
     Area (canvas.position |> Position.negate) size |> Area.div canvas.zoom
 
 
@@ -151,7 +163,7 @@ tablesArea domInfos tables =
     let
         positions : List ( TableProps, Size )
         positions =
-            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> M.mapOrElse .size (Size 0 0))
+            tables |> L.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> M.mapOrElse .size Size.zero)
 
         left : Float
         left =

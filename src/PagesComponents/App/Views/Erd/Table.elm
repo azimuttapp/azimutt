@@ -1,6 +1,6 @@
 module PagesComponents.App.Views.Erd.Table exposing (viewTable)
 
-import Conf exposing (conf)
+import Conf
 import Dict
 import FontAwesome.Icon exposing (viewIcon)
 import FontAwesome.Regular as IconLight
@@ -38,8 +38,8 @@ import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.RelationFull exposing (RelationFull)
 import PagesComponents.App.Models exposing (FindPathMsg(..), Hover, Msg(..), VirtualRelation, VirtualRelationMsg(..))
-import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt, sizeAttr, withColumnName)
-import Tracking exposing (events)
+import PagesComponents.App.Views.Helpers exposing (columnRefAsHtmlId, onDrag, placeAt)
+import Track
 
 
 viewTable : Hover -> Maybe VirtualRelation -> ZoomLevel -> Int -> Table -> TableProps -> List RelationFull -> Maybe DomInfo -> Html Msg
@@ -51,12 +51,12 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
     in
     div
         [ class "erd-table"
-        , class props.color
+        , class props.color.name
         , classList [ ( "view", table.view ), ( "selected", props.selected ) ]
         , id (TableId.toHtmlId table.id)
         , placeAt props.position
-        , style "z-index" (String.fromInt (conf.zIndex.tables + index))
-        , domInfo |> M.mapOrElse (\i -> sizeAttr i.size) (style "visibility" "hidden")
+        , style "z-index" (String.fromInt (Conf.canvas.zIndex.tables + index))
+        , domInfo |> M.mapOrElse (\_ -> style "" "") (style "visibility" "hidden")
         , Pointer.onEnter (\_ -> HoverTable (Just table.id))
         , Pointer.onLeave (\_ -> HoverTable Nothing)
         , onDrag (TableId.toHtmlId table.id)
@@ -74,7 +74,7 @@ viewHeader zoom index table =
             (L.appendOn table.comment viewComment [ span (B.cond table.view [ title "This is a view" ] [] ++ tableNameSize zoom) [ text (TableId.show table.id) ] ])
         , bsDropdown (TableId.toHtmlId table.id ++ "-settings-dropdown")
             []
-            (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track events.openTableSettings) [ viewIcon Icon.ellipsisV ])
+            (\attrs -> div ([ style "font-size" "0.9rem", style "opacity" "0.25", style "width" "30px", style "margin-left" "-10px", style "margin-right" "-20px" ] ++ attrs ++ track Track.openTableSettings) [ viewIcon Icon.ellipsisV ])
             (\attrs ->
                 ul attrs
                     [ li [] [ button [ type_ "button", class "dropdown-item", onClick (HideTable table.id) ] [ text "Hide table" ] ]
@@ -147,7 +147,7 @@ viewColumn isHover virtualRelation columnRelations table column =
 
 isRelationHover : Hover -> List RelationFull -> Bool
 isRelationHover hover columnRelations =
-    hover.column |> M.exist (\c -> columnRelations |> List.any (\r -> (r.src.table.id == c.table && r.src.column.name == c.column) || (r.ref.table.id == c.table && r.ref.column.name == c.column)))
+    hover.column |> M.any (\c -> columnRelations |> List.any (\r -> (r.src.table.id == c.table && r.src.column.name == c.column) || (r.ref.table.id == c.table && r.ref.column.name == c.column)))
 
 
 viewHiddenColumns : String -> Table -> List RelationFull -> List Column -> Html Msg
@@ -155,7 +155,7 @@ viewHiddenColumns collapseId table tableRelations hiddenColumns =
     divIf (List.length hiddenColumns > 0)
         [ class "hidden-columns" ]
         [ button ([ class "toggle", type_ "button" ] ++ bsToggleCollapse collapseId)
-            [ text (S.plural (hiddenColumns |> List.length) "No hidden column" "1 hidden column" "hidden columns")
+            [ text (hiddenColumns |> List.length |> S.plural "No hidden column" "1 hidden column" "hidden columns")
             ]
         , Keyed.node "div"
             [ class "collapse", id collapseId ]
@@ -187,7 +187,7 @@ viewColumnIcon table column columnRelations attrs =
 
         ( ( _, Just fk ), _ ) ->
             -- TODO: know fk table state to not put onClick when it's already shown (so Update.elm#showTable on Shown state could issue an error)
-            div (class "icon" :: onClick (ShowTable fk.ref.table.id) :: attrs ++ track events.showTableWithForeignKey) [ div [ title (formatFkTitle fk), bsToggle Tooltip ] [ viewIcon Icon.externalLinkAlt ] ]
+            div (class "icon" :: onClick (ShowTable fk.ref.table.id) :: attrs ++ track Track.showTableWithForeignKey) [ div [ title (formatFkTitle fk), bsToggle Tooltip ] [ viewIcon Icon.externalLinkAlt ] ]
 
         ( _, ( u :: us, _, _ ) ) ->
             div (class "icon" :: attrs) [ div [ title (formatUniqueTitle (u :: us)), bsToggle Tooltip ] [ viewIcon Icon.fingerprint ] ]
@@ -213,11 +213,11 @@ viewColumnDropdown columnRelations ref element =
             |> List.map
                 (\relation ->
                     li []
-                        [ button ([ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ] ++ track events.showTableWithIncomingRelationsDropdown)
+                        [ button ([ type_ "button", class "dropdown-item", classList [ ( "disabled", not (relation.src.props == Nothing) ) ], onClick (ShowTable relation.src.table.id) ] ++ track Track.showTableWithIncomingRelationsDropdown)
                             [ viewIcon Icon.externalLinkAlt
                             , text " "
                             , b [] [ text (TableId.show relation.src.table.id) ]
-                            , text ("" |> withColumnName relation.src.column.name |> Column.withNullableInfo relation.src.column.nullable)
+                            , text ("" |> Column.withName relation.src.column |> Column.withNullable relation.src.column)
                             ]
                         ]
                 )
@@ -229,7 +229,7 @@ viewColumnDropdown columnRelations ref element =
         items ->
             bsDropdown (columnRefAsHtmlId ref ++ "-relations-dropdown")
                 [ class "dropdown-menu-end" ]
-                (\attrs -> element (attrs ++ track events.openIncomingRelationsDropdown))
+                (\attrs -> element (attrs ++ track Track.openIncomingRelationsDropdown))
                 (\attrs -> ul attrs (items ++ viewShowAllOption columnRelations))
 
 
@@ -340,4 +340,4 @@ formatCheckTitle checks =
 
 formatReference : RelationFull -> String
 formatReference rel =
-    TableId.show rel.ref.table.id |> withColumnName rel.ref.column.name
+    TableId.show rel.ref.table.id |> Column.withName rel.ref.column

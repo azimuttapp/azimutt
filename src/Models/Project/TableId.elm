@@ -1,6 +1,6 @@
 module Models.Project.TableId exposing (TableId, decode, encode, fromHtmlId, fromString, parse, show, toHtmlId, toString)
 
-import Conf exposing (conf)
+import Conf
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Models.HtmlId as HtmlId exposing (HtmlId)
@@ -25,7 +25,7 @@ fromHtmlId id =
             ( schema, table |> HtmlId.decode )
 
         _ ->
-            ( conf.default.schema, id )
+            ( Conf.schema.default, id )
 
 
 toString : TableId -> String
@@ -40,12 +40,12 @@ fromString id =
             ( schema, table )
 
         _ ->
-            ( conf.default.schema, id )
+            ( Conf.schema.default, id )
 
 
 show : TableId -> String
 show ( schema, table ) =
-    if schema == conf.default.schema then
+    if schema == Conf.schema.default then
         table
 
     else
@@ -56,13 +56,13 @@ parse : String -> TableId
 parse tableId =
     case tableId |> String.split "." of
         table :: [] ->
-            ( conf.default.schema, table )
+            ( Conf.schema.default, table )
 
         schema :: table :: [] ->
             ( schema, table )
 
         _ ->
-            ( conf.default.schema, tableId )
+            ( Conf.schema.default, tableId )
 
 
 encode : TableId -> Value
