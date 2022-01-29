@@ -76,7 +76,7 @@ localFileModal zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , div [ css [ Tw.mt_3 ] ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) ]
+        , div [ css [ Tw.mt_3 ] ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> M.filter (\_ -> name1 /= name2)
@@ -173,7 +173,7 @@ newSourceModal titleId model =
                     ]
                 ]
             ]
-        , div [ css [ Tw.mt_3 ] ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) ]
+        , div [ css [ Tw.mt_3 ] ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , SQLSource.viewParsing model
         ]
     , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]

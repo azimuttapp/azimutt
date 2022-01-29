@@ -268,7 +268,7 @@ handleJsMessage req message model =
                     ++ (errors
                             |> List.concatMap
                                 (\( name, err ) ->
-                                    [ Ports.toastError ("Unable to read project " ++ name ++ ": " ++ D.errorToHtml err)
+                                    [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ D.errorToHtml err))
                                     , Ports.trackJsonError "decode-project" err
                                     ]
                                 )

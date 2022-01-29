@@ -108,7 +108,7 @@ ids :
     , modal : HtmlId
     }
 ids =
-    { searchInput = "search"
+    { searchInput = "app-nav-search"
     , navFeaturesDropdown = "navbar-features-dropdown"
     , navProjectDropdown = "navbar-project-dropdown"
     , navLayoutDropdown = "navbar-layout-dropdown"

@@ -2,17 +2,21 @@ module PagesComponents.Projects.New.View exposing (viewNewProject)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Kbd as Kbd
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
 import Conf
 import Css
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, aside, div, form, h2, nav, p, span, text)
+import Html.Styled exposing (Html, a, aside, div, form, h2, li, nav, p, span, text, ul)
 import Html.Styled.Attributes exposing (css, href)
 import Html.Styled.Events exposing (onClick)
+import Libs.Html.Styled exposing (bText, extLink)
 import Libs.Html.Styled.Attributes exposing (ariaCurrent)
 import Libs.Models.Color as Color
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Tailwind.Utilities as Tu
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
@@ -77,7 +81,7 @@ viewTabContent model =
     div []
         ([ case model.selectedTab of
             Schema ->
-                viewSchemaUpload
+                viewSchemaUpload model.openedCollapse
 
             Sample ->
                 viewSampleSelection model.parsing.selectedSample
@@ -87,15 +91,37 @@ viewTabContent model =
         )
 
 
-viewSchemaUpload : Html Msg
-viewSchemaUpload =
+viewSchemaUpload : HtmlId -> Html Msg
+viewSchemaUpload openedCollapse =
     div []
         [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
         , form []
             [ div [ css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_y_6, Tw.gap_x_4, Bp.sm [ Tw.grid_cols_6 ] ] ]
                 [ div [ css [ Bp.sm [ Tw.col_span_6 ] ] ]
-                    [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> SQLSourceMsg)
+                    [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop
                     ]
+                ]
+            ]
+        , div [ css [ Tw.mt_3 ] ]
+            [ div [ onClick (ToggleCollapse "get-schema"), css [ Tu.link, Tw.text_sm, Tw.text_gray_500 ] ] [ text "How to get my database schema?" ]
+            , div [ css [ Tu.unless (openedCollapse == "get-schema") [ Tw.hidden ], Tw.mt_1, Tw.mb_3, Tw.p_3, Tw.border, Color.border Color.gray 300, Tw.rounded ] ]
+                [ p []
+                    [ text "An "
+                    , bText "SQL schema"
+                    , text " is a SQL file with all the needed instructions to create your database, so it contains your database structure. Here are some ways to get it:"
+                    , ul [ css [ Tw.list_disc, Tw.list_inside, Tw.pl_3 ] ]
+                        [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", extLink "https://stackoverflow.com/a/54504510/15051232" [ css [ Tu.link ] ] [ text "DBeaver" ], text ")" ]
+                        , li [] [ bText "Find it", text " in your project: some frameworks like Rails store the schema in your project, so you may have it (ex: with Rails it's ", Kbd.badge [] [ "db/structure.sql" ], text " if you use the SQL version)" ]
+                        ]
+                    ]
+                , p [ css [ Tw.mt_3 ] ] [ text "If you have no idea on what I'm talking about just before, ask to the developers working on the project or your database administrator 😇" ]
+                ]
+            ]
+        , div []
+            [ div [ onClick (ToggleCollapse "data-privacy"), css [ Tu.link, Tw.text_sm, Tw.text_gray_500 ] ] [ text "What about data privacy?" ]
+            , div [ css [ Tu.unless (openedCollapse == "data-privacy") [ Tw.hidden ], Tw.mt_1, Tw.p_3, Tw.border, Color.border Color.gray 300, Tw.rounded ] ]
+                [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
+                , p [ css [ Tw.mt_3 ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
                 ]
             ]
         ]
