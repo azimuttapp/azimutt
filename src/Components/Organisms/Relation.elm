@@ -2,6 +2,7 @@ module Components.Organisms.Relation exposing (doc, line)
 
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
+import Html.Styled exposing (div)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
@@ -57,5 +58,5 @@ doc : Chapter x
 doc =
     Chapter.chapter "Relation"
         |> Chapter.renderComponentList
-            [ ( "line", line Position.zero (Position 50 50) False Nothing "relation" 10 )
+            [ ( "line", div [ css [ Tw.h_32 ] ] [ line Position.zero (Position 50 50) False Nothing "relation" 10 ] )
             ]

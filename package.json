@@ -2,6 +2,7 @@
   "devDependencies": {
     "elm-coverage": "^0.4.0",
     "elm-review": "^2.5.5",
-    "elm-test": "^0.19.1-revision7"
+    "elm-test": "^0.19.1-revision7",
+    "tailwindcss": "^3.0.18"
   }
 }

@@ -44,6 +44,7 @@ Dev commands:
 
 - launch dev server: `elm-spa server` or `elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js` (needs `npm install -g elm-live` or use `npx`)
 - launch design system: `elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js` (needs `npm install -g elm-book` or use `npx`)
+- launch tailwind: `npx tailwindcss -i ./public/tw-styles.css -o ./public/dist/tw-styles.css --watch` (needs `npm install -D tailwindcss`)
 - launch the tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
 - run linter: `elm-review` (needs `npm install -g elm-review` or use `npx`)
 - check format: `elm-format src tests --validate` (needs `npm install -g elm-format` or use `npx`)

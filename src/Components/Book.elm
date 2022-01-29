@@ -22,6 +22,7 @@ import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
+import Components.Organisms.Relation2 as Relation2
 import Components.Organisms.Table as Table
 import Components.Slices.Blog as Blog
 import Components.Slices.Content as Content
@@ -38,8 +39,8 @@ import ElmBook.ComponentOptions
 import ElmBook.ElmCSS as ElmCSS
 import ElmBook.StatefulOptions
 import ElmBook.ThemeOptions
-import Html.Styled exposing (Html, img, table, td, text, th, tr)
-import Html.Styled.Attributes exposing (alt, css, src)
+import Html.Styled exposing (Html, img, node, table, td, text, th, tr)
+import Html.Styled.Attributes exposing (alt, css, href, rel, src)
 import Libs.Models.Color as Color exposing (Color, ColorLevel)
 import Tailwind.Utilities as Tw
 
@@ -77,7 +78,7 @@ main =
     ElmCSS.book "Azimutt Design System"
         |> ElmBook.withThemeOptions
             [ ElmBook.ThemeOptions.subtitle "v0.1.0"
-            , ElmBook.ThemeOptions.globals [ Global.global Tw.globalStyles ]
+            , ElmBook.ThemeOptions.globals [ Global.global Tw.globalStyles, node "link" [ rel "stylesheet", href "/dist/tw-styles.css" ] [] ]
             , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ Tw.h_12 ] ] [])
             ]
         |> ElmBook.withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
@@ -87,7 +88,7 @@ main =
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Input.doc theme, Kbd.doc, Link.doc theme, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, FileInput.doc theme, ItemList.doc theme, Modal.doc theme, Slideover.doc theme, Toast.doc theme, Tooltip.doc ] )
-            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Table.doc ] )
+            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Relation2.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
             ]
 
