@@ -1,15 +1,29 @@
-module Libs.Html.Events exposing (WheelEvent, onWheel, stopClick, wheelDecoder)
+module Libs.Html.Events exposing (PointerEvent, WheelEvent, onPointerDown, onPointerUp, onWheel, pointerDecoder, stopClick, wheelDecoder)
 
 import Html exposing (Attribute)
 import Html.Events exposing (stopPropagationOn)
-import Json.Decode as Decode exposing (Decoder)
+import Html.Events.Extra.Pointer as Pointer
+import Json.Decode as Decode
 import Libs.Delta exposing (Delta)
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 
 
-stopClick : msg -> Attribute msg
-stopClick m =
-    stopPropagationOn "click" (Decode.succeed ( m, True ))
+
+-- sorted alphabetically
+
+
+type alias PointerEvent =
+    { position : Position, ctrl : Bool, alt : Bool, shift : Bool }
+
+
+onPointerDown : (PointerEvent -> msg) -> Attribute msg
+onPointerDown msg =
+    Html.Events.on "pointerdown" (pointerDecoder |> Decode.map msg)
+
+
+onPointerUp : (PointerEvent -> msg) -> Attribute msg
+onPointerUp msg =
+    Html.Events.on "pointerup" (pointerDecoder |> Decode.map msg)
 
 
 type alias FileEvent =
@@ -24,7 +38,7 @@ onFileChange : (FileEvent -> msg) -> Attribute msg
 onFileChange callback =
     -- Elm: no error message when decoder fail, hard to get it correct :(
     let
-        fileDecoder : Decoder FileInfo
+        fileDecoder : Decode.Decoder FileInfo
         fileDecoder =
             Decode.map4 FileInfo
                 (Decode.field "name" Decode.string)
@@ -32,7 +46,7 @@ onFileChange callback =
                 (Decode.field "size" Decode.int)
                 (Decode.field "lastModified" Decode.int)
 
-        decoder : Decoder msg
+        decoder : Decode.Decoder msg
         decoder =
             Decode.field "target"
                 (Decode.map2 FileEvent
@@ -68,7 +82,29 @@ onWheel callback =
     Html.Events.custom "wheel" (wheelDecoder |> Decode.map (callback >> preventDefaultAndStopPropagation))
 
 
-wheelDecoder : Decoder WheelEvent
+stopClick : msg -> Attribute msg
+stopClick m =
+    stopPropagationOn "click" (Decode.succeed ( m, True ))
+
+
+
+-- HELPERS
+
+
+pointerDecoder : Decode.Decoder PointerEvent
+pointerDecoder =
+    Pointer.eventDecoder
+        |> Decode.map
+            (\e ->
+                { position = e.pointer.pagePos |> Position.fromTuple
+                , ctrl = e.pointer.keys.ctrl
+                , alt = e.pointer.keys.alt
+                , shift = e.pointer.keys.shift
+                }
+            )
+
+
+wheelDecoder : Decode.Decoder WheelEvent
 wheelDecoder =
     Decode.map6 WheelEvent
         (Decode.map2 Position

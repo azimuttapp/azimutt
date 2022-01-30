@@ -1,24 +1,24 @@
 module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Atoms.Styles as Styles
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..), MenuItem)
-import Components.Molecules.Tooltip as Tooltip
-import Css
+import Components.Molecules.Dropdown2 as Dropdown2 exposing (Direction(..), MenuItem)
+import Components.Molecules.Tooltip2 as Tooltip2
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, br, button, div, span, text)
-import Html.Styled.Attributes exposing (css, id, tabindex, type_)
-import Html.Styled.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
-import Html.Styled.Keyed as Keyed
-import Html.Styled.Lazy as Lazy
+import Html exposing (Attribute, Html, button, div, span, text)
+import Html.Attributes exposing (class, id, style, tabindex, type_)
+import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
+import Html.Keyed as Keyed
+import Html.Lazy as Lazy
+import Html.Styled as Styled exposing (fromUnstyled)
+import Html.Styled.Attributes as Styled
 import Libs.Bool as B
-import Libs.Html.Styled exposing (bText)
-import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHaspopup, role, track)
-import Libs.Html.Styled.Events exposing (onPointerUp)
+import Libs.Html exposing (bText)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, classes, role, track)
+import Libs.Html.Events exposing (onPointerUp)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
@@ -26,7 +26,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
-import Libs.Tailwind.Utilities as Tu
+import Libs.Tailwind exposing (TwClass, bg_50, border_500, border_b_200, ring_500, text_500)
 import Set exposing (Set)
 import Tailwind.Utilities as Tw
 import Track
@@ -109,27 +109,25 @@ type alias Actions msg =
     }
 
 
-table : Model msg -> Html msg
+table : Model msg -> Styled.Html msg
 table model =
     div
         [ id model.id
         , onMouseEnter (model.actions.hoverTable True)
         , onMouseLeave (model.actions.hoverTable False)
-        , css
-            [ Tw.inline_block
-            , Tw.bg_white
-            , Tw.rounded_lg
-            , Tw.cursor_pointer
-            , B.cond model.state.isHover Tw.shadow_lg Tw.shadow_md
-            , Tu.when model.state.selected [ Tw.ring_4, Color.ring model.state.color 500 ]
+        , classes
+            [ "inline-block bg-white rounded-lg cursor-pointer"
+            , B.cond model.state.isHover "shadow-lg" "shadow-md"
+            , B.cond model.state.selected ("ring-4 " ++ ring_500 model.state.color) ""
 
-            {- , Tu.when model.state.dragging [ Tw.transform, Tw.neg_rotate_3 ] -}
+            --, B.cond model.state.dragging "transform -rotate-3" ""
             ]
         ]
         [ Lazy.lazy viewHeader model
         , Lazy.lazy viewColumns model
         , Lazy.lazy viewHiddenColumns model
         ]
+        |> fromUnstyled
 
 
 viewHeader : Model msg -> Html msg
@@ -139,37 +137,30 @@ viewHeader model =
         dropdownId =
             model.id ++ "-settings"
 
-        textSize : Css.Style
-        textSize =
+        headerTextSize : List (Attribute msg)
+        headerTextSize =
             if model.zoom < 0.5 then
-                Tu.font (1.25 * 0.5 / model.zoom) "rem"
+                [ style "font-size" (String.fromFloat (1.25 * 0.5 / model.zoom) ++ "rem") ]
 
             else
-                Tw.text_xl
+                []
     in
     div
-        [ css
-            [ Tw.flex
-            , Tw.items_center
-            , Tw.justify_items_center
-            , Tw.px_3
-            , Tw.py_1
-            , Tw.rounded_t_lg
-            , Tw.border_t_8
-            , Color.border model.state.color 500
-            , Tw.border_b
-            , Color.border_b Color.default 200
-            , Color.bg (B.cond model.state.isHover model.state.color Color.default) 50
+        [ classes
+            [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b"
+            , border_500 model.state.color
+            , border_b_200 Color.default
+            , bg_50 (B.cond model.state.isHover model.state.color Color.default)
             ]
         ]
-        [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), css [ Tw.flex_grow, Tw.text_center ] ]
+        [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), class "flex-grow text-center" ]
             [ if model.isView then
-                span [ css [ textSize, Tw.italic, Tw.underline, Tu.underline_dotted ] ] [ text model.label ] |> Tooltip.t "This is a view"
+                span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip2.t "This is a view"
 
               else
-                span [ css [ textSize ] ] [ text model.label ]
+                span ([ class "text-xl" ] ++ headerTextSize) [ text model.label ]
             ]
-        , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
+        , Dropdown2.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
                     ([ type_ "button"
@@ -177,15 +168,15 @@ viewHeader model =
                      , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
-                     , css [ Tw.flex, Tw.text_sm, Tw.opacity_25, Css.focus [ Tw.outline_none ] ]
+                     , class "flex text-sm opacity-25 focus:outline-none"
                      ]
                         ++ track Track.openTableSettings
                     )
-                    [ span [ css [ Tw.sr_only ] ] [ text "Open table settings" ]
-                    , Icon.solid DotsVertical []
+                    [ span [ class "sr-only" ] [ text "Open table settings" ]
+                    , Icon.solid DotsVertical [] |> Styled.toUnstyled
                     ]
             )
-            (\_ -> div [ css [ Tu.z_max ] ] (model.settings |> List.map Dropdown.submenuButton))
+            (\_ -> div [ class "z-max" ] (model.settings |> List.map Dropdown2.submenuButton))
         ]
 
 
@@ -205,11 +196,11 @@ viewHiddenColumns model =
         div [] []
 
     else
-        div [ css [ Tw.m_2, Tw.p_2, Tw.bg_gray_100, Tw.rounded_lg ] ]
-            [ div [ onClick model.actions.clickHiddenColumns, css [ Tw.text_gray_400, Tw.uppercase, Tw.font_bold, Tw.text_sm ] ]
+        div [ class "m-2 p-2 bg-gray-100 rounded-lg" ]
+            [ div [ onClick model.actions.clickHiddenColumns, class "text-gray-400 uppercase font-bold text-sm" ]
                 [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
             , Keyed.node "div"
-                [ css [ Tw.rounded_lg, Tw.pt_2, Tu.unless model.state.showHiddenColumns [ Tw.hidden ] ] ]
+                [ classes [ "rounded-lg pt-2", B.cond model.state.showHiddenColumns "" "hidden" ] ]
                 (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
             ]
 
@@ -220,7 +211,11 @@ viewColumn model isLast column =
         ([ onMouseEnter (model.actions.hoverColumn column.name True)
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
-         , css [ Tw.items_center, Tw.flex, Tw.px_2, Tw.bg_white, Css.batch (B.cond (isHighlightedColumn model column) [ Color.text model.state.color 500, Color.bg model.state.color 50 ] [ Color.text Color.default 500 ]), Tu.when isLast [ Tw.rounded_b_lg ] ]
+         , classes
+            [ "items-center flex px-2 bg-white"
+            , B.cond (isHighlightedColumn model column) (text_500 model.state.color ++ " " ++ bg_50 model.state.color) (text_500 Color.default)
+            , B.cond isLast "rounded-b-lg" ""
+            ]
          ]
             ++ (model.actions.clickColumn |> M.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
         )
@@ -233,22 +228,23 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
-        div ([ css [ Tw.w_6, Tw.h_6 ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey) [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+        div ([ class "w-6 h-6", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
+            [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Key [ Tw.pt_2 ] |> Tooltip.t "Primary key" ]
+        div [ class "w-6 h-6" ] [ Icon.solid Key [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t "Primary key" ]
 
     else if column.uniques |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid FingerPrint [ Tw.pt_2 ] |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid FingerPrint [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid SortDescending [ Tw.pt_2 ] |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid SortDescending [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> L.nonEmpty then
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Check [ Tw.pt_2 ] |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid Check [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
-        div [ css [ Tw.w_6, Tw.h_6 ] ] [ Icon.solid Empty [ Tw.pt_2 ] ]
+        div [ class "w-6 h-6" ] [ Icon.solid Empty [ Tw.pt_2 ] |> Styled.toUnstyled ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
@@ -259,10 +255,10 @@ viewColumnIconDropdown model column icon =
             model.id ++ "-" ++ column.name ++ "-dropdown"
     in
     if column.inRelations |> List.isEmpty then
-        div [] [ button [ type_ "button", id dropdownId, css [ Css.focus [ Tw.outline_none ] ] ] [ icon ] ]
+        div [] [ button [ type_ "button", id dropdownId, class "focus:outline-none" ] [ icon ] ]
 
     else
-        Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
+        Dropdown2.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
                     ([ type_ "button"
@@ -270,7 +266,7 @@ viewColumnIconDropdown model column icon =
                      , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
-                     , css [ Css.focus [ Tw.outline_none ] ]
+                     , class "focus:outline-none"
                      ]
                         ++ track Track.openIncomingRelationsDropdown
                     )
@@ -284,13 +280,13 @@ viewColumnIconDropdown model column icon =
                                 let
                                     content : List (Html msg)
                                     content =
-                                        [ Icon.solid ExternalLink [ Tw.inline ]
+                                        [ Icon.solid ExternalLink [ Tw.inline ] |> Styled.toUnstyled
                                         , bText (formatTableRef { schema = r.column.schema, table = r.column.table })
                                         , text ("." ++ r.column.column ++ B.cond r.nullable "?" "")
                                         ]
                                 in
                                 if r.tableShown then
-                                    Dropdown.btnDisabled [ Tw.py_1 ] content
+                                    Dropdown2.btnDisabled "py-1" content
 
                                 else
                                     viewColumnIconDropdownItem (model.actions.clickRelations [ r ]) content
@@ -313,12 +309,7 @@ viewColumnIconDropdown model column icon =
 viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
 viewColumnIconDropdownItem message content =
     button
-        ([ type_ "button"
-         , onClick message
-         , role "menuitem"
-         , tabindex -1
-         , css [ Tw.py_1, Tw.block, Tw.w_full, Tw.text_left, Dropdown.itemStyles, Css.focus [ Tw.outline_none ] ]
-         ]
+        ([ type_ "button", onClick message, role "menuitem", tabindex -1, classes [ "py-1 block w-full text-left focus:outline-none", Dropdown2.itemStyles ] ]
             ++ track Track.showTableWithIncomingRelationsDropdown
         )
         content
@@ -326,38 +317,38 @@ viewColumnIconDropdownItem message content =
 
 viewColumnName : Column -> Html msg
 viewColumnName column =
-    div [ css [ Tw.flex, Tw.flex_grow, Tu.when column.isPrimaryKey [ Tw.font_bold ] ] ]
+    div [ classes [ "flex flex-grow", B.cond column.isPrimaryKey "font-bold" "" ] ]
         ([ text column.name ] |> L.appendOn column.comment viewComment)
 
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Tooltip.t comment
+    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Styled.toUnstyled |> Tooltip2.t comment
 
 
 viewColumnKind : Model msg -> Column -> Html msg
 viewColumnKind model column =
     let
-        opacity : Css.Style
+        opacity : TwClass
         opacity =
-            B.cond (isHighlightedColumn model column) Tw.opacity_100 Tw.opacity_25
+            B.cond (isHighlightedColumn model column) "opacity-100" "opacity-25"
 
         value : Html msg
         value =
             column.default
                 |> M.mapOrElse
-                    (\default -> span [ css [ opacity, Tw.underline ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
-                    (span [ css [ opacity ] ] [ text column.kind ])
+                    (\default -> span [ classes [ "underline", opacity ] ] [ text column.kind ] |> Tooltip2.t ("default value: " ++ default))
+                    (span [ class opacity ] [ text column.kind ])
 
         nullable : List (Html msg)
         nullable =
             if column.nullable then
-                [ span [ css [ opacity ] ] [ text "?" ] |> Tooltip.t "nullable" ]
+                [ span [ class opacity ] [ text "?" ] |> Tooltip2.t "nullable" ]
 
             else
                 []
     in
-    div [ css [ Tw.ml_1 ] ] (value :: nullable)
+    div [ class "ml-1" ] (value :: nullable)
 
 
 formatTableRef : TableRef -> String
@@ -482,7 +473,7 @@ doc =
               )
             , ( "states"
               , \_ ->
-                    div [ css [ Tw.flex, Tw.flex_wrap, Tw.gap_6 ] ]
+                    Styled.div [ Styled.css [ Tw.flex, Tw.flex_wrap, Tw.gap_6 ] ]
                         ([ { sample | id = "View", isView = True }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }
                          , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, highlightedColumns = Set.fromList [ "name" ] }) }
@@ -492,8 +483,7 @@ doc =
                          , { sample | id = "Hidden columns hidden", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = False }) }
                          , { sample | id = "Hidden columns visible", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = True }) }
                          ]
-                            |> List.map (\model -> div [] [ text (model.id ++ ":"), br [] [], table model ])
+                            |> List.map (\model -> Styled.div [] [ Styled.text (model.id ++ ":"), Styled.br [] [], table model ])
                         )
               )
-            , ( "global css", \_ -> div [] [ Styles.global, text "Global styles are needed for tooltip reveal and dropdown submenu" ] )
             ]

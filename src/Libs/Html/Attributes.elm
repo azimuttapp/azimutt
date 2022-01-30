@@ -68,7 +68,7 @@ ariaOrientation text =
 
 classes : List String -> Attribute msg
 classes values =
-    values |> String.join " " |> class
+    values |> List.filter (\v -> v /= "") |> String.join " " |> class
 
 
 role : String -> Attribute msg

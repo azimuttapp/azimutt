@@ -63,7 +63,7 @@ viewTable zoom cursorMode args index props table =
             , Tw.absolute
             , Tw.transform
             , Tu.translate_x_y props.position.left props.position.top "px"
-            , Tu.z (Conf.canvas.zIndex.tables + index + B.cond (props.selected || dragging || (openedDropdown == table.htmlId ++ "-settings")) 1000 0)
+            , Tu.z (Conf.canvas.zIndex.tables + index + B.cond (props.selected || dragging || (openedDropdown |> String.startsWith table.htmlId)) 1000 0)
             , Tu.when (props.size == Size.zero) [ Tw.invisible ]
             ]
          ]

@@ -80,7 +80,7 @@ viewSource _ zone source =
                         ]
                     , div [ css [ Tw.flex, Tw.justify_between ] ]
                         [ span [ css [ Tu.text_muted ] ] [ text ((tables |> S.pluralizeL "table") ++ ", " ++ (views |> S.pluralizeL "view") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
-                        , span [ css [ Tu.text_muted ] ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.lt (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
+                        , span [ css [ Tu.text_muted ] ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.tl (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
                         ]
                     ]
     in

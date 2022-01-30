@@ -1,4 +1,4 @@
-module Components.Molecules.Tooltip exposing (b, bl, br, doc, l, lt, r, t, tr)
+module Components.Molecules.Tooltip exposing (b, bl, br, doc, l, r, t, tl, tr)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Styles as Styles
@@ -23,8 +23,8 @@ t =
     tooltip [ Tw.bottom_full, Tw.mb_3, Tw.items_center ] [ Tw.top_full, Tu.translate_y -50 "%" ]
 
 
-lt : String -> Html msg -> Html msg
-lt =
+tl : String -> Html msg -> Html msg
+tl =
     tooltip [ Tw.bottom_full, Tw.mb_3, Tw.right_0, Tw.items_end ] [ Tw.top_full, Tu.translate_y -50 "%", Tw.mr_3 ]
 
 
@@ -80,7 +80,7 @@ doc =
             [ ( "tooltip"
               , div []
                     [ span [] [ Button.primary3 Color.indigo [] [ text "Top" ] |> t "Top aligned tooltip with more text." ]
-                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Top left" ] |> lt "Top left aligned tooltip with more text." ]
+                    , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Top left" ] |> tl "Top left aligned tooltip with more text." ]
                     , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Top right" ] |> tr "Top right aligned tooltip with more text." ]
                     , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Left" ] |> l "Left aligned tooltip with more text." ]
                     , span [ css [ Tw.ml_3 ] ] [ Button.primary3 Color.indigo [] [ text "Right" ] |> r "Right aligned tooltip with more text." ]
