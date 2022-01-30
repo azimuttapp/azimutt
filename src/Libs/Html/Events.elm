@@ -1,7 +1,7 @@
-module Libs.Html.Events exposing (PointerEvent, WheelEvent, onPointerDown, onPointerUp, onWheel, pointerDecoder, stopClick, wheelDecoder)
+module Libs.Html.Events exposing (PointerEvent, WheelEvent, onPointerDown, onPointerUp, onWheel, pointerDecoder, preventPointerDown, stopClick, stopPointerDown, wheelDecoder)
 
 import Html exposing (Attribute)
-import Html.Events exposing (stopPropagationOn)
+import Html.Events exposing (preventDefaultOn, stopPropagationOn)
 import Html.Events.Extra.Pointer as Pointer
 import Json.Decode as Decode
 import Libs.Delta exposing (Delta)
@@ -82,9 +82,19 @@ onWheel callback =
     Html.Events.custom "wheel" (wheelDecoder |> Decode.map (callback >> preventDefaultAndStopPropagation))
 
 
+preventPointerDown : (PointerEvent -> msg) -> Attribute msg
+preventPointerDown msg =
+    preventDefaultOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
+
+
 stopClick : msg -> Attribute msg
 stopClick m =
     stopPropagationOn "click" (Decode.succeed ( m, True ))
+
+
+stopPointerDown : (PointerEvent -> msg) -> Attribute msg
+stopPointerDown msg =
+    stopPropagationOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
 
 
 

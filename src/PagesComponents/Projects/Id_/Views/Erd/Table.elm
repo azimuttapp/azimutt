@@ -4,25 +4,25 @@ import Components.Organisms.Table as Table
 import Conf
 import Dict
 import Either exposing (Either(..))
-import Html.Styled exposing (Attribute, Html, div)
-import Html.Styled.Attributes exposing (css)
+import Html exposing (Attribute, div)
+import Html.Attributes exposing (style)
+import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
-import Libs.Html.Styled.Events exposing (stopPointerDown)
+import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Events exposing (stopPointerDown)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.Tailwind.Utilities as Tu
 import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
-import Tailwind.Utilities as Tw
 
 
 type alias TableArgs =
@@ -44,7 +44,7 @@ stringToArgs args =
             ( "", False, False )
 
 
-viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
+viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Styled.Html Msg
 viewTable zoom cursorMode args index props table =
     let
         ( openedDropdown, dragging, virtualRelation ) =
@@ -56,16 +56,16 @@ viewTable zoom cursorMode args index props table =
         drag : List (Attribute Msg)
         drag =
             B.cond (cursorMode == CursorDrag) [] [ stopPointerDown (.position >> DragStart table.htmlId) ]
+
+        zIndex : Int
+        zIndex =
+            Conf.canvas.zIndex.tables + index + B.cond (props.selected || dragging || (openedDropdown |> String.startsWith table.htmlId)) 1000 0
     in
     div
-        ([ css
-            [ Tw.select_none
-            , Tw.absolute
-            , Tw.transform
-            , Tu.translate_x_y props.position.left props.position.top "px"
-            , Tu.z (Conf.canvas.zIndex.tables + index + B.cond (props.selected || dragging || (openedDropdown |> String.startsWith table.htmlId)) 1000 0)
-            , Tu.when (props.size == Size.zero) [ Tw.invisible ]
-            ]
+        ([ classes [ "select-none absolute", B.cond (props.size == Size.zero) "invisible" "" ]
+         , style "left" (String.fromFloat props.position.left ++ "px")
+         , style "top" (String.fromFloat props.position.top ++ "px")
+         , style "z-index" (String.fromInt zIndex)
          ]
             ++ drag
         )
@@ -138,6 +138,7 @@ viewTable zoom cursorMode args index props table =
             , zoom = zoom
             }
         ]
+        |> fromUnstyled
 
 
 buildColumn : ErdTableProps -> ErdColumn -> Table.Column

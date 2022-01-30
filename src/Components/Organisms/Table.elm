@@ -109,7 +109,7 @@ type alias Actions msg =
     }
 
 
-table : Model msg -> Styled.Html msg
+table : Model msg -> Html msg
 table model =
     div
         [ id model.id
@@ -127,7 +127,6 @@ table model =
         , Lazy.lazy viewColumns model
         , Lazy.lazy viewHiddenColumns model
         ]
-        |> fromUnstyled
 
 
 viewHeader : Model msg -> Html msg
@@ -470,6 +469,7 @@ doc =
                                 , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 }
                         }
+                        |> fromUnstyled
               )
             , ( "states"
               , \_ ->
@@ -483,7 +483,7 @@ doc =
                          , { sample | id = "Hidden columns hidden", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = False }) }
                          , { sample | id = "Hidden columns visible", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = True }) }
                          ]
-                            |> List.map (\model -> Styled.div [] [ Styled.text (model.id ++ ":"), Styled.br [] [], table model ])
+                            |> List.map (\model -> Styled.div [] [ Styled.text (model.id ++ ":"), Styled.br [] [], table model |> fromUnstyled ])
                         )
               )
             ]
