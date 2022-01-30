@@ -16,8 +16,8 @@ import Libs.Tailwind exposing (TwClass, border_500, ring_500)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 
 
-viewCommands : CursorMode -> ZoomLevel -> HtmlId -> HtmlId -> Styled.Html Msg
-viewCommands cursorMode canvasZoom htmlId openedDropdown =
+viewCommands : CursorMode -> ZoomLevel -> Bool -> HtmlId -> HtmlId -> Styled.Html Msg
+viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
     let
         buttonStyles : TwClass
         buttonStyles =
@@ -31,7 +31,7 @@ viewCommands cursorMode canvasZoom htmlId openedDropdown =
         inverted =
             "bg-gray-700 text-white hover:bg-gray-600"
     in
-    div [ class "tw-commands absolute bottom-0 right-0 p-3" ]
+    div [ class ("tw-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
         [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
             [ button [ type_ "button", onClick FitContent, classes [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
                 [ Icon.solid ArrowsExpand [] |> Styled.toUnstyled ]

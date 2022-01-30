@@ -5,6 +5,7 @@ import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Css.Global as Global
+import Dict
 import Gen.Route as Route
 import Html.Styled exposing (Html, div)
 import Html.Styled.Attributes exposing (class, css)
@@ -51,7 +52,7 @@ viewApp model htmlId erd =
     div [ class "tw-app" ]
         [ Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
         , Lazy.lazy7 viewErd model.screen erd model.cursorMode model.selectionBox model.virtualRelation model.openedDropdown model.dragging
-        , Lazy.lazy4 viewCommands model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+        , Lazy.lazy5 viewCommands model.cursorMode erd.canvas.zoom (erd.tableProps |> Dict.isEmpty) (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
         ]
 
 
