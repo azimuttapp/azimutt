@@ -14,6 +14,8 @@ module.exports = {
     safelist: [
         ...colors.map(color => `bg-${color}-50`),
         ...colors.map(color => `bg-${color}-100`),
+        ...colors.map(color => `bg-${color}-400`),
+        ...colors.map(color => `border-${color}-400`),
         ...colors.map(color => `border-${color}-500`),
         ...colors.map(color => `border-b-${color}-200`),
         ...colors.map(color => `ring-${color}-500`),

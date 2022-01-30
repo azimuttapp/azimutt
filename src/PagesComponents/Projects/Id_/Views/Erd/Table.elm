@@ -4,9 +4,8 @@ import Components.Organisms.Table as Table
 import Conf
 import Dict
 import Either exposing (Either(..))
-import Html exposing (Attribute, div)
+import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (style)
-import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
 import Libs.Html.Attributes exposing (classes)
@@ -44,7 +43,7 @@ stringToArgs args =
             ( "", False, False )
 
 
-viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Styled.Html Msg
+viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
 viewTable zoom cursorMode args index props table =
     let
         ( openedDropdown, dragging, virtualRelation ) =
@@ -138,7 +137,6 @@ viewTable zoom cursorMode args index props table =
             , zoom = zoom
             }
         ]
-        |> fromUnstyled
 
 
 buildColumn : ErdTableProps -> ErdColumn -> Table.Column

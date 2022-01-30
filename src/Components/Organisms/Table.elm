@@ -211,7 +211,7 @@ viewColumn model isLast column =
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
          , classes
-            [ "items-center flex px-2 bg-white"
+            [ "items-center flex px-2 bg-white whitespace-nowrap"
             , B.cond (isHighlightedColumn model column) (text_500 model.state.color ++ " " ++ bg_50 model.state.color) (text_500 Color.default)
             , B.cond isLast "rounded-b-lg" ""
             ]

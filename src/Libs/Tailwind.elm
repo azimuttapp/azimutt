@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (TwClass, bg_100, bg_50, border_500, border_b_200, ring_500, stroke_400, stroke_500, text_500, text_800)
+module Libs.Tailwind exposing (TwClass, bg_100, bg_400, bg_50, border_400, border_500, border_b_200, ring_500, stroke_400, stroke_500, text_500, text_800)
 
 import Libs.Models.Color exposing (Color)
 
@@ -19,6 +19,16 @@ bg_50 color =
 bg_100 : Color -> TwClass
 bg_100 color =
     "bg-" ++ color.name ++ "-100"
+
+
+bg_400 : Color -> TwClass
+bg_400 color =
+    "bg-" ++ color.name ++ "-400"
+
+
+border_400 : Color -> TwClass
+border_400 color =
+    "border-" ++ color.name ++ "-400"
 
 
 border_500 : Color -> TwClass
