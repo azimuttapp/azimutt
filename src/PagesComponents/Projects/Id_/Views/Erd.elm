@@ -1,6 +1,6 @@
 module PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 
-import Components.Atoms.Badge2 as Badge2
+import Components.Atoms.Badge2 as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
 import Dict exposing (Dict)
@@ -185,7 +185,7 @@ viewEmptyState tables =
                     [ text "Your project has "
                     , bText (tables |> S.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge2.basic Conf.theme.color [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Conf.theme.color [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ♥️ Azimutt, "

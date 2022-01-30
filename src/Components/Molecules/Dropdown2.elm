@@ -2,7 +2,7 @@ module Components.Molecules.Dropdown2 exposing (Action, Direction(..), DocState,
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Atoms.Kbd2 as Kbd2
+import Components.Atoms.Kbd2 as Kbd
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
@@ -102,7 +102,7 @@ submenuButton menu =
 
 hotkeyBtn : msg -> String -> Maybe (List String) -> Html msg
 hotkeyBtn action label hotkey =
-    btn "flex justify-between" action ([ text label ] ++ (hotkey |> M.mapOrElse (\k -> [ Kbd2.badge [ class "ml-3" ] k ]) []))
+    btn "flex justify-between" action ([ text label ] ++ (hotkey |> M.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] k ]) []))
 
 
 btn : TwClass -> msg -> List (Html msg) -> Html msg

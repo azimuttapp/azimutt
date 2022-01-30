@@ -1,8 +1,8 @@
 module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown2 as Dropdown2 exposing (Direction(..), MenuItem)
-import Components.Molecules.Tooltip2 as Tooltip2
+import Components.Molecules.Dropdown2 as Dropdown exposing (Direction(..), MenuItem)
+import Components.Molecules.Tooltip2 as Tooltip
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
@@ -154,12 +154,12 @@ viewHeader model =
         ]
         [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), class "flex-grow text-center" ]
             [ if model.isView then
-                span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip2.t "This is a view"
+                span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
 
               else
                 span ([ class "text-xl" ] ++ headerTextSize) [ text model.label ]
             ]
-        , Dropdown2.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
+        , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
                     ([ type_ "button"
@@ -175,7 +175,7 @@ viewHeader model =
                     , Icon.solid DotsVertical [] |> Styled.toUnstyled
                     ]
             )
-            (\_ -> div [ class "z-max" ] (model.settings |> List.map Dropdown2.submenuButton))
+            (\_ -> div [ class "z-max" ] (model.settings |> List.map Dropdown.submenuButton))
         ]
 
 
@@ -228,19 +228,19 @@ viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
         div ([ class "w-6 h-6", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
-            [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+            [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
-        div [ class "w-6 h-6" ] [ Icon.solid Key [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t "Primary key" ]
+        div [ class "w-6 h-6" ] [ Icon.solid Key [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t "Primary key" ]
 
     else if column.uniques |> L.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid FingerPrint [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid FingerPrint [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> L.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid SortDescending [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid SortDescending [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> L.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid Check [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip2.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid Check [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
         div [ class "w-6 h-6" ] [ Icon.solid Empty [ Tw.pt_2 ] |> Styled.toUnstyled ]
@@ -257,7 +257,7 @@ viewColumnIconDropdown model column icon =
         div [] [ button [ type_ "button", id dropdownId, class "focus:outline-none" ] [ icon ] ]
 
     else
-        Dropdown2.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
+        Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
                 button
                     ([ type_ "button"
@@ -285,7 +285,7 @@ viewColumnIconDropdown model column icon =
                                         ]
                                 in
                                 if r.tableShown then
-                                    Dropdown2.btnDisabled "py-1" content
+                                    Dropdown.btnDisabled "py-1" content
 
                                 else
                                     viewColumnIconDropdownItem (model.actions.clickRelations [ r ]) content
@@ -308,7 +308,7 @@ viewColumnIconDropdown model column icon =
 viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
 viewColumnIconDropdownItem message content =
     button
-        ([ type_ "button", onClick message, role "menuitem", tabindex -1, classes [ "py-1 block w-full text-left focus:outline-none", Dropdown2.itemStyles ] ]
+        ([ type_ "button", onClick message, role "menuitem", tabindex -1, classes [ "py-1 block w-full text-left focus:outline-none", Dropdown.itemStyles ] ]
             ++ track Track.showTableWithIncomingRelationsDropdown
         )
         content
@@ -322,7 +322,7 @@ viewColumnName column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Styled.toUnstyled |> Tooltip2.t comment
+    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Styled.toUnstyled |> Tooltip.t comment
 
 
 viewColumnKind : Model msg -> Column -> Html msg
@@ -336,13 +336,13 @@ viewColumnKind model column =
         value =
             column.default
                 |> M.mapOrElse
-                    (\default -> span [ classes [ "underline", opacity ] ] [ text column.kind ] |> Tooltip2.t ("default value: " ++ default))
+                    (\default -> span [ classes [ "underline", opacity ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
                     (span [ class opacity ] [ text column.kind ])
 
         nullable : List (Html msg)
         nullable =
             if column.nullable then
-                [ span [ class opacity ] [ text "?" ] |> Tooltip2.t "nullable" ]
+                [ span [ class opacity ] [ text "?" ] |> Tooltip.t "nullable" ]
 
             else
                 []
