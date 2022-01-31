@@ -5,7 +5,7 @@ import Conf
 import Css.Global as Global
 import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
-import Html.Styled as Styled exposing (Html)
+import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
 import Page
 import Ports
 import Request exposing (Request)
@@ -78,11 +78,11 @@ subscriptions _ =
 view : Model -> View Msg
 view model =
     { title = "Page not found - Azimutt"
-    , body = model |> viewNotFound |> List.map Styled.toUnstyled
+    , body = model |> viewNotFound |> List.map toUnstyled
     }
 
 
-viewNotFound : Model -> List (Html msg)
+viewNotFound : Model -> List (Styled.Html msg)
 viewNotFound _ =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full ], Global.selector "body" [ Tw.h_full ] ]
@@ -101,4 +101,5 @@ viewNotFound _ =
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
         }
+        |> fromUnstyled
     ]

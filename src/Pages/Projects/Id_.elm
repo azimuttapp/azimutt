@@ -2,7 +2,7 @@ module Pages.Projects.Id_ exposing (Model, Msg, page)
 
 import Browser.Events
 import Components.Molecules.Modal as Modal
-import Components.Molecules.Toast exposing (Content(..))
+import Components.Molecules.Toast2 exposing (Content(..))
 import Conf
 import Dict
 import Gen.Params.Projects.Id_ exposing (Params)

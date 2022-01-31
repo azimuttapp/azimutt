@@ -1,21 +1,23 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
 import Components.Atoms.Styles as Styles
-import Components.Molecules.Toast as Toast
+import Components.Molecules.Toast2 as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Css.Global as Global
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, div)
-import Html.Styled.Attributes exposing (class, css)
-import Html.Styled.Keyed as Keyed
-import Html.Styled.Lazy as Lazy
+import Html exposing (div)
+import Html.Attributes exposing (class)
+import Html.Keyed as Keyed
+import Html.Lazy as Lazy
+import Html.Styled as Styled exposing (fromUnstyled)
+import Html.Styled.Lazy as Styled
 import Libs.List as L
 import Libs.Maybe as Maybe
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import Libs.Tailwind exposing (border_500)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
@@ -32,7 +34,7 @@ import Tailwind.Utilities as Tw
 import Time
 
 
-viewProject : Shared.Model -> Model -> List (Html Msg)
+viewProject : Shared.Model -> Model -> List (Styled.Html Msg)
 viewProject shared model =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100, Tw.overflow_hidden ], Global.selector "body" [ Tw.h_full ] ]
@@ -42,28 +44,30 @@ viewProject shared model =
 
       else
         viewLoader
-    , Lazy.lazy3 viewModal shared.zone shared.now model
-    , Lazy.lazy viewToasts model.toasts
+    , Styled.lazy3 viewModal shared.zone shared.now model
+    , Styled.lazy viewToasts model.toasts
     ]
 
 
-viewApp : Model -> HtmlId -> Erd -> Html Msg
+viewApp : Model -> HtmlId -> Erd -> Styled.Html Msg
 viewApp model htmlId erd =
     div [ class "tw-app" ]
         [ Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
         , Lazy.lazy7 viewErd model.screen erd model.cursorMode model.selectionBox model.virtualRelation model.openedDropdown model.dragging
         , Lazy.lazy5 viewCommands model.cursorMode erd.canvas.zoom (erd.tableProps |> Dict.isEmpty) (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
         ]
+        |> fromUnstyled
 
 
-viewLoader : Html msg
+viewLoader : Styled.Html msg
 viewLoader =
-    div [ class "tw-loader", css [ Tw.flex, Tw.justify_center, Tw.items_center, Tw.h_screen ] ]
-        [ div [ css [ Tw.animate_spin, Tw.rounded_full, Tw.h_32, Tw.w_32, Tw.border_t_2, Tw.border_b_2, Color.border Conf.theme.color 500 ] ] []
+    div [ class "tw-loader flex justify-center items-center h-screen" ]
+        [ div [ class ("animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 " ++ border_500 Conf.theme.color) ] []
         ]
+        |> fromUnstyled
 
 
-viewNotFound : Html msg
+viewNotFound : Styled.Html msg
 viewNotFound =
     NotFound.simple Conf.theme
         { brand =
@@ -80,9 +84,10 @@ viewNotFound =
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
         }
+        |> fromUnstyled
 
 
-viewModal : Time.Zone -> Time.Posix -> Model -> Html Msg
+viewModal : Time.Zone -> Time.Posix -> Model -> Styled.Html Msg
 viewModal zone now model =
     Keyed.node "div"
         [ class "tw-modals" ]
@@ -96,8 +101,9 @@ viewModal zone now model =
             |> List.filterMap identity
             |> List.sortBy (\( id, _ ) -> model.openedDialogs |> L.indexOf id |> Maybe.withDefault 0 |> negate)
         )
+        |> fromUnstyled
 
 
-viewToasts : List Toast.Model -> Html Msg
+viewToasts : List Toast.Model -> Styled.Html Msg
 viewToasts toasts =
-    div [ class "tw-toasts" ] [ Toast.container Conf.theme toasts ToastHide ]
+    div [ class "tw-toasts" ] [ Toast.container Conf.theme toasts ToastHide ] |> fromUnstyled

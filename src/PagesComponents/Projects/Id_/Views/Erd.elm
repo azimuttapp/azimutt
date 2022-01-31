@@ -43,7 +43,7 @@ import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable
 import Tailwind.Utilities as Tw
 
 
-viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> Styled.Html Msg
+viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> Html Msg
 viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown dragging =
     let
         canvas : CanvasProps
@@ -106,7 +106,6 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
           else
             div [] []
         ]
-        |> Styled.fromUnstyled
 
 
 viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg

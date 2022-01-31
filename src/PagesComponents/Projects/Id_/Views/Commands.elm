@@ -4,7 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown2 as Dropdown exposing (Direction(..))
 import Components.Molecules.Tooltip2 as Tooltip
 import Conf
-import Html exposing (button, div, span, text)
+import Html exposing (Html, button, div, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
 import Html.Styled as Styled
@@ -16,7 +16,7 @@ import Libs.Tailwind exposing (TwClass, border_500, ring_500)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 
 
-viewCommands : CursorMode -> ZoomLevel -> Bool -> HtmlId -> HtmlId -> Styled.Html Msg
+viewCommands : CursorMode -> ZoomLevel -> Bool -> HtmlId -> HtmlId -> Html Msg
 viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
     let
         buttonStyles : TwClass
@@ -62,4 +62,3 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
             , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), classes [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus [] |> Styled.toUnstyled ]
             ]
         ]
-        |> Styled.fromUnstyled

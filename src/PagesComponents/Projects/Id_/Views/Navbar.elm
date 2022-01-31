@@ -2,35 +2,37 @@ module PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Atoms.Kbd as Kbd
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Atoms.Kbd2 as Kbd
+import Components.Molecules.Dropdown2 as Dropdown exposing (Direction(..))
 import Conf
-import Css
 import Dict
 import Either exposing (Either(..))
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, button, div, img, nav, span, text)
-import Html.Styled.Attributes exposing (alt, class, css, height, href, id, src, tabindex, type_, width)
-import Html.Styled.Events exposing (onClick)
-import Html.Styled.Lazy as Lazy
+import Html exposing (Html, a, button, div, img, nav, span, text)
+import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_, width)
+import Html.Events exposing (onClick)
+import Html.Lazy as Lazy
+import Html.Styled as Styled exposing (toUnstyled)
+import Html.Styled.Attributes as Styled
+import Html.Styled.Events as Styled
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Either as E
 import Libs.Hotkey as Hotkey exposing (Hotkey)
-import Libs.Html.Styled exposing (extLink)
-import Libs.Html.Styled.Attributes exposing (ariaControls, ariaExpanded, role)
+import Libs.Html exposing (extLink)
+import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, classes, role)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import Libs.Tailwind exposing (TwClass, bg_500, bg_600, border_500, focusRing, text_100, text_200)
 import Libs.Tailwind.Utilities as Tu
 import Models.Project.CanvasProps as CanvasProps
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
-import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
@@ -57,20 +59,20 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
         canResetCanvas =
             erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
     in
-    nav [ class "tw-navbar", css [ Tw.relative, Tu.z_max, Color.bg Conf.theme.color 600 ] ]
-        [ div [ css [ Tw.mx_auto, Tw.px_2, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_4 ] ] ]
-            [ div [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Tw.h_16 ] ]
-                [ div [ css [ Tw.flex, Tw.items_center, Tw.px_2, Bp.lg [ Tw.px_0 ] ] ]
+    nav [ classes [ "tw-navbar relative z-max", bg_600 Conf.theme.color ] ]
+        [ div [ class "mx-auto px-2 lg:px-8 sm:px-4" ]
+            [ div [ class "relative flex items-center justify-between h-16" ]
+                [ div [ class "flex items-center px-2 lg:px-0" ]
                     [ viewNavbarBrand
                     , Lazy.lazy6 viewNavbarSearch model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
-                , div [ css [ Tw.flex_1, Tw.flex, Tw.justify_center, Tw.px_2 ] ]
+                , div [ class "flex-1 flex justify-center px-2" ]
                     [ Lazy.lazy6 viewNavbarTitle erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
-                , div [ css [ Tw.hidden, Bp.lg [ Tw.block, Tw.ml_4 ] ] ]
-                    [ div [ css [ Tw.flex, Tw.items_center ] ]
+                , div [ class "hidden lg:block lg:ml-4" ]
+                    [ div [ class "flex items-center" ]
                         [ viewNavbarResetLayout canResetCanvas
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , viewNavbarSettings
@@ -84,31 +86,31 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
 
 viewNavbarBrand : Html msg
 viewNavbarBrand =
-    a [ href (Route.toHref Route.Projects), css [ Tw.flex, Tw.justify_start, Tw.items_center, Tw.flex_shrink_0, Tw.font_medium ] ]
-        [ img [ css [ Tw.block, Tw.h_8, Tw.h_8 ], src "/logo.png", alt "Azimutt", width 32, height 32 ] []
-        , span [ css [ Tw.ml_3, Tw.text_2xl, Tw.text_white, Tw.hidden, Bp.lg [ Tw.block ] ] ] [ text "Azimutt" ]
+    a [ href (Route.toHref Route.Projects), class "flex justify-start items-center flex-shrink-0 font-medium" ]
+        [ img [ class "block h-8 h-8", src "/logo.png", alt "Azimutt", width 32, height 32 ] []
+        , span [ class "ml-3 text-2xl text-white hidden lg:block" ] [ text "Azimutt" ]
         ]
 
 
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
-    button [ onClick (HelpMsg (HOpen "")), css [ Tw.ml_3, Tw.rounded_full, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ] ]
-        [ Icon.solid QuestionMarkCircle [ Color.text Conf.theme.color 300 ] ]
+    button [ onClick (HelpMsg (HOpen "")), class ("ml-3 rounded-full " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 )) ]
+        [ Icon.solid QuestionMarkCircle [ Color.text Conf.theme.color 300 ] |> toUnstyled ]
 
 
 viewNavbarResetLayout : Bool -> Html Msg
 viewNavbarResetLayout canResetCanvas =
-    Button.primary3 Conf.theme.color [ onClick resetCanvas, css [ Tw.ml_auto, Tu.unless canResetCanvas [ Tw.invisible ] ] ] [ text "Reset canvas" ]
+    Button.primary3 Conf.theme.color [ Styled.onClick resetCanvas, Styled.css [ Tw.ml_auto, Tu.unless canResetCanvas [ Tw.invisible ] ] ] [ Styled.text "Reset canvas" ] |> toUnstyled
 
 
 viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
 viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ Tw.ml_3, Tw.flex_shrink_0, Tw.flex, Tw.justify_center, Tw.items_center, Color.bg Conf.theme.color 600, Tw.p_1, Tw.rounded_full, Color.text Conf.theme.color 200, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
-                [ span [ css [ Tw.sr_only ] ] [ text "View features" ]
-                , Icon.outline LightningBolt []
-                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), class ("ml-3 flex-shrink-0 flex justify-center items-center " ++ bg_600 Conf.theme.color ++ " p-1 rounded-full " ++ text_200 Conf.theme.color ++ " " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ++ " hover:text-white") ]
+                [ span [ class "sr-only" ] [ text "View features" ]
+                , Icon.outline LightningBolt [] |> toUnstyled
+                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ] |> toUnstyled
                 ]
         )
         (\_ ->
@@ -118,8 +120,8 @@ viewNavbarFeatures features htmlId openedDropdown =
                         (\btn ->
                             btn.action
                                 |> E.reduce
-                                    (\url -> extLink url [ role "menuitem", tabindex -1, css [ Tw.block, Dropdown.itemStyles ] ] [ btn.content ])
-                                    (\action -> Dropdown.btn [ Tw.flex, Tw.justify_between ] action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ css [ Tw.ml_3 ] ] (Hotkey.keys h) ]) [])))
+                                    (\url -> extLink url [ role "menuitem", tabindex -1, classes [ "block", Dropdown.itemStyles ] ] [ btn.content ])
+                                    (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
                         )
                 )
         )
@@ -127,19 +129,19 @@ viewNavbarFeatures features htmlId openedDropdown =
 
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ Tw.ml_3, Tw.flex_shrink_0, Color.bg Conf.theme.color 600, Tw.p_1, Tw.rounded_full, Color.text Conf.theme.color 200, Tu.focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ), Css.hover [ Tw.text_white ] ] ]
-        [ span [ css [ Tw.sr_only ] ] [ text "View settings" ]
-        , Icon.outline Cog []
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class ("ml-3 flex-shrink-0 " ++ bg_600 Conf.theme.color ++ " p-1 rounded-full " ++ text_200 Conf.theme.color ++ " " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ++ " hover:text-white") ]
+        [ span [ class "sr-only" ] [ text "View settings" ]
+        , Icon.outline Cog [] |> toUnstyled
         ]
 
 
 navbarMobileButton : Bool -> Html Msg
 navbarMobileButton open =
-    div [ css [ Tw.flex, Bp.lg [ Tw.hidden ] ] ]
-        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_2, Tw.rounded_md, Color.text Conf.theme.color 200, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_white ], Css.hover [ Tw.text_white, Color.bg Conf.theme.color 500 ] ] ]
-            [ span [ css [ Tw.sr_only ] ] [ text "Open main menu" ]
-            , Icon.outline Menu [ B.cond open Tw.hidden Tw.block ]
-            , Icon.outline X [ B.cond open Tw.block Tw.hidden ]
+    div [ class "flex lg:hidden" ]
+        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, class ("inline-flex items-center justify-center p-2 rounded-md " ++ text_200 Conf.theme.color ++ " hover:text-white hover:" ++ bg_500 Conf.theme.color ++ " focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white") ]
+            [ span [ class "sr-only" ] [ text "Open main menu" ]
+            , Icon.outline Menu [ B.cond open Tw.hidden Tw.block ] |> toUnstyled
+            , Icon.outline X [ B.cond open Tw.block Tw.hidden ] |> toUnstyled
             ]
         ]
 
@@ -147,30 +149,30 @@ navbarMobileButton open =
 viewNavbarMobileMenu : List (Btn Msg) -> Bool -> Bool -> Html Msg
 viewNavbarMobileMenu features canResetCanvas isOpen =
     let
-        groupSpace : Css.Style
+        groupSpace : TwClass
         groupSpace =
-            Css.batch [ Tw.px_2, Tw.pt_2, Tw.pb_3, Tw.space_y_1 ]
+            "px-2 pt-2 pb-3 space-y-1"
 
-        groupBorder : Css.Style
+        groupBorder : TwClass
         groupBorder =
-            Css.batch [ Tw.border_t, Color.border Conf.theme.color 500 ]
+            "border-t " ++ border_500 Conf.theme.color
 
-        btnStyle : Css.Style
+        btnStyle : TwClass
         btnStyle =
-            Css.batch [ Color.text Conf.theme.color 100, Tw.flex, Tw.w_full, Tw.items_center, Tw.justify_start, Tw.px_3, Tw.py_2, Tw.rounded_md, Tw.text_base, Tw.font_medium, Css.hover [ Color.bg Conf.theme.color 500, Tw.text_white ], Css.focus [ Tw.outline_none ] ]
+            text_100 Conf.theme.color ++ " flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium hover:" ++ bg_500 Conf.theme.color ++ " hover:text-white focus:outline-none"
     in
-    div [ css [ Bp.lg [ Tw.hidden ], Tu.unless isOpen [ Tw.hidden ] ], id "mobile-menu" ]
-        ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, css [ btnStyle ] ] [ text "Reset canvas" ] ] []
+    div [ classes [ "lg:hidden", B.cond isOpen "" "hidden" ], id "mobile-menu" ]
+        ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, class btnStyle ] [ text "Reset canvas" ] ] []
          , features
             |> List.map
                 (\f ->
                     f.action
                         |> E.reduce
-                            (\url -> extLink url [ css [ btnStyle ] ] [ f.content ])
-                            (\action -> button [ type_ "button", onClick action, css [ btnStyle ] ] [ f.content ])
+                            (\url -> extLink url [ class btnStyle ] [ f.content ])
+                            (\action -> button [ type_ "button", onClick action, class btnStyle ] [ f.content ])
                 )
-         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ btnStyle ] ] [ Icon.outline Cog [ Tw.mr_3 ], text "Settings" ] ]
+         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ] |> toUnstyled, text "Settings" ] ]
          ]
             |> List.filter L.nonEmpty
-            |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, Tu.when (i /= 0) [ groupBorder ] ] ] groupContent)
+            |> List.indexedMap (\i groupContent -> div [ classes [ groupSpace, B.cond (i /= 0) groupBorder "" ] ] groupContent)
         )

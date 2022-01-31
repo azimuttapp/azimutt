@@ -1,20 +1,23 @@
 module PagesComponents.Projects.Id_.Views.Modals.Help exposing (viewHelp)
 
-import Components.Atoms.Badge as Badge
+import Components.Atoms.Badge2 as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Atoms.Kbd as Kbd
-import Components.Molecules.Modal as Modal
+import Components.Atoms.Kbd2 as Kbd
+import Components.Molecules.Modal2 as Modal
 import Conf
-import Html.Styled exposing (Html, div, h3, p, text)
-import Html.Styled.Attributes exposing (css, id)
-import Html.Styled.Events exposing (onClick)
-import Libs.Html.Styled exposing (extLink)
+import Html exposing (Html, div, h3, p, text)
+import Html.Attributes exposing (class, id)
+import Html.Events exposing (onClick)
+import Html.Styled as Styled
+import Html.Styled.Events as Styled
+import Libs.Bool as B
+import Libs.Html exposing (extLink)
+import Libs.Html.Attributes exposing (classes)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind.Utilities as Tu
+import Libs.Tailwind exposing (bg_100, text_700)
 import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
-import Tailwind.Breakpoints as Bp
 import Tailwind.Utilities as Tw
 
 
@@ -31,16 +34,16 @@ viewHelp opened model =
         , isOpen = opened
         , onBackgroundClick = ModalClose (HelpMsg HClose)
         }
-        [ div [ css [ Tw.max_w_3xl, Tw.mx_6, Tw.mt_6 ] ]
-            [ div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_5 ] ] ]
-                [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ]
+        [ div [ class "max-w-3xl mx-6 mt-6" ]
+            [ div [ class "mt-3 text-center sm:mt-5" ]
+                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
                     [ text "🎊 Hey! Welcome to Azimutt 🎊" ]
-                , div [ css [ Tw.mt_2 ] ]
-                    [ p [ css [ Tw.text_sm, Tw.text_gray_500 ] ]
+                , div [ class "mt-2" ]
+                    [ p [ class "text-sm text-gray-500" ]
                         [ text "Let's dive into the features you might be interested in..." ]
                     ]
                 ]
-            , div [ css [ Tw.mt_3, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Tw.divide_y, Tw.divide_gray_300 ] ]
+            , div [ class "mt-3 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
                 (List.map (\s -> sectionToAccordionItem (s.title == model.openedSection) s)
                     [ search
                     , canvasNavigation
@@ -51,14 +54,14 @@ viewHelp opened model =
                     , shortcuts
                     ]
                 )
-            , p [ css [ Tw.mt_3 ] ]
+            , p [ class "mt-3" ]
                 [ text "I hope you find Azimutt as much as useful as I do. The application is quickly evolving and any feedback, feature request or use case description is "
-                , extLink Conf.constants.azimuttDiscussions [ css [ Tu.link ] ] [ text "very welcome" ]
+                , extLink Conf.constants.azimuttDiscussions [ class "tw-link" ] [ text "very welcome" ]
                 , text " to help us make the most out of it."
                 ]
             ]
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
-            [ Button.primary3 Conf.theme.color [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
+        , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+            [ Button.primary3 Conf.theme.color [ Styled.onClick (ModalClose (HelpMsg HClose)) ] [ Styled.text "Thanks!" ] |> Styled.toUnstyled ]
         ]
 
 
@@ -74,7 +77,7 @@ search =
                          You will find tables from your schema but also columns or relations.
                          We search "everywhere": name, comment or constraints for tables, name, comment, type or default value for columns and name, linked table and columns for relations.
                          Selecting them will show the related table on the canvas.""" ]
-        , p [ css [ Tw.mt_3 ] ]
+        , p [ class "mt-3" ]
             [ tip
             , text " Just type "
             , hotkey [ "/" ]
@@ -84,10 +87,10 @@ search =
             , hotkey [ "Enter" ]
             , text " to navigate in the results and select one."
             ]
-        , p [ css [ Tw.mt_3 ] ]
+        , p [ class "mt-3" ]
             [ soon
             , text " We plan to use full-text search to be typo tolerant and have better results, as well as let you import some data to perform search on them. If you need this, please "
-            , extLink Conf.constants.azimuttDiscussionSearch [ css [ Tu.link ] ] [ text "vote and let us know" ]
+            , extLink Conf.constants.azimuttDiscussionSearch [ class "tw-link" ] [ text "vote and let us know" ]
             , text " to help prioritize it."
             ]
         ]
@@ -102,16 +105,16 @@ canvasNavigation =
             [ text "You have an infinite canvas to organize your tables. You can scroll with your mouse and zoom using the "
             , hotkey [ "ctrl", "scroll" ]
             , text ". On the bottom right you also have some commands to control the zoom or adjust your schema to the screen ("
-            , Icon.solid ArrowsExpand [ Tw.inline ]
+            , Icon.solid ArrowsExpand [ Tw.inline ] |> Styled.toUnstyled
             , text ")."
             ]
-        , p [ css [ Tw.mt_3 ] ] [ text "You can move table by dragging them and move the whole canvas by dragging the background." ]
-        , p [ css [ Tw.mt_3 ] ]
+        , p [ class "mt-3" ] [ text "You can move table by dragging them and move the whole canvas by dragging the background." ]
+        , p [ class "mt-3" ]
             [ tip
             , text " You can select multiple tables using "
             , hotkey [ "ctrl", "click" ]
             , text " or the selection box, and then move them all at once. If you have feedback or suggestions to improve this navigation, please "
-            , extLink Conf.constants.azimuttDiscussionCanvas [ css [ Tu.link ] ] [ text "tell us" ]
+            , extLink Conf.constants.azimuttDiscussionCanvas [ class "tw-link" ] [ text "tell us" ]
             , text ", it's an important core feature."
             ]
         ]
@@ -154,7 +157,7 @@ followRelation =
         [ text "Azimutt shows you foreign keys as outgoing relations from a column with a small horizontal link on the right. Just "
         , hotkey [ "click" ]
         , text " on the column icon ("
-        , Icon.solid ExternalLink [ Tw.inline ]
+        , Icon.solid ExternalLink [ Tw.inline ] |> Styled.toUnstyled
         , text ") to show the target table. Incoming relations (foreign keys pointing to the table) are shown on the left, "
         , hotkey [ "click" ]
         , text " on the column icon to see all the incoming relations an choose the tables you want to show."
@@ -170,7 +173,7 @@ findPath =
             [ experimental
             , text " Find all the possible paths between two tables. To get relevant results, use the settings to ignore some tables or columns and keep the length small. "
             , text "We are still figuring out how this could be the most interesting (path algo, heuristics, UX...) so don't hesitate to "
-            , extLink Conf.constants.azimuttDiscussionFindPath [ css [ Tu.link ] ] [ text "come and discuss" ]
+            , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "come and discuss" ]
             , text " about it."
             ]
         ]
@@ -182,7 +185,7 @@ shortcuts =
     { title = "Shortcuts"
     , body =
         [ p [] [ text "Keyboard shortcuts improve user productivity. So Azimutt has some to help you:" ]
-        , div [ css [ Tw.mt_3 ] ]
+        , div [ class "mt-3" ]
             ([ { hotkey = [ "/" ], description = "Focus on the search" }
              , { hotkey = [ "Ctrl", "s" ], description = "Save the project. It's not done automatically so don't forget it ^^" }
              , { hotkey = [ "d" ], description = "Hide a table or column, depending on what is hovered" }
@@ -196,9 +199,9 @@ shortcuts =
              , { hotkey = [ "Escape" ], description = "Cancel what you are doing (drag, opened dialog, input focus, create relation...)" }
              , { hotkey = [ "?" ], description = "Open this documentation dialog" }
              ]
-                |> List.map (\h -> div [ css [ Tw.flex, Tw.justify_between, Tw.flex_row_reverse, Tw.mt_1 ] ] [ hotkey h.hotkey, text (" " ++ h.description) ])
+                |> List.map (\h -> div [ class "flex justify-between flex-row-reverse mt-1" ] [ hotkey h.hotkey, text (" " ++ h.description) ])
             )
-        , p [ css [ Tw.mt_3 ] ] [ text "If you can think of other or have better suggestion for them, ", extLink Conf.constants.azimuttDiscussions [ css [ Tu.link ] ] [ text "just let us know" ], text "." ]
+        , p [ class "mt-3" ] [ text "If you can think of other or have better suggestion for them, ", extLink Conf.constants.azimuttDiscussions [ class "tw-link" ] [ text "just let us know" ], text "." ]
         ]
     }
 
@@ -206,8 +209,8 @@ shortcuts =
 sectionToAccordionItem : Bool -> Section Msg -> Html Msg
 sectionToAccordionItem isOpen section =
     div []
-        [ div [ onClick (HelpMsg (HToggle section.title)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when isOpen [ Color.bg Conf.theme.color 100, Color.text Conf.theme.color 700 ] ] ] [ text section.title ]
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Tu.unless isOpen [ Tw.hidden ] ] ] section.body
+        [ div [ onClick (HelpMsg (HToggle section.title)), classes [ "px-6 py-4 cursor-pointer", B.cond isOpen (bg_100 Conf.theme.color ++ " " ++ text_700 Conf.theme.color) "" ] ] [ text section.title ]
+        , div [ classes [ "px-6 py-3 border-t border-gray-300", B.cond isOpen "" "hidden" ] ] section.body
         ]
 
 

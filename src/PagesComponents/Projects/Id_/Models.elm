@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
-import Components.Molecules.Toast as Toast exposing (Content(..))
+import Components.Molecules.Toast2 as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html.Styled exposing (Html, text)
 import Libs.Area exposing (Area)
