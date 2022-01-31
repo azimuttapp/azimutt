@@ -11,7 +11,7 @@ module.exports = {
             zIndex: {'max': '10000'}
         },
     },
-    plugins: [],
+    plugins: [require('@tailwindcss/forms')],
     safelist: [
         ...colors.map(color => `bg-${color}-50`),
         ...colors.map(color => `bg-${color}-100`),
