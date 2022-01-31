@@ -8,7 +8,7 @@ import Conf
 import Css
 import Dict
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, button, div, h3, li, p, span, text, ul)
+import Html.Styled exposing (Html, a, button, div, fromUnstyled, h3, li, p, span, text, toUnstyled, ul)
 import Html.Styled.Attributes exposing (class, css, href, id, type_)
 import Html.Styled.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
@@ -144,7 +144,9 @@ viewProjectCard zone project =
         , div [ css [ Tw.flex, Tw.divide_x, Tw.divide_gray_200 ] ]
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ Tw.flex_grow_0, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Tw.px_4, Css.hover [ Tw.text_gray_500 ] ] ]
                 [ Icon.outline Trash [ Tw.text_gray_400 ] ]
+                |> toUnstyled
                 |> Tooltip.t "Delete this project"
+                |> fromUnstyled
             , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ Tw.flex_grow, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.py_4, Tw.text_sm, Tw.text_gray_700, Tw.font_medium, Css.hover [ Tw.text_gray_500 ] ] ] ++ track (Track.loadProject project))
                 [ Icon.outline ArrowCircleRight [ Tw.text_gray_400 ], span [ css [ Tw.ml_3 ] ] [ text "Open project" ] ]
             ]
@@ -185,13 +187,14 @@ viewModal model =
                         , icon = c.icon
                         , color = c.color
                         , title = c.title
-                        , message = c.message
+                        , message = c.message |> toUnstyled
                         , confirm = c.confirm
                         , cancel = c.cancel
                         , onConfirm = ModalClose (ConfirmAnswer True c.onConfirm)
                         , onCancel = ModalClose (ConfirmAnswer False Cmd.none)
                         }
                         model.modalOpened
+                        |> fromUnstyled
                 )
             |> Maybe.withDefault (div [] [])
         ]

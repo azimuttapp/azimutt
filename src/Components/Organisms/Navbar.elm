@@ -7,7 +7,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, button, div, img, input, label, nav, span, text)
+import Html.Styled exposing (Html, a, button, div, fromUnstyled, img, input, label, nav, span, text, toUnstyled)
 import Html.Styled.Attributes exposing (alt, css, for, height, href, id, name, placeholder, src, type_, width)
 import Html.Styled.Events exposing (onClick)
 import Libs.Bool as B
@@ -159,8 +159,10 @@ adminProfile theme isOpen profile =
                 [ span [ css [ Tw.sr_only ] ] [ text "Open user menu" ]
                 , img [ css [ Tw.rounded_full, Tw.h_8, Tw.w_8 ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]
+                |> toUnstyled
         )
-        (\_ -> div [] (profile.links |> List.map Dropdown.link))
+        (\_ -> div [] (profile.links |> List.map (\l -> l |> Dropdown.link |> fromUnstyled)) |> toUnstyled)
+        |> fromUnstyled
 
 
 adminMobileMenu : Theme -> AdminNavigation msg -> Maybe AdminNotifications -> Maybe (AdminProfile msg) -> AdminMobileMenu msg -> String -> Bool -> Html msg

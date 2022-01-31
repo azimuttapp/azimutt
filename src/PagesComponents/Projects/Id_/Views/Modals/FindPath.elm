@@ -2,9 +2,9 @@ module PagesComponents.Projects.Id_.Views.Modals.FindPath exposing (viewFindPath
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Alert2 as Alert
-import Components.Molecules.Modal2 as Modal
-import Components.Molecules.Tooltip2 as Tooltip
+import Components.Molecules.Alert as Alert
+import Components.Molecules.Modal as Modal
+import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, br, button, div, h2, h3, img, input, label, option, p, pre, select, small, span, text)

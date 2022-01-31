@@ -2,21 +2,20 @@ module Components.Molecules.Toast exposing (Content(..), DocState, Model, Shared
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Css
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, button, div, p, span, text)
-import Html.Styled.Attributes exposing (css)
-import Html.Styled.Events exposing (onClick)
-import Html.Styled.Keyed as Keyed
-import Libs.Html.Styled.Attributes exposing (ariaLive)
+import Html exposing (Html, button, div, p, span, text)
+import Html.Attributes exposing (class)
+import Html.Events exposing (onClick)
+import Html.Keyed as Keyed
+import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled.Events as Styled
+import Libs.Html.Attributes exposing (ariaLive, classes)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind.Utilities as Tu
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
+import Libs.Tailwind exposing (TwClass, focusRing)
 
 
 type alias Model =
@@ -45,16 +44,16 @@ render theme onClose model =
 simple : Theme -> msg -> Bool -> SimpleModel -> Html msg
 simple theme onClose isOpen model =
     toast
-        (div [ css [ Tw.flex, Tw.items_start ] ]
-            [ div [ css [ Tw.flex_shrink_0 ] ] [ Icon.outline model.icon [ Color.text model.color 400 ] ]
-            , div [ css [ Tw.ml_3, Tw.w_0, Tw.flex_1, Tw.pt_0_dot_5 ] ]
-                [ p [ css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_900 ] ] [ text model.title ]
-                , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text model.message ]
+        (div [ class "flex items-start" ]
+            [ div [ class "flex-shrink-0" ] [ Icon.outline model.icon [ Color.text model.color 400 ] |> toUnstyled ]
+            , div [ class "ml-3 w-0 flex-1 pt-0.5" ]
+                [ p [ class "text-sm font-medium text-gray-900" ] [ text model.title ]
+                , p [ class "mt-1 text-sm text-gray-500" ] [ text model.message ]
                 ]
-            , div [ css [ Tw.ml_4, Tw.flex_shrink_0, Tw.flex ] ]
-                [ button [ onClick onClose, css [ Tw.bg_white, Tw.rounded_md, Tw.inline_flex, Tw.text_gray_400, Tu.focusRing ( theme.color, 500 ) ( Color.white, 500 ), Css.hover [ Tw.text_gray_500 ] ] ]
-                    [ span [ css [ Tw.sr_only ] ] [ text "Close" ]
-                    , Icon.solid X []
+            , div [ class "ml-4 flex-shrink-0 flex" ]
+                [ button [ onClick onClose, class ("bg-white rounded-md inline-flex text-gray-400 " ++ focusRing ( theme.color, 500 ) ( Color.white, 500 ) ++ " hover:text-gray-500") ]
+                    [ span [ class "sr-only" ] [ text "Close" ]
+                    , Icon.solid X [] |> toUnstyled
                     ]
                 ]
             ]
@@ -65,16 +64,16 @@ simple theme onClose isOpen model =
 toast : Html msg -> Bool -> Html msg
 toast content isOpen =
     let
-        toastBlock : Css.Style
+        toastBlock : TwClass
         toastBlock =
             if isOpen then
-                Css.batch [ Tw.transition, Tw.ease_in, Tw.duration_100, Tw.opacity_100, Tw.transform, Tw.translate_y_0, Bp.sm [ Tw.translate_x_2 ] ]
+                "transition ease-in duration-100 opacity-100 transform translate-y-0 sm:translate-x-2"
 
             else
-                Css.batch [ Tw.transition, Tw.ease_out, Tw.duration_300, Tw.opacity_0, Tw.transform, Tw.translate_y_2, Bp.sm [ Tw.translate_y_0, Tw.translate_x_0 ], Tw.pointer_events_none ]
+                "transition ease-out duration-300 opacity-0 transform translate-y-2 pointer-events-none sm:translate-y-0 sm:translate-x-0"
     in
-    div [ css [ Tw.max_w_sm, Tw.w_full, Tw.bg_white, Tw.shadow_lg, Tw.rounded_lg, Tw.pointer_events_auto, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Tw.overflow_hidden, toastBlock ] ]
-        [ div [ css [ Tw.p_4 ] ]
+    div [ classes [ "max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden", toastBlock ] ]
+        [ div [ class "p-4" ]
             [ content
             ]
         ]
@@ -82,9 +81,9 @@ toast content isOpen =
 
 container : Theme -> List Model -> (String -> msg) -> Html msg
 container theme toasts close =
-    div [ ariaLive "assertive", css [ Tw.fixed, Tw.inset_0, Tw.flex, Tw.items_end, Tw.px_4, Tw.py_6, Tu.z_max, Tw.pointer_events_none, Bp.sm [ Tw.p_6, Tw.items_end ] ] ]
+    div [ ariaLive "assertive", class "fixed inset-0 flex items-end px-4 py-6 z-max pointer-events-none sm:p-6 sm:items-end" ]
         [ Keyed.node "div"
-            [ css [ Tw.w_full, Tw.flex, Tw.flex_col, Tw.items_center, Tw.space_y_4, Bp.sm [ Tw.items_start ] ] ]
+            [ class "w-full flex flex-col items-center space-y-4 sm:items-start" ]
             (toasts |> List.map (\t -> render theme (close t.key) t))
         ]
 
@@ -130,11 +129,11 @@ doc : Theme -> Chapter (SharedDocState x)
 doc theme =
     Chapter.chapter "Toast"
         |> Chapter.renderStatefulComponentList
-            [ ( "simple", \_ -> simple theme noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
+            [ ( "simple", \_ -> simple theme noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } |> fromUnstyled )
             , ( "add toasts"
               , \{ toastDocState } ->
                     Button.primary3 theme.color
-                        [ onClick
+                        [ Styled.onClick
                             (addToast
                                 (Simple
                                     { color = Color.green
@@ -145,7 +144,7 @@ doc theme =
                                 )
                             )
                         ]
-                        [ text "Simple toast!" ]
+                        [ Styled.text "Simple toast!" ]
               )
-            , ( "container", \{ toastDocState } -> container theme toastDocState.toasts removeToast )
+            , ( "container", \{ toastDocState } -> container theme toastDocState.toasts removeToast |> fromUnstyled )
             ]

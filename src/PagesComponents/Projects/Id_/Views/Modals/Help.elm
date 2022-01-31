@@ -1,10 +1,10 @@
 module PagesComponents.Projects.Id_.Views.Modals.Help exposing (viewHelp)
 
-import Components.Atoms.Badge2 as Badge
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Atoms.Kbd2 as Kbd
-import Components.Molecules.Modal2 as Modal
+import Components.Atoms.Kbd as Kbd
+import Components.Molecules.Modal as Modal
 import Conf
 import Html exposing (Html, div, h3, p, text)
 import Html.Attributes exposing (class, id)

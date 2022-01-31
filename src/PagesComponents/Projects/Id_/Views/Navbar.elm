@@ -2,8 +2,8 @@ module PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Atoms.Kbd2 as Kbd
-import Components.Molecules.Dropdown2 as Dropdown exposing (Direction(..))
+import Components.Atoms.Kbd as Kbd
+import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Conf
 import Dict
 import Either exposing (Either(..))

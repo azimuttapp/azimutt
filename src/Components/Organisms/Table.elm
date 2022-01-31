@@ -1,8 +1,8 @@
 module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown2 as Dropdown exposing (Direction(..), MenuItem)
-import Components.Molecules.Tooltip2 as Tooltip
+import Components.Molecules.Dropdown as Dropdown exposing (Direction(..), MenuItem)
+import Components.Molecules.Tooltip as Tooltip
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)

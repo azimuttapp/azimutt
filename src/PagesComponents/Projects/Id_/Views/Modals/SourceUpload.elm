@@ -2,9 +2,9 @@ module PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSour
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon exposing (Icon(..))
-import Components.Molecules.Alert2 as Alert
+import Components.Molecules.Alert as Alert
 import Components.Molecules.FileInput as FileInput
-import Components.Molecules.Modal2 as Modal
+import Components.Molecules.Modal as Modal
 import Conf
 import Html exposing (Html, br, div, h3, li, p, text, ul)
 import Html.Attributes exposing (class, id)
@@ -97,7 +97,7 @@ localFileModal zone now titleId source fileName updatedAt model =
 
             _ ->
                 div [] []
-        , SQLSource.viewParsing model |> toUnstyled
+        , SQLSource.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -127,7 +127,7 @@ remoteFileModal zone now titleId source fileUrl model =
         , div [ class "mt-3 flex justify-center" ]
             [ Button.primary5 Conf.theme.color [ Styled.onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ Styled.text "Fetch file again" ] |> toUnstyled
             ]
-        , SQLSource.viewParsing model |> toUnstyled
+        , SQLSource.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -173,7 +173,7 @@ newSourceModal titleId model =
                 ]
             ]
         , div [ class "mt-3" ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") |> toUnstyled ]
-        , SQLSource.viewParsing model |> toUnstyled
+        , SQLSource.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceAdd >> ProjectSettingsMsg)) "Add source"

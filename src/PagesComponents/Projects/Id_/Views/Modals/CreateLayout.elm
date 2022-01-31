@@ -2,7 +2,7 @@ module PagesComponents.Projects.Id_.Views.Modals.CreateLayout exposing (viewCrea
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Modal2 as Modal
+import Components.Molecules.Modal as Modal
 import Conf
 import Html exposing (Html, div, h3, input, label, p, text)
 import Html.Attributes exposing (autofocus, class, for, id, name, tabindex, type_, value)

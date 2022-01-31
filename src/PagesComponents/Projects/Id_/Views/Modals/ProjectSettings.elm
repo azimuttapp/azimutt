@@ -3,7 +3,7 @@ module PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewP
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Input as Input
 import Components.Molecules.Slideover as Slideover
-import Components.Molecules.Tooltip2 as Tooltip
+import Components.Molecules.Tooltip as Tooltip
 import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
 import Html.Attributes exposing (checked, class, for, id, type_, value)

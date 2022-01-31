@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown2 as Dropdown exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, button, div, input, kbd, label, span, text)

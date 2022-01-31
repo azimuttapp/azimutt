@@ -2,7 +2,7 @@ module Components.Molecules.Slideover exposing (DocState, Model, SharedDocState,
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Modal as Modal
+import Conf
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
@@ -38,7 +38,7 @@ slideover model content =
 
         duration : Millis
         duration =
-            B.cond model.isOpen Modal.openDuration Modal.closeDuration
+            B.cond model.isOpen Conf.ui.openDuration Conf.ui.closeDuration
     in
     div [ classes [ "fixed inset-0 overflow-hidden z-max", B.cond model.isOpen "" "pointer-events-none" ], ariaLabelledby labelId, role "dialog", ariaModal True ]
         [ div [ class "absolute inset-0 overflow-hidden" ]

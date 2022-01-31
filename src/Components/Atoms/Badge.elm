@@ -2,21 +2,22 @@ module Components.Atoms.Badge exposing (basic, doc, rounded)
 
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Attribute, Html, span, text)
-import Html.Styled.Attributes exposing (css)
-import Libs.Models.Color as Color exposing (Color)
+import Html exposing (Attribute, Html, span, text)
+import Html.Styled as Styled
+import Libs.Html.Attributes exposing (classes)
+import Libs.Models.Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Tailwind.Utilities as Tw
+import Libs.Tailwind exposing (bg_100, text_800)
 
 
 basic : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
 basic color attrs content =
-    span ([ css [ Tw.inline_flex, Tw.items_center, Tw.px_2_dot_5, Tw.py_0_dot_5, Tw.rounded_full, Tw.text_xs, Tw.font_medium, Color.bg color 100, Color.text color 800 ] ] ++ attrs) content
+    span ([ classes [ "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", bg_100 color, text_800 color ] ] ++ attrs) content
 
 
 rounded : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
 rounded color attrs content =
-    span ([ css [ Tw.inline_flex, Tw.items_center, Tw.px_2, Tw.py_0_dot_5, Tw.rounded, Tw.text_xs, Tw.font_medium, Color.bg color 100, Color.text color 800 ] ] ++ attrs) content
+    span ([ classes [ "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium", bg_100 color, text_800 color ] ] ++ attrs) content
 
 
 
@@ -27,6 +28,6 @@ doc : Theme -> Chapter x
 doc theme =
     Chapter.chapter "Badge"
         |> Chapter.renderComponentList
-            [ ( "basic", basic theme.color [] [ text "Badge" ] )
-            , ( "rounded", rounded theme.color [] [ text "Badge" ] )
+            [ ( "basic", basic theme.color [] [ text "Badge" ] |> Styled.fromUnstyled )
+            , ( "rounded", rounded theme.color [] [ text "Badge" ] |> Styled.fromUnstyled )
             ]

@@ -1,31 +1,24 @@
 module Components.Book exposing (DocState, main)
 
 import Components.Atoms.Badge as Badge
-import Components.Atoms.Badge2 as Badge2
 import Components.Atoms.Button as Button
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Input as Input
 import Components.Atoms.Kbd as Kbd
-import Components.Atoms.Kbd2 as Kbd2
 import Components.Atoms.Link as Link
 import Components.Atoms.Markdown as Markdown
 import Components.Atoms.Styles as Styles
 import Components.Molecules.Alert as Alert
-import Components.Molecules.Alert2 as Alert2
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Dropdown as Dropdown
-import Components.Molecules.Dropdown2 as Dropdown2
 import Components.Molecules.Feature as Feature
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
-import Components.Molecules.Modal2 as Modal2
 import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Toast as Toast
-import Components.Molecules.Toast2 as Toast2
 import Components.Molecules.Tooltip as Tooltip
-import Components.Molecules.Tooltip2 as Tooltip2
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
@@ -60,7 +53,6 @@ type alias DocState =
     , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
     , toastDocState : Toast.DocState
-    , toastDocState2 : Toast2.DocState
     }
 
 
@@ -73,7 +65,6 @@ init =
     , slideoverDocState = Slideover.initDocState
     , tableDocState = Table.initDocState
     , toastDocState = Toast.initDocState
-    , toastDocState2 = Toast2.initDocState
     }
 
 
@@ -95,8 +86,8 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc theme, Badge2.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Input.doc theme, Kbd.doc, Kbd2.doc, Link.doc theme, Markdown.doc ] )
-            , ( "Molecules", [ Alert.doc, Alert2.doc, Divider.doc, Dropdown.doc theme, Dropdown2.doc theme, Feature.doc, FileInput.doc theme, ItemList.doc theme, Modal.doc theme, Modal2.doc theme, Slideover.doc theme, Toast.doc theme, Toast2.doc theme, Tooltip.doc, Tooltip2.doc ] )
+            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Input.doc theme, Kbd.doc, Link.doc theme, Markdown.doc ] )
+            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, FileInput.doc theme, ItemList.doc theme, Modal.doc theme, Slideover.doc theme, Toast.doc theme, Tooltip.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
             ]

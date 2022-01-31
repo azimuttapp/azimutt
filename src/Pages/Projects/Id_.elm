@@ -1,8 +1,7 @@
 module Pages.Projects.Id_ exposing (Model, Msg, page)
 
 import Browser.Events
-import Components.Molecules.Modal as Modal
-import Components.Molecules.Toast2 exposing (Content(..))
+import Components.Molecules.Toast exposing (Content(..))
 import Conf
 import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
@@ -241,7 +240,7 @@ update req now msg model =
             ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id )
 
         ModalClose message ->
-            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Modal.closeDuration message )
+            ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
             model |> handleJsMessage req message

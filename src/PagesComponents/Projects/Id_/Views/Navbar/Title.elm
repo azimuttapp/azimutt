@@ -1,8 +1,8 @@
 module PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown2 as Dropdown exposing (Direction(..))
-import Components.Molecules.Tooltip2 as Tooltip
+import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route

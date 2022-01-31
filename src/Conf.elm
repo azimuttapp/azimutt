@@ -1,4 +1,4 @@
-module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, theme)
+module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, theme, ui)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
@@ -88,6 +88,11 @@ canvas =
 schema : { default : SchemaName }
 schema =
     { default = "public" }
+
+
+ui : { openDuration : Int, closeDuration : Int }
+ui =
+    { openDuration = 200, closeDuration = 300 }
 
 
 ids :

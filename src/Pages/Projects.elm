@@ -1,7 +1,6 @@
 module Pages.Projects exposing (Model, Msg, page)
 
 import Browser.Navigation as Navigation
-import Components.Molecules.Modal as Modal
 import Conf
 import Gen.Params.Projects exposing (Params)
 import Html.Styled as Styled
@@ -83,7 +82,7 @@ update req msg model =
             ( { model | modalOpened = True }, Ports.autofocusWithin Conf.ids.modal )
 
         ModalClose message ->
-            ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )
+            ( { model | modalOpened = False }, T.sendAfter Conf.ui.closeDuration message )
 
         NavigateTo url ->
             ( model, Navigation.pushUrl req.key url )

@@ -1,6 +1,6 @@
 module PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 
-import Components.Atoms.Badge2 as Badge
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
 import Dict exposing (Dict)

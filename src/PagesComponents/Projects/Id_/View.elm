@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
 import Components.Atoms.Styles as Styles
-import Components.Molecules.Toast2 as Toast
+import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Css.Global as Global

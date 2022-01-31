@@ -11,7 +11,8 @@ import Components.Slices.Hero as Hero
 import Conf
 import Css.Global as Global
 import Gen.Route as Route
-import Html.Styled exposing (Html, b, br, div, span, text)
+import Html as Unstyled
+import Html.Styled exposing (Html, b, br, div, fromUnstyled, span, text)
 import Html.Styled.Attributes exposing (css, href, title)
 import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
 import Libs.Html.Styled exposing (bText, extLink)
@@ -145,7 +146,7 @@ viewHome model =
                 , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
                 , br [] []
-                , Badge.basic Color.red [] [ text "soon" ]
+                , Badge.basic Color.red [] [ Unstyled.text "soon" ] |> fromUnstyled
                 , text " It will make you a "
                 , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
                 , text ", just as you like!"
