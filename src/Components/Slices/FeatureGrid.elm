@@ -4,42 +4,44 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, br, div, h2, h3, p, span, text)
-import Html.Styled.Attributes exposing (class, css, href)
-import Tailwind.Breakpoints as Bp
+import Html exposing (Html, a, br, div, h2, h3, p, span, text)
+import Html.Attributes exposing (class, href)
+import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Libs.Html.Attributes exposing (classes)
+import Libs.Tailwind exposing (lg, sm)
 import Tailwind.Utilities as Tw
 
 
 coloredSlice : Html msg
 coloredSlice =
-    div [ css [ Tw.bg_gradient_to_r, Tw.from_green_800, Tw.to_indigo_700 ] ]
-        [ div [ css [ Tw.max_w_4xl, Tw.mx_auto, Tw.px_4, Tw.py_16, Bp.sm [ Tw.px_6, Tw.pt_20, Tw.pb_24 ], Bp.lg [ Tw.max_w_7xl, Tw.pt_24, Tw.px_8 ] ] ]
-            [ h2 [ css [ Tw.text_3xl, Tw.font_extrabold, Tw.text_white, Tw.tracking_tight ] ]
+    div [ classes [ "bg-gradient-to-r from-green-800 to-indigo-700" ] ]
+        [ div [ classes [ "max-w-4xl mx-auto px-4 py-16", sm "px-6 pt-20 pb-24", lg "max-w-7xl pt-24 px-8" ] ]
+            [ h2 [ classes [ "text-3xl font-extrabold text-white tracking-tight" ] ]
                 [ text "Explore your SQL schema like never before" ]
-            , p [ css [ Tw.mt_4, Tw.max_w_3xl, Tw.text_lg, Tw.text_purple_200 ] ]
+            , p [ classes [ "mt-4 max-w-3xl text-lg text-purple-200" ] ]
                 [ text "Your new weapons to dig into your schema:" ]
-            , div [ css [ Tw.mt_12, Tw.grid, Tw.grid_cols_1, Tw.gap_x_6, Tw.gap_y_12, Tw.text_white, Bp.lg [ Tw.mt_16, Tw.grid_cols_3, Tw.gap_x_8, Tw.gap_y_16 ], Bp.sm [ Tw.grid_cols_2 ] ] ]
-                [ item (Icon.outline Inbox [])
+            , div [ classes [ "mt-12 grid grid-cols-1 gap-x-6 gap-y-12 text-white", lg "mt-16 grid-cols-3 gap-x-8 gap-y-16", sm "grid-cols-2" ] ]
+                [ item (Icon.outline Inbox [] |> toUnstyled)
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
                               Seeing only what you need is vital to understand how it works. This is true for tables but also for columns and relations!""" ]
-                , item (Icon.outline DocumentSearch [])
+                , item (Icon.outline DocumentSearch [] |> toUnstyled)
                     "Search"
                     [ text """Search is awesome, don't know where to start? Just type a few words and you will have related tables and columns ranked by relevance.
                               Looking at table and column names, but also comments, keys or relations.""" ]
-                , item (Icon.outline Photograph [])
+                , item (Icon.outline Photograph [] |> toUnstyled)
                     "Layouts"
                     [ text """Your database is probably supporting many use cases, why not save them and move from one to an other ?
                               Layouts are here for that: select tables and columns related to a feature and save them as a layout. So you can easily switch between them.""" ]
-                , item (Icon.outline Link [])
+                , item (Icon.outline Link [] |> toUnstyled)
                     "Relation exploration"
                     [ text """Start from a table and look at its relations to display more.
                               Outgoing, of course (foreign keys), but incoming ones also (foreign keys from other tables)!""" ]
-                , item (Icon.outline Link [])
+                , item (Icon.outline Link [] |> toUnstyled)
                     "Relation search"
                     [ text """Did you ever ask how to join two tables ?
                               Azimutt can help showing all the possible paths between two tables. But also between a table and a column!""" ]
-                , item (Icon.outline Link [])
+                , item (Icon.outline Link [] |> toUnstyled)
                     "Lorem Ipsum"
                     [ text "You came this far ??? Awesome! You seem quite interested and ready to dig in ^^", br [] [], text """
                             The best you can do now is to """, a [ href (Route.toHref Route.App), class "link" ] [ text "try it out" ], text " right away :D" ]
@@ -52,10 +54,10 @@ item : Html msg -> String -> List (Html msg) -> Html msg
 item icon title description =
     div []
         [ div []
-            [ span [ css [ Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_md, Tw.bg_white, Tw.bg_opacity_10 ] ] [ icon ] ]
-        , div [ css [ Tw.mt_6 ] ]
-            [ h3 [ css [ Tw.text_lg, Tw.font_medium, Tw.text_white ] ] [ text title ]
-            , p [ css [ Tw.mt_2, Tw.text_base, Tw.text_purple_200 ] ] description
+            [ span [ classes [ "flex items-center justify-center h-12 w-12 rounded-md bg-white bg-opacity-10" ] ] [ icon ] ]
+        , div [ classes [ "mt-6" ] ]
+            [ h3 [ classes [ "text-lg font-medium text-white" ] ] [ text title ]
+            , p [ classes [ "mt-2 text-base text-purple-200" ] ] description
             ]
         ]
 
@@ -77,13 +79,13 @@ type alias CardItemModel msg =
 
 cardSlice : CardModel msg -> Html msg
 cardSlice model =
-    div [ css [ Tw.relative, Tw.bg_white, Tw.py_16, Bp.lg [ Tw.py_32 ], Bp.sm [ Tw.py_24 ] ] ]
-        [ div [ css [ Tw.mx_auto, Tw.max_w_md, Tw.px_4, Tw.text_center, Bp.lg [ Tw.px_8, Tw.max_w_7xl ], Bp.sm [ Tw.max_w_3xl, Tw.px_6 ] ] ]
-            [ h2 [ css [ Tw.text_base, Tw.font_semibold, Tw.tracking_wider, Tw.uppercase, Tw.bg_gradient_to_r, Tw.from_green_600, Tw.to_indigo_600, Tw.bg_clip_text, Tw.text_transparent ] ] [ text model.header ]
-            , p [ css [ Tw.mt_2, Tw.text_3xl, Tw.font_extrabold, Tw.text_gray_900, Tw.tracking_tight, Bp.sm [ Tw.text_4xl ] ] ] [ text model.title ]
-            , p [ css [ Tw.mt_5, Tw.max_w_prose, Tw.mx_auto, Tw.text_xl, Tw.text_gray_500 ] ] [ text model.description ]
-            , div [ css [ Tw.mt_12 ] ]
-                [ div [ css [ Tw.grid, Tw.grid_cols_1, Tw.gap_8, Bp.lg [ Tw.grid_cols_3 ], Bp.sm [ Tw.grid_cols_2 ] ] ]
+    div [ classes [ "relative bg-white py-16", lg "py-32", sm "py-24" ] ]
+        [ div [ classes [ "mx-auto max-w-md px-4 text-center", lg "px-8 max-w-7xl", sm "max-w-3xl px-6" ] ]
+            [ h2 [ classes [ "text-base font-semibold tracking-wider uppercase bg-gradient-to-r from-green-600 to-indigo-600 bg-clip-text text-transparent" ] ] [ text model.header ]
+            , p [ classes [ "mt-2 text-3xl font-extrabold text-gray-900 tracking-tight", sm "text-4xl" ] ] [ text model.title ]
+            , p [ classes [ "mt-5 max-w-prose mx-auto text-xl text-gray-500" ] ] [ text model.description ]
+            , div [ classes [ "mt-12" ] ]
+                [ div [ classes [ "grid grid-cols-1 gap-8", lg "grid-cols-3", sm "grid-cols-2" ] ]
                     (model.cards |> List.map card)
                 ]
             ]
@@ -92,14 +94,14 @@ cardSlice model =
 
 card : CardItemModel msg -> Html msg
 card model =
-    div [ css [ Tw.pt_6 ] ]
-        [ div [ css [ Tw.flow_root, Tw.bg_gray_50, Tw.rounded_lg, Tw.px_6, Tw.pb_8 ] ]
-            [ div [ css [ Tw.neg_mt_6 ] ]
+    div [ classes [ "pt-6" ] ]
+        [ div [ classes [ "flow-root bg-gray-50 rounded-lg px-6 pb-8" ] ]
+            [ div [ classes [ "-mt-6" ] ]
                 [ div []
-                    [ span [ css [ Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.p_3, Tw.rounded_md, Tw.shadow_lg, Tw.bg_gradient_to_r, Tw.from_green_600, Tw.to_indigo_600 ] ] [ Icon.outline model.icon [ Tw.text_white ] ]
+                    [ span [ classes [ "inline-flex items-center justify-center p-3 rounded-md shadow-lg bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline model.icon [ Tw.text_white ] |> toUnstyled ]
                     ]
-                , h3 [ css [ Tw.mt_8, Tw.text_lg, Tw.font_medium, Tw.text_gray_900, Tw.tracking_tight ] ] [ text model.title ]
-                , p [ css [ Tw.mt_5, Tw.text_base, Tw.text_gray_500 ] ] model.description
+                , h3 [ classes [ "mt-8 text-lg font-medium text-gray-900 tracking-tight" ] ] [ text model.title ]
+                , p [ classes [ "mt-5 text-base text-gray-500" ] ] model.description
                 ]
             ]
         ]
@@ -129,6 +131,6 @@ doc : Chapter x
 doc =
     chapter "FeatureGrid"
         |> renderComponentList
-            [ ( "coloredSlice", coloredSlice )
-            , ( "cardsSlice", cardSlice cardModel )
+            [ ( "coloredSlice", coloredSlice |> fromUnstyled )
+            , ( "cardsSlice", cardSlice cardModel |> fromUnstyled )
             ]

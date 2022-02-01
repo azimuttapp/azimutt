@@ -1,15 +1,13 @@
 module Components.Slices.Blog exposing (Article, Model, Subscribe, article, articleList, doc)
 
 import Components.Slices.Newsletter as Newsletter
-import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, div, form, h2, p, text, time)
-import Html.Styled.Attributes exposing (css, datetime, href)
+import Html exposing (Html, a, div, form, h2, p, text, time)
+import Html.Attributes exposing (class, datetime, href)
+import Html.Styled exposing (fromUnstyled)
 import Libs.DateTime as DateTime
 import Libs.Maybe as M
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
 import Time
 
 
@@ -35,17 +33,17 @@ type alias Article =
 
 articleList : Model -> Html msg
 articleList model =
-    div [ css [ Tw.bg_white, Tw.pt_16, Tw.pb_20, Tw.px_4, Bp.lg [ Tw.pt_24, Tw.pb_28, Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-        [ div [ css [ Tw.relative, Tw.max_w_lg, Tw.mx_auto, Tw.divide_y_2, Tw.divide_gray_200, Bp.lg [ Tw.max_w_7xl ] ] ]
+    div [ class "bg-white pt-16 pb-20 px-4 lg:pt-24 lg:pb-28 lg:px-8 sm:px-6" ]
+        [ div [ class "relative max-w-lg mx-auto divide-y-2 divide-gray-200 lg:max-w-7xl" ]
             [ div []
-                [ h2 [ css [ Tw.text_3xl, Tw.tracking_tight, Tw.font_extrabold, Tw.text_gray_900, Bp.sm [ Tw.text_4xl ] ] ] [ text model.title ]
-                , div [ css [ Tw.mt_3, Bp.lg [ Tw.grid, Tw.grid_cols_2, Tw.gap_5, Tw.items_center ], Bp.sm [ Tw.mt_4 ] ] ]
-                    ([ p [ css [ Tw.text_xl, Tw.text_gray_500 ] ] [ text model.headline ]
+                [ h2 [ class "text-3xl tracking-tight font-extrabold text-gray-900 sm:text-4xl" ] [ text model.title ]
+                , div [ class "mt-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-center sm:mt-4" ]
+                    ([ p [ class "text-xl text-gray-500" ] [ text model.headline ]
                      ]
                         ++ (model.newsletter |> M.mapOrElse (\form -> [ Newsletter.small form ]) [])
                     )
                 ]
-            , div [ css [ Tw.mt_6, Tw.pt_10, Tw.grid, Tw.gap_16, Bp.lg [ Tw.grid_cols_2, Tw.gap_x_5, Tw.gap_y_12 ] ] ] (model.articles |> List.map articleItem)
+            , div [ class "mt-6 pt-10 grid gap-16 lg:grid-cols-2 lg:gap-x-5 lg:gap-y-12" ] (model.articles |> List.map articleItem)
             ]
         ]
 
@@ -53,27 +51,27 @@ articleList model =
 articleItem : Article -> Html msg
 articleItem model =
     div []
-        [ p [ css [ Tw.text_sm, Tw.text_gray_500 ] ]
+        [ p [ class "text-sm text-gray-500" ]
             [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd") ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ] ]
-        , a [ href model.link, css [ Tw.mt_2, Tw.block ] ]
-            [ p [ css [ Tw.text_xl, Tw.font_semibold, Tw.text_gray_900 ] ] [ text model.title ]
-            , p [ css [ Tw.mt_3, Tw.text_base, Tw.text_gray_500 ] ] [ text model.excerpt ]
+        , a [ href model.link, class "mt-2 block" ]
+            [ p [ class "text-xl font-semibold text-gray-900" ] [ text model.title ]
+            , p [ class "mt-3 text-base text-gray-500" ] [ text model.excerpt ]
             ]
-        , div [ css [ Tw.mt_3 ] ]
-            [ a [ href model.link, css [ Tw.text_base, Tw.font_semibold, Tw.text_indigo_600, Css.hover [ Tw.text_indigo_500 ] ] ] [ text "Read full story" ] ]
+        , div [ class "mt-3" ]
+            [ a [ href model.link, class "text-base font-semibold text-indigo-600 hover:text-indigo-500" ] [ text "Read full story" ] ]
         ]
 
 
 article : Article -> Html msg
 article model =
     div []
-        [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), css [ Tw.uppercase, Tw.text_xs, Tw.text_gray_500, Tw.font_bold ] ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
-        , h2 [ css [ Tw.mt_1, Tw.text_2xl, Tw.tracking_tight, Tw.font_extrabold, Tw.text_gray_900, Bp.md [ Tw.text_3xl ], Bp.sm [ Tw.leading_none ] ] ]
+        [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), class "uppercase text-xs text-gray-500 font-bold" ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
+        , h2 [ class "mt-1 text-2xl tracking-tight font-extrabold text-gray-900 md:text-3xl sm:leading-none" ]
             [ a [ href model.link ] [ text model.title ] ]
-        , div [ css [ Tw.mt_6 ] ]
+        , div [ class "mt-6" ]
             [ p [] [ text model.excerpt ] ]
-        , div [ css [ Tw.mt_10 ] ]
-            [ a [ css [ Tw.text_indigo_600, Tw.uppercase, Tw.text_sm, Tw.tracking_wide, Tw.font_black ], href model.link ] [ text "Read full story →" ] ]
+        , div [ class "mt-10" ]
+            [ a [ class "text-indigo-600 uppercase text-sm tracking-wide font-black", href model.link ] [ text "Read full story →" ] ]
         ]
 
 
@@ -120,6 +118,6 @@ doc : Chapter x
 doc =
     chapter "Blog"
         |> renderComponentList
-            [ ( "articleList", articleList modelDoc )
-            , ( "article", article articleDoc )
+            [ ( "articleList", articleList modelDoc |> fromUnstyled )
+            , ( "article", article articleDoc |> fromUnstyled )
             ]

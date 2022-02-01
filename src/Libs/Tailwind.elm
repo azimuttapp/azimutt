@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (TwClass, bg_100, bg_400, bg_50, bg_500, bg_600, border_300, border_400, border_500, border_b_200, focus, focusRing, placeholder_200, placeholder_400, ring_500, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900)
+module Libs.Tailwind exposing (TwClass, active, bg_100, bg_400, bg_50, bg_500, bg_600, border_300, border_400, border_500, border_b_200, focus, focusRing, hover, lg, md, placeholder_200, placeholder_400, ring_500, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
 
 import Libs.Models.Color exposing (Color, ColorLevel)
 
@@ -22,13 +22,59 @@ ringOffset color level =
     "ring-offset-" ++ color.name ++ "-" ++ String.fromInt level
 
 
+
+-- SYNTAX HELPERS
+-- must be handled by tailwind.config.js `transform`
+
+
+hover : TwClass -> TwClass
+hover =
+    addState "hover"
+
+
 focus : TwClass -> TwClass
-focus classes =
-    classes |> String.split " " |> List.map (\c -> "focus:" ++ c) |> String.join " "
+focus =
+    addState "focus"
+
+
+active : TwClass -> TwClass
+active =
+    addState "active"
+
+
+sm : TwClass -> TwClass
+sm =
+    addState "sm"
+
+
+md : TwClass -> TwClass
+md =
+    addState "md"
+
+
+lg : TwClass -> TwClass
+lg =
+    addState "lg"
+
+
+xl : TwClass -> TwClass
+xl =
+    addState "xl"
+
+
+xxl : TwClass -> TwClass
+xxl =
+    addState "2xl"
+
+
+addState : String -> TwClass -> TwClass
+addState state classes =
+    classes |> String.split " " |> List.map String.trim |> List.filter (\c -> c /= "") |> List.map (\c -> state ++ ":" ++ c) |> String.join " "
 
 
 
--- dynamic tailwind classes, add them also to tailwind.config.js safelist
+-- DYNAMIC CLASSES
+-- must be added to tailwind.config.js `safelist`
 
 
 bg_50 : Color -> TwClass

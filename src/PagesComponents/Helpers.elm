@@ -9,11 +9,11 @@ import Components.Slices.Newsletter as Newsletter
 import Conf
 import Css.Global as Global
 import Gen.Route as Route
-import Html exposing (Html, div)
+import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class, id)
-import Html.Styled as S
-import Html.Styled.Attributes as SA
-import Libs.Html.Styled as S
+import Html.Styled as Styled exposing (toUnstyled)
+import Html.Styled.Attributes as Styled
+import Libs.Html.Styled as Styled
 import Libs.Models exposing (Link)
 import Libs.Models.Color as Color
 import Libs.Tailwind.Utilities as Tu
@@ -31,22 +31,22 @@ viewToasts =
     div [ id "toast-container", class "toast-container position-fixed bottom-0 start-0 p-2" ] []
 
 
-publicHeader : S.Html msg
+publicHeader : Html msg
 publicHeader =
     Header.rightLinksWhite
         { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
         , links =
-            [ { url = Route.toHref Route.Blog, content = [ S.text "Blog" ], external = False }
-            , { url = Conf.constants.azimuttDiscussions, content = [ S.text "Discussions" ], external = True }
-            , { url = Conf.constants.azimuttRoadmap, content = [ S.text "Roadmap" ], external = True }
-            , { url = Conf.constants.azimuttGithub, content = [ S.text "Source code" ], external = True }
-            , { url = Conf.constants.azimuttBugReport, content = [ S.text "Bug reports" ], external = True }
-            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter [], S.span [ SA.css [ Tw.sr_only ] ] [ S.text "Twitter" ] ], external = True }
+            [ { url = Route.toHref Route.Blog, content = [ text "Blog" ], external = False }
+            , { url = Conf.constants.azimuttDiscussions, content = [ text "Discussions" ], external = True }
+            , { url = Conf.constants.azimuttRoadmap, content = [ text "Roadmap" ], external = True }
+            , { url = Conf.constants.azimuttGithub, content = [ text "Source code" ], external = True }
+            , { url = Conf.constants.azimuttBugReport, content = [ text "Bug reports" ], external = True }
+            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter [] |> toUnstyled, span [ class "sr-only" ] [ text "Twitter" ] ], external = True }
             ]
         }
 
 
-newsletterSection : S.Html msg
+newsletterSection : Html msg
 newsletterSection =
     Newsletter.basicSlice
         { form = Conf.newsletter |> (\n -> { n | cta = "Get onboard" })
@@ -56,7 +56,7 @@ newsletterSection =
         }
 
 
-publicFooter : S.Html msg
+publicFooter : Html msg
 publicFooter =
     Footer.slice
 
@@ -65,15 +65,15 @@ appShell :
     (Link -> msg)
     -> msg
     -> { x | selectedMenu : String, mobileMenuOpen : Bool }
-    -> List (S.Html msg)
-    -> List (S.Html msg)
-    -> List (S.Html msg)
-    -> List (S.Html msg)
+    -> List (Styled.Html msg)
+    -> List (Styled.Html msg)
+    -> List (Styled.Html msg)
+    -> List (Styled.Html msg)
 appShell onNavigationClick onMobileMenuClick model title content footer =
     [ Global.global Tw.globalStyles
     , Global.global [ Global.selector "html" [ Tw.h_full, Tw.bg_gray_100 ], Global.selector "body" [ Tw.h_full ] ]
     , Styles.global
-    , S.div [ SA.css [ Color.bg Conf.theme.color 600, Tw.pb_32 ] ]
+    , Styled.div [ Styled.css [ Color.bg Conf.theme.color 600, Tw.pb_32 ] ]
         [ Navbar.admin Conf.theme
             { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
             , navigation =
@@ -91,35 +91,35 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
             }
         , viewHeader title
         ]
-    , S.div [ SA.css [ Tw.neg_mt_32 ] ]
-        [ S.main_ [ SA.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.pb_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ S.div [ SA.css [ Tw.bg_white, Tw.rounded_lg, Tw.shadow ] ] content
+    , Styled.div [ Styled.css [ Tw.neg_mt_32 ] ]
+        [ Styled.main_ [ Styled.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.pb_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
+            [ Styled.div [ Styled.css [ Tw.bg_white, Tw.rounded_lg, Tw.shadow ] ] content
             ]
         ]
     ]
         ++ (viewOldApp :: footer)
 
 
-viewHeader : List (S.Html msg) -> S.Html msg
+viewHeader : List (Styled.Html msg) -> Styled.Html msg
 viewHeader content =
-    S.header [ SA.css [ Tw.py_10 ] ]
-        [ S.div [ SA.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ S.h1 [ SA.css [ Tw.text_3xl, Tw.font_bold, Tw.text_white ] ] content
+    Styled.header [ Styled.css [ Tw.py_10 ] ]
+        [ Styled.div [ Styled.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
+            [ Styled.h1 [ Styled.css [ Tw.text_3xl, Tw.font_bold, Tw.text_white ] ] content
             ]
         ]
 
 
-viewOldApp : S.Html msg
+viewOldApp : Styled.Html msg
 viewOldApp =
-    S.footer []
-        [ S.div [ SA.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.py_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.md [ Tw.flex, Tw.items_center, Tw.justify_between ], Bp.sm [ Tw.px_6 ] ] ]
-            [ S.div [ SA.css [ Tw.mt_8, Bp.md [ Tw.mt_0, Tw.order_1 ] ] ]
-                [ S.p [ SA.css [ Tw.text_center, Tw.text_base, Tw.text_gray_400 ] ]
-                    [ S.text "This new Azimutt version is in trial, please give "
-                    , S.extLink Conf.constants.azimuttBugReport [ SA.css [ Tu.link ] ] [ S.text "any feedback" ]
-                    , S.text " you may have. You can still access the previous version "
-                    , S.a [ SA.href (Route.toHref Route.App), SA.css [ Tu.link ] ] [ S.text "here" ]
-                    , S.text "."
+    Styled.footer []
+        [ Styled.div [ Styled.css [ Tw.max_w_7xl, Tw.mx_auto, Tw.py_12, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.md [ Tw.flex, Tw.items_center, Tw.justify_between ], Bp.sm [ Tw.px_6 ] ] ]
+            [ Styled.div [ Styled.css [ Tw.mt_8, Bp.md [ Tw.mt_0, Tw.order_1 ] ] ]
+                [ Styled.p [ Styled.css [ Tw.text_center, Tw.text_base, Tw.text_gray_400 ] ]
+                    [ Styled.text "This new Azimutt version is in trial, please give "
+                    , Styled.extLink Conf.constants.azimuttBugReport [ Styled.css [ Tu.link ] ] [ Styled.text "any feedback" ]
+                    , Styled.text " you may have. You can still access the previous version "
+                    , Styled.a [ Styled.href (Route.toHref Route.App), Styled.css [ Tu.link ] ] [ Styled.text "here" ]
+                    , Styled.text "."
                     ]
                 ]
             ]

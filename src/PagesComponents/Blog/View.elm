@@ -5,7 +5,7 @@ import Components.Slices.Newsletter as Newsletter
 import Conf
 import Css
 import Css.Global as Global
-import Html.Styled exposing (Html, div, h1, hr, p, text)
+import Html.Styled exposing (Html, div, fromUnstyled, h1, hr, p, text)
 import Html.Styled.Attributes exposing (css, style)
 import Libs.Html.Styled exposing (extLink)
 import PagesComponents.Blog.Models exposing (Model)
@@ -16,7 +16,7 @@ import Tailwind.Utilities as Tw
 viewBlog : Model -> List (Html msg)
 viewBlog model =
     [ Global.global Tw.globalStyles
-    , Helpers.publicHeader
+    , Helpers.publicHeader |> fromUnstyled
     , div [ css [ Tw.mt_24, Tw.max_w_prose, Tw.mx_auto, Tw.text_center ] ]
         [ h1 [ css [ Tw.text_4xl, Tw.font_black ] ]
             [ text "Azimutt blog" ]
@@ -28,10 +28,10 @@ viewBlog model =
             , text ". We're building an application to empower developers understanding their relational databases. You can read about how we build it and how to use it on this blog."
             ]
         ]
-    , div [ css [ Tw.mt_12 ] ] [ Newsletter.centered Conf.newsletter ]
+    , div [ css [ Tw.mt_12 ] ] [ Newsletter.centered Conf.newsletter |> fromUnstyled ]
     , hr [ css [ Tw.w_full, Tw.bg_gray_100, Tw.my_12 ], style "height" "1px" ] []
-    , div [ css [ Tw.mt_16, Tw.mb_24, Tw.max_w_prose, Tw.mx_auto ] ] (model.articles |> List.map Tuple.second |> List.map Blog.article |> List.intersperse (hr [ css [ Tw.w_full, Tw.bg_gray_100, Tw.my_12 ], style "height" "1px" ] []))
+    , div [ css [ Tw.mt_16, Tw.mb_24, Tw.max_w_prose, Tw.mx_auto ] ] (model.articles |> List.map Tuple.second |> List.map (Blog.article >> fromUnstyled) |> List.intersperse (hr [ css [ Tw.w_full, Tw.bg_gray_100, Tw.my_12 ], style "height" "1px" ] []))
 
     -- add it when out of initial page, Helpers.newsletterSection
-    , Helpers.publicFooter
+    , Helpers.publicFooter |> fromUnstyled
     ]

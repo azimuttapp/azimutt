@@ -11,12 +11,15 @@ import Components.Slices.Hero as Hero
 import Conf
 import Css.Global as Global
 import Gen.Route as Route
-import Html as Unstyled
-import Html.Styled exposing (Html, b, br, div, fromUnstyled, span, text)
-import Html.Styled.Attributes exposing (css, href, title)
-import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
-import Libs.Html.Styled exposing (bText, extLink)
-import Libs.Html.Styled.Attributes exposing (track)
+import Html exposing (b, br, div, span, text)
+import Html.Attributes exposing (title)
+import Html.Styled as Styled exposing (fromUnstyled)
+import Html.Styled.Attributes as Styled
+import Libs.Bootstrap exposing (Toggle(..), bsToggle)
+import Libs.Html exposing (bText, extLink)
+import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Styled as Styled
+import Libs.Html.Styled.Attributes as Styled2
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
@@ -25,28 +28,28 @@ import Tailwind.Utilities as Tw
 import Track
 
 
-viewHome : Model -> List (Html msg)
+viewHome : Model -> List (Styled.Html msg)
 viewHome model =
     let
-        heroCta : Html msg
+        heroCta : Styled.Html msg
         heroCta =
             model.projects
                 |> List.head
                 |> M.mapOrElse
                     (\p ->
-                        div []
-                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
-                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                        Styled.div []
+                            [ Link.white5 Color.indigo ([ Styled.href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ Styled2.track (Track.openAppCta "last-project")) [ Styled.text ("Explore " ++ p.name) ]
+                            , Link.white5 Color.indigo ([ Styled.href (Route.toHref Route.Projects), Styled.css [ Tw.ml_3 ] ] ++ Styled2.track (Track.openAppCta "dashboard")) [ Styled.text "Open Dashboard" ]
                             ]
                     )
-                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
+                    (Link.white5 Color.indigo ([ Styled.href (Route.toHref Route.Projects) ] ++ Styled2.track (Track.openAppCta "home-hero")) [ Styled.text "Explore your schema" ])
     in
     [ Global.global Tw.globalStyles
-    , Helpers.publicHeader
+    , Helpers.publicHeader |> fromUnstyled
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your database SQL schema"
-        , content = [ bText "Did you ever find yourself lost in your database?", br [] [], bText "Discover how Azimutt will help you understand it." ]
+        , content = [ Styled.bText "Did you ever find yourself lost in your database?", Styled.br [] [], Styled.bText "Discover how Azimutt will help you understand it." ]
         , cta = heroCta
         }
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
@@ -72,6 +75,7 @@ viewHome model =
                 , avatar = { src = "/assets/images/avatar-loic-knuchel.jpg", alt = "Loïc Knuchel" }
                 }
         }
+        |> fromUnstyled
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-light.png", alt = "Gospeak.io minimal schema by Azimutt" }
         { image = { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
         , imagePosition = Left
@@ -80,7 +84,7 @@ viewHome model =
             { title = "See what you need"
             , content =
                 [ text "Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how."
-                , div [ css [ Tw.mt_3 ] ] []
+                , div [ classes [ "mt-3" ] ] []
                 , Feature.checked { title = "search everywhere", description = Nothing }
                 , Feature.checked { title = "show, hide and organize tables", description = Nothing }
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
@@ -95,6 +99,7 @@ viewHome model =
                 , avatar = { src = "/assets/images/avatar-oliver-searle-barnes.png", alt = "Oliver Searle-Barnes" }
                 }
         }
+        |> fromUnstyled
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-incoming-relation.jpg", alt = "Gospeak.io incoming relations by Azimutt" }
         , imagePosition = Right
@@ -107,7 +112,7 @@ viewHome model =
                 , text "Did you ever wanted to see what is on the other side of a relation ? With Azimutt, it's just one click away 🤩"
                 , br [] []
                 , text "And there's more, how do you see incoming relations ? Azimutt list all of them and is able to show one, many or all of them in just two clicks! 😍"
-                , div [ css [ Tw.mt_3 ] ] []
+                , div [ classes [ "mt-3" ] ] []
                 , Feature.checked { title = "outgoing relations", description = Nothing }
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]
@@ -115,6 +120,7 @@ viewHome model =
         , cta = Just { url = Route.toHref Route.Projects, text = "I can't resist, let's go!", track = Just (Track.openAppCta "home-relations-section") }
         , quote = Nothing
         }
+        |> fromUnstyled
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-layouts.jpg", alt = "Gospeak.io layouts by Azimutt" }
         , imagePosition = Left
@@ -131,6 +137,7 @@ viewHome model =
         , cta = Just { url = Route.toHref Route.Projects, text = "That's enough, I'm in!", track = Just (Track.openAppCta "home-layouts-section") }
         , quote = Nothing
         }
+        |> fromUnstyled
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-find-path.png", alt = "Gospeak.io find path with Azimutt" }
         , imagePosition = Right
@@ -146,7 +153,7 @@ viewHome model =
                 , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
                 , br [] []
-                , Badge.basic Color.red [] [ Unstyled.text "soon" ] |> fromUnstyled
+                , Badge.basic Color.red [] [ text "soon" ]
                 , text " It will make you a "
                 , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
                 , text ", just as you like!"
@@ -155,6 +162,7 @@ viewHome model =
         , cta = Just { url = Route.toHref Route.Projects, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
         , quote = Nothing
         }
+        |> fromUnstyled
     , FeatureGrid.cardSlice
         { header = "Last chance"
         , title = "What more can you want ?"
@@ -172,7 +180,8 @@ viewHome model =
               }
             ]
         }
-    , Cta.slice
-    , Helpers.newsletterSection
-    , Helpers.publicFooter
+        |> fromUnstyled
+    , Cta.slice |> fromUnstyled
+    , Helpers.newsletterSection |> fromUnstyled
+    , Helpers.publicFooter |> fromUnstyled
     ]

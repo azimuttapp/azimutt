@@ -3,7 +3,7 @@ module PagesComponents.Blog.Slug.View exposing (viewArticle)
 import Components.Atoms.Markdown exposing (markdown)
 import Components.Slices.Content as Content
 import Css.Global as Global
-import Html.Styled exposing (Html, div, li, text, ul)
+import Html.Styled exposing (Html, div, fromUnstyled, li, text, ul)
 import Html.Styled.Attributes exposing (style)
 import Libs.Http as H
 import Libs.Nel as Nel
@@ -15,7 +15,7 @@ import Tailwind.Utilities as Tw
 viewArticle : Model -> List (Html msg)
 viewArticle model =
     [ Global.global Tw.globalStyles
-    , Helpers.publicHeader
+    , Helpers.publicHeader |> fromUnstyled
     , case model of
         Loading ->
             Content.centered
@@ -52,6 +52,6 @@ viewArticle model =
                 , content = [ markdown [ "blog-article" ] content.body ]
                 , dots = True
                 }
-    , Helpers.newsletterSection
-    , Helpers.publicFooter
+    , Helpers.newsletterSection |> fromUnstyled
+    , Helpers.publicFooter |> fromUnstyled
     ]

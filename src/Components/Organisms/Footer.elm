@@ -2,32 +2,31 @@ module Components.Organisms.Footer exposing (doc, slice)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
-import Css
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, div, p, span, text)
-import Html.Styled.Attributes exposing (css)
-import Libs.Html.Styled exposing (extLink)
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
+import Html exposing (Html, div, p, span, text)
+import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Libs.Html exposing (extLink)
+import Libs.Html.Attributes exposing (classes)
+import Libs.Tailwind exposing (hover, md)
 
 
 slice : Html msg
 slice =
-    div [ css [ Tw.mt_8, Tw.border_t, Tw.border_gray_200, Tw.py_8, Tw.px_8, Bp.md [ Tw.flex, Tw.items_center, Tw.justify_between ] ] ]
-        [ div [ css [ Tw.flex, Tw.space_x_6, Bp.md [ Tw.order_2 ] ] ]
+    div [ classes [ "mt-8 border-t border-gray-200 py-8 px-8", md "flex items-center justify-between" ] ]
+        [ div [ classes [ "flex space-x-6", md "order-2" ] ]
             [ extLink Conf.constants.azimuttTwitter
-                [ css [ Tw.text_gray_400, Css.hover [ Tw.text_gray_500 ] ] ]
-                [ span [ css [ Tw.sr_only ] ] [ text "Twitter" ]
-                , Icon.twitter []
+                [ classes [ "text-gray-400", hover "text-gray-500" ] ]
+                [ span [ classes [ "sr-only" ] ] [ text "Twitter" ]
+                , Icon.twitter [] |> toUnstyled
                 ]
             , extLink Conf.constants.azimuttGithub
-                [ css [ Tw.text_gray_400, Css.hover [ Tw.text_gray_500 ] ] ]
-                [ span [ css [ Tw.sr_only ] ] [ text "GitHub" ]
-                , Icon.github []
+                [ classes [ "text-gray-400", hover "text-gray-500" ] ]
+                [ span [ classes [ "sr-only" ] ] [ text "GitHub" ]
+                , Icon.github [] |> toUnstyled
                 ]
             ]
-        , p [ css [ Tw.mt_8, Tw.text_base, Tw.text_gray_400, Bp.md [ Tw.mt_0, Tw.order_1 ] ] ]
+        , p [ classes [ "mt-8 text-base text-gray-400", md "mt-0 order-1" ] ]
             [ text "© 2021 Azimutt" ]
         ]
 
@@ -40,5 +39,5 @@ doc : Chapter x
 doc =
     Chapter.chapter "Footer"
         |> Chapter.renderComponentList
-            [ ( "slice", slice )
+            [ ( "slice", slice |> fromUnstyled )
             ]
