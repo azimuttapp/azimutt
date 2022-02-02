@@ -10,7 +10,6 @@ import Html exposing (Html, br, button, div, small, span, text)
 import Html.Attributes exposing (class, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
-import Html.Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
@@ -121,7 +120,6 @@ confirmDeleteLayout layout name =
                 , br [] []
                 , text ("It contains " ++ (layout.tables |> String.pluralizeL "table") ++ ".")
                 ]
-                |> fromUnstyled
         , confirm = "Delete " ++ name ++ " layout"
         , cancel = "Cancel"
         , onConfirm = T.send (name |> LDelete |> LayoutMsg)

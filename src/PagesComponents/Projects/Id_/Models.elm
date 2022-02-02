@@ -3,7 +3,7 @@ module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(.
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
-import Html.Styled exposing (Html, text)
+import Html exposing (Html, text)
 import Libs.Area exposing (Area)
 import Libs.Html.Events exposing (WheelEvent)
 import Libs.Models exposing (Millis, ZoomDelta)

@@ -1,7 +1,5 @@
-module Libs.Models.Color exposing (Color, ColorLevel, HexColor, RgbColor, all, amber, bg, black, blue, border, border_b, cyan, decode, default, divide, emerald, encode, from, fuchsia, gray, green, hex, hexToRgb, indigo, levels, lime, list, orange, pink, placeholder, purple, red, rgba, ring, ringOffset, rose, sky, stroke, teal, text, to, via, violet, white, yellow)
+module Libs.Models.Color exposing (Color, ColorLevel, HexColor, RgbColor, all, amber, black, blue, cyan, decode, default, emerald, encode, fuchsia, gray, green, hex, hexToRgb, indigo, levels, lime, list, orange, pink, purple, red, rgba, rose, sky, teal, violet, white, yellow)
 
-import Css
-import Css.Global
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.List as L
@@ -171,104 +169,6 @@ white =
 levels : List ColorLevel
 levels =
     [ 50, 100, 200, 300, 400, 500, 600, 700, 800, 900 ]
-
-
-bg : Color -> ColorLevel -> Css.Style
-bg color level =
-    Css.batch
-        [ Css.property "--tw-bg-opacity" "1"
-        , Css.property "background-color" (color |> rgba "var(--tw-bg-opacity)" level)
-        ]
-
-
-border : Color -> ColorLevel -> Css.Style
-border color level =
-    Css.batch
-        [ Css.property "--tw-border-opacity" "1"
-        , Css.property "border-color" (color |> rgba "var(--tw-border-opacity)" level)
-        ]
-
-
-border_b : Color -> ColorLevel -> Css.Style
-border_b color level =
-    Css.batch
-        [ Css.property "--tw-border-opacity" "1"
-        , Css.property "border-bottom-color" (color |> rgba "var(--tw-border-opacity)" level)
-        ]
-
-
-divide : Color -> ColorLevel -> Css.Style
-divide color level =
-    Css.batch
-        [ Css.Global.children
-            [ Css.Global.selector ":not([hidden]) ~ :not([hidden])"
-                [ Css.property "--tw-divide-opacity" "1"
-                , Css.property "border-color" (color |> rgba "var(--tw-divide-opacity)" level)
-                ]
-            ]
-        ]
-
-
-from : Color -> ColorLevel -> Css.Style
-from color level =
-    Css.batch
-        [ Css.property "--tw-gradient-from" (color |> hex level)
-        , Css.property "--tw-gradient-stops" ("var(--tw-gradient-from), var(--tw-gradient-to, " ++ (color |> rgba "0" level) ++ ")")
-        ]
-
-
-placeholder : Color -> ColorLevel -> Css.Style
-placeholder color level =
-    Css.batch
-        [ Css.pseudoElement "placeholder"
-            [ Css.property "--tw-placeholder-opacity" "1"
-            , Css.property "color" (color |> rgba "var(--tw-placeholder-opacity)" level)
-            ]
-        , Css.pseudoClass "-ms-input-placeholder"
-            [ Css.property "--tw-placeholder-opacity" "1"
-            , Css.property "color" (color |> rgba "var(--tw-placeholder-opacity)" level)
-            ]
-        , Css.pseudoElement "-moz-placeholder"
-            [ Css.property "--tw-placeholder-opacity" "1"
-            , Css.property "color" (color |> rgba "var(--tw-placeholder-opacity)" level)
-            ]
-        ]
-
-
-ring : Color -> ColorLevel -> Css.Style
-ring color level =
-    Css.batch
-        [ Css.property "--tw-ring-opacity" "1"
-        , Css.property "--tw-ring-color" (color |> rgba "var(--tw-ring-opacity)" level)
-        ]
-
-
-ringOffset : Color -> ColorLevel -> Css.Style
-ringOffset color level =
-    Css.property "--tw-ring-offset-color" (color |> hex level)
-
-
-text : Color -> ColorLevel -> Css.Style
-text color level =
-    Css.batch
-        [ Css.property "--tw-text-opacity" "1"
-        , Css.property "color" (color |> rgba "var(--tw-text-opacity)" level)
-        ]
-
-
-to : Color -> ColorLevel -> Css.Style
-to color level =
-    Css.property "--tw-gradient-to" (color |> hex level)
-
-
-via : Color -> ColorLevel -> Css.Style
-via color level =
-    Css.property "--tw-gradient-stops" ("var(--tw-gradient-from), " ++ (color |> hex level) ++ ", var(--tw-gradient-to, " ++ (color |> rgba "0" level) ++ ")")
-
-
-stroke : Color -> ColorLevel -> Css.Style
-stroke color level =
-    Css.property "stroke" (color |> hex level)
 
 
 rgba : String -> ColorLevel -> Color -> String

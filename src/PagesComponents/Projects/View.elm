@@ -10,7 +10,6 @@ import Gen.Route as Route
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
-import Html.Styled exposing (fromUnstyled, toUnstyled)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
@@ -155,7 +154,7 @@ confirmDeleteProject project =
         { color = Color.red
         , icon = Trash
         , title = "Delete project"
-        , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ] |> fromUnstyled
+        , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
         , confirm = "Delete " ++ project.name
         , cancel = "Cancel"
         , onConfirm = T.send (DeleteProject project)
@@ -183,7 +182,7 @@ viewModal model =
                         , icon = c.icon
                         , color = c.color
                         , title = c.title
-                        , message = c.message |> toUnstyled
+                        , message = c.message
                         , confirm = c.confirm
                         , cancel = c.cancel
                         , onConfirm = ModalClose (ConfirmAnswer True c.onConfirm)

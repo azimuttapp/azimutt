@@ -8,7 +8,6 @@ import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
 import Html.Attributes exposing (checked, class, for, id, type_, value)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled
 import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
@@ -74,7 +73,7 @@ viewSource _ zone source =
                             [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ "focus:outline-none", B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
                                 [ Icon.solid Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
-                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (Styled.text "Are you really sure?")), class "focus:outline-none" ]
+                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), class "focus:outline-none" ]
                                 [ Icon.solid Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
                             ]

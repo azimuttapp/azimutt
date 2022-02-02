@@ -1,7 +1,7 @@
 module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
-import Html.Styled exposing (Html)
+import Html exposing (Html)
 import Libs.Models.Color exposing (Color)
 import Models.Project exposing (Project)
 import Request exposing (Request)
