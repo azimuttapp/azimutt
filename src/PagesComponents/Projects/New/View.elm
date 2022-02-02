@@ -11,7 +11,6 @@ import Gen.Route as Route
 import Html exposing (Html, a, aside, div, form, h2, li, nav, p, span, text, ul)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaCurrent, css)
@@ -25,19 +24,18 @@ import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
 
 
-viewNewProject : Model -> List (Styled.Html Msg)
+viewNewProject : Model -> List (Html Msg)
 viewNewProject model =
     appShell (\link -> SelectMenu link.text)
         ToggleMobileMenu
         model
-        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft "inline-block", text " ", text model.selectedMenu ] |> fromUnstyled ]
+        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent model
             { tabs =
                 [ { tab = Schema, icon = DocumentText, text = "From SQL schema" }
                 , { tab = Sample, icon = Collection, text = "From sample" }
                 ]
             }
-            |> fromUnstyled
         ]
         []
 

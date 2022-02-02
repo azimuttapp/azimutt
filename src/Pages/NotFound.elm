@@ -2,15 +2,13 @@ module Pages.NotFound exposing (Model, Msg, page)
 
 import Components.Slices.NotFound as NotFound
 import Conf
-import Css.Global as Global
 import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
-import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
+import Html exposing (Html)
 import Page
 import Ports
 import Request exposing (Request)
 import Shared
-import Tailwind.Utilities as Tw
 import View exposing (View)
 
 
@@ -39,7 +37,10 @@ type alias Msg =
 init : Request -> ( Model, Cmd Msg )
 init req =
     ( req.url.path |> addPrefixed "?" req.url.query |> addPrefixed "#" req.url.fragment
-    , Ports.trackPage "not-found"
+    , Cmd.batch
+        [ Ports.setClasses { html = "h-full", body = "h-full" }
+        , Ports.trackPage "not-found"
+        ]
     )
 
 
@@ -78,15 +79,13 @@ subscriptions _ =
 view : Model -> View Msg
 view model =
     { title = "Page not found - Azimutt"
-    , body = model |> viewNotFound |> List.map toUnstyled
+    , body = model |> viewNotFound
     }
 
 
-viewNotFound : Model -> List (Styled.Html msg)
+viewNotFound : Model -> List (Html msg)
 viewNotFound _ =
-    [ Global.global Tw.globalStyles
-    , Global.global [ Global.selector "html" [ Tw.h_full ], Global.selector "body" [ Tw.h_full ] ]
-    , NotFound.simple Conf.theme
+    [ NotFound.simple Conf.theme
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
             , link = { url = Route.toHref Route.Home_, text = "Azimutt" }
@@ -101,5 +100,4 @@ viewNotFound _ =
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
         }
-        |> fromUnstyled
     ]

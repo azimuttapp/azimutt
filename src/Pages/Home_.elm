@@ -37,8 +37,9 @@ init : ( Model, Cmd msg )
 init =
     ( { projects = [] }
     , Cmd.batch
-        [ Ports.loadProjects
+        [ Ports.setClasses { html = "", body = "" }
         , Ports.trackPage "home"
+        , Ports.loadProjects
         ]
     )
 

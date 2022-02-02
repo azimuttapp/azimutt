@@ -3,7 +3,6 @@ module Pages.Projects exposing (Model, Msg, page)
 import Browser.Navigation as Navigation
 import Conf
 import Gen.Params.Projects exposing (Params)
-import Html.Styled as Styled
 import Libs.Bool as B
 import Libs.Task as T
 import Page
@@ -50,8 +49,9 @@ init =
       , toasts = []
       }
     , Cmd.batch
-        [ Ports.loadProjects
+        [ Ports.setClasses { html = "h-full bg-gray-100", body = "h-full" }
         , Ports.trackPage "dashboard"
+        , Ports.loadProjects
         ]
     )
 
@@ -117,5 +117,5 @@ subscriptions _ =
 view : Shared.Model -> Model -> View Msg
 view shared model =
     { title = "Azimutt - Explore your database schema"
-    , body = model |> viewProjects shared |> List.map Styled.toUnstyled
+    , body = model |> viewProjects shared
     }

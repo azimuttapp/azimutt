@@ -10,7 +10,7 @@ import Gen.Route as Route
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled, toUnstyled)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
@@ -26,14 +26,14 @@ import Time
 import Track
 
 
-viewProjects : Shared.Model -> Model -> List (Styled.Html Msg)
+viewProjects : Shared.Model -> Model -> List (Html Msg)
 viewProjects shared model =
     appShell (\link -> SelectMenu link.text)
         ToggleMobileMenu
         model
-        [ text model.selectedMenu |> fromUnstyled ]
-        [ viewContent shared model |> fromUnstyled ]
-        [ viewModal model |> fromUnstyled ]
+        [ text model.selectedMenu ]
+        [ viewContent shared model ]
+        [ viewModal model ]
 
 
 viewContent : Shared.Model -> Model -> Html Msg

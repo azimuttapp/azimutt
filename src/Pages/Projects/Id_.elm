@@ -6,7 +6,6 @@ import Conf
 import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
-import Html.Styled as Styled
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
 import Libs.Dict as Dict
@@ -92,8 +91,9 @@ init =
       , openedDialogs = []
       }
     , Cmd.batch
-        [ Ports.loadProjects
+        [ Ports.setClasses { html = "h-full bg-gray-100 overflow-hidden", body = "h-full" }
         , Ports.trackPage "app"
+        , Ports.loadProjects
         , Ports.listenHotkeys Conf.hotkeys
         ]
     )
@@ -337,5 +337,5 @@ targetIdDecoder =
 view : Shared.Model -> Model -> View Msg
 view shared model =
     { title = model.erd |> M.mapOrElse (\e -> e.project.name ++ " - Azimutt") "Azimutt - Explore your database schema"
-    , body = model |> viewProject shared |> List.map Styled.toUnstyled
+    , body = model |> viewProject shared
     }

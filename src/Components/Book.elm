@@ -8,7 +8,6 @@ import Components.Atoms.Input as Input
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
 import Components.Atoms.Markdown as Markdown
-import Components.Atoms.Styles as Styles
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Dropdown as Dropdown
@@ -32,7 +31,6 @@ import Components.Slices.FeatureSideBySide as FeatureSideBySide
 import Components.Slices.Hero as Hero
 import Components.Slices.Newsletter as Newsletter
 import Components.Slices.NotFound as NotFound
-import Css.Global as Global
 import ElmBook
 import ElmBook.Chapter as Chapter
 import ElmBook.ComponentOptions
@@ -78,7 +76,7 @@ main =
     ElmCSS.book "Azimutt Design System"
         |> ElmBook.withThemeOptions
             [ ElmBook.ThemeOptions.subtitle "v0.1.0"
-            , ElmBook.ThemeOptions.globals [ Global.global Tw.globalStyles, Styles.global, node "link" [ rel "stylesheet", href "/dist/tw-styles.css" ] [] ]
+            , ElmBook.ThemeOptions.globals [ node "link" [ rel "stylesheet", href "/dist/tw-styles.css" ] [] ]
             , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ Tw.h_12 ] ] [])
             ]
         |> ElmBook.withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
