@@ -32,15 +32,15 @@ import Components.Slices.Hero as Hero
 import Components.Slices.Newsletter as Newsletter
 import Components.Slices.NotFound as NotFound
 import ElmBook
-import ElmBook.Chapter as Chapter
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import ElmBook.ComponentOptions
-import ElmBook.ElmCSS as ElmCSS
 import ElmBook.StatefulOptions
 import ElmBook.ThemeOptions
-import Html.Styled exposing (Html, img, node, table, td, text, th, tr)
-import Html.Styled.Attributes exposing (alt, css, href, rel, src)
+import Html exposing (Html, img, node, table, td, text, th, tr)
+import Html.Attributes exposing (alt, href, rel, src)
+import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color exposing (Color, ColorLevel)
-import Tailwind.Utilities as Tw
+import Libs.Tailwind exposing (bg)
 
 
 type alias DocState =
@@ -71,13 +71,13 @@ theme =
     { color = Color.indigo }
 
 
-main : ElmCSS.Book DocState
+main : ElmBook.Book DocState
 main =
-    ElmCSS.book "Azimutt Design System"
+    ElmBook.book "Azimutt Design System"
         |> ElmBook.withThemeOptions
             [ ElmBook.ThemeOptions.subtitle "v0.1.0"
             , ElmBook.ThemeOptions.globals [ node "link" [ rel "stylesheet", href "/dist/tw-styles.css" ] [] ]
-            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ Tw.h_12 ] ] [])
+            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ "h-12" ] ] [])
             ]
         |> ElmBook.withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
         |> ElmBook.withStatefulOptions [ ElmBook.StatefulOptions.initialState init ]
@@ -91,7 +91,7 @@ main =
             ]
 
 
-docs : ElmCSS.Chapter x
+docs : Chapter x
 docs =
     Chapter.chapter "Readme" |> Chapter.render """
 
@@ -100,7 +100,7 @@ work in progress
 """
 
 
-colorsDoc : ElmCSS.Chapter x
+colorsDoc : Chapter x
 colorsDoc =
     Chapter.chapter "Colors"
         |> Chapter.renderComponentList
@@ -115,4 +115,4 @@ colorsDoc =
 
 viewColorCell : Color -> ColorLevel -> Html msg
 viewColorCell color level =
-    td [ css [ Tw.p_3, Color.bg color level ] ] [ text (color |> Color.hex level) ]
+    td [ css [ "p-3", bg color level ] ] [ text (color |> Color.hex level) ]

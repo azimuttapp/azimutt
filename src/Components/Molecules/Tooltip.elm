@@ -1,15 +1,12 @@
 module Components.Molecules.Tooltip exposing (b, bl, br, doc, l, r, t, tl, tr)
 
 import Components.Atoms.Button as Button
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
-import Html.Styled as Styled
-import Html.Styled.Attributes
+import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Tailwind exposing (TwClass)
-import Tailwind.Utilities as Tw
 
 
 
@@ -78,7 +75,7 @@ doc =
     Chapter.chapter "Tooltip"
         |> Chapter.renderComponentList
             [ ( "tooltip"
-              , Styled.div []
+              , div []
                     ([ ( "Top", t "Top aligned tooltip with more text." )
                      , ( "Top left", tl "Top left aligned tooltip with more text." )
                      , ( "Top right", tr "Top right aligned tooltip with more text." )
@@ -88,14 +85,7 @@ doc =
                      , ( "Bottom left", bl "Bottom left aligned tooltip with more text." )
                      , ( "Bottom right", br "Bottom right aligned tooltip with more text." )
                      ]
-                        |> List.map
-                            (\( value, buildTooltip ) ->
-                                Styled.span [ Html.Styled.Attributes.css [ Tw.ml_3 ] ]
-                                    [ Button.primary3 Color.indigo [] [ text value ]
-                                        |> buildTooltip
-                                        |> Styled.fromUnstyled
-                                    ]
-                            )
+                        |> List.map (\( value, buildTooltip ) -> span [ css [ "ml-3" ] ] [ Button.primary3 Color.indigo [] [ text value ] |> buildTooltip ])
                     )
               )
             ]

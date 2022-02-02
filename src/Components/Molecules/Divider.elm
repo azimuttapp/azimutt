@@ -1,11 +1,9 @@
 module Components.Molecules.Divider exposing (doc, withIcon, withLabel, withLabelLeft)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Tailwind exposing (TwClass)
 
@@ -43,7 +41,7 @@ doc : Chapter x
 doc =
     Chapter.chapter "Divider"
         |> Chapter.renderComponentList
-            [ ( "withLabel", withLabel "Continue" |> fromUnstyled )
-            , ( "withIcon", withIcon Plus |> fromUnstyled )
-            , ( "withLabelLeft", withLabelLeft "Continue" |> fromUnstyled )
+            [ ( "withLabel", withLabel "Continue" )
+            , ( "withIcon", withIcon Plus )
+            , ( "withLabelLeft", withLabelLeft "Continue" )
             ]

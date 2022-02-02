@@ -1,10 +1,8 @@
 module Components.Molecules.Feature exposing (CheckedModel, checked, doc)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, dd, div, dt, p, text)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css)
 
 
@@ -30,6 +28,6 @@ doc : Chapter x
 doc =
     chapter "Feature"
         |> renderComponentList
-            [ ( "checked", checked { title = "Invite team members", description = Just "You can manage phone, email and chat conversations all from a single mailbox." } |> fromUnstyled )
-            , ( "checked, no description", checked { title = "Invite team members", description = Nothing } |> fromUnstyled )
+            [ ( "checked", checked { title = "Invite team members", description = Just "You can manage phone, email and chat conversations all from a single mailbox." } )
+            , ( "checked, no description", checked { title = "Invite team members", description = Nothing } )
             ]

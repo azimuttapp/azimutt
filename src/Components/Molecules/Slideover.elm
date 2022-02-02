@@ -5,12 +5,10 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h2, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models exposing (Millis)
@@ -94,14 +92,13 @@ updateDocState transform =
     Actions.updateState (\s -> { s | slideoverDocState = s.slideoverDocState |> transform })
 
 
-component : String -> (Bool -> (Bool -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Styled.Html msg )
+component : String -> (Bool -> (Bool -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Html msg )
 component name buildComponent =
     ( name
     , \{ slideoverDocState } ->
         buildComponent
             (slideoverDocState.opened == name)
             (\isOpen -> updateDocState (\s -> { s | opened = B.cond isOpen name "" }))
-            |> fromUnstyled
     )
 
 

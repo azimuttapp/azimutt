@@ -1,12 +1,10 @@
 module Components.Slices.FeatureGrid exposing (CardItemModel, CardModel, cardSlice, coloredSlice, doc)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Gen.Route as Route
 import Html exposing (Html, a, br, div, h2, h3, p, span, text)
 import Html.Attributes exposing (class, href)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (lg, sm)
 
@@ -130,6 +128,6 @@ doc : Chapter x
 doc =
     chapter "FeatureGrid"
         |> renderComponentList
-            [ ( "coloredSlice", coloredSlice |> fromUnstyled )
-            , ( "cardsSlice", cardSlice cardModel |> fromUnstyled )
+            [ ( "coloredSlice", coloredSlice )
+            , ( "cardsSlice", cardSlice cardModel )
             ]

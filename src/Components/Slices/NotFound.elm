@@ -1,10 +1,8 @@
 module Components.Slices.NotFound exposing (Brand, SimpleModel, doc, simple)
 
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, div, footer, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models exposing (Image, Link)
 import Libs.Models.Theme exposing (Theme)
@@ -81,5 +79,5 @@ doc : Theme -> Chapter x
 doc theme =
     Chapter.chapter "NotFound"
         |> Chapter.renderComponentList
-            [ ( "simple", simple theme docModel |> fromUnstyled )
+            [ ( "simple", simple theme docModel )
             ]

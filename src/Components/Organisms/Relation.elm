@@ -1,16 +1,14 @@
 module Components.Organisms.Relation exposing (doc, line)
 
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled
-import Html.Styled.Attributes
+import ElmBook.Chapter as Chapter exposing (Chapter)
+import Html exposing (div)
+import Html.Attributes as Html
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
 import Svg exposing (Svg, svg, text)
 import Svg.Attributes exposing (class, height, strokeDasharray, style, width, x1, x2, y1, y2)
-import Svg.Styled
 
 
 line : Position -> Position -> Bool -> Maybe Color -> String -> Int -> Svg msg
@@ -65,5 +63,5 @@ doc =
              , ( "green", line Position.zero (Position 50 50) False (Just Color.green) "relation" 10 )
              , ( "nullable", line Position.zero (Position 50 50) True Nothing "relation" 10 )
              ]
-                |> List.map (Tuple.mapSecond (\component -> Html.Styled.div [ Html.Styled.Attributes.style "height" "100px" ] [ Svg.Styled.fromUnstyled component ]))
+                |> List.map (Tuple.mapSecond (\component -> div [ Html.style "height" "100px" ] [ component ]))
             )

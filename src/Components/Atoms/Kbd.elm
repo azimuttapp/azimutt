@@ -1,10 +1,8 @@
 module Components.Atoms.Kbd exposing (badge, doc)
 
 import Components.Atoms.Badge as Badge
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Attribute, Html, text)
-import Html.Styled as Styled
 import Libs.Models.Color as Color
 
 
@@ -21,4 +19,4 @@ doc : Chapter x
 doc =
     chapter "Kbd"
         |> renderComponentList
-            [ ( "badge", badge [] [ "Ctrl", "Alt", "S" ] |> Styled.fromUnstyled ) ]
+            [ ( "badge", badge [] [ "Ctrl", "Alt", "S" ] ) ]

@@ -2,10 +2,8 @@ module Components.Organisms.Footer exposing (doc, slice)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, p, span, text)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (hover, md)
@@ -39,5 +37,5 @@ doc : Chapter x
 doc =
     Chapter.chapter "Footer"
         |> Chapter.renderComponentList
-            [ ( "slice", slice |> fromUnstyled )
+            [ ( "slice", slice )
             ]

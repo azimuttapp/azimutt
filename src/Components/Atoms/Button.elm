@@ -1,10 +1,8 @@
 module Components.Atoms.Button exposing (commonStyles, doc, light, light1, light2, light3, light4, light5, primary, primary1, primary2, primary3, primary4, primary5, secondary, secondary1, secondary2, secondary3, secondary4, secondary5, size1, size2, size3, size4, size5, white, white1, white2, white3, white4, white5)
 
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Attribute, Html, button, div, text)
 import Html.Attributes exposing (disabled, type_)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
@@ -183,7 +181,6 @@ doc theme =
                     , primary5 theme.color [ css [ "mr-3" ] ] [ text "primary5" ]
                     , primary5 theme.color [ css [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
-                    |> fromUnstyled
               )
             , ( "secondary"
               , div []
@@ -194,7 +191,6 @@ doc theme =
                     , secondary5 theme.color [ css [ "mr-3" ] ] [ text "secondary5" ]
                     , secondary5 theme.color [ css [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
-                    |> fromUnstyled
               )
             , ( "light"
               , div []
@@ -205,7 +201,6 @@ doc theme =
                     , light5 theme.color [ css [ "mr-3" ] ] [ text "light5" ]
                     , light5 theme.color [ css [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
-                    |> fromUnstyled
               )
             , ( "white"
               , div []
@@ -216,6 +211,5 @@ doc theme =
                     , white5 theme.color [ css [ "mr-3" ] ] [ text "white5" ]
                     , white5 theme.color [ css [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
-                    |> fromUnstyled
               )
             ]

@@ -4,13 +4,11 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, p, span, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaLive, css)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
@@ -128,7 +126,7 @@ doc : Theme -> Chapter (SharedDocState x)
 doc theme =
     Chapter.chapter "Toast"
         |> Chapter.renderStatefulComponentList
-            [ ( "simple", \_ -> simple theme noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } |> fromUnstyled )
+            [ ( "simple", \_ -> simple theme noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
             , ( "add toasts"
               , \{ toastDocState } ->
                     Button.primary3 theme.color
@@ -144,7 +142,6 @@ doc theme =
                             )
                         ]
                         [ text "Simple toast!" ]
-                        |> fromUnstyled
               )
-            , ( "container", \{ toastDocState } -> container theme toastDocState.toasts removeToast |> fromUnstyled )
+            , ( "container", \{ toastDocState } -> container theme toastDocState.toasts removeToast )
             ]

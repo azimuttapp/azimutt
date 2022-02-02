@@ -6,15 +6,12 @@ import Components.Molecules.Tooltip as Tooltip
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
-import Html exposing (Attribute, Html, button, div, span, text)
+import ElmBook.Chapter as Chapter exposing (Chapter)
+import Html exposing (Attribute, Html, br, button, div, span, text)
 import Html.Attributes exposing (class, id, style, tabindex, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
-import Html.Styled as Styled exposing (fromUnstyled)
-import Html.Styled.Attributes as Styled
 import Libs.Bool as B
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
@@ -28,7 +25,6 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
 import Libs.Tailwind exposing (TwClass, bg_50, border_500, border_b_200, ring_500, text_500)
 import Set exposing (Set)
-import Tailwind.Utilities as Tw
 import Track
 
 
@@ -469,11 +465,10 @@ doc =
                                 , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 }
                         }
-                        |> fromUnstyled
               )
             , ( "states"
               , \_ ->
-                    Styled.div [ Styled.css [ Tw.flex, Tw.flex_wrap, Tw.gap_6 ] ]
+                    div [ css [ "flex flex-wrap gap-6" ] ]
                         ([ { sample | id = "View", isView = True }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }
                          , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, highlightedColumns = Set.fromList [ "name" ] }) }
@@ -483,7 +478,7 @@ doc =
                          , { sample | id = "Hidden columns hidden", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = False }) }
                          , { sample | id = "Hidden columns visible", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = True }) }
                          ]
-                            |> List.map (\model -> Styled.div [] [ Styled.text (model.id ++ ":"), Styled.br [] [], table model |> fromUnstyled ])
+                            |> List.map (\model -> div [] [ text (model.id ++ ":"), br [] [], table model ])
                         )
               )
             ]

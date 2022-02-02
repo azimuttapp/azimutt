@@ -2,12 +2,10 @@ module Components.Molecules.ItemList exposing (IconItem, doc, withIcons)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Actions exposing (logAction)
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (type_)
 import Html.Events exposing (onClick)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, css, role)
 import Libs.Models.Color as Color exposing (Color)
@@ -60,6 +58,5 @@ doc theme =
                     , { color = Color.indigo, icon = Table, title = "Create a Spreadsheet →", description = "Lots of numbers and things — good for nerds.", active = True, onClick = logAction "Spreadsheet clicked" }
                     , { color = Color.purple, icon = Clock, title = "Create a Timeline →", description = "Get a birds-eye-view of your procrastination.", active = True, onClick = logAction "Timeline clicked" }
                     ]
-                    |> fromUnstyled
               )
             ]

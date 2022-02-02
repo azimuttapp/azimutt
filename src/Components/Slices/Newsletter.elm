@@ -1,10 +1,8 @@
 module Components.Slices.Newsletter exposing (Form, Model, basicSlice, centered, doc, formDoc, small)
 
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, a, button, div, form, h2, input, label, p, text)
 import Html.Attributes exposing (action, attribute, class, for, href, id, method, name, placeholder, rel, required, target, type_)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Tailwind exposing (focus, focusRing, hover, lg, sm)
@@ -98,7 +96,7 @@ doc : Chapter x
 doc =
     chapter "Newsletter"
         |> renderComponentList
-            [ ( "basicSlice", basicSlice modelDoc |> fromUnstyled )
-            , ( "centered", centered modelDoc.form |> fromUnstyled )
-            , ( "small", small modelDoc.form |> fromUnstyled )
+            [ ( "basicSlice", basicSlice modelDoc )
+            , ( "centered", centered modelDoc.form )
+            , ( "small", small modelDoc.form )
             ]

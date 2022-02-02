@@ -3,12 +3,10 @@ module Components.Slices.Hero exposing (Model, backgroundImageSlice, basicSlice,
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Gen.Route as Route
 import Html exposing (Html, a, button, div, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, href, src, type_)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, css)
 import Libs.Models exposing (Image)
 import Libs.Models.Color as Color
@@ -128,6 +126,6 @@ doc : Chapter x
 doc =
     chapter "Hero"
         |> renderComponentList
-            [ ( "basicSlice", basicSlice |> fromUnstyled )
-            , ( "backgroundImageSlice", backgroundImageSlice docModel |> fromUnstyled )
+            [ ( "basicSlice", basicSlice )
+            , ( "backgroundImageSlice", backgroundImageSlice docModel )
             ]

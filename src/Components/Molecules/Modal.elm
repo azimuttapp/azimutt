@@ -4,12 +4,10 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, h3, p, span, text)
 import Html.Attributes exposing (autofocus, class, id)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models.Color as Color exposing (Color)
@@ -121,14 +119,13 @@ updateDocState transform =
     Actions.updateState (\s -> { s | modalDocState = s.modalDocState |> transform })
 
 
-component : String -> (Bool -> (Bool -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Styled.Html msg )
+component : String -> (Bool -> (Bool -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Html msg )
 component name buildComponent =
     ( name
     , \{ modalDocState } ->
         buildComponent
             (modalDocState.opened == name)
             (\isOpen -> updateDocState (\s -> { s | opened = B.cond isOpen name "" }))
-            |> fromUnstyled
     )
 
 

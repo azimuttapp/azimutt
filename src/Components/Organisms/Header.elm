@@ -1,10 +1,8 @@
 module Components.Organisms.Header exposing (Brand, ExtLink, LeftLinksModel, LeftLinksTheme, RightLinksModel, RightLinksTheme, doc, leftLinks, leftLinksIndigo, leftLinksWhite, rightLinks, rightLinksIndigo, rightLinksWhite)
 
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, div, header, img, nav, span, text)
 import Html.Attributes exposing (alt, class, href, src)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaLabel, css)
 import Libs.Models exposing (Image, Link)
@@ -149,10 +147,10 @@ doc : Chapter x
 doc =
     Chapter.chapter "Header"
         |> Chapter.renderComponentList
-            [ ( "rightLinksIndigo", rightLinksIndigo (rightLinksModel logoWhite) |> fromUnstyled )
-            , ( "rightLinksWhite", rightLinksWhite (rightLinksModel logoIndigo) |> fromUnstyled )
-            , ( "rightLinks", rightLinks { bg = "bg-white", text = "" } (rightLinksModel logoIndigo) |> fromUnstyled )
-            , ( "leftLinksIndigo", leftLinksIndigo (leftLinksModel logoWhite) |> fromUnstyled )
-            , ( "leftLinksWhite", leftLinksWhite (leftLinksModel logoIndigo) |> fromUnstyled )
-            , ( "leftLinks", leftLinks { bg = "bg-white", links = "", secondary = "", primary = "" } (leftLinksModel logoIndigo) |> fromUnstyled )
+            [ ( "rightLinksIndigo", rightLinksIndigo (rightLinksModel logoWhite) )
+            , ( "rightLinksWhite", rightLinksWhite (rightLinksModel logoIndigo) )
+            , ( "rightLinks", rightLinks { bg = "bg-white", text = "" } (rightLinksModel logoIndigo) )
+            , ( "leftLinksIndigo", leftLinksIndigo (leftLinksModel logoWhite) )
+            , ( "leftLinksWhite", leftLinksWhite (leftLinksModel logoIndigo) )
+            , ( "leftLinks", leftLinks { bg = "bg-white", links = "", secondary = "", primary = "" } (leftLinksModel logoIndigo) )
             ]

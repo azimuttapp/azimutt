@@ -1,11 +1,9 @@
 module Components.Atoms.Icon exposing (Icon(..), doc, dribbble, facebook, github, instagram, loading, outline, slash, solid, twitter)
 
 import Dict exposing (Dict)
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (title)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaHidden, role)
 import Libs.Maybe as M
 import Libs.Svg.Attributes exposing (css, vectorEffect)
@@ -1272,8 +1270,8 @@ doc : Chapter x
 doc =
     Chapter.chapter "Icon"
         |> Chapter.withComponentList
-            [ ( "outline icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewOutline icon.outline "" ])) |> fromUnstyled )
-            , ( "solid icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewSolid icon.solid "" ])) |> fromUnstyled )
+            [ ( "outline icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewOutline icon.outline "" ])) )
+            , ( "solid icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewSolid icon.solid "" ])) )
             , ( "special icons"
               , div []
                     [ span [ title "dribbble", css [ "inline-block w-6" ] ] [ dribbble "" ]
@@ -1284,7 +1282,6 @@ doc =
                     , span [ title "slash", css [ "inline-block w-6" ] ] [ slash "" ]
                     , span [ title "twitter", css [ "inline-block w-6" ] ] [ twitter "" ]
                     ]
-                    |> fromUnstyled
               )
             ]
         |> Chapter.render """

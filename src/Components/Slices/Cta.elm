@@ -1,12 +1,10 @@
 module Components.Slices.Cta exposing (doc, slice)
 
 import Conf
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Gen.Route as Route
 import Html exposing (Html, a, div, h2, span, text)
 import Html.Attributes exposing (href)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css, track)
 import Libs.Tailwind exposing (hover, lg, sm)
@@ -39,5 +37,5 @@ doc : Chapter x
 doc =
     chapter "Cta"
         |> renderComponentList
-            [ ( "slice", slice |> fromUnstyled )
+            [ ( "slice", slice )
             ]

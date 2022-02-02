@@ -4,12 +4,10 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, button, div, img, input, label, nav, span, text)
 import Html.Attributes exposing (alt, for, height, href, id, name, placeholder, src, type_, width)
 import Html.Events exposing (onClick)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, css)
 import Libs.Maybe as M
@@ -266,5 +264,5 @@ doc : Theme -> Chapter (SharedDocState x)
 doc theme =
     Chapter.chapter "Navbar"
         |> Chapter.renderStatefulComponentList
-            [ ( "admin", \{ navbarDocState } -> admin theme adminModel navbarDocState.app |> fromUnstyled )
+            [ ( "admin", \{ navbarDocState } -> admin theme adminModel navbarDocState.app )
             ]

@@ -1,11 +1,9 @@
 module Components.Slices.Content exposing (CenteredModel, centered, doc)
 
 import Components.Atoms.Dots as Dots
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, a, blockquote, div, figcaption, figure, h1, h2, img, li, p, span, strong, text, ul)
 import Html.Attributes exposing (alt, height, href, src, width)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, css, role)
 import Libs.Maybe as M
@@ -95,6 +93,5 @@ doc =
                         ]
                     , dots = True
                     }
-                    |> fromUnstyled
               )
             ]

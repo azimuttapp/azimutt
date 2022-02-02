@@ -1,11 +1,9 @@
 module Components.Slices.Blog exposing (Article, Model, Subscribe, article, articleList, doc)
 
 import Components.Slices.Newsletter as Newsletter
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, a, div, form, h2, p, text, time)
 import Html.Attributes exposing (class, datetime, href)
-import Html.Styled exposing (fromUnstyled)
 import Libs.DateTime as DateTime
 import Libs.Maybe as M
 import Time
@@ -118,6 +116,6 @@ doc : Chapter x
 doc =
     chapter "Blog"
         |> renderComponentList
-            [ ( "articleList", articleList modelDoc |> fromUnstyled )
-            , ( "article", article articleDoc |> fromUnstyled )
+            [ ( "articleList", articleList modelDoc )
+            , ( "article", article articleDoc )
             ]

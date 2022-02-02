@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (TwClass, active, batch, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, border_300, border_400, border_500, border_700, border_b_200, disabled, focus, focusRing, focusWithin, focusWithinRing, hover, lg, md, placeholder_200, placeholder_400, ring_500, ring_offset_600, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
+module Libs.Tailwind exposing (TwClass, active, batch, bg, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, border_300, border_400, border_500, border_700, border_b_200, disabled, focus, focusRing, focusWithin, focusWithinRing, hover, lg, md, placeholder_200, placeholder_400, ring_500, ring_offset_600, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
 
 import Libs.Models.Color exposing (Color, ColorLevel)
 
@@ -15,6 +15,11 @@ focusRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
 focusWithinRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> TwClass
 focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
     "outline-none ring-2 ring-offset-2 " ++ ring ringColor ringLevel ++ " " ++ ringOffset offsetColor offsetLevel |> focusWithin
+
+
+bg : Color -> ColorLevel -> TwClass
+bg color level =
+    "bg-" ++ color.name ++ "-" ++ String.fromInt level
 
 
 ring : Color -> ColorLevel -> TwClass

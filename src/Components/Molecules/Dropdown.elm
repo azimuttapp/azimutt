@@ -6,12 +6,10 @@ import Components.Atoms.Kbd as Kbd
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, button, div, text)
 import Html.Attributes exposing (class, href, id, tabindex, type_)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, css, role)
 import Libs.Maybe as M
@@ -149,14 +147,13 @@ updateDocState transform =
     Actions.updateState (\s -> { s | dropdownDocState = s.dropdownDocState |> transform })
 
 
-component : String -> (String -> (String -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Styled.Html msg )
+component : String -> (String -> (String -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Html msg )
 component name buildComponent =
     ( name
     , \{ dropdownDocState } ->
         buildComponent
             dropdownDocState.opened
             (\id -> updateDocState (\s -> { s | opened = B.cond (s.opened == id) "" id }))
-            |> fromUnstyled
     )
 
 

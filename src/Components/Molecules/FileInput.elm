@@ -2,11 +2,9 @@ module Components.Molecules.FileInput exposing (Model, basic, doc, input)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Actions exposing (logAction)
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, label, p, span, text)
 import Html.Attributes exposing (for)
-import Html.Styled exposing (fromUnstyled)
 import Libs.FileInput as FileInput exposing (File)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.Color as Color
@@ -58,7 +56,7 @@ doc : Theme -> Chapter x
 doc theme =
     Chapter.chapter "FileInput"
         |> Chapter.renderComponentList
-            [ ( "basic", basic theme "basic-id" (\f -> logAction ("Selected: " ++ f.name)) (logAction "Noop") |> fromUnstyled )
+            [ ( "basic", basic theme "basic-id" (\f -> logAction ("Selected: " ++ f.name)) (logAction "Noop") )
             , ( "input"
               , input theme
                     { id = "input-id"
@@ -67,6 +65,5 @@ doc theme =
                     , onLeave = Just { id = "input-leave-id", msg = logAction "Leave" }
                     , onSelect = \file -> logAction ("Select " ++ file.name)
                     }
-                    |> fromUnstyled
               )
             ]

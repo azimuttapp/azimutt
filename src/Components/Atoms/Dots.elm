@@ -1,9 +1,7 @@
 module Components.Atoms.Dots exposing (doc, dots, dotsBottomRight, dotsMiddleLeft, dotsTopRight)
 
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, div)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Svg.Attributes exposing (css)
 import Libs.Tailwind exposing (TwClass)
 import Svg exposing (defs, pattern, rect, svg)
@@ -51,5 +49,5 @@ doc : Chapter x
 doc =
     chapter "Dots"
         |> renderComponentList
-            [ ( "dots", div [ css [ "h-96" ] ] [ dots "id" 404 384 "" ] |> fromUnstyled )
+            [ ( "dots", div [ css [ "h-96" ] ] [ dots "id" 404 384 "" ] )
             ]

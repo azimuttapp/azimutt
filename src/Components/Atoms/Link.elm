@@ -1,11 +1,9 @@
 module Components.Atoms.Link exposing (doc, light1, light2, light3, light4, light5, primary1, primary2, primary3, primary4, primary5, secondary1, secondary2, secondary3, secondary4, secondary5, white1, white2, white3, white4, white5)
 
 import Components.Atoms.Button exposing (commonStyles, light, primary, secondary, size1, size2, size3, size4, size5, white)
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Attribute, Html, a, div, text)
 import Html.Attributes exposing (href)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
@@ -133,7 +131,6 @@ doc theme =
                     , primary4 theme.color [ href "#", css [ "mr-3" ] ] [ text "primary4" ]
                     , primary5 theme.color [ href "#", css [ "mr-3" ] ] [ text "primary5" ]
                     ]
-                    |> fromUnstyled
               )
             , ( "secondary"
               , div []
@@ -143,7 +140,6 @@ doc theme =
                     , secondary4 theme.color [ href "#", css [ "mr-3" ] ] [ text "secondary4" ]
                     , secondary5 theme.color [ href "#", css [ "mr-3" ] ] [ text "secondary5" ]
                     ]
-                    |> fromUnstyled
               )
             , ( "light"
               , div []
@@ -153,7 +149,6 @@ doc theme =
                     , light4 theme.color [ href "#", css [ "mr-3" ] ] [ text "light4" ]
                     , light5 theme.color [ href "#", css [ "mr-3" ] ] [ text "light5" ]
                     ]
-                    |> fromUnstyled
               )
             , ( "white"
               , div []
@@ -163,6 +158,5 @@ doc theme =
                     , white4 theme.color [ href "#", css [ "mr-3" ] ] [ text "white4" ]
                     , white5 theme.color [ href "#", css [ "mr-3" ] ] [ text "white5" ]
                     ]
-                    |> fromUnstyled
               )
             ]

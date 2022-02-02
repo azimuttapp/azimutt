@@ -2,11 +2,9 @@ module Components.Molecules.Alert exposing (ActionsModel, DescriptionModel, List
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, h3, li, text, ul)
 import Html.Attributes exposing (class)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Tailwind exposing (bg_50, border_400, text_400, text_700, text_800)
@@ -123,8 +121,8 @@ doc : Chapter x
 doc =
     Chapter.chapter "Alert"
         |> Chapter.renderComponentList
-            [ ( "withDescription", withDescription { color = Color.yellow, icon = Exclamation, title = "Attention needed" } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." ] |> fromUnstyled )
-            , ( "withList", withList { color = Color.red, icon = XCircle, title = "There were 2 errors with your submission", items = [ "Your password must be at least 8 characters", "Your password must include at least one pro wrestling finishing move" ] } |> fromUnstyled )
+            [ ( "withDescription", withDescription { color = Color.yellow, icon = Exclamation, title = "Attention needed" } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." ] )
+            , ( "withList", withList { color = Color.red, icon = XCircle, title = "There were 2 errors with your submission", items = [ "Your password must be at least 8 characters", "Your password must include at least one pro wrestling finishing move" ] } )
             , ( "withActions"
               , withActions
                     { color = Color.green
@@ -136,6 +134,5 @@ doc =
                         ]
                     }
                     [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam." ]
-                    |> fromUnstyled
               )
             ]

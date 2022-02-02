@@ -2,12 +2,10 @@ module Components.Atoms.Input exposing (DocState, SharedDocState, checkbox, doc,
 
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, input, label, option, p, select, span, text)
 import Html.Attributes exposing (checked, class, for, id, name, placeholder, selected, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
@@ -77,7 +75,7 @@ doc : Theme -> Chapter (SharedDocState x)
 doc _ =
     Chapter.chapter "Input"
         |> Chapter.renderStatefulComponentList
-            [ ( "textWithLabelAndHelp", \{ inputDocState } -> textWithLabelAndHelp "" "email" "email" "Email" "you@example.com" "We'll only use this for spam." inputDocState.text (\value -> updateDocState (\state -> { state | text = value })) |> fromUnstyled )
-            , ( "selectWithLabelAndHelp", \{ inputDocState } -> selectWithLabelAndHelp "" "role" "Role" "Choose the correct role" [ ( "admin", "Admin" ), ( "guest", "Guest" ), ( "demo", "Demo" ) ] inputDocState.select (\value -> updateDocState (\state -> { state | select = value })) |> fromUnstyled )
-            , ( "checkbox", \{ inputDocState } -> checkbox "" "comments" "Comments" "Get notified when someones posts a comment on a posting." inputDocState.checkbox (updateDocState (\state -> { state | checkbox = not state.checkbox })) |> fromUnstyled )
+            [ ( "textWithLabelAndHelp", \{ inputDocState } -> textWithLabelAndHelp "" "email" "email" "Email" "you@example.com" "We'll only use this for spam." inputDocState.text (\value -> updateDocState (\state -> { state | text = value })) )
+            , ( "selectWithLabelAndHelp", \{ inputDocState } -> selectWithLabelAndHelp "" "role" "Role" "Choose the correct role" [ ( "admin", "Admin" ), ( "guest", "Guest" ), ( "demo", "Demo" ) ] inputDocState.select (\value -> updateDocState (\state -> { state | select = value })) )
+            , ( "checkbox", \{ inputDocState } -> checkbox "" "comments" "Comments" "Get notified when someones posts a comment on a posting." inputDocState.checkbox (updateDocState (\state -> { state | checkbox = not state.checkbox })) )
             ]

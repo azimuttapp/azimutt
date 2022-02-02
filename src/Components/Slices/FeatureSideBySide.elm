@@ -1,12 +1,10 @@
 module Components.Slices.FeatureSideBySide exposing (Description, Model, Position(..), Quote, doc, imageSlice, imageSwapSlice)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Gen.Route as Route
 import Html exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
-import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
 import Libs.Models exposing (Image, TrackedLink)
@@ -192,11 +190,11 @@ doc : Chapter x
 doc =
     chapter "FeatureSideBySide"
         |> renderComponentList
-            [ ( "imageSlice", imageSlice dsModelFull |> fromUnstyled )
-            , ( "imageSlice, imagePosition left", imageSlice { dsModelFull | imagePosition = Left } |> fromUnstyled )
-            , ( "imageSlice, no quote", imageSlice { dsModelFull | quote = Nothing } |> fromUnstyled )
-            , ( "imageSlice, no quote, no cta", imageSlice { dsModelFull | cta = Nothing, quote = Nothing } |> fromUnstyled )
-            , ( "imageSlice, no quote, no cta, no icon", imageSlice { dsModelFull | icon = Nothing, cta = Nothing, quote = Nothing } |> fromUnstyled )
-            , ( "imageSwapSlice", imageSwapSlice dsSwapImage dsModelFull |> fromUnstyled )
-            , ( "imageSwapSlice, imagePosition left", imageSwapSlice dsSwapImage { dsModelFull | imagePosition = Left } |> fromUnstyled )
+            [ ( "imageSlice", imageSlice dsModelFull )
+            , ( "imageSlice, imagePosition left", imageSlice { dsModelFull | imagePosition = Left } )
+            , ( "imageSlice, no quote", imageSlice { dsModelFull | quote = Nothing } )
+            , ( "imageSlice, no quote, no cta", imageSlice { dsModelFull | cta = Nothing, quote = Nothing } )
+            , ( "imageSlice, no quote, no cta, no icon", imageSlice { dsModelFull | icon = Nothing, cta = Nothing, quote = Nothing } )
+            , ( "imageSwapSlice", imageSwapSlice dsSwapImage dsModelFull )
+            , ( "imageSwapSlice, imagePosition left", imageSwapSlice dsSwapImage { dsModelFull | imagePosition = Left } )
             ]

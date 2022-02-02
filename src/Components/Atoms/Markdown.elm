@@ -1,10 +1,8 @@
 module Components.Atoms.Markdown exposing (doc, markdown, markdownUnsafe)
 
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html)
 import Html.Attributes exposing (class, classList)
-import Html.Styled exposing (fromUnstyled)
 import Markdown exposing (Options)
 
 
@@ -40,6 +38,6 @@ doc : Chapter x
 doc =
     chapter "Markdown"
         |> renderComponentList
-            [ ( "markdown", markdown [] "Some *text*, but <b>html</b> is escaped \\o/" |> fromUnstyled )
-            , ( "markdownUnsafe", markdownUnsafe [] "Some *text* with <b>html</b> working!" |> fromUnstyled )
+            [ ( "markdown", markdown [] "Some *text*, but <b>html</b> is escaped \\o/" )
+            , ( "markdownUnsafe", markdownUnsafe [] "Some *text* with <b>html</b> working!" )
             ]
