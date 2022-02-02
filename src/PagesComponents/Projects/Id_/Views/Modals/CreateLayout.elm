@@ -11,7 +11,7 @@ import Libs.Html exposing (bText, sendTweet)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (bg_100, sm, text_600)
+import Libs.Tailwind exposing (sm)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 
 
@@ -33,8 +33,8 @@ viewCreateLayout opened model =
         , onBackgroundClick = ModalClose (LayoutMsg LCancel)
         }
         [ div [ class "px-6 pt-6 sm:flex sm:items-start" ]
-            [ div [ class ("mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full " ++ bg_100 Conf.theme.color ++ " sm:mx-0 sm:h-10 sm:w-10") ]
-                [ Icon.outline Template (text_600 Conf.theme.color)
+            [ div [ class "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 sm:mx-0 sm:h-10 sm:w-10" ]
+                [ Icon.outline Template "text-primary-600"
                 ]
             , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
@@ -55,7 +55,7 @@ viewCreateLayout opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Conf.theme.color [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ "w-full text-base", sm "ml-3 w-auto text-sm" ] ] [ text "Save layout" ]
+            [ Button.primary3 Color.primary [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ "w-full text-base", sm "ml-3 w-auto text-sm" ] ] [ text "Save layout" ]
             , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ "mt-3 w-full text-base", sm "mt-0 w-auto text-sm" ] ] [ text "Cancel" ]
             ]
         ]

@@ -15,7 +15,7 @@ import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
 import Libs.Models.Color as Color
 import Libs.String as S
-import Libs.Tailwind exposing (TwClass, focus, focusRing, hover, lg, md, ring_500, sm, text_600)
+import Libs.Tailwind exposing (TwClass, focus, focusRing, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
@@ -64,11 +64,11 @@ viewNoProjects =
         [ p [ css [ "mt-1 text-sm text-gray-500" ] ]
             [ text "You haven’t created any project yet. Import your own schema." ]
         , viewFirstProject
-        , div [ css [ "mt-6 text-sm font-medium", text_600 Conf.theme.color ] ]
+        , div [ css [ "mt-6 text-sm font-medium text-primary-600" ] ]
             [ text "Or explore a sample one"
             , span [ ariaHidden True ] [ text " →" ]
             ]
-        , ItemList.withIcons Conf.theme
+        , ItemList.withIcons
             (Conf.schemaSamples
                 |> Dict.values
                 |> List.sortBy .tables
@@ -88,7 +88,7 @@ viewNoProjects =
 
 viewFirstProject : Html msg
 viewFirstProject =
-    a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover "border-gray-400", focus ("outline-none ring-2 ring-offset-2 " ++ ring_500 Conf.theme.color) ] ]
+    a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover "border-gray-400", focus "outline-none ring-2 ring-offset-2 ring-primary-500" ] ]
         [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
         , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
         ]
@@ -164,7 +164,7 @@ confirmDeleteProject project =
 viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover "border-gray-400 text-gray-400", focusRing ( Conf.theme.color, 500 ) ( Color.white, 500 ) ] ]
+        [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover "border-gray-400 text-gray-400", focusRing ( "primary", 500 ) ( Color.white, 500 ) ] ]
             [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]

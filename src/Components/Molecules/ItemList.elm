@@ -9,24 +9,23 @@ import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, css, role)
 import Libs.Models.Color as Color exposing (Color)
-import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind exposing (bg_500, focus, focusWithin, hover, ring_500, sm)
+import Libs.Tailwind exposing (bg_500, focus, focusWithin, hover, sm)
 
 
 type alias IconItem msg =
     { color : Color, icon : Icon, title : String, description : String, active : Bool, onClick : msg }
 
 
-withIcons : Theme -> List (IconItem msg) -> Html msg
-withIcons theme items =
+withIcons : List (IconItem msg) -> Html msg
+withIcons items =
     ul [ role "list", css [ "mt-6 grid grid-cols-1 gap-6", sm "grid-cols-2" ] ]
-        (items |> List.map (withIcon theme))
+        (items |> List.map withIcon)
 
 
-withIcon : Theme -> IconItem msg -> Html msg
-withIcon theme item =
+withIcon : IconItem msg -> Html msg
+withIcon item =
     li [ css [ "flow-root", B.cond item.active "" "filter grayscale" ] ]
-        [ div [ css [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover "bg-gray-50", focusWithin ("ring-2 " ++ ring_500 theme.color) ] ]
+        [ div [ css [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover "bg-gray-50", focusWithin "ring-2 ring-primary-500" ] ]
             [ div [ css [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon "text-white" ]
             , div []
                 [ h3 []
@@ -45,12 +44,12 @@ withIcon theme item =
 -- DOCUMENTATION
 
 
-doc : Theme -> Chapter x
-doc theme =
+doc : Chapter x
+doc =
     Chapter.chapter "ItemList"
         |> Chapter.renderComponentList
             [ ( "withIcons"
-              , withIcons theme
+              , withIcons
                     [ { color = Color.pink, icon = ViewList, title = "Create a List →", description = "Another to-do system you’ll try but eventually give up on.", active = True, onClick = logAction "List clicked" }
                     , { color = Color.yellow, icon = Calendar, title = "Create a Calendar →", description = "Stay on top of your deadlines, or don’t — it’s up to you.", active = True, onClick = logAction "Calendar clicked" }
                     , { color = Color.green, icon = Photograph, title = "Create a Gallery →", description = "Great for mood boards and inspiration.", active = True, onClick = logAction "Gallery clicked" }

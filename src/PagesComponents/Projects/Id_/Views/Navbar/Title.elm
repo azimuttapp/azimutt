@@ -3,7 +3,6 @@ module PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Components.Molecules.Tooltip as Tooltip
-import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route
 import Html exposing (Html, br, button, div, small, span, text)
@@ -18,7 +17,7 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (focusRing, text_300)
+import Libs.Tailwind exposing (focusRing)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -38,7 +37,7 @@ viewProjectsDropdown : List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Ht
 viewProjectsDropdown otherProjects project htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 )) ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 )) ]
                 [ span [] [ text project.name ]
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
@@ -61,7 +60,7 @@ viewLayoutsMaybe usedLayout layouts htmlId openedDropdown =
         []
 
     else
-        [ Icon.slash (text_300 Conf.theme.color)
+        [ Icon.slash "text-primary-300"
         , Lazy.lazy4 viewLayouts usedLayout layouts htmlId openedDropdown
         ]
 
@@ -70,7 +69,7 @@ viewLayouts : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> 
 viewLayouts usedLayout layouts htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 )) ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 )) ]
                 [ span [] [ text (usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]

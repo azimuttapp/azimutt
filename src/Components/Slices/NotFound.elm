@@ -5,8 +5,7 @@ import Html exposing (Html, a, div, footer, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models exposing (Image, Link)
-import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind exposing (text_500, text_600)
+import Libs.Tailwind exposing (hover)
 
 
 type alias SimpleModel =
@@ -23,8 +22,8 @@ type alias Brand =
     { img : Image, link : Link }
 
 
-simple : Theme -> SimpleModel -> Html msg
-simple theme model =
+simple : SimpleModel -> Html msg
+simple model =
     div [ class "min-h-full pt-16 pb-12 flex flex-col bg-white" ]
         [ main_ [ class "flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4 lg:px-8 sm:px-6" ]
             [ div [ class "flex-shrink-0 flex justify-center" ]
@@ -35,11 +34,11 @@ simple theme model =
                 ]
             , div [ class "py-16" ]
                 [ div [ class "text-center" ]
-                    [ p [ class ("text-sm font-semibold " ++ text_600 theme.color ++ " uppercase tracking-wide") ] [ text model.header ]
+                    [ p [ class "text-sm font-semibold text-primary-600 uppercase tracking-wide" ] [ text model.header ]
                     , h1 [ class "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl" ] [ text model.title ]
                     , p [ class "mt-2 text-base text-gray-500" ] [ text model.message ]
                     , div [ class "mt-6" ]
-                        [ a [ href model.link.url, css [ "text-base font-medium", text_600 theme.color, "hover:" ++ text_500 theme.color ] ]
+                        [ a [ href model.link.url, css [ "text-base font-medium text-primary-600", hover "text-primary-500" ] ]
                             [ text model.link.text
                             , span [ ariaHidden True ] [ text "→" ]
                             ]
@@ -75,9 +74,9 @@ docModel =
     }
 
 
-doc : Theme -> Chapter x
-doc theme =
+doc : Chapter x
+doc =
     Chapter.chapter "NotFound"
         |> Chapter.renderComponentList
-            [ ( "simple", simple theme docModel )
+            [ ( "simple", simple docModel )
             ]

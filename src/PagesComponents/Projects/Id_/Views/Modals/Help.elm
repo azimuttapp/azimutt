@@ -14,7 +14,6 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (bg_100, text_700)
 import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
 
 
@@ -58,7 +57,7 @@ viewHelp opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Conf.theme.color [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
+            [ Button.primary3 Color.primary [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
         ]
 
 
@@ -206,7 +205,7 @@ shortcuts =
 sectionToAccordionItem : Bool -> Section Msg -> Html Msg
 sectionToAccordionItem isOpen section =
     div []
-        [ div [ onClick (HelpMsg (HToggle section.title)), css [ "px-6 py-4 cursor-pointer", B.cond isOpen (bg_100 Conf.theme.color ++ " " ++ text_700 Conf.theme.color) "" ] ] [ text section.title ]
+        [ div [ onClick (HelpMsg (HToggle section.title)), css [ "px-6 py-4 cursor-pointer", B.cond isOpen "bg-primary-100 text-primary-700" "" ] ] [ text section.title ]
         , div [ css [ "px-6 py-3 border-t border-gray-300", B.cond isOpen "" "hidden" ] ] section.body
         ]
 

@@ -23,7 +23,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
-import Libs.Tailwind exposing (TwClass, bg_50, border_500, border_b_200, ring_500, text_500)
+import Libs.Tailwind exposing (TwClass, bg_50, border_500, ring_500, text_500)
 import Set exposing (Set)
 import Track
 
@@ -142,9 +142,8 @@ viewHeader model =
     in
     div
         [ css
-            [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b"
+            [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b border-b-default-200"
             , border_500 model.state.color
-            , border_b_200 Color.default
             , bg_50 (B.cond model.state.isHover model.state.color Color.default)
             ]
         ]
@@ -208,7 +207,7 @@ viewColumn model isLast column =
          , onDoubleClick (model.actions.dblClickColumn column.name)
          , css
             [ "items-center flex px-2 bg-white whitespace-nowrap"
-            , B.cond (isHighlightedColumn model column) (text_500 model.state.color ++ " " ++ bg_50 model.state.color) (text_500 Color.default)
+            , B.cond (isHighlightedColumn model column) (text_500 model.state.color ++ " " ++ bg_50 model.state.color) "text-default-500"
             , B.cond isLast "rounded-b-lg" ""
             ]
          ]

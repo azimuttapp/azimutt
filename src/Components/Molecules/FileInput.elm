@@ -9,14 +9,13 @@ import Libs.FileInput as FileInput exposing (File)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.String as String
-import Libs.Tailwind exposing (border_400, focusWithinRing, hover, text_600)
+import Libs.Tailwind exposing (focusWithinRing, hover)
 
 
-basic : Theme -> HtmlId -> (File -> msg) -> msg -> Html msg
-basic theme fieldId onSelect noop =
-    input theme { id = fieldId, onDrop = \f _ -> onSelect f, onOver = Just (\_ _ -> noop), onLeave = Nothing, onSelect = onSelect }
+basic : HtmlId -> (File -> msg) -> msg -> Html msg
+basic fieldId onSelect noop =
+    input { id = fieldId, onDrop = \f _ -> onSelect f, onOver = Just (\_ _ -> noop), onLeave = Nothing, onSelect = onSelect }
 
 
 type alias Model msg =
@@ -28,16 +27,16 @@ type alias Model msg =
     }
 
 
-input : Theme -> Model msg -> Html msg
-input theme model =
+input : Model msg -> Html msg
+input model =
     label
-        ([ for model.id, role "button", css [ "flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md text-gray-600", hover (border_400 theme.color ++ " " ++ text_600 theme.color), focusWithinRing ( theme.color, 600 ) ( Color.white, 600 ) ] ]
+        ([ for model.id, role "button", css [ "flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md text-gray-600", hover "border-primary-400 text-primary-600", focusWithinRing ( Color.primary, 600 ) ( Color.white, 600 ) ] ]
             ++ FileInput.onDrop { onDrop = model.onDrop, onOver = model.onOver, onLeave = model.onLeave }
         )
         [ div [ css [ "space-y-1 text-center" ] ]
             [ Icon.outline DocumentAdd "mx_auto h-12 w-12"
             , div [ css [ "flex text-sm" ] ]
-                [ span [ css [ "relative cursor-pointer bg-white rounded-md font-medium", text_600 theme.color ] ]
+                [ span [ css [ "relative cursor-pointer bg-white rounded-md font-medium text-primary-600" ] ]
                     [ span [] [ text "Upload a file" ]
                     , FileInput.hiddenInputSingle model.id [ ".sql" ] model.onSelect
                     ]
@@ -52,13 +51,13 @@ input theme model =
 -- DOCUMENTATION
 
 
-doc : Theme -> Chapter x
-doc theme =
+doc : Chapter x
+doc =
     Chapter.chapter "FileInput"
         |> Chapter.renderComponentList
-            [ ( "basic", basic theme "basic-id" (\f -> logAction ("Selected: " ++ f.name)) (logAction "Noop") )
+            [ ( "basic", basic "basic-id" (\f -> logAction ("Selected: " ++ f.name)) (logAction "Noop") )
             , ( "input"
-              , input theme
+              , input
                     { id = "input-id"
                     , onDrop = \file files -> logAction ("Drop " ++ ((file :: files) |> String.pluralizeL "file") ++ ": " ++ ((file :: files) |> List.map .name |> String.join ", "))
                     , onOver = Just (\file files -> logAction ("Over " ++ ((file :: files) |> String.pluralizeL "file") ++ ": " ++ ((file :: files) |> List.map .name |> String.join ", ")))

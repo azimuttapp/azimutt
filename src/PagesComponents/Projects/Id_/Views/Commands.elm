@@ -11,7 +11,7 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Tailwind exposing (TwClass, border_500, ring_500)
+import Libs.Tailwind exposing (TwClass, batch, focus)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 
 
@@ -20,7 +20,7 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
     let
         buttonStyles : TwClass
         buttonStyles =
-            "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:" ++ ring_500 Conf.theme.color ++ " focus:" ++ border_500 Conf.theme.color
+            batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ]
 
         classic : TwClass
         classic =

@@ -1,4 +1,4 @@
-module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, theme, ui)
+module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
@@ -6,7 +6,6 @@ import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.SchemaName exposing (SchemaName)
 
@@ -47,11 +46,6 @@ twitter =
 github : String
 github =
     "https://github.com/azimuttapp/azimutt"
-
-
-theme : Theme
-theme =
-    { color = Color.indigo }
 
 
 newsletter : Newsletter.Form

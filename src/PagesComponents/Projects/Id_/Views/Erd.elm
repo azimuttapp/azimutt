@@ -23,7 +23,6 @@ import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.String as S
-import Libs.Tailwind exposing (bg_400, border_400, text_500)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
@@ -148,7 +147,7 @@ viewRelations tableProps relations =
 viewSelectionBox : Area -> Html Msg
 viewSelectionBox area =
     div
-        [ css [ "tw-selection-area absolute border-2 bg-opacity-25 z-max", border_400 Color.teal, bg_400 Color.teal ]
+        [ css [ "tw-selection-area absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ]
         , style "transform" ("translate(" ++ String.fromFloat area.position.left ++ "px, " ++ String.fromFloat area.position.top ++ "px)")
         , style "width" (String.fromFloat area.size.width ++ "px")
         , style "height" (String.fromFloat area.size.height ++ "px")
@@ -170,7 +169,7 @@ viewEmptyState tables =
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
             [ div [ class "text-center" ]
-                [ Icon.outline Template ("w-12 h-12 mx-auto " ++ text_500 Conf.theme.color)
+                [ Icon.outline Template "w-12 h-12 mx-auto text-primary-500"
                 , h2 [ class "mt-2 text-lg font-medium text-gray-900" ]
                     [ text "Hello from Azimutt 👋" ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
@@ -182,7 +181,7 @@ viewEmptyState tables =
                     [ text "Your project has "
                     , bText (tables |> S.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic Conf.theme.color [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Color.primary [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ♥️ Azimutt, "

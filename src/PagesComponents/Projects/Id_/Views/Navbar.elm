@@ -23,7 +23,7 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, bg_500, bg_600, border_500, focusRing, text_100, text_200, text_300)
+import Libs.Tailwind exposing (TwClass, batch, focus, focusRing, hover)
 import Models.Project.CanvasProps as CanvasProps
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -54,7 +54,7 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
         canResetCanvas =
             erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
     in
-    nav [ css [ "tw-navbar relative z-max", bg_600 Conf.theme.color ] ]
+    nav [ css [ "tw-navbar relative z-max bg-primary-600" ] ]
         [ div [ class "mx-auto px-2 lg:px-8 sm:px-4" ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ class "flex items-center px-2 lg:px-0" ]
@@ -89,20 +89,20 @@ viewNavbarBrand =
 
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
-    button [ onClick (HelpMsg (HOpen "")), class ("ml-3 rounded-full " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 )) ]
-        [ Icon.solid QuestionMarkCircle (text_300 Conf.theme.color) ]
+    button [ onClick (HelpMsg (HOpen "")), class ("ml-3 rounded-full " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 )) ]
+        [ Icon.solid QuestionMarkCircle "text-primary-300" ]
 
 
 viewNavbarResetLayout : Bool -> Html Msg
 viewNavbarResetLayout canResetCanvas =
-    Button.primary3 Conf.theme.color [ onClick resetCanvas, css [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
+    Button.primary3 Color.primary [ onClick resetCanvas, css [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
 
 
 viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
 viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), class ("ml-3 flex-shrink-0 flex justify-center items-center " ++ bg_600 Conf.theme.color ++ " p-1 rounded-full " ++ text_200 Conf.theme.color ++ " " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ++ " hover:text-white") ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), class ("ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200 " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ++ " hover:text-white") ]
                 [ span [ class "sr-only" ] [ text "View features" ]
                 , Icon.outline LightningBolt ""
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
@@ -124,7 +124,7 @@ viewNavbarFeatures features htmlId openedDropdown =
 
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class ("ml-3 flex-shrink-0 " ++ bg_600 Conf.theme.color ++ " p-1 rounded-full " ++ text_200 Conf.theme.color ++ " " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ++ " hover:text-white") ]
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class ("ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200 " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ++ " hover:text-white") ]
         [ span [ class "sr-only" ] [ text "View settings" ]
         , Icon.outline Cog ""
         ]
@@ -133,7 +133,7 @@ viewNavbarSettings =
 navbarMobileButton : Bool -> Html Msg
 navbarMobileButton open =
     div [ class "flex lg:hidden" ]
-        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, class ("inline-flex items-center justify-center p-2 rounded-md " ++ text_200 Conf.theme.color ++ " hover:text-white hover:" ++ bg_500 Conf.theme.color ++ " focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white") ]
+        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ "inline-flex items-center justify-center p-2 rounded-md text-primary-200", hover "text-white bg-primary-500", focus "outline-none ring-2 ring-inset ring-white" ] ]
             [ span [ class "sr-only" ] [ text "Open main menu" ]
             , Icon.outline Menu (B.cond open "hidden" "block")
             , Icon.outline X (B.cond open "block" "hidden")
@@ -150,11 +150,11 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
 
         groupBorder : TwClass
         groupBorder =
-            "border-t " ++ border_500 Conf.theme.color
+            "border-t border-primary-500"
 
         btnStyle : TwClass
         btnStyle =
-            text_100 Conf.theme.color ++ " flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium hover:" ++ bg_500 Conf.theme.color ++ " hover:text-white focus:outline-none"
+            batch [ "text-primary-100 flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium", hover "bg-primary-500 text-white", focus "outline-none" ]
     in
     div [ css [ "lg:hidden", B.cond isOpen "" "hidden" ], id "mobile-menu" ]
         ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, class btnStyle ] [ text "Reset canvas" ] ] []

@@ -12,7 +12,7 @@ import Html.Attributes exposing (class, href, id)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models exposing (Link)
-import Libs.Tailwind exposing (bg_600, lg, md, sm)
+import Libs.Tailwind exposing (lg, md, sm)
 
 
 root : List (Html msg) -> List (Html msg)
@@ -64,8 +64,8 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
 appShell onNavigationClick onMobileMenuClick model title content footer =
-    [ div [ css [ "pb-32", bg_600 Conf.theme.color ] ]
-        [ Navbar.admin Conf.theme
+    [ div [ css [ "pb-32 bg-primary-600" ] ]
+        [ Navbar.admin
             { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
             , navigation =
                 { links = [ { url = Route.toHref Route.Projects, text = "Dashboard" } ]

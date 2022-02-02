@@ -19,7 +19,6 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.String as String
-import Libs.Tailwind exposing (bg_100, text_600, text_700)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
@@ -57,8 +56,8 @@ viewFindPath opened tables settings model =
 viewHeader : String -> Html msg
 viewHeader titleId =
     div [ class "pt-6 px-6 sm:flex sm:items-start" ]
-        [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", bg_100 Conf.theme.color, "sm:mx-0 sm:h-10 sm:w-10" ] ]
-            [ Icon.outline LocationMarker (text_600 Conf.theme.color)
+        [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 sm:mx-0 sm:h-10 sm:w-10" ] ]
+            [ Icon.outline LocationMarker "text-primary-600"
             ]
         , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
             [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Find a path between tables" ]
@@ -201,9 +200,9 @@ viewPaths model =
 viewPath : Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
 viewPath opened from i path =
     div []
-        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ "px-6 py-4 cursor-pointer", B.cond (opened == Just i) (bg_100 Conf.theme.color ++ " " ++ text_700 Conf.theme.color) "" ] ]
+        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ "px-6 py-4 cursor-pointer", B.cond (opened == Just i) "bg-primary-100 text-primary-700" "" ] ]
             (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep))
-        , div [ css [ "px-6 py-3 border-t border-gray-300", text_700 Conf.theme.color, B.cond (opened /= Just i) "hidden" "" ] ]
+        , div [ css [ "px-6 py-3 border-t border-gray-300", "text-primary-700", B.cond (opened /= Just i) "hidden" "" ] ]
             [ pre [] [ text (buildQuery from path) ]
             ]
         ]
@@ -249,17 +248,17 @@ viewFooter settings model =
         (case ( model.from, model.to, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
-                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
+                    [ Button.primary3 Color.primary [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
 
                 else
-                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
+                    [ Button.primary3 Color.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
 
             ( Just _, Just _, FindPathState.Searching ) ->
-                [ Button.primary3 Conf.theme.color [ disabled True ] [ Icon.loading "-ml-1 mr-2 animate-spin", text "Searching..." ] ]
+                [ Button.primary3 Color.primary [ disabled True ] [ Icon.loading "-ml-1 mr-2 animate-spin", text "Searching..." ] ]
 
             ( Just _, Just _, FindPathState.Empty ) ->
-                [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
+                [ Button.primary3 Color.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
 
             _ ->
-                [ Button.primary3 Conf.theme.color [ disabled True ] [ text "Search" ] ]
+                [ Button.primary3 Color.primary [ disabled True ] [ text "Search" ] ]
         )

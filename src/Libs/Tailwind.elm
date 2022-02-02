@@ -1,10 +1,15 @@
-module Libs.Tailwind exposing (TwClass, active, batch, bg, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, border_300, border_400, border_500, border_700, border_b_200, disabled, focus, focusRing, focusWithin, focusWithinRing, hover, lg, md, placeholder_200, placeholder_400, ring_500, ring_offset_600, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
+module Libs.Tailwind exposing (TwClass, active, batch, bg, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, border_400, border_500, disabled, focus, focusRing, focusWithin, focusWithinRing, hover, lg, md, ring_500, sm, stroke_500, text_300, text_400, text_500, text_600, text_700, text_800, xl, xxl)
 
 import Libs.Models.Color exposing (Color, ColorLevel)
 
 
 type alias TwClass =
     String
+
+
+
+-- BAD HELPERS
+-- will have to replace them as they make tailwind class generation quite hard :(
 
 
 focusRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> TwClass
@@ -19,17 +24,17 @@ focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
 
 bg : Color -> ColorLevel -> TwClass
 bg color level =
-    "bg-" ++ color.name ++ "-" ++ String.fromInt level
+    "bg-" ++ color ++ "-" ++ String.fromInt level
 
 
 ring : Color -> ColorLevel -> TwClass
 ring color level =
-    "ring-" ++ color.name ++ "-" ++ String.fromInt level
+    "ring-" ++ color ++ "-" ++ String.fromInt level
 
 
 ringOffset : Color -> ColorLevel -> TwClass
 ringOffset color level =
-    "ring-offset-" ++ color.name ++ "-" ++ String.fromInt level
+    "ring-offset-" ++ color ++ "-" ++ String.fromInt level
 
 
 batch : List TwClass -> TwClass
@@ -104,139 +109,84 @@ addState state classes =
 
 bg_50 : Color -> TwClass
 bg_50 color =
-    "bg-" ++ color.name ++ "-50"
+    "bg-" ++ color ++ "-50"
 
 
 bg_100 : Color -> TwClass
 bg_100 color =
-    "bg-" ++ color.name ++ "-100"
+    "bg-" ++ color ++ "-100"
 
 
 bg_200 : Color -> TwClass
 bg_200 color =
-    "bg-" ++ color.name ++ "-200"
+    "bg-" ++ color ++ "-200"
 
 
 bg_300 : Color -> TwClass
 bg_300 color =
-    "bg-" ++ color.name ++ "-300"
-
-
-bg_400 : Color -> TwClass
-bg_400 color =
-    "bg-" ++ color.name ++ "-400"
+    "bg-" ++ color ++ "-300"
 
 
 bg_500 : Color -> TwClass
 bg_500 color =
-    "bg-" ++ color.name ++ "-500"
+    "bg-" ++ color ++ "-500"
 
 
 bg_600 : Color -> TwClass
 bg_600 color =
-    "bg-" ++ color.name ++ "-600"
+    "bg-" ++ color ++ "-600"
 
 
 bg_700 : Color -> TwClass
 bg_700 color =
-    "bg-" ++ color.name ++ "-700"
-
-
-border_300 : Color -> TwClass
-border_300 color =
-    "border-" ++ color.name ++ "-300"
+    "bg-" ++ color ++ "-700"
 
 
 border_400 : Color -> TwClass
 border_400 color =
-    "border-" ++ color.name ++ "-400"
+    "border-" ++ color ++ "-400"
 
 
 border_500 : Color -> TwClass
 border_500 color =
-    "border-" ++ color.name ++ "-500"
-
-
-border_700 : Color -> TwClass
-border_700 color =
-    "border-" ++ color.name ++ "-700"
-
-
-border_b_200 : Color -> TwClass
-border_b_200 color =
-    "border-b-" ++ color.name ++ "-200"
-
-
-placeholder_200 : Color -> TwClass
-placeholder_200 color =
-    "placeholder-" ++ color.name ++ "-200"
-
-
-placeholder_400 : Color -> TwClass
-placeholder_400 color =
-    "placeholder-" ++ color.name ++ "-400"
+    "border-" ++ color ++ "-500"
 
 
 ring_500 : Color -> TwClass
 ring_500 color =
-    "ring-" ++ color.name ++ "-500"
-
-
-ring_offset_600 : Color -> TwClass
-ring_offset_600 color =
-    "ring-offset-" ++ color.name ++ "-600"
-
-
-stroke_400 : Color -> TwClass
-stroke_400 color =
-    "stroke-" ++ color.name ++ "-400"
+    "ring-" ++ color ++ "-500"
 
 
 stroke_500 : Color -> TwClass
 stroke_500 color =
-    "stroke-" ++ color.name ++ "-500"
-
-
-text_100 : Color -> TwClass
-text_100 color =
-    "text-" ++ color.name ++ "-100"
-
-
-text_200 : Color -> TwClass
-text_200 color =
-    "text-" ++ color.name ++ "-200"
+    "stroke-" ++ color ++ "-500"
 
 
 text_300 : Color -> TwClass
 text_300 color =
-    "text-" ++ color.name ++ "-300"
+    "text-" ++ color ++ "-300"
 
 
 text_400 : Color -> TwClass
 text_400 color =
-    "text-" ++ color.name ++ "-400"
+    "text-" ++ color ++ "-400"
 
 
 text_500 : Color -> TwClass
 text_500 color =
-    "text-" ++ color.name ++ "-500"
+    "text-" ++ color ++ "-500"
 
 
 text_600 : Color -> TwClass
 text_600 color =
-    "text-" ++ color.name ++ "-600"
+    "text-" ++ color ++ "-600"
 
 
 text_700 : Color -> TwClass
 text_700 color =
-    "text-" ++ color.name ++ "-700"
+    "text-" ++ color ++ "-700"
 
 
 text_800 : Color -> TwClass
 text_800 color =
-    "text-" ++ color.name ++ "-800"
-
-
-text_900 : Color -> TwClass
-text_900 color =
-    "text-" ++ color.name ++ "-900"
+    "text-" ++ color ++ "-800"

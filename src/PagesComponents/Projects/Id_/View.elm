@@ -13,7 +13,6 @@ import Libs.List as L
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (border_500)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
@@ -53,13 +52,13 @@ viewApp model htmlId erd =
 viewLoader : Html msg
 viewLoader =
     div [ class "tw-loader flex justify-center items-center h-screen" ]
-        [ div [ class ("animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 " ++ border_500 Conf.theme.color) ] []
+        [ div [ class "animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-500" ] []
         ]
 
 
 viewNotFound : Html msg
 viewNotFound =
-    NotFound.simple Conf.theme
+    NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
             , link = { url = Route.toHref Route.Home_, text = "Azimutt" }
@@ -94,4 +93,4 @@ viewModal zone now model =
 
 viewToasts : List Toast.Model -> Html Msg
 viewToasts toasts =
-    div [ class "tw-toasts" ] [ Toast.container Conf.theme toasts ToastHide ]
+    div [ class "tw-toasts" ] [ Toast.container toasts ToastHide ]

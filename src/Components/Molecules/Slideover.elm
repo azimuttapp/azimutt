@@ -12,8 +12,8 @@ import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models exposing (Millis)
+import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (focus)
 
 
@@ -102,14 +102,14 @@ component name buildComponent =
     )
 
 
-doc : Theme -> Chapter (SharedDocState x)
-doc theme =
+doc : Chapter (SharedDocState x)
+doc =
     Chapter.chapter "Slideover"
         |> Chapter.renderStatefulComponentList
             [ component "slideover"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Color.primary [ onClick (setOpen True) ] [ text "Click me!" ]
                         , slideover
                             { id = "slideover"
                             , title = "Panel with overlay"

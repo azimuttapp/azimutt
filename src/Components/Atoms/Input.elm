@@ -8,7 +8,6 @@ import Html.Attributes exposing (checked, class, for, id, name, placeholder, sel
 import Html.Events exposing (onClick, onInput)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (TwClass)
 
 
@@ -71,8 +70,8 @@ updateDocState transform =
     Actions.updateState (\s -> { s | inputDocState = s.inputDocState |> transform })
 
 
-doc : Theme -> Chapter (SharedDocState x)
-doc _ =
+doc : Chapter (SharedDocState x)
+doc =
     Chapter.chapter "Input"
         |> Chapter.renderStatefulComponentList
             [ ( "textWithLabelAndHelp", \{ inputDocState } -> textWithLabelAndHelp "" "email" "email" "Email" "you@example.com" "We'll only use this for spam." inputDocState.text (\value -> updateDocState (\state -> { state | text = value })) )

@@ -14,7 +14,7 @@ import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.Tailwind exposing (TwClass, bg_500, bg_600, border_300, focus, placeholder_200, placeholder_400, text_100, text_200, text_300, text_400, text_900)
+import Libs.Tailwind exposing (TwClass, focus, sm)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -30,7 +30,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
             , Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
                 (\m ->
                     div []
-                        [ div [ class "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] [ Icon.solid Search (text_200 Conf.theme.color) ]
+                        [ div [ class "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] [ Icon.solid Search "text-primary-200" ]
                         , input
                             [ type_ "search"
                             , name "search"
@@ -41,7 +41,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             , onInput SearchUpdated
                             , onFocus (DropdownToggle m.id)
                             , onBlur (DropdownToggle m.id)
-                            , css [ "block w-full pl-10 pr-3 py-2 border border-transparent rounded-md leading-5", bg_500 Conf.theme.color, text_100 Conf.theme.color, placeholder_200 Conf.theme.color, focus ("outline-none bg-white border-white ring-white " ++ text_900 Conf.theme.color ++ " " ++ placeholder_400 Conf.theme.color), "sm:text-sm" ]
+                            , css [ "block w-full pl-10 pr-3 py-2 border border-transparent rounded-md leading-5 bg-primary-500 text-primary-100 placeholder-primary-200", focus "outline-none bg-white border-white ring-white text-primary-900 placeholder-primary-400", sm "text-sm" ]
                             ]
                             []
                         , Conf.hotkeys
@@ -50,7 +50,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             |> M.mapOrElse
                                 (\h ->
                                     div [ class "absolute inset-y-0 right-0 flex py-1.5 pr-1.5" ]
-                                        [ kbd [ class ("inline-flex items-center border " ++ border_300 Conf.theme.color ++ " rounded px-2 text-sm font-sans font-medium " ++ text_300 Conf.theme.color) ]
+                                        [ kbd [ class "inline-flex items-center border border-primary-300 rounded px-2 text-sm font-sans font-medium text-primary-300" ]
                                             [ text h.key ]
                                         ]
                                 )
@@ -104,11 +104,11 @@ viewSearchResult searchId shownTables active index res =
                         "flex w-full items-center"
                 in
                 if disabled then
-                    span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, B.cond (active == index) (text_400 Conf.theme.color) "" ] ])
+                    span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, B.cond (active == index) "text-primary-400" "" ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, "focus:outline-none", B.cond (active == index) (bg_600 Conf.theme.color ++ " text-white") "" ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, "focus:outline-none", B.cond (active == index) "bg-primary-600 text-white" "" ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
     in
     case res of

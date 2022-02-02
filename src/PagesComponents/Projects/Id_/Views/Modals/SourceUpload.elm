@@ -73,7 +73,7 @@ localFileModal zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
+        , div [ class "mt-3" ] [ FileInput.basic "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> M.filter (\_ -> name1 /= name2)
@@ -123,7 +123,7 @@ remoteFileModal zone now titleId source fileUrl model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Conf.theme.color [ onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
+            [ Button.primary5 Color.primary [ onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
             ]
         , SQLSource.viewParsing model
         ]
@@ -170,7 +170,7 @@ newSourceModal titleId model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
+        , div [ class "mt-3" ] [ FileInput.basic "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , SQLSource.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
@@ -186,7 +186,7 @@ newSourceModal titleId model =
 
 primaryBtn : Maybe Msg -> String -> Html Msg
 primaryBtn clicked label =
-    Button.primary3 Conf.theme.color (clicked |> M.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
+    Button.primary3 Color.primary (clicked |> M.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
 
 
 closeBtn : Html Msg

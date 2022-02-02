@@ -16,7 +16,7 @@ import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaCurrent, css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (batch, bg_50, border_300, border_500, hover, lg, sm, text_500, text_700)
+import Libs.Tailwind exposing (hover, lg, sm)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
@@ -62,8 +62,8 @@ viewContent model page =
 viewTab : Tab -> TabModel Tab -> Html Msg
 viewTab selected tab =
     if tab.tab == selected then
-        a [ href "", css [ bg_50 Conf.theme.color, border_500 Conf.theme.color, text_700 Conf.theme.color, "border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover (batch [ bg_50 Conf.theme.color, text_700 Conf.theme.color ]) ], ariaCurrent "page" ]
-            [ Icon.outline tab.icon ("flex-shrink-0 -ml-1 mr-3 h-6 w-6 " ++ text_500 Conf.theme.color)
+        a [ href "", css [ "bg-primary-50 border-primary-500 text-primary-700 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover "bg-primary-50 text-primary-700" ], ariaCurrent "page" ]
+            [ Icon.outline tab.icon "flex-shrink-0 -ml-1 mr-3 h-6 w-6 text-primary-500"
             , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 
@@ -96,13 +96,13 @@ viewSchemaUpload openedCollapse =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm "grid-cols-6" ] ]
                 [ div [ css [ sm "col-span-6" ] ]
-                    [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop
+                    [ FileInput.basic "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop
                     ]
                 ]
             ]
         , div [ css [ "mt-3" ] ]
             [ div [ onClick (ToggleCollapse "get-schema"), css [ "tw-link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
-            , div [ css [ "mt-1 mb-3 p-3 border rounded", border_300 Color.gray, B.cond (openedCollapse == "get-schema") "" "hidden" ] ]
+            , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == "get-schema") "" "hidden" ] ]
                 [ p []
                     [ text "An "
                     , bText "SQL schema"
@@ -117,7 +117,7 @@ viewSchemaUpload openedCollapse =
             ]
         , div []
             [ div [ onClick (ToggleCollapse "data-privacy"), css [ "tw-link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
-            , div [ css [ "mt-1 p-3 border rounded", border_300 Color.gray, B.cond (openedCollapse == "data-privacy") "" "hidden" ] ]
+            , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == "data-privacy") "" "hidden" ] ]
                 [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
                 , p [ css [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
                 ]
@@ -129,7 +129,7 @@ viewSampleSelection : Maybe String -> Html Msg
 viewSampleSelection selectedSample =
     div []
         [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
-        , ItemList.withIcons Conf.theme
+        , ItemList.withIcons
             (Conf.schemaSamples
                 |> Dict.values
                 |> List.sortBy .tables
@@ -159,7 +159,7 @@ viewActions : ProjectId -> Source -> Html Msg
 viewActions projectId source =
     div [ css [ "mt-6" ] ]
         [ div [ css [ "flex justify-end" ] ]
-            [ Button.white3 Conf.theme.color [ onClick DropSchema ] [ text "Trash this" ]
-            , Button.primary3 Conf.theme.color [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
+            [ Button.white3 Color.primary [ onClick DropSchema ] [ text "Trash this" ]
+            , Button.primary3 Color.primary [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
             ]
         ]

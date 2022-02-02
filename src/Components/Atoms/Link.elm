@@ -5,8 +5,7 @@ import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Attribute, Html, a, div, text)
 import Html.Attributes exposing (href)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color exposing (Color)
-import Libs.Models.Theme exposing (Theme)
+import Libs.Models.Color as Color exposing (Color)
 import Libs.Tailwind exposing (TwClass)
 
 
@@ -119,44 +118,44 @@ build colorStyles sizeStyles color attrs content =
 -- DOCUMENTATION
 
 
-doc : Theme -> Chapter x
-doc theme =
+doc : Chapter x
+doc =
     chapter "Link"
         |> renderComponentList
             [ ( "primary"
               , div []
-                    [ primary1 theme.color [ href "#", css [ "mr-3" ] ] [ text "primary1" ]
-                    , primary2 theme.color [ href "#", css [ "mr-3" ] ] [ text "primary2" ]
-                    , primary3 theme.color [ href "#", css [ "mr-3" ] ] [ text "primary3" ]
-                    , primary4 theme.color [ href "#", css [ "mr-3" ] ] [ text "primary4" ]
-                    , primary5 theme.color [ href "#", css [ "mr-3" ] ] [ text "primary5" ]
+                    [ primary1 Color.primary [ href "#", css [ "mr-3" ] ] [ text "primary1" ]
+                    , primary2 Color.primary [ href "#", css [ "mr-3" ] ] [ text "primary2" ]
+                    , primary3 Color.primary [ href "#", css [ "mr-3" ] ] [ text "primary3" ]
+                    , primary4 Color.primary [ href "#", css [ "mr-3" ] ] [ text "primary4" ]
+                    , primary5 Color.primary [ href "#", css [ "mr-3" ] ] [ text "primary5" ]
                     ]
               )
             , ( "secondary"
               , div []
-                    [ secondary1 theme.color [ href "#", css [ "mr-3" ] ] [ text "secondary1" ]
-                    , secondary2 theme.color [ href "#", css [ "mr-3" ] ] [ text "secondary2" ]
-                    , secondary3 theme.color [ href "#", css [ "mr-3" ] ] [ text "secondary3" ]
-                    , secondary4 theme.color [ href "#", css [ "mr-3" ] ] [ text "secondary4" ]
-                    , secondary5 theme.color [ href "#", css [ "mr-3" ] ] [ text "secondary5" ]
+                    [ secondary1 Color.primary [ href "#", css [ "mr-3" ] ] [ text "secondary1" ]
+                    , secondary2 Color.primary [ href "#", css [ "mr-3" ] ] [ text "secondary2" ]
+                    , secondary3 Color.primary [ href "#", css [ "mr-3" ] ] [ text "secondary3" ]
+                    , secondary4 Color.primary [ href "#", css [ "mr-3" ] ] [ text "secondary4" ]
+                    , secondary5 Color.primary [ href "#", css [ "mr-3" ] ] [ text "secondary5" ]
                     ]
               )
             , ( "light"
               , div []
-                    [ light1 theme.color [ href "#", css [ "mr-3" ] ] [ text "light1" ]
-                    , light2 theme.color [ href "#", css [ "mr-3" ] ] [ text "light2" ]
-                    , light3 theme.color [ href "#", css [ "mr-3" ] ] [ text "light3" ]
-                    , light4 theme.color [ href "#", css [ "mr-3" ] ] [ text "light4" ]
-                    , light5 theme.color [ href "#", css [ "mr-3" ] ] [ text "light5" ]
+                    [ light1 Color.primary [ href "#", css [ "mr-3" ] ] [ text "light1" ]
+                    , light2 Color.primary [ href "#", css [ "mr-3" ] ] [ text "light2" ]
+                    , light3 Color.primary [ href "#", css [ "mr-3" ] ] [ text "light3" ]
+                    , light4 Color.primary [ href "#", css [ "mr-3" ] ] [ text "light4" ]
+                    , light5 Color.primary [ href "#", css [ "mr-3" ] ] [ text "light5" ]
                     ]
               )
             , ( "white"
               , div []
-                    [ white1 theme.color [ href "#", css [ "mr-3" ] ] [ text "white1" ]
-                    , white2 theme.color [ href "#", css [ "mr-3" ] ] [ text "white2" ]
-                    , white3 theme.color [ href "#", css [ "mr-3" ] ] [ text "white3" ]
-                    , white4 theme.color [ href "#", css [ "mr-3" ] ] [ text "white4" ]
-                    , white5 theme.color [ href "#", css [ "mr-3" ] ] [ text "white5" ]
+                    [ white1 Color.primary [ href "#", css [ "mr-3" ] ] [ text "white1" ]
+                    , white2 Color.primary [ href "#", css [ "mr-3" ] ] [ text "white2" ]
+                    , white3 Color.primary [ href "#", css [ "mr-3" ] ] [ text "white3" ]
+                    , white4 Color.primary [ href "#", css [ "mr-3" ] ] [ text "white4" ]
+                    , white5 Color.primary [ href "#", css [ "mr-3" ] ] [ text "white5" ]
                     ]
               )
             ]

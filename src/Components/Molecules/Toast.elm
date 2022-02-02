@@ -11,7 +11,6 @@ import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Libs.Html.Attributes exposing (ariaLive, css)
 import Libs.Models.Color as Color exposing (Color)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (TwClass, focusRing, text_400)
 
 
@@ -31,15 +30,15 @@ type alias SimpleModel =
     }
 
 
-render : Theme -> msg -> Model -> ( String, Html msg )
-render theme onClose model =
+render : msg -> Model -> ( String, Html msg )
+render onClose model =
     case model.content of
         Simple content ->
-            ( model.key, simple theme onClose model.isOpen content )
+            ( model.key, simple onClose model.isOpen content )
 
 
-simple : Theme -> msg -> Bool -> SimpleModel -> Html msg
-simple theme onClose isOpen model =
+simple : msg -> Bool -> SimpleModel -> Html msg
+simple onClose isOpen model =
     toast
         (div [ class "flex items-start" ]
             [ div [ class "flex-shrink-0" ] [ Icon.outline model.icon (text_400 model.color) ]
@@ -48,7 +47,7 @@ simple theme onClose isOpen model =
                 , p [ class "mt-1 text-sm text-gray-500" ] [ text model.message ]
                 ]
             , div [ class "ml-4 flex-shrink-0 flex" ]
-                [ button [ onClick onClose, class ("bg-white rounded-md inline-flex text-gray-400 " ++ focusRing ( theme.color, 500 ) ( Color.white, 500 ) ++ " hover:text-gray-500") ]
+                [ button [ onClick onClose, class ("bg-white rounded-md inline-flex text-gray-400 " ++ focusRing ( Color.primary, 500 ) ( Color.white, 500 ) ++ " hover:text-gray-500") ]
                     [ span [ class "sr-only" ] [ text "Close" ]
                     , Icon.solid X ""
                     ]
@@ -76,12 +75,12 @@ toast content isOpen =
         ]
 
 
-container : Theme -> List Model -> (String -> msg) -> Html msg
-container theme toasts close =
+container : List Model -> (String -> msg) -> Html msg
+container toasts close =
     div [ ariaLive "assertive", class "fixed inset-0 flex items-end px-4 py-6 z-max pointer-events-none sm:p-6 sm:items-end" ]
         [ Keyed.node "div"
             [ class "w-full flex flex-col items-center space-y-4 sm:items-start" ]
-            (toasts |> List.map (\t -> render theme (close t.key) t))
+            (toasts |> List.map (\t -> render (close t.key) t))
         ]
 
 
@@ -122,14 +121,14 @@ noop =
     updateDocState identity
 
 
-doc : Theme -> Chapter (SharedDocState x)
-doc theme =
+doc : Chapter (SharedDocState x)
+doc =
     Chapter.chapter "Toast"
         |> Chapter.renderStatefulComponentList
-            [ ( "simple", \_ -> simple theme noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
+            [ ( "simple", \_ -> simple noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
             , ( "add toasts"
               , \{ toastDocState } ->
-                    Button.primary3 theme.color
+                    Button.primary3 Color.primary
                         [ onClick
                             (addToast
                                 (Simple
@@ -143,5 +142,5 @@ doc theme =
                         ]
                         [ text "Simple toast!" ]
               )
-            , ( "container", \{ toastDocState } -> container theme toastDocState.toasts removeToast )
+            , ( "container", \{ toastDocState } -> container toastDocState.toasts removeToast )
             ]

@@ -85,7 +85,7 @@ view model =
 
 viewNotFound : Model -> List (Html msg)
 viewNotFound _ =
-    [ NotFound.simple Conf.theme
+    [ NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
             , link = { url = Route.toHref Route.Home_, text = "Azimutt" }

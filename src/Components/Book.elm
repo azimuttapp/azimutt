@@ -36,10 +36,10 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import ElmBook.ComponentOptions
 import ElmBook.StatefulOptions
 import ElmBook.ThemeOptions
-import Html exposing (Html, img, node, table, td, text, th, tr)
+import Html exposing (img, node, table, td, text, th, tr)
 import Html.Attributes exposing (alt, href, rel, src)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color as Color exposing (Color, ColorLevel)
+import Libs.Models.Color as Color
 import Libs.Tailwind exposing (bg)
 
 
@@ -66,11 +66,6 @@ init =
     }
 
 
-theme : { color : Color }
-theme =
-    { color = Color.indigo }
-
-
 main : ElmBook.Book DocState
 main =
     ElmBook.book "Azimutt Design System"
@@ -84,10 +79,10 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Input.doc theme, Kbd.doc, Link.doc theme, Markdown.doc ] )
-            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, FileInput.doc theme, ItemList.doc theme, Modal.doc theme, Slideover.doc theme, Toast.doc theme, Tooltip.doc ] )
-            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Table.doc ] )
-            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Markdown.doc ] )
+            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc, Relation.doc, Table.doc ] )
+            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc ] )
             ]
 
 
@@ -106,13 +101,16 @@ colorsDoc =
         |> Chapter.renderComponentList
             [ ( "Color"
               , table []
-                    (tr [] (th [] [] :: (Color.levels |> List.map (\l -> th [] [ text (String.fromInt l) ])))
-                        :: (Color.all |> List.map (\color -> tr [] (th [] [ text color.name ] :: (Color.levels |> List.map (viewColorCell color)))))
+                    (tr [] (th [] [] :: (Color.levels |> List.map (\l -> th [ css [ "w-24 text-center" ] ] [ text (String.fromInt l) ])))
+                        :: (Color.all
+                                |> List.map
+                                    (\color ->
+                                        tr []
+                                            (th [ css [ "h-10" ] ] [ text color ]
+                                                :: (Color.levels |> List.map (\level -> td [ css [ bg color level ] ] []))
+                                            )
+                                    )
+                           )
                     )
               )
             ]
-
-
-viewColorCell : Color -> ColorLevel -> Html msg
-viewColorCell color level =
-    td [ css [ "p-3", bg color level ] ] [ text (color |> Color.hex level) ]

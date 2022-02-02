@@ -7,6 +7,7 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
+import Libs.Tailwind exposing (stroke_500)
 import Svg exposing (Svg, svg, text)
 import Svg.Attributes exposing (class, height, strokeDasharray, style, width, x1, x2, y1, y2)
 
@@ -45,7 +46,7 @@ viewLine p1 p2 nullable color =
             , y1 (String.fromFloat p1.top)
             , x2 (String.fromFloat p2.left)
             , y2 (String.fromFloat p2.top)
-            , class (color |> M.mapOrElse (\c -> "stroke-" ++ c.name ++ "-500 stroke-3") ("stroke-" ++ Color.default.name ++ "-400 stroke-2"))
+            , class (color |> M.mapOrElse (\c -> stroke_500 c ++ " stroke-3") "stroke-default-400 stroke-2")
             ]
         )
         []

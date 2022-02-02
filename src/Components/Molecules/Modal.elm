@@ -12,7 +12,6 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (TwClass, bg_100, sm, text_600)
 
 
@@ -129,14 +128,14 @@ component name buildComponent =
     )
 
 
-doc : Theme -> Chapter (SharedDocState x)
-doc theme =
+doc : Chapter (SharedDocState x)
+doc =
     Chapter.chapter "Modal"
         |> Chapter.renderStatefulComponentList
             [ component "confirm"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Color.primary [ onClick (setOpen True) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
                             , color = Color.red
@@ -154,7 +153,7 @@ doc theme =
             , component "modal"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Color.primary [ onClick (setOpen True) ] [ text "Click me!" ]
                         , modal
                             { id = "modal"
                             , titleId = "modal-title"
