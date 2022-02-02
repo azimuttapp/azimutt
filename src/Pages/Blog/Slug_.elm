@@ -1,7 +1,6 @@
 module Pages.Blog.Slug_ exposing (Model, Msg, page)
 
 import Gen.Params.Blog.Slug_ exposing (Params)
-import Html.Styled as Styled
 import Http
 import Libs.Regex as Rgx
 import Libs.Result as R
@@ -77,5 +76,5 @@ view model =
 
             _ ->
                 "Azimutt blog - Explore your database schema"
-    , body = viewArticle model |> List.map Styled.toUnstyled
+    , body = viewArticle model
     }

@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@tailwindcss/forms": "^0.4.0",
+    "@tailwindcss/typography": "^0.5.1",
     "elm-coverage": "^0.4.0",
     "elm-review": "^2.5.5",
     "elm-test": "^0.19.1-revision7",

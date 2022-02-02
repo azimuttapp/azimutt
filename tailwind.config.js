@@ -50,7 +50,10 @@ module.exports = {
             rose: colors.rose,
         }
     },
-    plugins: [require('@tailwindcss/forms')],
+    plugins: [
+        require('@tailwindcss/forms'),
+        require('@tailwindcss/typography')
+    ],
     safelist: [
         // https://tailwindcss.com/docs/content-configuration#using-regular-expressions
         {pattern: /bg-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50|100|200|300|400|500|600|700)/, variants: ['hover', 'disabled']},
