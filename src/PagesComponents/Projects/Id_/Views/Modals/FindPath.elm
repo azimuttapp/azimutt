@@ -10,7 +10,6 @@ import Dict exposing (Dict)
 import Html exposing (Html, br, button, div, h2, h3, img, input, label, option, p, pre, select, small, span, text)
 import Html.Attributes exposing (alt, class, disabled, for, id, placeholder, selected, src, title, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Html.Styled exposing (toUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
@@ -20,7 +19,7 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.String as String
-import Libs.Tailwind exposing (bg_100, text_700)
+import Libs.Tailwind exposing (bg_100, text_600, text_700)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
@@ -31,7 +30,6 @@ import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
-import Tailwind.Utilities as Tw
 
 
 viewFindPath : Bool -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
@@ -60,7 +58,7 @@ viewHeader : String -> Html msg
 viewHeader titleId =
     div [ class "pt-6 px-6 sm:flex sm:items-start" ]
         [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", bg_100 Conf.theme.color, "sm:mx-0 sm:h-10 sm:w-10" ] ]
-            [ Icon.outline LocationMarker [ Color.text Conf.theme.color 600 ] |> toUnstyled
+            [ Icon.outline LocationMarker (text_600 Conf.theme.color)
             ]
         , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
             [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Find a path between tables" ]
@@ -257,7 +255,7 @@ viewFooter settings model =
                     [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
 
             ( Just _, Just _, FindPathState.Searching ) ->
-                [ Button.primary3 Conf.theme.color [ disabled True ] [ Icon.loading [ Tw.neg_ml_1, Tw.mr_2, Tw.animate_spin ] |> toUnstyled, text "Searching..." ] ]
+                [ Button.primary3 Conf.theme.color [ disabled True ] [ Icon.loading "-ml-1 mr-2 animate-spin", text "Searching..." ] ]
 
             ( Just _, Just _, FindPathState.Empty ) ->
                 [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]

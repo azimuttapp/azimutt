@@ -5,10 +5,9 @@ import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
-import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Tailwind exposing (TwClass)
-import Tailwind.Utilities as Tw
 
 
 withLabel : String -> Html msg
@@ -18,7 +17,7 @@ withLabel label =
 
 withIcon : Icon -> Html msg
 withIcon icon =
-    divider "justify-center" [ span [ class "bg-white px-2 text-gray-500" ] [ Icon.solid icon [ Tw.text_gray_500 ] |> toUnstyled ] ]
+    divider "justify-center" [ span [ class "bg-white px-2 text-gray-500" ] [ Icon.solid icon "text-gray-500" ] ]
 
 
 withLabelLeft : String -> Html msg

@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (TwClass, active, batch, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, border_300, border_400, border_500, border_b_200, disabled, focus, focusRing, focusWithin, hover, lg, md, placeholder_200, placeholder_400, ring_500, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
+module Libs.Tailwind exposing (TwClass, active, batch, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, border_300, border_400, border_500, border_700, border_b_200, disabled, focus, focusRing, focusWithin, focusWithinRing, hover, lg, md, placeholder_200, placeholder_400, ring_500, ring_offset_600, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
 
 import Libs.Models.Color exposing (Color, ColorLevel)
 
@@ -10,6 +10,11 @@ type alias TwClass =
 focusRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> TwClass
 focusRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
     "outline-none ring-2 ring-offset-2 " ++ ring ringColor ringLevel ++ " " ++ ringOffset offsetColor offsetLevel |> focus
+
+
+focusWithinRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> TwClass
+focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
+    "outline-none ring-2 ring-offset-2 " ++ ring ringColor ringLevel ++ " " ++ ringOffset offsetColor offsetLevel |> focusWithin
 
 
 ring : Color -> ColorLevel -> TwClass
@@ -147,6 +152,11 @@ border_500 color =
     "border-" ++ color.name ++ "-500"
 
 
+border_700 : Color -> TwClass
+border_700 color =
+    "border-" ++ color.name ++ "-700"
+
+
 border_b_200 : Color -> TwClass
 border_b_200 color =
     "border-b-" ++ color.name ++ "-200"
@@ -165,6 +175,11 @@ placeholder_400 color =
 ring_500 : Color -> TwClass
 ring_500 color =
     "ring-" ++ color.name ++ "-500"
+
+
+ring_offset_600 : Color -> TwClass
+ring_offset_600 color =
+    "ring-offset-" ++ color.name ++ "-600"
 
 
 stroke_400 : Color -> TwClass

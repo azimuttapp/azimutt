@@ -6,10 +6,10 @@ import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, div, h3, li, text, ul)
 import Html.Attributes exposing (class)
-import Html.Styled as Styled exposing (fromUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.Color as Color exposing (Color)
-import Libs.Tailwind exposing (bg_50, border_400, text_700, text_800)
+import Libs.Tailwind exposing (bg_50, border_400, text_400, text_700, text_800)
 
 
 type alias DescriptionModel =
@@ -86,7 +86,7 @@ alert model =
 alertIcon : Color -> Icon -> Html msg
 alertIcon color icon =
     div [ class "flex-shrink-0" ]
-        [ Icon.solid icon [ Color.text color 400 ] |> Styled.toUnstyled ]
+        [ Icon.solid icon (text_400 color) ]
 
 
 alertTitle : Color -> String -> Html msg

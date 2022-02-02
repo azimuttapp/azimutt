@@ -9,7 +9,6 @@ import Html.Attributes exposing (class, classList, id, style)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
-import Html.Styled as Styled
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink, sendTweet)
@@ -24,7 +23,7 @@ import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.String as S
-import Libs.Tailwind exposing (bg_400, border_400)
+import Libs.Tailwind exposing (bg_400, border_400, text_500)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
@@ -40,7 +39,6 @@ import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable)
-import Tailwind.Utilities as Tw
 
 
 viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> Html Msg
@@ -172,7 +170,7 @@ viewEmptyState tables =
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
             [ div [ class "text-center" ]
-                [ Icon.outline Template [ Tw.w_12, Tw.h_12, Tw.mx_auto, Color.text Conf.theme.color 500 ] |> Styled.toUnstyled
+                [ Icon.outline Template ("w-12 h-12 mx-auto " ++ text_500 Conf.theme.color)
                 , h2 [ class "mt-2 text-lg font-medium text-gray-900" ]
                     [ text "Hello from Azimutt 👋" ]
                 , p [ class "mt-3 text-sm text-gray-500" ]

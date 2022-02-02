@@ -8,7 +8,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
 import Html exposing (Html, a, button, div, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, href, src, type_)
-import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, css)
 import Libs.Models exposing (Image)
 import Libs.Models.Color as Color
@@ -37,7 +37,7 @@ basicSlice =
                                 , div [ css [ "-mr-2 flex items-center", md "hidden" ] ]
                                     [ button [ type_ "button", css [ "bg-gray-50 rounded-md p-2 inline-flex items-center justify-center text-gray-400", focus "outline-none ring-2 ring-inset ring-indigo-500", hover "text-gray-500 bg-gray-100" ], ariaExpanded False ]
                                         [ span [ css [ "sr-only" ] ] [ text "Open main menu" ]
-                                        , Icon.outline Menu [] |> toUnstyled
+                                        , Icon.outline Menu ""
                                         ]
                                     ]
                                 ]
@@ -54,7 +54,7 @@ basicSlice =
                                 [ button [ type_ "button", css [ "bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400", focus "outline-none ring-2 ring-inset ring-indigo-500", hover "text-gray-500 bg-gray-100" ] ]
                                     [ span [ css [ "sr-only" ] ]
                                         [ text "Close menu" ]
-                                    , Icon.outline X [] |> toUnstyled
+                                    , Icon.outline X ""
                                     ]
                                 ]
                             ]

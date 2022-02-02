@@ -22,7 +22,6 @@ import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
-import Tailwind.Utilities as Tw
 import Time
 import Track
 
@@ -91,7 +90,7 @@ viewNoProjects =
 viewFirstProject : Html msg
 viewFirstProject =
     a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover "border-gray-400", focus ("outline-none ring-2 ring-offset-2 " ++ ring_500 Conf.theme.color) ] ]
-        [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ] |> toUnstyled
+        [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
         , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
         ]
 
@@ -142,10 +141,10 @@ viewProjectCard zone project =
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover "text-gray-500" ] ]
-                [ Icon.outline Trash [ Tw.text_gray_400 ] |> toUnstyled ]
+                [ Icon.outline Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
             , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover "text-gray-500" ] ] ++ track (Track.loadProject project))
-                [ Icon.outline ArrowCircleRight [ Tw.text_gray_400 ] |> toUnstyled, span [ css [ "ml-3" ] ] [ text "Open project" ] ]
+                [ Icon.outline ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]
 
@@ -167,7 +166,7 @@ viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
         [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover "border-gray-400 text-gray-400", focusRing ( Conf.theme.color, 500 ) ( Color.white, 500 ) ] ]
-            [ Icon.outline DocumentAdd [ Tw.mx_auto, Tw.h_12, Tw.w_12 ] |> toUnstyled
+            [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]
         ]

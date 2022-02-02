@@ -6,10 +6,9 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
 import Html exposing (Html, a, br, div, h2, h3, p, span, text)
 import Html.Attributes exposing (class, href)
-import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (lg, sm)
-import Tailwind.Utilities as Tw
 
 
 coloredSlice : Html msg
@@ -21,27 +20,27 @@ coloredSlice =
             , p [ css [ "mt-4 max-w-3xl text-lg text-purple-200" ] ]
                 [ text "Your new weapons to dig into your schema:" ]
             , div [ css [ "mt-12 grid grid-cols-1 gap-x-6 gap-y-12 text-white", lg "mt-16 grid-cols-3 gap-x-8 gap-y-16", sm "grid-cols-2" ] ]
-                [ item (Icon.outline Inbox [] |> toUnstyled)
+                [ item (Icon.outline Inbox "")
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
                               Seeing only what you need is vital to understand how it works. This is true for tables but also for columns and relations!""" ]
-                , item (Icon.outline DocumentSearch [] |> toUnstyled)
+                , item (Icon.outline DocumentSearch "")
                     "Search"
                     [ text """Search is awesome, don't know where to start? Just type a few words and you will have related tables and columns ranked by relevance.
                               Looking at table and column names, but also comments, keys or relations.""" ]
-                , item (Icon.outline Photograph [] |> toUnstyled)
+                , item (Icon.outline Photograph "")
                     "Layouts"
                     [ text """Your database is probably supporting many use cases, why not save them and move from one to an other ?
                               Layouts are here for that: select tables and columns related to a feature and save them as a layout. So you can easily switch between them.""" ]
-                , item (Icon.outline Link [] |> toUnstyled)
+                , item (Icon.outline Link "")
                     "Relation exploration"
                     [ text """Start from a table and look at its relations to display more.
                               Outgoing, of course (foreign keys), but incoming ones also (foreign keys from other tables)!""" ]
-                , item (Icon.outline Link [] |> toUnstyled)
+                , item (Icon.outline Link "")
                     "Relation search"
                     [ text """Did you ever ask how to join two tables ?
                               Azimutt can help showing all the possible paths between two tables. But also between a table and a column!""" ]
-                , item (Icon.outline Link [] |> toUnstyled)
+                , item (Icon.outline Link "")
                     "Lorem Ipsum"
                     [ text "You came this far ??? Awesome! You seem quite interested and ready to dig in ^^", br [] [], text """
                             The best you can do now is to """, a [ href (Route.toHref Route.App), class "link" ] [ text "try it out" ], text " right away :D" ]
@@ -98,7 +97,7 @@ card model =
         [ div [ css [ "flow-root bg-gray-50 rounded-lg px-6 pb-8" ] ]
             [ div [ css [ "-mt-6" ] ]
                 [ div []
-                    [ span [ css [ "inline-flex items-center justify-center p-3 rounded-md shadow-lg bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline model.icon [ Tw.text_white ] |> toUnstyled ]
+                    [ span [ css [ "inline-flex items-center justify-center p-3 rounded-md shadow-lg bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline model.icon "text-white" ]
                     ]
                 , h3 [ css [ "mt-8 text-lg font-medium text-gray-900 tracking-tight" ] ] [ text model.title ]
                 , p [ css [ "mt-5 text-base text-gray-500" ] ] model.description

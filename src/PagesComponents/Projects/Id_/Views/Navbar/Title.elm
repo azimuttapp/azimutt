@@ -10,7 +10,7 @@ import Html exposing (Html, br, button, div, small, span, text)
 import Html.Attributes exposing (class, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
-import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
@@ -19,14 +19,12 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (focusRing)
-import Libs.Tailwind.Utilities as Tu
+import Libs.Tailwind exposing (focusRing, text_300)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
-import Tailwind.Utilities as Tw
 
 
 viewNavbarTitle : List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
@@ -43,7 +41,7 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 )) ]
                 [ span [] [ text project.name ]
-                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ] |> toUnstyled
+                , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
         )
         (\_ ->
@@ -64,7 +62,7 @@ viewLayoutsMaybe usedLayout layouts htmlId openedDropdown =
         []
 
     else
-        [ Icon.slash [ Color.text Conf.theme.color 300 ] |> toUnstyled
+        [ Icon.slash (text_300 Conf.theme.color)
         , Lazy.lazy4 viewLayouts usedLayout layouts htmlId openedDropdown
         ]
 
@@ -75,7 +73,7 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 )) ]
                 [ span [] [ text (usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
-                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ] |> toUnstyled
+                , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
         )
         (\_ ->
@@ -99,8 +97,8 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
     span [ role "menuitem", tabindex -1, css [ "flex", Dropdown.itemStyles ] ]
-        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), class "focus:outline-none" ] [ Icon.solid Trash [ Tw.inline_block ] |> toUnstyled ] |> Tooltip.t "Delete this layout"
-        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), class "mx-2 focus:outline-none" ] [ Icon.solid Pencil [ Tw.inline_block ] |> toUnstyled ] |> Tooltip.t "Update layout with current one"
+        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), class "focus:outline-none" ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
+        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), class "mx-2 focus:outline-none" ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), class "flex-grow text-left focus:outline-none" ]
             [ text name
             , text " "

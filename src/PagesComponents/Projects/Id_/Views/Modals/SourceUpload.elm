@@ -9,7 +9,6 @@ import Conf
 import Html exposing (Html, br, div, h3, li, p, text, ul)
 import Html.Attributes exposing (class, disabled, id)
 import Html.Events exposing (onClick)
-import Html.Styled exposing (toUnstyled)
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (role)
@@ -74,7 +73,7 @@ localFileModal zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") |> toUnstyled ]
+        , div [ class "mt-3" ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> M.filter (\_ -> name1 /= name2)
@@ -171,7 +170,7 @@ newSourceModal titleId model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") |> toUnstyled ]
+        , div [ class "mt-3" ] [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , SQLSource.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]

@@ -15,7 +15,7 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind exposing (TwClass, bg_100, sm)
+import Libs.Tailwind exposing (TwClass, bg_100, sm, text_600)
 
 
 type alias ConfirmModel msg =
@@ -46,7 +46,7 @@ confirm model isOpen =
         }
         [ div [ class "px-6 pt-6 sm:flex sm:items-start" ]
             [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10", bg_100 model.color ] ]
-                [ Icon.outline model.icon [ Color.text model.color 600 ] |> Styled.toUnstyled
+                [ Icon.outline model.icon (text_600 model.color)
                 ]
             , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
                 [ h3 [ class "text-lg leading-6 font-medium text-gray-900", id titleId ]

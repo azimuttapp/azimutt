@@ -172,7 +172,7 @@ viewHeader model =
                         ++ track Track.openTableSettings
                     )
                     [ span [ class "sr-only" ] [ text "Open table settings" ]
-                    , Icon.solid DotsVertical [] |> Styled.toUnstyled
+                    , Icon.solid DotsVertical ""
                     ]
             )
             (\_ -> div [ class "z-max" ] (model.settings |> List.map Dropdown.submenuButton))
@@ -228,22 +228,22 @@ viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
         div ([ class "w-6 h-6", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
-            [ Icon.solid ExternalLink [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+            [ Icon.solid ExternalLink "pt-2" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
-        div [ class "w-6 h-6" ] [ Icon.solid Key [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t "Primary key" ]
+        div [ class "w-6 h-6" ] [ Icon.solid Key "pt-2" |> Tooltip.t "Primary key" ]
 
     else if column.uniques |> L.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid FingerPrint [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid FingerPrint "pt-2" |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> L.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid SortDescending [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid SortDescending "pt-2" |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> L.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid Check [ Tw.pt_2 ] |> Styled.toUnstyled |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid Check "pt-2" |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
-        div [ class "w-6 h-6" ] [ Icon.solid Empty [ Tw.pt_2 ] |> Styled.toUnstyled ]
+        div [ class "w-6 h-6" ] [ Icon.solid Empty "pt-2" ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
@@ -279,7 +279,7 @@ viewColumnIconDropdown model column icon =
                                 let
                                     content : List (Html msg)
                                     content =
-                                        [ Icon.solid ExternalLink [ Tw.inline ] |> Styled.toUnstyled
+                                        [ Icon.solid ExternalLink "inline"
                                         , bText (formatTableRef { schema = r.column.schema, table = r.column.table })
                                         , text ("." ++ r.column.column ++ B.cond r.nullable "?" "")
                                         ]
@@ -322,7 +322,7 @@ viewColumnName column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Chat [ Tw.w_4, Tw.ml_1, Tw.opacity_25 ] |> Styled.toUnstyled |> Tooltip.t comment
+    Icon.outline Chat "w-4 ml-1 opacity-25" |> Tooltip.t comment
 
 
 viewColumnKind : Model msg -> Column -> Html msg

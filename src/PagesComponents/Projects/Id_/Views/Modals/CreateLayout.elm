@@ -7,12 +7,11 @@ import Conf
 import Html exposing (Html, div, h3, input, label, p, text)
 import Html.Attributes exposing (autofocus, class, for, id, name, tabindex, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Html.Styled exposing (toUnstyled)
 import Libs.Html exposing (bText, sendTweet)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (bg_100, sm)
+import Libs.Tailwind exposing (bg_100, sm, text_600)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 
 
@@ -35,7 +34,7 @@ viewCreateLayout opened model =
         }
         [ div [ class "px-6 pt-6 sm:flex sm:items-start" ]
             [ div [ class ("mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full " ++ bg_100 Conf.theme.color ++ " sm:mx-0 sm:h-10 sm:w-10") ]
-                [ Icon.outline Template [ Color.text Conf.theme.color 600 ] |> toUnstyled
+                [ Icon.outline Template (text_600 Conf.theme.color)
                 ]
             , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]

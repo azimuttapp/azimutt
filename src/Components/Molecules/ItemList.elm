@@ -7,13 +7,12 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (type_)
 import Html.Events exposing (onClick)
-import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, css, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (bg_500, focus, focusWithin, hover, ring_500, sm)
-import Tailwind.Utilities as Tw
 
 
 type alias IconItem msg =
@@ -30,7 +29,7 @@ withIcon : Theme -> IconItem msg -> Html msg
 withIcon theme item =
     li [ css [ "flow-root", B.cond item.active "" "filter grayscale" ] ]
         [ div [ css [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover "bg-gray-50", focusWithin ("ring-2 " ++ ring_500 theme.color) ] ]
-            [ div [ css [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon [ Tw.text_white ] |> toUnstyled ]
+            [ div [ css [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon "text-white" ]
             , div []
                 [ h3 []
                     [ button [ type_ "button", onClick item.onClick, css [ "text-sm font-medium text-gray-900", focus "outline-none" ] ]

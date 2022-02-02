@@ -11,19 +11,18 @@ import Gen.Route as Route
 import Html exposing (Html, a, aside, div, form, h2, li, nav, p, span, text, ul)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaCurrent, css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (batch, bg_50, border_300, border_500, hover, lg, sm, text_700)
+import Libs.Tailwind exposing (batch, bg_50, border_300, border_500, hover, lg, sm, text_500, text_700)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
 import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
-import Tailwind.Utilities as Tw
 
 
 viewNewProject : Model -> List (Styled.Html Msg)
@@ -31,7 +30,7 @@ viewNewProject model =
     appShell (\link -> SelectMenu link.text)
         ToggleMobileMenu
         model
-        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft [ Tw.inline_block ] |> toUnstyled, text " ", text model.selectedMenu ] |> fromUnstyled ]
+        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft "inline-block", text " ", text model.selectedMenu ] |> fromUnstyled ]
         [ viewContent model
             { tabs =
                 [ { tab = Schema, icon = DocumentText, text = "From SQL schema" }
@@ -66,13 +65,13 @@ viewTab : Tab -> TabModel Tab -> Html Msg
 viewTab selected tab =
     if tab.tab == selected then
         a [ href "", css [ bg_50 Conf.theme.color, border_500 Conf.theme.color, text_700 Conf.theme.color, "border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover (batch [ bg_50 Conf.theme.color, text_700 Conf.theme.color ]) ], ariaCurrent "page" ]
-            [ Icon.outline tab.icon [ Color.text Conf.theme.color 500, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ] |> toUnstyled
+            [ Icon.outline tab.icon ("flex-shrink-0 -ml-1 mr-3 h-6 w-6 " ++ text_500 Conf.theme.color)
             , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 
     else
         a [ href "", onClick (SelectTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover "bg-gray-50 text-gray-900" ] ]
-            [ Icon.outline tab.icon [ Tw.text_gray_400, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ] |> toUnstyled
+            [ Icon.outline tab.icon "flex-shrink-0 -ml-1 mr-3 h-6 w-6 text-gray-400"
             , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 
@@ -99,7 +98,7 @@ viewSchemaUpload openedCollapse =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm "grid-cols-6" ] ]
                 [ div [ css [ sm "col-span-6" ] ]
-                    [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop |> toUnstyled
+                    [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop
                     ]
                 ]
             ]

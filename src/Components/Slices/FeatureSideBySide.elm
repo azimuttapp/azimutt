@@ -6,12 +6,11 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
 import Html exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
-import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
 import Libs.Models exposing (Image, TrackedLink)
 import Libs.Tailwind exposing (TwClass, hover, lg, md, sm)
-import Tailwind.Utilities as Tw
 
 
 type alias Model msg =
@@ -117,7 +116,7 @@ details position model =
 
 featureIcon : Icon -> Html msg
 featureIcon icon =
-    span [ css [ "h-12 w-12 rounded-md flex items-center justify-center bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline icon [ Tw.text_white ] |> toUnstyled ]
+    span [ css [ "h-12 w-12 rounded-md flex items-center justify-center bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline icon "text-white" ]
 
 
 featureDescription : Description msg -> Html msg

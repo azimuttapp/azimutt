@@ -10,7 +10,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, button, div, h2, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled as Styled exposing (fromUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models exposing (Millis)
@@ -68,7 +68,7 @@ closeBtn : msg -> Html msg
 closeBtn msg =
     button [ type_ "button", onClick msg, css [ "bg-white rounded-md text-gray-400 hover:text-gray-500", focus "outline-none ring-2 ring-offset-2 ring-indigo-500" ] ]
         [ span [ class "sr-only" ] [ text "Close panel" ]
-        , Icon.outline X [] |> toUnstyled
+        , Icon.outline X ""
         ]
 
 

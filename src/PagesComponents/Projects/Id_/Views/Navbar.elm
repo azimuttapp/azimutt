@@ -12,7 +12,6 @@ import Html exposing (Html, a, button, div, img, nav, span, text)
 import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_, width)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
-import Html.Styled exposing (toUnstyled)
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Either as E
@@ -24,14 +23,12 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, bg_500, bg_600, border_500, focusRing, text_100, text_200)
-import Libs.Tailwind.Utilities as Tu
+import Libs.Tailwind exposing (TwClass, bg_500, bg_600, border_500, focusRing, text_100, text_200, text_300)
 import Models.Project.CanvasProps as CanvasProps
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
-import Tailwind.Utilities as Tw
 
 
 type alias Btn msg =
@@ -93,7 +90,7 @@ viewNavbarBrand =
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
     button [ onClick (HelpMsg (HOpen "")), class ("ml-3 rounded-full " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 )) ]
-        [ Icon.solid QuestionMarkCircle [ Color.text Conf.theme.color 300 ] |> toUnstyled ]
+        [ Icon.solid QuestionMarkCircle (text_300 Conf.theme.color) ]
 
 
 viewNavbarResetLayout : Bool -> Html Msg
@@ -107,8 +104,8 @@ viewNavbarFeatures features htmlId openedDropdown =
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), class ("ml-3 flex-shrink-0 flex justify-center items-center " ++ bg_600 Conf.theme.color ++ " p-1 rounded-full " ++ text_200 Conf.theme.color ++ " " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ++ " hover:text-white") ]
                 [ span [ class "sr-only" ] [ text "View features" ]
-                , Icon.outline LightningBolt [] |> toUnstyled
-                , Icon.solid ChevronDown [ Tw.transform, Tw.transition, Tu.when m.isOpen [ Tw.neg_rotate_180 ] ] |> toUnstyled
+                , Icon.outline LightningBolt ""
+                , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
         )
         (\_ ->
@@ -129,7 +126,7 @@ viewNavbarSettings : Html Msg
 viewNavbarSettings =
     button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class ("ml-3 flex-shrink-0 " ++ bg_600 Conf.theme.color ++ " p-1 rounded-full " ++ text_200 Conf.theme.color ++ " " ++ focusRing ( Color.white, 600 ) ( Conf.theme.color, 600 ) ++ " hover:text-white") ]
         [ span [ class "sr-only" ] [ text "View settings" ]
-        , Icon.outline Cog [] |> toUnstyled
+        , Icon.outline Cog ""
         ]
 
 
@@ -138,8 +135,8 @@ navbarMobileButton open =
     div [ class "flex lg:hidden" ]
         [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, class ("inline-flex items-center justify-center p-2 rounded-md " ++ text_200 Conf.theme.color ++ " hover:text-white hover:" ++ bg_500 Conf.theme.color ++ " focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white") ]
             [ span [ class "sr-only" ] [ text "Open main menu" ]
-            , Icon.outline Menu [ B.cond open Tw.hidden Tw.block ] |> toUnstyled
-            , Icon.outline X [ B.cond open Tw.block Tw.hidden ] |> toUnstyled
+            , Icon.outline Menu (B.cond open "hidden" "block")
+            , Icon.outline X (B.cond open "block" "hidden")
             ]
         ]
 
@@ -169,7 +166,7 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
                             (\url -> extLink url [ class btnStyle ] [ f.content ])
                             (\action -> button [ type_ "button", onClick action, class btnStyle ] [ f.content ])
                 )
-         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ] |> toUnstyled, text "Settings" ] ]
+         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Cog "mr-3", text "Settings" ] ]
          ]
             |> List.filter L.nonEmpty
             |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, B.cond (i /= 0) groupBorder "" ] ] groupContent)

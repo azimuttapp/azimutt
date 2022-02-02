@@ -10,11 +10,11 @@ import Html exposing (Html, button, div, p, span, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
-import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Html.Styled exposing (fromUnstyled)
 import Libs.Html.Attributes exposing (ariaLive, css)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind exposing (TwClass, focusRing)
+import Libs.Tailwind exposing (TwClass, focusRing, text_400)
 
 
 type alias Model =
@@ -44,7 +44,7 @@ simple : Theme -> msg -> Bool -> SimpleModel -> Html msg
 simple theme onClose isOpen model =
     toast
         (div [ class "flex items-start" ]
-            [ div [ class "flex-shrink-0" ] [ Icon.outline model.icon [ Color.text model.color 400 ] |> toUnstyled ]
+            [ div [ class "flex-shrink-0" ] [ Icon.outline model.icon (text_400 model.color) ]
             , div [ class "ml-3 w-0 flex-1 pt-0.5" ]
                 [ p [ class "text-sm font-medium text-gray-900" ] [ text model.title ]
                 , p [ class "mt-1 text-sm text-gray-500" ] [ text model.message ]
@@ -52,7 +52,7 @@ simple theme onClose isOpen model =
             , div [ class "ml-4 flex-shrink-0 flex" ]
                 [ button [ onClick onClose, class ("bg-white rounded-md inline-flex text-gray-400 " ++ focusRing ( theme.color, 500 ) ( Color.white, 500 ) ++ " hover:text-gray-500") ]
                     [ span [ class "sr-only" ] [ text "Close" ]
-                    , Icon.solid X [] |> toUnstyled
+                    , Icon.solid X ""
                     ]
                 ]
             ]

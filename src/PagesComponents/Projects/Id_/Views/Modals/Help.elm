@@ -9,7 +9,6 @@ import Conf
 import Html exposing (Html, div, h3, p, text)
 import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled
 import Libs.Bool as B
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
@@ -17,7 +16,6 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (bg_100, text_700)
 import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
-import Tailwind.Utilities as Tw
 
 
 viewHelp : Bool -> HelpDialog -> Html Msg
@@ -104,7 +102,7 @@ canvasNavigation =
             [ text "You have an infinite canvas to organize your tables. You can scroll with your mouse and zoom using the "
             , hotkey [ "ctrl", "scroll" ]
             , text ". On the bottom right you also have some commands to control the zoom or adjust your schema to the screen ("
-            , Icon.solid ArrowsExpand [ Tw.inline ] |> Styled.toUnstyled
+            , Icon.solid ArrowsExpand "inline"
             , text ")."
             ]
         , p [ class "mt-3" ] [ text "You can move table by dragging them and move the whole canvas by dragging the background." ]
@@ -156,7 +154,7 @@ followRelation =
         [ text "Azimutt shows you foreign keys as outgoing relations from a column with a small horizontal link on the right. Just "
         , hotkey [ "click" ]
         , text " on the column icon ("
-        , Icon.solid ExternalLink [ Tw.inline ] |> Styled.toUnstyled
+        , Icon.solid ExternalLink "inline"
         , text ") to show the target table. Incoming relations (foreign keys pointing to the table) are shown on the left, "
         , hotkey [ "click" ]
         , text " on the column icon to see all the incoming relations an choose the tables you want to show."

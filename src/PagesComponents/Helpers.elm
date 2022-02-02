@@ -11,7 +11,7 @@ import Css.Global as Global
 import Gen.Route as Route
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class, id)
-import Html.Styled as Styled exposing (toUnstyled)
+import Html.Styled as Styled exposing (fromUnstyled)
 import Html.Styled.Attributes as Styled
 import Libs.Html.Styled as Styled
 import Libs.Models exposing (Link)
@@ -41,7 +41,7 @@ publicHeader =
             , { url = Conf.constants.azimuttRoadmap, content = [ text "Roadmap" ], external = True }
             , { url = Conf.constants.azimuttGithub, content = [ text "Source code" ], external = True }
             , { url = Conf.constants.azimuttBugReport, content = [ text "Bug reports" ], external = True }
-            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter [] |> toUnstyled, span [ class "sr-only" ] [ text "Twitter" ] ], external = True }
+            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter "", span [ class "sr-only" ] [ text "Twitter" ] ], external = True }
             ]
         }
 
@@ -89,6 +89,7 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
             , mobileMenuOpen = model.mobileMenuOpen
             , profileOpen = False
             }
+            |> fromUnstyled
         , viewHeader title
         ]
     , Styled.div [ Styled.css [ Tw.neg_mt_32 ] ]

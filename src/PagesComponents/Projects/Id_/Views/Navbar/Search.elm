@@ -7,22 +7,19 @@ import Dict exposing (Dict)
 import Html exposing (Attribute, Html, button, div, input, kbd, label, span, text)
 import Html.Attributes exposing (autocomplete, class, for, id, name, placeholder, tabindex, type_, value)
 import Html.Events exposing (onBlur, onFocus, onInput, onMouseDown)
-import Html.Styled exposing (toUnstyled)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css, role)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.Tailwind exposing (TwClass, bg_500, bg_600, border_300, focus, placeholder_200, placeholder_400, text_100, text_300, text_400, text_900)
+import Libs.Tailwind exposing (TwClass, bg_500, bg_600, border_300, focus, placeholder_200, placeholder_400, text_100, text_200, text_300, text_400, text_900)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
-import Tailwind.Utilities as Tw
 
 
 viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
@@ -33,7 +30,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
             , Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
                 (\m ->
                     div []
-                        [ div [ class "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] [ Icon.solid Search [ Color.text Conf.theme.color 200 ] |> toUnstyled ]
+                        [ div [ class "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] [ Icon.solid Search (text_200 Conf.theme.color) ]
                         , input
                             [ type_ "search"
                             , name "search"
@@ -64,7 +61,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                     if search.text == "" then
                         div []
                             [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", Dropdown.itemDisabledStyles ] ]
-                                [ text "Type to search into tables (", Icon.solid Icon.Table [] |> toUnstyled, text "), columns (", Icon.solid Tag [] |> toUnstyled, text ") and relations (", Icon.solid ExternalLink [] |> toUnstyled, text ")" ]
+                                [ text "Type to search into tables (", Icon.solid Icon.Table "", text "), columns (", Icon.solid Tag "", text ") and relations (", Icon.solid ExternalLink "", text ")" ]
                             ]
 
                     else
@@ -108,11 +105,11 @@ viewSearchResult searchId shownTables active index res =
                 in
                 if disabled then
                     span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, B.cond (active == index) (text_400 Conf.theme.color) "" ] ])
-                        ([ Icon.solid icon [ Tw.mr_3 ] |> toUnstyled ] ++ content)
+                        ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
                     button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, "focus:outline-none", B.cond (active == index) (bg_600 Conf.theme.color ++ " text-white") "" ] ])
-                        ([ Icon.solid icon [ Tw.mr_3 ] |> toUnstyled ] ++ content)
+                        ([ Icon.solid icon "mr-3" ] ++ content)
     in
     case res of
         FoundTable table ->

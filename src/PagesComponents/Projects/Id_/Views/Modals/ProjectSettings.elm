@@ -8,7 +8,7 @@ import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
 import Html.Attributes exposing (checked, class, for, id, type_, value)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (toUnstyled)
+import Html.Styled as Styled
 import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
@@ -25,7 +25,6 @@ import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
-import Tailwind.Utilities as Tw
 import Time
 
 
@@ -68,15 +67,15 @@ viewSource _ zone source =
                     [ div [ class "flex justify-between" ]
                         [ viewCheckbox ""
                             ("settings-source-" ++ SourceId.toString source.id)
-                            [ span [] [ Icon.solid icon [ Tw.inline ] |> toUnstyled, text source.name ] |> Tooltip.b labelTitle ]
+                            [ span [] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
                             source.enabled
                             (ProjectSettingsMsg (PSToggleSource source))
                         , div []
                             [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ "focus:outline-none", B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
-                                [ Icon.solid Refresh [ Tw.inline ] |> toUnstyled ]
+                                [ Icon.solid Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
                             , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (Styled.text "Are you really sure?")), class "focus:outline-none" ]
-                                [ Icon.solid Trash [ Tw.inline ] |> toUnstyled ]
+                                [ Icon.solid Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
                             ]
                         ]
@@ -100,7 +99,7 @@ viewSource _ zone source =
 viewAddSource : ProjectId -> Html Msg
 viewAddSource _ =
     button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), class "inline-flex items-center px-3 py-2 w-full text-left focus:outline-none" ]
-        [ Icon.solid Plus [ Tw.inline ] |> toUnstyled, text "Add source" ]
+        [ Icon.solid Plus "inline", text "Add source" ]
 
 
 viewSchemasSection : Erd -> Html Msg
