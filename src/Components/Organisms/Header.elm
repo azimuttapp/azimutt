@@ -6,7 +6,7 @@ import Html exposing (Html, a, div, header, img, nav, span, text)
 import Html.Attributes exposing (alt, class, href, src)
 import Html.Styled exposing (fromUnstyled)
 import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (ariaLabel, classes)
+import Libs.Html.Attributes exposing (ariaLabel, css)
 import Libs.Models exposing (Image, Link)
 import Libs.Tailwind exposing (TwClass)
 
@@ -45,17 +45,17 @@ rightLinks theme model =
         [ div [ class "flex justify-between items-center max-w-7xl mx-auto px-4 py-6 lg:px-8 md:justify-start md:space-x-10 sm:px-6" ]
             [ a [ href model.brand.link.url, class "flex justify-start items-center font-medium lg:w-0 lg:flex-1" ]
                 [ img [ src model.brand.img.src, alt model.brand.img.alt, class "h-8 w-auto sm:h-10" ] []
-                , span [ classes [ "ml-3 text-2xl", theme.text ] ] [ text model.brand.link.text ]
+                , span [ css [ "ml-3 text-2xl", theme.text ] ] [ text model.brand.link.text ]
                 ]
             , nav [ class "hidden space-x-10 md:flex" ]
                 (model.links
                     |> List.map
                         (\l ->
                             if l.external then
-                                extLink l.url [ classes [ "text-base font-medium", theme.text ] ] l.content
+                                extLink l.url [ css [ "text-base font-medium", theme.text ] ] l.content
 
                             else
-                                a [ href l.url, classes [ "text-base font-medium", theme.text ] ] l.content
+                                a [ href l.url, css [ "text-base font-medium", theme.text ] ] l.content
                         )
                 )
             ]
@@ -92,15 +92,15 @@ leftLinks theme model =
                 [ div [ class "flex items-center" ]
                     [ a [ href model.brand.link.url ] [ span [ class "sr-only" ] [ text model.brand.link.text ], img [ class "h-10 w-auto", src model.brand.img.src, alt model.brand.img.alt ] [] ]
                     , div [ class "hidden ml-10 space-x-8 lg:block" ]
-                        (model.links |> List.map (\link -> a [ href link.url, classes [ "text-base font-medium", theme.links ] ] [ text link.text ]))
+                        (model.links |> List.map (\link -> a [ href link.url, css [ "text-base font-medium", theme.links ] ] [ text link.text ]))
                     ]
                 , div [ class "ml-10 space-x-4" ]
-                    [ a [ href model.secondary.url, classes [ "inline-block py-2 px-4 border border-transparent rounded-md text-base font-medium", theme.secondary ] ] [ text model.secondary.text ]
-                    , a [ href model.primary.url, classes [ "inline-block py-2 px-4 border border-transparent rounded-md text-base font-medium", theme.primary ] ] [ text model.primary.text ]
+                    [ a [ href model.secondary.url, css [ "inline-block py-2 px-4 border border-transparent rounded-md text-base font-medium", theme.secondary ] ] [ text model.secondary.text ]
+                    , a [ href model.primary.url, css [ "inline-block py-2 px-4 border border-transparent rounded-md text-base font-medium", theme.primary ] ] [ text model.primary.text ]
                     ]
                 ]
             , div [ class "py-4 flex flex-wrap justify-center space-x-6 lg:hidden" ]
-                (model.links |> List.map (\link -> a [ href link.url, classes [ "text-base font-medium", theme.links ] ] [ text link.text ]))
+                (model.links |> List.map (\link -> a [ href link.url, css [ "text-base font-medium", theme.links ] ] [ text link.text ]))
             ]
         ]
 

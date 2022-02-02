@@ -8,7 +8,7 @@ import Html exposing (Html, div, input, label, option, p, select, span, text)
 import Html.Attributes exposing (checked, class, for, id, name, placeholder, selected, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Html.Styled exposing (fromUnstyled)
-import Libs.Html.Attributes exposing (ariaDescribedby, classes)
+import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (TwClass)
@@ -40,7 +40,7 @@ selectWithLabelAndHelp styles fieldId fieldLabel fieldHelp fieldOptions fieldVal
 checkbox : TwClass -> String -> String -> String -> Bool -> msg -> Html msg
 checkbox styles fieldId fieldLabel fieldHelp fieldValue fieldChange =
     -- TODO: fieldLabel, replace String with (List (Html msg))
-    div [ classes [ "relative flex items-start", styles ] ]
+    div [ css [ "relative flex items-start", styles ] ]
         [ div [ class "flex items-center h-5" ]
             [ input [ type_ "checkbox", name fieldId, id fieldId, checked fieldValue, onClick fieldChange, ariaDescribedby (fieldId ++ "-help"), class "h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" ] []
             ]

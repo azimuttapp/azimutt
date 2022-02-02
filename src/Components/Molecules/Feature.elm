@@ -5,7 +5,7 @@ import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, dd, div, dt, p, text)
 import Html.Styled exposing (fromUnstyled, toUnstyled)
-import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Attributes exposing (css)
 import Tailwind.Utilities as Tw
 
 
@@ -15,10 +15,10 @@ type alias CheckedModel =
 
 checked : CheckedModel -> Html msg
 checked model =
-    div [ classes [ "relative" ] ]
+    div [ css [ "relative" ] ]
         (List.filterMap identity
-            [ Just (dt [] [ Icon.outline Check [ Tw.absolute, Tw.text_green_500 ] |> toUnstyled, p [ classes [ "ml-9 text-lg leading-6 font-medium text-gray-900" ] ] [ text model.title ] ])
-            , model.description |> Maybe.map (\desc -> dd [ classes [ "mt-2 ml-9 text-base text-gray-500" ] ] [ text desc ])
+            [ Just (dt [] [ Icon.outline Check [ Tw.absolute, Tw.text_green_500 ] |> toUnstyled, p [ css [ "ml-9 text-lg leading-6 font-medium text-gray-900" ] ] [ text model.title ] ])
+            , model.description |> Maybe.map (\desc -> dd [ css [ "mt-2 ml-9 text-base text-gray-500" ] ] [ text desc ])
             ]
         )
 

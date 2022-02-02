@@ -13,7 +13,7 @@ import Html.Attributes exposing (class, href, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, classes, role)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, css, role)
 import Libs.Maybe as M
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -72,7 +72,7 @@ dropdown model elt content =
     in
     div [ class "relative inline-block text-left" ]
         [ elt model
-        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, classes [ menuStyles, direction, dropdownMenu ] ]
+        , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css [ menuStyles, direction, dropdownMenu ] ]
             [ content model
             ]
         ]
@@ -80,16 +80,16 @@ dropdown model elt content =
 
 link : Link -> Html msg
 link l =
-    a [ href l.url, role "menuitem", tabindex -1, classes [ "block", itemStyles ] ] [ text l.text ]
+    a [ href l.url, role "menuitem", tabindex -1, css [ "block", itemStyles ] ] [ text l.text ]
 
 
 submenuButton : MenuItem msg -> Html msg
 submenuButton menu =
     case menu.action of
         Left submenus ->
-            div [ classes [ "group relative", itemStyles ] ]
+            div [ css [ "group relative", itemStyles ] ]
                 [ text (menu.label ++ " »")
-                , div [ classes [ "group-hover:block hidden -top-1 left-full", menuStyles ] ]
+                , div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ]
                     (submenus |> List.map (\submenu -> hotkeyBtn submenu.action submenu.label submenu.hotkey))
                 ]
 
@@ -104,12 +104,12 @@ hotkeyBtn action label hotkey =
 
 btn : TwClass -> msg -> List (Html msg) -> Html msg
 btn styles message content =
-    button [ type_ "button", onClick message, role "menuitem", tabindex -1, classes [ "block w-full text-left focus:outline-none", itemStyles, styles ] ] content
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "block w-full text-left focus:outline-none", itemStyles, styles ] ] content
 
 
 btnDisabled : TwClass -> List (Html msg) -> Html msg
 btnDisabled styles content =
-    button [ type_ "button", role "menuitem", tabindex -1, classes [ "block w-full text-left focus:outline-none", itemDisabledStyles, styles ] ] content
+    button [ type_ "button", role "menuitem", tabindex -1, css [ "block w-full text-left focus:outline-none", itemDisabledStyles, styles ] ] content
 
 
 menuStyles : TwClass

@@ -12,7 +12,7 @@ import Html.Events exposing (onClick)
 import Html.Styled as Styled
 import Libs.Bool as B
 import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (bg_100, text_700)
@@ -208,8 +208,8 @@ shortcuts =
 sectionToAccordionItem : Bool -> Section Msg -> Html Msg
 sectionToAccordionItem isOpen section =
     div []
-        [ div [ onClick (HelpMsg (HToggle section.title)), classes [ "px-6 py-4 cursor-pointer", B.cond isOpen (bg_100 Conf.theme.color ++ " " ++ text_700 Conf.theme.color) "" ] ] [ text section.title ]
-        , div [ classes [ "px-6 py-3 border-t border-gray-300", B.cond isOpen "" "hidden" ] ] section.body
+        [ div [ onClick (HelpMsg (HToggle section.title)), css [ "px-6 py-4 cursor-pointer", B.cond isOpen (bg_100 Conf.theme.color ++ " " ++ text_700 Conf.theme.color) "" ] ] [ text section.title ]
+        , div [ css [ "px-6 py-3 border-t border-gray-300", B.cond isOpen "" "hidden" ] ] section.body
         ]
 
 

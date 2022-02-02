@@ -7,7 +7,7 @@ import Gen.Route as Route
 import Html exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
 import Html.Styled exposing (fromUnstyled, toUnstyled)
-import Libs.Html.Attributes exposing (classes, track)
+import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
 import Libs.Models exposing (Image, TrackedLink)
 import Libs.Tailwind exposing (TwClass, hover, lg, md, sm)
@@ -49,8 +49,8 @@ imageSwapSlice swap model =
 
 slice : Model msg -> (TwClass -> Image -> Html msg) -> (TwClass -> Image -> Html msg) -> Html msg
 slice model buildImageLeft buildImageRight =
-    div [ classes [ "pb-32 relative overflow-hidden" ] ]
-        [ div [ classes [ lg "mx-auto max-w-7xl px-8 grid grid-cols-2 grid-flow-col-dense gap-24" ] ]
+    div [ css [ "pb-32 relative overflow-hidden" ] ]
+        [ div [ css [ lg "mx-auto max-w-7xl px-8 grid grid-cols-2 grid-flow-col-dense gap-24" ] ]
             (case model.imagePosition of
                 Left ->
                     [ details "col-start-2" model, buildImageLeft "col-start-1" model.image ]
@@ -63,29 +63,29 @@ slice model buildImageLeft buildImageRight =
 
 imageLeft : TwClass -> Image -> Html msg
 imageLeft position image =
-    div [ classes [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ classes [ "pr-4 -ml-48", sm "pr-6", md "-ml-16", lg "px-0 m-0 relative h-full" ] ]
-            [ img [ classes [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src image.src, alt image.alt ] []
+    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
+        [ div [ css [ "pr-4 -ml-48", sm "pr-6", md "-ml-16", lg "px-0 m-0 relative h-full" ] ]
+            [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src image.src, alt image.alt ] []
             ]
         ]
 
 
 imageRight : TwClass -> Image -> Html msg
 imageRight position image =
-    div [ classes [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ classes [ "pl-4 -mr-48", sm "pl-6", md "-mr-16", lg "px-0 m-0 relative h-full" ] ]
-            [ img [ classes [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src image.src, alt image.alt ] []
+    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
+        [ div [ css [ "pl-4 -mr-48", sm "pl-6", md "-mr-16", lg "px-0 m-0 relative h-full" ] ]
+            [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src image.src, alt image.alt ] []
             ]
         ]
 
 
 imageLeftSwap : Image -> TwClass -> Image -> Html msg
 imageLeftSwap swap position base =
-    div [ classes [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ classes [ "pr-4 -ml-48", sm "pr-6", md "-ml-16", lg "px-0 m-0 relative h-full" ] ]
+    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
+        [ div [ css [ "pr-4 -ml-48", sm "pr-6", md "-ml-16", lg "px-0 m-0 relative h-full" ] ]
             [ span [ class "img-swipe" ]
-                [ img [ classes [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ classes [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src swap.src, alt swap.alt, class "img-hover" ] []
+                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src base.src, alt base.alt, class "img-default" ] []
+                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src swap.src, alt swap.alt, class "img-hover" ] []
                 ]
             ]
         ]
@@ -93,11 +93,11 @@ imageLeftSwap swap position base =
 
 imageRightSwap : Image -> TwClass -> Image -> Html msg
 imageRightSwap swap position base =
-    div [ classes [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ classes [ "pl-4 -mr-48", sm "pl-6", md "-mr-16", lg "px-0 m-0 relative h-full" ] ]
+    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
+        [ div [ css [ "pl-4 -mr-48", sm "pl-6", md "-mr-16", lg "px-0 m-0 relative h-full" ] ]
             [ span [ class "img-swipe" ]
-                [ img [ classes [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ classes [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src swap.src, alt swap.alt, class "img-hover" ] []
+                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src base.src, alt base.alt, class "img-default" ] []
+                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src swap.src, alt swap.alt, class "img-hover" ] []
                 ]
             ]
         ]
@@ -105,7 +105,7 @@ imageRightSwap swap position base =
 
 details : TwClass -> Model msg -> Html msg
 details position model =
-    div [ classes [ "px-4 max-w-xl mx-auto", sm "px-6", lg ("py-32 max-w-none mx-0 px-0 " ++ position) ] ]
+    div [ css [ "px-4 max-w-xl mx-auto", sm "px-6", lg ("py-32 max-w-none mx-0 px-0 " ++ position) ] ]
         (List.filterMap identity
             [ model.icon |> Maybe.map featureIcon
             , Just model.description |> Maybe.map featureDescription
@@ -117,23 +117,23 @@ details position model =
 
 featureIcon : Icon -> Html msg
 featureIcon icon =
-    span [ classes [ "h-12 w-12 rounded-md flex items-center justify-center bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline icon [ Tw.text_white ] |> toUnstyled ]
+    span [ css [ "h-12 w-12 rounded-md flex items-center justify-center bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline icon [ Tw.text_white ] |> toUnstyled ]
 
 
 featureDescription : Description msg -> Html msg
 featureDescription d =
-    div [ classes [ "mt-6" ] ]
-        [ h2 [ classes [ "text-3xl font-extrabold tracking-tight text-gray-900" ] ] [ text d.title ]
-        , p [ classes [ "mt-4 text-lg text-gray-500" ] ] d.content
+    div [ css [ "mt-6" ] ]
+        [ h2 [ css [ "text-3xl font-extrabold tracking-tight text-gray-900" ] ] [ text d.title ]
+        , p [ css [ "mt-4 text-lg text-gray-500" ] ] d.content
         ]
 
 
 featureCta : TrackedLink -> Html msg
 featureCta cta =
-    div [ classes [ "mt-6" ] ]
+    div [ css [ "mt-6" ] ]
         [ a
             ([ href cta.url
-             , classes [ "inline-flex px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-indigo-600", hover "text-white from-green-700 to-indigo-700" ]
+             , css [ "inline-flex px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-indigo-600", hover "text-white from-green-700 to-indigo-700" ]
              ]
                 ++ (cta.track |> M.mapOrElse track [])
             )
@@ -143,17 +143,17 @@ featureCta cta =
 
 featureQuote : Quote -> Html msg
 featureQuote quote =
-    div [ classes [ "mt-8 border-t border-gray-200 pt-6" ] ]
+    div [ css [ "mt-8 border-t border-gray-200 pt-6" ] ]
         [ blockquote []
             [ div []
-                [ p [ classes [ "text-base text-gray-500" ] ]
+                [ p [ css [ "text-base text-gray-500" ] ]
                     [ text ("“" ++ quote.text ++ "”") ]
                 ]
-            , footer [ classes [ "mt-3" ] ]
-                [ div [ classes [ "flex items-center space-x-3" ] ]
-                    [ div [ classes [ "flex-shrink-0" ] ]
-                        [ img [ src quote.avatar.src, alt quote.avatar.alt, classes [ "h-6 w-6 rounded-full" ] ] [] ]
-                    , div [ classes [ "text-base font-medium text-gray-700" ] ]
+            , footer [ css [ "mt-3" ] ]
+                [ div [ css [ "flex items-center space-x-3" ] ]
+                    [ div [ css [ "flex-shrink-0" ] ]
+                        [ img [ src quote.avatar.src, alt quote.avatar.alt, css [ "h-6 w-6 rounded-full" ] ] [] ]
+                    , div [ css [ "text-base font-medium text-gray-700" ] ]
                         [ text quote.author ]
                     ]
                 ]

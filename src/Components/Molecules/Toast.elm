@@ -11,7 +11,7 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Styled exposing (fromUnstyled, toUnstyled)
-import Libs.Html.Attributes exposing (ariaLive, classes)
+import Libs.Html.Attributes exposing (ariaLive, css)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (TwClass, focusRing)
@@ -71,7 +71,7 @@ toast content isOpen =
             else
                 "transition ease-out duration-300 opacity-0 transform translate-y-2 pointer-events-none sm:translate-y-0 sm:translate-x-0"
     in
-    div [ classes [ "max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden", toastBlock ] ]
+    div [ css [ "max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden", toastBlock ] ]
         [ div [ class "p-4" ]
             [ content
             ]

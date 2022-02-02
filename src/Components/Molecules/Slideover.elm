@@ -12,7 +12,7 @@ import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
 import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, classes, role)
+import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models exposing (Millis)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
@@ -39,11 +39,11 @@ slideover model content =
         duration =
             B.cond model.isOpen Conf.ui.openDuration Conf.ui.closeDuration
     in
-    div [ classes [ "fixed inset-0 overflow-hidden z-max", B.cond model.isOpen "" "pointer-events-none" ], ariaLabelledby labelId, role "dialog", ariaModal True ]
+    div [ css [ "fixed inset-0 overflow-hidden z-max", B.cond model.isOpen "" "pointer-events-none" ], ariaLabelledby labelId, role "dialog", ariaModal True ]
         [ div [ class "absolute inset-0 overflow-hidden" ]
-            [ div [ onClick model.onClickOverlay, classes [ "absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity ease-in-out", "duration-" ++ String.fromInt duration, B.cond model.isOpen "opacity-100" "opacity-0" ], ariaHidden True ] []
+            [ div [ onClick model.onClickOverlay, css [ "absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity ease-in-out", "duration-" ++ String.fromInt duration, B.cond model.isOpen "opacity-100" "opacity-0" ], ariaHidden True ] []
             , div [ class "fixed inset-y-0 right-0 pl-10 max-w-full flex" ]
-                [ div [ classes [ "w-screen max-w-md transform transition ease-in-out", "duration-" ++ String.fromInt duration, B.cond model.isOpen "translate-x-0" "translate-x-full" ] ]
+                [ div [ css [ "w-screen max-w-md transform transition ease-in-out", "duration-" ++ String.fromInt duration, B.cond model.isOpen "translate-x-0" "translate-x-full" ] ]
                     [ div [ id model.id, class "h-full flex flex-col bg-white shadow-xl" ]
                         [ header labelId model.title model.onClickClose
                         , div [ class "flex-1 relative overflow-y-scroll px-4 sm:px-6" ] [ content ]
@@ -66,7 +66,7 @@ header labelId title onClose =
 
 closeBtn : msg -> Html msg
 closeBtn msg =
-    button [ type_ "button", onClick msg, classes [ "bg-white rounded-md text-gray-400 hover:text-gray-500", focus "outline-none ring-2 ring-offset-2 ring-indigo-500" ] ]
+    button [ type_ "button", onClick msg, css [ "bg-white rounded-md text-gray-400 hover:text-gray-500", focus "outline-none ring-2 ring-offset-2 ring-indigo-500" ] ]
         [ span [ class "sr-only" ] [ text "Close panel" ]
         , Icon.outline X [] |> toUnstyled
         ]

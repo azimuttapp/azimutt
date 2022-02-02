@@ -6,7 +6,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
 import Html.Styled exposing (fromUnstyled, toUnstyled)
-import Libs.Html.Attributes exposing (ariaHidden, classes)
+import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Tailwind exposing (TwClass)
 import Tailwind.Utilities as Tw
 
@@ -32,7 +32,7 @@ divider position content =
         [ div [ class "absolute inset-0 flex items-center", ariaHidden True ]
             [ div [ class "w-full border-t border-gray-300" ] []
             ]
-        , div [ classes [ "relative flex", position ] ] content
+        , div [ css [ "relative flex", position ] ] content
         ]
 
 

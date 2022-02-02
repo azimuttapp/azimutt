@@ -8,7 +8,7 @@ import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (style)
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
-import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Attributes exposing (css)
 import Libs.Html.Events exposing (stopPointerDown)
 import Libs.List as L
 import Libs.Maybe as M
@@ -61,7 +61,7 @@ viewTable zoom cursorMode args index props table =
             Conf.canvas.zIndex.tables + index + B.cond (props.selected || dragging || (openedDropdown |> String.startsWith table.htmlId)) 1000 0
     in
     div
-        ([ classes [ "select-none absolute", B.cond (props.size == Size.zero) "invisible" "" ]
+        ([ css [ "select-none absolute", B.cond (props.size == Size.zero) "invisible" "" ]
          , style "left" (String.fromFloat props.position.left ++ "px")
          , style "top" (String.fromFloat props.position.top ++ "px")
          , style "z-index" (String.fromInt zIndex)

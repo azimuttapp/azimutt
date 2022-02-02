@@ -13,7 +13,7 @@ import Html.Lazy as Lazy
 import Html.Styled exposing (fromUnstyled, toUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, classes, role)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -98,7 +98,7 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
 
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
-    span [ role "menuitem", tabindex -1, classes [ "flex", Dropdown.itemStyles ] ]
+    span [ role "menuitem", tabindex -1, css [ "flex", Dropdown.itemStyles ] ]
         [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), class "focus:outline-none" ] [ Icon.solid Trash [ Tw.inline_block ] |> toUnstyled ] |> Tooltip.t "Delete this layout"
         , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), class "mx-2 focus:outline-none" ] [ Icon.solid Pencil [ Tw.inline_block ] |> toUnstyled ] |> Tooltip.t "Update layout with current one"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), class "flex-grow text-left focus:outline-none" ]

@@ -9,7 +9,7 @@ import Html.Attributes exposing (autocomplete, class, for, id, name, placeholder
 import Html.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Html.Styled exposing (toUnstyled)
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (classes, role)
+import Libs.Html.Attributes exposing (css, role)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -44,7 +44,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             , onInput SearchUpdated
                             , onFocus (DropdownToggle m.id)
                             , onBlur (DropdownToggle m.id)
-                            , classes [ "block w-full pl-10 pr-3 py-2 border border-transparent rounded-md leading-5", bg_500 Conf.theme.color, text_100 Conf.theme.color, placeholder_200 Conf.theme.color, focus ("outline-none bg-white border-white ring-white " ++ text_900 Conf.theme.color ++ " " ++ placeholder_400 Conf.theme.color), "sm:text-sm" ]
+                            , css [ "block w-full pl-10 pr-3 py-2 border border-transparent rounded-md leading-5", bg_500 Conf.theme.color, text_100 Conf.theme.color, placeholder_200 Conf.theme.color, focus ("outline-none bg-white border-white ring-white " ++ text_900 Conf.theme.color ++ " " ++ placeholder_400 Conf.theme.color), "sm:text-sm" ]
                             ]
                             []
                         , Conf.hotkeys
@@ -63,7 +63,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                 (\m ->
                     if search.text == "" then
                         div []
-                            [ span [ role "menuitem", tabindex -1, classes [ "flex w-full items-center", Dropdown.itemDisabledStyles ] ]
+                            [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", Dropdown.itemDisabledStyles ] ]
                                 [ text "Type to search into tables (", Icon.solid Icon.Table [] |> toUnstyled, text "), columns (", Icon.solid Tag [] |> toUnstyled, text ") and relations (", Icon.solid ExternalLink [] |> toUnstyled, text ")" ]
                             ]
 
@@ -72,7 +72,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
-                                            [ span [ role "menuitem", tabindex -1, classes [ "flex w-full items-center", Dropdown.itemDisabledStyles ] ]
+                                            [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", Dropdown.itemDisabledStyles ] ]
                                                 [ text "No result :(" ]
                                             ]
 
@@ -107,11 +107,11 @@ viewSearchResult searchId shownTables active index res =
                         "flex w-full items-center"
                 in
                 if disabled then
-                    span (commonAttrs ++ [ classes [ commonStyles, Dropdown.itemDisabledStyles, B.cond (active == index) (text_400 Conf.theme.color) "" ] ])
+                    span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, B.cond (active == index) (text_400 Conf.theme.color) "" ] ])
                         ([ Icon.solid icon [ Tw.mr_3 ] |> toUnstyled ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, classes [ commonStyles, Dropdown.itemStyles, "focus:outline-none", B.cond (active == index) (bg_600 Conf.theme.color ++ " text-white") "" ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, "focus:outline-none", B.cond (active == index) (bg_600 Conf.theme.color ++ " text-white") "" ] ])
                         ([ Icon.solid icon [ Tw.mr_3 ] |> toUnstyled ] ++ content)
     in
     case res of

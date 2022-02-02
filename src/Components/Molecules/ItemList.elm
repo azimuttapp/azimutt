@@ -9,7 +9,7 @@ import Html.Attributes exposing (type_)
 import Html.Events exposing (onClick)
 import Html.Styled exposing (fromUnstyled, toUnstyled)
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (ariaHidden, classes, role)
+import Libs.Html.Attributes exposing (ariaHidden, css, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (bg_500, focus, focusWithin, hover, ring_500, sm)
@@ -22,23 +22,23 @@ type alias IconItem msg =
 
 withIcons : Theme -> List (IconItem msg) -> Html msg
 withIcons theme items =
-    ul [ role "list", classes [ "mt-6 grid grid-cols-1 gap-6", sm "grid-cols-2" ] ]
+    ul [ role "list", css [ "mt-6 grid grid-cols-1 gap-6", sm "grid-cols-2" ] ]
         (items |> List.map (withIcon theme))
 
 
 withIcon : Theme -> IconItem msg -> Html msg
 withIcon theme item =
-    li [ classes [ "flow-root", B.cond item.active "" "filter grayscale" ] ]
-        [ div [ classes [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover "bg-gray-50", focusWithin ("ring-2 " ++ ring_500 theme.color) ] ]
-            [ div [ classes [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon [ Tw.text_white ] |> toUnstyled ]
+    li [ css [ "flow-root", B.cond item.active "" "filter grayscale" ] ]
+        [ div [ css [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover "bg-gray-50", focusWithin ("ring-2 " ++ ring_500 theme.color) ] ]
+            [ div [ css [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon [ Tw.text_white ] |> toUnstyled ]
             , div []
                 [ h3 []
-                    [ button [ type_ "button", onClick item.onClick, classes [ "text-sm font-medium text-gray-900", focus "outline-none" ] ]
-                        [ span [ classes [ "absolute inset-0" ], ariaHidden True ] []
+                    [ button [ type_ "button", onClick item.onClick, css [ "text-sm font-medium text-gray-900", focus "outline-none" ] ]
+                        [ span [ css [ "absolute inset-0" ], ariaHidden True ] []
                         , text item.title
                         ]
                     ]
-                , p [ classes [ "mt-1 text-sm text-gray-500" ] ] [ text item.description ]
+                , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text item.description ]
                 ]
             ]
         ]

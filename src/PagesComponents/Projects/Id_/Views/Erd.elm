@@ -13,7 +13,7 @@ import Html.Styled as Styled
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink, sendTweet)
-import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Attributes exposing (css)
 import Libs.Html.Events exposing (onWheel, stopPointerDown)
 import Libs.List as L
 import Libs.Maybe as M
@@ -150,7 +150,7 @@ viewRelations tableProps relations =
 viewSelectionBox : Area -> Html Msg
 viewSelectionBox area =
     div
-        [ classes [ "tw-selection-area absolute border-2 bg-opacity-25 z-max", border_400 Color.teal, bg_400 Color.teal ]
+        [ css [ "tw-selection-area absolute border-2 bg-opacity-25 z-max", border_400 Color.teal, bg_400 Color.teal ]
         , style "transform" ("translate(" ++ String.fromFloat area.position.left ++ "px, " ++ String.fromFloat area.position.top ++ "px)")
         , style "width" (String.fromFloat area.size.width ++ "px")
         , style "height" (String.fromFloat area.size.height ++ "px")

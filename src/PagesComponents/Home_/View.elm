@@ -14,7 +14,7 @@ import Html exposing (Html, b, br, div, span, text)
 import Html.Attributes exposing (href, title)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (classes, track)
+import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
@@ -33,7 +33,7 @@ viewHome model =
                     (\p ->
                         div []
                             [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
-                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), classes [ "ml-3" ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ "ml-3" ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
                             ]
                     )
                     (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
@@ -76,7 +76,7 @@ viewHome model =
             { title = "See what you need"
             , content =
                 [ text "Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how."
-                , div [ classes [ "mt-3" ] ] []
+                , div [ css [ "mt-3" ] ] []
                 , Feature.checked { title = "search everywhere", description = Nothing }
                 , Feature.checked { title = "show, hide and organize tables", description = Nothing }
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
@@ -103,7 +103,7 @@ viewHome model =
                 , text "Did you ever wanted to see what is on the other side of a relation ? With Azimutt, it's just one click away 🤩"
                 , br [] []
                 , text "And there's more, how do you see incoming relations ? Azimutt list all of them and is able to show one, many or all of them in just two clicks! 😍"
-                , div [ classes [ "mt-3" ] ] []
+                , div [ css [ "mt-3" ] ] []
                 , Feature.checked { title = "outgoing relations", description = Nothing }
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]

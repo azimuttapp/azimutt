@@ -7,20 +7,20 @@ import Gen.Route as Route
 import Html exposing (Html, a, br, div, h2, h3, p, span, text)
 import Html.Attributes exposing (class, href)
 import Html.Styled exposing (fromUnstyled, toUnstyled)
-import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (lg, sm)
 import Tailwind.Utilities as Tw
 
 
 coloredSlice : Html msg
 coloredSlice =
-    div [ classes [ "bg-gradient-to-r from-green-800 to-indigo-700" ] ]
-        [ div [ classes [ "max-w-4xl mx-auto px-4 py-16", sm "px-6 pt-20 pb-24", lg "max-w-7xl pt-24 px-8" ] ]
-            [ h2 [ classes [ "text-3xl font-extrabold text-white tracking-tight" ] ]
+    div [ css [ "bg-gradient-to-r from-green-800 to-indigo-700" ] ]
+        [ div [ css [ "max-w-4xl mx-auto px-4 py-16", sm "px-6 pt-20 pb-24", lg "max-w-7xl pt-24 px-8" ] ]
+            [ h2 [ css [ "text-3xl font-extrabold text-white tracking-tight" ] ]
                 [ text "Explore your SQL schema like never before" ]
-            , p [ classes [ "mt-4 max-w-3xl text-lg text-purple-200" ] ]
+            , p [ css [ "mt-4 max-w-3xl text-lg text-purple-200" ] ]
                 [ text "Your new weapons to dig into your schema:" ]
-            , div [ classes [ "mt-12 grid grid-cols-1 gap-x-6 gap-y-12 text-white", lg "mt-16 grid-cols-3 gap-x-8 gap-y-16", sm "grid-cols-2" ] ]
+            , div [ css [ "mt-12 grid grid-cols-1 gap-x-6 gap-y-12 text-white", lg "mt-16 grid-cols-3 gap-x-8 gap-y-16", sm "grid-cols-2" ] ]
                 [ item (Icon.outline Inbox [] |> toUnstyled)
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
@@ -54,10 +54,10 @@ item : Html msg -> String -> List (Html msg) -> Html msg
 item icon title description =
     div []
         [ div []
-            [ span [ classes [ "flex items-center justify-center h-12 w-12 rounded-md bg-white bg-opacity-10" ] ] [ icon ] ]
-        , div [ classes [ "mt-6" ] ]
-            [ h3 [ classes [ "text-lg font-medium text-white" ] ] [ text title ]
-            , p [ classes [ "mt-2 text-base text-purple-200" ] ] description
+            [ span [ css [ "flex items-center justify-center h-12 w-12 rounded-md bg-white bg-opacity-10" ] ] [ icon ] ]
+        , div [ css [ "mt-6" ] ]
+            [ h3 [ css [ "text-lg font-medium text-white" ] ] [ text title ]
+            , p [ css [ "mt-2 text-base text-purple-200" ] ] description
             ]
         ]
 
@@ -79,13 +79,13 @@ type alias CardItemModel msg =
 
 cardSlice : CardModel msg -> Html msg
 cardSlice model =
-    div [ classes [ "relative bg-white py-16", lg "py-32", sm "py-24" ] ]
-        [ div [ classes [ "mx-auto max-w-md px-4 text-center", lg "px-8 max-w-7xl", sm "max-w-3xl px-6" ] ]
-            [ h2 [ classes [ "text-base font-semibold tracking-wider uppercase bg-gradient-to-r from-green-600 to-indigo-600 bg-clip-text text-transparent" ] ] [ text model.header ]
-            , p [ classes [ "mt-2 text-3xl font-extrabold text-gray-900 tracking-tight", sm "text-4xl" ] ] [ text model.title ]
-            , p [ classes [ "mt-5 max-w-prose mx-auto text-xl text-gray-500" ] ] [ text model.description ]
-            , div [ classes [ "mt-12" ] ]
-                [ div [ classes [ "grid grid-cols-1 gap-8", lg "grid-cols-3", sm "grid-cols-2" ] ]
+    div [ css [ "relative bg-white py-16", lg "py-32", sm "py-24" ] ]
+        [ div [ css [ "mx-auto max-w-md px-4 text-center", lg "px-8 max-w-7xl", sm "max-w-3xl px-6" ] ]
+            [ h2 [ css [ "text-base font-semibold tracking-wider uppercase bg-gradient-to-r from-green-600 to-indigo-600 bg-clip-text text-transparent" ] ] [ text model.header ]
+            , p [ css [ "mt-2 text-3xl font-extrabold text-gray-900 tracking-tight", sm "text-4xl" ] ] [ text model.title ]
+            , p [ css [ "mt-5 max-w-prose mx-auto text-xl text-gray-500" ] ] [ text model.description ]
+            , div [ css [ "mt-12" ] ]
+                [ div [ css [ "grid grid-cols-1 gap-8", lg "grid-cols-3", sm "grid-cols-2" ] ]
                     (model.cards |> List.map card)
                 ]
             ]
@@ -94,14 +94,14 @@ cardSlice model =
 
 card : CardItemModel msg -> Html msg
 card model =
-    div [ classes [ "pt-6" ] ]
-        [ div [ classes [ "flow-root bg-gray-50 rounded-lg px-6 pb-8" ] ]
-            [ div [ classes [ "-mt-6" ] ]
+    div [ css [ "pt-6" ] ]
+        [ div [ css [ "flow-root bg-gray-50 rounded-lg px-6 pb-8" ] ]
+            [ div [ css [ "-mt-6" ] ]
                 [ div []
-                    [ span [ classes [ "inline-flex items-center justify-center p-3 rounded-md shadow-lg bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline model.icon [ Tw.text_white ] |> toUnstyled ]
+                    [ span [ css [ "inline-flex items-center justify-center p-3 rounded-md shadow-lg bg-gradient-to-r from-green-600 to-indigo-600" ] ] [ Icon.outline model.icon [ Tw.text_white ] |> toUnstyled ]
                     ]
-                , h3 [ classes [ "mt-8 text-lg font-medium text-gray-900 tracking-tight" ] ] [ text model.title ]
-                , p [ classes [ "mt-5 text-base text-gray-500" ] ] model.description
+                , h3 [ css [ "mt-8 text-lg font-medium text-gray-900 tracking-tight" ] ] [ text model.title ]
+                , p [ css [ "mt-5 text-base text-gray-500" ] ] model.description
                 ]
             ]
         ]

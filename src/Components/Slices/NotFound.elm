@@ -5,7 +5,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, a, div, footer, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
 import Html.Styled exposing (fromUnstyled)
-import Libs.Html.Attributes exposing (ariaHidden, classes)
+import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models exposing (Image, Link)
 import Libs.Models.Theme exposing (Theme)
 import Libs.Tailwind exposing (text_500, text_600)
@@ -41,7 +41,7 @@ simple theme model =
                     , h1 [ class "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl" ] [ text model.title ]
                     , p [ class "mt-2 text-base text-gray-500" ] [ text model.message ]
                     , div [ class "mt-6" ]
-                        [ a [ href model.link.url, classes [ "text-base font-medium", text_600 theme.color, "hover:" ++ text_500 theme.color ] ]
+                        [ a [ href model.link.url, css [ "text-base font-medium", text_600 theme.color, "hover:" ++ text_500 theme.color ] ]
                             [ text model.link.text
                             , span [ ariaHidden True ] [ text "→" ]
                             ]

@@ -1,4 +1,4 @@
-module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, classes, role, track)
+module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, css, role, track)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (attribute, class)
@@ -66,8 +66,8 @@ ariaOrientation text =
     attribute "aria-orientation" text
 
 
-classes : List String -> Attribute msg
-classes values =
+css : List String -> Attribute msg
+css values =
     values |> List.map String.trim |> List.filter (\v -> v /= "") |> String.join " " |> class
 
 

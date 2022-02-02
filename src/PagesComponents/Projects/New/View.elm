@@ -14,7 +14,7 @@ import Html.Events exposing (onClick)
 import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (ariaCurrent, classes)
+import Libs.Html.Attributes exposing (ariaCurrent, css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (batch, bg_50, border_300, border_500, hover, lg, sm, text_700)
@@ -54,10 +54,10 @@ type alias TabModel tab =
 
 viewContent : Model -> PageModel -> Html Msg
 viewContent model page =
-    div [ classes [ "divide-y", lg "grid grid-cols-12 divide-x" ] ]
-        [ aside [ classes [ "py-6", lg "col-span-3" ] ]
-            [ nav [ classes [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
-        , div [ classes [ "px-4 py-6", sm "p-6", lg "pb-8 col-span-9 rounded-r-lg" ] ]
+    div [ css [ "divide-y", lg "grid grid-cols-12 divide-x" ] ]
+        [ aside [ css [ "py-6", lg "col-span-3" ] ]
+            [ nav [ css [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
+        , div [ css [ "px-4 py-6", sm "p-6", lg "pb-8 col-span-9 rounded-r-lg" ] ]
             [ viewTabContent model ]
         ]
 
@@ -65,15 +65,15 @@ viewContent model page =
 viewTab : Tab -> TabModel Tab -> Html Msg
 viewTab selected tab =
     if tab.tab == selected then
-        a [ href "", classes [ bg_50 Conf.theme.color, border_500 Conf.theme.color, text_700 Conf.theme.color, "border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover (batch [ bg_50 Conf.theme.color, text_700 Conf.theme.color ]) ], ariaCurrent "page" ]
+        a [ href "", css [ bg_50 Conf.theme.color, border_500 Conf.theme.color, text_700 Conf.theme.color, "border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover (batch [ bg_50 Conf.theme.color, text_700 Conf.theme.color ]) ], ariaCurrent "page" ]
             [ Icon.outline tab.icon [ Color.text Conf.theme.color 500, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ] |> toUnstyled
-            , span [ classes [ "truncate" ] ] [ text tab.text ]
+            , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 
     else
-        a [ href "", onClick (SelectTab tab.tab), classes [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover "bg-gray-50 text-gray-900" ] ]
+        a [ href "", onClick (SelectTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover "bg-gray-50 text-gray-900" ] ]
             [ Icon.outline tab.icon [ Tw.text_gray_400, Tw.flex_shrink_0, Tw.neg_ml_1, Tw.mr_3, Tw.h_6, Tw.w_6 ] |> toUnstyled
-            , span [ classes [ "truncate" ] ] [ text tab.text ]
+            , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 
 
@@ -97,32 +97,32 @@ viewSchemaUpload openedCollapse =
     div []
         [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
         , form []
-            [ div [ classes [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm "grid-cols-6" ] ]
-                [ div [ classes [ sm "col-span-6" ] ]
+            [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm "grid-cols-6" ] ]
+                [ div [ css [ sm "col-span-6" ] ]
                     [ FileInput.basic Conf.theme "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop |> toUnstyled
                     ]
                 ]
             ]
-        , div [ classes [ "mt-3" ] ]
-            [ div [ onClick (ToggleCollapse "get-schema"), classes [ "tw-link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
-            , div [ classes [ "mt-1 mb-3 p-3 border rounded", border_300 Color.gray, B.cond (openedCollapse == "get-schema") "" "hidden" ] ]
+        , div [ css [ "mt-3" ] ]
+            [ div [ onClick (ToggleCollapse "get-schema"), css [ "tw-link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
+            , div [ css [ "mt-1 mb-3 p-3 border rounded", border_300 Color.gray, B.cond (openedCollapse == "get-schema") "" "hidden" ] ]
                 [ p []
                     [ text "An "
                     , bText "SQL schema"
                     , text " is a SQL file with all the needed instructions to create your database, so it contains your database structure. Here are some ways to get it:"
-                    , ul [ classes [ "list-disc list-inside pl-3" ] ]
-                        [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", extLink "https://stackoverflow.com/a/54504510/15051232" [ classes [ "tw-link" ] ] [ text "DBeaver" ], text ")" ]
+                    , ul [ css [ "list-disc list-inside pl-3" ] ]
+                        [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", extLink "https://stackoverflow.com/a/54504510/15051232" [ css [ "tw-link" ] ] [ text "DBeaver" ], text ")" ]
                         , li [] [ bText "Find it", text " in your project: some frameworks like Rails store the schema in your project, so you may have it (ex: with Rails it's ", Kbd.badge [] [ "db/structure.sql" ], text " if you use the SQL version)" ]
                         ]
                     ]
-                , p [ classes [ "mt-3" ] ] [ text "If you have no idea on what I'm talking about just before, ask to the developers working on the project or your database administrator 😇" ]
+                , p [ css [ "mt-3" ] ] [ text "If you have no idea on what I'm talking about just before, ask to the developers working on the project or your database administrator 😇" ]
                 ]
             ]
         , div []
-            [ div [ onClick (ToggleCollapse "data-privacy"), classes [ "tw-link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
-            , div [ classes [ "mt-1 p-3 border rounded", border_300 Color.gray, B.cond (openedCollapse == "data-privacy") "" "hidden" ] ]
+            [ div [ onClick (ToggleCollapse "data-privacy"), css [ "tw-link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
+            , div [ css [ "mt-1 p-3 border rounded", border_300 Color.gray, B.cond (openedCollapse == "data-privacy") "" "hidden" ] ]
                 [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
-                , p [ classes [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
+                , p [ css [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
                 ]
             ]
         ]
@@ -153,16 +153,16 @@ viewSampleSelection selectedSample =
 viewHeading : String -> String -> Html msg
 viewHeading title description =
     div []
-        [ h2 [ classes [ "text-lg leading-6 font-medium text-gray-900" ] ] [ text title ]
-        , p [ classes [ "mt-1 text-sm text-gray-500" ] ] [ text description ]
+        [ h2 [ css [ "text-lg leading-6 font-medium text-gray-900" ] ] [ text title ]
+        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text description ]
         ]
 
 
 viewActions : ProjectId -> Source -> Html Msg
 viewActions projectId source =
-    div [ classes [ "mt-6" ] ]
-        [ div [ classes [ "flex justify-end" ] ]
+    div [ css [ "mt-6" ] ]
+        [ div [ css [ "flex justify-end" ] ]
             [ Button.white3 Conf.theme.color [ onClick DropSchema ] [ text "Trash this" ]
-            , Button.primary3 Conf.theme.color [ onClick (CreateProject projectId source), classes [ "ml-3" ] ] [ text "Create project!" ]
+            , Button.primary3 Conf.theme.color [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
             ]
         ]

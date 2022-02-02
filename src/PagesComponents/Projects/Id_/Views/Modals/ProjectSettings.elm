@@ -12,7 +12,7 @@ import Html.Styled as Styled exposing (toUnstyled)
 import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (classes)
+import Libs.Html.Attributes exposing (css)
 import Libs.List as L
 import Libs.String as S
 import Libs.Tailwind exposing (TwClass)
@@ -72,7 +72,7 @@ viewSource _ zone source =
                             source.enabled
                             (ProjectSettingsMsg (PSToggleSource source))
                         , div []
-                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), classes [ "focus:outline-none", B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
+                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ "focus:outline-none", B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
                                 [ Icon.solid Refresh [ Tw.inline ] |> toUnstyled ]
                                 |> Tooltip.bl "Refresh this source"
                             , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (Styled.text "Are you really sure?")), class "focus:outline-none" ]
@@ -179,7 +179,7 @@ viewDisplaySettingsSection erd =
 
 viewCheckbox : TwClass -> String -> List (Html msg) -> Bool -> msg -> Html msg
 viewCheckbox styles fieldId fieldLabel value msg =
-    div [ classes [ "mt-3 relative flex items-start", styles ] ]
+    div [ css [ "mt-3 relative flex items-start", styles ] ]
         [ div [ class "flex items-center h-5" ]
             [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, class "h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500" ] []
             ]

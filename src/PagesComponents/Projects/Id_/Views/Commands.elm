@@ -9,7 +9,7 @@ import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
 import Html.Styled as Styled
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, classes)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, border_500, ring_500)
@@ -33,19 +33,19 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
     in
     div [ class ("tw-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
         [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
-            [ button [ type_ "button", onClick FitContent, classes [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
+            [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
                 [ Icon.solid ArrowsExpand [] |> Styled.toUnstyled ]
                 |> Tooltip.t "Fit content in view"
             ]
         , span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-            [ button [ type_ "button", onClick (CursorMode CursorSelect), classes [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick [] |> Styled.toUnstyled ] |> Tooltip.t "Select tool"
-            , button [ type_ "button", onClick (CursorMode CursorDrag), classes [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand [] |> Styled.toUnstyled ] |> Tooltip.t "Drag tool"
+            [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick [] |> Styled.toUnstyled ] |> Tooltip.t "Select tool"
+            , button [ type_ "button", onClick (CursorMode CursorDrag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand [] |> Styled.toUnstyled ] |> Tooltip.t "Drag tool"
             ]
         , span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-            [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), classes [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus [] |> Styled.toUnstyled ]
+            [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus [] |> Styled.toUnstyled ]
             , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
                 (\m ->
-                    button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, classes [ "-ml-px", buttonStyles, classic ] ]
+                    button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "-ml-px", buttonStyles, classic ] ]
                         [ text (String.fromInt (round (canvasZoom * 100)) ++ " %") ]
                 )
                 (\_ ->
@@ -59,6 +59,6 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
                         , Dropdown.btn "" (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
                         ]
                 )
-            , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), classes [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus [] |> Styled.toUnstyled ]
+            , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus [] |> Styled.toUnstyled ]
             ]
         ]

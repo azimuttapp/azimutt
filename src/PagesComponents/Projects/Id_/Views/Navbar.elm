@@ -18,7 +18,7 @@ import Libs.Dict as Dict
 import Libs.Either as E
 import Libs.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, classes, role)
+import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, role)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -57,7 +57,7 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
         canResetCanvas =
             erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
     in
-    nav [ classes [ "tw-navbar relative z-max", bg_600 Conf.theme.color ] ]
+    nav [ css [ "tw-navbar relative z-max", bg_600 Conf.theme.color ] ]
         [ div [ class "mx-auto px-2 lg:px-8 sm:px-4" ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ class "flex items-center px-2 lg:px-0" ]
@@ -98,7 +98,7 @@ viewNavbarHelp =
 
 viewNavbarResetLayout : Bool -> Html Msg
 viewNavbarResetLayout canResetCanvas =
-    Button.primary3 Conf.theme.color [ onClick resetCanvas, classes [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
+    Button.primary3 Conf.theme.color [ onClick resetCanvas, css [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
 
 
 viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
@@ -118,7 +118,7 @@ viewNavbarFeatures features htmlId openedDropdown =
                         (\btn ->
                             btn.action
                                 |> E.reduce
-                                    (\url -> extLink url [ role "menuitem", tabindex -1, classes [ "block", Dropdown.itemStyles ] ] [ btn.content ])
+                                    (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", Dropdown.itemStyles ] ] [ btn.content ])
                                     (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
                         )
                 )
@@ -159,7 +159,7 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
         btnStyle =
             text_100 Conf.theme.color ++ " flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium hover:" ++ bg_500 Conf.theme.color ++ " hover:text-white focus:outline-none"
     in
-    div [ classes [ "lg:hidden", B.cond isOpen "" "hidden" ], id "mobile-menu" ]
+    div [ css [ "lg:hidden", B.cond isOpen "" "hidden" ], id "mobile-menu" ]
         ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, class btnStyle ] [ text "Reset canvas" ] ] []
          , features
             |> List.map
@@ -172,5 +172,5 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
          , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Cog [ Tw.mr_3 ] |> toUnstyled, text "Settings" ] ]
          ]
             |> List.filter L.nonEmpty
-            |> List.indexedMap (\i groupContent -> div [ classes [ groupSpace, B.cond (i /= 0) groupBorder "" ] ] groupContent)
+            |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, B.cond (i /= 0) groupBorder "" ] ] groupContent)
         )

@@ -13,7 +13,7 @@ import Html.Events exposing (onClick, onInput)
 import Html.Styled exposing (toUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (ariaDescribedby, classes)
+import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color
@@ -59,7 +59,7 @@ viewFindPath opened tables settings model =
 viewHeader : String -> Html msg
 viewHeader titleId =
     div [ class "pt-6 px-6 sm:flex sm:items-start" ]
-        [ div [ classes [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", bg_100 Conf.theme.color, "sm:mx-0 sm:h-10 sm:w-10" ] ]
+        [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", bg_100 Conf.theme.color, "sm:mx-0 sm:h-10 sm:w-10" ] ]
             [ Icon.outline LocationMarker [ Color.text Conf.theme.color 600 ] |> toUnstyled
             ]
         , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
@@ -87,7 +87,7 @@ viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
 viewSettings modalId isOpen settings =
     div [ class "px-6 mt-3" ]
         [ button [ onClick (FindPathMsg FPToggleSettings), class "tw-link focus:outline-none" ] [ text "Search settings" ]
-        , div [ classes [ "p-3 border border-gray-300 bg-gray-50 rounded-md shadow-sm", B.cond isOpen "" "hidden" ] ]
+        , div [ css [ "p-3 border border-gray-300 bg-gray-50 rounded-md shadow-sm", B.cond isOpen "" "hidden" ] ]
             [ p [ class "mt-1 text-sm text-gray-500" ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
                           Use the settings below to limit your search and keep the search correct.""" ]
@@ -203,9 +203,9 @@ viewPaths model =
 viewPath : Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
 viewPath opened from i path =
     div []
-        [ div [ onClick (FindPathMsg (FPToggleResult i)), classes [ "px-6 py-4 cursor-pointer", B.cond (opened == Just i) (bg_100 Conf.theme.color ++ " " ++ text_700 Conf.theme.color) "" ] ]
+        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ "px-6 py-4 cursor-pointer", B.cond (opened == Just i) (bg_100 Conf.theme.color ++ " " ++ text_700 Conf.theme.color) "" ] ]
             (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep))
-        , div [ classes [ "px-6 py-3 border-t border-gray-300", text_700 Conf.theme.color, B.cond (opened /= Just i) "hidden" "" ] ]
+        , div [ css [ "px-6 py-3 border-t border-gray-300", text_700 Conf.theme.color, B.cond (opened /= Just i) "hidden" "" ] ]
             [ pre [] [ text (buildQuery from path) ]
             ]
         ]

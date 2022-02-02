@@ -7,7 +7,7 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, div, h3, li, text, ul)
 import Html.Attributes exposing (class)
 import Html.Styled as Styled exposing (fromUnstyled)
-import Libs.Html.Attributes exposing (classes, role)
+import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Tailwind exposing (bg_50, border_400, text_700, text_800)
 
@@ -75,7 +75,7 @@ type alias Model msg =
 
 alert : Model msg -> Html msg
 alert model =
-    div [ classes [ "p-4 border-l-4", bg_50 model.color, border_400 model.color ] ]
+    div [ css [ "p-4 border-l-4", bg_50 model.color, border_400 model.color ] ]
         [ div [ class "flex" ]
             [ alertIcon model.color model.icon
             , div [ class "ml-3" ] model.content
@@ -91,17 +91,17 @@ alertIcon color icon =
 
 alertTitle : Color -> String -> Html msg
 alertTitle color title =
-    h3 [ classes [ "text-sm font-medium", text_800 color ] ] [ text title ]
+    h3 [ css [ "text-sm font-medium", text_800 color ] ] [ text title ]
 
 
 alertDescription : Color -> List (Html msg) -> Html msg
 alertDescription color content =
-    div [ classes [ "mt-2 text-sm", text_700 color ] ] content
+    div [ css [ "mt-2 text-sm", text_700 color ] ] content
 
 
 alertList : Color -> List String -> Html msg
 alertList color items =
-    div [ classes [ "mt-2 text-sm", text_700 color ] ]
+    div [ css [ "mt-2 text-sm", text_700 color ] ]
         [ ul [ role "list", class "list-disc list-inside" ]
             (items |> List.map (\item -> li [] [ text item ]))
         ]
@@ -132,7 +132,7 @@ doc =
                     , title = "Order completed"
                     , actions =
                         [ Button.light2 Color.green [] [ text "View status" ]
-                        , Button.light2 Color.green [ classes [ "ml-3" ] ] [ text "Dismiss" ]
+                        , Button.light2 Color.green [ css [ "ml-3" ] ] [ text "Dismiss" ]
                         ]
                     }
                     [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam." ]

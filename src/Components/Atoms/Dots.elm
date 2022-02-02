@@ -4,7 +4,7 @@ import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, div)
 import Html.Styled exposing (fromUnstyled)
-import Libs.Svg.Attributes exposing (classes)
+import Libs.Svg.Attributes exposing (css)
 import Libs.Tailwind exposing (TwClass)
 import Svg exposing (defs, pattern, rect, svg)
 import Svg.Attributes exposing (fill, height, id, patternUnits, viewBox, width, x, y)
@@ -32,11 +32,11 @@ dots patternId dotsWidth dotsHeight styles =
         , height (String.fromInt dotsHeight)
         , viewBox ("0 0 " ++ String.fromInt dotsWidth ++ " " ++ String.fromInt dotsHeight)
         , fill "none"
-        , classes [ "absolute transform", styles ]
+        , css [ "absolute transform", styles ]
         ]
         [ defs []
             [ pattern [ id patternId, x "0", y "0", width "20", height "20", patternUnits "userSpaceOnUse" ]
-                [ rect [ x "0", y "0", width "4", height "4", fill "currentColor", classes [ "text-gray-200" ] ] []
+                [ rect [ x "0", y "0", width "4", height "4", fill "currentColor", css [ "text-gray-200" ] ] []
                 ]
             ]
         , rect [ width (String.fromInt dotsWidth), height (String.fromInt dotsHeight), fill ("url(#" ++ patternId ++ ")") ] []
@@ -51,5 +51,5 @@ doc : Chapter x
 doc =
     chapter "Dots"
         |> renderComponentList
-            [ ( "dots", div [ classes [ "h-96" ] ] [ dots "id" 404 384 "" ] |> fromUnstyled )
+            [ ( "dots", div [ css [ "h-96" ] ] [ dots "id" 404 384 "" ] |> fromUnstyled )
             ]

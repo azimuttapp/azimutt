@@ -17,7 +17,7 @@ import Html.Styled as Styled exposing (fromUnstyled)
 import Html.Styled.Attributes as Styled
 import Libs.Bool as B
 import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, classes, role, track)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
 import Libs.Html.Events exposing (onPointerUp)
 import Libs.List as L
 import Libs.Maybe as M
@@ -115,7 +115,7 @@ table model =
         [ id model.id
         , onMouseEnter (model.actions.hoverTable True)
         , onMouseLeave (model.actions.hoverTable False)
-        , classes
+        , css
             [ "inline-block bg-white rounded-lg cursor-pointer"
             , B.cond model.state.isHover "shadow-lg" "shadow-md"
             , B.cond model.state.selected ("ring-4 " ++ ring_500 model.state.color) ""
@@ -145,7 +145,7 @@ viewHeader model =
                 []
     in
     div
-        [ classes
+        [ css
             [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b"
             , border_500 model.state.color
             , border_b_200 Color.default
@@ -199,7 +199,7 @@ viewHiddenColumns model =
             [ div [ onClick model.actions.clickHiddenColumns, class "text-gray-400 uppercase font-bold text-sm" ]
                 [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
             , Keyed.node "div"
-                [ classes [ "rounded-lg pt-2", B.cond model.state.showHiddenColumns "" "hidden" ] ]
+                [ css [ "rounded-lg pt-2", B.cond model.state.showHiddenColumns "" "hidden" ] ]
                 (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
             ]
 
@@ -210,7 +210,7 @@ viewColumn model isLast column =
         ([ onMouseEnter (model.actions.hoverColumn column.name True)
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
-         , classes
+         , css
             [ "items-center flex px-2 bg-white whitespace-nowrap"
             , B.cond (isHighlightedColumn model column) (text_500 model.state.color ++ " " ++ bg_50 model.state.color) (text_500 Color.default)
             , B.cond isLast "rounded-b-lg" ""
@@ -308,7 +308,7 @@ viewColumnIconDropdown model column icon =
 viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
 viewColumnIconDropdownItem message content =
     button
-        ([ type_ "button", onClick message, role "menuitem", tabindex -1, classes [ "py-1 block w-full text-left focus:outline-none", Dropdown.itemStyles ] ]
+        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left focus:outline-none", Dropdown.itemStyles ] ]
             ++ track Track.showTableWithIncomingRelationsDropdown
         )
         content
@@ -316,7 +316,7 @@ viewColumnIconDropdownItem message content =
 
 viewColumnName : Column -> Html msg
 viewColumnName column =
-    div [ classes [ "flex flex-grow", B.cond column.isPrimaryKey "font-bold" "" ] ]
+    div [ css [ "flex flex-grow", B.cond column.isPrimaryKey "font-bold" "" ] ]
         ([ text column.name ] |> L.appendOn column.comment viewComment)
 
 
@@ -336,7 +336,7 @@ viewColumnKind model column =
         value =
             column.default
                 |> M.mapOrElse
-                    (\default -> span [ classes [ "underline", opacity ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
+                    (\default -> span [ css [ "underline", opacity ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
                     (span [ class opacity ] [ text column.kind ])
 
         nullable : List (Html msg)
