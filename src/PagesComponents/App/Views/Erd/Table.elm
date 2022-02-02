@@ -51,7 +51,7 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
     in
     div
         [ class "erd-table"
-        , class props.color.name
+        , class props.color
         , classList [ ( "view", table.view ), ( "selected", props.selected ) ]
         , id (TableId.toHtmlId table.id)
         , placeAt props.position
