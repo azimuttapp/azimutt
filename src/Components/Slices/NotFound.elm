@@ -5,7 +5,7 @@ import Html exposing (Html, a, div, footer, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models exposing (Image, Link)
-import Libs.Tailwind exposing (hover)
+import Libs.Tailwind exposing (hover, lg, sm)
 
 
 type alias SimpleModel =
@@ -46,10 +46,10 @@ simple model =
                     ]
                 ]
             ]
-        , footer [ class "flex-shrink-0 max-w-7xl w-full mx-auto px-4 lg:px-8 sm:px-6" ]
+        , footer [ css [ "flex-shrink-0 max-w-7xl w-full mx-auto px-4 ", lg "px-8", sm "px-6" ] ]
             [ nav [ class "flex justify-center space-x-4" ]
                 (model.footer
-                    |> List.map (\link -> a [ href link.url, class "text-sm font-medium text-gray-500 hover:text-gray-600" ] [ text link.text ])
+                    |> List.map (\link -> a [ href link.url, css [ "text-sm font-medium text-gray-500 ", hover "text-gray-600" ] ] [ text link.text ])
                     |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
                 )
             ]

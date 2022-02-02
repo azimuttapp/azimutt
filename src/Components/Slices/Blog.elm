@@ -5,7 +5,9 @@ import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, a, div, form, h2, p, text, time)
 import Html.Attributes exposing (class, datetime, href)
 import Libs.DateTime as DateTime
+import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as M
+import Libs.Tailwind exposing (hover)
 import Time
 
 
@@ -56,7 +58,7 @@ articleItem model =
             , p [ class "mt-3 text-base text-gray-500" ] [ text model.excerpt ]
             ]
         , div [ class "mt-3" ]
-            [ a [ href model.link, class "text-base font-semibold text-indigo-600 hover:text-indigo-500" ] [ text "Read full story" ] ]
+            [ a [ href model.link, css [ "text-base font-semibold text-indigo-600", hover "text-indigo-500" ] ] [ text "Read full story" ] ]
         ]
 
 

@@ -19,6 +19,7 @@ import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.String as String
+import Libs.Tailwind exposing (focus, sm)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
@@ -83,7 +84,7 @@ viewAlert =
 viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
 viewSettings modalId isOpen settings =
     div [ class "px-6 mt-3" ]
-        [ button [ onClick (FindPathMsg FPToggleSettings), class "tw-link focus:outline-none" ] [ text "Search settings" ]
+        [ button [ onClick (FindPathMsg FPToggleSettings), css [ "tw-link", focus "outline-none" ] ] [ text "Search settings" ]
         , div [ css [ "p-3 border border-gray-300 bg-gray-50 rounded-md shadow-sm", B.cond isOpen "" "hidden" ] ]
             [ p [ class "mt-1 text-sm text-gray-500" ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
@@ -123,7 +124,7 @@ viewSettingsInput fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldV
     div [ class "sm:grid sm:grid-cols-4 sm:gap-3 sm:items-start sm:mt-3" ]
         [ label [ for fieldId, class "block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2" ] [ text fieldLabel ]
         , div [ class "mt-1 sm:mt-0 sm:col-span-3" ]
-            [ input [ type_ fieldType, id fieldId, value fieldValue, onInput msg, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), class "w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" ] []
+            [ input [ type_ fieldType, id fieldId, value fieldValue, onInput msg, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "w-full border-gray-300 rounded-md shadow-sm", focus "ring-indigo-500 border-indigo-500", sm "text-sm" ] ] []
             , p [ id (fieldId ++ "-help"), class "text-sm text-gray-500" ] [ text fieldHelp ]
             ]
         ]
@@ -142,7 +143,7 @@ viewSelectCard fieldId title description selectedValue buildMsg tables =
     div [ class "flex-grow p-3 border border-gray-300 rounded-md shadow-sm sm:col-span-3" ]
         [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text title ]
         , div [ class "mt-1" ]
-            [ select [ id fieldId, onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), class "block w-full border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" ]
+            [ select [ id fieldId, onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), css [ "block w-full border-gray-300 rounded-md", focus "ring-indigo-500 border-indigo-500", sm "text-sm" ] ]
                 (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
                     :: (tables
                             |> Dict.values

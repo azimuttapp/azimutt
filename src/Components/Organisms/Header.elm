@@ -6,7 +6,7 @@ import Html.Attributes exposing (alt, class, href, src)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaLabel, css)
 import Libs.Models exposing (Image, Link)
-import Libs.Tailwind exposing (TwClass)
+import Libs.Tailwind exposing (TwClass, batch, hover)
 
 
 type alias RightLinksModel msg =
@@ -29,12 +29,12 @@ type alias RightLinksTheme =
 
 rightLinksWhite : RightLinksModel msg -> Html msg
 rightLinksWhite model =
-    rightLinks { bg = "bg-white", text = "text-gray-500 hover:text-gray-900" } model
+    rightLinks { bg = "bg-white", text = batch [ "text-gray-500", hover "text-gray-900" ] } model
 
 
 rightLinksIndigo : RightLinksModel msg -> Html msg
 rightLinksIndigo model =
-    rightLinks { bg = "bg-indigo-600", text = "text-white hover:text-indigo-50" } model
+    rightLinks { bg = "bg-indigo-600", text = batch [ "text-white", hover "text-indigo-50" ] } model
 
 
 rightLinks : RightLinksTheme -> RightLinksModel msg -> Html msg
@@ -74,12 +74,12 @@ type alias LeftLinksTheme =
 
 leftLinksIndigo : LeftLinksModel -> Html msg
 leftLinksIndigo model =
-    leftLinks { bg = "bg-indigo-600", links = "text-white hover:text-indigo-50", secondary = "text-white bg-indigo-500 hover:bg-opacity-75", primary = "text-indigo-600 bg-white hover:bg-indigo-50" } model
+    leftLinks { bg = "bg-indigo-600", links = batch [ "text-white", hover "text-indigo-50" ], secondary = batch [ "text-white bg-indigo-500", hover "bg-opacity-75" ], primary = batch [ "text-indigo-600 bg-white", hover "bg-indigo-50" ] } model
 
 
 leftLinksWhite : LeftLinksModel -> Html msg
 leftLinksWhite model =
-    leftLinks { bg = "bg-white", links = "text-gray-500 hover:text-gray-900", secondary = "text-gray-500 hover:text-gray-900", primary = "text-white bg-indigo-600 hover:bg-indigo-700" } model
+    leftLinks { bg = "bg-white", links = batch [ "text-gray-500", hover "text-gray-900" ], secondary = batch [ "text-gray-500", hover "text-gray-900" ], primary = batch [ "text-white bg-indigo-600", hover "bg-indigo-700" ] } model
 
 
 leftLinks : LeftLinksTheme -> LeftLinksModel -> Html msg

@@ -108,7 +108,7 @@ viewSearchResult searchId shownTables active index res =
                         ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, "focus:outline-none", B.cond (active == index) "bg-primary-600 text-white" "" ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, focus "outline-none", B.cond (active == index) "bg-primary-600 text-white" "" ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
     in
     case res of

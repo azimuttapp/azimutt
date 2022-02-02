@@ -11,7 +11,7 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Tailwind exposing (TwClass, batch, focus)
+import Libs.Tailwind exposing (TwClass, batch, focus, hover)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 
 
@@ -24,11 +24,11 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
 
         classic : TwClass
         classic =
-            "bg-white text-gray-700 hover:bg-gray-50"
+            batch [ "bg-white text-gray-700", hover "bg-gray-50" ]
 
         inverted : TwClass
         inverted =
-            "bg-gray-700 text-white hover:bg-gray-600"
+            batch [ "bg-gray-700 text-white", hover "bg-gray-600" ]
     in
     div [ class ("tw-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
         [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]

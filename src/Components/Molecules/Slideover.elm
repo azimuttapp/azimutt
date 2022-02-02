@@ -14,7 +14,7 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css
 import Libs.Models exposing (Millis)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (focus)
+import Libs.Tailwind exposing (focus, hover)
 
 
 type alias Model msg =
@@ -64,7 +64,7 @@ header labelId title onClose =
 
 closeBtn : msg -> Html msg
 closeBtn msg =
-    button [ type_ "button", onClick msg, css [ "bg-white rounded-md text-gray-400 hover:text-gray-500", focus "outline-none ring-2 ring-offset-2 ring-indigo-500" ] ]
+    button [ type_ "button", onClick msg, css [ "bg-white rounded-md text-gray-400", hover "text-gray-500", focus "outline-none ring-2 ring-offset-2 ring-indigo-500" ] ]
         [ span [ class "sr-only" ] [ text "Close panel" ]
         , Icon.outline X ""
         ]

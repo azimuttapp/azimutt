@@ -17,7 +17,7 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (focusRing)
+import Libs.Tailwind exposing (focus, focusRing)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -95,9 +95,9 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
     span [ role "menuitem", tabindex -1, css [ "flex", Dropdown.itemStyles ] ]
-        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), class "focus:outline-none" ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
-        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), class "mx-2 focus:outline-none" ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
-        , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), class "flex-grow text-left focus:outline-none" ]
+        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ focus "outline-none" ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
+        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ "mx-2", focus "outline-none" ] ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
+        , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left", focus "outline-none" ] ]
             [ text name
             , text " "
             , small [] [ text ("(" ++ (layout.tables |> String.pluralizeL "table") ++ ")") ]

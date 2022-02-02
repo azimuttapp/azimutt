@@ -102,7 +102,7 @@ viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
 viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), class ("ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200 " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ++ " hover:text-white") ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover "text-white", focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ] ]
                 [ span [ class "sr-only" ] [ text "View features" ]
                 , Icon.outline LightningBolt ""
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
@@ -124,7 +124,7 @@ viewNavbarFeatures features htmlId openedDropdown =
 
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class ("ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200 " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ++ " hover:text-white") ]
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover "text-white", focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ] ]
         [ span [ class "sr-only" ] [ text "View settings" ]
         , Icon.outline Cog ""
         ]

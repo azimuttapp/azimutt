@@ -23,6 +23,7 @@ import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.String as S
+import Libs.Tailwind exposing (focus)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
@@ -174,7 +175,7 @@ viewEmptyState tables =
                     [ text "Hello from Azimutt 👋" ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "Azimutt let you freely explore your database schema. To start, just type what you are looking for in the "
-                    , button [ onClick (Focus Conf.ids.searchInput), class "tw-link focus:outline-none" ] [ text "search bar" ]
+                    , button [ onClick (Focus Conf.ids.searchInput), css [ "tw-link", focus "outline-none" ] ] [ text "search bar" ]
                     , text ", and then look at columns and follow relations. Once you have interesting layout, you can save it for later."
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
