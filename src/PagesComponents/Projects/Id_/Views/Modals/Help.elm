@@ -10,7 +10,6 @@ import Html exposing (Html, div, h3, p, text)
 import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
 import Html.Styled as Styled
-import Html.Styled.Events as Styled
 import Libs.Bool as B
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (classes)
@@ -61,7 +60,7 @@ viewHelp opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Conf.theme.color [ Styled.onClick (ModalClose (HelpMsg HClose)) ] [ Styled.text "Thanks!" ] |> Styled.toUnstyled ]
+            [ Button.primary3 Conf.theme.color [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
         ]
 
 

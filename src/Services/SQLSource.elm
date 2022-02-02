@@ -11,9 +11,7 @@ import DataSources.SqlParser.StatementParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
 import Html exposing (Html, div, li, p, span, text, ul)
-import Html.Attributes exposing (class)
-import Html.Styled as Styled exposing (toUnstyled)
-import Html.Styled.Attributes as Styled
+import Html.Attributes exposing (class, href)
 import Libs.Bool as B
 import Libs.Dict as D
 import Libs.FileInput exposing (File)
@@ -341,7 +339,7 @@ viewErrorAlert model =
                 { color = Color.red
                 , icon = XCircle
                 , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (model.schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
-                , actions = [ Link.light2 Color.red [ Styled.href (sendErrorReport parseErrors model.schemaErrors) ] [ Styled.text "Send error report" ] |> toUnstyled ]
+                , actions = [ Link.light2 Color.red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
                 }
                 [ p []
                     [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it. "

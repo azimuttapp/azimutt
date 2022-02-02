@@ -12,9 +12,7 @@ import Html exposing (Html, a, button, div, img, nav, span, text)
 import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_, width)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
-import Html.Styled as Styled exposing (toUnstyled)
-import Html.Styled.Attributes as Styled
-import Html.Styled.Events as Styled
+import Html.Styled exposing (toUnstyled)
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Either as E
@@ -100,7 +98,7 @@ viewNavbarHelp =
 
 viewNavbarResetLayout : Bool -> Html Msg
 viewNavbarResetLayout canResetCanvas =
-    Button.primary3 Conf.theme.color [ Styled.onClick resetCanvas, Styled.css [ Tw.ml_auto, Tu.unless canResetCanvas [ Tw.invisible ] ] ] [ Styled.text "Reset canvas" ] |> toUnstyled
+    Button.primary3 Conf.theme.color [ onClick resetCanvas, classes [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
 
 
 viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg

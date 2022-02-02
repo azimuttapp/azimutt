@@ -7,8 +7,9 @@ module.exports = {
             // https://tailwindcss.com/docs/content-configuration#transforming-source-files
             elm: (content) => {
                 // transform elm sources to create full tailwind classes from helpers functions (cf src/Libs/Tailwind.elm)
-                return content.replaceAll(/(\[ |, )(?:Tw\.)?(hover|focus|active|sm|md|lg|xl|xxl) "([^"]+)"/g, (match, start, state, classes) => {
-                    const twState = state === 'xxl' ? '2xl' : state
+                const mappings = {xxl: '2xl', focusWithin: 'focus-within'}
+                return content.replaceAll(/(\[ |, )(?:Tw\.)?(sm|md|lg|xl|xxl|hover|focus|active|disabled|focusWithin) "([^"]+)"/g, (match, start, state, classes) => {
+                    const twState = mappings[state] ||  state
                     return `${start}"${classes.split(' ').map(c => c.trim()).filter(c => c !== '').map(c => twState + ':' + c).join(' ')}"`
                 })
             }
@@ -52,13 +53,13 @@ module.exports = {
     plugins: [require('@tailwindcss/forms')],
     safelist: [
         // https://tailwindcss.com/docs/content-configuration#using-regular-expressions
-        {pattern: /bg-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50|100|400|500|600)/},
+        {pattern: /bg-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50|100|200|300|400|500|600|700)/, variants: ['hover', 'disabled']},
         {pattern: /border-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(300|400|500)/},
         {pattern: /border-b-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(200)/},
-        {pattern: /placeholder-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(200|400)/},
-        {pattern: /ring-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(500|600)/},
-        {pattern: /ring-offset-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(600)/},
+        {pattern: /placeholder-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(200|400)/, variants: ['focus']},
+        {pattern: /ring-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(500|600)/, variants: ['focus', 'focus-within']},
+        {pattern: /ring-offset-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(500|600)/, variants: ['focus']},
         {pattern: /stroke-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(400|500)/},
-        {pattern: /text-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(100|200|300|400|500|600|700|800|900)/}
+        {pattern: /text-(slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(100|200|300|400|500|600|700|800|900)/, variants: ['focus', 'disabled']}
     ]
 }

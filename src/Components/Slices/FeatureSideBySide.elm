@@ -105,7 +105,7 @@ imageRightSwap swap position base =
 
 details : TwClass -> Model msg -> Html msg
 details position model =
-    div [ classes [ "px-4 max-w-xl mx-auto", sm "px-6", lg ("py-32 max-w-none mx-0 px-0" ++ position) ] ]
+    div [ classes [ "px-4 max-w-xl mx-auto", sm "px-6", lg ("py-32 max-w-none mx-0 px-0 " ++ position) ] ]
         (List.filterMap identity
             [ model.icon |> Maybe.map featureIcon
             , Just model.description |> Maybe.map featureDescription

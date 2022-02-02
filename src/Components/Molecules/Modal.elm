@@ -7,19 +7,15 @@ import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, div, h3, p, span, text)
-import Html.Attributes exposing (class, id)
+import Html.Attributes exposing (autofocus, class, id)
 import Html.Events exposing (onClick)
 import Html.Styled as Styled exposing (fromUnstyled)
-import Html.Styled.Attributes as Styled
-import Html.Styled.Events as Styled
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, classes, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind exposing (TwClass, bg_100)
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
+import Libs.Tailwind exposing (TwClass, bg_100, sm)
 
 
 type alias ConfirmModel msg =
@@ -61,8 +57,8 @@ confirm model isOpen =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 bg-gray-50 sm:flex sm:items-center sm:flex-row-reverse" ]
-            [ Button.primary3 model.color [ Styled.onClick model.onConfirm, Styled.autofocus True, Styled.css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ Styled.text model.confirm ] |> Styled.toUnstyled
-            , Button.white3 Color.gray [ Styled.onClick model.onCancel, Styled.css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ Styled.text model.cancel ] |> Styled.toUnstyled
+            [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, classes [ "w-full text-base", sm "ml-3 w-auto text-sm" ] ] [ text model.confirm ]
+            , Button.white3 Color.gray [ onClick model.onCancel, classes [ "mt-3 w-full text-base", sm "mt-0 w-auto text-sm" ] ] [ text model.cancel ]
             ]
         ]
 
@@ -143,7 +139,7 @@ doc theme =
             [ component "confirm"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ Styled.onClick (setOpen True) ] [ Styled.text "Click me!" ] |> Styled.toUnstyled
+                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
                             , color = Color.red
@@ -161,7 +157,7 @@ doc theme =
             , component "modal"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ Styled.onClick (setOpen True) ] [ Styled.text "Click me!" ] |> Styled.toUnstyled
+                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
                         , modal
                             { id = "modal"
                             , titleId = "modal-title"

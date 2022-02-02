@@ -3,7 +3,7 @@ module Components.Slices.Content exposing (CenteredModel, centered, doc)
 import Components.Atoms.Dots as Dots
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, blockquote, div, figcaption, figure, h1, h2, img, li, p, span, strong, text, ul)
+import Html.Styled exposing (Html, a, blockquote, div, figcaption, figure, fromUnstyled, h1, h2, img, li, p, span, strong, text, ul)
 import Html.Styled.Attributes exposing (alt, css, height, href, src, width)
 import Libs.Bool as B
 import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
@@ -27,9 +27,9 @@ centered model =
         [ B.cond model.dots
             (div [ css [ Tw.hidden, Bp.lg [ Tw.block, Tw.absolute, Tw.inset_y_0, Tw.h_full, Tw.w_full ] ] ]
                 [ div [ css [ Tw.relative, Tw.h_full, Tw.text_lg, Tw.max_w_prose, Tw.mx_auto ], ariaHidden True ]
-                    [ Dots.dotsTopRight "74b3fd99-0a6f-4271-bef2-e80eeafdf357" 384
-                    , Dots.dotsMiddleLeft "f210dbf6-a58d-4871-961e-36d5016a0f49" 384
-                    , Dots.dotsBottomRight "d3eb07ae-5182-43e6-857d-35c643af9034" 384
+                    [ Dots.dotsTopRight "74b3fd99-0a6f-4271-bef2-e80eeafdf357" 384 |> fromUnstyled
+                    , Dots.dotsMiddleLeft "f210dbf6-a58d-4871-961e-36d5016a0f49" 384 |> fromUnstyled
+                    , Dots.dotsBottomRight "d3eb07ae-5182-43e6-857d-35c643af9034" 384 |> fromUnstyled
                     ]
                 ]
             )

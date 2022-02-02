@@ -10,8 +10,7 @@ import Html exposing (Html, button, div, p, span, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
-import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
-import Html.Styled.Events as Styled
+import Html.Styled exposing (fromUnstyled, toUnstyled)
 import Libs.Html.Attributes exposing (ariaLive, classes)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
@@ -133,7 +132,7 @@ doc theme =
             , ( "add toasts"
               , \{ toastDocState } ->
                     Button.primary3 theme.color
-                        [ Styled.onClick
+                        [ onClick
                             (addToast
                                 (Simple
                                     { color = Color.green
@@ -144,7 +143,8 @@ doc theme =
                                 )
                             )
                         ]
-                        [ Styled.text "Simple toast!" ]
+                        [ text "Simple toast!" ]
+                        |> fromUnstyled
               )
             , ( "container", \{ toastDocState } -> container theme toastDocState.toasts removeToast |> fromUnstyled )
             ]

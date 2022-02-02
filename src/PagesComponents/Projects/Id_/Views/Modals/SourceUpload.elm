@@ -7,10 +7,9 @@ import Components.Molecules.FileInput as FileInput
 import Components.Molecules.Modal as Modal
 import Conf
 import Html exposing (Html, br, div, h3, li, p, text, ul)
-import Html.Attributes exposing (class, id)
-import Html.Styled as Styled exposing (toUnstyled)
-import Html.Styled.Attributes as Styled
-import Html.Styled.Events as Styled
+import Html.Attributes exposing (class, disabled, id)
+import Html.Events exposing (onClick)
+import Html.Styled exposing (toUnstyled)
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (role)
@@ -125,7 +124,7 @@ remoteFileModal zone now titleId source fileUrl model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Conf.theme.color [ Styled.onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ Styled.text "Fetch file again" ] |> toUnstyled
+            [ Button.primary5 Conf.theme.color [ onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
             ]
         , SQLSource.viewParsing model
         ]
@@ -188,9 +187,9 @@ newSourceModal titleId model =
 
 primaryBtn : Maybe Msg -> String -> Html Msg
 primaryBtn clicked label =
-    Button.primary3 Conf.theme.color (clicked |> M.mapOrElse (\c -> [ Styled.onClick c ]) [ Styled.disabled True ]) [ Styled.text label ] |> toUnstyled
+    Button.primary3 Conf.theme.color (clicked |> M.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
 
 
 closeBtn : Html Msg
 closeBtn =
-    Button.white3 Color.gray [ Styled.onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ Styled.text "Close" ] |> toUnstyled
+    Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]

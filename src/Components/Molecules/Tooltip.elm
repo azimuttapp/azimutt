@@ -91,8 +91,7 @@ doc =
                         |> List.map
                             (\( value, buildTooltip ) ->
                                 Styled.span [ Html.Styled.Attributes.css [ Tw.ml_3 ] ]
-                                    [ Button.primary3 Color.indigo [] [ Styled.text value ]
-                                        |> Styled.toUnstyled
+                                    [ Button.primary3 Color.indigo [] [ text value ]
                                         |> buildTooltip
                                         |> Styled.fromUnstyled
                                     ]

@@ -3,78 +3,77 @@ module Components.Slices.Hero exposing (Model, backgroundImageSlice, basicSlice,
 import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
-import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
 import Gen.Route as Route
-import Html.Styled exposing (Html, a, button, div, h1, img, main_, nav, p, span, text)
-import Html.Styled.Attributes exposing (alt, css, href, src, type_)
-import Libs.Html.Styled.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel)
+import Html exposing (Html, a, button, div, h1, img, main_, nav, p, span, text)
+import Html.Attributes exposing (alt, href, src, type_)
+import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, classes)
 import Libs.Models exposing (Image)
 import Libs.Models.Color as Color
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
+import Libs.Tailwind exposing (focus, hover, lg, md, sm, xl)
 
 
 basicSlice : Html msg
 basicSlice =
-    div [ css [ Tw.relative, Tw.bg_gray_50, Tw.overflow_hidden ] ]
-        [ div [ css [ Tw.hidden, Bp.sm [ Tw.block, Tw.absolute, Tw.inset_y_0, Tw.h_full, Tw.w_full ] ], ariaHidden True ]
-            [ div [ css [ Tw.relative, Tw.h_full, Tw.max_w_7xl, Tw.mx_auto ] ]
-                [ Dots.dots "f210dbf6-a58d-4871-961e-36d5016a0f49" 404 784 [ Tw.right_full, Tw.translate_y_1over4, Tw.translate_x_1over4, Bp.lg [ Tw.translate_x_1over2 ] ]
-                , Dots.dots "5d0dd344-b041-4d26-bec4-8d33ea57ec9b" 404 784 [ Tw.left_full, Tw.neg_translate_y_3over4, Tw.neg_translate_x_1over4, Bp.lg [ Tw.neg_translate_x_1over2 ], Bp.md [ Tw.neg_translate_y_1over2 ] ]
+    div [ classes [ "relative bg-gray-50 overflow-hidden" ] ]
+        [ div [ classes [ "hidden", sm "block absolute inset-y-0 h-full w-full" ], ariaHidden True ]
+            [ div [ classes [ "relative h-full max-w-7xl mx-auto" ] ]
+                [ Dots.dots "f210dbf6-a58d-4871-961e-36d5016a0f49" 404 784 "right-full translate-y-1/4 translate-x-1/4 lg:translate-x-1/2"
+                , Dots.dots "5d0dd344-b041-4d26-bec4-8d33ea57ec9b" 404 784 "left-full -translate-y-3/4 -translate-x-1/4 lg:-translate-x-1/2 md:-translate-y-1/2"
                 ]
             ]
-        , div [ css [ Tw.relative, Tw.pt_6, Tw.pb_16, Bp.sm [ Tw.pb_24 ] ] ]
+        , div [ classes [ "relative pt-6 pb-16", sm "pb-24" ] ]
             [ div []
-                [ div [ css [ Tw.max_w_7xl, Tw.mx_auto, Tw.px_4, Bp.sm [ Tw.px_6 ] ] ]
-                    [ nav [ css [ Tw.relative, Tw.flex, Tw.items_center, Tw.justify_between, Bp.md [ Tw.justify_center ], Bp.sm [ Tw.h_10 ] ], ariaLabel "Global" ]
-                        [ div [ css [ Tw.flex, Tw.items_center, Tw.flex_1, Bp.md [ Tw.absolute, Tw.inset_y_0, Tw.left_0 ] ] ]
-                            [ div [ css [ Tw.flex, Tw.items_center, Tw.justify_between, Tw.w_full, Bp.md [ Tw.w_auto ] ] ]
+                [ div [ classes [ "max-w-7xl mx-auto px-4", sm "px-6" ] ]
+                    [ nav [ classes [ "relative flex items-center justify-between", md "justify-center", sm "h-10" ], ariaLabel "Global" ]
+                        [ div [ classes [ "flex items-center flex-1", md "absolute inset-y-0 left-0" ] ]
+                            [ div [ classes [ "flex items-center justify-between w-full", md "w-auto" ] ]
                                 [ a [ href "#" ]
-                                    [ span [ css [ Tw.sr_only ] ] [ text "Workflow" ]
-                                    , img [ src "/logo.svg", alt "", css [ Tw.h_8, Tw.w_auto, Bp.sm [ Tw.h_10 ] ] ] []
+                                    [ span [ classes [ "sr-only" ] ] [ text "Workflow" ]
+                                    , img [ src "/logo.svg", alt "", classes [ "h-8 w-auto", sm "h-10" ] ] []
                                     ]
-                                , div [ css [ Tw.neg_mr_2, Tw.flex, Tw.items_center, Bp.md [ Tw.hidden ] ] ]
-                                    [ button [ type_ "button", css [ Tw.bg_gray_50, Tw.rounded_md, Tw.p_2, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.text_gray_400, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_indigo_500 ], Css.hover [ Tw.text_gray_500, Tw.bg_gray_100 ] ], ariaExpanded False ]
-                                        [ span [ css [ Tw.sr_only ] ] [ text "Open main menu" ]
-                                        , Icon.outline Menu []
+                                , div [ classes [ "-mr-2 flex items-center", md "hidden" ] ]
+                                    [ button [ type_ "button", classes [ "bg-gray-50 rounded-md p-2 inline-flex items-center justify-center text-gray-400", focus "outline-none ring-2 ring-inset ring-indigo-500", hover "text-gray-500 bg-gray-100" ], ariaExpanded False ]
+                                        [ span [ classes [ "sr-only" ] ] [ text "Open main menu" ]
+                                        , Icon.outline Menu [] |> toUnstyled
                                         ]
                                     ]
                                 ]
                             ]
                         ]
                     ]
-                , div [ css [ Tw.absolute, Tw.top_0, Tw.inset_x_0, Tw.p_2, Tw.transition, Tw.transform, Tw.origin_top_right, Bp.md [ Tw.hidden ] ] ]
-                    [ div [ css [ Tw.rounded_lg, Tw.shadow_md, Tw.bg_white, Tw.ring_1, Tw.ring_black, Tw.ring_opacity_5, Tw.overflow_hidden ] ]
-                        [ div [ css [ Tw.px_5, Tw.pt_4, Tw.flex, Tw.items_center, Tw.justify_between ] ]
+                , div [ classes [ "absolute top-0 inset-x-0 p-2 transition transform origin-top-right", md "hidden" ] ]
+                    [ div [ classes [ "rounded-lg shadow-md bg-white ring-1 ring-black ring-opacity-5 overflow-hidden" ] ]
+                        [ div [ classes [ "px-5 pt-4 flex items-center justify-between" ] ]
                             [ div []
-                                [ img [ src "/logo.svg", alt "Azimutt logo", css [ Tw.h_8, Tw.w_auto ] ] []
+                                [ img [ src "/logo.svg", alt "Azimutt logo", classes [ "h-8 w-auto" ] ] []
                                 ]
-                            , div [ css [ Tw.neg_mr_2 ] ]
-                                [ button [ type_ "button", css [ Tw.bg_white, Tw.rounded_md, Tw.p_2, Tw.inline_flex, Tw.items_center, Tw.justify_center, Tw.text_gray_400, Css.focus [ Tw.outline_none, Tw.ring_2, Tw.ring_inset, Tw.ring_indigo_500 ], Css.hover [ Tw.text_gray_500, Tw.bg_gray_100 ] ] ]
-                                    [ span [ css [ Tw.sr_only ] ]
+                            , div [ classes [ "-mr-2" ] ]
+                                [ button [ type_ "button", classes [ "bg-white rounded-md p-2 inline-flex items-center justify-center text-gray-400", focus "outline-none ring-2 ring-inset ring-indigo-500", hover "text-gray-500 bg-gray-100" ] ]
+                                    [ span [ classes [ "sr-only" ] ]
                                         [ text "Close menu" ]
-                                    , Icon.outline X []
+                                    , Icon.outline X [] |> toUnstyled
                                     ]
                                 ]
                             ]
                         ]
                     ]
                 ]
-            , main_ [ css [ Tw.mt_16, Tw.mx_auto, Tw.max_w_7xl, Tw.px_4, Bp.sm [ Tw.mt_24 ] ] ]
-                [ div [ css [ Tw.text_center ] ]
-                    [ h1 [ css [ Tw.text_4xl, Tw.tracking_tight, Tw.font_extrabold, Tw.text_gray_900, Bp.md [ Tw.text_6xl ], Bp.sm [ Tw.text_5xl ] ] ]
-                        [ span [ css [ Tw.block, Bp.xl [ Tw.inline ] ] ]
+            , main_ [ classes [ "mt-16 mx-auto max-w-7xl px-4", sm "mt-24" ] ]
+                [ div [ classes [ "text-center" ] ]
+                    [ h1 [ classes [ "text-4xl tracking-tight font-extrabold text-gray-900", md "text-6xl", sm "text-5xl" ] ]
+                        [ span [ classes [ "block", xl "inline" ] ]
                             [ text "Explore your " ]
-                        , span [ css [ Tw.block, Tw.text_blue_600, Bp.xl [ Tw.inline ] ] ]
+                        , span [ classes [ "block text-blue-600", xl "inline" ] ]
                             [ text "database schema" ]
                         ]
-                    , p [ css [ Tw.mt_3, Tw.max_w_md, Tw.mx_auto, Tw.text_base, Tw.text_gray_500, Bp.md [ Tw.mt_5, Tw.text_xl, Tw.max_w_3xl ], Bp.sm [ Tw.text_lg ] ] ]
+                    , p [ classes [ "mt-3 max-w-md mx-auto text-base text-gray-500", md "mt-5 text-xl max-w-3xl", sm "text-lg" ] ]
                         [ text "Easily visualize your database schema and see how everything fits together." ]
-                    , div [ css [ Tw.mt_5, Tw.max_w_md, Tw.mx_auto, Bp.md [ Tw.mt_8 ], Bp.sm [ Tw.flex, Tw.justify_center ] ] ]
-                        [ div [ css [ Tw.rounded_md, Tw.shadow ] ]
-                            [ a [ href (Route.toHref Route.App), css [ Tw.w_full, Tw.flex, Tw.items_center, Tw.justify_center, Tw.px_8, Tw.py_3, Tw.border, Tw.border_transparent, Tw.text_base, Tw.font_medium, Tw.rounded_md, Tw.text_white, Tw.bg_blue_600, Css.hover [ Tw.bg_blue_800 ], Bp.md [ Tw.py_4, Tw.text_lg, Tw.px_10 ] ] ]
+                    , div [ classes [ "mt-5 max-w-md mx-auto", md "mt-8", sm "flex justify-center" ] ]
+                        [ div [ classes [ "rounded-md shadow" ] ]
+                            [ a [ href (Route.toHref Route.App), classes [ "w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600", hover "bg-blue-800", md "py-4 text-lg px-10" ] ]
                                 [ text "Get started" ]
                             ]
                         ]
@@ -90,21 +89,21 @@ type alias Model msg =
 
 backgroundImageSlice : Model msg -> Html msg
 backgroundImageSlice model =
-    div [ css [ Tw.relative ] ]
-        [ div [ css [ Tw.absolute, Tw.inset_x_0, Tw.bottom_0, Tw.h_1over2 ] ] []
-        , div [ css [ Tw.max_w_7xl, Tw.mx_auto, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ div [ css [ Tw.relative, Tw.shadow_xl, Bp.sm [ Tw.rounded_2xl, Tw.overflow_hidden ] ] ]
-                [ div [ css [ Tw.absolute, Tw.inset_0 ] ]
-                    [ img [ src model.bg.src, alt model.bg.alt, css [ Tw.h_full, Tw.w_full, Tw.object_cover ] ] []
-                    , div [ css [ Tw.absolute, Tw.inset_0, Tw.bg_gradient_to_r, Tw.from_green_200, Tw.to_indigo_700, Tw.mix_blend_multiply ] ] []
+    div [ classes [ "relative" ] ]
+        [ div [ classes [ "absolute inset-x-0 bottom-0 h-1/2" ] ] []
+        , div [ classes [ "max-w-7xl mx-auto", lg "px-8", sm "px-6" ] ]
+            [ div [ classes [ "relative shadow-xl", sm "rounded-2xl overflow-hidden" ] ]
+                [ div [ classes [ "absolute inset-0" ] ]
+                    [ img [ src model.bg.src, alt model.bg.alt, classes [ "h-full w-full object-cover" ] ] []
+                    , div [ classes [ "absolute inset-0 bg-gradient-to-r from-green-200 to-indigo-700 mix-blend-multiply" ] ] []
                     ]
-                , div [ css [ Tw.relative, Tw.px_4, Tw.py_16, Bp.lg [ Tw.py_32, Tw.px_8 ], Bp.sm [ Tw.px_6, Tw.py_24 ] ] ]
-                    [ h1 [ css [ Tw.text_4xl, Tw.font_extrabold, Tw.tracking_tight, Bp.lg [ Tw.text_6xl ], Bp.sm [ Tw.text_5xl ] ] ]
-                        [ span [ css [ Tw.block, Tw.text_white ] ] [ text model.title ]
+                , div [ classes [ "relative px-4 py-16", lg "py-32 px-8", sm "px-6 py-24" ] ]
+                    [ h1 [ classes [ "text-4xl font-extrabold tracking-tight", lg "text-6xl", sm "text-5xl" ] ]
+                        [ span [ classes [ "block text-white" ] ] [ text model.title ]
                         ]
-                    , p [ css [ Tw.mt_6, Tw.max_w_lg, Tw.text_xl, Tw.text_indigo_100 ] ] model.content
-                    , div [ css [ Tw.mt_10 ] ]
-                        [ div [ css [ Tw.space_y_4, Bp.sm [ Tw.space_y_0, Tw.inline_grid, Tw.grid_cols_1, Tw.gap_5 ] ] ] [ model.cta ]
+                    , p [ classes [ "mt-6 max-w-lg text-xl text-indigo-100" ] ] model.content
+                    , div [ classes [ "mt-10" ] ]
+                        [ div [ classes [ "space-y-4", sm "space-y-0 inline-grid grid-cols-1 gap-5" ] ] [ model.cta ]
                         ]
                     ]
                 ]
@@ -129,6 +128,6 @@ doc : Chapter x
 doc =
     chapter "Hero"
         |> renderComponentList
-            [ ( "basicSlice", basicSlice )
-            , ( "backgroundImageSlice", backgroundImageSlice docModel )
+            [ ( "basicSlice", basicSlice |> fromUnstyled )
+            , ( "backgroundImageSlice", backgroundImageSlice docModel |> fromUnstyled )
             ]

@@ -6,17 +6,14 @@ import Components.Molecules.Modal as Modal
 import Conf
 import Html exposing (Html, div, h3, input, label, p, text)
 import Html.Attributes exposing (autofocus, class, for, id, name, tabindex, type_, value)
-import Html.Events exposing (onInput)
-import Html.Styled as Styled exposing (toUnstyled)
-import Html.Styled.Attributes as Styled
-import Html.Styled.Events as Styled
+import Html.Events exposing (onClick, onInput)
+import Html.Styled exposing (toUnstyled)
 import Libs.Html exposing (bText, sendTweet)
+import Libs.Html.Attributes exposing (classes)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (bg_100)
+import Libs.Tailwind exposing (bg_100, sm)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
 
 
 viewCreateLayout : Bool -> LayoutDialog -> Html Msg
@@ -59,7 +56,7 @@ viewCreateLayout opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Conf.theme.color [ Styled.onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), Styled.css [ Tw.w_full, Tw.text_base, Bp.sm [ Tw.ml_3, Tw.w_auto, Tw.text_sm ] ] ] [ Styled.text "Save layout" ] |> toUnstyled
-            , Button.white3 Color.gray [ Styled.onClick (LCancel |> LayoutMsg |> ModalClose), Styled.css [ Tw.mt_3, Tw.w_full, Tw.text_base, Bp.sm [ Tw.mt_0, Tw.w_auto, Tw.text_sm ] ] ] [ Styled.text "Cancel" ] |> toUnstyled
+            [ Button.primary3 Conf.theme.color [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), classes [ "w-full text-base", sm "ml-3 w-auto text-sm" ] ] [ text "Save layout" ]
+            , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), classes [ "mt-3 w-full text-base", sm "mt-0 w-auto text-sm" ] ] [ text "Cancel" ]
             ]
         ]

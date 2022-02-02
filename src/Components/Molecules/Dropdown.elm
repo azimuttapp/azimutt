@@ -11,12 +11,9 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, a, button, div, text)
 import Html.Attributes exposing (class, href, id, tabindex, type_)
 import Html.Events exposing (onClick)
-import Html.Styled as Styled exposing (fromUnstyled)
-import Html.Styled.Attributes as Styled
-import Html.Styled.Events as Styled
+import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
 import Libs.Bool as B
-import Libs.Html.Attributes exposing (ariaLabelledby, ariaOrientation, classes, role)
-import Libs.Html.Styled.Attributes as Styled
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, classes, role)
 import Libs.Maybe as M
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -170,13 +167,13 @@ doc theme =
             [ component "dropdown"
                 (\opened toggleOpen ->
                     dropdown { id = "dropdown", direction = BottomRight, isOpen = opened == "dropdown" }
-                        (\m -> Button.white3 theme.color [ Styled.id m.id, Styled.ariaExpanded True, Styled.ariaHaspopup True, Styled.onClick (toggleOpen m.id) ] [ Styled.text "Options", Icon.solid ChevronDown [] ] |> Styled.toUnstyled)
+                        (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown [] |> toUnstyled ])
                         (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn "" (logAction label) [ text label ])))
                 )
             , component "item styles"
                 (\opened toggleOpen ->
                     dropdown { id = "styles", direction = BottomRight, isOpen = opened == "styles" }
-                        (\m -> Button.white3 theme.color [ Styled.id m.id, Styled.ariaExpanded True, Styled.ariaHaspopup True, Styled.onClick (toggleOpen m.id) ] [ Styled.text "Options", Icon.solid ChevronDown [] ] |> Styled.toUnstyled)
+                        (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "Options", Icon.solid ChevronDown [] |> toUnstyled ])
                         (\_ ->
                             div []
                                 [ btn "" (logAction "btn") [ text "btn" ]
@@ -189,18 +186,18 @@ doc theme =
                 )
             , component "directions"
                 (\opened toggleOpen ->
-                    div [ class "flex space-x-3 -ml-3" ]
+                    div [ class "flex space-x-3" ]
                         [ dropdown { id = "BottomRight", direction = BottomRight, isOpen = opened == "BottomRight" }
-                            (\m -> Button.white3 theme.color [ Styled.id m.id, Styled.ariaExpanded True, Styled.ariaHaspopup True, Styled.onClick (toggleOpen m.id) ] [ Styled.text "BottomRight", Icon.solid ChevronDown [] ] |> Styled.toUnstyled)
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "BottomRight", Icon.solid ChevronDown [] |> toUnstyled ])
                             (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn "" (logAction label) [ text label ])))
                         , dropdown { id = "BottomLeft", direction = BottomLeft, isOpen = opened == "BottomLeft" }
-                            (\m -> Button.white3 theme.color [ Styled.id m.id, Styled.ariaExpanded True, Styled.ariaHaspopup True, Styled.onClick (toggleOpen m.id) ] [ Styled.text "BottomLeft", Icon.solid ChevronDown [] ] |> Styled.toUnstyled)
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "BottomLeft", Icon.solid ChevronDown [] |> toUnstyled ])
                             (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn "" (logAction label) [ text label ])))
                         , dropdown { id = "TopRight", direction = TopRight, isOpen = opened == "TopRight" }
-                            (\m -> Button.white3 theme.color [ Styled.id m.id, Styled.ariaExpanded True, Styled.ariaHaspopup True, Styled.onClick (toggleOpen m.id) ] [ Styled.text "TopRight", Icon.solid ChevronDown [] ] |> Styled.toUnstyled)
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "TopRight", Icon.solid ChevronDown [] |> toUnstyled ])
                             (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn "" (logAction label) [ text label ])))
                         , dropdown { id = "TopLeft", direction = TopLeft, isOpen = opened == "TopLeft" }
-                            (\m -> Button.white3 theme.color [ Styled.id m.id, Styled.ariaExpanded True, Styled.ariaHaspopup True, Styled.onClick (toggleOpen m.id) ] [ Styled.text "TopLeft", Icon.solid ChevronDown [] ] |> Styled.toUnstyled)
+                            (\m -> Button.white3 theme.color [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "TopLeft", Icon.solid ChevronDown [] |> toUnstyled ])
                             (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn "" (logAction label) [ text label ])))
                         ]
                 )

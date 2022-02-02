@@ -1,14 +1,14 @@
 module Components.Atoms.Button exposing (commonStyles, doc, light, light1, light2, light3, light4, light5, primary, primary1, primary2, primary3, primary4, primary5, secondary, secondary1, secondary2, secondary3, secondary4, secondary5, size1, size2, size3, size4, size5, white, white1, white2, white3, white4, white5)
 
-import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Attribute, Html, button, div, text)
-import Html.Styled.Attributes exposing (css, disabled, type_)
+import Html exposing (Attribute, Html, button, div, text)
+import Html.Attributes exposing (disabled, type_)
+import Html.Styled exposing (fromUnstyled)
+import Libs.Html.Attributes exposing (classes)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind.Utilities as Tu
-import Tailwind.Utilities as Tw
+import Libs.Tailwind as Tw exposing (TwClass, batch, bg_100, bg_200, bg_300, bg_50, bg_600, bg_700, focusRing, hover, text_300, text_700, text_800)
 
 
 primary1 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
@@ -111,59 +111,59 @@ white5 =
     build white size5
 
 
-primary : Color -> Css.Style
+primary : Color -> TwClass
 primary color =
-    Css.batch [ Tw.border_transparent, Tw.shadow_sm, Tw.text_white, Color.bg color 600, Css.hover [ Color.bg color 700 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 300 ] ]
+    batch [ "border-transparent shadow-sm text-white", bg_600 color, hover (bg_700 color), Tw.disabled ("cursor-not-allowed " ++ bg_300 color) ]
 
 
-secondary : Color -> Css.Style
+secondary : Color -> TwClass
 secondary color =
-    Css.batch [ Tw.border_transparent, Color.text color 700, Color.bg color 100, Css.hover [ Color.bg color 200 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 100, Color.text color 300 ] ]
+    batch [ "border-transparent", text_700 color, bg_100 color, hover (bg_200 color), Tw.disabled (batch [ "cursor-not-allowed", bg_100 color, text_300 color ]) ]
 
 
-light : Color -> Css.Style
+light : Color -> TwClass
 light color =
-    Css.batch [ Tw.border_transparent, Color.text color 800, Color.bg color 50, Css.hover [ Color.bg color 100 ], Css.disabled [ Tw.cursor_not_allowed, Color.bg color 50, Color.text color 300 ] ]
+    batch [ "border-transparent", text_800 color, bg_50 color, hover (bg_100 color), Tw.disabled (batch [ "cursor-not-allowed", bg_50 color, text_300 color ]) ]
 
 
-white : Color -> Css.Style
+white : Color -> TwClass
 white color =
-    Css.batch [ Tw.border_gray_300, Tw.shadow_sm, Color.text color 700, Tw.bg_white, Css.hover [ Color.bg color 50 ], Css.disabled [ Tw.cursor_not_allowed, Tw.border_gray_200, Tw.bg_white, Color.text color 300 ] ]
+    batch [ "border-gray-300 shadow-sm bg-white", text_700 color, hover (bg_50 color), Tw.disabled (batch [ "cursor-not-allowed border-gray-200 bg-white", text_300 color ]) ]
 
 
-size1 : Css.Style
+size1 : TwClass
 size1 =
-    Css.batch [ Tw.px_2_dot_5, Tw.py_1_dot_5, Tw.text_xs, Tw.rounded ]
+    "px-2.5 py-1.5 text-xs rounded"
 
 
-size2 : Css.Style
+size2 : TwClass
 size2 =
-    Css.batch [ Tw.px_3, Tw.py_2, Tw.text_sm, Tw.leading_4, Tw.rounded_md ]
+    "px-3 py-2 text-sm leading-4 rounded-md"
 
 
-size3 : Css.Style
+size3 : TwClass
 size3 =
-    Css.batch [ Tw.px_4, Tw.py_2, Tw.text_sm, Tw.rounded_md ]
+    "px-4 py-2 text-sm rounded-md"
 
 
-size4 : Css.Style
+size4 : TwClass
 size4 =
-    Css.batch [ Tw.px_4, Tw.py_2, Tw.text_base, Tw.rounded_md ]
+    "px-4 py-2 text-base rounded-md"
 
 
-size5 : Css.Style
+size5 : TwClass
 size5 =
-    Css.batch [ Tw.px_6, Tw.py_3, Tw.text_base, Tw.rounded_md ]
+    "px-6 py-3 text-base rounded-md"
 
 
-commonStyles : Color -> Css.Style
+commonStyles : Color -> TwClass
 commonStyles color =
-    Css.batch [ Tw.inline_flex, Tw.justify_center, Tw.items_center, Tw.border, Tw.font_medium, Tu.focusRing ( color, 500 ) ( Color.white, 500 ) ]
+    batch [ "inline-flex justify-center items-center border font-medium", focusRing ( color, 500 ) ( Color.white, 500 ) ]
 
 
-build : (Color -> Css.Style) -> Css.Style -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+build : (Color -> TwClass) -> TwClass -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
 build colorStyles sizeStyles color attrs content =
-    button (attrs ++ [ type_ "button", css [ commonStyles color, colorStyles color, sizeStyles ] ]) content
+    button (attrs ++ [ type_ "button", classes [ commonStyles color, colorStyles color, sizeStyles ] ]) content
 
 
 
@@ -176,42 +176,46 @@ doc theme =
         |> renderComponentList
             [ ( "primary"
               , div []
-                    [ primary1 theme.color [ css [ Tw.mr_3 ] ] [ text "primary1" ]
-                    , primary2 theme.color [ css [ Tw.mr_3 ] ] [ text "primary2" ]
-                    , primary3 theme.color [ css [ Tw.mr_3 ] ] [ text "primary3" ]
-                    , primary4 theme.color [ css [ Tw.mr_3 ] ] [ text "primary4" ]
-                    , primary5 theme.color [ css [ Tw.mr_3 ] ] [ text "primary5" ]
-                    , primary5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
+                    [ primary1 theme.color [ classes [ "mr-3" ] ] [ text "primary1" ]
+                    , primary2 theme.color [ classes [ "mr-3" ] ] [ text "primary2" ]
+                    , primary3 theme.color [ classes [ "mr-3" ] ] [ text "primary3" ]
+                    , primary4 theme.color [ classes [ "mr-3" ] ] [ text "primary4" ]
+                    , primary5 theme.color [ classes [ "mr-3" ] ] [ text "primary5" ]
+                    , primary5 theme.color [ classes [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
+                    |> fromUnstyled
               )
             , ( "secondary"
               , div []
-                    [ secondary1 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary1" ]
-                    , secondary2 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary2" ]
-                    , secondary3 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary3" ]
-                    , secondary4 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary4" ]
-                    , secondary5 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary5" ]
-                    , secondary5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
+                    [ secondary1 theme.color [ classes [ "mr-3" ] ] [ text "secondary1" ]
+                    , secondary2 theme.color [ classes [ "mr-3" ] ] [ text "secondary2" ]
+                    , secondary3 theme.color [ classes [ "mr-3" ] ] [ text "secondary3" ]
+                    , secondary4 theme.color [ classes [ "mr-3" ] ] [ text "secondary4" ]
+                    , secondary5 theme.color [ classes [ "mr-3" ] ] [ text "secondary5" ]
+                    , secondary5 theme.color [ classes [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
+                    |> fromUnstyled
               )
             , ( "light"
               , div []
-                    [ light1 theme.color [ css [ Tw.mr_3 ] ] [ text "light1" ]
-                    , light2 theme.color [ css [ Tw.mr_3 ] ] [ text "light2" ]
-                    , light3 theme.color [ css [ Tw.mr_3 ] ] [ text "light3" ]
-                    , light4 theme.color [ css [ Tw.mr_3 ] ] [ text "light4" ]
-                    , light5 theme.color [ css [ Tw.mr_3 ] ] [ text "light5" ]
-                    , light5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
+                    [ light1 theme.color [ classes [ "mr-3" ] ] [ text "light1" ]
+                    , light2 theme.color [ classes [ "mr-3" ] ] [ text "light2" ]
+                    , light3 theme.color [ classes [ "mr-3" ] ] [ text "light3" ]
+                    , light4 theme.color [ classes [ "mr-3" ] ] [ text "light4" ]
+                    , light5 theme.color [ classes [ "mr-3" ] ] [ text "light5" ]
+                    , light5 theme.color [ classes [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
+                    |> fromUnstyled
               )
             , ( "white"
               , div []
-                    [ white1 theme.color [ css [ Tw.mr_3 ] ] [ text "white1" ]
-                    , white2 theme.color [ css [ Tw.mr_3 ] ] [ text "white2" ]
-                    , white3 theme.color [ css [ Tw.mr_3 ] ] [ text "white3" ]
-                    , white4 theme.color [ css [ Tw.mr_3 ] ] [ text "white4" ]
-                    , white5 theme.color [ css [ Tw.mr_3 ] ] [ text "white5" ]
-                    , white5 theme.color [ css [ Tw.mr_3 ], disabled True ] [ text "disabled" ]
+                    [ white1 theme.color [ classes [ "mr-3" ] ] [ text "white1" ]
+                    , white2 theme.color [ classes [ "mr-3" ] ] [ text "white2" ]
+                    , white3 theme.color [ classes [ "mr-3" ] ] [ text "white3" ]
+                    , white4 theme.color [ classes [ "mr-3" ] ] [ text "white4" ]
+                    , white5 theme.color [ classes [ "mr-3" ] ] [ text "white5" ]
+                    , white5 theme.color [ classes [ "mr-3" ], disabled True ] [ text "disabled" ]
                     ]
+                    |> fromUnstyled
               )
             ]

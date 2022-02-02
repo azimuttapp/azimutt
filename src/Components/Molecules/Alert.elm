@@ -7,11 +7,9 @@ import ElmBook.ElmCSS exposing (Chapter)
 import Html exposing (Html, div, h3, li, text, ul)
 import Html.Attributes exposing (class)
 import Html.Styled as Styled exposing (fromUnstyled)
-import Html.Styled.Attributes as Styled
 import Libs.Html.Attributes exposing (classes, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Tailwind exposing (bg_50, border_400, text_700, text_800)
-import Tailwind.Utilities as Tw
 
 
 type alias DescriptionModel =
@@ -133,8 +131,8 @@ doc =
                     , icon = CheckCircle
                     , title = "Order completed"
                     , actions =
-                        [ Button.light2 Color.green [] [ Styled.text "View status" ] |> Styled.toUnstyled
-                        , Button.light2 Color.green [ Styled.css [ Tw.ml_3 ] ] [ Styled.text "Dismiss" ] |> Styled.toUnstyled
+                        [ Button.light2 Color.green [] [ text "View status" ]
+                        , Button.light2 Color.green [ classes [ "ml-3" ] ] [ text "Dismiss" ]
                         ]
                     }
                     [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam." ]

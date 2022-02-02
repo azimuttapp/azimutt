@@ -1,18 +1,18 @@
 module Components.Molecules.ItemList exposing (IconItem, doc, withIcons)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Css
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, button, div, h3, li, p, span, text, ul)
-import Html.Styled.Attributes exposing (css, type_)
-import Html.Styled.Events exposing (onClick)
-import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
+import Html exposing (Html, button, div, h3, li, p, span, text, ul)
+import Html.Attributes exposing (type_)
+import Html.Events exposing (onClick)
+import Html.Styled exposing (fromUnstyled, toUnstyled)
+import Libs.Bool as B
+import Libs.Html.Attributes exposing (ariaHidden, classes, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind.Utilities as Tu
-import Tailwind.Breakpoints as Bp
+import Libs.Tailwind exposing (bg_500, focus, focusWithin, hover, ring_500, sm)
 import Tailwind.Utilities as Tw
 
 
@@ -22,23 +22,23 @@ type alias IconItem msg =
 
 withIcons : Theme -> List (IconItem msg) -> Html msg
 withIcons theme items =
-    ul [ role "list", css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_6, Bp.sm [ Tw.grid_cols_2 ] ] ]
+    ul [ role "list", classes [ "mt-6 grid grid-cols-1 gap-6", sm "grid-cols-2" ] ]
         (items |> List.map (withIcon theme))
 
 
 withIcon : Theme -> IconItem msg -> Html msg
 withIcon theme item =
-    li [ css [ Tw.flow_root, Tu.unless item.active [ Tw.filter, Tw.grayscale ] ] ]
-        [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, Tu.focusWithin [ Tw.ring_2, Color.ring theme.color 500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
-            [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_16, Tw.w_16, Tw.rounded_lg, Color.bg item.color 500 ] ] [ Icon.outline item.icon [ Tw.text_white ] ]
+    li [ classes [ "flow-root", B.cond item.active "" "filter grayscale" ] ]
+        [ div [ classes [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover "bg-gray-50", focusWithin ("ring-2 " ++ ring_500 theme.color) ] ]
+            [ div [ classes [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon [ Tw.text_white ] |> toUnstyled ]
             , div []
                 [ h3 []
-                    [ button [ type_ "button", onClick item.onClick, css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_900, Css.focus [ Tw.outline_none ] ] ]
-                        [ span [ css [ Tw.absolute, Tw.inset_0 ], ariaHidden True ] []
+                    [ button [ type_ "button", onClick item.onClick, classes [ "text-sm font-medium text-gray-900", focus "outline-none" ] ]
+                        [ span [ classes [ "absolute inset-0" ], ariaHidden True ] []
                         , text item.title
                         ]
                     ]
-                , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text item.description ]
+                , p [ classes [ "mt-1 text-sm text-gray-500" ] ] [ text item.description ]
                 ]
             ]
         ]
@@ -61,5 +61,6 @@ doc theme =
                     , { color = Color.indigo, icon = Table, title = "Create a Spreadsheet →", description = "Lots of numbers and things — good for nerds.", active = True, onClick = logAction "Spreadsheet clicked" }
                     , { color = Color.purple, icon = Clock, title = "Create a Timeline →", description = "Get a birds-eye-view of your procrastination.", active = True, onClick = logAction "Timeline clicked" }
                     ]
+                    |> fromUnstyled
               )
             ]

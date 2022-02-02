@@ -9,47 +9,40 @@ import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
 import Conf
-import Css.Global as Global
 import Gen.Route as Route
-import Html exposing (b, br, div, span, text)
-import Html.Attributes exposing (title)
-import Html.Styled as Styled exposing (fromUnstyled)
-import Html.Styled.Attributes as Styled
+import Html exposing (Html, b, br, div, span, text)
+import Html.Attributes exposing (href, title)
 import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (classes)
-import Libs.Html.Styled as Styled
-import Libs.Html.Styled.Attributes as Styled2
+import Libs.Html.Attributes exposing (classes, track)
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Home_.Models exposing (Model)
-import Tailwind.Utilities as Tw
 import Track
 
 
-viewHome : Model -> List (Styled.Html msg)
+viewHome : Model -> List (Html msg)
 viewHome model =
     let
-        heroCta : Styled.Html msg
+        heroCta : Html msg
         heroCta =
             model.projects
                 |> List.head
                 |> M.mapOrElse
                     (\p ->
-                        Styled.div []
-                            [ Link.white5 Color.indigo ([ Styled.href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ Styled2.track (Track.openAppCta "last-project")) [ Styled.text ("Explore " ++ p.name) ]
-                            , Link.white5 Color.indigo ([ Styled.href (Route.toHref Route.Projects), Styled.css [ Tw.ml_3 ] ] ++ Styled2.track (Track.openAppCta "dashboard")) [ Styled.text "Open Dashboard" ]
+                        div []
+                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), classes [ "ml-3" ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
                             ]
                     )
-                    (Link.white5 Color.indigo ([ Styled.href (Route.toHref Route.Projects) ] ++ Styled2.track (Track.openAppCta "home-hero")) [ Styled.text "Explore your schema" ])
+                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
     in
-    [ Global.global Tw.globalStyles
-    , Helpers.publicHeader |> fromUnstyled
+    [ Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your database SQL schema"
-        , content = [ Styled.bText "Did you ever find yourself lost in your database?", Styled.br [] [], Styled.bText "Discover how Azimutt will help you understand it." ]
+        , content = [ bText "Did you ever find yourself lost in your database?", br [] [], bText "Discover how Azimutt will help you understand it." ]
         , cta = heroCta
         }
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
@@ -75,7 +68,6 @@ viewHome model =
                 , avatar = { src = "/assets/images/avatar-loic-knuchel.jpg", alt = "Loïc Knuchel" }
                 }
         }
-        |> fromUnstyled
     , FeatureSideBySide.imageSwapSlice { src = "/assets/images/gospeak-schema-light.png", alt = "Gospeak.io minimal schema by Azimutt" }
         { image = { src = "/assets/images/gospeak-schema-full.png", alt = "Gospeak.io schema by Azimutt" }
         , imagePosition = Left
@@ -99,7 +91,6 @@ viewHome model =
                 , avatar = { src = "/assets/images/avatar-oliver-searle-barnes.png", alt = "Oliver Searle-Barnes" }
                 }
         }
-        |> fromUnstyled
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-incoming-relation.jpg", alt = "Gospeak.io incoming relations by Azimutt" }
         , imagePosition = Right
@@ -120,7 +111,6 @@ viewHome model =
         , cta = Just { url = Route.toHref Route.Projects, text = "I can't resist, let's go!", track = Just (Track.openAppCta "home-relations-section") }
         , quote = Nothing
         }
-        |> fromUnstyled
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-layouts.jpg", alt = "Gospeak.io layouts by Azimutt" }
         , imagePosition = Left
@@ -137,7 +127,6 @@ viewHome model =
         , cta = Just { url = Route.toHref Route.Projects, text = "That's enough, I'm in!", track = Just (Track.openAppCta "home-layouts-section") }
         , quote = Nothing
         }
-        |> fromUnstyled
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-find-path.png", alt = "Gospeak.io find path with Azimutt" }
         , imagePosition = Right
@@ -162,7 +151,6 @@ viewHome model =
         , cta = Just { url = Route.toHref Route.Projects, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
         , quote = Nothing
         }
-        |> fromUnstyled
     , FeatureGrid.cardSlice
         { header = "Last chance"
         , title = "What more can you want ?"
@@ -180,8 +168,7 @@ viewHome model =
               }
             ]
         }
-        |> fromUnstyled
-    , Cta.slice |> fromUnstyled
-    , Helpers.newsletterSection |> fromUnstyled
-    , Helpers.publicFooter |> fromUnstyled
+    , Cta.slice
+    , Helpers.newsletterSection
+    , Helpers.publicFooter
     ]

@@ -8,11 +8,9 @@ import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, br, button, div, h2, h3, img, input, label, option, p, pre, select, small, span, text)
-import Html.Attributes exposing (alt, class, for, id, placeholder, selected, src, title, type_, value)
+import Html.Attributes exposing (alt, class, disabled, for, id, placeholder, selected, src, title, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Html.Styled as Styled exposing (toUnstyled)
-import Html.Styled.Attributes as Styled
-import Html.Styled.Events as Styled
+import Html.Styled exposing (toUnstyled)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaDescribedby, classes)
@@ -253,17 +251,17 @@ viewFooter settings model =
         (case ( model.from, model.to, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
-                    [ Button.primary3 Conf.theme.color [ Styled.onClick (FindPathMsg FPClose) ] [ Styled.text "Done" ] |> toUnstyled ]
+                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
 
                 else
-                    [ Button.primary3 Conf.theme.color [ Styled.onClick (FindPathMsg FPSearch) ] [ Styled.text "Search" ] |> toUnstyled, span [] [ text "Results are out of sync with search 🤯" ] ]
+                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
 
             ( Just _, Just _, FindPathState.Searching ) ->
-                [ Button.primary3 Conf.theme.color [ Styled.disabled True ] [ Icon.loading [ Tw.neg_ml_1, Tw.mr_2, Tw.animate_spin ], Styled.text "Searching..." ] |> toUnstyled ]
+                [ Button.primary3 Conf.theme.color [ disabled True ] [ Icon.loading [ Tw.neg_ml_1, Tw.mr_2, Tw.animate_spin ] |> toUnstyled, text "Searching..." ] ]
 
             ( Just _, Just _, FindPathState.Empty ) ->
-                [ Button.primary3 Conf.theme.color [ Styled.onClick (FindPathMsg FPSearch) ] [ Styled.text "Search" ] |> toUnstyled ]
+                [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
 
             _ ->
-                [ Button.primary3 Conf.theme.color [ Styled.disabled True ] [ Styled.text "Search" ] |> toUnstyled ]
+                [ Button.primary3 Conf.theme.color [ disabled True ] [ text "Search" ] ]
         )

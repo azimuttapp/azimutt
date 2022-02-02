@@ -1,14 +1,15 @@
 module Components.Atoms.Link exposing (doc, light1, light2, light3, light4, light5, primary1, primary2, primary3, primary4, primary5, secondary1, secondary2, secondary3, secondary4, secondary5, white1, white2, white3, white4, white5)
 
 import Components.Atoms.Button exposing (commonStyles, light, primary, secondary, size1, size2, size3, size4, size5, white)
-import Css
 import ElmBook.Chapter exposing (chapter, renderComponentList)
 import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Attribute, Html, a, div, text)
-import Html.Styled.Attributes exposing (css)
+import Html exposing (Attribute, Html, a, div, text)
+import Html.Attributes exposing (href)
+import Html.Styled exposing (fromUnstyled)
+import Libs.Html.Attributes exposing (classes)
 import Libs.Models.Color exposing (Color)
 import Libs.Models.Theme exposing (Theme)
-import Tailwind.Utilities as Tw
+import Libs.Tailwind exposing (TwClass)
 
 
 primary1 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
@@ -111,9 +112,9 @@ white5 =
     build white size5
 
 
-build : (Color -> Css.Style) -> Css.Style -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
+build : (Color -> TwClass) -> TwClass -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg
 build colorStyles sizeStyles color attrs content =
-    a (attrs ++ [ css [ commonStyles color, colorStyles color, sizeStyles ] ]) content
+    a (attrs ++ [ classes [ commonStyles color, colorStyles color, sizeStyles ] ]) content
 
 
 
@@ -126,38 +127,42 @@ doc theme =
         |> renderComponentList
             [ ( "primary"
               , div []
-                    [ primary1 theme.color [ css [ Tw.mr_3 ] ] [ text "primary1" ]
-                    , primary2 theme.color [ css [ Tw.mr_3 ] ] [ text "primary2" ]
-                    , primary3 theme.color [ css [ Tw.mr_3 ] ] [ text "primary3" ]
-                    , primary4 theme.color [ css [ Tw.mr_3 ] ] [ text "primary4" ]
-                    , primary5 theme.color [ css [ Tw.mr_3 ] ] [ text "primary5" ]
+                    [ primary1 theme.color [ href "#", classes [ "mr-3" ] ] [ text "primary1" ]
+                    , primary2 theme.color [ href "#", classes [ "mr-3" ] ] [ text "primary2" ]
+                    , primary3 theme.color [ href "#", classes [ "mr-3" ] ] [ text "primary3" ]
+                    , primary4 theme.color [ href "#", classes [ "mr-3" ] ] [ text "primary4" ]
+                    , primary5 theme.color [ href "#", classes [ "mr-3" ] ] [ text "primary5" ]
                     ]
+                    |> fromUnstyled
               )
             , ( "secondary"
               , div []
-                    [ secondary1 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary1" ]
-                    , secondary2 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary2" ]
-                    , secondary3 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary3" ]
-                    , secondary4 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary4" ]
-                    , secondary5 theme.color [ css [ Tw.mr_3 ] ] [ text "secondary5" ]
+                    [ secondary1 theme.color [ href "#", classes [ "mr-3" ] ] [ text "secondary1" ]
+                    , secondary2 theme.color [ href "#", classes [ "mr-3" ] ] [ text "secondary2" ]
+                    , secondary3 theme.color [ href "#", classes [ "mr-3" ] ] [ text "secondary3" ]
+                    , secondary4 theme.color [ href "#", classes [ "mr-3" ] ] [ text "secondary4" ]
+                    , secondary5 theme.color [ href "#", classes [ "mr-3" ] ] [ text "secondary5" ]
                     ]
+                    |> fromUnstyled
               )
             , ( "light"
               , div []
-                    [ light1 theme.color [ css [ Tw.mr_3 ] ] [ text "light1" ]
-                    , light2 theme.color [ css [ Tw.mr_3 ] ] [ text "light2" ]
-                    , light3 theme.color [ css [ Tw.mr_3 ] ] [ text "light3" ]
-                    , light4 theme.color [ css [ Tw.mr_3 ] ] [ text "light4" ]
-                    , light5 theme.color [ css [ Tw.mr_3 ] ] [ text "light5" ]
+                    [ light1 theme.color [ href "#", classes [ "mr-3" ] ] [ text "light1" ]
+                    , light2 theme.color [ href "#", classes [ "mr-3" ] ] [ text "light2" ]
+                    , light3 theme.color [ href "#", classes [ "mr-3" ] ] [ text "light3" ]
+                    , light4 theme.color [ href "#", classes [ "mr-3" ] ] [ text "light4" ]
+                    , light5 theme.color [ href "#", classes [ "mr-3" ] ] [ text "light5" ]
                     ]
+                    |> fromUnstyled
               )
             , ( "white"
               , div []
-                    [ white1 theme.color [ css [ Tw.mr_3 ] ] [ text "white1" ]
-                    , white2 theme.color [ css [ Tw.mr_3 ] ] [ text "white2" ]
-                    , white3 theme.color [ css [ Tw.mr_3 ] ] [ text "white3" ]
-                    , white4 theme.color [ css [ Tw.mr_3 ] ] [ text "white4" ]
-                    , white5 theme.color [ css [ Tw.mr_3 ] ] [ text "white5" ]
+                    [ white1 theme.color [ href "#", classes [ "mr-3" ] ] [ text "white1" ]
+                    , white2 theme.color [ href "#", classes [ "mr-3" ] ] [ text "white2" ]
+                    , white3 theme.color [ href "#", classes [ "mr-3" ] ] [ text "white3" ]
+                    , white4 theme.color [ href "#", classes [ "mr-3" ] ] [ text "white4" ]
+                    , white5 theme.color [ href "#", classes [ "mr-3" ] ] [ text "white5" ]
                     ]
+                    |> fromUnstyled
               )
             ]

@@ -11,7 +11,6 @@ import Html exposing (Html, button, div, h2, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
 import Html.Styled as Styled exposing (fromUnstyled, toUnstyled)
-import Html.Styled.Events as Styled
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, classes, role)
 import Libs.Models exposing (Millis)
@@ -113,7 +112,7 @@ doc theme =
             [ component "slideover"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 theme.color [ Styled.onClick (setOpen True) ] [ Styled.text "Click me!" ] |> toUnstyled
+                        [ Button.primary3 theme.color [ onClick (setOpen True) ] [ text "Click me!" ]
                         , slideover
                             { id = "slideover"
                             , title = "Panel with overlay"

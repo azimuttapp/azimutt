@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (TwClass, active, bg_100, bg_400, bg_50, bg_500, bg_600, border_300, border_400, border_500, border_b_200, focus, focusRing, hover, lg, md, placeholder_200, placeholder_400, ring_500, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
+module Libs.Tailwind exposing (TwClass, active, batch, bg_100, bg_200, bg_300, bg_400, bg_50, bg_500, bg_600, bg_700, border_300, border_400, border_500, border_b_200, disabled, focus, focusRing, focusWithin, hover, lg, md, placeholder_200, placeholder_400, ring_500, sm, stroke_400, stroke_500, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, text_900, xl, xxl)
 
 import Libs.Models.Color exposing (Color, ColorLevel)
 
@@ -9,7 +9,7 @@ type alias TwClass =
 
 focusRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> TwClass
 focusRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
-    "outline-none ring-2 ring-offset-2 " ++ ring ringColor ringLevel ++ ringOffset offsetColor offsetLevel |> focus
+    "outline-none ring-2 ring-offset-2 " ++ ring ringColor ringLevel ++ " " ++ ringOffset offsetColor offsetLevel |> focus
 
 
 ring : Color -> ColorLevel -> TwClass
@@ -22,24 +22,14 @@ ringOffset color level =
     "ring-offset-" ++ color.name ++ "-" ++ String.fromInt level
 
 
+batch : List TwClass -> TwClass
+batch classes =
+    classes |> List.map String.trim |> List.filter (\v -> v /= "") |> String.join " "
+
+
 
 -- SYNTAX HELPERS
 -- must be handled by tailwind.config.js `transform`
-
-
-hover : TwClass -> TwClass
-hover =
-    addState "hover"
-
-
-focus : TwClass -> TwClass
-focus =
-    addState "focus"
-
-
-active : TwClass -> TwClass
-active =
-    addState "active"
 
 
 sm : TwClass -> TwClass
@@ -67,6 +57,31 @@ xxl =
     addState "2xl"
 
 
+hover : TwClass -> TwClass
+hover =
+    addState "hover"
+
+
+focus : TwClass -> TwClass
+focus =
+    addState "focus"
+
+
+active : TwClass -> TwClass
+active =
+    addState "active"
+
+
+disabled : TwClass -> TwClass
+disabled =
+    addState "disabled"
+
+
+focusWithin : TwClass -> TwClass
+focusWithin =
+    addState "focus-within"
+
+
 addState : String -> TwClass -> TwClass
 addState state classes =
     classes |> String.split " " |> List.map String.trim |> List.filter (\c -> c /= "") |> List.map (\c -> state ++ ":" ++ c) |> String.join " "
@@ -87,6 +102,16 @@ bg_100 color =
     "bg-" ++ color.name ++ "-100"
 
 
+bg_200 : Color -> TwClass
+bg_200 color =
+    "bg-" ++ color.name ++ "-200"
+
+
+bg_300 : Color -> TwClass
+bg_300 color =
+    "bg-" ++ color.name ++ "-300"
+
+
 bg_400 : Color -> TwClass
 bg_400 color =
     "bg-" ++ color.name ++ "-400"
@@ -100,6 +125,11 @@ bg_500 color =
 bg_600 : Color -> TwClass
 bg_600 color =
     "bg-" ++ color.name ++ "-600"
+
+
+bg_700 : Color -> TwClass
+bg_700 color =
+    "bg-" ++ color.name ++ "-700"
 
 
 border_300 : Color -> TwClass
