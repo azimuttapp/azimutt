@@ -42,7 +42,7 @@ viewCreateLayout opened model =
                 , div [ class "mt-2" ]
                     [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Layout name" ]
                     , div [ class "mt-1" ]
-                        [ input [ type_ "text", name "layout-name", id inputId, value model.name, onInput (LEdit >> LayoutMsg), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus "ring-indigo-500 border-indigo-500", sm "text-sm" ] ] []
+                        [ input [ type_ "text", name "layout-name", id inputId, value model.name, onInput (LEdit >> LayoutMsg), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
                         ]
                     , p [ class "mt-1 text-sm text-gray-500" ]
                         [ text "Do you like Azimutt ? Consider "
@@ -55,7 +55,7 @@ viewCreateLayout opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Color.primary [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ "w-full text-base", sm "ml-3 w-auto text-sm" ] ] [ text "Save layout" ]
-            , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ "mt-3 w-full text-base", sm "mt-0 w-auto text-sm" ] ] [ text "Cancel" ]
+            [ Button.primary3 Color.primary [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text "Save layout" ]
+            , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]

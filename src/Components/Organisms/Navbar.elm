@@ -14,7 +14,7 @@ import Libs.Maybe as M
 import Libs.Models exposing (Image, Link)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (TwClass, focus, focusRing, focusWithin, hover, lg, sm)
+import Libs.Tailwind exposing (TwClass, focus, focusWithin, focus_ring_offset_600, hover, lg, sm)
 
 
 type alias AdminModel msg =
@@ -71,16 +71,16 @@ type alias AdminState =
 
 admin : AdminModel msg -> AdminState -> Html msg
 admin model state =
-    nav [ css [ "border-b border-opacity-25 bg-primary-600 border-primary-300", lg "border-none" ] ]
-        [ div [ css [ "max-w-7xl mx-auto px-4", lg "px-8", sm "px-6" ] ]
-            [ div [ css [ "relative h-16 flex items-center justify-between", lg "border-b border-opacity-25 border-primary-400" ] ]
-                [ div [ css [ "px-2 flex items-center", lg "px-0" ] ]
+    nav [ css [ "border-b border-opacity-25 bg-primary-600 border-primary-300", lg [ "border-none" ] ] ]
+        [ div [ css [ "max-w-7xl mx-auto px-4", lg [ "px-8" ], sm [ "px-6" ] ] ]
+            [ div [ css [ "relative h-16 flex items-center justify-between", lg [ "border-b border-opacity-25 border-primary-400" ] ] ]
+                [ div [ css [ "px-2 flex items-center", lg [ "px-0" ] ] ]
                     [ div [ css [ "flex-shrink-0" ] ] [ adminBrand model.brand ]
-                    , div [ css [ "hidden", lg "block ml-10" ] ] [ adminNavigation model.navigation state.selectedMenu ]
+                    , div [ css [ "hidden", lg [ "block ml-10" ] ] ] [ adminNavigation model.navigation state.selectedMenu ]
                     ]
                 , model.search |> M.mapOrElse adminSearch (div [] [])
                 , adminMobileMenuButton model.mobileMenu state.mobileMenuOpen
-                , div [ css [ "hidden", lg "block ml-4" ] ]
+                , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
                     [ div [ css [ "flex items-center" ] ]
                         [ model.notifications |> M.mapOrElse adminNotifications (div [] [])
                         , model.profile |> M.mapOrElse (adminProfile state.profileOpen) (div [] [])
@@ -96,7 +96,7 @@ adminBrand : AdminBrand -> Html msg
 adminBrand brand =
     a [ href brand.link.url, css [ "flex justify-start items-center font-medium" ] ]
         [ img [ css [ "block h-8 w-8" ], src brand.img.src, alt brand.img.alt, width 32, height 32 ] []
-        , span [ css [ "ml-3 text-2xl text-white hidden", lg "block" ] ] [ text brand.link.text ]
+        , span [ css [ "ml-3 text-2xl text-white hidden", lg [ "block" ] ] ] [ text brand.link.text ]
         ]
 
 
@@ -111,17 +111,17 @@ adminNavigationLink styles navigationActive navigationOnClick link =
         a [ href link.url, onClick (navigationOnClick link), css [ "text-white rounded-md py-2 px-3 font-medium bg-primary-700", styles ], ariaCurrent "page" ] [ text link.text ]
 
     else
-        a [ href link.url, onClick (navigationOnClick link), css [ "text-white rounded-md py-2 px-3 font-medium", styles, hover "bg-opacity-75 bg-primary-500" ] ] [ text link.text ]
+        a [ href link.url, onClick (navigationOnClick link), css [ "text-white rounded-md py-2 px-3 font-medium", styles, hover [ "bg-opacity-75 bg-primary-500" ] ] ] [ text link.text ]
 
 
 adminSearch : AdminSearch -> Html msg
 adminSearch search =
-    div [ css [ "flex-1 px-2 flex justify-center", lg "ml-6 justify-end" ] ]
-        [ div [ css [ "max-w-lg w-full", lg "max-w-xs" ] ]
+    div [ css [ "flex-1 px-2 flex justify-center", lg [ "ml-6 justify-end" ] ] ]
+        [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
             [ label [ for search.id, css [ "sr-only" ] ] [ text "Search" ]
-            , div [ css [ "relative text-gray-400", focusWithin "text-gray-600" ] ]
+            , div [ css [ "relative text-gray-400", focusWithin [ "]text-gray-600" ] ] ]
                 [ div [ css [ "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] ] [ Icon.solid Search "" ]
-                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ "block w-full bg-white py-2 pl-10 pr-3 border border-transparent rounded-md leading-5 text-gray-900 placeholder-gray-500", focusRing ( Color.white, 600 ) ( Color.primary, 600 ), sm "text-sm" ] ] []
+                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ "block w-full bg-white py-2 pl-10 pr-3 border border-transparent rounded-md leading-5 text-gray-900 placeholder-gray-500", focus_ring_offset_600 Color.primary, sm [ "text-sm" ] ] ] []
                 ]
             ]
         ]
@@ -129,8 +129,8 @@ adminSearch search =
 
 adminMobileMenuButton : AdminMobileMenu msg -> Bool -> Html msg
 adminMobileMenuButton mobileMenu isOpen =
-    div [ css [ "flex", lg "hidden" ] ]
-        [ button [ type_ "button", onClick mobileMenu.onClick, css [ "p-2 rounded-md inline-flex items-center justify-center bg-primary-600 text-primary-200", hover "text-white bg-opacity-75 bg-primary-500", focus "outline-none ring-2 ring-offset-2 ring-white ring-offset-primary-600" ], ariaControls mobileMenu.id, ariaExpanded isOpen ]
+    div [ css [ "flex", lg [ "hidden" ] ] ]
+        [ button [ type_ "button", onClick mobileMenu.onClick, css [ "p-2 rounded-md inline-flex items-center justify-center bg-primary-600 text-primary-200", hover [ "text-white bg-opacity-75 bg-primary-500" ], focus [ "outline-none ring-2 ring-offset-2 ring-white ring-offset-primary-600" ] ], ariaControls mobileMenu.id, ariaExpanded isOpen ]
             [ span [ css [ "sr-only" ] ] [ text "Open main menu" ]
             , Icon.outline Menu (B.cond isOpen "hidden" "block")
             , Icon.outline X (B.cond isOpen "block" "hidden")
@@ -140,7 +140,7 @@ adminMobileMenuButton mobileMenu isOpen =
 
 adminNotifications : AdminNotifications -> Html msg
 adminNotifications _ =
-    button [ type_ "button", css [ "ml-auto flex-shrink-0 rounded-full p-1 bg-primary-600 text-primary-200", hover "text-white", focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ] ]
+    button [ type_ "button", css [ "ml-auto flex-shrink-0 rounded-full p-1 bg-primary-600 text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
         [ span [ css [ "sr-only" ] ] [ text "View notifications" ]
         , Icon.outline Bell ""
         ]
@@ -150,7 +150,7 @@ adminProfile : Bool -> AdminProfile msg -> Html msg
 adminProfile isOpen profile =
     Dropdown.dropdown { id = profile.id, direction = BottomLeft, isOpen = isOpen }
         (\m ->
-            button [ type_ "button", id m.id, onClick profile.onClick, css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ], ariaExpanded m.isOpen, ariaHaspopup True ]
+            button [ type_ "button", id m.id, onClick profile.onClick, css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Color.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
                 [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
                 , img [ css [ "rounded-full h-8 w-8" ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]
@@ -160,7 +160,7 @@ adminProfile isOpen profile =
 
 adminMobileMenu : AdminNavigation msg -> Maybe AdminNotifications -> Maybe (AdminProfile msg) -> AdminMobileMenu msg -> String -> Bool -> Html msg
 adminMobileMenu navigation notifications profile mobileMenu activeMenu isOpen =
-    div [ css [ lg "hidden", B.cond isOpen "" "hidden" ], id mobileMenu.id ]
+    div [ css [ lg [ "hidden" ], B.cond isOpen "" "hidden" ], id mobileMenu.id ]
         [ adminMobileNavigation navigation activeMenu
         , profile
             |> M.mapOrElse
@@ -177,7 +177,7 @@ adminMobileMenu navigation notifications profile mobileMenu activeMenu isOpen =
                             , notifications |> M.mapOrElse adminNotifications (div [] [])
                             ]
                         , div [ css [ "mt-3 px-2 space-y-1" ] ]
-                            (p.links |> List.map (\link -> a [ href link.url, css [ "block rounded-md py-2 px-3 text-base font-medium text-white", hover "bg-opacity-75 bg-primary-500" ] ] [ text link.text ]))
+                            (p.links |> List.map (\link -> a [ href link.url, css [ "block rounded-md py-2 px-3 text-base font-medium text-white", hover [ "bg-opacity-75 bg-primary-500" ] ] ] [ text link.text ]))
                         ]
                 )
                 (div [] [])

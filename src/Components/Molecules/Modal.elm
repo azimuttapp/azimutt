@@ -54,8 +54,8 @@ confirm model isOpen =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 bg-gray-50 sm:flex sm:items-center sm:flex-row-reverse" ]
-            [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ "w-full text-base", sm "ml-3 w-auto text-sm" ] ] [ text model.confirm ]
-            , Button.white3 Color.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm "mt-0 w-auto text-sm" ] ] [ text model.cancel ]
+            [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text model.confirm ]
+            , Button.white3 Color.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text model.cancel ]
             ]
         ]
 

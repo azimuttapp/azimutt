@@ -20,9 +20,9 @@ viewBlog model =
             [ text "Azimutt blog" ]
         , p [ css [ "text-lg mt-6" ] ]
             [ text "Hi! We are "
-            , extLink "https://twitter.com/sbouaked" [ css [ "text-indigo-600", hover "underline" ] ] [ text "Samir" ]
+            , extLink "https://twitter.com/sbouaked" [ css [ "text-indigo-600", hover [ "underline" ] ] ] [ text "Samir" ]
             , text " and "
-            , extLink "https://twitter.com/loicknuchel" [ css [ "text-indigo-600", hover "underline" ] ] [ text "Loïc" ]
+            , extLink "https://twitter.com/loicknuchel" [ css [ "text-indigo-600", hover [ "underline" ] ] ] [ text "Loïc" ]
             , text ". We're building an application to empower developers understanding their relational databases. You can read about how we build it and how to use it on this blog."
             ]
         ]

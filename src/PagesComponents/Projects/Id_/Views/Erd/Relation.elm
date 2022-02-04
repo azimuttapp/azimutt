@@ -63,7 +63,7 @@ viewVirtualRelation ( ( maybeProps, column ), position ) =
 
 viewEmptyRelation : Svg msg
 viewEmptyRelation =
-    svg [ class "erd-relation", width "0px", height "0px" ] []
+    svg [ class "tw-empty-relation", width "0px", height "0px" ] []
 
 
 getColor : Maybe ErdColumnProps -> Maybe ErdColumnProps -> Maybe Color

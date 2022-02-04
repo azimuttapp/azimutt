@@ -17,7 +17,7 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (focus, focusRing)
+import Libs.Tailwind exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -37,7 +37,7 @@ viewProjectsDropdown : List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Ht
 viewProjectsDropdown otherProjects project htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 )) ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Color.primary ] ]
                 [ span [] [ text project.name ]
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
@@ -69,7 +69,7 @@ viewLayouts : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> 
 viewLayouts usedLayout layouts htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, class ("flex justify-center items-center p-1 rounded-full " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 )) ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Color.primary ] ]
                 [ span [] [ text (usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
@@ -95,9 +95,9 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
     span [ role "menuitem", tabindex -1, css [ "flex", Dropdown.itemStyles ] ]
-        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ focus "outline-none" ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
-        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ "mx-2", focus "outline-none" ] ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
-        , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left", focus "outline-none" ] ]
+        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ focus [ "outline-none" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
+        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ "mx-2", focus [ "outline-none" ] ] ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
+        , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left", focus [ "outline-none" ] ] ]
             [ text name
             , text " "
             , small [] [ text ("(" ++ (layout.tables |> String.pluralizeL "table") ++ ")") ]

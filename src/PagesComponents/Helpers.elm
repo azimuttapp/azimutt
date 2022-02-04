@@ -83,7 +83,7 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
         , viewHeader title
         ]
     , div [ css [ "-mt-32" ] ]
-        [ main_ [ css [ "max-w-7xl mx-auto pb-12 px-4", lg "px-8", sm "px-6" ] ]
+        [ main_ [ css [ "max-w-7xl mx-auto pb-12 px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
             [ div [ css [ "bg-white rounded-lg shadow" ] ] content
             ]
         ]
@@ -94,7 +94,7 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
 viewHeader : List (Html msg) -> Html msg
 viewHeader content =
     header [ css [ "py-10" ] ]
-        [ div [ css [ "max-w-7xl mx-auto px-4", lg "px-8", sm "px-6" ] ]
+        [ div [ css [ "max-w-7xl mx-auto px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
             [ h1 [ css [ "text-3xl font-bold text-white" ] ] content
             ]
         ]
@@ -103,8 +103,8 @@ viewHeader content =
 viewOldApp : Html msg
 viewOldApp =
     footer []
-        [ div [ css [ "max-w-7xl mx-auto py-12 px-4", lg "px-8", md "flex items-center justify-between", sm "px-6" ] ]
-            [ div [ css [ "mt-8", md "mt-0 order-1" ] ]
+        [ div [ css [ "max-w-7xl mx-auto py-12 px-4", sm [ "px-6" ], md [ "flex items-center justify-between" ], lg [ "px-8" ] ] ]
+            [ div [ css [ "mt-8", md [ "mt-0 order-1" ] ] ]
                 [ p [ css [ "text-center text-base text-gray-400" ] ]
                     [ text "This new Azimutt version is in trial, please give "
                     , extLink Conf.constants.azimuttBugReport [ css [ "tw-link" ] ] [ text "any feedback" ]

@@ -58,7 +58,7 @@ articleItem model =
             , p [ class "mt-3 text-base text-gray-500" ] [ text model.excerpt ]
             ]
         , div [ class "mt-3" ]
-            [ a [ href model.link, css [ "text-base font-semibold text-indigo-600", hover "text-indigo-500" ] ] [ text "Read full story" ] ]
+            [ a [ href model.link, css [ "text-base font-semibold text-indigo-600", hover [ "text-indigo-500" ] ] ] [ text "Read full story" ] ]
         ]
 
 

@@ -16,7 +16,7 @@ textWithLabelAndHelp styles fieldId fieldType fieldLabel fieldPlaceholder fieldH
     div [ class styles ]
         [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text fieldLabel ]
         , div [ class "mt-1" ]
-            [ input [ type_ fieldType, name fieldId, id fieldId, value fieldValue, onInput fieldChange, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus "ring-indigo-500 border-indigo-500", sm "text-sm" ] ] []
+            [ input [ type_ fieldType, name fieldId, id fieldId, value fieldValue, onInput fieldChange, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
             ]
         , p [ id (fieldId ++ "-help"), class "mt-2 text-sm text-gray-500" ] [ text fieldHelp ]
         ]
@@ -27,7 +27,7 @@ selectWithLabelAndHelp styles fieldId fieldLabel fieldHelp fieldOptions fieldVal
     div [ class styles ]
         [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text fieldLabel ]
         , div [ class "mt-1" ]
-            [ select [ name fieldId, id fieldId, onInput fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus "ring-indigo-500 border-indigo-500", sm "text-sm" ] ]
+            [ select [ name fieldId, id fieldId, onInput fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]
                 (fieldOptions |> List.map (\( optionId, optionLabel ) -> option [ value optionId, selected (optionId == fieldValue) ] [ text optionLabel ]))
             ]
         , p [ id (fieldId ++ "-help"), class "mt-2 text-sm text-gray-500" ] [ text fieldHelp ]
@@ -39,7 +39,7 @@ checkbox styles fieldId fieldLabel fieldHelp fieldValue fieldChange =
     -- TODO: fieldLabel, replace String with (List (Html msg))
     div [ css [ "relative flex items-start", styles ] ]
         [ div [ class "flex items-center h-5" ]
-            [ input [ type_ "checkbox", name fieldId, id fieldId, checked fieldValue, onClick fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus "ring-indigo-500" ] ] []
+            [ input [ type_ "checkbox", name fieldId, id fieldId, checked fieldValue, onClick fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus [ "ring-indigo-500" ] ] ] []
             ]
         , div [ class "ml-3 text-sm" ]
             [ label [ for fieldId, class "font-medium text-gray-700" ] [ text fieldLabel ]

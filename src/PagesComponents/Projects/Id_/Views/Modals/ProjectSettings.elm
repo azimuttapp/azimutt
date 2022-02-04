@@ -70,10 +70,10 @@ viewSource _ zone source =
                             source.enabled
                             (ProjectSettingsMsg (PSToggleSource source))
                         , div []
-                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ focus "outline-none", B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
+                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ focus [ "outline-none" ], B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
                                 [ Icon.solid Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
-                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus "outline-none" ] ]
+                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
                             ]
@@ -97,7 +97,7 @@ viewSource _ zone source =
 
 viewAddSource : ProjectId -> Html Msg
 viewAddSource _ =
-    button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ "inline-flex items-center px-3 py-2 w-full text-left", focus "outline-none" ] ]
+    button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ "inline-flex items-center px-3 py-2 w-full text-left", focus [ "outline-none" ] ] ]
         [ Icon.solid Plus "inline", text "Add source" ]
 
 
@@ -179,7 +179,7 @@ viewCheckbox : TwClass -> String -> List (Html msg) -> Bool -> msg -> Html msg
 viewCheckbox styles fieldId fieldLabel value msg =
     div [ css [ "mt-3 relative flex items-start", styles ] ]
         [ div [ class "flex items-center h-5" ]
-            [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus "ring-indigo-500" ] ] []
+            [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus [ "ring-indigo-500" ] ] ] []
             ]
         , div [ class "ml-3 text-sm" ] [ label [ for fieldId, class "text-gray-700" ] fieldLabel ]
         ]

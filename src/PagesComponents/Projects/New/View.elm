@@ -51,10 +51,10 @@ type alias TabModel tab =
 
 viewContent : Model -> PageModel -> Html Msg
 viewContent model page =
-    div [ css [ "divide-y", lg "grid grid-cols-12 divide-x" ] ]
-        [ aside [ css [ "py-6", lg "col-span-3" ] ]
+    div [ css [ "divide-y", lg [ "grid grid-cols-12 divide-x" ] ] ]
+        [ aside [ css [ "py-6", lg [ "col-span-3" ] ] ]
             [ nav [ css [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
-        , div [ css [ "px-4 py-6", sm "p-6", lg "pb-8 col-span-9 rounded-r-lg" ] ]
+        , div [ css [ "px-4 py-6", sm [ "p-6" ], lg [ "pb-8 col-span-9 rounded-r-lg" ] ] ]
             [ viewTabContent model ]
         ]
 
@@ -62,13 +62,13 @@ viewContent model page =
 viewTab : Tab -> TabModel Tab -> Html Msg
 viewTab selected tab =
     if tab.tab == selected then
-        a [ href "", css [ "bg-primary-50 border-primary-500 text-primary-700 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover "bg-primary-50 text-primary-700" ], ariaCurrent "page" ]
+        a [ href "", css [ "bg-primary-50 border-primary-500 text-primary-700 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-primary-50 text-primary-700" ] ], ariaCurrent "page" ]
             [ Icon.outline tab.icon "flex-shrink-0 -ml-1 mr-3 h-6 w-6 text-primary-500"
             , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 
     else
-        a [ href "", onClick (SelectTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover "bg-gray-50 text-gray-900" ] ]
+        a [ href "", onClick (SelectTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-gray-50 text-gray-900" ] ] ]
             [ Icon.outline tab.icon "flex-shrink-0 -ml-1 mr-3 h-6 w-6 text-gray-400"
             , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
@@ -94,8 +94,8 @@ viewSchemaUpload openedCollapse =
     div []
         [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
         , form []
-            [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm "grid-cols-6" ] ]
-                [ div [ css [ sm "col-span-6" ] ]
+            [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
+                [ div [ css [ sm [ "col-span-6" ] ] ]
                     [ FileInput.basic "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop
                     ]
                 ]

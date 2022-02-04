@@ -23,7 +23,7 @@ centered : CenteredModel msg -> Html msg
 centered model =
     div [ css [ "relative py-16 bg-white overflow-hidden" ] ]
         [ B.cond model.dots
-            (div [ css [ "hidden", lg "block absolute inset-y-0 h-full w-full" ] ]
+            (div [ css [ "hidden", lg [ "block absolute inset-y-0 h-full w-full" ] ] ]
                 [ div [ css [ "relative h-full text-lg max-w-prose mx-auto" ], ariaHidden True ]
                     [ Dots.dotsTopRight "74b3fd99-0a6f-4271-bef2-e80eeafdf357" 384
                     , Dots.dotsMiddleLeft "f210dbf6-a58d-4871-961e-36d5016a0f49" 384
@@ -32,11 +32,11 @@ centered model =
                 ]
             )
             (div [] [])
-        , div [ css [ "relative px-4", sm "px-6", lg "px-8" ] ]
+        , div [ css [ "relative px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
             [ div [ css [ "text-lg max-w-prose mx-auto" ] ]
                 ([ h1 []
                     [ span [ css [ "block text-base text-center text-indigo-600 font-semibold tracking-wide uppercase" ] ] [ text model.section ]
-                    , span [ css [ "mt-2 block text-3xl text-center leading-8 font-extrabold tracking-tight text-gray-900", sm "text-4xl" ] ] [ text model.title ]
+                    , span [ css [ "mt-2 block text-3xl text-center leading-8 font-extrabold tracking-tight text-gray-900", sm [ "text-4xl" ] ] ] [ text model.title ]
                     ]
                  ]
                     ++ (model.introduction |> M.mapOrElse (\intro -> [ p [ css [ "mt-8 text-xl text-gray-500 leading-8" ] ] [ text intro ] ]) [])

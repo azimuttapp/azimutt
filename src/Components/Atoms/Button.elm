@@ -5,7 +5,7 @@ import Html exposing (Attribute, Html, button, div, text)
 import Html.Attributes exposing (disabled, type_)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color exposing (Color)
-import Libs.Tailwind as Tw exposing (TwClass, batch, bg_100, bg_200, bg_300, bg_50, bg_600, bg_700, focusRing, hover, text_300, text_700, text_800)
+import Libs.Tailwind as Tw exposing (TwClass, batch, bg_100, bg_200, bg_300, bg_50, bg_600, bg_700, focus_ring_500, hover, text_300, text_700, text_800)
 
 
 primary1 : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
@@ -110,22 +110,22 @@ white5 =
 
 primary : Color -> TwClass
 primary color =
-    batch [ "border-transparent shadow-sm text-white", bg_600 color, hover (bg_700 color), Tw.disabled ("cursor-not-allowed " ++ bg_300 color) ]
+    batch [ "border-transparent shadow-sm text-white", bg_600 color, hover [ bg_700 color ], Tw.disabled [ "cursor-not-allowed", bg_300 color ] ]
 
 
 secondary : Color -> TwClass
 secondary color =
-    batch [ "border-transparent", text_700 color, bg_100 color, hover (bg_200 color), Tw.disabled (batch [ "cursor-not-allowed", bg_100 color, text_300 color ]) ]
+    batch [ "border-transparent", text_700 color, bg_100 color, hover [ bg_200 color ], Tw.disabled [ "cursor-not-allowed", bg_100 color, text_300 color ] ]
 
 
 light : Color -> TwClass
 light color =
-    batch [ "border-transparent", text_800 color, bg_50 color, hover (bg_100 color), Tw.disabled (batch [ "cursor-not-allowed", bg_50 color, text_300 color ]) ]
+    batch [ "border-transparent", text_800 color, bg_50 color, hover [ bg_100 color ], Tw.disabled [ "cursor-not-allowed", bg_50 color, text_300 color ] ]
 
 
 white : Color -> TwClass
 white color =
-    batch [ "border-gray-300 shadow-sm bg-white", text_700 color, hover (bg_50 color), Tw.disabled (batch [ "cursor-not-allowed border-gray-200 bg-white", text_300 color ]) ]
+    batch [ "border-gray-300 shadow-sm bg-white", text_700 color, hover [ bg_50 color ], Tw.disabled [ "cursor-not-allowed border-gray-200 bg-white", text_300 color ] ]
 
 
 size1 : TwClass
@@ -155,7 +155,7 @@ size5 =
 
 commonStyles : Color -> TwClass
 commonStyles color =
-    batch [ "inline-flex justify-center items-center border font-medium", focusRing ( color, 500 ) ( Color.white, 500 ) ]
+    batch [ "inline-flex justify-center items-center border font-medium", focus_ring_500 color ]
 
 
 build : (Color -> TwClass) -> TwClass -> Color -> List (Attribute msg) -> List (Html msg) -> Html msg

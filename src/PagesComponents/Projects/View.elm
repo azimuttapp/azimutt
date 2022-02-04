@@ -15,7 +15,7 @@ import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
 import Libs.Models.Color as Color
 import Libs.String as S
-import Libs.Tailwind exposing (TwClass, focus, focusRing, hover, lg, md, sm)
+import Libs.Tailwind exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
@@ -37,7 +37,7 @@ viewProjects shared model =
 
 viewContent : Shared.Model -> Model -> Html Msg
 viewContent shared model =
-    div [ css [ "p-8", sm "p-6" ] ]
+    div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
         ]
 
@@ -88,7 +88,7 @@ viewNoProjects =
 
 viewFirstProject : Html msg
 viewFirstProject =
-    a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover "border-gray-400", focus "outline-none ring-2 ring-offset-2 ring-primary-500" ] ]
+    a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover [ "border-gray-400" ], focus [ "outline-none ring-2 ring-offset-2 ring-primary-500" ] ] ]
         [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
         , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
         ]
@@ -96,12 +96,12 @@ viewFirstProject =
 
 projectList : List (Html msg) -> Html msg
 projectList content =
-    ul [ role "list", css [ "grid grid-cols-1 gap-6", lg "grid-cols-4", md "grid-cols-3", sm "grid-cols-2" ] ] content
+    ul [ role "list", css [ "grid grid-cols-1 gap-6", sm [ "grid-cols-2" ], md [ "grid-cols-3" ], lg [ "grid-cols-4" ] ] ] content
 
 
 viewProjectPlaceholder : Html msg
 viewProjectPlaceholder =
-    li [ class "tw-project-placeholder", css [ "animate-pulse col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover "shadow-lg" ] ]
+    li [ class "tw-project-placeholder", css [ "animate-pulse col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ viewTextPlaceholder "w-24 h-3" ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
@@ -110,9 +110,9 @@ viewProjectPlaceholder =
                 ]
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
-            [ button [ type_ "button", css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover "text-gray-500" ] ]
+            [ button [ type_ "button", css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
                 [ viewIconPlaceholder "" ]
-            , a [ href "#", css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover "text-gray-500" ] ]
+            , a [ href "#", css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ]
                 [ viewIconPlaceholder "", viewTextPlaceholder "ml-3 w-24" ]
             ]
         ]
@@ -130,7 +130,7 @@ viewIconPlaceholder styles =
 
 viewProjectCard : Time.Zone -> Project -> Html Msg
 viewProjectCard zone project =
-    li [ class "tw-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover "shadow-lg" ] ]
+    li [ class "tw-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ text project.name ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
@@ -139,10 +139,10 @@ viewProjectCard zone project =
                 ]
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
-            [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover "text-gray-500" ] ]
+            [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
                 [ Icon.outline Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
-            , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover "text-gray-500" ] ] ++ track (Track.loadProject project))
+            , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
                 [ Icon.outline ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]
@@ -164,7 +164,7 @@ confirmDeleteProject project =
 viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover "border-gray-400 text-gray-400", focusRing ( "primary", 500 ) ( Color.white, 500 ) ] ]
+        [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Color.primary ] ]
             [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]

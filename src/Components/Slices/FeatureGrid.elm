@@ -12,12 +12,12 @@ import Libs.Tailwind exposing (lg, sm)
 coloredSlice : Html msg
 coloredSlice =
     div [ css [ "bg-gradient-to-r from-green-800 to-indigo-700" ] ]
-        [ div [ css [ "max-w-4xl mx-auto px-4 py-16", sm "px-6 pt-20 pb-24", lg "max-w-7xl pt-24 px-8" ] ]
+        [ div [ css [ "max-w-4xl mx-auto px-4 py-16", sm [ "px-6 pt-20 pb-24" ], lg [ "max-w-7xl pt-24 px-8" ] ] ]
             [ h2 [ css [ "text-3xl font-extrabold text-white tracking-tight" ] ]
                 [ text "Explore your SQL schema like never before" ]
             , p [ css [ "mt-4 max-w-3xl text-lg text-purple-200" ] ]
                 [ text "Your new weapons to dig into your schema:" ]
-            , div [ css [ "mt-12 grid grid-cols-1 gap-x-6 gap-y-12 text-white", lg "mt-16 grid-cols-3 gap-x-8 gap-y-16", sm "grid-cols-2" ] ]
+            , div [ css [ "mt-12 grid grid-cols-1 gap-x-6 gap-y-12 text-white", sm [ "grid-cols-2" ], lg [ "mt-16 grid-cols-3 gap-x-8 gap-y-16" ] ] ]
                 [ item (Icon.outline Inbox "")
                     "Partial display"
                     [ text """Maybe the less impressive but most useful feature when you work with a schema with 20, 40 or even 400 or 1000 tables!
@@ -76,13 +76,13 @@ type alias CardItemModel msg =
 
 cardSlice : CardModel msg -> Html msg
 cardSlice model =
-    div [ css [ "relative bg-white py-16", lg "py-32", sm "py-24" ] ]
-        [ div [ css [ "mx-auto max-w-md px-4 text-center", lg "px-8 max-w-7xl", sm "max-w-3xl px-6" ] ]
+    div [ css [ "relative bg-white py-16", sm [ "py-24" ], lg [ "py-32" ] ] ]
+        [ div [ css [ "mx-auto max-w-md px-4 text-center", sm [ "max-w-3xl px-6" ], lg [ "px-8 max-w-7xl" ] ] ]
             [ h2 [ css [ "text-base font-semibold tracking-wider uppercase bg-gradient-to-r from-green-600 to-indigo-600 bg-clip-text text-transparent" ] ] [ text model.header ]
-            , p [ css [ "mt-2 text-3xl font-extrabold text-gray-900 tracking-tight", sm "text-4xl" ] ] [ text model.title ]
+            , p [ css [ "mt-2 text-3xl font-extrabold text-gray-900 tracking-tight", sm [ "text-4xl" ] ] ] [ text model.title ]
             , p [ css [ "mt-5 max-w-prose mx-auto text-xl text-gray-500" ] ] [ text model.description ]
             , div [ css [ "mt-12" ] ]
-                [ div [ css [ "grid grid-cols-1 gap-8", lg "grid-cols-3", sm "grid-cols-2" ] ]
+                [ div [ css [ "grid grid-cols-1 gap-8", sm [ "grid-cols-2" ], lg [ "grid-cols-3" ] ] ]
                     (model.cards |> List.map card)
                 ]
             ]

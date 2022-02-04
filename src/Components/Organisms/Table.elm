@@ -162,7 +162,7 @@ viewHeader model =
                      , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
-                     , css [ "flex text-sm opacity-25", focus "outline-none" ]
+                     , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
                      ]
                         ++ track Track.openTableSettings
                     )
@@ -249,7 +249,7 @@ viewColumnIconDropdown model column icon =
             model.id ++ "-" ++ column.name ++ "-dropdown"
     in
     if column.inRelations |> List.isEmpty then
-        div [] [ button [ type_ "button", id dropdownId, css [ focus "outline-none" ] ] [ icon ] ]
+        div [] [ button [ type_ "button", id dropdownId, css [ focus [ "outline-none" ] ] ] [ icon ] ]
 
     else
         Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
@@ -260,7 +260,7 @@ viewColumnIconDropdown model column icon =
                      , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
-                     , css [ focus "outline-none" ]
+                     , css [ focus [ "outline-none" ] ]
                      ]
                         ++ track Track.openIncomingRelationsDropdown
                     )
@@ -303,7 +303,7 @@ viewColumnIconDropdown model column icon =
 viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
 viewColumnIconDropdownItem message content =
     button
-        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus "outline-none", Dropdown.itemStyles ] ]
+        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], Dropdown.itemStyles ] ]
             ++ track Track.showTableWithIncomingRelationsDropdown
         )
         content

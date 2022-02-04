@@ -175,7 +175,7 @@ viewEmptyState tables =
                     [ text "Hello from Azimutt 👋" ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "Azimutt let you freely explore your database schema. To start, just type what you are looking for in the "
-                    , button [ onClick (Focus Conf.ids.searchInput), css [ "tw-link", focus "outline-none" ] ] [ text "search bar" ]
+                    , button [ onClick (Focus Conf.ids.searchInput), css [ "tw-link", focus [ "outline-none" ] ] ] [ text "search bar" ]
                     , text ", and then look at columns and follow relations. Once you have interesting layout, you can save it for later."
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]

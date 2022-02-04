@@ -18,18 +18,18 @@ type alias IconItem msg =
 
 withIcons : List (IconItem msg) -> Html msg
 withIcons items =
-    ul [ role "list", css [ "mt-6 grid grid-cols-1 gap-6", sm "grid-cols-2" ] ]
+    ul [ role "list", css [ "mt-6 grid grid-cols-1 gap-6", sm [ "grid-cols-2" ] ] ]
         (items |> List.map withIcon)
 
 
 withIcon : IconItem msg -> Html msg
 withIcon item =
     li [ css [ "flow-root", B.cond item.active "" "filter grayscale" ] ]
-        [ div [ css [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover "bg-gray-50", focusWithin "ring-2 ring-primary-500" ] ]
+        [ div [ css [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover [ "bg-gray-50" ], focusWithin [ "ring-2 ring-primary-500" ] ] ]
             [ div [ css [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon "text-white" ]
             , div []
                 [ h3 []
-                    [ button [ type_ "button", onClick item.onClick, css [ "text-sm font-medium text-gray-900", focus "outline-none" ] ]
+                    [ button [ type_ "button", onClick item.onClick, css [ "text-sm font-medium text-gray-900", focus [ "outline-none" ] ] ]
                         [ span [ css [ "absolute inset-0" ], ariaHidden True ] []
                         , text item.title
                         ]

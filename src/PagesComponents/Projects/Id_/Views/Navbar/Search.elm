@@ -41,7 +41,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             , onInput SearchUpdated
                             , onFocus (DropdownToggle m.id)
                             , onBlur (DropdownToggle m.id)
-                            , css [ "block w-full pl-10 pr-3 py-2 border border-transparent rounded-md leading-5 bg-primary-500 text-primary-100 placeholder-primary-200", focus "outline-none bg-white border-white ring-white text-primary-900 placeholder-primary-400", sm "text-sm" ]
+                            , css [ "block w-full pl-10 pr-3 py-2 border border-transparent rounded-md leading-5 bg-primary-500 text-primary-100 placeholder-primary-200", focus [ "outline-none bg-white border-white ring-white text-primary-900 placeholder-primary-400" ], sm [ "text-sm" ] ]
                             ]
                             []
                         , Conf.hotkeys
@@ -108,7 +108,7 @@ viewSearchResult searchId shownTables active index res =
                         ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, focus "outline-none", B.cond (active == index) "bg-primary-600 text-white" "" ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, focus [ "outline-none" ], B.cond (active == index) "bg-primary-600 text-white" "" ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
     in
     case res of

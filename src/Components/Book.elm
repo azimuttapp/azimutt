@@ -40,7 +40,6 @@ import Html exposing (img, node, table, td, text, th, tr)
 import Html.Attributes exposing (alt, href, rel, src)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
-import Libs.Tailwind exposing (bg)
 
 
 type alias DocState =
@@ -107,7 +106,7 @@ colorsDoc =
                                     (\color ->
                                         tr []
                                             (th [ css [ "h-10" ] ] [ text color ]
-                                                :: (Color.levels |> List.map (\level -> td [ css [ bg color level ] ] []))
+                                                :: (Color.levels |> List.map (\level -> td [ css [ "bg-" ++ color ++ "-" ++ String.fromInt level ] ] []))
                                             )
                                     )
                            )

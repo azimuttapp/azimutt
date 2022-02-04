@@ -38,7 +38,7 @@ simple model =
                     , h1 [ class "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl" ] [ text model.title ]
                     , p [ class "mt-2 text-base text-gray-500" ] [ text model.message ]
                     , div [ class "mt-6" ]
-                        [ a [ href model.link.url, css [ "text-base font-medium text-primary-600", hover "text-primary-500" ] ]
+                        [ a [ href model.link.url, css [ "text-base font-medium text-primary-600", hover [ "text-primary-500" ] ] ]
                             [ text model.link.text
                             , span [ ariaHidden True ] [ text "→" ]
                             ]
@@ -46,10 +46,10 @@ simple model =
                     ]
                 ]
             ]
-        , footer [ css [ "flex-shrink-0 max-w-7xl w-full mx-auto px-4 ", lg "px-8", sm "px-6" ] ]
+        , footer [ css [ "flex-shrink-0 max-w-7xl w-full mx-auto px-4 ", sm [ "px-6" ], lg [ "px-8" ] ] ]
             [ nav [ class "flex justify-center space-x-4" ]
                 (model.footer
-                    |> List.map (\link -> a [ href link.url, css [ "text-sm font-medium text-gray-500 ", hover "text-gray-600" ] ] [ text link.text ])
+                    |> List.map (\link -> a [ href link.url, css [ "text-sm font-medium text-gray-500 ", hover [ "text-gray-600" ] ] ] [ text link.text ])
                     |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
                 )
             ]

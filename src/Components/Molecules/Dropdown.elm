@@ -102,12 +102,12 @@ hotkeyBtn action label hotkey =
 
 btn : TwClass -> msg -> List (Html msg) -> Html msg
 btn styles message content =
-    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "block w-full text-left", focus "outline-none", itemStyles, styles ] ] content
+    button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "block w-full text-left", focus [ "outline-none" ], itemStyles, styles ] ] content
 
 
 btnDisabled : TwClass -> List (Html msg) -> Html msg
 btnDisabled styles content =
-    button [ type_ "button", role "menuitem", tabindex -1, css [ "block w-full text-left", focus "outline-none", itemDisabledStyles, styles ] ] content
+    button [ type_ "button", role "menuitem", tabindex -1, css [ "block w-full text-left", focus [ "outline-none" ], itemDisabledStyles, styles ] ] content
 
 
 menuStyles : TwClass
@@ -117,7 +117,7 @@ menuStyles =
 
 itemStyles : TwClass
 itemStyles =
-    batch [ "py-2 px-4 text-sm text-gray-700", hover "bg-gray-100 text-gray-900" ]
+    batch [ "py-2 px-4 text-sm text-gray-700", hover [ "bg-gray-100 text-gray-900" ] ]
 
 
 itemDisabledStyles : TwClass

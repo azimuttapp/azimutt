@@ -23,7 +23,7 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, batch, focus, focusRing, hover)
+import Libs.Tailwind exposing (TwClass, batch, focus, focus_ring_offset_600, hover)
 import Models.Project.CanvasProps as CanvasProps
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -89,7 +89,7 @@ viewNavbarBrand =
 
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
-    button [ onClick (HelpMsg (HOpen "")), class ("ml-3 rounded-full " ++ focusRing ( Color.white, 600 ) ( Color.primary, 600 )) ]
+    button [ onClick (HelpMsg (HOpen "")), css [ "ml-3 rounded-full", focus_ring_offset_600 Color.primary ] ]
         [ Icon.solid QuestionMarkCircle "text-primary-300" ]
 
 
@@ -102,7 +102,7 @@ viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
 viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover "text-white", focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
                 [ span [ class "sr-only" ] [ text "View features" ]
                 , Icon.outline LightningBolt ""
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
@@ -124,7 +124,7 @@ viewNavbarFeatures features htmlId openedDropdown =
 
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover "text-white", focusRing ( Color.white, 600 ) ( Color.primary, 600 ) ] ]
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
         [ span [ class "sr-only" ] [ text "View settings" ]
         , Icon.outline Cog ""
         ]
@@ -133,7 +133,7 @@ viewNavbarSettings =
 navbarMobileButton : Bool -> Html Msg
 navbarMobileButton open =
     div [ class "flex lg:hidden" ]
-        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ "inline-flex items-center justify-center p-2 rounded-md text-primary-200", hover "text-white bg-primary-500", focus "outline-none ring-2 ring-inset ring-white" ] ]
+        [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ "inline-flex items-center justify-center p-2 rounded-md text-primary-200", hover [ "text-white bg-primary-500" ], focus [ "outline-none ring-2 ring-inset ring-white" ] ] ]
             [ span [ class "sr-only" ] [ text "Open main menu" ]
             , Icon.outline Menu (B.cond open "hidden" "block")
             , Icon.outline X (B.cond open "block" "hidden")
@@ -154,7 +154,7 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
 
         btnStyle : TwClass
         btnStyle =
-            batch [ "text-primary-100 flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium", hover "bg-primary-500 text-white", focus "outline-none" ]
+            batch [ "text-primary-100 flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium", hover [ "bg-primary-500 text-white" ], focus [ "outline-none" ] ]
     in
     div [ css [ "lg:hidden", B.cond isOpen "" "hidden" ], id "mobile-menu" ]
         ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, class btnStyle ] [ text "Reset canvas" ] ] []

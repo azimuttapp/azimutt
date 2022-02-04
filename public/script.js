@@ -461,7 +461,7 @@ window.addEventListener('load', function() {
     const consoleLog = console.log
     console.log = (...args) => {
         const msg = args[0]
-        if (msg.startsWith('[elm-time')) {
+        if (typeof msg === 'string' && msg.startsWith('[elm-time')) {
             if (msg.startsWith('[elm-time-end]')) {
                 console.timeEnd(msg.slice(15, -4))
             } else {

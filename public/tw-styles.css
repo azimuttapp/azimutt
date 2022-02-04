@@ -29,3 +29,29 @@ input[type="search"]::-webkit-search-results-button,
 input[type="search"]::-webkit-search-results-decoration {
     display: none;
 }
+
+/* home page */
+
+.img-swipe { display: inline-block; }
+.img-swipe .img-default { display: initial; }
+.img-swipe .img-hover { display: none; }
+.img-swipe:hover .img-default { display: none; }
+.img-swipe:hover .img-hover { display: initial; }
+
+/* blog */
+
+.blog-article img {
+    width: 100%;
+    border-radius: .5rem;
+}
+
+.blog-article img + em, .blog-article img + br + em {
+    display: block;
+    margin-top: -32px;
+    font-size: .8888889em;
+    text-align: center;
+}
+
+.blog-article img + br + em {
+    margin-top: -64px;
+}

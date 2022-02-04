@@ -20,15 +20,15 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
     let
         buttonStyles : TwClass
         buttonStyles =
-            batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ]
+            batch [ "relative inline-flex items-center p-2 border border-gray-300 text-sm font-medium", focus [ "z-10 outline-none ring-1 ring-primary-500 border-primary-500" ] ]
 
         classic : TwClass
         classic =
-            batch [ "bg-white text-gray-700", hover "bg-gray-50" ]
+            batch [ "bg-white text-gray-700", hover [ "bg-gray-50" ] ]
 
         inverted : TwClass
         inverted =
-            batch [ "bg-gray-700 text-white", hover "bg-gray-600" ]
+            batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
     in
     div [ class ("tw-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
         [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]

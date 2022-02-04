@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (TwClass, active, batch, bg, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, border_400, border_500, disabled, focus, focusRing, focusWithin, focusWithinRing, hover, lg, md, ring_500, sm, stroke_500, text_300, text_400, text_500, text_600, text_700, text_800, xl, xxl)
+module Libs.Tailwind exposing (TwClass, active, batch, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, border_400, border_500, disabled, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, hover, lg, md, ring_500, ring_600, ring_offset_600, sm, stroke_500, text_300, text_400, text_500, text_600, text_700, text_800, xl, xxl)
 
 import Libs.Models.Color exposing (Color, ColorLevel)
 
@@ -8,33 +8,22 @@ type alias TwClass =
 
 
 
--- BAD HELPERS
--- will have to replace them as they make tailwind class generation quite hard :(
+-- HELPERS
 
 
-focusRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> TwClass
-focusRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
-    "outline-none ring-2 ring-offset-2 " ++ ring ringColor ringLevel ++ " " ++ ringOffset offsetColor offsetLevel |> focus
+focus_ring_500 : Color -> TwClass
+focus_ring_500 ringColor =
+    focus [ "outline-none ring-2 ring-offset-2", ring_500 ringColor, "ring-offset-white" ]
 
 
-focusWithinRing : ( Color, ColorLevel ) -> ( Color, ColorLevel ) -> TwClass
-focusWithinRing ( ringColor, ringLevel ) ( offsetColor, offsetLevel ) =
-    "outline-none ring-2 ring-offset-2 " ++ ring ringColor ringLevel ++ " " ++ ringOffset offsetColor offsetLevel |> focusWithin
+focus_ring_within_600 : Color -> TwClass
+focus_ring_within_600 ringColor =
+    focusWithin [ "outline-none ring-2 ring-offset-2", ring_600 ringColor, "ring-offset-white" ]
 
 
-bg : Color -> ColorLevel -> TwClass
-bg color level =
-    "bg-" ++ color ++ "-" ++ String.fromInt level
-
-
-ring : Color -> ColorLevel -> TwClass
-ring color level =
-    "ring-" ++ color ++ "-" ++ String.fromInt level
-
-
-ringOffset : Color -> ColorLevel -> TwClass
-ringOffset color level =
-    "ring-offset-" ++ color ++ "-" ++ String.fromInt level
+focus_ring_offset_600 : Color -> TwClass
+focus_ring_offset_600 ringOffsetColor =
+    focus [ "outline-none ring-2 ring-offset-2", "ring-white", ring_offset_600 ringOffsetColor ]
 
 
 batch : List TwClass -> TwClass
@@ -43,68 +32,70 @@ batch classes =
 
 
 
--- SYNTAX HELPERS
--- must be handled by tailwind.config.js `transform`
+-- DYNAMIC STATE CLASSES
+-- they are handled in tailwind.config.js `transform` with `expandDynamicStates`
+-- this function expand them for tailwind parser, so it's really important to not break syntax
 
 
-sm : TwClass -> TwClass
+sm : List TwClass -> TwClass
 sm =
     addState "sm"
 
 
-md : TwClass -> TwClass
+md : List TwClass -> TwClass
 md =
     addState "md"
 
 
-lg : TwClass -> TwClass
+lg : List TwClass -> TwClass
 lg =
     addState "lg"
 
 
-xl : TwClass -> TwClass
+xl : List TwClass -> TwClass
 xl =
     addState "xl"
 
 
-xxl : TwClass -> TwClass
+xxl : List TwClass -> TwClass
 xxl =
     addState "2xl"
 
 
-hover : TwClass -> TwClass
+hover : List TwClass -> TwClass
 hover =
     addState "hover"
 
 
-focus : TwClass -> TwClass
+focus : List TwClass -> TwClass
 focus =
     addState "focus"
 
 
-active : TwClass -> TwClass
+active : List TwClass -> TwClass
 active =
     addState "active"
 
 
-disabled : TwClass -> TwClass
+disabled : List TwClass -> TwClass
 disabled =
     addState "disabled"
 
 
-focusWithin : TwClass -> TwClass
+focusWithin : List TwClass -> TwClass
 focusWithin =
     addState "focus-within"
 
 
-addState : String -> TwClass -> TwClass
+addState : String -> List TwClass -> TwClass
 addState state classes =
-    classes |> String.split " " |> List.map String.trim |> List.filter (\c -> c /= "") |> List.map (\c -> state ++ ":" ++ c) |> String.join " "
+    classes |> String.join " " |> String.split " " |> List.map String.trim |> List.filter (\c -> c /= "") |> List.map (\c -> state ++ ":" ++ c) |> String.join " "
 
 
 
--- DYNAMIC CLASSES
--- must be added to tailwind.config.js `safelist`
+-- DYNAMIC COLOR CLASSES
+-- they are handled in tailwind.config.js `transform` with `expandDynamicColors`
+-- this function expand them for tailwind parser, so it's really important to not break syntax
 
 
 bg_50 : Color -> TwClass
@@ -155,6 +146,16 @@ border_500 color =
 ring_500 : Color -> TwClass
 ring_500 color =
     "ring-" ++ color ++ "-500"
+
+
+ring_600 : Color -> TwClass
+ring_600 color =
+    "ring-" ++ color ++ "-600"
+
+
+ring_offset_600 : Color -> TwClass
+ring_offset_600 color =
+    "ring-offset-" ++ color ++ "-600"
 
 
 stroke_500 : Color -> TwClass

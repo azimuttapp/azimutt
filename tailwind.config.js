@@ -1,18 +1,30 @@
 const colors = require('tailwindcss/colors')
 
+const usedColors = ['primary', 'default', 'slate', 'gray', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
+function expandDynamicColors(fileContent) {
+    // see "DYNAMIC COLOR CLASSES" in src/Libs/Tailwind.elm
+    return fileContent.replaceAll(/ (bg|border|ring|ring_offset|stroke|text)_([0-9]{1,2}0) [^ ,)\n]+/g, (match, attr, level) => {
+        return ` "${usedColors.map(clazz => `${attr}-${clazz}-${level}`).join(' ')}"`
+    })
+}
+
+const stateMappings = {xxl: '2xl', focusWithin: 'focus-within'}
+function expandDynamicStates(fileContent) {
+    // see "DYNAMIC STATE CLASSES" in src/Libs/Tailwind.elm
+    return fileContent.replaceAll(/(?:Tw\.)?(sm|md|lg|xl|xxl|hover|focus|active|disabled|focusWithin) \[ ([^\]]+) ]/g, (match, state, content) => {
+        const stateClass = stateMappings[state] || state
+        const classes = [...content.matchAll(/"([^"]+)"/g)].map(match => match[1]) // collect string and concat them
+        return `"${classes.join(' ').split(' ').map(c => c.trim()).filter(c => c !== '').map(clazz => stateClass + ':' + clazz).join(' ')}"`
+    })
+}
+
 module.exports = {
     content: {
-        files: ["./src/Components/**/*.elm", "./src/PagesComponents/**/*.elm"],
+        files: ["src/Libs/Tailwind.elm", "./src/Components/**/*.elm", "./src/PagesComponents/**/*.elm"],
         transform: {
             // https://tailwindcss.com/docs/content-configuration#transforming-source-files
-            elm: (content) => {
-                // transform elm sources to create full tailwind classes from helpers functions (cf src/Libs/Tailwind.elm)
-                const mappings = {xxl: '2xl', focusWithin: 'focus-within'}
-                return content.replaceAll(/(\[ |, )(?:Tw\.)?(sm|md|lg|xl|xxl|hover|focus|active|disabled|focusWithin) "([^"]+)"/g, (match, start, state, classes) => {
-                    const twState = mappings[state] ||  state
-                    return `${start}"${classes.split(' ').map(c => c.trim()).filter(c => c !== '').map(c => twState + ':' + c).join(' ')}"`
-                })
-            }
+            // transform elm sources to expand helpers to full tailwind classes (cf src/Libs/Tailwind.elm)
+            elm: content => expandDynamicStates(expandDynamicColors(content))
         }
     },
     theme: {
@@ -53,14 +65,5 @@ module.exports = {
     plugins: [
         require('@tailwindcss/forms'),
         require('@tailwindcss/typography')
-    ],
-    safelist: [
-        // https://tailwindcss.com/docs/content-configuration#using-regular-expressions
-        {pattern: /bg-(primary|default|slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(50|100|200|300|400|500|600|700|800|900)/, variants: ['hover', 'disabled']},
-        {pattern: /border-(primary|default|slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(400|500)/},
-        {pattern: /ring-(primary|default|slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(500|600)/, variants: ['focus', 'focus-within']},
-        {pattern: /ring-offset-(primary|default|slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(500|600)/, variants: ['focus', 'focus-within']},
-        {pattern: /stroke-(primary|default|slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(500)/},
-        {pattern: /text-(primary|default|slate|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(300|400|500|600|700|800)/, variants: ['focus', 'disabled']}
     ]
 }

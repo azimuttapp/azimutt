@@ -5,10 +5,11 @@ import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Gen.Route as Route
 import Html exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
+import Libs.Bool as B
 import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
 import Libs.Models exposing (Image, TrackedLink)
-import Libs.Tailwind exposing (TwClass, hover, lg, md, sm)
+import Libs.Tailwind exposing (hover, lg, md, sm)
 
 
 type alias Model msg =
@@ -44,65 +45,59 @@ imageSwapSlice swap model =
     slice model (imageLeftSwap swap) (imageRightSwap swap)
 
 
-slice : Model msg -> (TwClass -> Image -> Html msg) -> (TwClass -> Image -> Html msg) -> Html msg
+slice : Model msg -> (Image -> Html msg) -> (Image -> Html msg) -> Html msg
 slice model buildImageLeft buildImageRight =
     div [ css [ "pb-32 relative overflow-hidden" ] ]
-        [ div [ css [ lg "mx-auto max-w-7xl px-8 grid grid-cols-2 grid-flow-col-dense gap-24" ] ]
-            (case model.imagePosition of
-                Left ->
-                    [ details "col-start-2" model, buildImageLeft "col-start-1" model.image ]
-
-                Right ->
-                    [ details "col-start-1" model, buildImageRight "col-start-2" model.image ]
-            )
+        [ div [ css [ lg [ "mx-auto max-w-7xl px-8 grid grid-cols-2 grid-flow-col-dense gap-24" ] ] ]
+            [ details model.imagePosition model, B.cond (model.imagePosition == Left) buildImageLeft buildImageRight model.image ]
         ]
 
 
-imageLeft : TwClass -> Image -> Html msg
-imageLeft position image =
-    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ css [ "pr-4 -ml-48", sm "pr-6", md "-ml-16", lg "px-0 m-0 relative h-full" ] ]
-            [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src image.src, alt image.alt ] []
+imageLeft : Image -> Html msg
+imageLeft image =
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-1" ] ] ]
+        [ div [ css [ "pr-4 -ml-48", sm [ "pr-6" ], md [ "-ml-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
+            [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src image.src, alt image.alt ] []
             ]
         ]
 
 
-imageRight : TwClass -> Image -> Html msg
-imageRight position image =
-    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ css [ "pl-4 -mr-48", sm "pl-6", md "-mr-16", lg "px-0 m-0 relative h-full" ] ]
-            [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src image.src, alt image.alt ] []
+imageRight : Image -> Html msg
+imageRight image =
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-2" ] ] ]
+        [ div [ css [ "pl-4 -mr-48", sm [ "pl-6" ], md [ "-mr-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
+            [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src image.src, alt image.alt ] []
             ]
         ]
 
 
-imageLeftSwap : Image -> TwClass -> Image -> Html msg
-imageLeftSwap swap position base =
-    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ css [ "pr-4 -ml-48", sm "pr-6", md "-ml-16", lg "px-0 m-0 relative h-full" ] ]
+imageLeftSwap : Image -> Image -> Html msg
+imageLeftSwap swap base =
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-1" ] ] ]
+        [ div [ css [ "pr-4 -ml-48", sm [ "pr-6" ], md [ "-ml-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
             [ span [ class "img-swipe" ]
-                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute right-0 h-full w-auto max-w-none" ], src swap.src, alt swap.alt, class "img-hover" ] []
+                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, class "img-default" ] []
+                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src swap.src, alt swap.alt, class "img-hover" ] []
                 ]
             ]
         ]
 
 
-imageRightSwap : Image -> TwClass -> Image -> Html msg
-imageRightSwap swap position base =
-    div [ css [ "mt-12", sm "mt-16", lg ("mt-0 " ++ position) ] ]
-        [ div [ css [ "pl-4 -mr-48", sm "pl-6", md "-mr-16", lg "px-0 m-0 relative h-full" ] ]
+imageRightSwap : Image -> Image -> Html msg
+imageRightSwap swap base =
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-2" ] ] ]
+        [ div [ css [ "pl-4 -mr-48", sm [ "pl-6" ], md [ "-mr-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
             [ span [ class "img-swipe" ]
-                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg "absolute left-0 h-full w-auto max-w-none" ], src swap.src, alt swap.alt, class "img-hover" ] []
+                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, class "img-default" ] []
+                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src swap.src, alt swap.alt, class "img-hover" ] []
                 ]
             ]
         ]
 
 
-details : TwClass -> Model msg -> Html msg
+details : Position -> Model msg -> Html msg
 details position model =
-    div [ css [ "px-4 max-w-xl mx-auto", sm "px-6", lg ("py-32 max-w-none mx-0 px-0 " ++ position) ] ]
+    div [ css [ "px-4 max-w-xl mx-auto", sm [ "px-6" ], lg [ "py-32 max-w-none mx-0 px-0", B.cond (position == Right) "col-start-1" "col-start-2" ] ] ]
         (List.filterMap identity
             [ model.icon |> Maybe.map featureIcon
             , Just model.description |> Maybe.map featureDescription
@@ -130,7 +125,7 @@ featureCta cta =
     div [ css [ "mt-6" ] ]
         [ a
             ([ href cta.url
-             , css [ "inline-flex px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-indigo-600", hover "text-white from-green-700 to-indigo-700" ]
+             , css [ "inline-flex px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-indigo-600", hover [ "text-white from-green-700 to-indigo-700" ] ]
              ]
                 ++ (cta.track |> M.mapOrElse track [])
             )
