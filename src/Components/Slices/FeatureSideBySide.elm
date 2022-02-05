@@ -55,7 +55,7 @@ slice model buildImageLeft buildImageRight =
 
 imageLeft : Image -> Html msg
 imageLeft image =
-    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-1" ] ] ]
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "col-start-1" ] ] ]
         [ div [ css [ "pr-4 -ml-48", sm [ "pr-6" ], md [ "-ml-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
             [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src image.src, alt image.alt ] []
             ]
@@ -64,7 +64,7 @@ imageLeft image =
 
 imageRight : Image -> Html msg
 imageRight image =
-    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-2" ] ] ]
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "col-start-2" ] ] ]
         [ div [ css [ "pl-4 -mr-48", sm [ "pl-6" ], md [ "-mr-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
             [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src image.src, alt image.alt ] []
             ]
@@ -73,7 +73,7 @@ imageRight image =
 
 imageLeftSwap : Image -> Image -> Html msg
 imageLeftSwap swap base =
-    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-1" ] ] ]
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "col-start-1" ] ] ]
         [ div [ css [ "pr-4 -ml-48", sm [ "pr-6" ], md [ "-ml-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
             [ span [ class "img-swipe" ]
                 [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, class "img-default" ] []
@@ -85,7 +85,7 @@ imageLeftSwap swap base =
 
 imageRightSwap : Image -> Image -> Html msg
 imageRightSwap swap base =
-    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "mt-0", "col-start-2" ] ] ]
+    div [ css [ "mt-12", sm [ "mt-16" ], lg [ "col-start-2" ] ] ]
         [ div [ css [ "pl-4 -mr-48", sm [ "pl-6" ], md [ "-mr-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
             [ span [ class "img-swipe" ]
                 [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, class "img-default" ] []

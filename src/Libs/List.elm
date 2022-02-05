@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -282,6 +282,11 @@ dropWhile predicate list =
 dropUntil : (a -> Bool) -> List a -> List a
 dropUntil predicate list =
     dropWhile (\a -> not (predicate a)) list
+
+
+dropRight : Int -> List a -> List a
+dropRight n list =
+    list |> List.take (List.length list - n)
 
 
 unique : List comparable -> List comparable

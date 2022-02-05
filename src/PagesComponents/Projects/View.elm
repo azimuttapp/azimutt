@@ -89,7 +89,7 @@ viewNoProjects =
 viewFirstProject : Html msg
 viewFirstProject =
     a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover [ "border-gray-400" ], focus [ "outline-none ring-2 ring-offset-2 ring-primary-500" ] ] ]
-        [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
+        [ Icon.outline2x DocumentAdd "mx-auto"
         , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
         ]
 
@@ -165,7 +165,7 @@ viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
         [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Color.primary ] ]
-            [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
+            [ Icon.outline2x DocumentAdd "mx-auto"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]
         ]

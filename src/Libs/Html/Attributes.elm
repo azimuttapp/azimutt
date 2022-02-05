@@ -1,10 +1,12 @@
-module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, css, role, track)
+module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, role, track)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (attribute, class)
 import Libs.Bool as B
+import Libs.List as List
 import Libs.Models exposing (Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Tailwind exposing (TwClass)
 
 
 
@@ -66,9 +68,18 @@ ariaOrientation text =
     attribute "aria-orientation" text
 
 
-css : List String -> Attribute msg
+css : List TwClass -> Attribute msg
 css values =
-    values |> List.map String.trim |> List.filter (\v -> v /= "") |> String.join " " |> class
+    values |> computeStyles |> class
+
+
+computeStyles : List TwClass -> TwClass
+computeStyles values =
+    values
+        |> List.concatMap (String.split " ")
+        |> List.map String.trim
+        |> List.filter (\v -> v /= "")
+        |> String.join " "
 
 
 role : String -> Attribute msg

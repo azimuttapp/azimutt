@@ -170,7 +170,7 @@ viewEmptyState tables =
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
             [ div [ class "text-center" ]
-                [ Icon.outline Template "w-12 h-12 mx-auto text-primary-500"
+                [ Icon.outline2x Template "mx-auto text-primary-500"
                 , h2 [ class "mt-2 text-lg font-medium text-gray-900" ]
                     [ text "Hello from Azimutt 👋" ]
                 , p [ class "mt-3 text-sm text-gray-500" ]

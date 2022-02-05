@@ -63,13 +63,13 @@ viewTab : Tab -> TabModel Tab -> Html Msg
 viewTab selected tab =
     if tab.tab == selected then
         a [ href "", css [ "bg-primary-50 border-primary-500 text-primary-700 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-primary-50 text-primary-700" ] ], ariaCurrent "page" ]
-            [ Icon.outline tab.icon "flex-shrink-0 -ml-1 mr-3 h-6 w-6 text-primary-500"
+            [ Icon.outline tab.icon "-ml-1 mr-3 text-primary-500"
             , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 
     else
         a [ href "", onClick (SelectTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-gray-50 text-gray-900" ] ] ]
-            [ Icon.outline tab.icon "flex-shrink-0 -ml-1 mr-3 h-6 w-6 text-gray-400"
+            [ Icon.outline tab.icon "-ml-1 mr-3 text-gray-400"
             , span [ css [ "truncate" ] ] [ text tab.text ]
             ]
 

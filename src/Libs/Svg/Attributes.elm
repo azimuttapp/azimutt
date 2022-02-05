@@ -1,13 +1,16 @@
 module Libs.Svg.Attributes exposing (css, vectorEffect)
 
 import Html.Attributes exposing (attribute)
+import Libs.Html.Attributes exposing (computeStyles)
+import Libs.List as List
+import Libs.Tailwind exposing (TwClass)
 import Svg exposing (Attribute)
 import Svg.Attributes exposing (class)
 
 
-css : List String -> Attribute msg
+css : List TwClass -> Attribute msg
 css values =
-    values |> List.map String.trim |> List.filter (\v -> v /= "") |> String.join " " |> class
+    values |> computeStyles |> class
 
 
 vectorEffect : String -> Attribute msg

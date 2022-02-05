@@ -34,7 +34,7 @@ input model =
             ++ FileInput.onDrop { onDrop = model.onDrop, onOver = model.onOver, onLeave = model.onLeave }
         )
         [ div [ css [ "space-y-1 text-center" ] ]
-            [ Icon.outline DocumentAdd "mx-auto h-12 w-12"
+            [ Icon.outline2x DocumentAdd "mx-auto"
             , div [ css [ "flex text-sm" ] ]
                 [ span [ css [ "relative cursor-pointer bg-white rounded-md font-medium text-primary-600" ] ]
                     [ span [] [ text "Upload a file" ]

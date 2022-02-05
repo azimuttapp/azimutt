@@ -1,4 +1,4 @@
-module Components.Atoms.Icon exposing (Icon(..), doc, dribbble, facebook, github, instagram, loading, outline, slash, solid, twitter)
+module Components.Atoms.Icon exposing (Icon(..), doc, dribbble, facebook, github, instagram, loading, outline, outline2x, slash, solid, twitter)
 
 import Dict exposing (Dict)
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -1190,12 +1190,17 @@ icons =
 
 outline : Icon -> TwClass -> Html msg
 outline icon styles =
-    icons |> Dict.get (icon |> toString) |> M.mapOrElse .outline [] |> (\lines -> viewOutline lines styles)
+    icons |> Dict.get (icon |> toString) |> M.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-6 w-6 " ++ styles))
+
+
+outline2x : Icon -> TwClass -> Html msg
+outline2x icon styles =
+    icons |> Dict.get (icon |> toString) |> M.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-12 w-12 " ++ styles))
 
 
 solid : Icon -> TwClass -> Html msg
 solid icon styles =
-    icons |> Dict.get (icon |> toString) |> M.mapOrElse .solid [] |> (\lines -> viewSolid lines styles)
+    icons |> Dict.get (icon |> toString) |> M.mapOrElse .solid [] |> (\lines -> viewSolid lines ("h-5 w-5 " ++ styles))
 
 
 
@@ -1231,8 +1236,8 @@ loading styles =
 
 
 slash : TwClass -> Html msg
-slash =
-    viewSolid [ "M5.555 17.776l8-16 .894.448-8 16-.894-.448z" ]
+slash styles =
+    viewSolid [ "M5.555 17.776l8-16 .894.448-8 16-.894-.448z" ] ("h-5 w-5 " ++ styles)
 
 
 twitter : TwClass -> Html msg
@@ -1246,13 +1251,13 @@ twitter =
 
 viewOutline : List String -> TwClass -> Html msg
 viewOutline lines styles =
-    svg [ viewBox "0 0 24 24", fill "none", stroke "currentColor", ariaHidden True, css [ "flex-shrink-0 h-6 w-6", styles ] ]
+    svg [ viewBox "0 0 24 24", fill "none", stroke "currentColor", ariaHidden True, css [ "flex-shrink-0", styles ] ]
         (lines |> List.map (\line -> path [ d line, strokeLinecap "round", strokeLinejoin "round", strokeWidth "2", vectorEffect "non-scaling-stroke" ] []))
 
 
 viewSolid : List String -> TwClass -> Html msg
 viewSolid lines styles =
-    svg [ viewBox "0 0 20 20", fill "currentColor", ariaHidden True, css [ "flex-shrink-0 h-5 w-5", styles ] ]
+    svg [ viewBox "0 0 20 20", fill "currentColor", ariaHidden True, css [ "flex-shrink-0", styles ] ]
         (lines |> List.map (\line -> path [ d line, fillRule "evenodd", clipRule "evenodd" ] []))
 
 
@@ -1270,8 +1275,8 @@ doc : Chapter x
 doc =
     Chapter.chapter "Icon"
         |> Chapter.withComponentList
-            [ ( "outline icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewOutline icon.outline "" ])) )
-            , ( "solid icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewSolid icon.solid "" ])) )
+            [ ( "outline icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewOutline icon.outline "h-6 w-6" ])) )
+            , ( "solid icons", div [] (icons |> Dict.toList |> List.map (\( name, icon ) -> div [ title name, css [ "inline-block w-6" ] ] [ viewSolid icon.solid "h-5 w-5" ])) )
             , ( "special icons"
               , div []
                     [ span [ title "dribbble", css [ "inline-block w-6" ] ] [ dribbble "" ]
@@ -1287,16 +1292,16 @@ doc =
         |> Chapter.render """
 Here is the full list of available icons. Use them with:
 
-    Icon.outline ArrowDown [ <styles> ]
-    Icon.solid ArrowDown [ <styles> ]
+    Icon.outline ArrowDown "<styles>"
+    Icon.solid ArrowDown "<styles>"
 
 <component with-label="outline icons" />
 <component with-label="solid icons" />
 
 Or for special ones:
 
-    Icon.twitter [ <styles> ]
-    Icon.github [ <styles> ]
+    Icon.twitter "<styles>"
+    Icon.github "<styles>"
 
 <component with-label="special icons" />
 """
