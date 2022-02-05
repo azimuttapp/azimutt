@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (Action, Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, btnDisabled, doc, dropdown, initDocState, itemDisabledStyles, itemStyles, link, menuStyles, submenuButton)
+module Components.Molecules.Dropdown exposing (Action, Direction(..), DocState, MenuItem, Model, SharedDocState, SubMenuItem, btn, btnDisabled, doc, dropdown, initDocState, itemActiveStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, menuStyles, submenuButton)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -120,9 +120,19 @@ itemStyles =
     batch [ "py-2 px-4 text-sm text-gray-700", hover [ "bg-gray-100 text-gray-900" ] ]
 
 
+itemActiveStyles : TwClass
+itemActiveStyles =
+    batch [ "py-2 px-4 text-sm bg-primary-600 text-white", hover [ "bg-primary-700 text-primary-50" ] ]
+
+
 itemDisabledStyles : TwClass
 itemDisabledStyles =
-    "py-2 px-4 text-sm text-gray-400"
+    batch [ "py-2 px-4 text-sm text-gray-400", hover [ "bg-gray-50" ] ]
+
+
+itemDisabledActiveStyles : TwClass
+itemDisabledActiveStyles =
+    batch [ "py-2 px-4 text-sm text-primary-400", hover [ "bg-primary-50" ] ]
 
 
 

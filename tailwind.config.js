@@ -3,8 +3,8 @@ const colors = require('tailwindcss/colors')
 const usedColors = ['primary', 'default', 'slate', 'gray', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose']
 function expandDynamicColors(fileContent) {
     // see "DYNAMIC COLOR CLASSES" in src/Libs/Tailwind.elm
-    return fileContent.replaceAll(/ (bg|border|ring|ring_offset|stroke|text)_([0-9]{1,2}0) [^ ,)\n]+/g, (match, attr, level) => {
-        return ` "${usedColors.map(clazz => `${attr}-${clazz}-${level}`).join(' ')}"`
+    return fileContent.replaceAll(/([^_\n])(bg|border|ring|ring_offset|stroke|text)_([0-9]{1,2}0) [^ ,):\n]+/g, (match, start, attr, level) => {
+        return `${start}"${usedColors.map(clazz => `${attr}-${clazz}-${level}`).join(' ')}"`
     })
 }
 

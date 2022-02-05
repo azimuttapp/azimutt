@@ -104,11 +104,11 @@ viewSearchResult searchId shownTables active index res =
                         "flex w-full items-center"
                 in
                 if disabled then
-                    span (commonAttrs ++ [ css [ commonStyles, Dropdown.itemDisabledStyles, B.cond (active == index) "text-primary-400" "" ] ])
+                    span (commonAttrs ++ [ css [ commonStyles, B.cond (active == index) Dropdown.itemDisabledActiveStyles Dropdown.itemDisabledStyles ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, Dropdown.itemStyles, focus [ "outline-none" ], B.cond (active == index) "bg-primary-600 text-white" "" ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, focus [ "outline-none" ], B.cond (active == index) Dropdown.itemActiveStyles Dropdown.itemStyles ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
     in
     case res of

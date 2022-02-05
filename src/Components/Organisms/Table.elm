@@ -23,7 +23,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
-import Libs.Tailwind exposing (TwClass, bg_50, border_500, focus, ring_500, text_500)
+import Libs.Tailwind exposing (TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
 import Track
 
@@ -206,8 +206,8 @@ viewColumn model isLast column =
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
          , css
-            [ "items-center flex px-2 bg-white whitespace-nowrap"
-            , B.cond (isHighlightedColumn model column) (text_500 model.state.color ++ " " ++ bg_50 model.state.color) "text-default-500"
+            [ "items-center flex px-2 whitespace-nowrap"
+            , B.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
             , B.cond isLast "rounded-b-lg" ""
             ]
          ]
