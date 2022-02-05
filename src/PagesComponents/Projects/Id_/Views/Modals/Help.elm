@@ -7,7 +7,7 @@ import Components.Atoms.Kbd as Kbd
 import Components.Molecules.Modal as Modal
 import Conf
 import Html exposing (Html, div, h3, p, text)
-import Html.Attributes exposing (class, id)
+import Html.Attributes exposing (id)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html exposing (extLink)
@@ -30,16 +30,16 @@ viewHelp opened model =
         , isOpen = opened
         , onBackgroundClick = ModalClose (HelpMsg HClose)
         }
-        [ div [ class "max-w-3xl mx-6 mt-6" ]
-            [ div [ class "mt-3 text-center sm:mt-5" ]
-                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
+        [ div [ css [ "max-w-3xl mx-6 mt-6" ] ]
+            [ div [ css [ "mt-3 text-center sm:mt-5" ] ]
+                [ h3 [ id titleId, css [ "text-lg leading-6 font-medium text-gray-900" ] ]
                     [ text "🎊 Hey! Welcome to Azimutt 🎊" ]
-                , div [ class "mt-2" ]
-                    [ p [ class "text-sm text-gray-500" ]
+                , div [ css [ "mt-2" ] ]
+                    [ p [ css [ "text-sm text-gray-500" ] ]
                         [ text "Let's dive into the features you might be interested in..." ]
                     ]
                 ]
-            , div [ class "mt-3 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
+            , div [ css [ "mt-3 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ] ]
                 (List.map (\s -> sectionToAccordionItem (s.title == model.openedSection) s)
                     [ search
                     , canvasNavigation
@@ -50,13 +50,13 @@ viewHelp opened model =
                     , shortcuts
                     ]
                 )
-            , p [ class "mt-3" ]
+            , p [ css [ "mt-3" ] ]
                 [ text "I hope you find Azimutt as much as useful as I do. The application is quickly evolving and any feedback, feature request or use case description is "
-                , extLink Conf.constants.azimuttDiscussions [ class "tw-link" ] [ text "very welcome" ]
+                , extLink Conf.constants.azimuttDiscussions [ css [ "tw-link" ] ] [ text "very welcome" ]
                 , text " to help us make the most out of it."
                 ]
             ]
-        , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+        , div [ css [ "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ] ]
             [ Button.primary3 Color.primary [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
         ]
 
@@ -73,7 +73,7 @@ search =
                          You will find tables from your schema but also columns or relations.
                          We search "everywhere": name, comment or constraints for tables, name, comment, type or default value for columns and name, linked table and columns for relations.
                          Selecting them will show the related table on the canvas.""" ]
-        , p [ class "mt-3" ]
+        , p [ css [ "mt-3" ] ]
             [ tip
             , text " Just type "
             , hotkey [ "/" ]
@@ -83,10 +83,10 @@ search =
             , hotkey [ "Enter" ]
             , text " to navigate in the results and select one."
             ]
-        , p [ class "mt-3" ]
+        , p [ css [ "mt-3" ] ]
             [ soon
             , text " We plan to use full-text search to be typo tolerant and have better results, as well as let you import some data to perform search on them. If you need this, please "
-            , extLink Conf.constants.azimuttDiscussionSearch [ class "tw-link" ] [ text "vote and let us know" ]
+            , extLink Conf.constants.azimuttDiscussionSearch [ css [ "tw-link" ] ] [ text "vote and let us know" ]
             , text " to help prioritize it."
             ]
         ]
@@ -104,13 +104,13 @@ canvasNavigation =
             , Icon.solid ArrowsExpand "inline"
             , text ")."
             ]
-        , p [ class "mt-3" ] [ text "You can move table by dragging them and move the whole canvas by dragging the background." ]
-        , p [ class "mt-3" ]
+        , p [ css [ "mt-3" ] ] [ text "You can move table by dragging them and move the whole canvas by dragging the background." ]
+        , p [ css [ "mt-3" ] ]
             [ tip
             , text " You can select multiple tables using "
             , hotkey [ "ctrl", "click" ]
             , text " or the selection box, and then move them all at once. If you have feedback or suggestions to improve this navigation, please "
-            , extLink Conf.constants.azimuttDiscussionCanvas [ class "tw-link" ] [ text "tell us" ]
+            , extLink Conf.constants.azimuttDiscussionCanvas [ css [ "tw-link" ] ] [ text "tell us" ]
             , text ", it's an important core feature."
             ]
         ]
@@ -169,7 +169,7 @@ findPath =
             [ experimental
             , text " Find all the possible paths between two tables. To get relevant results, use the settings to ignore some tables or columns and keep the length small. "
             , text "We are still figuring out how this could be the most interesting (path algo, heuristics, UX...) so don't hesitate to "
-            , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "come and discuss" ]
+            , extLink Conf.constants.azimuttDiscussionFindPath [ css [ "tw-link" ] ] [ text "come and discuss" ]
             , text " about it."
             ]
         ]
@@ -181,7 +181,7 @@ shortcuts =
     { title = "Shortcuts"
     , body =
         [ p [] [ text "Keyboard shortcuts improve user productivity. So Azimutt has some to help you:" ]
-        , div [ class "mt-3" ]
+        , div [ css [ "mt-3" ] ]
             ([ { hotkey = [ "/" ], description = "Focus on the search" }
              , { hotkey = [ "Ctrl", "s" ], description = "Save the project. It's not done automatically so don't forget it ^^" }
              , { hotkey = [ "d" ], description = "Hide a table or column, depending on what is hovered" }
@@ -195,9 +195,9 @@ shortcuts =
              , { hotkey = [ "Escape" ], description = "Cancel what you are doing (drag, opened dialog, input focus, create relation...)" }
              , { hotkey = [ "?" ], description = "Open this documentation dialog" }
              ]
-                |> List.map (\h -> div [ class "flex justify-between flex-row-reverse mt-1" ] [ hotkey h.hotkey, text (" " ++ h.description) ])
+                |> List.map (\h -> div [ css [ "flex justify-between flex-row-reverse mt-1" ] ] [ hotkey h.hotkey, text (" " ++ h.description) ])
             )
-        , p [ class "mt-3" ] [ text "If you can think of other or have better suggestion for them, ", extLink Conf.constants.azimuttDiscussions [ class "tw-link" ] [ text "just let us know" ], text "." ]
+        , p [ css [ "mt-3" ] ] [ text "If you can think of other or have better suggestion for them, ", extLink Conf.constants.azimuttDiscussions [ css [ "tw-link" ] ] [ text "just let us know" ], text "." ]
         ]
     }
 

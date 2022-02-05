@@ -3,6 +3,7 @@ module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelati
 import Components.Organisms.Relation as Relation
 import Conf
 import Libs.Bool as B
+import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as M
 import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
@@ -12,7 +13,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import Svg exposing (Svg, svg)
-import Svg.Attributes exposing (class, height, width)
+import Svg.Attributes exposing (height, width)
 
 
 viewRelation : Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg msg
@@ -63,7 +64,7 @@ viewVirtualRelation ( ( maybeProps, column ), position ) =
 
 viewEmptyRelation : Svg msg
 viewEmptyRelation =
-    svg [ class "tw-empty-relation", width "0px", height "0px" ] []
+    svg [ css [ "tw-empty-relation" ], width "0px", height "0px" ] []
 
 
 getColor : Maybe ErdColumnProps -> Maybe ErdColumnProps -> Maybe Color

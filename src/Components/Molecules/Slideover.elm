@@ -7,7 +7,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, h2, span, text)
-import Html.Attributes exposing (class, id, type_)
+import Html.Attributes exposing (id, type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
@@ -38,13 +38,13 @@ slideover model content =
             B.cond model.isOpen Conf.ui.openDuration Conf.ui.closeDuration
     in
     div [ css [ "fixed inset-0 overflow-hidden z-max", B.cond model.isOpen "" "pointer-events-none" ], ariaLabelledby labelId, role "dialog", ariaModal True ]
-        [ div [ class "absolute inset-0 overflow-hidden" ]
+        [ div [ css [ "absolute inset-0 overflow-hidden" ] ]
             [ div [ onClick model.onClickOverlay, css [ "absolute inset-0 bg-gray-500 bg-opacity-75 transition-opacity ease-in-out", "duration-" ++ String.fromInt duration, B.cond model.isOpen "opacity-100" "opacity-0" ], ariaHidden True ] []
-            , div [ class "fixed inset-y-0 right-0 pl-10 max-w-full flex" ]
+            , div [ css [ "fixed inset-y-0 right-0 pl-10 max-w-full flex" ] ]
                 [ div [ css [ "w-screen max-w-md transform transition ease-in-out", "duration-" ++ String.fromInt duration, B.cond model.isOpen "translate-x-0" "translate-x-full" ] ]
-                    [ div [ id model.id, class "h-full flex flex-col bg-white shadow-xl" ]
+                    [ div [ id model.id, css [ "h-full flex flex-col bg-white shadow-xl" ] ]
                         [ header labelId model.title model.onClickClose
-                        , div [ class "flex-1 relative overflow-y-scroll px-4 sm:px-6" ] [ content ]
+                        , div [ css [ "flex-1 relative overflow-y-scroll px-4 sm:px-6" ] ] [ content ]
                         ]
                     ]
                 ]
@@ -54,10 +54,10 @@ slideover model content =
 
 header : HtmlId -> String -> msg -> Html msg
 header labelId title onClose =
-    div [ class "py-6 px-4 sm:px-6" ]
-        [ div [ class "flex items-start justify-between" ]
-            [ h2 [ class "text-lg font-medium text-gray-900", id labelId ] [ text title ]
-            , div [ class "ml-3 h-7 flex items-center" ] [ closeBtn onClose ]
+    div [ css [ "py-6 px-4 sm:px-6" ] ]
+        [ div [ css [ "flex items-start justify-between" ] ]
+            [ h2 [ css [ "text-lg font-medium text-gray-900" ], id labelId ] [ text title ]
+            , div [ css [ "ml-3 h-7 flex items-center" ] ] [ closeBtn onClose ]
             ]
         ]
 
@@ -65,7 +65,7 @@ header labelId title onClose =
 closeBtn : msg -> Html msg
 closeBtn msg =
     button [ type_ "button", onClick msg, css [ "bg-white rounded-md text-gray-400", hover [ "text-gray-500" ], focus [ "outline-none ring-2 ring-offset-2 ring-indigo-500" ] ] ]
-        [ span [ class "sr-only" ] [ text "Close panel" ]
+        [ span [ css [ "sr-only" ] ] [ text "Close panel" ]
         , Icon.outline X ""
         ]
 
@@ -117,8 +117,8 @@ doc =
                             , onClickClose = setOpen False
                             , onClickOverlay = setOpen False
                             }
-                            (div [ class "absolute inset-0 pb-6 px-4 sm:px-6" ]
-                                [ div [ class "h-full border-2 border-dashed border-gray-200", ariaHidden True ]
+                            (div [ css [ "absolute inset-0 pb-6 px-4 sm:px-6" ] ]
+                                [ div [ css [ "h-full border-2 border-dashed border-gray-200" ], ariaHidden True ]
                                     []
                                 ]
                             )

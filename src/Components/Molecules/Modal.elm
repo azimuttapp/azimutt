@@ -6,7 +6,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, h3, p, span, text)
-import Html.Attributes exposing (autofocus, class, id)
+import Html.Attributes exposing (autofocus, id)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
@@ -41,19 +41,19 @@ confirm model isOpen =
         , isOpen = isOpen
         , onBackgroundClick = model.onCancel
         }
-        [ div [ class "px-6 pt-6 sm:flex sm:items-start" ]
+        [ div [ css [ "px-6 pt-6 sm:flex sm:items-start" ] ]
             [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10", bg_100 model.color ] ]
                 [ Icon.outline model.icon (text_600 model.color)
                 ]
-            , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
-                [ h3 [ class "text-lg leading-6 font-medium text-gray-900", id titleId ]
+            , div [ css [ "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ] ]
+                [ h3 [ css [ "text-lg leading-6 font-medium text-gray-900" ], id titleId ]
                     [ text model.title ]
-                , div [ class "mt-2" ]
-                    [ p [ class "text-sm text-gray-500" ] [ model.message ]
+                , div [ css [ "mt-2" ] ]
+                    [ p [ css [ "text-sm text-gray-500" ] ] [ model.message ]
                     ]
                 ]
             ]
-        , div [ class "px-6 py-3 mt-6 bg-gray-50 sm:flex sm:items-center sm:flex-row-reverse" ]
+        , div [ css [ "px-6 py-3 mt-6 bg-gray-50 sm:flex sm:items-center sm:flex-row-reverse" ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text model.confirm ]
             , Button.white3 Color.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text model.cancel ]
             ]
@@ -88,9 +88,9 @@ modal model content =
                 "transition-all ease-out duration-300 opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
     in
     div [ ariaLabelledby model.titleId, role "dialog", ariaModal True, css [ "fixed z-max inset-0 overflow-y-auto", B.cond model.isOpen "" "pointer-events-none" ] ]
-        [ div [ class "flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0" ]
+        [ div [ css [ "flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0" ] ]
             [ div [ ariaHidden True, onClick model.onBackgroundClick, css [ "fixed inset-0 bg-gray-500 bg-opacity-75", backgroundOverlay ] ] []
-            , {- This element is to trick the browser into centering the modal contents. -} span [ class "hidden sm:inline-block sm:align-middle sm:h-screen", ariaHidden True ] [ text "\u{200B}" ]
+            , {- This element is to trick the browser into centering the modal contents. -} span [ css [ "hidden sm:inline-block sm:align-middle sm:h-screen" ], ariaHidden True ] [ text "\u{200B}" ]
             , div [ id model.id, css [ "inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform sm:my-8 sm:max-w-max sm:w-full", modalPanel ] ] content
             ]
         ]

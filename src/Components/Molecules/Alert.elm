@@ -4,7 +4,6 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, h3, li, text, ul)
-import Html.Attributes exposing (class)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Tailwind exposing (bg_50, border_400, text_400, text_700, text_800)
@@ -74,16 +73,16 @@ type alias Model msg =
 alert : Model msg -> Html msg
 alert model =
     div [ css [ "p-4 border-l-4", bg_50 model.color, border_400 model.color ] ]
-        [ div [ class "flex" ]
+        [ div [ css [ "flex" ] ]
             [ alertIcon model.color model.icon
-            , div [ class "ml-3" ] model.content
+            , div [ css [ "ml-3" ] ] model.content
             ]
         ]
 
 
 alertIcon : Color -> Icon -> Html msg
 alertIcon color icon =
-    div [ class "flex-shrink-0" ]
+    div [ css [ "flex-shrink-0" ] ]
         [ Icon.solid icon (text_400 color) ]
 
 
@@ -100,15 +99,15 @@ alertDescription color content =
 alertList : Color -> List String -> Html msg
 alertList color items =
     div [ css [ "mt-2 text-sm", text_700 color ] ]
-        [ ul [ role "list", class "list-disc list-inside" ]
+        [ ul [ role "list", css [ "list-disc list-inside" ] ]
             (items |> List.map (\item -> li [] [ text item ]))
         ]
 
 
 alertActions : List (Html msg) -> Html msg
 alertActions actions =
-    div [ class "mt-4" ]
-        [ div [ class "-mx-2 -my-1.5 flex" ]
+    div [ css [ "mt-4" ] ]
+        [ div [ css [ "-mx-2 -my-1.5 flex" ] ]
             actions
         ]
 

@@ -3,7 +3,6 @@ module Components.Molecules.Tooltip exposing (b, bl, br, doc, l, r, t, tl, tr)
 import Components.Atoms.Button as Button
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, span, text)
-import Html.Attributes exposing (class)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Tailwind exposing (TwClass)
@@ -57,11 +56,11 @@ br =
 
 tooltip : TwClass -> TwClass -> String -> Html msg -> Html msg
 tooltip bubble caret value content =
-    div [ class "group relative inline-flex flex-col items-center" ]
+    div [ css [ "group relative inline-flex flex-col items-center" ] ]
         [ content
-        , div [ class ("group-hover:flex hidden absolute flex-col z-max " ++ bubble) ]
-            [ div [ class ("absolute w-3 h-3 bg-black transform rotate-45 " ++ caret) ] []
-            , span [ class "relative p-2 bg-black text-white text-xs leading-none whitespace-nowrap rounded shadow-lg" ] [ text value ]
+        , div [ css [ "group-hover:flex hidden absolute flex-col z-max", bubble ] ]
+            [ div [ css [ "absolute w-3 h-3 bg-black transform rotate-45", caret ] ] []
+            , span [ css [ "relative p-2 bg-black text-white text-xs leading-none whitespace-nowrap rounded shadow-lg" ] ] [ text value ]
             ]
         ]
 

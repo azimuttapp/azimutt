@@ -11,11 +11,12 @@ import DataSources.SqlParser.StatementParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
 import Html exposing (Html, div, li, p, span, text, ul)
-import Html.Attributes exposing (class, href)
+import Html.Attributes exposing (href)
 import Libs.Bool as B
 import Libs.Dict as D
 import Libs.FileInput exposing (File)
 import Libs.Html exposing (bText)
+import Libs.Html.Attributes exposing (css)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (FileContent, FileLineContent)
@@ -258,7 +259,7 @@ viewParsing model =
          )
             |> Maybe.map2
                 (\parsedSchema sourceText ->
-                    [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                    [ div [ css [ "mt-6" ] ] [ Divider.withLabel (model.parsedSource |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
                     , viewLogs sourceText parsedSchema
                     , viewErrorAlert parsedSchema
                     , model.source |> Maybe.map2 viewSourceDiff model.parsedSource |> Maybe.withDefault (div [] [])
@@ -271,7 +272,7 @@ viewParsing model =
 
 viewLogs : String -> SQLParsing msg -> Html msg
 viewLogs source model =
-    div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
+    div [ css [ "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ] ]
         ([ div [] [ text ("Loaded " ++ source ++ ".") ] ]
             ++ (model.lines |> M.mapOrElse (\l -> [ div [] [ text ("Found " ++ (l |> List.length |> String.fromInt) ++ " lines in the file.") ] ]) [])
             ++ (model.statements |> M.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements.") ] ]) [])
@@ -309,17 +310,17 @@ viewLogs source model =
 
 viewParseError : SqlStatement -> List ParseError -> Html msg
 viewParseError statement errors =
-    div [ class "text-red-500" ]
+    div [ css [ "text-red-500" ] ]
         (div [] [ text ("Paring error line " ++ (statement.head.line |> String.fromInt) ++ ":") ]
-            :: (errors |> List.map (\error -> div [ class "pl-3" ] [ text error ]))
+            :: (errors |> List.map (\error -> div [ css [ "pl-3" ] ] [ text error ]))
         )
 
 
 viewSchemaError : List SchemaError -> Html msg
 viewSchemaError errors =
-    div [ class "text-red-500" ]
+    div [ css [ "text-red-500" ] ]
         (div [] [ text "Schema error:" ]
-            :: (errors |> List.map (\error -> div [ class "pl-3" ] [ text error ]))
+            :: (errors |> List.map (\error -> div [ css [ "pl-3" ] ] [ text error ]))
         )
 
 
@@ -334,7 +335,7 @@ viewErrorAlert model =
         div [] []
 
     else
-        div [ class "mt-6" ]
+        div [ css [ "mt-6" ] ]
             [ Alert.withActions
                 { color = Color.red
                 , icon = XCircle
@@ -401,9 +402,9 @@ viewSourceDiff newSource oldSource =
             existingRelations |> List.filter (\( oldRelation, newRelation ) -> oldRelation /= newRelation)
     in
     if L.nonEmpty updatedTables || L.nonEmpty newTables || L.nonEmpty removedTables || L.nonEmpty updatedRelations || L.nonEmpty newRelations || L.nonEmpty removedRelations then
-        div [ class "mt-3" ]
+        div [ css [ "mt-3" ] ]
             [ Alert.withDescription { color = Color.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
-                [ ul [ class "list-disc list-inside" ]
+                [ ul [ css [ "list-disc list-inside" ] ]
                     ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( _, t ) -> TableId.show t.id))
                      , viewSourceDiffItem "new table" (newTables |> List.map (\t -> TableId.show t.id))
                      , viewSourceDiffItem "removed table" (removedTables |> List.map (\t -> TableId.show t.id))
@@ -417,7 +418,7 @@ viewSourceDiff newSource oldSource =
             ]
 
     else
-        div [ class "mt-3" ]
+        div [ css [ "mt-3" ] ]
             [ Alert.withDescription { color = Color.green, icon = CheckCircle, title = "Source parsed" }
                 [ text "There is no differences but you can still refresh the source to change the last updated date." ]
             ]

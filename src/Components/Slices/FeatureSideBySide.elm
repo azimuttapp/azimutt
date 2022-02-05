@@ -4,7 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Gen.Route as Route
 import Html exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
-import Html.Attributes exposing (alt, class, href, src)
+import Html.Attributes exposing (alt, href, src)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
@@ -75,9 +75,9 @@ imageLeftSwap : Image -> Image -> Html msg
 imageLeftSwap swap base =
     div [ css [ "mt-12", sm [ "mt-16" ], lg [ "col-start-1" ] ] ]
         [ div [ css [ "pr-4 -ml-48", sm [ "pr-6" ], md [ "-ml-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
-            [ span [ class "img-swipe" ]
-                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src swap.src, alt swap.alt, class "img-hover" ] []
+            [ span [ css [ "img-swipe" ] ]
+                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, css [ "img-default" ] ] []
+                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute right-0 h-full w-auto max-w-none" ] ], src swap.src, alt swap.alt, css [ "img-hover" ] ] []
                 ]
             ]
         ]
@@ -87,9 +87,9 @@ imageRightSwap : Image -> Image -> Html msg
 imageRightSwap swap base =
     div [ css [ "mt-12", sm [ "mt-16" ], lg [ "col-start-2" ] ] ]
         [ div [ css [ "pl-4 -mr-48", sm [ "pl-6" ], md [ "-mr-16" ], lg [ "px-0 m-0 relative h-full" ] ] ]
-            [ span [ class "img-swipe" ]
-                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, class "img-default" ] []
-                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src swap.src, alt swap.alt, class "img-hover" ] []
+            [ span [ css [ "img-swipe" ] ]
+                [ img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src base.src, alt base.alt, css [ "img-default" ] ] []
+                , img [ css [ "w-full rounded-xl shadow-xl ring-1 ring-black ring-opacity-5", lg [ "absolute left-0 h-full w-auto max-w-none" ] ], src swap.src, alt swap.alt, css [ "img-hover" ] ] []
                 ]
             ]
         ]

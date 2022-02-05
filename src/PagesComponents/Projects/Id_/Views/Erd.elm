@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, main_, p, text)
-import Html.Attributes exposing (class, classList, id, style)
+import Html.Attributes exposing (id, style)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
@@ -79,18 +79,18 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
                     )
     in
     main_
-        [ class "tw-erd"
-        , classList
-            [ ( "tw-cursor-hand", cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing )
-            , ( "tw-cursor-hand-drag", cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing )
-            , ( "tw-cursor-cross", virtualRelation /= Nothing )
-            ]
-        , id Conf.ids.erd
+        [ id Conf.ids.erd
         , onWheel OnWheel
         , stopPointerDown (.position >> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        , css
+            [ "tw-erd"
+            , B.cond (cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing) "tw-cursor-hand" ""
+            , B.cond (cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing) "tw-cursor-hand-drag" ""
+            , B.cond (virtualRelation /= Nothing) "tw-cursor-cross" ""
+            ]
         ]
         [ div
-            [ class "tw-canvas origin-top-left"
+            [ css [ "tw-canvas origin-top-left" ]
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
             [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
@@ -109,7 +109,7 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
 viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
 viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps tables shownTables =
     Keyed.node "div"
-        [ class "tw-tables" ]
+        [ css [ "tw-tables" ] ]
         (shownTables
             |> List.reverse
             |> List.indexedMap (\index tableId -> ( index, tableId ))
@@ -141,7 +141,7 @@ viewRelations tableProps relations =
             tableProps |> Dict.get ref.table |> Maybe.andThen (\t -> t.columnProps |> Dict.get ref.column)
     in
     Keyed.node "div"
-        [ class "tw-relations" ]
+        [ css [ "tw-relations" ] ]
         (relations |> List.map (\r -> ( r.name, Lazy.lazy3 viewRelation (getColumnProps r.src) (getColumnProps r.ref) r )))
 
 
@@ -167,28 +167,28 @@ viewEmptyState tables =
                 |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
                 |> List.take 10
     in
-    div [ class "flex h-full justify-center items-center" ]
-        [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
-            [ div [ class "text-center" ]
+    div [ css [ "flex h-full justify-center items-center" ] ]
+        [ div [ css [ "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ] ]
+            [ div [ css [ "text-center" ] ]
                 [ Icon.outline2x Template "mx-auto text-primary-500"
-                , h2 [ class "mt-2 text-lg font-medium text-gray-900" ]
+                , h2 [ css [ "mt-2 text-lg font-medium text-gray-900" ] ]
                     [ text "Hello from Azimutt 👋" ]
-                , p [ class "mt-3 text-sm text-gray-500" ]
+                , p [ css [ "mt-3 text-sm text-gray-500" ] ]
                     [ text "Azimutt let you freely explore your database schema. To start, just type what you are looking for in the "
                     , button [ onClick (Focus Conf.ids.searchInput), css [ "tw-link", focus [ "outline-none" ] ] ] [ text "search bar" ]
                     , text ", and then look at columns and follow relations. Once you have interesting layout, you can save it for later."
                     ]
-                , p [ class "mt-3 text-sm text-gray-500" ]
+                , p [ css [ "mt-3 text-sm text-gray-500" ] ]
                     [ text "Your project has "
                     , bText (tables |> S.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic Color.primary [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Color.primary [ onClick (ShowTable t.id), css [ "m-1 cursor-pointer" ] ] [ text (TableId.show t.id) ]))
                     ]
-                , p [ class "mt-3 text-sm text-gray-500" ]
+                , p [ css [ "mt-3 text-sm text-gray-500" ] ]
                     [ text "If you ♥️ Azimutt, "
-                    , sendTweet Conf.constants.cheeringTweet [ class "tw-link" ] [ text "come and say hi" ]
+                    , sendTweet Conf.constants.cheeringTweet [ css [ "tw-link" ] ] [ text "come and say hi" ]
                     , text ". We are eager to learn how you use it and for what. We also love "
-                    , extLink Conf.constants.azimuttFeatureRequests [ class "tw-link" ] [ text "feedback and feature requests" ]
+                    , extLink Conf.constants.azimuttFeatureRequests [ css [ "tw-link" ] ] [ text "feedback and feature requests" ]
                     , text "."
                     ]
                 ]

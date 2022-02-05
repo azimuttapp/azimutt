@@ -8,7 +8,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, button, div, text)
-import Html.Attributes exposing (class, href, id, tabindex, type_)
+import Html.Attributes exposing (href, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, css, role)
@@ -68,7 +68,7 @@ dropdown model elt content =
                 TopLeft ->
                     "origin-bottom-right right-0 bottom-full mb-2"
     in
-    div [ class "relative inline-block text-left" ]
+    div [ css [ "relative inline-block text-left" ] ]
         [ elt model
         , div [ role "menu", ariaOrientation "vertical", ariaLabelledby model.id, tabindex -1, css [ menuStyles, direction, dropdownMenu ] ]
             [ content model
@@ -97,7 +97,7 @@ submenuButton menu =
 
 hotkeyBtn : msg -> String -> Maybe (List String) -> Html msg
 hotkeyBtn action label hotkey =
-    btn "flex justify-between" action ([ text label ] ++ (hotkey |> M.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] k ]) []))
+    btn "flex justify-between" action ([ text label ] ++ (hotkey |> M.mapOrElse (\k -> [ Kbd.badge [ css [ "ml-3" ] ] k ]) []))
 
 
 btn : TwClass -> msg -> List (Html msg) -> Html msg
@@ -193,7 +193,7 @@ doc =
                 )
             , component "directions"
                 (\opened toggleOpen ->
-                    div [ class "flex space-x-3" ]
+                    div [ css [ "flex space-x-3" ] ]
                         [ dropdown { id = "BottomRight", direction = BottomRight, isOpen = opened == "BottomRight" }
                             (\m -> Button.white3 Color.primary [ id m.id, ariaExpanded True, ariaHaspopup True, onClick (toggleOpen m.id) ] [ text "BottomRight", Icon.solid ChevronDown "" ])
                             (\_ -> div [] ([ "Account settings", "Support", "License" ] |> List.map (\label -> btn "" (logAction label) [ text label ])))

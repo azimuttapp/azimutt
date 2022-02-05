@@ -7,9 +7,10 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
+import Libs.Svg.Attributes exposing (css)
 import Libs.Tailwind exposing (stroke_500)
 import Svg exposing (Svg, svg, text)
-import Svg.Attributes exposing (class, height, strokeDasharray, style, width, x1, x2, y1, y2)
+import Svg.Attributes exposing (height, strokeDasharray, style, width, x1, x2, y1, y2)
 
 
 line : Position -> Position -> Bool -> Maybe Color -> String -> Int -> Svg msg
@@ -24,7 +25,7 @@ line src ref nullable color label index =
             { left = min src.left ref.left - padding, top = min src.top ref.top - padding }
     in
     svg
-        [ class "tw-relation absolute"
+        [ css [ "tw-relation absolute" ]
         , width (String.fromFloat (abs (src.left - ref.left) + (padding * 2)))
         , height (String.fromFloat (abs (src.top - ref.top) + (padding * 2)))
         , style ("left: " ++ String.fromFloat origin.left ++ "px; top: " ++ String.fromFloat origin.top ++ "px; z-index: " ++ String.fromInt index ++ ";")
@@ -46,7 +47,7 @@ viewLine p1 p2 nullable color =
             , y1 (String.fromFloat p1.top)
             , x2 (String.fromFloat p2.left)
             , y2 (String.fromFloat p2.top)
-            , class (color |> M.mapOrElse (\c -> stroke_500 c ++ " stroke-3") "stroke-default-400 stroke-2")
+            , css (color |> M.mapOrElse (\c -> [ stroke_500 c, "stroke-3" ]) [ "stroke-default-400 stroke-2" ])
             ]
         )
         []

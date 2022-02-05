@@ -6,7 +6,7 @@ import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Tooltip as Tooltip
 import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
-import Html.Attributes exposing (checked, class, for, id, type_, value)
+import Html.Attributes exposing (checked, for, id, type_, value)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.DateTime as DateTime
@@ -47,8 +47,8 @@ viewProjectSettings zone opened erd model =
 viewSourcesSection : Time.Zone -> Erd -> Html Msg
 viewSourcesSection zone erd =
     fieldset []
-        [ legend [ class "font-medium text-gray-900" ] [ text "Project sources" ]
-        , div [ class "mt-1 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
+        [ legend [ css [ "font-medium text-gray-900" ] ] [ text "Project sources" ]
+        , div [ css [ "mt-1 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ] ]
             ((erd.sources |> List.map (viewSource erd.project.id zone)) ++ [ viewAddSource erd.project.id ])
         ]
 
@@ -62,8 +62,8 @@ viewSource _ zone source =
         view : Icon -> String -> Time.Posix -> String -> Html Msg
         view =
             \icon updatedAtText updatedAt labelTitle ->
-                div [ class "px-4 py-2" ]
-                    [ div [ class "flex justify-between" ]
+                div [ css [ "px-4 py-2" ] ]
+                    [ div [ css [ "flex justify-between" ] ]
                         [ viewCheckbox ""
                             ("settings-source-" ++ SourceId.toString source.id)
                             [ span [] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
@@ -78,9 +78,9 @@ viewSource _ zone source =
                                 |> Tooltip.bl "Delete this source"
                             ]
                         ]
-                    , div [ class "flex justify-between" ]
-                        [ span [ class "tw-text-muted" ] [ text ((tables |> S.pluralizeL "table") ++ ", " ++ (views |> S.pluralizeL "view") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
-                        , span [ class "tw-text-muted" ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.tl (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
+                    , div [ css [ "flex justify-between" ] ]
+                        [ span [ css [ "tw-text-muted" ] ] [ text ((tables |> S.pluralizeL "table") ++ ", " ++ (views |> S.pluralizeL "view") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
+                        , span [ css [ "tw-text-muted" ] ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.tl (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
                         ]
                     ]
     in
@@ -109,10 +109,10 @@ viewSchemasSection erd =
             erd.sources |> List.concatMap (.tables >> Dict.values) |> L.groupBy .schema |> Dict.toList |> List.map (\( name, tables ) -> ( name, tables )) |> List.sortBy Tuple.first
     in
     if List.length schemas > 1 then
-        fieldset [ class "mt-6" ]
-            [ legend [ class "font-medium text-gray-900" ] [ text "Project schemas" ]
-            , p [ class "text-sm text-gray-500" ] [ text "Allow you to enable or not SQL schemas in your project." ]
-            , div [ class "list-group" ] (schemas |> List.map (viewSchema erd.settings.removedSchemas))
+        fieldset [ css [ "mt-6" ] ]
+            [ legend [ css [ "font-medium text-gray-900" ] ] [ text "Project schemas" ]
+            , p [ css [ "text-sm text-gray-500" ] ] [ text "Allow you to enable or not SQL schemas in your project." ]
+            , div [ css [ "list-group" ] ] (schemas |> List.map (viewSchema erd.settings.removedSchemas))
             ]
 
     else
@@ -135,9 +135,9 @@ viewDisplaySettingsSection erd =
         viewsCount =
             erd.sources |> List.concatMap (.tables >> Dict.values) |> List.filter .view |> List.length
     in
-    fieldset [ class "mt-6" ]
-        [ legend [ class "font-medium text-gray-900" ] [ text "Display options" ]
-        , p [ class "text-sm text-gray-500" ] [ text "Configure global options for Azimutt ERD." ]
+    fieldset [ css [ "mt-6" ] ]
+        [ legend [ css [ "font-medium text-gray-900" ] ] [ text "Display options" ]
+        , p [ css [ "text-sm text-gray-500" ] ] [ text "Configure global options for Azimutt ERD." ]
         , viewCheckbox (B.cond (viewsCount == 0) "hidden" "")
             "settings-no-views"
             [ bText "Remove views" |> Tooltip.tr "Check this if you don't want to have SQL views in Azimutt"
@@ -178,8 +178,8 @@ viewDisplaySettingsSection erd =
 viewCheckbox : TwClass -> String -> List (Html msg) -> Bool -> msg -> Html msg
 viewCheckbox styles fieldId fieldLabel value msg =
     div [ css [ "mt-3 relative flex items-start", styles ] ]
-        [ div [ class "flex items-center h-5" ]
+        [ div [ css [ "flex items-center h-5" ] ]
             [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus [ "ring-indigo-500" ] ] ] []
             ]
-        , div [ class "ml-3 text-sm" ] [ label [ for fieldId, class "text-gray-700" ] fieldLabel ]
+        , div [ css [ "ml-3 text-sm" ] ] [ label [ for fieldId, css [ "text-gray-700" ] ] fieldLabel ]
         ]

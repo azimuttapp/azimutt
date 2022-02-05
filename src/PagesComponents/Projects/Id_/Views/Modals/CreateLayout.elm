@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Conf
 import Html exposing (Html, div, h3, input, label, p, text)
-import Html.Attributes exposing (autofocus, class, for, id, name, tabindex, type_, value)
+import Html.Attributes exposing (autofocus, for, id, name, tabindex, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Html exposing (bText, sendTweet)
 import Libs.Html.Attributes exposing (css)
@@ -32,21 +32,21 @@ viewCreateLayout opened model =
         , isOpen = opened
         , onBackgroundClick = ModalClose (LayoutMsg LCancel)
         }
-        [ div [ class "px-6 pt-6 sm:flex sm:items-start" ]
-            [ div [ class "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 sm:mx-0 sm:h-10 sm:w-10" ]
+        [ div [ css [ "px-6 pt-6 sm:flex sm:items-start" ] ]
+            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 sm:mx-0 sm:h-10 sm:w-10" ] ]
                 [ Icon.outline Template "text-primary-600"
                 ]
-            , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
-                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
+            , div [ css [ "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ] ]
+                [ h3 [ id titleId, css [ "text-lg leading-6 font-medium text-gray-900" ] ]
                     [ text "Save your layout" ]
-                , div [ class "mt-2" ]
-                    [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Layout name" ]
-                    , div [ class "mt-1" ]
+                , div [ css [ "mt-2" ] ]
+                    [ label [ for inputId, css [ "block text-sm font-medium text-gray-700" ] ] [ text "Layout name" ]
+                    , div [ css [ "mt-1" ] ]
                         [ input [ type_ "text", name "layout-name", id inputId, value model.name, onInput (LEdit >> LayoutMsg), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
                         ]
-                    , p [ class "mt-1 text-sm text-gray-500" ]
+                    , p [ css [ "mt-1 text-sm text-gray-500" ] ]
                         [ text "Do you like Azimutt ? Consider "
-                        , sendTweet Conf.constants.cheeringTweet [ tabindex -1, class "tw-link" ] [ text "sending us a tweet" ]
+                        , sendTweet Conf.constants.cheeringTweet [ tabindex -1, css [ "tw-link" ] ] [ text "sending us a tweet" ]
                         , text ", it will help "
                         , bText "keep our motivation high"
                         , text " 🥰"
@@ -54,7 +54,7 @@ viewCreateLayout opened model =
                     ]
                 ]
             ]
-        , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50" ]
+        , div [ css [ "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50" ] ]
             [ Button.primary3 Color.primary [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text "Save layout" ]
             , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]

@@ -5,7 +5,7 @@ import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, button, div, input, kbd, label, span, text)
-import Html.Attributes exposing (autocomplete, class, for, id, name, placeholder, tabindex, type_, value)
+import Html.Attributes exposing (autocomplete, for, id, name, placeholder, tabindex, type_, value)
 import Html.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css, role)
@@ -24,13 +24,13 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 
 viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
 viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
-    div [ class "ml-6" ]
-        [ div [ class "max-w-lg w-full lg:max-w-xs" ]
-            [ label [ for htmlId, class "sr-only" ] [ text "Search" ]
+    div [ css [ "ml-6" ] ]
+        [ div [ css [ "max-w-lg w-full lg:max-w-xs" ] ]
+            [ label [ for htmlId, css [ "sr-only" ] ] [ text "Search" ]
             , Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
                 (\m ->
                     div []
-                        [ div [ class "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] [ Icon.solid Search "text-primary-200" ]
+                        [ div [ css [ "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] ] [ Icon.solid Search "text-primary-200" ]
                         , input
                             [ type_ "search"
                             , name "search"
@@ -49,8 +49,8 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             |> Maybe.andThen List.head
                             |> M.mapOrElse
                                 (\h ->
-                                    div [ class "absolute inset-y-0 right-0 flex py-1.5 pr-1.5" ]
-                                        [ kbd [ class "inline-flex items-center border border-primary-300 rounded px-2 text-sm font-sans font-medium text-primary-300" ]
+                                    div [ css [ "absolute inset-y-0 right-0 flex py-1.5 pr-1.5" ] ]
+                                        [ kbd [ css [ "inline-flex items-center border border-primary-300 rounded px-2 text-sm font-sans font-medium text-primary-300" ] ]
                                             [ text h.key ]
                                         ]
                                 )
@@ -74,7 +74,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                                             ]
 
                                     else
-                                        div [ class "max-h-192 overflow-y-auto" ]
+                                        div [ css [ "max-h-192 overflow-y-auto" ] ]
                                             (results |> List.indexedMap (viewSearchResult m.id shownTables (search.active |> modBy (results |> List.length))))
                                )
                 )
@@ -116,7 +116,7 @@ viewSearchResult searchId shownTables active index res =
             viewItem (ShowTable table.id) Icon.Table [ text (TableId.show table.id) ] (shownTables |> L.has table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> L.has table.id)
+            viewItem (ShowTable table.id) Tag [ span [ css [ "opacity-50" ] ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> L.has table.id)
 
         FoundRelation relation ->
             if shownTables |> L.hasNot relation.src.table then
