@@ -2,24 +2,23 @@ module Components.Atoms.Markdown exposing (doc, markdown, markdownUnsafe)
 
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html)
-import Libs.Html.Attributes exposing (css)
-import Libs.Tailwind exposing (TwClass)
+import Html.Attributes exposing (class, classList)
 import Markdown exposing (Options)
 
 
-markdown : TwClass -> String -> Html msg
-markdown styles md =
-    render defaultOptions styles md
+markdown : List String -> String -> Html msg
+markdown classes md =
+    render defaultOptions classes md
 
 
-markdownUnsafe : TwClass -> String -> Html msg
-markdownUnsafe styles md =
-    render { defaultOptions | sanitize = False } styles md
+markdownUnsafe : List String -> String -> Html msg
+markdownUnsafe classes md =
+    render { defaultOptions | sanitize = False } classes md
 
 
-render : Options -> TwClass -> String -> Html msg
-render options styles md =
-    Markdown.toHtmlWith options [ css [ "markdown", styles ] ] md
+render : Options -> List String -> String -> Html msg
+render options classes md =
+    Markdown.toHtmlWith options [ class "markdown", classList (classes |> List.map (\c -> ( c, True ))) ] md
 
 
 defaultOptions : Options
@@ -39,6 +38,6 @@ doc : Chapter x
 doc =
     chapter "Markdown"
         |> renderComponentList
-            [ ( "markdown", markdown "" "Some *text*, but <b>html</b> is escaped \\o/" )
-            , ( "markdownUnsafe", markdownUnsafe "" "Some *text* with <b>html</b> working!" )
+            [ ( "markdown", markdown [] "Some *text*, but <b>html</b> is escaped \\o/" )
+            , ( "markdownUnsafe", markdownUnsafe [] "Some *text* with <b>html</b> working!" )
             ]

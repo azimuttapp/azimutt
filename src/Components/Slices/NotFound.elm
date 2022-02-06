@@ -2,7 +2,7 @@ module Components.Slices.NotFound exposing (Brand, SimpleModel, doc, simple)
 
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, div, footer, h1, img, main_, nav, p, span, text)
-import Html.Attributes exposing (alt, href, src)
+import Html.Attributes exposing (alt, class, href, src)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models exposing (Image, Link)
 import Libs.Tailwind exposing (hover, lg, sm)
@@ -24,20 +24,20 @@ type alias Brand =
 
 simple : SimpleModel -> Html msg
 simple model =
-    div [ css [ "min-h-full pt-16 pb-12 flex flex-col bg-white" ] ]
-        [ main_ [ css [ "flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4 lg:px-8 sm:px-6" ] ]
-            [ div [ css [ "flex-shrink-0 flex justify-center" ] ]
-                [ a [ href model.brand.link.url, css [ "inline-flex" ] ]
-                    [ span [ css [ "sr-only" ] ] [ text model.brand.link.text ]
-                    , img [ css [ "h-12 w-auto" ], src model.brand.img.src, alt model.brand.img.alt ] []
+    div [ class "min-h-full pt-16 pb-12 flex flex-col bg-white" ]
+        [ main_ [ class "flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4 lg:px-8 sm:px-6" ]
+            [ div [ class "flex-shrink-0 flex justify-center" ]
+                [ a [ href model.brand.link.url, class "inline-flex" ]
+                    [ span [ class "sr-only" ] [ text model.brand.link.text ]
+                    , img [ class "h-12 w-auto", src model.brand.img.src, alt model.brand.img.alt ] []
                     ]
                 ]
-            , div [ css [ "py-16" ] ]
-                [ div [ css [ "text-center" ] ]
-                    [ p [ css [ "text-sm font-semibold text-primary-600 uppercase tracking-wide" ] ] [ text model.header ]
-                    , h1 [ css [ "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl" ] ] [ text model.title ]
-                    , p [ css [ "mt-2 text-base text-gray-500" ] ] [ text model.message ]
-                    , div [ css [ "mt-6" ] ]
+            , div [ class "py-16" ]
+                [ div [ class "text-center" ]
+                    [ p [ class "text-sm font-semibold text-primary-600 uppercase tracking-wide" ] [ text model.header ]
+                    , h1 [ class "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl" ] [ text model.title ]
+                    , p [ class "mt-2 text-base text-gray-500" ] [ text model.message ]
+                    , div [ class "mt-6" ]
                         [ a [ href model.link.url, css [ "text-base font-medium text-primary-600", hover [ "text-primary-500" ] ] ]
                             [ text model.link.text
                             , span [ ariaHidden True ] [ text "→" ]
@@ -47,10 +47,10 @@ simple model =
                 ]
             ]
         , footer [ css [ "flex-shrink-0 max-w-7xl w-full mx-auto px-4 ", sm [ "px-6" ], lg [ "px-8" ] ] ]
-            [ nav [ css [ "flex justify-center space-x-4" ] ]
+            [ nav [ class "flex justify-center space-x-4" ]
                 (model.footer
                     |> List.map (\link -> a [ href link.url, css [ "text-sm font-medium text-gray-500 ", hover [ "text-gray-600" ] ] ] [ text link.text ])
-                    |> List.intersperse (span [ css [ "inline-block border-l border-gray-300" ], ariaHidden True ] [])
+                    |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
                 )
             ]
         ]

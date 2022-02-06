@@ -8,7 +8,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, br, button, div, span, text)
-import Html.Attributes exposing (id, style, tabindex, type_)
+import Html.Attributes exposing (class, id, style, tabindex, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
@@ -147,12 +147,12 @@ viewHeader model =
             , bg_50 (B.cond model.state.isHover model.state.color Color.default)
             ]
         ]
-        [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), css [ "flex-grow text-center" ] ]
+        [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), class "flex-grow text-center" ]
             [ if model.isView then
-                span ([ css [ "text-xl italic underline decoration-dotted" ] ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
+                span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
 
               else
-                span ([ css [ "text-xl" ] ] ++ headerTextSize) [ text model.label ]
+                span ([ class "text-xl" ] ++ headerTextSize) [ text model.label ]
             ]
         , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
             (\m ->
@@ -166,11 +166,11 @@ viewHeader model =
                      ]
                         ++ track Track.openTableSettings
                     )
-                    [ span [ css [ "sr-only" ] ] [ text "Open table settings" ]
+                    [ span [ class "sr-only" ] [ text "Open table settings" ]
                     , Icon.solid DotsVertical ""
                     ]
             )
-            (\_ -> div [ css [ "z-max" ] ] (model.settings |> List.map Dropdown.submenuButton))
+            (\_ -> div [ class "z-max" ] (model.settings |> List.map Dropdown.submenuButton))
         ]
 
 
@@ -190,8 +190,8 @@ viewHiddenColumns model =
         div [] []
 
     else
-        div [ css [ "m-2 p-2 bg-gray-100 rounded-lg" ] ]
-            [ div [ onClick model.actions.clickHiddenColumns, css [ "text-gray-400 uppercase font-bold text-sm" ] ]
+        div [ class "m-2 p-2 bg-gray-100 rounded-lg" ]
+            [ div [ onClick model.actions.clickHiddenColumns, class "text-gray-400 uppercase font-bold text-sm" ]
                 [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
             , Keyed.node "div"
                 [ css [ "rounded-lg pt-2", B.cond model.state.showHiddenColumns "" "hidden" ] ]
@@ -222,23 +222,23 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
-        div ([ css [ "w-6 h-6" ], onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
+        div ([ class "w-6 h-6", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
             [ Icon.solid ExternalLink "pt-2" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
-        div [ css [ "w-6 h-6" ] ] [ Icon.solid Key "pt-2" |> Tooltip.t "Primary key" ]
+        div [ class "w-6 h-6" ] [ Icon.solid Key "pt-2" |> Tooltip.t "Primary key" ]
 
     else if column.uniques |> L.nonEmpty then
-        div [ css [ "w-6 h-6" ] ] [ Icon.solid FingerPrint "pt-2" |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid FingerPrint "pt-2" |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> L.nonEmpty then
-        div [ css [ "w-6 h-6" ] ] [ Icon.solid SortDescending "pt-2" |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid SortDescending "pt-2" |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> L.nonEmpty then
-        div [ css [ "w-6 h-6" ] ] [ Icon.solid Check "pt-2" |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [ class "w-6 h-6" ] [ Icon.solid Check "pt-2" |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
-        div [ css [ "w-6 h-6" ] ] [ Icon.solid Empty "pt-2" ]
+        div [ class "w-6 h-6" ] [ Icon.solid Empty "pt-2" ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
@@ -332,17 +332,17 @@ viewColumnKind model column =
             column.default
                 |> M.mapOrElse
                     (\default -> span [ css [ "underline", opacity ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
-                    (span [ css [ opacity ] ] [ text column.kind ])
+                    (span [ class opacity ] [ text column.kind ])
 
         nullable : List (Html msg)
         nullable =
             if column.nullable then
-                [ span [ css [ opacity ] ] [ text "?" ] |> Tooltip.t "nullable" ]
+                [ span [ class opacity ] [ text "?" ] |> Tooltip.t "nullable" ]
 
             else
                 []
     in
-    div [ css [ "ml-1" ] ] (value :: nullable)
+    div [ class "ml-1" ] (value :: nullable)
 
 
 formatTableRef : TableRef -> String

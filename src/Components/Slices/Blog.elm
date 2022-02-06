@@ -3,7 +3,7 @@ module Components.Slices.Blog exposing (Article, Model, Subscribe, article, arti
 import Components.Slices.Newsletter as Newsletter
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, a, div, form, h2, p, text, time)
-import Html.Attributes exposing (datetime, href)
+import Html.Attributes exposing (class, datetime, href)
 import Libs.DateTime as DateTime
 import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as M
@@ -33,17 +33,17 @@ type alias Article =
 
 articleList : Model -> Html msg
 articleList model =
-    div [ css [ "bg-white pt-16 pb-20 px-4 lg:pt-24 lg:pb-28 lg:px-8 sm:px-6" ] ]
-        [ div [ css [ "relative max-w-lg mx-auto divide-y-2 divide-gray-200 lg:max-w-7xl" ] ]
+    div [ class "bg-white pt-16 pb-20 px-4 lg:pt-24 lg:pb-28 lg:px-8 sm:px-6" ]
+        [ div [ class "relative max-w-lg mx-auto divide-y-2 divide-gray-200 lg:max-w-7xl" ]
             [ div []
-                [ h2 [ css [ "text-3xl tracking-tight font-extrabold text-gray-900 sm:text-4xl" ] ] [ text model.title ]
-                , div [ css [ "mt-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-center sm:mt-4" ] ]
-                    ([ p [ css [ "text-xl text-gray-500" ] ] [ text model.headline ]
+                [ h2 [ class "text-3xl tracking-tight font-extrabold text-gray-900 sm:text-4xl" ] [ text model.title ]
+                , div [ class "mt-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-center sm:mt-4" ]
+                    ([ p [ class "text-xl text-gray-500" ] [ text model.headline ]
                      ]
                         ++ (model.newsletter |> M.mapOrElse (\form -> [ Newsletter.small form ]) [])
                     )
                 ]
-            , div [ css [ "mt-6 pt-10 grid gap-16 lg:grid-cols-2 lg:gap-x-5 lg:gap-y-12" ] ] (model.articles |> List.map articleItem)
+            , div [ class "mt-6 pt-10 grid gap-16 lg:grid-cols-2 lg:gap-x-5 lg:gap-y-12" ] (model.articles |> List.map articleItem)
             ]
         ]
 
@@ -51,13 +51,13 @@ articleList model =
 articleItem : Article -> Html msg
 articleItem model =
     div []
-        [ p [ css [ "text-sm text-gray-500" ] ]
+        [ p [ class "text-sm text-gray-500" ]
             [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd") ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ] ]
-        , a [ href model.link, css [ "mt-2 block" ] ]
-            [ p [ css [ "text-xl font-semibold text-gray-900" ] ] [ text model.title ]
-            , p [ css [ "mt-3 text-base text-gray-500" ] ] [ text model.excerpt ]
+        , a [ href model.link, class "mt-2 block" ]
+            [ p [ class "text-xl font-semibold text-gray-900" ] [ text model.title ]
+            , p [ class "mt-3 text-base text-gray-500" ] [ text model.excerpt ]
             ]
-        , div [ css [ "mt-3" ] ]
+        , div [ class "mt-3" ]
             [ a [ href model.link, css [ "text-base font-semibold text-indigo-600", hover [ "text-indigo-500" ] ] ] [ text "Read full story" ] ]
         ]
 
@@ -65,13 +65,13 @@ articleItem model =
 article : Article -> Html msg
 article model =
     div []
-        [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), css [ "uppercase text-xs text-gray-500 font-bold" ] ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
-        , h2 [ css [ "mt-1 text-2xl tracking-tight font-extrabold text-gray-900 md:text-3xl sm:leading-none" ] ]
+        [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), class "uppercase text-xs text-gray-500 font-bold" ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
+        , h2 [ class "mt-1 text-2xl tracking-tight font-extrabold text-gray-900 md:text-3xl sm:leading-none" ]
             [ a [ href model.link ] [ text model.title ] ]
-        , div [ css [ "mt-6" ] ]
+        , div [ class "mt-6" ]
             [ p [] [ text model.excerpt ] ]
-        , div [ css [ "mt-10" ] ]
-            [ a [ css [ "text-indigo-600 uppercase text-sm tracking-wide font-black" ], href model.link ] [ text "Read full story →" ] ]
+        , div [ class "mt-10" ]
+            [ a [ class "text-indigo-600 uppercase text-sm tracking-wide font-black", href model.link ] [ text "Read full story →" ] ]
         ]
 
 

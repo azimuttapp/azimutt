@@ -4,7 +4,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, input, label, option, p, select, span, text)
-import Html.Attributes exposing (checked, for, id, name, placeholder, selected, type_, value)
+import Html.Attributes exposing (checked, class, for, id, name, placeholder, selected, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -13,24 +13,24 @@ import Libs.Tailwind exposing (TwClass, focus, sm)
 
 textWithLabelAndHelp : TwClass -> HtmlId -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg
 textWithLabelAndHelp styles fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldValue fieldChange =
-    div [ css [ styles ] ]
-        [ label [ for fieldId, css [ "block text-sm font-medium text-gray-700" ] ] [ text fieldLabel ]
-        , div [ css [ "mt-1" ] ]
+    div [ class styles ]
+        [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text fieldLabel ]
+        , div [ class "mt-1" ]
             [ input [ type_ fieldType, name fieldId, id fieldId, value fieldValue, onInput fieldChange, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
             ]
-        , p [ id (fieldId ++ "-help"), css [ "mt-2 text-sm text-gray-500" ] ] [ text fieldHelp ]
+        , p [ id (fieldId ++ "-help"), class "mt-2 text-sm text-gray-500" ] [ text fieldHelp ]
         ]
 
 
 selectWithLabelAndHelp : TwClass -> HtmlId -> String -> String -> List ( String, String ) -> String -> (String -> msg) -> Html msg
 selectWithLabelAndHelp styles fieldId fieldLabel fieldHelp fieldOptions fieldValue fieldChange =
-    div [ css [ styles ] ]
-        [ label [ for fieldId, css [ "block text-sm font-medium text-gray-700" ] ] [ text fieldLabel ]
-        , div [ css [ "mt-1" ] ]
+    div [ class styles ]
+        [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text fieldLabel ]
+        , div [ class "mt-1" ]
             [ select [ name fieldId, id fieldId, onInput fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]
                 (fieldOptions |> List.map (\( optionId, optionLabel ) -> option [ value optionId, selected (optionId == fieldValue) ] [ text optionLabel ]))
             ]
-        , p [ id (fieldId ++ "-help"), css [ "mt-2 text-sm text-gray-500" ] ] [ text fieldHelp ]
+        , p [ id (fieldId ++ "-help"), class "mt-2 text-sm text-gray-500" ] [ text fieldHelp ]
         ]
 
 
@@ -38,12 +38,12 @@ checkbox : TwClass -> String -> String -> String -> Bool -> msg -> Html msg
 checkbox styles fieldId fieldLabel fieldHelp fieldValue fieldChange =
     -- TODO: fieldLabel, replace String with (List (Html msg))
     div [ css [ "relative flex items-start", styles ] ]
-        [ div [ css [ "flex items-center h-5" ] ]
+        [ div [ class "flex items-center h-5" ]
             [ input [ type_ "checkbox", name fieldId, id fieldId, checked fieldValue, onClick fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus [ "ring-indigo-500" ] ] ] []
             ]
-        , div [ css [ "ml-3 text-sm" ] ]
-            [ label [ for fieldId, css [ "font-medium text-gray-700" ] ] [ text fieldLabel ]
-            , span [ id (fieldId ++ "-help"), css [ "text-gray-500" ] ] [ text (" " ++ fieldHelp) ]
+        , div [ class "ml-3 text-sm" ]
+            [ label [ for fieldId, class "font-medium text-gray-700" ] [ text fieldLabel ]
+            , span [ id (fieldId ++ "-help"), class "text-gray-500" ] [ text (" " ++ fieldHelp) ]
             ]
         ]
 

@@ -9,7 +9,7 @@ import Dict
 import Either exposing (Either(..))
 import Gen.Route as Route
 import Html exposing (Html, a, button, div, img, nav, span, text)
-import Html.Attributes exposing (alt, height, href, id, src, tabindex, type_, width)
+import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_, width)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
@@ -55,19 +55,19 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
             erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
     in
     nav [ css [ "tw-navbar relative z-max bg-primary-600" ] ]
-        [ div [ css [ "mx-auto px-2 lg:px-8 sm:px-4" ] ]
-            [ div [ css [ "relative flex items-center justify-between h-16" ] ]
-                [ div [ css [ "flex items-center px-2 lg:px-0" ] ]
+        [ div [ class "mx-auto px-2 lg:px-8 sm:px-4" ]
+            [ div [ class "relative flex items-center justify-between h-16" ]
+                [ div [ class "flex items-center px-2 lg:px-0" ]
                     [ viewNavbarBrand
                     , Lazy.lazy6 viewNavbarSearch model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
-                , div [ css [ "flex-1 flex justify-center px-2" ] ]
+                , div [ class "flex-1 flex justify-center px-2" ]
                     [ Lazy.lazy6 viewNavbarTitle erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
-                , div [ css [ "hidden lg:block lg:ml-4" ] ]
-                    [ div [ css [ "flex items-center" ] ]
+                , div [ class "hidden lg:block lg:ml-4" ]
+                    [ div [ class "flex items-center" ]
                         [ viewNavbarResetLayout canResetCanvas
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , viewNavbarSettings
@@ -81,9 +81,9 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
 
 viewNavbarBrand : Html msg
 viewNavbarBrand =
-    a [ href (Route.toHref Route.Projects), css [ "flex justify-start items-center flex-shrink-0 font-medium" ] ]
-        [ img [ css [ "block h-8 h-8" ], src "/logo.png", alt "Azimutt", width 32, height 32 ] []
-        , span [ css [ "ml-3 text-2xl text-white hidden lg:block" ] ] [ text "Azimutt" ]
+    a [ href (Route.toHref Route.Projects), class "flex justify-start items-center flex-shrink-0 font-medium" ]
+        [ img [ class "block h-8 h-8", src "/logo.png", alt "Azimutt", width 32, height 32 ] []
+        , span [ class "ml-3 text-2xl text-white hidden lg:block" ] [ text "Azimutt" ]
         ]
 
 
@@ -103,7 +103,7 @@ viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
-                [ span [ css [ "sr-only" ] ] [ text "View features" ]
+                [ span [ class "sr-only" ] [ text "View features" ]
                 , Icon.outline LightningBolt ""
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
@@ -116,7 +116,7 @@ viewNavbarFeatures features htmlId openedDropdown =
                             btn.action
                                 |> E.reduce
                                     (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", Dropdown.itemStyles ] ] [ btn.content ])
-                                    (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ css [ "ml-3" ] ] (Hotkey.keys h) ]) [])))
+                                    (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
                         )
                 )
         )
@@ -125,16 +125,16 @@ viewNavbarFeatures features htmlId openedDropdown =
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
     button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
-        [ span [ css [ "sr-only" ] ] [ text "View settings" ]
+        [ span [ class "sr-only" ] [ text "View settings" ]
         , Icon.outline Cog ""
         ]
 
 
 navbarMobileButton : Bool -> Html Msg
 navbarMobileButton open =
-    div [ css [ "flex lg:hidden" ] ]
+    div [ class "flex lg:hidden" ]
         [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ "inline-flex items-center justify-center p-2 rounded-md text-primary-200", hover [ "text-white bg-primary-500" ], focus [ "outline-none ring-2 ring-inset ring-white" ] ] ]
-            [ span [ css [ "sr-only" ] ] [ text "Open main menu" ]
+            [ span [ class "sr-only" ] [ text "Open main menu" ]
             , Icon.outline Menu (B.cond open "hidden" "block")
             , Icon.outline X (B.cond open "block" "hidden")
             ]
@@ -157,16 +157,16 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
             batch [ "text-primary-100 flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium", hover [ "bg-primary-500 text-white" ], focus [ "outline-none" ] ]
     in
     div [ css [ "lg:hidden", B.cond isOpen "" "hidden" ], id "mobile-menu" ]
-        ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, css [ btnStyle ] ] [ text "Reset canvas" ] ] []
+        ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, class btnStyle ] [ text "Reset canvas" ] ] []
          , features
             |> List.map
                 (\f ->
                     f.action
                         |> E.reduce
-                            (\url -> extLink url [ css [ btnStyle ] ] [ f.content ])
-                            (\action -> button [ type_ "button", onClick action, css [ btnStyle ] ] [ f.content ])
+                            (\url -> extLink url [ class btnStyle ] [ f.content ])
+                            (\action -> button [ type_ "button", onClick action, class btnStyle ] [ f.content ])
                 )
-         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ btnStyle ] ] [ Icon.outline Cog "mr-3", text "Settings" ] ]
+         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Cog "mr-3", text "Settings" ] ]
          ]
             |> List.filter L.nonEmpty
             |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, B.cond (i /= 0) groupBorder "" ] ] groupContent)

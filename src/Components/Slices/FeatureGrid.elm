@@ -4,7 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Gen.Route as Route
 import Html exposing (Html, a, br, div, h2, h3, p, span, text)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (class, href)
 import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (lg, sm)
 
@@ -41,7 +41,7 @@ coloredSlice =
                 , item (Icon.outline Link "")
                     "Lorem Ipsum"
                     [ text "You came this far ??? Awesome! You seem quite interested and ready to dig in ^^", br [] [], text """
-                            The best you can do now is to """, a [ href (Route.toHref Route.App), css [ "tw-link" ] ] [ text "try it out" ], text " right away :D" ]
+                            The best you can do now is to """, a [ href (Route.toHref Route.App), class "link" ] [ text "try it out" ], text " right away :D" ]
                 ]
             ]
         ]

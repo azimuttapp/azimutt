@@ -5,7 +5,7 @@ import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Html exposing (Html, button, div, span, text)
-import Html.Attributes exposing (id, type_)
+import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
@@ -30,17 +30,17 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
         inverted =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
     in
-    div [ css [ "tw-commands absolute bottom-0 right-0 m-3", B.cond hide "hidden" "" ] ]
-        [ span [ css [ "relative z-0 inline-flex shadow-sm rounded-md" ] ]
+    div [ class ("tw-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
+        [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
             [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
                 [ Icon.solid ArrowsExpand "" ]
                 |> Tooltip.t "Fit content in view"
             ]
-        , span [ css [ "relative z-0 inline-flex shadow-sm rounded-md ml-2" ] ]
+        , span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
             [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
             , button [ type_ "button", onClick (CursorMode CursorDrag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
             ]
-        , span [ css [ "relative z-0 inline-flex shadow-sm rounded-md ml-2" ] ]
+        , span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
             [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus "" ]
             , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
                 (\m ->

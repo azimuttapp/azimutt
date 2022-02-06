@@ -46,7 +46,7 @@ viewArticle model =
                 { section = content.category |> Maybe.withDefault "Azimutt"
                 , title = content.title
                 , introduction = Nothing
-                , content = [ markdown "blog-article" content.body ]
+                , content = [ markdown [ "blog-article" ] content.body ]
                 , dots = True
                 }
     , Helpers.newsletterSection

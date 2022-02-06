@@ -6,6 +6,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, button, div, p, span, text)
+import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Libs.Html.Attributes exposing (ariaLive, css)
@@ -39,15 +40,15 @@ render onClose model =
 simple : msg -> Bool -> SimpleModel -> Html msg
 simple onClose isOpen model =
     toast
-        (div [ css [ "flex items-start" ] ]
-            [ div [ css [ "flex-shrink-0" ] ] [ Icon.outline model.icon (text_400 model.color) ]
-            , div [ css [ "ml-3 w-0 flex-1 pt-0.5" ] ]
-                [ p [ css [ "text-sm font-medium text-gray-900" ] ] [ text model.title ]
-                , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text model.message ]
+        (div [ class "flex items-start" ]
+            [ div [ class "flex-shrink-0" ] [ Icon.outline model.icon (text_400 model.color) ]
+            , div [ class "ml-3 w-0 flex-1 pt-0.5" ]
+                [ p [ class "text-sm font-medium text-gray-900" ] [ text model.title ]
+                , p [ class "mt-1 text-sm text-gray-500" ] [ text model.message ]
                 ]
-            , div [ css [ "ml-4 flex-shrink-0 flex" ] ]
+            , div [ class "ml-4 flex-shrink-0 flex" ]
                 [ button [ onClick onClose, css [ "bg-white rounded-md inline-flex text-gray-400", hover [ "text-gray-500" ], focus_ring_500 Color.primary ] ]
-                    [ span [ css [ "sr-only" ] ] [ text "Close" ]
+                    [ span [ class "sr-only" ] [ text "Close" ]
                     , Icon.solid X ""
                     ]
                 ]
@@ -68,7 +69,7 @@ toast content isOpen =
                 "transition ease-out duration-300 opacity-0 transform translate-y-2 pointer-events-none sm:translate-y-0 sm:translate-x-0"
     in
     div [ css [ "max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden", toastBlock ] ]
-        [ div [ css [ "p-4" ] ]
+        [ div [ class "p-4" ]
             [ content
             ]
         ]
@@ -76,9 +77,9 @@ toast content isOpen =
 
 container : List Model -> (String -> msg) -> Html msg
 container toasts close =
-    div [ ariaLive "assertive", css [ "fixed inset-0 flex items-end px-4 py-6 z-max pointer-events-none sm:p-6 sm:items-end" ] ]
+    div [ ariaLive "assertive", class "fixed inset-0 flex items-end px-4 py-6 z-max pointer-events-none sm:p-6 sm:items-end" ]
         [ Keyed.node "div"
-            [ css [ "w-full flex flex-col items-center space-y-4 sm:items-start" ] ]
+            [ class "w-full flex flex-col items-center space-y-4 sm:items-start" ]
             (toasts |> List.map (\t -> render (close t.key) t))
         ]
 

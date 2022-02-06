@@ -8,7 +8,7 @@ import Conf
 import Dict
 import Gen.Route as Route
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
-import Html.Attributes exposing (href, id, type_)
+import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
@@ -101,7 +101,7 @@ projectList content =
 
 viewProjectPlaceholder : Html msg
 viewProjectPlaceholder =
-    li [ css [ "tw-project-placeholder animate-pulse col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
+    li [ class "tw-project-placeholder", css [ "animate-pulse col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ viewTextPlaceholder "w-24 h-3" ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
@@ -130,7 +130,7 @@ viewIconPlaceholder styles =
 
 viewProjectCard : Time.Zone -> Project -> Html Msg
 viewProjectCard zone project =
-    li [ css [ "tw-project col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
+    li [ class "tw-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ text project.name ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
@@ -173,7 +173,7 @@ viewNewProject =
 
 viewModal : Model -> Html Msg
 viewModal model =
-    div [ css [ "tw-modal" ], id Conf.ids.modal ]
+    div [ class "tw-modal", id Conf.ids.modal ]
         [ model.confirm
             |> Maybe.map
                 (\c ->

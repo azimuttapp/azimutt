@@ -6,7 +6,7 @@ import Components.Molecules.Tooltip as Tooltip
 import Dict exposing (Dict)
 import Gen.Route as Route
 import Html exposing (Html, br, button, div, small, span, text)
-import Html.Attributes exposing (id, tabindex, type_)
+import Html.Attributes exposing (class, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
@@ -27,7 +27,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
 viewNavbarTitle : List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarTitle otherProjects project usedLayout layouts htmlId openedDropdown =
-    div [ css [ "flex justify-center items-center text-white" ] ]
+    div [ class "flex justify-center items-center text-white" ]
         ([ Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects")) ]
             ++ viewLayoutsMaybe usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
@@ -43,13 +43,13 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
                 ]
         )
         (\_ ->
-            div [ css [ "divide-y divide-gray-100" ] ]
+            div [ class "divide-y divide-gray-100" ]
                 (([ [ Dropdown.btn "" SaveProject [ text "Save project" ] ] ]
                     ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
                     ++ [ [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )
                     |> L.filterNot List.isEmpty
-                    |> List.map (\section -> div [ role "none", css [ "py-1" ] ] section)
+                    |> List.map (\section -> div [ role "none", class "py-1" ] section)
                 )
         )
 
@@ -75,17 +75,17 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
                 ]
         )
         (\_ ->
-            div [ css [ "min-w-max divide-y divide-gray-100" ] ]
+            div [ class "min-w-max divide-y divide-gray-100" ]
                 (L.prependOn usedLayout
                     (\l ->
-                        div [ role "none", css [ "py-1" ] ]
+                        div [ role "none", class "py-1" ]
                             [ Dropdown.btn "" (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
                             , Dropdown.btn "" (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
                             ]
                     )
-                    [ div [ role "none", css [ "py-1" ] ]
+                    [ div [ role "none", class "py-1" ]
                         [ Dropdown.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
-                    , div [ role "none", css [ "py-1" ] ]
+                    , div [ role "none", class "py-1" ]
                         (layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
                     ]
                 )

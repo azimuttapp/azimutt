@@ -8,7 +8,7 @@ import Components.Slices.Newsletter as Newsletter
 import Conf
 import Gen.Route as Route
 import Html exposing (Html, a, div, footer, h1, header, main_, p, span, text)
-import Html.Attributes exposing (href, id)
+import Html.Attributes exposing (class, href, id)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models exposing (Link)
@@ -22,7 +22,7 @@ root children =
 
 viewToasts : Html msg
 viewToasts =
-    div [ id "toast-container", css [ "toast-container position-fixed bottom-0 start-0 p-2" ] ] []
+    div [ id "toast-container", class "toast-container position-fixed bottom-0 start-0 p-2" ] []
 
 
 publicHeader : Html msg
@@ -35,7 +35,7 @@ publicHeader =
             , { url = Conf.constants.azimuttRoadmap, content = [ text "Roadmap" ], external = True }
             , { url = Conf.constants.azimuttGithub, content = [ text "Source code" ], external = True }
             , { url = Conf.constants.azimuttBugReport, content = [ text "Bug reports" ], external = True }
-            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter "", span [ css [ "sr-only" ] ] [ text "Twitter" ] ], external = True }
+            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter "", span [ class "sr-only" ] [ text "Twitter" ] ], external = True }
             ]
         }
 

@@ -2,7 +2,7 @@ module Components.Organisms.Header exposing (Brand, ExtLink, LeftLinksModel, Lef
 
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, div, header, img, nav, span, text)
-import Html.Attributes exposing (alt, href, src)
+import Html.Attributes exposing (alt, class, href, src)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaLabel, css)
 import Libs.Models exposing (Image, Link)
@@ -39,13 +39,13 @@ rightLinksIndigo model =
 
 rightLinks : RightLinksTheme -> RightLinksModel msg -> Html msg
 rightLinks theme model =
-    header [ css [ theme.bg ] ]
-        [ div [ css [ "flex justify-between items-center max-w-7xl mx-auto px-4 py-6 lg:px-8 md:justify-start md:space-x-10 sm:px-6" ] ]
-            [ a [ href model.brand.link.url, css [ "flex justify-start items-center font-medium lg:w-0 lg:flex-1" ] ]
-                [ img [ src model.brand.img.src, alt model.brand.img.alt, css [ "h-8 w-auto sm:h-10" ] ] []
+    header [ class theme.bg ]
+        [ div [ class "flex justify-between items-center max-w-7xl mx-auto px-4 py-6 lg:px-8 md:justify-start md:space-x-10 sm:px-6" ]
+            [ a [ href model.brand.link.url, class "flex justify-start items-center font-medium lg:w-0 lg:flex-1" ]
+                [ img [ src model.brand.img.src, alt model.brand.img.alt, class "h-8 w-auto sm:h-10" ] []
                 , span [ css [ "ml-3 text-2xl", theme.text ] ] [ text model.brand.link.text ]
                 ]
-            , nav [ css [ "hidden space-x-10 md:flex" ] ]
+            , nav [ class "hidden space-x-10 md:flex" ]
                 (model.links
                     |> List.map
                         (\l ->
@@ -84,20 +84,20 @@ leftLinksWhite model =
 
 leftLinks : LeftLinksTheme -> LeftLinksModel -> Html msg
 leftLinks theme model =
-    header [ css [ theme.bg ] ]
-        [ nav [ css [ "max-w-7xl mx-auto px-4 lg:px-8 sm:px-6" ], ariaLabel "Top" ]
-            [ div [ css [ "w-full py-6 flex items-center justify-between border-b border-indigo-500 lg:border-none" ] ]
-                [ div [ css [ "flex items-center" ] ]
-                    [ a [ href model.brand.link.url ] [ span [ css [ "sr-only" ] ] [ text model.brand.link.text ], img [ css [ "h-10 w-auto" ], src model.brand.img.src, alt model.brand.img.alt ] [] ]
-                    , div [ css [ "hidden ml-10 space-x-8 lg:block" ] ]
+    header [ class theme.bg ]
+        [ nav [ class "max-w-7xl mx-auto px-4 lg:px-8 sm:px-6", ariaLabel "Top" ]
+            [ div [ class "w-full py-6 flex items-center justify-between border-b border-indigo-500 lg:border-none" ]
+                [ div [ class "flex items-center" ]
+                    [ a [ href model.brand.link.url ] [ span [ class "sr-only" ] [ text model.brand.link.text ], img [ class "h-10 w-auto", src model.brand.img.src, alt model.brand.img.alt ] [] ]
+                    , div [ class "hidden ml-10 space-x-8 lg:block" ]
                         (model.links |> List.map (\link -> a [ href link.url, css [ "text-base font-medium", theme.links ] ] [ text link.text ]))
                     ]
-                , div [ css [ "ml-10 space-x-4" ] ]
+                , div [ class "ml-10 space-x-4" ]
                     [ a [ href model.secondary.url, css [ "inline-block py-2 px-4 border border-transparent rounded-md text-base font-medium", theme.secondary ] ] [ text model.secondary.text ]
                     , a [ href model.primary.url, css [ "inline-block py-2 px-4 border border-transparent rounded-md text-base font-medium", theme.primary ] ] [ text model.primary.text ]
                     ]
                 ]
-            , div [ css [ "py-4 flex flex-wrap justify-center space-x-6 lg:hidden" ] ]
+            , div [ class "py-4 flex flex-wrap justify-center space-x-6 lg:hidden" ]
                 (model.links |> List.map (\link -> a [ href link.url, css [ "text-base font-medium", theme.links ] ] [ text link.text ]))
             ]
         ]
