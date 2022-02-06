@@ -105,8 +105,8 @@ colorsDoc =
                                 |> List.map
                                     (\color ->
                                         tr []
-                                            (th [ css [ "h-10" ] ] [ text color ]
-                                                :: (Tw.levels |> List.map (\level -> td [ css [ "bg-" ++ color ++ "-" ++ String.fromInt level ] ] []))
+                                            (th [ css [ "h-10" ] ] [ text (Tw.extractColor color) ]
+                                                :: (Tw.levels |> List.map (\level -> td [ css [ "bg-" ++ Tw.extractColor color ++ "-" ++ String.fromInt level ] ] []))
                                             )
                                     )
                            )

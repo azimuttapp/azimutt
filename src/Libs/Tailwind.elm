@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, black, blue, border_400, border_500, cyan, decodeColor, default, disabled, emerald, encodeColor, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, fuchsia, gray, green, hover, indigo, levels, lg, lime, list, md, orange, pink, primary, purple, red, ring_500, ring_600, ring_offset_600, rose, sky, sm, stroke_500, teal, text_300, text_400, text_500, text_600, text_700, text_800, violet, white, xl, xxl, yellow)
+module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, black, blue, border_400, border_500, cyan, decodeColor, default, disabled, emerald, encodeColor, extractColor, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, fuchsia, gray, green, hover, indigo, levels, lg, lime, list, md, orange, pink, primary, purple, red, ring_500, ring_600, ring_offset_600, rose, sky, sm, stroke_500, teal, text_300, text_400, text_500, text_600, text_700, text_800, violet, white, xl, xxl, yellow)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -102,97 +102,97 @@ addState state classes =
 
 
 bg_50 : Color -> TwClass
-bg_50 color =
+bg_50 (Color color) =
     "bg-" ++ color ++ "-50"
 
 
 bg_100 : Color -> TwClass
-bg_100 color =
+bg_100 (Color color) =
     "bg-" ++ color ++ "-100"
 
 
 bg_200 : Color -> TwClass
-bg_200 color =
+bg_200 (Color color) =
     "bg-" ++ color ++ "-200"
 
 
 bg_300 : Color -> TwClass
-bg_300 color =
+bg_300 (Color color) =
     "bg-" ++ color ++ "-300"
 
 
 bg_500 : Color -> TwClass
-bg_500 color =
+bg_500 (Color color) =
     "bg-" ++ color ++ "-500"
 
 
 bg_600 : Color -> TwClass
-bg_600 color =
+bg_600 (Color color) =
     "bg-" ++ color ++ "-600"
 
 
 bg_700 : Color -> TwClass
-bg_700 color =
+bg_700 (Color color) =
     "bg-" ++ color ++ "-700"
 
 
 border_400 : Color -> TwClass
-border_400 color =
+border_400 (Color color) =
     "border-" ++ color ++ "-400"
 
 
 border_500 : Color -> TwClass
-border_500 color =
+border_500 (Color color) =
     "border-" ++ color ++ "-500"
 
 
 ring_500 : Color -> TwClass
-ring_500 color =
+ring_500 (Color color) =
     "ring-" ++ color ++ "-500"
 
 
 ring_600 : Color -> TwClass
-ring_600 color =
+ring_600 (Color color) =
     "ring-" ++ color ++ "-600"
 
 
 ring_offset_600 : Color -> TwClass
-ring_offset_600 color =
+ring_offset_600 (Color color) =
     "ring-offset-" ++ color ++ "-600"
 
 
 stroke_500 : Color -> TwClass
-stroke_500 color =
+stroke_500 (Color color) =
     "stroke-" ++ color ++ "-500"
 
 
 text_300 : Color -> TwClass
-text_300 color =
+text_300 (Color color) =
     "text-" ++ color ++ "-300"
 
 
 text_400 : Color -> TwClass
-text_400 color =
+text_400 (Color color) =
     "text-" ++ color ++ "-400"
 
 
 text_500 : Color -> TwClass
-text_500 color =
+text_500 (Color color) =
     "text-" ++ color ++ "-500"
 
 
 text_600 : Color -> TwClass
-text_600 color =
+text_600 (Color color) =
     "text-" ++ color ++ "-600"
 
 
 text_700 : Color -> TwClass
-text_700 color =
+text_700 (Color color) =
     "text-" ++ color ++ "-700"
 
 
 text_800 : Color -> TwClass
-text_800 color =
+text_800 (Color color) =
     "text-" ++ color ++ "-800"
 
 
@@ -200,8 +200,8 @@ text_800 color =
 -- Color definition
 
 
-type alias Color =
-    String
+type Color
+    = Color String
 
 
 type alias ColorLevel =
@@ -220,112 +220,112 @@ all =
 
 default : Color
 default =
-    "default"
+    Color "default"
 
 
 primary : Color
 primary =
-    "primary"
+    Color "primary"
 
 
 black : Color
 black =
-    "black"
+    Color "black"
 
 
 white : Color
 white =
-    "white"
+    Color "white"
 
 
 gray : Color
 gray =
-    "gray"
+    Color "gray"
 
 
 red : Color
 red =
-    "red"
+    Color "red"
 
 
 orange : Color
 orange =
-    "orange"
+    Color "orange"
 
 
 amber : Color
 amber =
-    "amber"
+    Color "amber"
 
 
 yellow : Color
 yellow =
-    "yellow"
+    Color "yellow"
 
 
 lime : Color
 lime =
-    "lime"
+    Color "lime"
 
 
 green : Color
 green =
-    "green"
+    Color "green"
 
 
 emerald : Color
 emerald =
-    "emerald"
+    Color "emerald"
 
 
 teal : Color
 teal =
-    "teal"
+    Color "teal"
 
 
 cyan : Color
 cyan =
-    "cyan"
+    Color "cyan"
 
 
 sky : Color
 sky =
-    "sky"
+    Color "sky"
 
 
 blue : Color
 blue =
-    "blue"
+    Color "blue"
 
 
 indigo : Color
 indigo =
-    "indigo"
+    Color "indigo"
 
 
 violet : Color
 violet =
-    "violet"
+    Color "violet"
 
 
 purple : Color
 purple =
-    "purple"
+    Color "purple"
 
 
 fuchsia : Color
 fuchsia =
-    "fuchsia"
+    Color "fuchsia"
 
 
 pink : Color
 pink =
-    "pink"
+    Color "pink"
 
 
 rose : Color
 rose =
-    "rose"
+    Color "rose"
 
 
 levels : List ColorLevel
@@ -334,10 +334,16 @@ levels =
 
 
 encodeColor : Color -> Value
-encodeColor color =
+encodeColor (Color color) =
     Encode.string color
 
 
 decodeColor : Decode.Decoder Color
 decodeColor =
-    Decode.string |> Decode.andThen (\name -> all |> List.find (\c -> c == name) |> Maybe.mapOrElse Decode.succeed (Decode.fail ("Unknown color: '" ++ name ++ "'")))
+    Decode.string |> Decode.andThen (\name -> all |> List.find (\(Color c) -> c == name) |> Maybe.mapOrElse Decode.succeed (Decode.fail ("Unknown color: '" ++ name ++ "'")))
+
+
+extractColor : Color -> String
+extractColor (Color color) =
+    -- FIXME this function should be removed when possible
+    color

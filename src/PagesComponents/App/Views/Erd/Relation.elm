@@ -5,7 +5,7 @@ import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
-import Libs.Tailwind exposing (Color)
+import Libs.Tailwind as Tw exposing (Color)
 import Models.ColumnRefFull exposing (ColumnRefFull)
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.RelationName exposing (RelationName)
@@ -95,7 +95,7 @@ viewLine p1 p2 optional color =
             , y2 (String.fromFloat p2.y)
             , style
                 (color
-                    |> M.mapOrElse (\c -> "stroke: var(--tw-" ++ c ++ "); stroke-width: 3;")
+                    |> M.mapOrElse (\c -> "stroke: var(--tw-" ++ Tw.extractColor c ++ "); stroke-width: 3;")
                         "stroke: #A0AEC0; stroke-width: 2;"
                 )
             ]
