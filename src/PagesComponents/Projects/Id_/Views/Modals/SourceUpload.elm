@@ -11,13 +11,14 @@ import Html.Attributes exposing (class, disabled, id)
 import Html.Events exposing (onClick)
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (role)
+import Libs.Html.Attributes exposing (css, role)
 import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Tailwind exposing (sm)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsMsg(..), SourceUploadDialog)
@@ -58,7 +59,7 @@ viewSourceUpload zone now opened model =
 localFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SQLSource Msg -> List (Html Msg)
 localFileModal zone now titleId source fileName updatedAt model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
-        [ div [ class "mt-3 sm:mt-5" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
                 [ text ("Refresh " ++ source.name ++ " source") ]
             , div [ class "mt-2" ]
@@ -107,7 +108,7 @@ localFileModal zone now titleId source fileName updatedAt model =
 remoteFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> SQLSource Msg -> List (Html Msg)
 remoteFileModal zone now titleId source fileUrl model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
-        [ div [ class "mt-3 sm:mt-5" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
                 [ text ("Refresh " ++ source.name ++ " source") ]
             , div [ class "mt-2" ]
@@ -137,7 +138,7 @@ remoteFileModal zone now titleId source fileUrl model =
 userDefinedModal : HtmlId -> List (Html Msg)
 userDefinedModal titleId =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
-        [ div [ class "mt-3 sm:mt-5" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
                 [ text "This is a user source, it can't be refreshed!" ]
             ]
@@ -160,7 +161,7 @@ userDefinedModal titleId =
 newSourceModal : HtmlId -> SQLSource Msg -> List (Html Msg)
 newSourceModal titleId model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
-        [ div [ class "mt-3 sm:mt-5" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
                 [ text "Add a new source" ]
             , div [ class "mt-2" ]

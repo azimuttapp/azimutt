@@ -56,11 +56,11 @@ viewFindPath opened tables settings model =
 
 viewHeader : String -> Html msg
 viewHeader titleId =
-    div [ class "pt-6 px-6 sm:flex sm:items-start" ]
-        [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 sm:mx-0 sm:h-10 sm:w-10" ] ]
+    div [ css [ "pt-6 px-6", sm [ "flex items-start" ] ] ]
+        [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100", sm [ "mx-0 h-10 w-10" ] ] ]
             [ Icon.outline LocationMarker "text-primary-600"
             ]
-        , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
+        , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Find a path between tables" ]
             , p [ class "text-sm text-gray-500" ]
                 [ text "Use relations to find a path between two tables. Useful when you don't know how tables are connected but you want to query their data together." ]
@@ -121,9 +121,9 @@ stringList str =
 
 viewSettingsInput : String -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg
 viewSettingsInput fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldValue msg =
-    div [ class "sm:grid sm:grid-cols-4 sm:gap-3 sm:items-start sm:mt-3" ]
-        [ label [ for fieldId, class "block text-sm font-medium text-gray-700 sm:mt-px sm:pt-2" ] [ text fieldLabel ]
-        , div [ class "mt-1 sm:mt-0 sm:col-span-3" ]
+    div [ css [ sm [ "grid grid-cols-4 gap-3 items-start mt-3" ] ] ]
+        [ label [ for fieldId, css [ "block text-sm font-medium text-gray-700", sm [ "mt-px pt-2" ] ] ] [ text fieldLabel ]
+        , div [ css [ "mt-1", sm [ "mt-0 col-span-3" ] ] ]
             [ input [ type_ fieldType, id fieldId, value fieldValue, onInput msg, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "w-full border-gray-300 rounded-md shadow-sm", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
             , p [ id (fieldId ++ "-help"), class "text-sm text-gray-500" ] [ text fieldHelp ]
             ]
@@ -140,7 +140,7 @@ viewSearchForm modalId tables from to =
 
 viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId ErdTable -> Html Msg
 viewSelectCard fieldId title description selectedValue buildMsg tables =
-    div [ class "flex-grow p-3 border border-gray-300 rounded-md shadow-sm sm:col-span-3" ]
+    div [ css [ "flex-grow p-3 border border-gray-300 rounded-md shadow-sm", sm [ "col-span-3" ] ] ]
         [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text title ]
         , div [ class "mt-1" ]
             [ select [ id fieldId, onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), css [ "block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]

@@ -14,7 +14,7 @@ import Libs.Maybe as M
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.Tailwind exposing (TwClass, focus, sm)
+import Libs.Tailwind exposing (TwClass, focus, lg, sm)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -25,7 +25,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
 viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
     div [ class "ml-6" ]
-        [ div [ class "max-w-lg w-full lg:max-w-xs" ]
+        [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
             [ label [ for htmlId, class "sr-only" ] [ text "Search" ]
             , Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
                 (\m ->

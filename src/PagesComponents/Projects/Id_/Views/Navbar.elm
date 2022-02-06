@@ -23,7 +23,7 @@ import Libs.Maybe as M
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, batch, focus, focus_ring_offset_600, hover)
+import Libs.Tailwind exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.Project.CanvasProps as CanvasProps
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -55,9 +55,9 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
             erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
     in
     nav [ css [ "tw-navbar relative z-max bg-primary-600" ] ]
-        [ div [ class "mx-auto px-2 lg:px-8 sm:px-4" ]
+        [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
-                [ div [ class "flex items-center px-2 lg:px-0" ]
+                [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
                     [ viewNavbarBrand
                     , Lazy.lazy6 viewNavbarSearch model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
@@ -66,7 +66,7 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
                     [ Lazy.lazy6 viewNavbarTitle erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
-                , div [ class "hidden lg:block lg:ml-4" ]
+                , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
                     [ div [ class "flex items-center" ]
                         [ viewNavbarResetLayout canResetCanvas
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
@@ -83,7 +83,7 @@ viewNavbarBrand : Html msg
 viewNavbarBrand =
     a [ href (Route.toHref Route.Projects), class "flex justify-start items-center flex-shrink-0 font-medium" ]
         [ img [ class "block h-8 h-8", src "/logo.png", alt "Azimutt", width 32, height 32 ] []
-        , span [ class "ml-3 text-2xl text-white hidden lg:block" ] [ text "Azimutt" ]
+        , span [ css [ "ml-3 text-2xl text-white hidden", lg [ "block" ] ] ] [ text "Azimutt" ]
         ]
 
 
@@ -132,7 +132,7 @@ viewNavbarSettings =
 
 navbarMobileButton : Bool -> Html Msg
 navbarMobileButton open =
-    div [ class "flex lg:hidden" ]
+    div [ css [ "flex", lg [ "hidden" ] ] ]
         [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ "inline-flex items-center justify-center p-2 rounded-md text-primary-200", hover [ "text-white bg-primary-500" ], focus [ "outline-none ring-2 ring-inset ring-white" ] ] ]
             [ span [ class "sr-only" ] [ text "Open main menu" ]
             , Icon.outline Menu (B.cond open "hidden" "block")
@@ -156,7 +156,7 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
         btnStyle =
             batch [ "text-primary-100 flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium", hover [ "bg-primary-500 text-white" ], focus [ "outline-none" ] ]
     in
-    div [ css [ "lg:hidden", B.cond isOpen "" "hidden" ], id "mobile-menu" ]
+    div [ css [ lg [ "hidden" ], B.cond isOpen "" "hidden" ], id "mobile-menu" ]
         ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, class btnStyle ] [ text "Reset canvas" ] ] []
          , features
             |> List.map

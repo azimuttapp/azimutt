@@ -32,11 +32,11 @@ viewCreateLayout opened model =
         , isOpen = opened
         , onBackgroundClick = ModalClose (LayoutMsg LCancel)
         }
-        [ div [ class "px-6 pt-6 sm:flex sm:items-start" ]
-            [ div [ class "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100 sm:mx-0 sm:h-10 sm:w-10" ]
+        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
+            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100", sm [ "mx-0 h-10 w-10" ] ] ]
                 [ Icon.outline Template "text-primary-600"
                 ]
-            , div [ class "mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left" ]
+            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
                     [ text "Save your layout" ]
                 , div [ class "mt-2" ]

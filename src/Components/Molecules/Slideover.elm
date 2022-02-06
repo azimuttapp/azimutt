@@ -14,7 +14,7 @@ import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css
 import Libs.Models exposing (Millis)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (focus, hover)
+import Libs.Tailwind exposing (focus, hover, sm)
 
 
 type alias Model msg =
@@ -44,7 +44,7 @@ slideover model content =
                 [ div [ css [ "w-screen max-w-md transform transition ease-in-out", "duration-" ++ String.fromInt duration, B.cond model.isOpen "translate-x-0" "translate-x-full" ] ]
                     [ div [ id model.id, class "h-full flex flex-col bg-white shadow-xl" ]
                         [ header labelId model.title model.onClickClose
-                        , div [ class "flex-1 relative overflow-y-scroll px-4 sm:px-6" ] [ content ]
+                        , div [ css [ "flex-1 relative overflow-y-scroll px-4", sm [ "px-6" ] ] ] [ content ]
                         ]
                     ]
                 ]
@@ -54,7 +54,7 @@ slideover model content =
 
 header : HtmlId -> String -> msg -> Html msg
 header labelId title onClose =
-    div [ class "py-6 px-4 sm:px-6" ]
+    div [ css [ "py-6 px-4", sm [ "px-6" ] ] ]
         [ div [ class "flex items-start justify-between" ]
             [ h2 [ class "text-lg font-medium text-gray-900", id labelId ] [ text title ]
             , div [ class "ml-3 h-7 flex items-center" ] [ closeBtn onClose ]
@@ -117,7 +117,7 @@ doc =
                             , onClickClose = setOpen False
                             , onClickOverlay = setOpen False
                             }
-                            (div [ class "absolute inset-0 pb-6 px-4 sm:px-6" ]
+                            (div [ css [ "absolute inset-0 pb-6 px-4", sm [ "px-6" ] ] ]
                                 [ div [ class "h-full border-2 border-dashed border-gray-200", ariaHidden True ]
                                     []
                                 ]

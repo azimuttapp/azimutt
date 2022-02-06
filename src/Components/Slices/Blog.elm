@@ -7,7 +7,7 @@ import Html.Attributes exposing (class, datetime, href)
 import Libs.DateTime as DateTime
 import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as M
-import Libs.Tailwind exposing (hover)
+import Libs.Tailwind exposing (hover, lg, md, sm)
 import Time
 
 
@@ -33,17 +33,17 @@ type alias Article =
 
 articleList : Model -> Html msg
 articleList model =
-    div [ class "bg-white pt-16 pb-20 px-4 lg:pt-24 lg:pb-28 lg:px-8 sm:px-6" ]
-        [ div [ class "relative max-w-lg mx-auto divide-y-2 divide-gray-200 lg:max-w-7xl" ]
+    div [ css [ "bg-white pt-16 pb-20 px-4", sm [ "px-6" ], lg [ "pt-24 pb-28 px-8" ] ] ]
+        [ div [ css [ "relative max-w-lg mx-auto divide-y-2 divide-gray-200", lg [ "max-w-7xl" ] ] ]
             [ div []
-                [ h2 [ class "text-3xl tracking-tight font-extrabold text-gray-900 sm:text-4xl" ] [ text model.title ]
-                , div [ class "mt-3 lg:grid lg:grid-cols-2 lg:gap-5 lg:items-center sm:mt-4" ]
+                [ h2 [ css [ "text-3xl tracking-tight font-extrabold text-gray-900", sm [ "text-4xl" ] ] ] [ text model.title ]
+                , div [ css [ "mt-3", sm [ "mt-4" ], lg [ "grid grid-cols-2 gap-5 items-center" ] ] ]
                     ([ p [ class "text-xl text-gray-500" ] [ text model.headline ]
                      ]
                         ++ (model.newsletter |> M.mapOrElse (\form -> [ Newsletter.small form ]) [])
                     )
                 ]
-            , div [ class "mt-6 pt-10 grid gap-16 lg:grid-cols-2 lg:gap-x-5 lg:gap-y-12" ] (model.articles |> List.map articleItem)
+            , div [ css [ "mt-6 pt-10 grid gap-16", lg [ "grid-cols-2 gap-x-5 gap-y-12" ] ] ] (model.articles |> List.map articleItem)
             ]
         ]
 
@@ -66,7 +66,7 @@ article : Article -> Html msg
 article model =
     div []
         [ time [ datetime (model.date |> DateTime.formatUtc "yyyy-MM-dd"), class "uppercase text-xs text-gray-500 font-bold" ] [ text (model.date |> DateTime.formatUtc "MMM dd, yyyy") ]
-        , h2 [ class "mt-1 text-2xl tracking-tight font-extrabold text-gray-900 md:text-3xl sm:leading-none" ]
+        , h2 [ css [ "mt-1 text-2xl tracking-tight font-extrabold text-gray-900", md [ "text-3xl leading-none" ] ] ]
             [ a [ href model.link ] [ text model.title ] ]
         , div [ class "mt-6" ]
             [ p [] [ text model.excerpt ] ]

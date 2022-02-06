@@ -10,7 +10,7 @@ import Html.Attributes exposing (alt, href, src, type_)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, css)
 import Libs.Models exposing (Image)
 import Libs.Models.Color as Color
-import Libs.Tailwind exposing (focus, hover, lg, md, sm, xl)
+import Libs.Tailwind exposing (batch, focus, hover, lg, md, sm, xl)
 
 
 basicSlice : Html msg
@@ -18,8 +18,8 @@ basicSlice =
     div [ css [ "relative bg-gray-50 overflow-hidden" ] ]
         [ div [ css [ "hidden", sm [ "block absolute inset-y-0 h-full w-full" ] ], ariaHidden True ]
             [ div [ css [ "relative h-full max-w-7xl mx-auto" ] ]
-                [ Dots.dots "f210dbf6-a58d-4871-961e-36d5016a0f49" 404 784 "right-full translate-y-1/4 translate-x-1/4 lg:translate-x-1/2"
-                , Dots.dots "5d0dd344-b041-4d26-bec4-8d33ea57ec9b" 404 784 "left-full -translate-y-3/4 -translate-x-1/4 lg:-translate-x-1/2 md:-translate-y-1/2"
+                [ Dots.dots "f210dbf6-a58d-4871-961e-36d5016a0f49" 404 784 (batch [ "right-full translate-y-1/4 translate-x-1/4", lg [ "translate-x-1/2" ] ])
+                , Dots.dots "5d0dd344-b041-4d26-bec4-8d33ea57ec9b" 404 784 (batch [ "left-full -translate-y-3/4 -translate-x-1/4", md [ "-translate-y-1/2" ], lg [ "-translate-x-1/2" ] ])
                 ]
             ]
         , div [ css [ "relative pt-6 pb-16", sm [ "pb-24" ] ] ]

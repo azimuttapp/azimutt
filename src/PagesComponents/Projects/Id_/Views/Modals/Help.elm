@@ -14,6 +14,7 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Tailwind exposing (sm)
 import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
 
 
@@ -31,7 +32,7 @@ viewHelp opened model =
         , onBackgroundClick = ModalClose (HelpMsg HClose)
         }
         [ div [ class "max-w-3xl mx-6 mt-6" ]
-            [ div [ class "mt-3 text-center sm:mt-5" ]
+            [ div [ css [ "mt-3 text-center", sm [ "mt-5" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
                     [ text "🎊 Hey! Welcome to Azimutt 🎊" ]
                 , div [ class "mt-2" ]

@@ -11,7 +11,7 @@ import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Libs.Html.Attributes exposing (ariaLive, css)
 import Libs.Models.Color as Color exposing (Color)
-import Libs.Tailwind exposing (TwClass, focus_ring_500, hover, text_400)
+import Libs.Tailwind exposing (TwClass, batch, focus_ring_500, hover, sm, text_400)
 
 
 type alias Model =
@@ -63,10 +63,10 @@ toast content isOpen =
         toastBlock : TwClass
         toastBlock =
             if isOpen then
-                "transition ease-in duration-100 opacity-100 transform translate-y-0 sm:translate-x-2"
+                batch [ "transition ease-in duration-100 opacity-100 transform translate-y-0", sm [ "translate-x-2" ] ]
 
             else
-                "transition ease-out duration-300 opacity-0 transform translate-y-2 pointer-events-none sm:translate-y-0 sm:translate-x-0"
+                batch [ "transition ease-out duration-300 opacity-0 transform translate-y-2 pointer-events-none", sm [ "translate-y-0 translate-x-0" ] ]
     in
     div [ css [ "max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden", toastBlock ] ]
         [ div [ class "p-4" ]
@@ -77,9 +77,9 @@ toast content isOpen =
 
 container : List Model -> (String -> msg) -> Html msg
 container toasts close =
-    div [ ariaLive "assertive", class "fixed inset-0 flex items-end px-4 py-6 z-max pointer-events-none sm:p-6 sm:items-end" ]
+    div [ ariaLive "assertive", css [ "fixed inset-0 flex items-end px-4 py-6 z-max pointer-events-none", sm [ "p-6 items-end" ] ] ]
         [ Keyed.node "div"
-            [ class "w-full flex flex-col items-center space-y-4 sm:items-start" ]
+            [ css [ "w-full flex flex-col items-center space-y-4", sm [ "items-start" ] ] ]
             (toasts |> List.map (\t -> render (close t.key) t))
         ]
 
