@@ -8,8 +8,7 @@ import Html.Attributes exposing (type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, css, role)
-import Libs.Models.Color as Color exposing (Color)
-import Libs.Tailwind exposing (bg_500, focus, focusWithin, hover, sm)
+import Libs.Tailwind as Tw exposing (Color, bg_500, focus, focusWithin, hover, sm)
 
 
 type alias IconItem msg =
@@ -50,12 +49,12 @@ doc =
         |> Chapter.renderComponentList
             [ ( "withIcons"
               , withIcons
-                    [ { color = Color.pink, icon = ViewList, title = "Create a List →", description = "Another to-do system you’ll try but eventually give up on.", active = True, onClick = logAction "List clicked" }
-                    , { color = Color.yellow, icon = Calendar, title = "Create a Calendar →", description = "Stay on top of your deadlines, or don’t — it’s up to you.", active = True, onClick = logAction "Calendar clicked" }
-                    , { color = Color.green, icon = Photograph, title = "Create a Gallery →", description = "Great for mood boards and inspiration.", active = True, onClick = logAction "Gallery clicked" }
-                    , { color = Color.blue, icon = ViewBoards, title = "Create a Board →", description = "Track tasks in different stages of your project.", active = True, onClick = logAction "Board clicked" }
-                    , { color = Color.indigo, icon = Table, title = "Create a Spreadsheet →", description = "Lots of numbers and things — good for nerds.", active = True, onClick = logAction "Spreadsheet clicked" }
-                    , { color = Color.purple, icon = Clock, title = "Create a Timeline →", description = "Get a birds-eye-view of your procrastination.", active = True, onClick = logAction "Timeline clicked" }
+                    [ { color = Tw.pink, icon = ViewList, title = "Create a List →", description = "Another to-do system you’ll try but eventually give up on.", active = True, onClick = logAction "List clicked" }
+                    , { color = Tw.yellow, icon = Calendar, title = "Create a Calendar →", description = "Stay on top of your deadlines, or don’t — it’s up to you.", active = True, onClick = logAction "Calendar clicked" }
+                    , { color = Tw.green, icon = Photograph, title = "Create a Gallery →", description = "Great for mood boards and inspiration.", active = True, onClick = logAction "Gallery clicked" }
+                    , { color = Tw.blue, icon = ViewBoards, title = "Create a Board →", description = "Track tasks in different stages of your project.", active = True, onClick = logAction "Board clicked" }
+                    , { color = Tw.indigo, icon = Table, title = "Create a Spreadsheet →", description = "Lots of numbers and things — good for nerds.", active = True, onClick = logAction "Spreadsheet clicked" }
+                    , { color = Tw.purple, icon = Clock, title = "Create a Timeline →", description = "Get a birds-eye-view of your procrastination.", active = True, onClick = logAction "Timeline clicked" }
                     ]
               )
             ]

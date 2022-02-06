@@ -10,9 +10,8 @@ import Html.Attributes exposing (autofocus, class, id)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
-import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (TwClass, batch, bg_100, sm, text_600)
+import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_100, sm, text_600)
 
 
 type alias ConfirmModel msg =
@@ -55,7 +54,7 @@ confirm model isOpen =
             ]
         , div [ css [ "px-6 py-3 mt-6 bg-gray-50", sm [ "flex items-center flex-row-reverse" ] ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text model.confirm ]
-            , Button.white3 Color.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text model.cancel ]
+            , Button.white3 Tw.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text model.cancel ]
             ]
         ]
 
@@ -135,10 +134,10 @@ doc =
             [ component "confirm"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 Color.primary [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Tw.primary [ onClick (setOpen True) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
-                            , color = Color.red
+                            , color = Tw.red
                             , icon = Exclamation
                             , title = "Deactivate account"
                             , message = text "Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
@@ -153,7 +152,7 @@ doc =
             , component "modal"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 Color.primary [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Tw.primary [ onClick (setOpen True) ] [ text "Click me!" ]
                         , modal
                             { id = "modal"
                             , titleId = "modal-title"

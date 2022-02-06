@@ -12,9 +12,8 @@ import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (sm)
+import Libs.Tailwind as Tw exposing (sm)
 import PagesComponents.Projects.Id_.Models exposing (HelpDialog, HelpMsg(..), Msg(..))
 
 
@@ -58,7 +57,7 @@ viewHelp opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Color.primary [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
+            [ Button.primary3 Tw.primary [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
         ]
 
 
@@ -213,17 +212,17 @@ sectionToAccordionItem isOpen section =
 
 tip : Html msg
 tip =
-    Badge.rounded Color.green [] [ text "tip" ]
+    Badge.rounded Tw.green [] [ text "tip" ]
 
 
 soon : Html msg
 soon =
-    Badge.rounded Color.indigo [] [ text "soon" ]
+    Badge.rounded Tw.indigo [] [ text "soon" ]
 
 
 experimental : Html msg
 experimental =
-    Badge.rounded Color.yellow [] [ text "experimental" ]
+    Badge.rounded Tw.yellow [] [ text "experimental" ]
 
 
 hotkey : List String -> Html msg

@@ -4,8 +4,7 @@ import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html, a, button, div, form, h2, input, label, p, text)
 import Html.Attributes exposing (action, attribute, class, for, href, id, method, name, placeholder, rel, required, target, type_)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color as Color
-import Libs.Tailwind exposing (focus, focus_ring_500, hover, lg, sm)
+import Libs.Tailwind as Tw exposing (focus, focus_ring_500, hover, lg, sm)
 
 
 type alias Model msg =
@@ -37,7 +36,7 @@ basicSlice model =
                     [ label [ for "newsletter-email", class "sr-only" ] [ text model.form.placeholder ]
                     , input [ type_ "email", name "member[email]", id "newsletter-email", placeholder model.form.placeholder, attribute "autocomplete" "email", required True, css [ "w-full px-5 py-3 border border-gray-300 shadow-sm placeholder-gray-400 rounded-md", focus [ "ring-1 ring-indigo-500 border-indigo-500" ], sm [ "max-w-xs" ] ] ] []
                     , div [ css [ "mt-3 rounded-md shadow", sm [ "mt-0 ml-3 flex-shrink-0" ] ] ]
-                        [ button [ type_ "submit", css [ "w-full flex items-center justify-center py-3 px-5 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600", hover [ "bg-indigo-700" ], focus_ring_500 Color.indigo ] ]
+                        [ button [ type_ "submit", css [ "w-full flex items-center justify-center py-3 px-5 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600", hover [ "bg-indigo-700" ], focus_ring_500 Tw.indigo ] ]
                             [ text model.form.cta ]
                         ]
                     ]
@@ -68,7 +67,7 @@ small model =
             , input [ type_ "email", name "member[email]", id "newsletter-email", attribute "autocomplete" "email", required True, css [ "appearance-none w-full px-4 py-2 border border-gray-300 text-base rounded-md text-gray-900 bg-white placeholder-gray-500", focus [ "outline-none ring-indigo-500 border-indigo-500" ], lg [ "max-w-xs" ] ], placeholder model.placeholder ] []
             ]
         , div [ css [ "mt-2 flex-shrink-0 w-full flex rounded-md shadow-sm", sm [ "mt-0 ml-3 w-auto inline-flex" ] ] ]
-            [ button [ type_ "submit", css [ "w-full bg-indigo-600 px-4 py-2 border border-transparent rounded-md flex items-center justify-center text-base font-medium text-white", hover [ "bg-indigo-700" ], focus_ring_500 Color.indigo, sm [ "w-auto inline-flex" ] ] ]
+            [ button [ type_ "submit", css [ "w-full bg-indigo-600 px-4 py-2 border border-transparent rounded-md flex items-center justify-center text-base font-medium text-white", hover [ "bg-indigo-700" ], focus_ring_500 Tw.indigo, sm [ "w-auto inline-flex" ] ] ]
                 [ text model.cta ]
             ]
         ]

@@ -9,8 +9,7 @@ import Html exposing (Html, a, button, div, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, href, src, type_)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, css)
 import Libs.Models exposing (Image)
-import Libs.Models.Color as Color
-import Libs.Tailwind exposing (batch, focus, hover, lg, md, sm, xl)
+import Libs.Tailwind as Tw exposing (batch, focus, hover, lg, md, sm, xl)
 
 
 basicSlice : Html msg
@@ -118,7 +117,7 @@ docModel =
     { bg = { src = "https://images.unsplash.com/photo-1521737852567-6949f3f9f2b5?ixid=MXwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=2830&q=80&sat=-100", alt = "People working on laptops" }
     , title = "Take control of your customer support"
     , content = [ text "Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem cupidatat commodo. Elit sunt amet fugiat veniam occaecat fugiat aliqua." ]
-    , cta = Link.white5 Color.indigo [ href "#" ] [ text "Get started" ]
+    , cta = Link.white5 Tw.indigo [ href "#" ] [ text "Get started" ]
     }
 
 

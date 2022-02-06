@@ -4,7 +4,6 @@ import Conf
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Fuzz as F
-import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileSize exposing (FileSize)
@@ -15,6 +14,7 @@ import Libs.Models.Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
+import Libs.Tailwind as Tw exposing (Color)
 import Time
 
 
@@ -64,7 +64,7 @@ zoomLevel =
 
 color : Fuzzer Color
 color =
-    Fuzz.oneOf (Color.list |> List.map Fuzz.constant)
+    Fuzz.oneOf (Tw.list |> List.map Fuzz.constant)
 
 
 

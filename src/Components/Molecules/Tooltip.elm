@@ -5,8 +5,7 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, span, text)
 import Html.Attributes exposing (class)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color as Color
-import Libs.Tailwind exposing (TwClass)
+import Libs.Tailwind as Tw exposing (TwClass)
 
 
 
@@ -85,7 +84,7 @@ doc =
                      , ( "Bottom left", bl "Bottom left aligned tooltip with more text." )
                      , ( "Bottom right", br "Bottom right aligned tooltip with more text." )
                      ]
-                        |> List.map (\( value, buildTooltip ) -> span [ css [ "ml-3" ] ] [ Button.primary3 Color.indigo [] [ text value ] |> buildTooltip ])
+                        |> List.map (\( value, buildTooltip ) -> span [ css [ "ml-3" ] ] [ Button.primary3 Tw.indigo [] [ text value ] |> buildTooltip ])
                     )
               )
             ]

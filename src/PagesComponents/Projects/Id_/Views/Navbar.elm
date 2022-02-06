@@ -20,10 +20,9 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, role)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
+import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.Project.CanvasProps as CanvasProps
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -89,20 +88,20 @@ viewNavbarBrand =
 
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
-    button [ onClick (HelpMsg (HOpen "")), css [ "ml-3 rounded-full", focus_ring_offset_600 Color.primary ] ]
+    button [ onClick (HelpMsg (HOpen "")), css [ "ml-3 rounded-full", focus_ring_offset_600 Tw.primary ] ]
         [ Icon.solid QuestionMarkCircle "text-primary-300" ]
 
 
 viewNavbarResetLayout : Bool -> Html Msg
 viewNavbarResetLayout canResetCanvas =
-    Button.primary3 Color.primary [ onClick resetCanvas, css [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
+    Button.primary3 Tw.primary [ onClick resetCanvas, css [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
 
 
 viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
 viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Tw.primary ] ]
                 [ span [ class "sr-only" ] [ text "View features" ]
                 , Icon.outline LightningBolt ""
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
@@ -124,7 +123,7 @@ viewNavbarFeatures features htmlId openedDropdown =
 
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Tw.primary ] ]
         [ span [ class "sr-only" ] [ text "View settings" ]
         , Icon.outline Cog ""
         ]

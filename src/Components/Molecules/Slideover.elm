@@ -12,9 +12,8 @@ import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models exposing (Millis)
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (focus, hover, sm)
+import Libs.Tailwind as Tw exposing (focus, hover, sm)
 
 
 type alias Model msg =
@@ -109,7 +108,7 @@ doc =
             [ component "slideover"
                 (\isOpen setOpen ->
                     div []
-                        [ Button.primary3 Color.primary [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Tw.primary [ onClick (setOpen True) ] [ text "Click me!" ]
                         , slideover
                             { id = "slideover"
                             , title = "Panel with overlay"

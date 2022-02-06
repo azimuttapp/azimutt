@@ -12,9 +12,8 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, css)
 import Libs.Maybe as M
 import Libs.Models exposing (Image, Link)
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (TwClass, focus, focusWithin, focus_ring_offset_600, hover, lg, sm)
+import Libs.Tailwind as Tw exposing (TwClass, focus, focusWithin, focus_ring_offset_600, hover, lg, sm)
 
 
 type alias AdminModel msg =
@@ -121,7 +120,7 @@ adminSearch search =
             [ label [ for search.id, css [ "sr-only" ] ] [ text "Search" ]
             , div [ css [ "relative text-gray-400", focusWithin [ "]text-gray-600" ] ] ]
                 [ div [ css [ "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] ] [ Icon.solid Search "" ]
-                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ "block w-full bg-white py-2 pl-10 pr-3 border border-transparent rounded-md leading-5 text-gray-900 placeholder-gray-500", focus_ring_offset_600 Color.primary, sm [ "text-sm" ] ] ] []
+                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ "block w-full bg-white py-2 pl-10 pr-3 border border-transparent rounded-md leading-5 text-gray-900 placeholder-gray-500", focus_ring_offset_600 Tw.primary, sm [ "text-sm" ] ] ] []
                 ]
             ]
         ]
@@ -140,7 +139,7 @@ adminMobileMenuButton mobileMenu isOpen =
 
 adminNotifications : AdminNotifications -> Html msg
 adminNotifications _ =
-    button [ type_ "button", css [ "ml-auto flex-shrink-0 rounded-full p-1 bg-primary-600 text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Color.primary ] ]
+    button [ type_ "button", css [ "ml-auto flex-shrink-0 rounded-full p-1 bg-primary-600 text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Tw.primary ] ]
         [ span [ css [ "sr-only" ] ] [ text "View notifications" ]
         , Icon.outline Bell ""
         ]
@@ -150,7 +149,7 @@ adminProfile : Bool -> AdminProfile msg -> Html msg
 adminProfile isOpen profile =
     Dropdown.dropdown { id = profile.id, direction = BottomLeft, isOpen = isOpen }
         (\m ->
-            button [ type_ "button", id m.id, onClick profile.onClick, css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Color.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
+            button [ type_ "button", id m.id, onClick profile.onClick, css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
                 [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
                 , img [ css [ "rounded-full h-8 w-8" ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]

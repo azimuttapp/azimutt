@@ -1,9 +1,9 @@
 module PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps, create, createAll)
 
 import Dict exposing (Dict)
-import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
+import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnName exposing (ColumnName)
 import Set exposing (Set)
 

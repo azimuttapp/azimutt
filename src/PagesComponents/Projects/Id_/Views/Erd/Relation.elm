@@ -4,9 +4,9 @@ import Components.Organisms.Relation as Relation
 import Conf
 import Libs.Bool as B
 import Libs.Maybe as M
-import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
+import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnRef as ColumnRef
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)

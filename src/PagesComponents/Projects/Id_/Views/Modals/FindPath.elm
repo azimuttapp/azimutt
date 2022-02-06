@@ -15,11 +15,10 @@ import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.String as String
-import Libs.Tailwind exposing (focus, sm)
+import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
@@ -71,7 +70,7 @@ viewHeader titleId =
 viewAlert : Html msg
 viewAlert =
     div [ class "px-6 mt-3" ]
-        [ Alert.withDescription { color = Color.yellow, icon = Exclamation, title = "Experimental feature" }
+        [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Experimental feature" }
             [ text "This feature is experimental to see if and how it's useful and "
             , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "gather some feedback" ]
             , text "."
@@ -249,17 +248,17 @@ viewFooter settings model =
         (case ( model.from, model.to, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
-                    [ Button.primary3 Color.primary [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
+                    [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
 
                 else
-                    [ Button.primary3 Color.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
+                    [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
 
             ( Just _, Just _, FindPathState.Searching ) ->
-                [ Button.primary3 Color.primary [ disabled True ] [ Icon.loading "-ml-1 mr-2 animate-spin", text "Searching..." ] ]
+                [ Button.primary3 Tw.primary [ disabled True ] [ Icon.loading "-ml-1 mr-2 animate-spin", text "Searching..." ] ]
 
             ( Just _, Just _, FindPathState.Empty ) ->
-                [ Button.primary3 Color.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
+                [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
 
             _ ->
-                [ Button.primary3 Color.primary [ disabled True ] [ text "Search" ] ]
+                [ Button.primary3 Tw.primary [ disabled True ] [ text "Search" ] ]
         )

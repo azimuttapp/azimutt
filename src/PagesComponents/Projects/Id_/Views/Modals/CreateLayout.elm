@@ -9,9 +9,8 @@ import Html.Attributes exposing (autofocus, class, for, id, name, tabindex, type
 import Html.Events exposing (onClick, onInput)
 import Libs.Html exposing (bText, sendTweet)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (focus, sm)
+import Libs.Tailwind as Tw exposing (focus, sm)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 
 
@@ -55,7 +54,7 @@ viewCreateLayout opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Color.primary [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text "Save layout" ]
-            , Button.white3 Color.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
+            [ Button.primary3 Tw.primary [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text "Save layout" ]
+            , Button.white3 Tw.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]

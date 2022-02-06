@@ -13,9 +13,8 @@ import Html.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
-import Libs.Models.Color as Color
 import Libs.String as S
-import Libs.Tailwind exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
+import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
@@ -151,7 +150,7 @@ viewProjectCard zone project =
 confirmDeleteProject : Project -> Msg
 confirmDeleteProject project =
     ConfirmOpen
-        { color = Color.red
+        { color = Tw.red
         , icon = Trash
         , title = "Delete project"
         , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
@@ -164,7 +163,7 @@ confirmDeleteProject project =
 viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Color.primary ] ]
+        [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Tw.primary ] ]
             [ Icon.outline2x DocumentAdd "mx-auto"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]

@@ -18,12 +18,11 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role, tra
 import Libs.Html.Events exposing (onPointerUp)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as S
-import Libs.Tailwind exposing (TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
+import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
 import Track
 
@@ -144,7 +143,7 @@ viewHeader model =
         [ css
             [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b border-b-default-200"
             , border_500 model.state.color
-            , bg_50 (B.cond model.state.isHover model.state.color Color.default)
+            , bg_50 (B.cond model.state.isHover model.state.color Tw.default)
             ]
         ]
         [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), class "flex-grow text-center" ]
@@ -421,7 +420,7 @@ sample =
           }
         ]
     , state =
-        { color = Color.indigo
+        { color = Tw.indigo
         , isHover = False
         , highlightedColumns = Set.empty
         , selected = False

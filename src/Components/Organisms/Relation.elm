@@ -5,9 +5,8 @@ import Html exposing (div)
 import Html.Attributes as Html
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Tailwind exposing (stroke_500)
+import Libs.Tailwind as Tw exposing (Color, stroke_500)
 import Svg exposing (Svg, svg, text)
 import Svg.Attributes exposing (class, height, strokeDasharray, style, width, x1, x2, y1, y2)
 
@@ -61,7 +60,7 @@ doc =
     Chapter.chapter "Relation"
         |> Chapter.renderComponentList
             ([ ( "line", line Position.zero (Position 50 50) False Nothing "relation" 10 )
-             , ( "green", line Position.zero (Position 50 50) False (Just Color.green) "relation" 10 )
+             , ( "green", line Position.zero (Position 50 50) False (Just Tw.green) "relation" 10 )
              , ( "nullable", line Position.zero (Position 50 50) True Nothing "relation" 10 )
              ]
                 |> List.map (Tuple.mapSecond (\component -> div [ Html.style "height" "100px" ] [ component ]))

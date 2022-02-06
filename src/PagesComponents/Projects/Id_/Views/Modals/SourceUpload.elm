@@ -13,12 +13,11 @@ import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Maybe as M
-import Libs.Models.Color as Color
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (sm)
+import Libs.Tailwind as Tw exposing (sm)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsMsg(..), SourceUploadDialog)
@@ -87,7 +86,7 @@ localFileModal zone now titleId source fileName updatedAt model =
 
                             else
                                 div [ class "mt-3" ]
-                                    [ Alert.withDescription { color = Color.yellow, icon = Exclamation, title = "Found some strange things" }
+                                    [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Found some strange things" }
                                         [ ul [ role "list", class "list-disc list-inside" ]
                                             (warnings |> List.map (\warning -> li [] warning))
                                         ]
@@ -124,7 +123,7 @@ remoteFileModal zone now titleId source fileUrl model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Color.primary [ onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
+            [ Button.primary5 Tw.primary [ onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
             ]
         , SQLSource.viewParsing model
         ]
@@ -187,9 +186,9 @@ newSourceModal titleId model =
 
 primaryBtn : Maybe Msg -> String -> Html Msg
 primaryBtn clicked label =
-    Button.primary3 Color.primary (clicked |> M.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
+    Button.primary3 Tw.primary (clicked |> M.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
 
 
 closeBtn : Html Msg
 closeBtn =
-    Button.white3 Color.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]
+    Button.white3 Tw.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]

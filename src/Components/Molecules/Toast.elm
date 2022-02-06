@@ -10,8 +10,7 @@ import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Libs.Html.Attributes exposing (ariaLive, css)
-import Libs.Models.Color as Color exposing (Color)
-import Libs.Tailwind exposing (TwClass, batch, focus_ring_500, hover, sm, text_400)
+import Libs.Tailwind as Tw exposing (Color, TwClass, batch, focus_ring_500, hover, sm, text_400)
 
 
 type alias Model =
@@ -47,7 +46,7 @@ simple onClose isOpen model =
                 , p [ class "mt-1 text-sm text-gray-500" ] [ text model.message ]
                 ]
             , div [ class "ml-4 flex-shrink-0 flex" ]
-                [ button [ onClick onClose, css [ "bg-white rounded-md inline-flex text-gray-400", hover [ "text-gray-500" ], focus_ring_500 Color.primary ] ]
+                [ button [ onClick onClose, css [ "bg-white rounded-md inline-flex text-gray-400", hover [ "text-gray-500" ], focus_ring_500 Tw.primary ] ]
                     [ span [ class "sr-only" ] [ text "Close" ]
                     , Icon.solid X ""
                     ]
@@ -125,14 +124,14 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Toast"
         |> Chapter.renderStatefulComponentList
-            [ ( "simple", \_ -> simple noop True { color = Color.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
+            [ ( "simple", \_ -> simple noop True { color = Tw.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
             , ( "add toasts"
               , \{ toastDocState } ->
-                    Button.primary3 Color.primary
+                    Button.primary3 Tw.primary
                         [ onClick
                             (addToast
                                 (Simple
-                                    { color = Color.green
+                                    { color = Tw.green
                                     , icon = CheckCircle
                                     , title = (toastDocState.index |> String.fromInt) ++ ". Successfully saved!"
                                     , message = "Anyone with a link can now view this file."

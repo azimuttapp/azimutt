@@ -16,7 +16,7 @@ import Libs.Bootstrap exposing (Toggle(..), bsToggle)
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
-import Libs.Models.Color as Color
+import Libs.Tailwind as Tw
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Home_.Models exposing (Model)
 import Track
@@ -32,11 +32,11 @@ viewHome model =
                 |> M.mapOrElse
                     (\p ->
                         div []
-                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
-                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ "ml-3" ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                            [ Link.white5 Tw.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                            , Link.white5 Tw.indigo ([ href (Route.toHref Route.Projects), css [ "ml-3" ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
                             ]
                     )
-                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
+                    (Link.white5 Tw.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
     in
     [ Helpers.publicHeader
     , Hero.backgroundImageSlice
@@ -142,7 +142,7 @@ viewHome model =
                 , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
                 , br [] []
-                , Badge.basic Color.red [] [ text "soon" ]
+                , Badge.basic Tw.red [] [ text "soon" ]
                 , text " It will make you a "
                 , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
                 , text ", just as you like!"

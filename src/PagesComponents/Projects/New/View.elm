@@ -14,9 +14,8 @@ import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaCurrent, css)
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (hover, lg, sm)
+import Libs.Tailwind as Tw exposing (hover, lg, sm)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
@@ -159,7 +158,7 @@ viewActions : ProjectId -> Source -> Html Msg
 viewActions projectId source =
     div [ css [ "mt-6" ] ]
         [ div [ css [ "flex justify-end" ] ]
-            [ Button.white3 Color.primary [ onClick DropSchema ] [ text "Trash this" ]
-            , Button.primary3 Color.primary [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
+            [ Button.white3 Tw.primary [ onClick DropSchema ] [ text "Trash this" ]
+            , Button.primary3 Tw.primary [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
             ]
         ]

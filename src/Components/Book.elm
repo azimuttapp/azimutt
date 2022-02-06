@@ -39,7 +39,7 @@ import ElmBook.ThemeOptions
 import Html exposing (img, node, table, td, text, th, tr)
 import Html.Attributes exposing (alt, href, rel, src)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color as Color
+import Libs.Tailwind as Tw
 
 
 type alias DocState =
@@ -100,13 +100,13 @@ colorsDoc =
         |> Chapter.renderComponentList
             [ ( "Color"
               , table []
-                    (tr [] (th [] [] :: (Color.levels |> List.map (\l -> th [ css [ "w-24 text-center" ] ] [ text (String.fromInt l) ])))
-                        :: (Color.all
+                    (tr [] (th [] [] :: (Tw.levels |> List.map (\l -> th [ css [ "w-24 text-center" ] ] [ text (String.fromInt l) ])))
+                        :: (Tw.all
                                 |> List.map
                                     (\color ->
                                         tr []
                                             (th [ css [ "h-10" ] ] [ text color ]
-                                                :: (Color.levels |> List.map (\level -> td [ css [ "bg-" ++ color ++ "-" ++ String.fromInt level ] ] []))
+                                                :: (Tw.levels |> List.map (\level -> td [ css [ "bg-" ++ color ++ "-" ++ String.fromInt level ] ] []))
                                             )
                                     )
                            )

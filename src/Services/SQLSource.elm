@@ -19,10 +19,10 @@ import Libs.Html exposing (bText)
 import Libs.List as L
 import Libs.Maybe as M
 import Libs.Models exposing (FileContent, FileLineContent)
-import Libs.Models.Color as Color
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Result as R
 import Libs.String as S
+import Libs.Tailwind as Tw
 import Libs.Task as T
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
@@ -336,10 +336,10 @@ viewErrorAlert model =
     else
         div [ class "mt-6" ]
             [ Alert.withActions
-                { color = Color.red
+                { color = Tw.red
                 , icon = XCircle
                 , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (model.schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
-                , actions = [ Link.light2 Color.red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
+                , actions = [ Link.light2 Tw.red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
                 }
                 [ p []
                     [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it. "
@@ -402,7 +402,7 @@ viewSourceDiff newSource oldSource =
     in
     if L.nonEmpty updatedTables || L.nonEmpty newTables || L.nonEmpty removedTables || L.nonEmpty updatedRelations || L.nonEmpty newRelations || L.nonEmpty removedRelations then
         div [ class "mt-3" ]
-            [ Alert.withDescription { color = Color.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
+            [ Alert.withDescription { color = Tw.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
                 [ ul [ class "list-disc list-inside" ]
                     ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( _, t ) -> TableId.show t.id))
                      , viewSourceDiffItem "new table" (newTables |> List.map (\t -> TableId.show t.id))
@@ -418,7 +418,7 @@ viewSourceDiff newSource oldSource =
 
     else
         div [ class "mt-3" ]
-            [ Alert.withDescription { color = Color.green, icon = CheckCircle, title = "Source parsed" }
+            [ Alert.withDescription { color = Tw.green, icon = CheckCircle, title = "Source parsed" }
                 [ text "There is no differences but you can still refresh the source to change the last updated date." ]
             ]
 

@@ -8,12 +8,12 @@ import Libs.Dict as D
 import Libs.Json.Decode as D
 import Libs.Maybe as M
 import Libs.Models exposing (UID)
-import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
+import Libs.Tailwind as Tw exposing (Color)
 import Libs.Time as Time
 import Models.ColumnOrder exposing (ColumnOrder(..))
 import Models.Project exposing (Project)
@@ -568,7 +568,7 @@ decodeTableProps =
     Decode.map5 TablePropsV1
         (Decode.field "id" decodeTableId)
         (Decode.field "position" Position.decode)
-        (Decode.field "color" Color.decode)
+        (Decode.field "color" Tw.decodeColor)
         (D.defaultField "columns" (Decode.list Decode.string) [])
         (D.defaultField "selected" Decode.bool False)
 

@@ -3,8 +3,7 @@ module Components.Atoms.Badge exposing (basic, doc, rounded)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, span, text)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.Color as Color exposing (Color)
-import Libs.Tailwind exposing (bg_100, text_800)
+import Libs.Tailwind as Tw exposing (Color, bg_100, text_800)
 
 
 basic : Color -> List (Attribute msg) -> List (Html msg) -> Html msg
@@ -25,6 +24,6 @@ doc : Chapter x
 doc =
     Chapter.chapter "Badge"
         |> Chapter.renderComponentList
-            [ ( "basic", basic Color.primary [] [ text "Badge" ] )
-            , ( "rounded", rounded Color.primary [] [ text "Badge" ] )
+            [ ( "basic", basic Tw.primary [] [ text "Badge" ] )
+            , ( "rounded", rounded Tw.primary [] [ text "Badge" ] )
             ]

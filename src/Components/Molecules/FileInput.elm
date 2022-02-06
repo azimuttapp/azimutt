@@ -7,10 +7,9 @@ import Html exposing (Html, div, label, p, span, text)
 import Html.Attributes exposing (for)
 import Libs.FileInput as FileInput exposing (File)
 import Libs.Html.Attributes exposing (css, role)
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (focus_ring_within_600, hover)
+import Libs.Tailwind as Tw exposing (focus_ring_within_600, hover)
 
 
 basic : HtmlId -> (File -> msg) -> msg -> Html msg
@@ -30,7 +29,7 @@ type alias Model msg =
 input : Model msg -> Html msg
 input model =
     label
-        ([ for model.id, role "button", css [ "flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md text-gray-600", hover [ "border-primary-400 text-primary-600" ], focus_ring_within_600 Color.primary ] ]
+        ([ for model.id, role "button", css [ "flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md text-gray-600", hover [ "border-primary-400 text-primary-600" ], focus_ring_within_600 Tw.primary ] ]
             ++ FileInput.onDrop { onDrop = model.onDrop, onOver = model.onOver, onLeave = model.onLeave }
         )
         [ div [ css [ "space-y-1 text-center" ] ]
