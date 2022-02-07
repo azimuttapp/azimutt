@@ -2,13 +2,11 @@ module Components.Molecules.Alert exposing (ActionsModel, DescriptionModel, List
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, div, h3, li, text, ul)
-import Html.Styled.Attributes exposing (css)
-import Libs.Html.Styled.Attributes exposing (role)
-import Libs.Models.Color as Color exposing (Color)
-import Tailwind.Utilities as Tw
+import ElmBook.Chapter as Chapter exposing (Chapter)
+import Html exposing (Html, div, h3, li, text, ul)
+import Html.Attributes exposing (class)
+import Libs.Html.Attributes exposing (css, role)
+import Libs.Tailwind as Tw exposing (Color, bg_50, border_400, text_400, text_700, text_800)
 
 
 type alias DescriptionModel =
@@ -74,42 +72,42 @@ type alias Model msg =
 
 alert : Model msg -> Html msg
 alert model =
-    div [ css [ Color.bg model.color 50, Tw.p_4, Tw.border_l_4, Color.border model.color 400 ] ]
-        [ div [ css [ Tw.flex ] ]
+    div [ css [ "p-4 border-l-4", bg_50 model.color, border_400 model.color ] ]
+        [ div [ class "flex" ]
             [ alertIcon model.color model.icon
-            , div [ css [ Tw.ml_3 ] ] model.content
+            , div [ class "ml-3" ] model.content
             ]
         ]
 
 
 alertIcon : Color -> Icon -> Html msg
 alertIcon color icon =
-    div [ css [ Tw.flex_shrink_0 ] ]
-        [ Icon.solid icon [ Color.text color 400 ] ]
+    div [ class "flex-shrink-0" ]
+        [ Icon.solid icon (text_400 color) ]
 
 
 alertTitle : Color -> String -> Html msg
 alertTitle color title =
-    h3 [ css [ Tw.text_sm, Tw.font_medium, Color.text color 800 ] ] [ text title ]
+    h3 [ css [ "text-sm font-medium", text_800 color ] ] [ text title ]
 
 
 alertDescription : Color -> List (Html msg) -> Html msg
 alertDescription color content =
-    div [ css [ Tw.mt_2, Tw.text_sm, Color.text color 700 ] ] content
+    div [ css [ "mt-2 text-sm", text_700 color ] ] content
 
 
 alertList : Color -> List String -> Html msg
 alertList color items =
-    div [ css [ Tw.mt_2, Tw.text_sm, Color.text color 700 ] ]
-        [ ul [ role "list", css [ Tw.list_disc, Tw.list_inside ] ]
+    div [ css [ "mt-2 text-sm", text_700 color ] ]
+        [ ul [ role "list", class "list-disc list-inside" ]
             (items |> List.map (\item -> li [] [ text item ]))
         ]
 
 
 alertActions : List (Html msg) -> Html msg
 alertActions actions =
-    div [ css [ Tw.mt_4 ] ]
-        [ div [ css [ Tw.neg_mx_2, Tw.neg_my_1_dot_5, Tw.flex ] ]
+    div [ class "mt-4" ]
+        [ div [ class "-mx-2 -my-1.5 flex" ]
             actions
         ]
 
@@ -122,7 +120,18 @@ doc : Chapter x
 doc =
     Chapter.chapter "Alert"
         |> Chapter.renderComponentList
-            [ ( "withDescription", withDescription { color = Color.yellow, icon = Exclamation, title = "Attention needed" } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." ] )
-            , ( "withList", withList { color = Color.red, icon = XCircle, title = "There were 2 errors with your submission", items = [ "Your password must be at least 8 characters", "Your password must include at least one pro wrestling finishing move" ] } )
-            , ( "withActions", withActions { color = Color.green, icon = CheckCircle, title = "Order completed", actions = [ Button.light2 Color.green [] [ text "View status" ], Button.light2 Color.green [ css [ Tw.ml_3 ] ] [ text "Dismiss" ] ] } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam." ] )
+            [ ( "withDescription", withDescription { color = Tw.yellow, icon = Exclamation, title = "Attention needed" } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." ] )
+            , ( "withList", withList { color = Tw.red, icon = XCircle, title = "There were 2 errors with your submission", items = [ "Your password must be at least 8 characters", "Your password must include at least one pro wrestling finishing move" ] } )
+            , ( "withActions"
+              , withActions
+                    { color = Tw.green
+                    , icon = CheckCircle
+                    , title = "Order completed"
+                    , actions =
+                        [ Button.light2 Tw.green [] [ text "View status" ]
+                        , Button.light2 Tw.green [ css [ "ml-3" ] ] [ text "Dismiss" ]
+                        ]
+                    }
+                    [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam." ]
+              )
             ]

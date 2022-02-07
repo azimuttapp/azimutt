@@ -9,18 +9,16 @@ import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
 import Components.Slices.Hero as Hero
 import Conf
-import Css.Global as Global
 import Gen.Route as Route
-import Html.Styled exposing (Html, b, br, div, span, text)
-import Html.Styled.Attributes exposing (css, href, title)
-import Libs.Bootstrap.Styled exposing (Toggle(..), bsToggle)
-import Libs.Html.Styled exposing (bText, extLink)
-import Libs.Html.Styled.Attributes exposing (track)
+import Html exposing (Html, b, br, div, span, text)
+import Html.Attributes exposing (href, title)
+import Libs.Bootstrap exposing (Toggle(..), bsToggle)
+import Libs.Html exposing (bText, extLink)
+import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
-import Libs.Models.Color as Color
+import Libs.Tailwind as Tw
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Home_.Models exposing (Model)
-import Tailwind.Utilities as Tw
 import Track
 
 
@@ -34,14 +32,13 @@ viewHome model =
                 |> M.mapOrElse
                     (\p ->
                         div []
-                            [ Link.white5 Color.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
-                            , Link.white5 Color.indigo ([ href (Route.toHref Route.Projects), css [ Tw.ml_3 ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
+                            [ Link.white5 Tw.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]
+                            , Link.white5 Tw.indigo ([ href (Route.toHref Route.Projects), css [ "ml-3" ] ] ++ track (Track.openAppCta "dashboard")) [ text "Open Dashboard" ]
                             ]
                     )
-                    (Link.white5 Color.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
+                    (Link.white5 Tw.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
     in
-    [ Global.global Tw.globalStyles
-    , Helpers.publicHeader
+    [ Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your database SQL schema"
@@ -79,7 +76,7 @@ viewHome model =
             { title = "See what you need"
             , content =
                 [ text "Good understanding starts with a good visualization. Azimutt is the only Entity-Relationship diagram that let you choose what you want to see and how."
-                , div [ css [ Tw.mt_3 ] ] []
+                , div [ css [ "mt-3" ] ] []
                 , Feature.checked { title = "search everywhere", description = Nothing }
                 , Feature.checked { title = "show, hide and organize tables", description = Nothing }
                 , Feature.checked { title = "show, hide and sort columns", description = Nothing }
@@ -106,7 +103,7 @@ viewHome model =
                 , text "Did you ever wanted to see what is on the other side of a relation ? With Azimutt, it's just one click away 🤩"
                 , br [] []
                 , text "And there's more, how do you see incoming relations ? Azimutt list all of them and is able to show one, many or all of them in just two clicks! 😍"
-                , div [ css [ Tw.mt_3 ] ] []
+                , div [ css [ "mt-3" ] ] []
                 , Feature.checked { title = "outgoing relations", description = Nothing }
                 , Feature.checked { title = "incoming relations", description = Nothing }
                 ]
@@ -145,7 +142,7 @@ viewHome model =
                 , text """It will look for every relation and build possible paths between two tables you want to join.
                               And as it is helpful, it will even build the SQL request for you with all the needed joins."""
                 , br [] []
-                , Badge.basic Color.red [] [ text "soon" ]
+                , Badge.basic Tw.red [] [ text "soon" ]
                 , text " It will make you a "
                 , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
                 , text ", just as you like!"

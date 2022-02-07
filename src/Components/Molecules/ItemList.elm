@@ -1,44 +1,39 @@
 module Components.Molecules.ItemList exposing (IconItem, doc, withIcons)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Css
 import ElmBook.Actions exposing (logAction)
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, button, div, h3, li, p, span, text, ul)
-import Html.Styled.Attributes exposing (css, type_)
-import Html.Styled.Events exposing (onClick)
-import Libs.Html.Styled.Attributes exposing (ariaHidden, role)
-import Libs.Models.Color as Color exposing (Color)
-import Libs.Models.Theme exposing (Theme)
-import Libs.Tailwind.Utilities as Tu
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
+import ElmBook.Chapter as Chapter exposing (Chapter)
+import Html exposing (Html, button, div, h3, li, p, span, text, ul)
+import Html.Attributes exposing (type_)
+import Html.Events exposing (onClick)
+import Libs.Bool as B
+import Libs.Html.Attributes exposing (ariaHidden, css, role)
+import Libs.Tailwind as Tw exposing (Color, bg_500, focus, focusWithin, hover, sm)
 
 
 type alias IconItem msg =
     { color : Color, icon : Icon, title : String, description : String, active : Bool, onClick : msg }
 
 
-withIcons : Theme -> List (IconItem msg) -> Html msg
-withIcons theme items =
-    ul [ role "list", css [ Tw.mt_6, Tw.grid, Tw.grid_cols_1, Tw.gap_6, Bp.sm [ Tw.grid_cols_2 ] ] ]
-        (items |> List.map (withIcon theme))
+withIcons : List (IconItem msg) -> Html msg
+withIcons items =
+    ul [ role "list", css [ "mt-6 grid grid-cols-1 gap-6", sm [ "grid-cols-2" ] ] ]
+        (items |> List.map withIcon)
 
 
-withIcon : Theme -> IconItem msg -> Html msg
-withIcon theme item =
-    li [ css [ Tw.flow_root, Tu.unless item.active [ Tw.filter, Tw.grayscale ] ] ]
-        [ div [ css [ Tw.relative, Tw.neg_m_2, Tw.p_2, Tw.flex, Tw.items_center, Tw.space_x_4, Tw.rounded_xl, Tu.focusWithin [ Tw.ring_2, Color.ring theme.color 500 ], Css.hover [ Tw.bg_gray_50 ] ] ]
-            [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_16, Tw.w_16, Tw.rounded_lg, Color.bg item.color 500 ] ] [ Icon.outline item.icon [ Tw.text_white ] ]
+withIcon : IconItem msg -> Html msg
+withIcon item =
+    li [ css [ "flow-root", B.cond item.active "" "filter grayscale" ] ]
+        [ div [ css [ "relative -m-2 p-2 flex items-center space-x-4 rounded-xl", hover [ "bg-gray-50" ], focusWithin [ "ring-2 ring-primary-500" ] ] ]
+            [ div [ css [ "flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-lg", bg_500 item.color ] ] [ Icon.outline item.icon "text-white" ]
             , div []
                 [ h3 []
-                    [ button [ type_ "button", onClick item.onClick, css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_900, Css.focus [ Tw.outline_none ] ] ]
-                        [ span [ css [ Tw.absolute, Tw.inset_0 ], ariaHidden True ] []
+                    [ button [ type_ "button", onClick item.onClick, css [ "text-sm font-medium text-gray-900", focus [ "outline-none" ] ] ]
+                        [ span [ css [ "absolute inset-0" ], ariaHidden True ] []
                         , text item.title
                         ]
                     ]
-                , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text item.description ]
+                , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text item.description ]
                 ]
             ]
         ]
@@ -48,18 +43,18 @@ withIcon theme item =
 -- DOCUMENTATION
 
 
-doc : Theme -> Chapter x
-doc theme =
+doc : Chapter x
+doc =
     Chapter.chapter "ItemList"
         |> Chapter.renderComponentList
             [ ( "withIcons"
-              , withIcons theme
-                    [ { color = Color.pink, icon = ViewList, title = "Create a List →", description = "Another to-do system you’ll try but eventually give up on.", active = True, onClick = logAction "List clicked" }
-                    , { color = Color.yellow, icon = Calendar, title = "Create a Calendar →", description = "Stay on top of your deadlines, or don’t — it’s up to you.", active = True, onClick = logAction "Calendar clicked" }
-                    , { color = Color.green, icon = Photograph, title = "Create a Gallery →", description = "Great for mood boards and inspiration.", active = True, onClick = logAction "Gallery clicked" }
-                    , { color = Color.blue, icon = ViewBoards, title = "Create a Board →", description = "Track tasks in different stages of your project.", active = True, onClick = logAction "Board clicked" }
-                    , { color = Color.indigo, icon = Table, title = "Create a Spreadsheet →", description = "Lots of numbers and things — good for nerds.", active = True, onClick = logAction "Spreadsheet clicked" }
-                    , { color = Color.purple, icon = Clock, title = "Create a Timeline →", description = "Get a birds-eye-view of your procrastination.", active = True, onClick = logAction "Timeline clicked" }
+              , withIcons
+                    [ { color = Tw.pink, icon = ViewList, title = "Create a List →", description = "Another to-do system you’ll try but eventually give up on.", active = True, onClick = logAction "List clicked" }
+                    , { color = Tw.yellow, icon = Calendar, title = "Create a Calendar →", description = "Stay on top of your deadlines, or don’t — it’s up to you.", active = True, onClick = logAction "Calendar clicked" }
+                    , { color = Tw.green, icon = Photograph, title = "Create a Gallery →", description = "Great for mood boards and inspiration.", active = True, onClick = logAction "Gallery clicked" }
+                    , { color = Tw.blue, icon = ViewBoards, title = "Create a Board →", description = "Track tasks in different stages of your project.", active = True, onClick = logAction "Board clicked" }
+                    , { color = Tw.indigo, icon = Table, title = "Create a Spreadsheet →", description = "Lots of numbers and things — good for nerds.", active = True, onClick = logAction "Spreadsheet clicked" }
+                    , { color = Tw.purple, icon = Clock, title = "Create a Timeline →", description = "Get a birds-eye-view of your procrastination.", active = True, onClick = logAction "Timeline clicked" }
                     ]
               )
             ]

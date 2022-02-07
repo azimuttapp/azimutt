@@ -1,10 +1,8 @@
 module Pages.Projects exposing (Model, Msg, page)
 
 import Browser.Navigation as Navigation
-import Components.Molecules.Modal as Modal
 import Conf
 import Gen.Params.Projects exposing (Params)
-import Html.Styled as Styled
 import Libs.Bool as B
 import Libs.Task as T
 import Page
@@ -51,8 +49,9 @@ init =
       , toasts = []
       }
     , Cmd.batch
-        [ Ports.loadProjects
+        [ Ports.setClasses { html = "h-full bg-gray-100", body = "h-full" }
         , Ports.trackPage "dashboard"
+        , Ports.loadProjects
         ]
     )
 
@@ -83,7 +82,7 @@ update req msg model =
             ( { model | modalOpened = True }, Ports.autofocusWithin Conf.ids.modal )
 
         ModalClose message ->
-            ( { model | modalOpened = False }, T.sendAfter Modal.closeDuration message )
+            ( { model | modalOpened = False }, T.sendAfter Conf.ui.closeDuration message )
 
         NavigateTo url ->
             ( model, Navigation.pushUrl req.key url )
@@ -118,5 +117,5 @@ subscriptions _ =
 view : Shared.Model -> Model -> View Msg
 view shared model =
     { title = "Azimutt - Explore your database schema"
-    , body = model |> viewProjects shared |> List.map Styled.toUnstyled
+    , body = model |> viewProjects shared
     }

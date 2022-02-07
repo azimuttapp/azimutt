@@ -1,14 +1,10 @@
-module Libs.Html exposing (bText, codeText, divIf, extLink)
+module Libs.Html exposing (bText, codeText, divIf, extLink, sendTweet)
 
 import Html exposing (Attribute, Html, a, b, code, div, text)
 import Html.Attributes exposing (href, rel, target)
 import Libs.Html.Attributes exposing (track)
 import Track
-
-
-extLink : String -> List (Attribute msg) -> List (Html msg) -> Html msg
-extLink url attrs children =
-    a ([ href url, target "_blank", rel "noopener" ] ++ track (Track.externalLink url) ++ attrs) children
+import Url exposing (percentEncode)
 
 
 bText : String -> Html msg
@@ -28,3 +24,13 @@ divIf predicate attrs children =
 
     else
         div [] []
+
+
+extLink : String -> List (Attribute msg) -> List (Html msg) -> Html msg
+extLink url attrs children =
+    a ([ href url, target "_blank", rel "noopener" ] ++ track (Track.externalLink url) ++ attrs) children
+
+
+sendTweet : String -> List (Attribute msg) -> List (Html msg) -> Html msg
+sendTweet tweet attrs children =
+    "https://twitter.com/intent/tweet?text=" ++ percentEncode tweet |> (\url -> extLink url attrs children)

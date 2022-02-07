@@ -3,7 +3,6 @@ module Pages.Blog exposing (Model, Msg, page)
 import Components.Slices.Blog exposing (Article)
 import Gen.Params.Blog exposing (Params)
 import Gen.Route as Route
-import Html.Styled as Styled
 import Http
 import Libs.Bool as B
 import Libs.DateTime as DateTime
@@ -15,6 +14,7 @@ import PagesComponents.Blog.Models as Models
 import PagesComponents.Blog.Slug.Models exposing (Content)
 import PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent)
 import PagesComponents.Blog.View exposing (viewBlog)
+import Ports
 import Request
 import Shared
 import Time
@@ -44,7 +44,12 @@ init =
     [ "the-story-behind-azimutt" ]
         |> (\slugs ->
                 ( { articles = slugs |> List.map (\slug -> ( slug, buildInitArticle slug )) }
-                , Cmd.batch (slugs |> List.map (getArticle GotArticle))
+                , Cmd.batch
+                    ([ Ports.setClasses { html = "", body = "" }
+                     , Ports.trackPage "blog"
+                     ]
+                        ++ (slugs |> List.map (getArticle GotArticle))
+                    )
                 )
            )
 
@@ -134,5 +139,5 @@ subscriptions _ =
 view : Model -> View Msg
 view model =
     { title = "Azimutt blog - Explore your database schema"
-    , body = viewBlog model |> List.map Styled.toUnstyled
+    , body = viewBlog model
     }

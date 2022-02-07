@@ -1,7 +1,6 @@
 module Pages.Blog.Slug_ exposing (Model, Msg, page)
 
 import Gen.Params.Blog.Slug_ exposing (Params)
-import Html.Styled as Styled
 import Http
 import Libs.Regex as Rgx
 import Libs.Result as R
@@ -9,6 +8,7 @@ import Page
 import PagesComponents.Blog.Slug.Models as Models exposing (Model(..))
 import PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent)
 import PagesComponents.Blog.Slug.View exposing (viewArticle)
+import Ports
 import Request
 import Shared
 import View exposing (View)
@@ -34,7 +34,13 @@ type alias Model =
 
 init : String -> ( Model, Cmd Msg )
 init slug =
-    ( Loading, slug |> getArticle GotArticle )
+    ( Loading
+    , Cmd.batch
+        [ Ports.setClasses { html = "", body = "" }
+        , Ports.trackPage "blog-article"
+        , slug |> getArticle GotArticle
+        ]
+    )
 
 
 
@@ -77,5 +83,5 @@ view model =
 
             _ ->
                 "Azimutt blog - Explore your database schema"
-    , body = viewArticle model |> List.map Styled.toUnstyled
+    , body = viewArticle model
     }

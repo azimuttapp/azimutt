@@ -1,37 +1,35 @@
 module Components.Molecules.Divider exposing (doc, withIcon, withLabel, withLabelLeft)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Css
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, div, span, text)
-import Html.Styled.Attributes exposing (css)
-import Libs.Html.Styled.Attributes exposing (ariaHidden)
-import Tailwind.Utilities as Tw
+import ElmBook.Chapter as Chapter exposing (Chapter)
+import Html exposing (Html, div, span, text)
+import Html.Attributes exposing (class)
+import Libs.Html.Attributes exposing (ariaHidden, css)
+import Libs.Tailwind exposing (TwClass)
 
 
 withLabel : String -> Html msg
 withLabel label =
-    divider Tw.justify_center [ span [ css [ Tw.px_2, Tw.bg_white, Tw.text_sm, Tw.text_gray_500 ] ] [ text label ] ]
+    divider "justify-center" [ span [ class "px-2 bg-white text-sm text-gray-500" ] [ text label ] ]
 
 
 withIcon : Icon -> Html msg
 withIcon icon =
-    divider Tw.justify_center [ span [ css [ Tw.bg_white, Tw.px_2, Tw.text_gray_500 ] ] [ Icon.solid icon [ Tw.text_gray_500 ] ] ]
+    divider "justify-center" [ span [ class "bg-white px-2 text-gray-500" ] [ Icon.solid icon "text-gray-500" ] ]
 
 
 withLabelLeft : String -> Html msg
 withLabelLeft label =
-    divider Tw.justify_start [ span [ css [ Tw.pr_2, Tw.bg_white, Tw.text_sm, Tw.text_gray_500 ] ] [ text label ] ]
+    divider "justify-start" [ span [ class "pr-2 bg-white text-sm text-gray-500" ] [ text label ] ]
 
 
-divider : Css.Style -> List (Html msg) -> Html msg
+divider : TwClass -> List (Html msg) -> Html msg
 divider position content =
-    div [ css [ Tw.relative ] ]
-        [ div [ css [ Tw.absolute, Tw.inset_0, Tw.flex, Tw.items_center ], ariaHidden True ]
-            [ div [ css [ Tw.w_full, Tw.border_t, Tw.border_gray_300 ] ] []
+    div [ class "relative" ]
+        [ div [ class "absolute inset-0 flex items-center", ariaHidden True ]
+            [ div [ class "w-full border-t border-gray-300" ] []
             ]
-        , div [ css [ Tw.relative, Tw.flex, position ] ] content
+        , div [ css [ "relative flex", position ] ] content
         ]
 
 

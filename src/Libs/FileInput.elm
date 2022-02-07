@@ -1,10 +1,11 @@
 module Libs.FileInput exposing (DropConfig, File, hiddenInputSingle, onDrop)
 
 -- variation of https://package.elm-lang.org/packages/mpizenberg/elm-file with Html.Styled.Attributes
+-- TODO: now I'm migrating away of elm-css, I should use elm-file instead...
 
-import Html.Styled exposing (Attribute, Html, input)
-import Html.Styled.Attributes exposing (accept, id, style, type_)
-import Html.Styled.Events as Events
+import Html exposing (Attribute, Html, input)
+import Html.Attributes exposing (accept, id, style, type_)
+import Html.Events as Events
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Libs.Maybe as M

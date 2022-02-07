@@ -6,12 +6,12 @@ import Libs.Area exposing (Area)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.List as L
-import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S
+import Libs.Tailwind as Tw exposing (Color)
 import Models.ColumnOrder as ColumnOrder
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
@@ -66,9 +66,9 @@ computeColor ( _, table ) =
     S.wordSplit table
         |> List.head
         |> Maybe.map S.hashCode
-        |> Maybe.map (modBy (List.length Color.list))
-        |> Maybe.andThen (\index -> Color.list |> L.get index)
-        |> Maybe.withDefault Color.default
+        |> Maybe.map (modBy (List.length Tw.list))
+        |> Maybe.andThen (\index -> Tw.list |> L.get index)
+        |> Maybe.withDefault Tw.default
 
 
 area : TableProps -> Area
@@ -83,7 +83,7 @@ encode value =
         , ( "position", value.position |> Position.encode )
 
         -- , ( "size", value.size |> Size.encode ) do not store size, it should be re-computed
-        , ( "color", value.color |> Color.encode )
+        , ( "color", value.color |> Tw.encodeColor )
         , ( "columns", value.columns |> E.withDefault (Encode.list ColumnName.encode) [] )
         , ( "selected", value.selected |> E.withDefault Encode.bool False )
         , ( "hiddenColumns", value.hiddenColumns |> E.withDefault Encode.bool False )
@@ -96,7 +96,7 @@ decode =
         (Decode.field "id" TableId.decode)
         (Decode.field "position" Position.decode)
         (D.defaultField "size" Size.decode Size.zero)
-        (Decode.field "color" Color.decode)
+        (Decode.field "color" Tw.decodeColor)
         (D.defaultField "columns" (Decode.list ColumnName.decode) [])
         (D.defaultField "selected" Decode.bool False)
         (D.defaultField "hiddenColumns" Decode.bool False)

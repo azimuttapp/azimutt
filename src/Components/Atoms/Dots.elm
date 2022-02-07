@@ -1,43 +1,40 @@
 module Components.Atoms.Dots exposing (doc, dots, dotsBottomRight, dotsMiddleLeft, dotsTopRight)
 
-import Css
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, div)
-import Html.Styled.Attributes as HtmlAttr
-import Libs.Tailwind.Utilities as Tu
-import Svg.Styled exposing (defs, pattern, rect, svg)
-import Svg.Styled.Attributes exposing (css, fill, height, id, patternUnits, viewBox, width, x, y)
-import Tailwind.Utilities as Tw
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
+import Html exposing (Html, div)
+import Libs.Svg.Attributes exposing (css)
+import Libs.Tailwind exposing (TwClass)
+import Svg exposing (defs, pattern, rect, svg)
+import Svg.Attributes exposing (fill, height, id, patternUnits, viewBox, width, x, y)
 
 
 dotsTopRight : String -> Int -> Html msg
 dotsTopRight id height =
-    dots id 404 height [ Tw.top_12, Tw.left_full, Tw.translate_x_32 ]
+    dots id 404 height "top-12 left-full translate-x-32"
 
 
 dotsMiddleLeft : String -> Int -> Html msg
 dotsMiddleLeft id height =
-    dots id 404 height [ Tw.top_1over2, Tw.right_full, Tw.neg_translate_y_1over2, Tw.neg_translate_x_32 ]
+    dots id 404 height "top-1/2 right-full -translate-y-1/2 -translate-x-32"
 
 
 dotsBottomRight : String -> Int -> Html msg
 dotsBottomRight id height =
-    dots id 404 height [ Tw.bottom_12, Tw.left_full, Tw.translate_x_32 ]
+    dots id 404 height "bottom-12 left-full translate-x-32"
 
 
-dots : String -> Int -> Int -> List Css.Style -> Html msg
+dots : String -> Int -> Int -> TwClass -> Html msg
 dots patternId dotsWidth dotsHeight styles =
     svg
         [ width (String.fromInt dotsWidth)
         , height (String.fromInt dotsHeight)
         , viewBox ("0 0 " ++ String.fromInt dotsWidth ++ " " ++ String.fromInt dotsHeight)
         , fill "none"
-        , css ([ Tw.absolute, Tw.transform ] ++ styles)
+        , css [ "absolute transform", styles ]
         ]
         [ defs []
             [ pattern [ id patternId, x "0", y "0", width "20", height "20", patternUnits "userSpaceOnUse" ]
-                [ rect [ x "0", y "0", width "4", height "4", fill "currentColor", css [ Tw.text_gray_200 ] ] []
+                [ rect [ x "0", y "0", width "4", height "4", fill "currentColor", css [ "text-gray-200" ] ] []
                 ]
             ]
         , rect [ width (String.fromInt dotsWidth), height (String.fromInt dotsHeight), fill ("url(#" ++ patternId ++ ")") ] []
@@ -52,5 +49,5 @@ doc : Chapter x
 doc =
     chapter "Dots"
         |> renderComponentList
-            [ ( "dots", div [ HtmlAttr.css [ Tu.h 384 "px" ] ] [ dots "id" 404 384 [] ] )
+            [ ( "dots", div [ css [ "h-96" ] ] [ dots "id" 404 384 "" ] )
             ]

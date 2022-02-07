@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
 
 import Components.Molecules.Modal as Modal
-import Html.Styled exposing (Html)
+import Html exposing (Html)
 import PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, Msg(..))
 
 

@@ -4,10 +4,10 @@ import Dict
 import Expect
 import Json.Decode as Decode
 import Libs.Dict as D
-import Libs.Models.Color as Color
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
+import Libs.Tailwind as Tw
 import Storage.ProjectV1 exposing (CanvasPropsV1, ColumnRefV1, ColumnV1, CommentV1, FindPathSettingsV1, IndexV1, LayoutV1, PrimaryKeyV1, ProjectSourceContentV1(..), ProjectSourceV1, ProjectV1, RelationV1, SchemaV1, SourceLineV1, SourceV1, TablePropsV1, TableV1, UniqueV1, decodeProject, defaultProjectSettings, upgrade)
 import Storage.ProjectV2Test as ProjectV2Test
 import Test exposing (Test, describe, test)
@@ -58,7 +58,7 @@ project1 =
     , schema =
         { tables = D.fromListMap .id [ TableV1 ( "public", "users" ) "public" "users" (Ned.singletonMap .name (ColumnV1 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
         , relations = []
-        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Color.red [ "id" ] True ] [] (time 1200) (time 1201)
+        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Tw.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
     , layouts = Dict.fromList [ ( "empty", LayoutV1 (CanvasPropsV1 Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
     , currentLayout = Nothing
@@ -130,12 +130,12 @@ project2 =
                   }
                 ]
         , relations = [ RelationV1 "creds_user_id" (ColumnRefV1 ( "public", "creds" ) "user_id") (ColumnRefV1 ( "public", "users" ) "id") [] ]
-        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Color.red [ "id" ] True ] [] (time 1200) (time 1201)
+        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Tw.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
     , layouts =
         Dict.fromList
             [ ( "empty", LayoutV1 (CanvasPropsV1 Position.zero 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", LayoutV1 (CanvasPropsV1 (Position 12 32) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 102) Color.red [ "id", "name" ] True ] [] (time 1202) (time 1203) )
+            , ( "users", LayoutV1 (CanvasPropsV1 (Position 12 32) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 102) Tw.red [ "id", "name" ] True ] [] (time 1202) (time 1203) )
             ]
     , currentLayout = Just "users"
     , settings = { findPath = FindPathSettingsV1 4 [ ( "public", "users" ) ] [ "created_by" ] }

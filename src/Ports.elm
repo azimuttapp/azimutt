@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), activateTooltipsAndPopovers, autofocusWithin, blur, click, dropProject, focus, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (HtmlContainers, JsMsg(..), activateTooltipsAndPopovers, autofocusWithin, blur, click, dropProject, focus, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -51,6 +51,11 @@ scrollTo id position =
 autofocusWithin : HtmlId -> Cmd msg
 autofocusWithin id =
     messageToJs (AutofocusWithin id)
+
+
+setClasses : HtmlContainers -> Cmd msg
+setClasses payload =
+    messageToJs (SetClasses payload)
 
 
 showModal : HtmlId -> Cmd msg
@@ -176,12 +181,17 @@ trackError name error =
     messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))
 
 
+type alias HtmlContainers =
+    { html : String, body : String }
+
+
 type ElmMsg
     = Click HtmlId
     | MouseDown HtmlId
     | Focus HtmlId
     | Blur HtmlId
     | ScrollTo HtmlId String
+    | SetClasses HtmlContainers
     | AutofocusWithin HtmlId
     | ShowModal HtmlId
     | HideModal HtmlId
@@ -250,6 +260,9 @@ elmEncoder elm =
 
         ScrollTo id position ->
             Encode.object [ ( "kind", "ScrollTo" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
+
+        SetClasses { html, body } ->
+            Encode.object [ ( "kind", "SetClasses" |> Encode.string ), ( "html", html |> Encode.string ), ( "body", body |> Encode.string ) ]
 
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]

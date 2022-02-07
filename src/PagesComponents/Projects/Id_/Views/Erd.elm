@@ -3,27 +3,26 @@ module PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Conf
-import Css
 import Dict exposing (Dict)
-import Html.Styled exposing (Html, button, div, h2, main_, p, text)
-import Html.Styled.Attributes exposing (class, classList, css, id)
-import Html.Styled.Events exposing (onClick)
-import Html.Styled.Keyed as Keyed
-import Html.Styled.Lazy as Lazy
+import Html exposing (Html, button, div, h2, main_, p, text)
+import Html.Attributes exposing (class, classList, id, style)
+import Html.Events exposing (onClick)
+import Html.Keyed as Keyed
+import Html.Lazy as Lazy
 import Libs.Area exposing (Area)
 import Libs.Bool as B
-import Libs.Html.Styled exposing (bText, extLink, sendTweet)
-import Libs.Html.Styled.Events exposing (onWheel, stopPointerDown)
+import Libs.Html exposing (bText, extLink, sendTweet)
+import Libs.Html.Attributes exposing (css)
+import Libs.Html.Events exposing (onWheel, stopPointerDown)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.String as S
-import Libs.Tailwind.Utilities as Tu
+import Libs.Tailwind as Tw exposing (focus)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
@@ -39,7 +38,6 @@ import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable)
-import Tailwind.Utilities as Tw
 
 
 viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> Html Msg
@@ -90,7 +88,10 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
         , onWheel OnWheel
         , stopPointerDown (.position >> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
-        [ div [ class "tw-canvas", css [ Tw.transform, Tw.origin_top_left, Tu.translate_x_y canvas.position.left canvas.position.top "px", Tu.scale canvas.zoom ] ]
+        [ div
+            [ class "tw-canvas origin-top-left"
+            , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
+            ]
             [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
             , Lazy.lazy2 viewRelations displayedTables displayedRelations
             , selectionBox |> M.filterNot (\_ -> tableProps |> Dict.isEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
@@ -146,19 +147,10 @@ viewRelations tableProps relations =
 viewSelectionBox : Area -> Html Msg
 viewSelectionBox area =
     div
-        [ class "tw-selection-area"
-        , css
-            [ Tw.transform
-            , Tu.translate_x_y area.position.left area.position.top "px"
-            , Tu.w area.size.width "px"
-            , Tu.h area.size.height "px"
-            , Color.border Color.teal 400
-            , Tw.border_2
-            , Color.bg Color.teal 400
-            , Tw.bg_opacity_25
-            , Tw.absolute
-            , Tu.z_max
-            ]
+        [ css [ "tw-selection-area absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ]
+        , style "transform" ("translate(" ++ String.fromFloat area.position.left ++ "px, " ++ String.fromFloat area.position.top ++ "px)")
+        , style "width" (String.fromFloat area.size.width ++ "px")
+        , style "height" (String.fromFloat area.size.height ++ "px")
         ]
         []
 
@@ -174,28 +166,28 @@ viewEmptyState tables =
                 |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
                 |> List.take 10
     in
-    div [ css [ Tw.flex, Tw.h_full, Tw.justify_center, Tw.items_center ] ]
-        [ div [ css [ Tw.max_w_prose, Tw.p_6, Tw.bg_white, Tw.border, Tw.border_gray_200, Tw.rounded_lg ] ]
-            [ div [ css [ Tw.text_center ] ]
-                [ Icon.outline Template [ Tw.w_12, Tw.h_12, Tw.mx_auto, Color.text Conf.theme.color 500 ]
-                , h2 [ css [ Tw.mt_2, Tw.text_lg, Tw.font_medium, Tw.text_gray_900 ] ]
+    div [ class "flex h-full justify-center items-center" ]
+        [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
+            [ div [ class "text-center" ]
+                [ Icon.outline2x Template "mx-auto text-primary-500"
+                , h2 [ class "mt-2 text-lg font-medium text-gray-900" ]
                     [ text "Hello from Azimutt 👋" ]
-                , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
+                , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "Azimutt let you freely explore your database schema. To start, just type what you are looking for in the "
-                    , button [ onClick (Focus Conf.ids.searchInput), css [ Tu.link, Css.focus [ Tw.outline_none ] ] ] [ text "search bar" ]
+                    , button [ onClick (Focus Conf.ids.searchInput), css [ "tw-link", focus [ "outline-none" ] ] ] [ text "search bar" ]
                     , text ", and then look at columns and follow relations. Once you have interesting layout, you can save it for later."
                     ]
-                , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
+                , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "Your project has "
                     , bText (tables |> S.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic Conf.theme.color [ onClick (ShowTable t.id), css [ Tw.m_1, Tw.cursor_pointer ] ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
                     ]
-                , p [ css [ Tw.mt_3, Tw.text_sm, Tw.text_gray_500 ] ]
+                , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ♥️ Azimutt, "
-                    , sendTweet Conf.constants.cheeringTweet [ css [ Tu.link ] ] [ text "come and say hi" ]
+                    , sendTweet Conf.constants.cheeringTweet [ class "tw-link" ] [ text "come and say hi" ]
                     , text ". We are eager to learn how you use it and for what. We also love "
-                    , extLink Conf.constants.azimuttFeatureRequests [ css [ Tu.link ] ] [ text "feedback and feature requests" ]
+                    , extLink Conf.constants.azimuttFeatureRequests [ class "tw-link" ] [ text "feedback and feature requests" ]
                     , text "."
                     ]
                 ]

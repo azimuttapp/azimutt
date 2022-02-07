@@ -24,6 +24,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.String as S
+import Libs.Tailwind as Tw
 import Models.ColumnOrder as ColumnOrder
 import Models.Project.Check exposing (Check)
 import Models.Project.Column as Column exposing (Column)
@@ -51,7 +52,7 @@ viewTable hover virtualRelation zoom index table props tableRelations domInfo =
     in
     div
         [ class "erd-table"
-        , class props.color.name
+        , class (Tw.extractColor props.color)
         , classList [ ( "view", table.view ), ( "selected", props.selected ) ]
         , id (TableId.toHtmlId table.id)
         , placeAt props.position

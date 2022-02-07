@@ -1,16 +1,11 @@
 module Components.Slices.NotFound exposing (Brand, SimpleModel, doc, simple)
 
-import Css
-import ElmBook.Chapter as Chapter
-import ElmBook.ElmCSS exposing (Chapter)
-import Html.Styled exposing (Html, a, div, footer, h1, img, main_, nav, p, span, text)
-import Html.Styled.Attributes exposing (alt, css, href, src)
-import Libs.Html.Styled.Attributes exposing (ariaHidden)
+import ElmBook.Chapter as Chapter exposing (Chapter)
+import Html exposing (Html, a, div, footer, h1, img, main_, nav, p, span, text)
+import Html.Attributes exposing (alt, class, href, src)
+import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models exposing (Image, Link)
-import Libs.Models.Color as Color
-import Libs.Models.Theme exposing (Theme)
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
+import Libs.Tailwind exposing (hover, lg, sm)
 
 
 type alias SimpleModel =
@@ -27,23 +22,23 @@ type alias Brand =
     { img : Image, link : Link }
 
 
-simple : Theme -> SimpleModel -> Html msg
-simple theme model =
-    div [ css [ Tw.min_h_full, Tw.pt_16, Tw.pb_12, Tw.flex, Tw.flex_col, Tw.bg_white ] ]
-        [ main_ [ css [ Tw.flex_grow, Tw.flex, Tw.flex_col, Tw.justify_center, Tw.max_w_7xl, Tw.w_full, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ div [ css [ Tw.flex_shrink_0, Tw.flex, Tw.justify_center ] ]
-                [ a [ href model.brand.link.url, css [ Tw.inline_flex ] ]
-                    [ span [ css [ Tw.sr_only ] ] [ text model.brand.link.text ]
-                    , img [ css [ Tw.h_12, Tw.w_auto ], src model.brand.img.src, alt model.brand.img.alt ] []
+simple : SimpleModel -> Html msg
+simple model =
+    div [ class "min-h-full pt-16 pb-12 flex flex-col bg-white" ]
+        [ main_ [ css [ "flex-grow flex flex-col justify-center max-w-7xl w-full mx-auto px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
+            [ div [ class "flex-shrink-0 flex justify-center" ]
+                [ a [ href model.brand.link.url, class "inline-flex" ]
+                    [ span [ class "sr-only" ] [ text model.brand.link.text ]
+                    , img [ class "h-12 w-auto", src model.brand.img.src, alt model.brand.img.alt ] []
                     ]
                 ]
-            , div [ css [ Tw.py_16 ] ]
-                [ div [ css [ Tw.text_center ] ]
-                    [ p [ css [ Tw.text_sm, Tw.font_semibold, Color.text theme.color 600, Tw.uppercase, Tw.tracking_wide ] ] [ text model.header ]
-                    , h1 [ css [ Tw.mt_2, Tw.text_4xl, Tw.font_extrabold, Tw.text_gray_900, Tw.tracking_tight, Bp.sm [ Tw.text_5xl ] ] ] [ text model.title ]
-                    , p [ css [ Tw.mt_2, Tw.text_base, Tw.text_gray_500 ] ] [ text model.message ]
-                    , div [ css [ Tw.mt_6 ] ]
-                        [ a [ href model.link.url, css [ Tw.text_base, Tw.font_medium, Color.text theme.color 600, Css.hover [ Color.text theme.color 500 ] ] ]
+            , div [ class "py-16" ]
+                [ div [ class "text-center" ]
+                    [ p [ class "text-sm font-semibold text-primary-600 uppercase tracking-wide" ] [ text model.header ]
+                    , h1 [ css [ "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight", sm [ "text-5xl" ] ] ] [ text model.title ]
+                    , p [ class "mt-2 text-base text-gray-500" ] [ text model.message ]
+                    , div [ class "mt-6" ]
+                        [ a [ href model.link.url, css [ "text-base font-medium text-primary-600", hover [ "text-primary-500" ] ] ]
                             [ text model.link.text
                             , span [ ariaHidden True ] [ text "→" ]
                             ]
@@ -51,11 +46,11 @@ simple theme model =
                     ]
                 ]
             ]
-        , footer [ css [ Tw.flex_shrink_0, Tw.max_w_7xl, Tw.w_full, Tw.mx_auto, Tw.px_4, Bp.lg [ Tw.px_8 ], Bp.sm [ Tw.px_6 ] ] ]
-            [ nav [ css [ Tw.flex, Tw.justify_center, Tw.space_x_4 ] ]
+        , footer [ css [ "flex-shrink-0 max-w-7xl w-full mx-auto px-4 ", sm [ "px-6" ], lg [ "px-8" ] ] ]
+            [ nav [ class "flex justify-center space-x-4" ]
                 (model.footer
-                    |> List.map (\link -> a [ href link.url, css [ Tw.text_sm, Tw.font_medium, Tw.text_gray_500, Css.hover [ Tw.text_gray_600 ] ] ] [ text link.text ])
-                    |> List.intersperse (span [ css [ Tw.inline_block, Tw.border_l, Tw.border_gray_300 ], ariaHidden True ] [])
+                    |> List.map (\link -> a [ href link.url, css [ "text-sm font-medium text-gray-500 ", hover [ "text-gray-600" ] ] ] [ text link.text ])
+                    |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
                 )
             ]
         ]
@@ -79,9 +74,9 @@ docModel =
     }
 
 
-doc : Theme -> Chapter x
-doc theme =
+doc : Chapter x
+doc =
     Chapter.chapter "NotFound"
         |> Chapter.renderComponentList
-            [ ( "simple", simple theme docModel )
+            [ ( "simple", simple docModel )
             ]

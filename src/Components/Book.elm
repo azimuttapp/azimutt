@@ -31,17 +31,15 @@ import Components.Slices.FeatureSideBySide as FeatureSideBySide
 import Components.Slices.Hero as Hero
 import Components.Slices.Newsletter as Newsletter
 import Components.Slices.NotFound as NotFound
-import Css.Global as Global
 import ElmBook
-import ElmBook.Chapter as Chapter
+import ElmBook.Chapter as Chapter exposing (Chapter)
 import ElmBook.ComponentOptions
-import ElmBook.ElmCSS as ElmCSS
 import ElmBook.StatefulOptions
 import ElmBook.ThemeOptions
-import Html.Styled exposing (Html, img, table, td, text, th, tr)
-import Html.Styled.Attributes exposing (alt, css, src)
-import Libs.Models.Color as Color exposing (Color, ColorLevel)
-import Tailwind.Utilities as Tw
+import Html exposing (img, node, table, td, text, th, tr)
+import Html.Attributes exposing (alt, href, rel, src)
+import Libs.Html.Attributes exposing (css)
+import Libs.Tailwind as Tw
 
 
 type alias DocState =
@@ -67,32 +65,27 @@ init =
     }
 
 
-theme : { color : Color }
-theme =
-    { color = Color.indigo }
-
-
-main : ElmCSS.Book DocState
+main : ElmBook.Book DocState
 main =
-    ElmCSS.book "Azimutt Design System"
+    ElmBook.book "Azimutt Design System"
         |> ElmBook.withThemeOptions
             [ ElmBook.ThemeOptions.subtitle "v0.1.0"
-            , ElmBook.ThemeOptions.globals [ Global.global Tw.globalStyles ]
-            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ Tw.h_12 ] ] [])
+            , ElmBook.ThemeOptions.globals [ node "link" [ rel "stylesheet", href "/dist/tw-styles.css" ] [] ]
+            , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ "h-12" ] ] [])
             ]
         |> ElmBook.withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
         |> ElmBook.withStatefulOptions [ ElmBook.StatefulOptions.initialState init ]
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc theme, Button.doc theme, colorsDoc, Dots.doc, Icon.doc, Input.doc theme, Kbd.doc, Link.doc theme, Markdown.doc ] )
-            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc theme, Feature.doc, FileInput.doc theme, ItemList.doc theme, Modal.doc theme, Slideover.doc theme, Toast.doc theme, Tooltip.doc ] )
-            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc theme, Relation.doc, Table.doc ] )
-            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc theme ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Markdown.doc ] )
+            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc, Relation.doc, Table.doc ] )
+            , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc ] )
             ]
 
 
-docs : ElmCSS.Chapter x
+docs : Chapter x
 docs =
     Chapter.chapter "Readme" |> Chapter.render """
 
@@ -101,19 +94,22 @@ work in progress
 """
 
 
-colorsDoc : ElmCSS.Chapter x
+colorsDoc : Chapter x
 colorsDoc =
     Chapter.chapter "Colors"
         |> Chapter.renderComponentList
             [ ( "Color"
               , table []
-                    (tr [] (th [] [] :: (Color.levels |> List.map (\l -> th [] [ text (String.fromInt l) ])))
-                        :: (Color.all |> List.map (\color -> tr [] (th [] [ text color.name ] :: (Color.levels |> List.map (viewColorCell color)))))
+                    (tr [] (th [] [] :: (Tw.levels |> List.map (\l -> th [ css [ "w-24 text-center" ] ] [ text (String.fromInt l) ])))
+                        :: (Tw.all
+                                |> List.map
+                                    (\color ->
+                                        tr []
+                                            (th [ css [ "h-10" ] ] [ text (Tw.extractColor color) ]
+                                                :: (Tw.levels |> List.map (\level -> td [ css [ "bg-" ++ Tw.extractColor color ++ "-" ++ String.fromInt level ] ] []))
+                                            )
+                                    )
+                           )
                     )
               )
             ]
-
-
-viewColorCell : Color -> ColorLevel -> Html msg
-viewColorCell color level =
-    td [ css [ Tw.p_3, Color.bg color level ] ] [ text (color |> Color.hex level) ]

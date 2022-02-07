@@ -4,9 +4,9 @@ import Dict exposing (Dict)
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Maybe as M
-import Libs.Models.Color exposing (Color)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
+import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)

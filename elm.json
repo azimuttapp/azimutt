@@ -9,7 +9,6 @@
     "dependencies": {
         "direct": {
             "dtwrks/elm-book": "1.2.0",
-            "dtwrks/elm-book-interop-elm-css": "1.0.0",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",
@@ -22,10 +21,8 @@
             "elm/url": "1.0.0",
             "elm-explorations/markdown": "1.0.0",
             "lattyware/elm-fontawesome": "5.0.0",
-            "matheus23/elm-default-tailwind-modules": "2.0.1",
             "mpizenberg/elm-file": "1.0.0",
             "mpizenberg/elm-pointer-events": "4.0.2",
-            "rtfeldman/elm-css": "16.1.1",
             "rtfeldman/elm-iso8601-date-strings": "1.1.4",
             "ryannhg/elm-spa": "6.0.0",
             "toastal/either": "3.6.3"

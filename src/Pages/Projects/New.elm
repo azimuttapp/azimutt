@@ -3,7 +3,6 @@ module Pages.Projects.New exposing (Model, Msg, page)
 import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
-import Html.Styled as Styled
 import Libs.Bool as B
 import Libs.Maybe as M
 import Libs.String as S
@@ -54,8 +53,9 @@ init req =
       , parsing = SQLSource.init Nothing Nothing
       }
     , Cmd.batch
-        ([ Ports.loadProjects
+        ([ Ports.setClasses { html = "h-full bg-gray-100", body = "h-full" }
          , Ports.trackPage "new-project"
+         , Ports.loadProjects
          ]
             ++ (req.query |> Dict.get "sample" |> M.mapOrElse (\sample -> [ T.send (sample |> SelectSample |> SQLSourceMsg) ]) [])
         )
@@ -132,5 +132,5 @@ subscriptions _ =
 view : Model -> View Msg
 view model =
     { title = "Azimutt - Explore your database schema"
-    , body = model |> viewNewProject |> List.map Styled.toUnstyled
+    , body = model |> viewNewProject
     }

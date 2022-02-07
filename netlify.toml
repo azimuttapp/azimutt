@@ -1,6 +1,6 @@
 [build]
   publish = "public"
-  command = "npx elm-spa build"
+  command = "npx tailwindcss -i ./public/tw-styles.css -o ./public/dist/tw-styles.css --minify && npx elm-spa build"
 
 [[redirects]]
   from = "/bee.js"

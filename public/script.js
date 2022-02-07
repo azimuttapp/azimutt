@@ -33,6 +33,7 @@ window.addEventListener('load', function() {
                 case 'Focus':           focus(port.id); break;
                 case 'Blur':            blur(port.id); break;
                 case 'ScrollTo':        scrollTo(port.id, port.position); break;
+                case 'SetClasses':      setClasses(port.html, port.body); break;
                 case 'AutofocusWithin': autofocusWithin(port.id); break;
                 case 'ShowModal':       showModal(port.id); break;
                 case 'HideModal':       hideModal(port.id); break;
@@ -69,6 +70,10 @@ window.addEventListener('load', function() {
     }
     function scrollTo(id, position) {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
+    }
+    function setClasses(html, body) {
+        document.getElementsByTagName('html')[0].setAttribute('class', html)
+        document.getElementsByTagName('body')[0].setAttribute('class', body)
     }
     function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()
@@ -456,7 +461,7 @@ window.addEventListener('load', function() {
     const consoleLog = console.log
     console.log = (...args) => {
         const msg = args[0]
-        if (msg.startsWith('[elm-time')) {
+        if (typeof msg === 'string' && msg.startsWith('[elm-time')) {
             if (msg.startsWith('[elm-time-end]')) {
                 console.timeEnd(msg.slice(15, -4))
             } else {

@@ -1,7 +1,6 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
 import Gen.Params.Home_ exposing (Params)
-import Html.Styled as Styled
 import Page
 import PagesComponents.Home_.Models as Models exposing (Msg(..))
 import PagesComponents.Home_.View exposing (viewHome)
@@ -38,8 +37,9 @@ init : ( Model, Cmd msg )
 init =
     ( { projects = [] }
     , Cmd.batch
-        [ Ports.loadProjects
+        [ Ports.setClasses { html = "", body = "" }
         , Ports.trackPage "home"
+        , Ports.loadProjects
         ]
     )
 
@@ -81,5 +81,5 @@ subscriptions _ =
 view : Model -> View msg
 view model =
     { title = "Azimutt - Explore your database schema"
-    , body = viewHome model |> List.map Styled.toUnstyled
+    , body = viewHome model
     }

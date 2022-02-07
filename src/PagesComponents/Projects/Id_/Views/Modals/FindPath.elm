@@ -6,20 +6,19 @@ import Components.Molecules.Alert as Alert
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
-import Css
 import Dict exposing (Dict)
-import Html.Styled exposing (Html, br, button, div, h2, h3, img, input, label, option, p, pre, select, small, span, text)
-import Html.Styled.Attributes exposing (alt, css, disabled, for, id, placeholder, selected, src, title, type_, value)
-import Html.Styled.Events exposing (onClick, onInput)
-import Libs.Html.Styled exposing (bText, extLink)
-import Libs.Html.Styled.Attributes exposing (ariaDescribedby)
+import Html exposing (Html, br, button, div, h2, h3, img, input, label, option, p, pre, select, small, span, text)
+import Html.Attributes exposing (alt, class, disabled, for, id, placeholder, selected, src, title, type_, value)
+import Html.Events exposing (onClick, onInput)
+import Libs.Bool as B
+import Libs.Html exposing (bText, extLink)
+import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.List as L
 import Libs.Maybe as M
-import Libs.Models.Color as Color
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.String as String
-import Libs.Tailwind.Utilities as Tu
+import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathDialog exposing (FindPathDialog)
 import Models.Project.FindPathPath exposing (FindPathPath)
@@ -30,8 +29,6 @@ import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
-import Tailwind.Breakpoints as Bp
-import Tailwind.Utilities as Tw
 
 
 viewFindPath : Bool -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
@@ -58,13 +55,13 @@ viewFindPath opened tables settings model =
 
 viewHeader : String -> Html msg
 viewHeader titleId =
-    div [ css [ Tw.pt_6, Tw.px_6, Bp.sm [ Tw.flex, Tw.items_start ] ] ]
-        [ div [ css [ Tw.mx_auto, Tw.flex_shrink_0, Tw.flex, Tw.items_center, Tw.justify_center, Tw.h_12, Tw.w_12, Tw.rounded_full, Color.bg Conf.theme.color 100, Bp.sm [ Tw.mx_0, Tw.h_10, Tw.w_10 ] ] ]
-            [ Icon.outline LocationMarker [ Color.text Conf.theme.color 600 ]
+    div [ css [ "pt-6 px-6", sm [ "flex items-start" ] ] ]
+        [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100", sm [ "mx-0 h-10 w-10" ] ] ]
+            [ Icon.outline LocationMarker "text-primary-600"
             ]
-        , div [ css [ Tw.mt_3, Tw.text_center, Bp.sm [ Tw.mt_0, Tw.ml_4, Tw.text_left ] ] ]
-            [ h3 [ id titleId, css [ Tw.text_lg, Tw.leading_6, Tw.font_medium, Tw.text_gray_900 ] ] [ text "Find a path between tables" ]
-            , p [ css [ Tw.text_sm, Tw.text_gray_500 ] ]
+        , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
+            [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Find a path between tables" ]
+            , p [ class "text-sm text-gray-500" ]
                 [ text "Use relations to find a path between two tables. Useful when you don't know how tables are connected but you want to query their data together." ]
             ]
         ]
@@ -72,10 +69,10 @@ viewHeader titleId =
 
 viewAlert : Html msg
 viewAlert =
-    div [ css [ Tw.px_6, Tw.mt_3 ] ]
-        [ Alert.withDescription { color = Color.yellow, icon = Exclamation, title = "Experimental feature" }
+    div [ class "px-6 mt-3" ]
+        [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Experimental feature" }
             [ text "This feature is experimental to see if and how it's useful and "
-            , extLink Conf.constants.azimuttDiscussionFindPath [ css [ Tu.link ] ] [ text "gather some feedback" ]
+            , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "gather some feedback" ]
             , text "."
             , br [] []
             , text "Please, be indulgent with the UX and share your thoughts on it (useful or not, how to improve...)."
@@ -85,10 +82,10 @@ viewAlert =
 
 viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
 viewSettings modalId isOpen settings =
-    div [ css [ Tw.px_6, Tw.mt_3 ] ]
-        [ button [ onClick (FindPathMsg FPToggleSettings), css [ Tu.link, Css.focus [ Tw.outline_none ] ] ] [ text "Search settings" ]
-        , div [ css [ Tw.p_3, Tw.border, Tw.border_gray_300, Tw.bg_gray_50, Tw.rounded_md, Tw.shadow_sm, Tu.unless isOpen [ Tw.hidden ] ] ]
-            [ p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ]
+    div [ class "px-6 mt-3" ]
+        [ button [ onClick (FindPathMsg FPToggleSettings), css [ "tw-link", focus [ "outline-none" ] ] ] [ text "Search settings" ]
+        , div [ css [ "p-3 border border-gray-300 bg-gray-50 rounded-md shadow-sm", B.cond isOpen "" "hidden" ] ]
+            [ p [ class "mt-1 text-sm text-gray-500" ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
                           Use the settings below to limit your search and keep the search correct.""" ]
             , viewSettingsInput (modalId ++ "-settings-ignored-tables")
@@ -123,18 +120,18 @@ stringList str =
 
 viewSettingsInput : String -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg
 viewSettingsInput fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldValue msg =
-    div [ css [ Bp.sm [ Tw.grid, Tw.grid_cols_4, Tw.gap_3, Tw.items_start, Tw.mt_3 ] ] ]
-        [ label [ for fieldId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700, Bp.sm [ Tw.mt_px, Tw.pt_2 ] ] ] [ text fieldLabel ]
-        , div [ css [ Tw.mt_1, Bp.sm [ Tw.mt_0, Tw.col_span_3 ] ] ]
-            [ input [ type_ fieldType, id fieldId, value fieldValue, onInput msg, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ Tw.form_input, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ] ] []
-            , p [ id (fieldId ++ "-help"), css [ Tw.text_sm, Tw.text_gray_500 ] ] [ text fieldHelp ]
+    div [ css [ sm [ "grid grid-cols-4 gap-3 items-start mt-3" ] ] ]
+        [ label [ for fieldId, css [ "block text-sm font-medium text-gray-700", sm [ "mt-px pt-2" ] ] ] [ text fieldLabel ]
+        , div [ css [ "mt-1", sm [ "mt-0 col-span-3" ] ] ]
+            [ input [ type_ fieldType, id fieldId, value fieldValue, onInput msg, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "w-full border-gray-300 rounded-md shadow-sm", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
+            , p [ id (fieldId ++ "-help"), class "text-sm text-gray-500" ] [ text fieldHelp ]
             ]
         ]
 
 
 viewSearchForm : HtmlId -> Dict TableId ErdTable -> Maybe TableId -> Maybe TableId -> Html Msg
 viewSearchForm modalId tables from to =
-    div [ css [ Tw.px_6, Tw.mt_3, Tw.flex, Tw.space_x_3 ] ]
+    div [ class "px-6 mt-3 flex space-x-3" ]
         [ viewSelectCard (modalId ++ "-from") "From" "Starting table for the path" from (FPUpdateFrom >> FindPathMsg) tables
         , viewSelectCard (modalId ++ "-to") "To" "Table you want to go to" to (FPUpdateTo >> FindPathMsg) tables
         ]
@@ -142,10 +139,10 @@ viewSearchForm modalId tables from to =
 
 viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId ErdTable -> Html Msg
 viewSelectCard fieldId title description selectedValue buildMsg tables =
-    div [ css [ Tw.flex_grow, Tw.p_3, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Bp.sm [ Tw.col_span_3 ] ] ]
-        [ label [ for fieldId, css [ Tw.block, Tw.text_sm, Tw.font_medium, Tw.text_gray_700 ] ] [ text title ]
-        , div [ css [ Tw.mt_1 ] ]
-            [ select [ id fieldId, onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), css [ Tw.form_select, Tw.block, Tw.w_full, Tw.border_gray_300, Tw.rounded_md, Css.focus [ Tw.ring_indigo_500, Tw.border_indigo_500 ], Bp.sm [ Tw.text_sm ] ] ]
+    div [ css [ "flex-grow p-3 border border-gray-300 rounded-md shadow-sm", sm [ "col-span-3" ] ] ]
+        [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text title ]
+        , div [ class "mt-1" ]
+            [ select [ id fieldId, onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), css [ "block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]
                 (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
                     :: (tables
                             |> Dict.values
@@ -160,7 +157,7 @@ viewSelectCard fieldId title description selectedValue buildMsg tables =
                        )
                 )
             ]
-        , p [ css [ Tw.mt_1, Tw.text_sm, Tw.text_gray_500 ] ] [ text description ]
+        , p [ class "mt-1 text-sm text-gray-500" ] [ text description ]
         ]
 
 
@@ -169,13 +166,13 @@ viewPaths model =
     case ( model.from, model.to, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
             if result.paths |> List.isEmpty then
-                div [ css [ Tw.px_6, Tw.mt_3, Tw.text_center ] ]
-                    [ h2 [ css [ Tw.mt_2, Tw.text_lg, Tw.font_medium, Tw.text_gray_900 ] ] [ text "No path found" ]
-                    , img [ src "/assets/images/closed-door.jpg", alt "Closed door", css [ Tw.h_96, Tw.inline_block, Tw.align_middle ] ] []
+                div [ class "px-6 mt-3 text-center" ]
+                    [ h2 [ class "mt-2 text-lg font-medium text-gray-900" ] [ text "No path found" ]
+                    , img [ src "/assets/images/closed-door.jpg", alt "Closed door", class "h-96 inline-block align-middle" ] []
                     ]
 
             else
-                div [ css [ Tw.px_6, Tw.mt_3, Tw.overflow_y_auto ] ]
+                div [ class "px-6 mt-3 overflow-y-auto" ]
                     [ div []
                         ([ text ("Found " ++ String.fromInt (List.length result.paths) ++ " paths between tables ")
                          , bText (TableId.show from)
@@ -184,14 +181,14 @@ viewPaths model =
                          , text ":"
                          , br [] []
                          ]
-                            |> L.appendIf ((result.paths |> List.length) > 100) (small [ css [ Tw.text_gray_500 ] ] [ text "Too much results ? Check 'Search settings' above to ignore some table or columns" ])
+                            |> L.appendIf ((result.paths |> List.length) > 100) (small [ class "text-gray-500" ] [ text "Too much results ? Check 'Search settings' above to ignore some table or columns" ])
                         )
-                    , div [ css [ Tw.mt_3, Tw.border, Tw.border_gray_300, Tw.rounded_md, Tw.shadow_sm, Tw.divide_y, Tw.divide_gray_300 ] ]
+                    , div [ class "mt-3 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
                         (result.paths |> List.sortBy Nel.length |> List.indexedMap (viewPath result.opened from))
-                    , small [ css [ Tw.text_gray_500 ] ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
-                    , div [ css [ Tw.mt_3 ] ]
+                    , small [ class "text-gray-500" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
+                    , div [ class "mt-3" ]
                         [ text "We hope your like this feature. If you have a few minutes, please write us "
-                        , extLink Conf.constants.azimuttDiscussionFindPath [ css [ Tu.link ] ] [ text "a quick feedback" ]
+                        , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "a quick feedback" ]
                         , text " about it and your use case so we can continue to improve 🚀"
                         ]
                     ]
@@ -203,9 +200,9 @@ viewPaths model =
 viewPath : Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
 viewPath opened from i path =
     div []
-        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ Tw.px_6, Tw.py_4, Tw.cursor_pointer, Tu.when (opened == Just i) [ Color.bg Conf.theme.color 100, Color.text Conf.theme.color 700 ] ] ]
+        [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ "px-6 py-4 cursor-pointer", B.cond (opened == Just i) "bg-primary-100 text-primary-700" "" ] ]
             (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep))
-        , div [ css [ Tw.px_6, Tw.py_3, Tw.border_t, Tw.border_gray_300, Color.text Conf.theme.color 700, Tu.when (opened /= Just i) [ Tw.hidden ] ] ]
+        , div [ css [ "px-6 py-3 border-t border-gray-300", "text-primary-700", B.cond (opened /= Just i) "hidden" "" ] ]
             [ pre [] [ text (buildQuery from path) ]
             ]
         ]
@@ -223,7 +220,7 @@ viewPathStep s =
 
 viewPathStepDetails : String -> ColumnRef -> ColumnRef -> List (Html msg)
 viewPathStepDetails dir from to =
-    [ text " > ", span [ css [ Tw.underline ] ] [ text (TableId.show to.table) ] |> Tooltip.t (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to) ]
+    [ text " > ", span [ class "underline" ] [ text (TableId.show to.table) ] |> Tooltip.t (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to) ]
 
 
 buildQuery : TableId -> FindPathPath -> String
@@ -247,21 +244,21 @@ buildQuery table joins =
 
 viewFooter : FindPathSettings -> FindPathDialog -> Html Msg
 viewFooter settings model =
-    div [ css [ Tw.px_6, Tw.py_3, Tw.mt_3, Tw.flex, Tw.items_center, Tw.justify_between, Tw.flex_row_reverse, Tw.bg_gray_50 ] ]
+    div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         (case ( model.from, model.to, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
-                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
+                    [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
 
                 else
-                    [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
+                    [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ], span [] [ text "Results are out of sync with search 🤯" ] ]
 
             ( Just _, Just _, FindPathState.Searching ) ->
-                [ Button.primary3 Conf.theme.color [ disabled True ] [ Icon.loading [ Tw.neg_ml_1, Tw.mr_2, Tw.animate_spin ], text "Searching..." ] ]
+                [ Button.primary3 Tw.primary [ disabled True ] [ Icon.loading "-ml-1 mr-2 animate-spin", text "Searching..." ] ]
 
             ( Just _, Just _, FindPathState.Empty ) ->
-                [ Button.primary3 Conf.theme.color [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
+                [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPSearch) ] [ text "Search" ] ]
 
             _ ->
-                [ Button.primary3 Conf.theme.color [ disabled True ] [ text "Search" ] ]
+                [ Button.primary3 Tw.primary [ disabled True ] [ text "Search" ] ]
         )

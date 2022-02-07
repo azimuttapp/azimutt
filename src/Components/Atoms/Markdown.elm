@@ -1,9 +1,8 @@
 module Components.Atoms.Markdown exposing (doc, markdown, markdownUnsafe)
 
-import ElmBook.Chapter exposing (chapter, renderComponentList)
-import ElmBook.ElmCSS exposing (Chapter)
+import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
+import Html exposing (Html)
 import Html.Attributes exposing (class, classList)
-import Html.Styled as Styled exposing (Html)
 import Markdown exposing (Options)
 
 
@@ -19,7 +18,7 @@ markdownUnsafe classes md =
 
 render : Options -> List String -> String -> Html msg
 render options classes md =
-    Styled.fromUnstyled (Markdown.toHtmlWith options [ class "markdown", classList (classes |> List.map (\c -> ( c, True ))) ] md)
+    Markdown.toHtmlWith options [ class "markdown", classList (classes |> List.map (\c -> ( c, True ))) ] md
 
 
 defaultOptions : Options

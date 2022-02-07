@@ -1,13 +1,12 @@
-module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, theme)
+module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
-import Libs.Models.Color as Color exposing (Color)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Theme exposing (Theme)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Tailwind as Tw exposing (Color)
 import Models.Project.SchemaName exposing (SchemaName)
 
 
@@ -49,11 +48,6 @@ github =
     "https://github.com/azimuttapp/azimutt"
 
 
-theme : Theme
-theme =
-    { color = Color.indigo }
-
-
 newsletter : Newsletter.Form
 newsletter =
     { method = "post", url = "https://www.getrevue.co/profile/azimuttapp/add_subscriber", placeholder = "Enter your email", cta = "Subscribe" }
@@ -65,9 +59,9 @@ type alias SampleSchema =
 
 schemaSamples : Dict String SampleSchema
 schemaSamples =
-    [ { url = "/samples/basic.sql", color = Color.pink, icon = ViewList, key = "basic", name = "Basic", description = "Simple login/role schema. The easiest one, just enough play with Azimutt features.", tables = 4 }
-    , { url = "/samples/wordpress.sql", color = Color.yellow, icon = Template, key = "wordpress", name = "Wordpress", description = "The well known CMS powering most of the web. An interesting schema, but with no foreign keys!", tables = 12 }
-    , { url = "/samples/gospeak.sql", color = Color.green, icon = ClipboardList, key = "gospeak", name = "Gospeak.io", description = "A full featured SaaS for meetup organizers. A good real world example to explore and really see the power of Azimutt.", tables = 26 }
+    [ { url = "/samples/basic.sql", color = Tw.pink, icon = ViewList, key = "basic", name = "Basic", description = "Simple login/role schema. The easiest one, just enough play with Azimutt features.", tables = 4 }
+    , { url = "/samples/wordpress.sql", color = Tw.yellow, icon = Template, key = "wordpress", name = "Wordpress", description = "The well known CMS powering most of the web. An interesting schema, but with no foreign keys!", tables = 12 }
+    , { url = "/samples/gospeak.sql", color = Tw.green, icon = ClipboardList, key = "gospeak", name = "Gospeak.io", description = "A full featured SaaS for meetup organizers. A good real world example to explore and really see the power of Azimutt.", tables = 26 }
     ]
         |> List.map (\sample -> ( sample.key, sample ))
         |> Dict.fromList
@@ -88,6 +82,11 @@ canvas =
 schema : { default : SchemaName }
 schema =
     { default = "public" }
+
+
+ui : { openDuration : Int, closeDuration : Int }
+ui =
+    { openDuration = 200, closeDuration = 300 }
 
 
 ids :
