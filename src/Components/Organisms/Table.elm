@@ -111,11 +111,10 @@ table model =
         , onMouseEnter (model.actions.hoverTable True)
         , onMouseLeave (model.actions.hoverTable False)
         , css
-            [ "inline-block bg-white rounded-lg cursor-pointer"
+            [ "inline-block bg-white rounded-lg"
             , B.cond model.state.isHover "shadow-lg" "shadow-md"
             , B.cond model.state.selected ("ring-4 " ++ ring_500 model.state.color) ""
-
-            --, B.cond model.state.dragging "transform -rotate-3" ""
+            , B.cond model.state.dragging "cursor-move" ""
             ]
         ]
         [ Lazy.lazy viewHeader model
@@ -221,7 +220,7 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> L.nonEmpty then
-        div ([ class "w-6 h-6", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
+        div ([ class "w-6 h-6 cursor-pointer", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
             [ Icon.solid ExternalLink "pt-2" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
@@ -248,7 +247,7 @@ viewColumnIconDropdown model column icon =
             model.id ++ "-" ++ column.name ++ "-dropdown"
     in
     if column.inRelations |> List.isEmpty then
-        div [] [ button [ type_ "button", id dropdownId, css [ focus [ "outline-none" ] ] ] [ icon ] ]
+        div [] [ button [ type_ "button", id dropdownId, css [ "cursor-default", focus [ "outline-none" ] ] ] [ icon ] ]
 
     else
         Dropdown.dropdown { id = dropdownId, direction = BottomRight, isOpen = model.state.openedDropdown == dropdownId }
@@ -316,7 +315,7 @@ viewColumnName column =
 
 viewComment : String -> Html msg
 viewComment comment =
-    Icon.outline Chat "w-4 ml-1 opacity-25" |> Tooltip.t comment
+    Icon.outline Chat "w-4 ml-1 opacity-50" |> Tooltip.t comment
 
 
 viewColumnKind : Model msg -> Column -> Html msg
@@ -324,7 +323,7 @@ viewColumnKind model column =
     let
         opacity : TwClass
         opacity =
-            B.cond (isHighlightedColumn model column) "opacity-100" "opacity-25"
+            B.cond (isHighlightedColumn model column) "opacity-100" "opacity-50"
 
         value : Html msg
         value =
@@ -339,7 +338,7 @@ viewColumnKind model column =
                 [ span [ class opacity ] [ text "?" ] |> Tooltip.t "nullable" ]
 
             else
-                []
+                [ span [ class "opacity-0" ] [ text "?" ] ]
     in
     div [ class "ml-1" ] (value :: nullable)
 

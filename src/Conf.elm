@@ -142,6 +142,8 @@ hotkeys =
         , ( "save-layout", [ { hotkey | key = "l", alt = True } ] )
         , ( "create-virtual-relation", [ { hotkey | key = "v", alt = True } ] )
         , ( "find-path", [ { hotkey | key = "p", alt = True } ] )
+        , ( "reset-zoom", [ { hotkey | key = "0", ctrl = True } ] )
+        , ( "fit-to-screen", [ { hotkey | key = "0", ctrl = True, alt = True } ] )
         , ( "undo", [ { hotkey | key = "z", ctrl = True } ] )
         , ( "redo", [ { hotkey | key = "Z", ctrl = True, shift = True } ] )
         , ( "cancel", [ { hotkey | key = "Escape" } ] )

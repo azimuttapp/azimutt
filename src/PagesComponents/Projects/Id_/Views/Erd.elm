@@ -80,9 +80,9 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
     main_
         [ class "tw-erd"
         , classList
-            [ ( "tw-cursor-hand", cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing )
-            , ( "tw-cursor-hand-drag", cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing )
-            , ( "tw-cursor-cross", virtualRelation /= Nothing )
+            [ ( "cursor-grab-all", cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing )
+            , ( "cursor-grabbing-all", cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing )
+            , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
         , onWheel OnWheel
@@ -184,7 +184,7 @@ viewEmptyState tables =
                     , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
-                    [ text "If you ♥️ Azimutt, "
+                    [ text "If you ❤️ Azimutt, "
                     , sendTweet Conf.constants.cheeringTweet [ class "tw-link" ] [ text "come and say hi" ]
                     , text ". We are eager to learn how you use it and for what. We also love "
                     , extLink Conf.constants.azimuttFeatureRequests [ class "tw-link" ] [ text "feedback and feature requests" ]

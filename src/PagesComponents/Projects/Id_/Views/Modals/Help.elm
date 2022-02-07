@@ -188,6 +188,8 @@ shortcuts =
              , { hotkey = [ "Alt", "l" ], description = "Create a layout from your current state" }
              , { hotkey = [ "Alt", "v" ], description = "Add a new virtual relation" }
              , { hotkey = [ "Alt", "p" ], description = "Open find path dialog, use hovered table as source" }
+             , { hotkey = [ "Ctrl", "0" ], description = "Zoom to 100%" }
+             , { hotkey = [ "Ctrl", "Alt", "0" ], description = "Fit diagram to screen" }
              , { hotkey = [ "Ctrl", "ArrowUp" ], description = "Bring hovered table on step forward" }
              , { hotkey = [ "Ctrl", "ArrowDown" ], description = "Bring hovered table on step backward" }
              , { hotkey = [ "Ctrl", "Shift", "ArrowUp" ], description = "Bring hovered table in the front" }

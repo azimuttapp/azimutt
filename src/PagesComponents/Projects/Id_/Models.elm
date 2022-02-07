@@ -231,4 +231,4 @@ confirm title content message =
 
 resetCanvas : Msg
 resetCanvas =
-    ResetCanvas |> confirm "Reset canvas?" (text "You will loose your current canvas state.")
+    ResetCanvas |> confirm "Reset canvas?" (text "You will lose your current canvas state.")

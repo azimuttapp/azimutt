@@ -118,10 +118,10 @@ viewHome model =
         , description =
             { title = "Context switch like a pro"
             , content =
-                [ text "Do you like throwing away your work ? Me neither. And Azimutt has you covered on this."
+                [ text "Do you like throwing away your work ? Me neither. And Azimutt has you covered on this. "
                 , text "Once you have finished an investigation, save your meaningful diagram as a layout so you can come back to it later and even improve it."
                 , br [] []
-                , text "Your colleagues will be jealous, until you tell the about Azimutt ❤️"
+                , text "Your colleagues will be jealous, until you tell them about Azimutt ❤️"
                 ]
             }
         , cta = Just { url = Route.toHref Route.Projects, text = "That's enough, I'm in!", track = Just (Track.openAppCta "home-layouts-section") }

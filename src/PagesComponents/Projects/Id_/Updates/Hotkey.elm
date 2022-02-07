@@ -56,6 +56,12 @@ handleHotkey model hotkey =
         "find-path" ->
             ( model, T.send (FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen model.hoverTable Nothing))) )
 
+        "reset-zoom" ->
+            ( model, T.send (Zoom (1 - (model.erd |> Maybe.mapOrElse (\erd -> erd.canvas.zoom) 0))) )
+
+        "fit-to-screen" ->
+            ( model, T.send FitContent )
+
         "undo" ->
             -- FIXME
             ( model, T.send (toastInfo "Undo action not handled yet") )
