@@ -1,9 +1,9 @@
-module PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation, create, unpack)
+module PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation, create, new, unpack)
 
 import Dict exposing (Dict)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation exposing (Relation)
-import Models.Project.RelationId exposing (RelationId)
+import Models.Project.RelationId as RelationId exposing (RelationId)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
@@ -17,6 +17,11 @@ type alias ErdRelation =
     , ref : ErdColumnRef
     , origins : List Origin
     }
+
+
+new : RelationName -> ErdColumnRef -> ErdColumnRef -> List Origin -> ErdRelation
+new name src ref origins =
+    ErdRelation (RelationId.new src ref) name src ref origins
 
 
 create : Dict TableId Table -> Relation -> ErdRelation

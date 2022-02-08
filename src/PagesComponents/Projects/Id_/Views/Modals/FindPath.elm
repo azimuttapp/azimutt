@@ -19,16 +19,17 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, sm)
-import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
-import Models.Project.FindPathDialog exposing (FindPathDialog)
-import Models.Project.FindPathPath exposing (FindPathPath)
+import Models.Project.ColumnRef as ColumnRef
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
-import Models.Project.FindPathState as FindPathState
-import Models.Project.FindPathStep exposing (FindPathStep)
-import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
+import PagesComponents.Projects.Id_.Models.FindPathPath exposing (FindPathPath)
+import PagesComponents.Projects.Id_.Models.FindPathState as FindPathState
+import PagesComponents.Projects.Id_.Models.FindPathStep exposing (FindPathStep)
+import PagesComponents.Projects.Id_.Models.FindPathStepDir exposing (FindPathStepDir(..))
 
 
 viewFindPath : Bool -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
@@ -72,7 +73,7 @@ viewAlert =
     div [ class "px-6 mt-3" ]
         [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Experimental feature" }
             [ text "This feature is experimental to see if and how it's useful and "
-            , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "gather some feedback" ]
+            , extLink Conf.constants.azimuttDiscussionFindPath [ class "link" ] [ text "gather some feedback" ]
             , text "."
             , br [] []
             , text "Please, be indulgent with the UX and share your thoughts on it (useful or not, how to improve...)."
@@ -83,7 +84,7 @@ viewAlert =
 viewSettings : HtmlId -> Bool -> FindPathSettings -> Html Msg
 viewSettings modalId isOpen settings =
     div [ class "px-6 mt-3" ]
-        [ button [ onClick (FindPathMsg FPToggleSettings), css [ "tw-link", focus [ "outline-none" ] ] ] [ text "Search settings" ]
+        [ button [ onClick (FindPathMsg FPToggleSettings), css [ "link", focus [ "outline-none" ] ] ] [ text "Search settings" ]
         , div [ css [ "p-3 border border-gray-300 bg-gray-50 rounded-md shadow-sm", B.cond isOpen "" "hidden" ] ]
             [ p [ class "mt-1 text-sm text-gray-500" ]
                 [ text """Finding all possible paths in a big graph with a lot of connections can take a long time.
@@ -188,7 +189,7 @@ viewPaths model =
                     , small [ class "text-gray-500" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                     , div [ class "mt-3" ]
                         [ text "We hope your like this feature. If you have a few minutes, please write us "
-                        , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "a quick feedback" ]
+                        , extLink Conf.constants.azimuttDiscussionFindPath [ class "link" ] [ text "a quick feedback" ]
                         , text " about it and your use case so we can continue to improve 🚀"
                         ]
                     ]
@@ -218,7 +219,7 @@ viewPathStep s =
             viewPathStepDetails "←" s.relation.ref s.relation.src
 
 
-viewPathStepDetails : String -> ColumnRef -> ColumnRef -> List (Html msg)
+viewPathStepDetails : String -> ErdColumnRef -> ErdColumnRef -> List (Html msg)
 viewPathStepDetails dir from to =
     [ text " > ", span [ class "underline" ] [ text (TableId.show to.table) ] |> Tooltip.t (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to) ]
 

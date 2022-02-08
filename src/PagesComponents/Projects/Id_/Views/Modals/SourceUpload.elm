@@ -147,7 +147,7 @@ userDefinedModal titleId =
                       So it doesn't make sense to refresh it (not out of sync), just edit or delete it if needed."""
             , br [] []
             , text "You should not see this, so if you came here normally, this is a bug. Please help us and "
-            , extLink Conf.constants.azimuttBugReport [ class "tw-link" ] [ text "report it" ]
+            , extLink Conf.constants.azimuttBugReport [ class "link" ] [ text "report it" ]
             , text ". What would be useful to fix it is what steps you did to get here."
             ]
         ]

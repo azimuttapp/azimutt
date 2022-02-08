@@ -100,7 +100,7 @@ projectList content =
 
 viewProjectPlaceholder : Html msg
 viewProjectPlaceholder =
-    li [ class "tw-project-placeholder", css [ "animate-pulse col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
+    li [ class "az-project-placeholder", css [ "animate-pulse col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ viewTextPlaceholder "w-24 h-3" ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
@@ -129,7 +129,7 @@ viewIconPlaceholder styles =
 
 viewProjectCard : Time.Zone -> Project -> Html Msg
 viewProjectCard zone project =
-    li [ class "tw-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
+    li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ text project.name ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
@@ -172,7 +172,7 @@ viewNewProject =
 
 viewModal : Model -> Html Msg
 viewModal model =
-    div [ class "tw-modal", id Conf.ids.modal ]
+    div [ class "az-modal", id Conf.ids.modal ]
         [ model.confirm
             |> Maybe.map
                 (\c ->

@@ -44,7 +44,7 @@ Dev commands:
 
 - launch dev server: `elm-spa server` or `elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js` (needs `npm install -g elm-live` or use `npx`)
 - launch design system: `elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js` (needs `npm install -g elm-book` or use `npx`)
-- launch tailwind: `npx tailwindcss -i ./public/tw-styles.css -o ./public/dist/tw-styles.css --watch` (needs `npm install -D tailwindcss`)
+- launch tailwind: `npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch` (needs `npm install -D tailwindcss`)
 - launch the tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
 - run linter: `elm-review` (needs `npm install -g elm-review` or use `npx`)
 - check format: `elm-format src tests --validate` (needs `npm install -g elm-format` or use `npx`)
@@ -86,8 +86,6 @@ A few files live directly on `src` folder:
 Also, a convention we use a lot: when "extending" an existing library (ex: `Maybe` or `Result`), I create the same files in the same structure but under the `Libs` folder.
 You can look at `Dict`, `List` but also `Html/Attributes` or `Html/Styled/Events` or even `Json/Encode`.
 When I use them, most of the time I import it only with its initial.
-So you may find `[] |> List.isEmpty` for functions from official libraries and `[] |> L.nonEmpty` for functions from my libraries.
-Not sure this one is good, feel free to suggest other ways ;)
 
 ## License
 

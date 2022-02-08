@@ -52,7 +52,7 @@ viewHelp opened model =
                 )
             , p [ class "mt-3" ]
                 [ text "I hope you find Azimutt as much as useful as I do. The application is quickly evolving and any feedback, feature request or use case description is "
-                , extLink Conf.constants.azimuttDiscussions [ class "tw-link" ] [ text "very welcome" ]
+                , extLink Conf.constants.azimuttDiscussions [ class "link" ] [ text "very welcome" ]
                 , text " to help us make the most out of it."
                 ]
             ]
@@ -86,7 +86,7 @@ search =
         , p [ class "mt-3" ]
             [ soon
             , text " We plan to use full-text search to be typo tolerant and have better results, as well as let you import some data to perform search on them. If you need this, please "
-            , extLink Conf.constants.azimuttDiscussionSearch [ class "tw-link" ] [ text "vote and let us know" ]
+            , extLink Conf.constants.azimuttDiscussionSearch [ class "link" ] [ text "vote and let us know" ]
             , text " to help prioritize it."
             ]
         ]
@@ -110,7 +110,7 @@ canvasNavigation =
             , text " You can select multiple tables using "
             , hotkey [ "ctrl", "click" ]
             , text " or the selection box, and then move them all at once. If you have feedback or suggestions to improve this navigation, please "
-            , extLink Conf.constants.azimuttDiscussionCanvas [ class "tw-link" ] [ text "tell us" ]
+            , extLink Conf.constants.azimuttDiscussionCanvas [ class "link" ] [ text "tell us" ]
             , text ", it's an important core feature."
             ]
         ]
@@ -169,7 +169,7 @@ findPath =
             [ experimental
             , text " Find all the possible paths between two tables. To get relevant results, use the settings to ignore some tables or columns and keep the length small. "
             , text "We are still figuring out how this could be the most interesting (path algo, heuristics, UX...) so don't hesitate to "
-            , extLink Conf.constants.azimuttDiscussionFindPath [ class "tw-link" ] [ text "come and discuss" ]
+            , extLink Conf.constants.azimuttDiscussionFindPath [ class "link" ] [ text "come and discuss" ]
             , text " about it."
             ]
         ]
@@ -199,7 +199,7 @@ shortcuts =
              ]
                 |> List.map (\h -> div [ class "flex justify-between flex-row-reverse mt-1" ] [ hotkey h.hotkey, text (" " ++ h.description) ])
             )
-        , p [ class "mt-3" ] [ text "If you can think of other or have better suggestion for them, ", extLink Conf.constants.azimuttDiscussions [ class "tw-link" ] [ text "just let us know" ], text "." ]
+        , p [ class "mt-3" ] [ text "If you can think of other or have better suggestion for them, ", extLink Conf.constants.azimuttDiscussions [ class "link" ] [ text "just let us know" ], text "." ]
         ]
     }
 

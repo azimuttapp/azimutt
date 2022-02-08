@@ -30,7 +30,7 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
         inverted =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
     in
-    div [ class ("tw-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
+    div [ class ("az-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
         [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
             [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
                 [ Icon.solid ArrowsExpand "" ]

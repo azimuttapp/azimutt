@@ -1,4 +1,4 @@
-module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader, root)
+module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Organisms.Footer as Footer
@@ -7,22 +7,12 @@ import Components.Organisms.Navbar as Navbar
 import Components.Slices.Newsletter as Newsletter
 import Conf
 import Gen.Route as Route
-import Html exposing (Html, a, div, footer, h1, header, main_, p, span, text)
-import Html.Attributes exposing (class, href, id)
+import Html exposing (Html, div, footer, h1, header, main_, p, span, text)
+import Html.Attributes exposing (class)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models exposing (Link)
 import Libs.Tailwind exposing (lg, md, sm)
-
-
-root : List (Html msg) -> List (Html msg)
-root children =
-    children ++ [ viewToasts ]
-
-
-viewToasts : Html msg
-viewToasts =
-    div [ id "toast-container", class "toast-container position-fixed bottom-0 start-0 p-2" ] []
 
 
 publicHeader : Html msg
@@ -88,7 +78,7 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
             ]
         ]
     ]
-        ++ (viewOldApp :: footer)
+        ++ (viewFooter :: footer)
 
 
 viewHeader : List (Html msg) -> Html msg
@@ -100,17 +90,19 @@ viewHeader content =
         ]
 
 
-viewOldApp : Html msg
-viewOldApp =
+viewFooter : Html msg
+viewFooter =
     footer []
         [ div [ css [ "max-w-7xl mx-auto py-12 px-4", sm [ "px-6" ], md [ "flex items-center justify-between" ], lg [ "px-8" ] ] ]
             [ div [ css [ "mt-8", md [ "mt-0 order-1" ] ] ]
                 [ p [ css [ "text-center text-base text-gray-400" ] ]
-                    [ text "This new Azimutt version is in trial, please give "
-                    , extLink Conf.constants.azimuttBugReport [ css [ "tw-link" ] ] [ text "any feedback" ]
-                    , text " you may have. You can still access the previous version "
-                    , a [ href (Route.toHref Route.App), css [ "tw-link" ] ] [ text "here" ]
-                    , text "."
+                    [ text "Azimutt is an "
+                    , extLink Conf.constants.azimuttGithub [ css [ "link" ] ] [ text "Open source" ]
+                    , text " tool written with love in "
+                    , extLink "https://elm-lang.org" [ css [ "link" ] ] [ text "Elm" ]
+                    , text ". We always look for "
+                    , extLink Conf.constants.azimuttFeatureRequests [ css [ "link" ] ] [ text "feedback" ]
+                    , text " and will happily discuss your use cases to make it evolve."
                     ]
                 ]
             ]

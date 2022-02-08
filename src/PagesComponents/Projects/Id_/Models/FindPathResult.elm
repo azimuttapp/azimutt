@@ -1,8 +1,8 @@
-module Models.Project.FindPathResult exposing (FindPathResult)
+module PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
 
-import Models.Project.FindPathPath exposing (FindPathPath)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.TableId exposing (TableId)
+import PagesComponents.Projects.Id_.Models.FindPathPath exposing (FindPathPath)
 
 
 type alias FindPathResult =

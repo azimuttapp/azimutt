@@ -45,7 +45,7 @@ viewCreateLayout opened model =
                         ]
                     , p [ class "mt-1 text-sm text-gray-500" ]
                         [ text "Do you like Azimutt ? Consider "
-                        , sendTweet Conf.constants.cheeringTweet [ tabindex -1, class "tw-link" ] [ text "sending us a tweet" ]
+                        , sendTweet Conf.constants.cheeringTweet [ tabindex -1, class "link" ] [ text "sending us a tweet" ]
                         , text ", it will help "
                         , bText "keep our motivation high"
                         , text " 🥰"

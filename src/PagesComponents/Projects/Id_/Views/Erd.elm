@@ -78,7 +78,8 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
                     )
     in
     main_
-        [ class "tw-erd"
+        [ class "az-erd h-full"
+        , style "height" "calc(100% - 64px)" -- 64px is the header height, we want this component to fill the viewport
         , classList
             [ ( "cursor-grab-all", cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing )
             , ( "cursor-grabbing-all", cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing )
@@ -89,7 +90,7 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
         , stopPointerDown (.position >> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
         ]
         [ div
-            [ class "tw-canvas origin-top-left"
+            [ class "az-canvas origin-top-left"
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
             [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
@@ -108,7 +109,7 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
 viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
 viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps tables shownTables =
     Keyed.node "div"
-        [ class "tw-tables" ]
+        [ class "az-tables" ]
         (shownTables
             |> List.reverse
             |> List.indexedMap (\index tableId -> ( index, tableId ))
@@ -140,14 +141,14 @@ viewRelations tableProps relations =
             tableProps |> Dict.get ref.table |> Maybe.andThen (\t -> t.columnProps |> Dict.get ref.column)
     in
     Keyed.node "div"
-        [ class "tw-relations" ]
+        [ class "az-relations" ]
         (relations |> List.map (\r -> ( r.name, Lazy.lazy3 viewRelation (getColumnProps r.src) (getColumnProps r.ref) r )))
 
 
 viewSelectionBox : Area -> Html Msg
 viewSelectionBox area =
     div
-        [ css [ "tw-selection-area absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ]
+        [ css [ "az-selection-area absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ]
         , style "transform" ("translate(" ++ String.fromFloat area.position.left ++ "px, " ++ String.fromFloat area.position.top ++ "px)")
         , style "width" (String.fromFloat area.size.width ++ "px")
         , style "height" (String.fromFloat area.size.height ++ "px")
@@ -174,7 +175,7 @@ viewEmptyState tables =
                     [ text "Hello from Azimutt 👋" ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "Azimutt let you freely explore your database schema. To start, just type what you are looking for in the "
-                    , button [ onClick (Focus Conf.ids.searchInput), css [ "tw-link", focus [ "outline-none" ] ] ] [ text "search bar" ]
+                    , button [ onClick (Focus Conf.ids.searchInput), css [ "link", focus [ "outline-none" ] ] ] [ text "search bar" ]
                     , text ", and then look at columns and follow relations. Once you have interesting layout, you can save it for later."
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
@@ -185,9 +186,9 @@ viewEmptyState tables =
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ❤️ Azimutt, "
-                    , sendTweet Conf.constants.cheeringTweet [ class "tw-link" ] [ text "come and say hi" ]
+                    , sendTweet Conf.constants.cheeringTweet [ class "link" ] [ text "come and say hi" ]
                     , text ". We are eager to learn how you use it and for what. We also love "
-                    , extLink Conf.constants.azimuttFeatureRequests [ class "tw-link" ] [ text "feedback and feature requests" ]
+                    , extLink Conf.constants.azimuttFeatureRequests [ class "link" ] [ text "feedback and feature requests" ]
                     , text "."
                     ]
                 ]

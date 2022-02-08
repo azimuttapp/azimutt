@@ -9,10 +9,10 @@ import Libs.Maybe as M
 import Libs.Models exposing (FileLineContent, TrackEvent)
 import Libs.Result as R
 import Models.Project exposing (Project)
-import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Source exposing (Source)
+import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
 
 
 

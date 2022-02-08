@@ -1,4 +1,4 @@
-module PagesComponents.App.Updates.FindPathTest exposing (..)
+module PagesComponents.Projects.Id_.Updates.FindPathTest exposing (..)
 
 import Dict exposing (Dict)
 import Expect
@@ -9,13 +9,15 @@ import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
-import Models.Project.FindPathStep exposing (FindPathStep)
-import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
-import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Relation as Relation
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
-import PagesComponents.App.Updates.FindPath exposing (computeFindPath)
+import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.FindPathStep exposing (FindPathStep)
+import PagesComponents.Projects.Id_.Models.FindPathStepDir exposing (FindPathStepDir(..))
+import PagesComponents.Projects.Id_.Updates.FindPath exposing (computeFindPath)
 import Test exposing (Test, describe, test)
 
 
@@ -44,52 +46,52 @@ suite =
         ]
 
 
-basicTables : Dict TableId Table
+basicTables : Dict TableId ErdTable
 basicTables =
     [ usersTable, rolesTable, roleUserTable, credentialsTable ] |> D.fromListMap .id
 
 
-basicRelations : List Relation
+basicRelations : List ErdRelation
 basicRelations =
     [ roleUserToUsers, roleUserToRoles, credentialsToUsers ]
 
 
-usersTable : Table
+usersTable : ErdTable
 usersTable =
     buildTable "users" [ "id" ]
 
 
-rolesTable : Table
+rolesTable : ErdTable
 rolesTable =
     buildTable "roles" [ "id", "by" ]
 
 
-roleUserTable : Table
+roleUserTable : ErdTable
 roleUserTable =
     buildTable "role_user" [ "id", "role_id", "user_id" ]
 
 
-credentialsTable : Table
+credentialsTable : ErdTable
 credentialsTable =
     buildTable "credentials" [ "user_id" ]
 
 
-roleUserToUsers : Relation
+roleUserToUsers : ErdRelation
 roleUserToUsers =
     buildRelation ( "role_user", "user_id" ) ( "users", "id" )
 
 
-roleUserToRoles : Relation
+roleUserToRoles : ErdRelation
 roleUserToRoles =
     buildRelation ( "role_user", "role_id" ) ( "roles", "id" )
 
 
-credentialsToUsers : Relation
+credentialsToUsers : ErdRelation
 credentialsToUsers =
     buildRelation ( "credentials", "user_id" ) ( "users", "id" )
 
 
-rolesToUsers : Relation
+rolesToUsers : ErdRelation
 rolesToUsers =
     buildRelation ( "roles", "by" ) ( "users", "id" )
 
@@ -99,9 +101,9 @@ tableId name =
     ( "public", name )
 
 
-buildTable : TableName -> List String -> Table
+buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) "public" name False (columnNames |> Nel.fromList |> Maybe.withDefault (Nel "id" []) |> Nel.map buildColumn |> Ned.fromNelMap .name) Nothing [] [] [] Nothing []
+    Table (tableId name) "public" name False (columnNames |> Nel.fromList |> Maybe.withDefault (Nel "id" []) |> Nel.map buildColumn |> Ned.fromNelMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create Dict.empty []
 
 
 buildColumn : ColumnName -> Column
@@ -109,9 +111,9 @@ buildColumn name =
     Column 0 name "int" False Nothing Nothing []
 
 
-buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> Relation
+buildRelation : ( TableName, ColumnName ) -> ( TableName, ColumnName ) -> ErdRelation
 buildRelation ( fromTable, fromCol ) ( toTable, toCol ) =
-    Relation.new "" (ColumnRef (tableId fromTable) fromCol) (ColumnRef (tableId toTable) toCol) []
+    Relation.new "" (ColumnRef (tableId fromTable) fromCol) (ColumnRef (tableId toTable) toCol) [] |> ErdRelation.create Dict.empty
 
 
 settings : FindPathSettings

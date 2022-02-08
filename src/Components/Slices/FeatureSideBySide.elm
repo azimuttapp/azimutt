@@ -2,7 +2,6 @@ module Components.Slices.FeatureSideBySide exposing (Description, Model, Positio
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
-import Gen.Route as Route
 import Html exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
 import Libs.Bool as B
@@ -166,7 +165,7 @@ dsModelFull =
         { title = "Better understand your customers"
         , content = [ text "Semper curabitur ullamcorper posuere nunc sed. Ornare iaculis bibendum malesuada faucibus lacinia porttitor. Pulvinar laoreet sagittis viverra duis. In venenatis sem arcu pretium pharetra at. Lectus viverra dui tellus ornare pharetra." ]
         }
-    , cta = Just { url = Route.toHref Route.App, text = "Get started", track = Nothing }
+    , cta = Just { url = "#", text = "Get started", track = Nothing }
     , quote =
         Just
             { text = "Cras velit quis eros eget rhoncus lacus ultrices sed diam. Sit orci risus aenean curabitur donec aliquet. Mi venenatis in euismod ut."

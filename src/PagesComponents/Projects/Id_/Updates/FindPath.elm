@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.FindPath exposing (Model, handleFindPath)
+module PagesComponents.Projects.Id_.Updates.FindPath exposing (Model, computeFindPath, handleFindPath)
 
 import Conf
 import Dict exposing (Dict)
@@ -6,18 +6,18 @@ import Libs.Bool as B
 import Libs.Maybe as M
 import Libs.Nel as Nel
 import Libs.Task as T
-import Models.Project.FindPathDialog exposing (FindPathDialog)
-import Models.Project.FindPathPath exposing (FindPathPath)
-import Models.Project.FindPathResult exposing (FindPathResult)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
-import Models.Project.FindPathState as FindPathState exposing (FindPathState(..))
-import Models.Project.FindPathStep exposing (FindPathStep)
-import Models.Project.FindPathStepDir exposing (FindPathStepDir(..))
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
-import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
+import PagesComponents.Projects.Id_.Models.FindPathPath exposing (FindPathPath)
+import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
+import PagesComponents.Projects.Id_.Models.FindPathState as FindPathState exposing (FindPathState(..))
+import PagesComponents.Projects.Id_.Models.FindPathStep exposing (FindPathStep)
+import PagesComponents.Projects.Id_.Models.FindPathStepDir exposing (FindPathStepDir(..))
 import Ports
 import Services.Lenses exposing (mapErdM, mapFindPathM, mapOpened, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
 import Track
@@ -106,10 +106,10 @@ buildPaths tables relations settings tableId isDone curPath =
                                         |> List.concatMap
                                             (\r ->
                                                 if r.src.table == tableId then
-                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.ref.table isDone (curPath ++ [ { relation = ErdRelation.unpack r, direction = Right } ])
+                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.ref.table isDone (curPath ++ [ { relation = r, direction = Right } ])
 
                                                 else
-                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.src.table isDone (curPath ++ [ { relation = ErdRelation.unpack r, direction = Left } ])
+                                                    buildPaths (tables |> Dict.remove tableId) otherRelations settings r.src.table isDone (curPath ++ [ { relation = r, direction = Left } ])
                                             )
                            )
             )

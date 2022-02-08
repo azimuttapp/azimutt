@@ -70,7 +70,7 @@ main =
     ElmBook.book "Azimutt Design System"
         |> ElmBook.withThemeOptions
             [ ElmBook.ThemeOptions.subtitle "v0.1.0"
-            , ElmBook.ThemeOptions.globals [ node "link" [ rel "stylesheet", href "/dist/tw-styles.css" ] [] ]
+            , ElmBook.ThemeOptions.globals [ node "link" [ rel "stylesheet", href "/dist/styles.css" ] [] ]
             , ElmBook.ThemeOptions.logo (img [ src "/logo.svg", alt "Azimutt logo", css [ "h-12" ] ] [])
             ]
         |> ElmBook.withComponentOptions [ ElmBook.ComponentOptions.fullWidth True ]
