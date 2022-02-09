@@ -4,9 +4,9 @@ import Array
 import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
-import Libs.Dict as D
-import Libs.Json.Decode as D
-import Libs.Maybe as M
+import Libs.Dict as Dict
+import Libs.Json.Decode as Decode
+import Libs.Maybe as Maybe
 import Libs.Models exposing (UID)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
@@ -323,9 +323,9 @@ upgradeProjectSource tables relations fromSample source =
 
             max : Int
             max =
-                sources |> Dict.keys |> List.maximum |> M.mapOrElse (\i -> i + 1) 0
+                sources |> Dict.keys |> List.maximum |> Maybe.mapOrElse (\i -> i + 1) 0
         in
-        List.repeat max "" |> List.indexedMap (\i a -> sources |> D.getOrElse i a) |> Array.fromList
+        List.repeat max "" |> List.indexedMap (\i a -> sources |> Dict.getOrElse i a) |> Array.fromList
     , tables = tables |> Dict.map (\_ -> upgradeTable)
     , relations = relations |> List.map upgradeRelation
     , enabled = True
@@ -404,17 +404,17 @@ upgradeSource source =
 
 decodeProject : Decode.Decoder ProjectV1
 decodeProject =
-    D.map10 ProjectV1
+    Decode.map10 ProjectV1
         (Decode.field "id" Decode.string)
         (Decode.field "name" Decode.string)
-        (Decode.field "sources" (D.nel decodeProjectSource))
+        (Decode.field "sources" (Decode.nel decodeProjectSource))
         (Decode.field "schema" decodeSchema)
-        (D.defaultField "layouts" (D.customDict stringAsLayoutName decodeLayout) Dict.empty)
-        (D.maybeField "currentLayout" Decode.string)
-        (D.defaultFieldDeep "settings" decodeProjectSettings defaultProjectSettings)
-        (D.defaultField "createdAt" Time.decode defaultTime)
-        (D.defaultField "updatedAt" Time.decode defaultTime)
-        (D.maybeField "fromSample" Decode.string)
+        (Decode.defaultField "layouts" (Decode.customDict stringAsLayoutName decodeLayout) Dict.empty)
+        (Decode.maybeField "currentLayout" Decode.string)
+        (Decode.defaultFieldDeep "settings" decodeProjectSettings defaultProjectSettings)
+        (Decode.defaultField "createdAt" Time.decode defaultTime)
+        (Decode.defaultField "updatedAt" Time.decode defaultTime)
+        (Decode.maybeField "fromSample" Decode.string)
 
 
 decodeProjectSource : Decode.Decoder ProjectSourceV1
@@ -429,7 +429,7 @@ decodeProjectSource =
 
 decodeProjectSourceContent : Decode.Decoder ProjectSourceContentV1
 decodeProjectSourceContent =
-    D.matchOn "kind"
+    Decode.matchOn "kind"
         (\kind ->
             case kind of
                 "LocalFile" ->
@@ -451,23 +451,23 @@ decodeProjectSourceContent =
 decodeSchema : Decode.Decoder SchemaV1
 decodeSchema =
     Decode.map3 SchemaV1
-        (Decode.field "tables" (Decode.list decodeTable) |> Decode.map (D.fromListMap .id))
+        (Decode.field "tables" (Decode.list decodeTable) |> Decode.map (Dict.fromListMap .id))
         (Decode.field "relations" (Decode.list decodeRelation))
-        (D.defaultField "layout" decodeLayout defaultLayout)
+        (Decode.defaultField "layout" decodeLayout defaultLayout)
 
 
 decodeTable : Decode.Decoder TableV1
 decodeTable =
-    D.map9 (\s t c p u i ch co so -> TableV1 ( s, t ) s t c p u i ch co so)
+    Decode.map9 (\s t c p u i ch co so -> TableV1 ( s, t ) s t c p u i ch co so)
         (Decode.field "schema" Decode.string)
         (Decode.field "table" Decode.string)
-        (Decode.field "columns" (D.nel decodeColumn |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
-        (D.maybeField "primaryKey" decodePrimaryKey)
-        (D.defaultField "uniques" (Decode.list decodeUnique) [])
-        (D.defaultField "indexes" (Decode.list decodeIndex) [])
-        (D.defaultField "checks" (Decode.list decodeCheck) [])
-        (D.maybeField "comment" decodeComment)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.field "columns" (Decode.nel decodeColumn |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
+        (Decode.maybeField "primaryKey" decodePrimaryKey)
+        (Decode.defaultField "uniques" (Decode.list decodeUnique) [])
+        (Decode.defaultField "indexes" (Decode.list decodeIndex) [])
+        (Decode.defaultField "checks" (Decode.list decodeCheck) [])
+        (Decode.maybeField "comment" decodeComment)
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodeColumn : Decode.Decoder (Int -> ColumnV1)
@@ -475,52 +475,52 @@ decodeColumn =
     Decode.map6 (\n t nu d c s -> \i -> ColumnV1 i n t nu d c s)
         (Decode.field "name" Decode.string)
         (Decode.field "type" Decode.string)
-        (D.defaultField "nullable" Decode.bool False)
-        (D.maybeField "default" Decode.string)
-        (D.maybeField "comment" decodeComment)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.defaultField "nullable" Decode.bool False)
+        (Decode.maybeField "default" Decode.string)
+        (Decode.maybeField "comment" decodeComment)
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodePrimaryKey : Decode.Decoder PrimaryKeyV1
 decodePrimaryKey =
     Decode.map3 PrimaryKeyV1
         (Decode.field "name" Decode.string)
-        (Decode.field "columns" (D.nel Decode.string))
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.field "columns" (Decode.nel Decode.string))
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodeUnique : Decode.Decoder UniqueV1
 decodeUnique =
     Decode.map4 UniqueV1
         (Decode.field "name" Decode.string)
-        (Decode.field "columns" (D.nel Decode.string))
+        (Decode.field "columns" (Decode.nel Decode.string))
         (Decode.field "definition" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodeIndex : Decode.Decoder IndexV1
 decodeIndex =
     Decode.map4 IndexV1
         (Decode.field "name" Decode.string)
-        (Decode.field "columns" (D.nel Decode.string))
+        (Decode.field "columns" (Decode.nel Decode.string))
         (Decode.field "definition" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodeCheck : Decode.Decoder CheckV1
 decodeCheck =
     Decode.map4 CheckV1
         (Decode.field "name" Decode.string)
-        (D.defaultField "columns" (Decode.list Decode.string) [])
+        (Decode.defaultField "columns" (Decode.list Decode.string) [])
         (Decode.field "predicate" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodeComment : Decode.Decoder CommentV1
 decodeComment =
     Decode.map2 CommentV1
         (Decode.field "text" Decode.string)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodeRelation : Decode.Decoder RelationV1
@@ -529,7 +529,7 @@ decodeRelation =
         (Decode.field "name" Decode.string)
         (Decode.field "src" decodeColumnRef)
         (Decode.field "ref" decodeColumnRef)
-        (D.defaultField "sources" (Decode.list decodeSource) [])
+        (Decode.defaultField "sources" (Decode.list decodeSource) [])
 
 
 decodeColumnRef : Decode.Decoder ColumnRefV1
@@ -543,7 +543,7 @@ decodeSource : Decode.Decoder SourceV1
 decodeSource =
     Decode.map2 SourceV1
         (Decode.field "id" Decode.string)
-        (Decode.field "lines" (D.nel decodeSourceLine))
+        (Decode.field "lines" (Decode.nel decodeSourceLine))
 
 
 decodeSourceLine : Decode.Decoder SourceLineV1
@@ -558,7 +558,7 @@ decodeLayout =
     Decode.map5 LayoutV1
         (Decode.field "canvas" CanvasProps.decode)
         (Decode.field "tables" (Decode.list decodeTableProps))
-        (D.defaultField "hiddenTables" (Decode.list decodeTableProps) [])
+        (Decode.defaultField "hiddenTables" (Decode.list decodeTableProps) [])
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
 
@@ -569,22 +569,22 @@ decodeTableProps =
         (Decode.field "id" decodeTableId)
         (Decode.field "position" Position.decode)
         (Decode.field "color" Tw.decodeColor)
-        (D.defaultField "columns" (Decode.list Decode.string) [])
-        (D.defaultField "selected" Decode.bool False)
+        (Decode.defaultField "columns" (Decode.list Decode.string) [])
+        (Decode.defaultField "selected" Decode.bool False)
 
 
 decodeProjectSettings : ProjectSettingsV1 -> Decode.Decoder ProjectSettingsV1
 decodeProjectSettings default =
     Decode.map ProjectSettingsV1
-        (D.defaultFieldDeep "findPath" decodeFindPathSettings default.findPath)
+        (Decode.defaultFieldDeep "findPath" decodeFindPathSettings default.findPath)
 
 
 decodeFindPathSettings : FindPathSettingsV1 -> Decode.Decoder FindPathSettingsV1
 decodeFindPathSettings default =
     Decode.map3 FindPathSettingsV1
-        (D.defaultField "maxPathLength" Decode.int default.maxPathLength)
-        (D.defaultField "ignoredTables" (Decode.list decodeTableId) default.ignoredTables)
-        (D.defaultField "ignoredColumns" (Decode.list Decode.string) default.ignoredColumns)
+        (Decode.defaultField "maxPathLength" Decode.int default.maxPathLength)
+        (Decode.defaultField "ignoredTables" (Decode.list decodeTableId) default.ignoredTables)
+        (Decode.defaultField "ignoredColumns" (Decode.list Decode.string) default.ignoredColumns)
 
 
 decodeTableId : Decode.Decoder TableIdV1

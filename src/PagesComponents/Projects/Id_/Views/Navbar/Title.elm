@@ -12,8 +12,8 @@ import Html.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
@@ -47,7 +47,7 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
                     ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
                     ++ [ [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )
-                    |> L.filterNot List.isEmpty
+                    |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)
                 )
         )
@@ -69,13 +69,13 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
-                [ span [] [ text (usedLayout |> M.mapOrElse (\l -> l) "layouts") ]
+                [ span [] [ text (usedLayout |> Maybe.mapOrElse (\l -> l) "layouts") ]
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
         )
         (\_ ->
             div [ class "min-w-max divide-y divide-gray-100" ]
-                (L.prependOn usedLayout
+                (List.prependOn usedLayout
                     (\l ->
                         div [ role "none", class "py-1" ]
                             [ Dropdown.btn "" (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]

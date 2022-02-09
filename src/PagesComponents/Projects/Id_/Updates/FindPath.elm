@@ -3,7 +3,7 @@ module PagesComponents.Projects.Id_.Updates.FindPath exposing (Model, computeFin
 import Conf
 import Dict exposing (Dict)
 import Libs.Bool as B
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Nel as Nel
 import Libs.Task as T
 import Models.Project.FindPathSettings exposing (FindPathSettings)
@@ -47,8 +47,8 @@ handleFindPath msg model =
 
         FPSearch ->
             model.findPath
-                |> Maybe.andThen (\fp -> M.zip3 model.erd fp.from fp.to)
-                |> M.mapOrElse (\( e, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute e.tables e.relations from to e.settings.findPath)) ))
+                |> Maybe.andThen (\fp -> Maybe.zip3 model.erd fp.from fp.to)
+                |> Maybe.mapOrElse (\( e, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute e.tables e.relations from to e.settings.findPath)) ))
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->
@@ -89,10 +89,10 @@ buildPaths tables relations settings tableId isDone curPath =
     -- FIXME improve algo complexity
     tables
         |> Dict.get tableId
-        |> M.mapOrElse
+        |> Maybe.mapOrElse
             (\table ->
                 if isDone table then
-                    curPath |> Nel.fromList |> M.mapOrElse (\p -> [ p ]) []
+                    curPath |> Nel.fromList |> Maybe.mapOrElse (\p -> [ p ]) []
 
                 else
                     relations

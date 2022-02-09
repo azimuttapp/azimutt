@@ -3,14 +3,14 @@ module Models.Project.TableProps exposing (TableProps, area, decode, encode, ini
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Area exposing (Area)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
-import Libs.List as L
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
+import Libs.List as List
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
-import Libs.String as S
+import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color)
 import Models.ColumnOrder as ColumnOrder
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
@@ -56,18 +56,18 @@ computeColumns settings relations table columns =
     in
     columns
         |> List.filterMap (\c -> table.columns |> Ned.get c)
-        |> L.filterNot (\c -> isColumnHidden c.name)
+        |> List.filterNot (\c -> isColumnHidden c.name)
         |> ColumnOrder.sortBy settings.columnOrder table tableRelations
         |> List.map .name
 
 
 computeColor : TableId -> Color
 computeColor ( _, table ) =
-    S.wordSplit table
+    String.wordSplit table
         |> List.head
-        |> Maybe.map S.hashCode
+        |> Maybe.map String.hashCode
         |> Maybe.map (modBy (List.length Tw.list))
-        |> Maybe.andThen (\index -> Tw.list |> L.get index)
+        |> Maybe.andThen (\index -> Tw.list |> List.get index)
         |> Maybe.withDefault Tw.default
 
 
@@ -78,15 +78,15 @@ area props =
 
 encode : TableProps -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "id", value.id |> TableId.encode )
         , ( "position", value.position |> Position.encode )
 
         -- , ( "size", value.size |> Size.encode ) do not store size, it should be re-computed
         , ( "color", value.color |> Tw.encodeColor )
-        , ( "columns", value.columns |> E.withDefault (Encode.list ColumnName.encode) [] )
-        , ( "selected", value.selected |> E.withDefault Encode.bool False )
-        , ( "hiddenColumns", value.hiddenColumns |> E.withDefault Encode.bool False )
+        , ( "columns", value.columns |> Encode.withDefault (Encode.list ColumnName.encode) [] )
+        , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
+        , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefault Encode.bool False )
         ]
 
 
@@ -95,8 +95,8 @@ decode =
     Decode.map7 TableProps
         (Decode.field "id" TableId.decode)
         (Decode.field "position" Position.decode)
-        (D.defaultField "size" Size.decode Size.zero)
+        (Decode.defaultField "size" Size.decode Size.zero)
         (Decode.field "color" Tw.decodeColor)
-        (D.defaultField "columns" (Decode.list ColumnName.decode) [])
-        (D.defaultField "selected" Decode.bool False)
-        (D.defaultField "hiddenColumns" Decode.bool False)
+        (Decode.defaultField "columns" (Decode.list ColumnName.decode) [])
+        (Decode.defaultField "selected" Decode.bool False)
+        (Decode.defaultField "hiddenColumns" Decode.bool False)

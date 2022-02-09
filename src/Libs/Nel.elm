@@ -2,7 +2,7 @@ module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filter
 
 -- Nel: NonEmptyList
 
-import Libs.List as L
+import Libs.List as List
 import Set
 
 
@@ -130,7 +130,7 @@ listZipWith transform list =
 
 merge : (a -> comparable) -> (a -> a -> a) -> Nel a -> Nel a -> Nel a
 merge getKey mergeValue l1 l2 =
-    L.merge getKey mergeValue (l1 |> toList) (l2 |> toList) |> fromList |> Maybe.withDefault l1
+    List.merge getKey mergeValue (l1 |> toList) (l2 |> toList) |> fromList |> Maybe.withDefault l1
 
 
 toList : Nel a -> List a

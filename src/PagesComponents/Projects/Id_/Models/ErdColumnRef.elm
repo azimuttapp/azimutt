@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef, create, unpack)
 
 import Dict exposing (Dict)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Ned as Ned
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -20,7 +20,7 @@ create : Dict TableId Table -> ColumnRef -> ErdColumnRef
 create tables ref =
     { table = ref.table
     , column = ref.column
-    , nullable = tables |> Dict.get ref.table |> Maybe.andThen (.columns >> Ned.get ref.column) |> M.mapOrElse .nullable False
+    , nullable = tables |> Dict.get ref.table |> Maybe.andThen (.columns >> Ned.get ref.column) |> Maybe.mapOrElse .nullable False
     }
 
 

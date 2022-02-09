@@ -3,7 +3,7 @@ module Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike, decode, enco
 import Conf
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
-import Libs.Json.Encode as E
+import Libs.Json.Encode as Encode
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.TableId as TableId exposing (TableId)
 
@@ -41,7 +41,7 @@ fromString id =
 
 encode : ColumnRef -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "table", value.table |> TableId.encode )
         , ( "column", value.column |> ColumnName.encode )
         ]

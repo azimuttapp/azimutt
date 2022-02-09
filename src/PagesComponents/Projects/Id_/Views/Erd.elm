@@ -14,14 +14,14 @@ import Libs.Bool as B
 import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
 import Libs.Html.Events exposing (onWheel, stopPointerDown)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
-import Libs.String as S
+import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -45,11 +45,11 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
     let
         canvas : CanvasProps
         canvas =
-            dragging |> M.filter (\d -> d.id == Conf.ids.erd) |> M.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
+            dragging |> Maybe.filter (\d -> d.id == Conf.ids.erd) |> Maybe.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
 
         tableProps : Dict TableId ErdTableProps
         tableProps =
-            dragging |> M.filter (\d -> d.id /= Conf.ids.erd) |> M.mapOrElse (\d -> erd.tableProps |> Drag.moveTables d canvas.zoom) erd.tableProps
+            dragging |> Maybe.filter (\d -> d.id /= Conf.ids.erd) |> Maybe.mapOrElse (\d -> erd.tableProps |> Drag.moveTables d canvas.zoom) erd.tableProps
 
         displayedTables : Dict TableId ErdTableProps
         displayedTables =
@@ -95,8 +95,8 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
             ]
             [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
             , Lazy.lazy3 viewRelations dragging displayedTables displayedRelations
-            , selectionBox |> M.filterNot (\_ -> tableProps |> Dict.isEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
-            , virtualRelationInfo |> M.mapOrElse viewVirtualRelation viewEmptyRelation
+            , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
+            , virtualRelationInfo |> Maybe.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
         , if tableProps |> Dict.isEmpty then
             viewEmptyState erd.tables
@@ -122,7 +122,7 @@ viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps ta
                         cursorMode
                         (Table.argsToString
                             (B.cond (openedDropdown |> String.startsWith table.htmlId) openedDropdown "")
-                            (dragging |> M.any (\d -> d.id == table.htmlId && d.init /= d.last))
+                            (dragging |> Maybe.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (virtualRelation /= Nothing)
                         )
                         index
@@ -147,7 +147,7 @@ viewRelations dragging tableProps relations =
                 (\r ->
                     ( r.name
                     , Lazy.lazy4 viewRelation
-                        (dragging |> M.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
+                        (dragging |> Maybe.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
                         (getColumnProps r.src)
                         (getColumnProps r.ref)
                         r
@@ -174,7 +174,7 @@ viewEmptyState tables =
         bestTables =
             tables
                 |> Dict.values
-                |> L.filterNot (\t -> (t.schema |> String.contains "_") || (t.name |> String.contains "_") || (t.schema |> String.contains "-") || (t.name |> String.contains "-"))
+                |> List.filterNot (\t -> (t.schema |> String.contains "_") || (t.name |> String.contains "_") || (t.schema |> String.contains "-") || (t.name |> String.contains "-"))
                 |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
                 |> List.take 10
     in
@@ -191,7 +191,7 @@ viewEmptyState tables =
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "Your project has "
-                    , bText (tables |> S.pluralizeD "table")
+                    , bText (tables |> String.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
                     , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
                     ]

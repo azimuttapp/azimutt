@@ -13,8 +13,8 @@ import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaDescribedby, css)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.String as String
@@ -143,7 +143,7 @@ viewSelectCard fieldId title description selectedValue buildMsg tables =
     div [ css [ "flex-grow p-3 border border-gray-300 rounded-md shadow-sm", sm [ "col-span-3" ] ] ]
         [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text title ]
         , div [ class "mt-1" ]
-            [ select [ id fieldId, onInput (\id -> Just id |> M.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), css [ "block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]
+            [ select [ id fieldId, onInput (\id -> Just id |> Maybe.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), css [ "block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]
                 (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
                     :: (tables
                             |> Dict.values
@@ -151,7 +151,7 @@ viewSelectCard fieldId title description selectedValue buildMsg tables =
                                 (\t ->
                                     option
                                         [ value (TableId.toString t.id)
-                                        , selected (selectedValue |> M.has t.id)
+                                        , selected (selectedValue |> Maybe.has t.id)
                                         ]
                                         [ text (TableId.show t.id) ]
                                 )
@@ -182,7 +182,7 @@ viewPaths model =
                          , text ":"
                          , br [] []
                          ]
-                            |> L.appendIf ((result.paths |> List.length) > 100) (small [ class "text-gray-500" ] [ text "Too much results ? Check 'Search settings' above to ignore some table or columns" ])
+                            |> List.appendIf ((result.paths |> List.length) > 100) (small [ class "text-gray-500" ] [ text "Too much results ? Check 'Search settings' above to ignore some table or columns" ])
                         )
                     , div [ class "mt-3 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
                         (result.paths |> List.sortBy Nel.length |> List.indexedMap (viewPath result.opened from))

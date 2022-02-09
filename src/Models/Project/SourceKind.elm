@@ -2,8 +2,8 @@ module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, path,
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Models.FileName as FileName exposing (FileName)
 import Libs.Models.FileSize as FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt as FileUpdatedAt exposing (FileUpdatedAt)
@@ -49,7 +49,7 @@ encode : SourceKind -> Value
 encode value =
     case value of
         LocalFile name size modified ->
-            E.notNullObject
+            Encode.notNullObject
                 [ ( "kind", "LocalFile" |> Encode.string )
                 , ( "name", name |> FileName.encode )
                 , ( "size", size |> FileSize.encode )
@@ -57,19 +57,19 @@ encode value =
                 ]
 
         RemoteFile name size ->
-            E.notNullObject
+            Encode.notNullObject
                 [ ( "kind", "RemoteFile" |> Encode.string )
                 , ( "url", name |> FileUrl.encode )
                 , ( "size", size |> FileSize.encode )
                 ]
 
         UserDefined ->
-            E.notNullObject [ ( "kind", "UserDefined" |> Encode.string ) ]
+            Encode.notNullObject [ ( "kind", "UserDefined" |> Encode.string ) ]
 
 
 decode : Decode.Decoder SourceKind
 decode =
-    D.matchOn "kind"
+    Decode.matchOn "kind"
         (\kind ->
             case kind of
                 "LocalFile" ->

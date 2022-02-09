@@ -2,7 +2,7 @@ module Libs.Hotkey exposing (Hotkey, HotkeyTarget, hotkey, hotkeyEncoder, keys, 
 
 import Json.Encode as Encode exposing (Value)
 import Libs.Bool as B
-import Libs.Json.Encode as E
+import Libs.Json.Encode as Encode
 
 
 type alias Hotkey =
@@ -42,7 +42,7 @@ hotkeyEncoder key =
         , ( "shift", key.shift |> Encode.bool )
         , ( "alt", key.alt |> Encode.bool )
         , ( "meta", key.meta |> Encode.bool )
-        , ( "target", key.target |> E.maybe hotkeyTargetEncoder )
+        , ( "target", key.target |> Encode.maybe hotkeyTargetEncoder )
         , ( "onInput", key.onInput |> Encode.bool )
         , ( "preventDefault", key.preventDefault |> Encode.bool )
         ]
@@ -51,7 +51,7 @@ hotkeyEncoder key =
 hotkeyTargetEncoder : HotkeyTarget -> Value
 hotkeyTargetEncoder t =
     Encode.object
-        [ ( "id", t.id |> E.maybe Encode.string )
-        , ( "class", t.class |> E.maybe Encode.string )
-        , ( "tag", t.tag |> E.maybe Encode.string )
+        [ ( "id", t.id |> Encode.maybe Encode.string )
+        , ( "class", t.class |> Encode.maybe Encode.string )
+        , ( "tag", t.tag |> Encode.maybe Encode.string )
         ]

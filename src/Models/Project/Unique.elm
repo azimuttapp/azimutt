@@ -2,8 +2,8 @@ module Models.Project.Unique exposing (Unique, decode, encode, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.Origin as Origin exposing (Origin)
@@ -29,11 +29,11 @@ merge u1 u2 =
 
 encode : Unique -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "name", value.name |> UniqueName.encode )
-        , ( "columns", value.columns |> E.nel ColumnName.encode )
+        , ( "columns", value.columns |> Encode.nel ColumnName.encode )
         , ( "definition", value.definition |> Encode.string )
-        , ( "origins", value.origins |> E.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
         ]
 
 
@@ -41,6 +41,6 @@ decode : Decode.Decoder Unique
 decode =
     Decode.map4 Unique
         (Decode.field "name" UniqueName.decode)
-        (Decode.field "columns" (D.nel ColumnName.decode))
+        (Decode.field "columns" (Decode.nel ColumnName.decode))
         (Decode.field "definition" Decode.string)
-        (D.defaultField "origins" (Decode.list Origin.decode) [])
+        (Decode.defaultField "origins" (Decode.list Origin.decode) [])

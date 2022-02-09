@@ -4,10 +4,10 @@ import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
-import Libs.Dict as D
-import Libs.Maybe as M
+import Libs.Dict as Dict
+import Libs.Maybe as Maybe
 import Libs.Models exposing (FileLineContent, TrackEvent)
-import Libs.Result as R
+import Libs.Result as Result
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -149,13 +149,13 @@ type alias SQLParsing x =
 
 parseSQLEvent : SQLParsing msg -> Source -> TrackEvent
 parseSQLEvent parser source =
-    { name = "parse" ++ (source.fromSample |> M.mapOrElse (\_ -> "-sample") "") ++ "-sql-source"
+    { name = "parse" ++ (source.fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-sql-source"
     , details =
-        [ ( "lines-count", parser.lines |> M.mapOrElse List.length 0 |> String.fromInt )
-        , ( "statements-count", parser.statements |> M.mapOrElse Dict.size 0 |> String.fromInt )
+        [ ( "lines-count", parser.lines |> Maybe.mapOrElse List.length 0 |> String.fromInt )
+        , ( "statements-count", parser.statements |> Maybe.mapOrElse Dict.size 0 |> String.fromInt )
         , ( "table-count", source.tables |> Dict.size |> String.fromInt )
         , ( "relation-count", source.relations |> List.length |> String.fromInt )
-        , ( "parsing-errors", parser.commands |> M.mapOrElse (D.count (\_ ( _, r ) -> r |> R.isErr)) 0 |> String.fromInt )
+        , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> String.fromInt )
         , ( "schema-errors", parser.schemaErrors |> List.length |> String.fromInt )
         ]
     , enabled = True
@@ -164,7 +164,7 @@ parseSQLEvent parser source =
 
 projectEvent : String -> Project -> TrackEvent
 projectEvent eventName project =
-    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> M.toList) |> List.head |> M.mapOrElse (\_ -> "-sample") "") ++ "-project"
+    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> Maybe.toList) |> List.head |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-project"
     , details =
         [ ( "table-count", project.tables |> Dict.size |> String.fromInt )
         , ( "relation-count", project.relations |> List.length |> String.fromInt )

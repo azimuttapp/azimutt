@@ -3,7 +3,7 @@ module Storage.ProjectV2Test exposing (..)
 import Array
 import Dict exposing (Dict)
 import Json.Decode as Decode
-import Libs.Dict as D
+import Libs.Dict as Dict
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Ned as Ned
@@ -95,7 +95,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    D.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
+    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
 
 
 project1 : Project
@@ -125,7 +125,7 @@ project1Json =
 
 tables2 : Dict TableId Table
 tables2 =
-    D.fromListMap .id
+    Dict.fromListMap .id
         [ { id = ( "public", "users" )
           , schema = "public"
           , name = "users"

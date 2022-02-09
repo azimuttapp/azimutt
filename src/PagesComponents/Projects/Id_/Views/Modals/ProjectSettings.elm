@@ -12,8 +12,8 @@ import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (css)
-import Libs.List as L
-import Libs.String as S
+import Libs.List as List
+import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Models.ColumnOrder as ColumnOrder
 import Models.Project.ProjectId exposing (ProjectId)
@@ -79,7 +79,7 @@ viewSource _ zone source =
                             ]
                         ]
                     , div [ class "flex justify-between" ]
-                        [ span [ class "text-sm text-gray-500" ] [ text ((tables |> S.pluralizeL "table") ++ ", " ++ (views |> S.pluralizeL "view") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
+                        [ span [ class "text-sm text-gray-500" ] [ text ((tables |> String.pluralizeL "table") ++ ", " ++ (views |> String.pluralizeL "view") ++ " & " ++ (source.relations |> String.pluralizeL "relation")) ]
                         , span [ class "text-sm text-gray-500" ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.tl (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
                         ]
                     ]
@@ -106,7 +106,7 @@ viewSchemasSection erd =
     let
         schemas : List ( SchemaName, List Table )
         schemas =
-            erd.sources |> List.concatMap (.tables >> Dict.values) |> L.groupBy .schema |> Dict.toList |> List.map (\( name, tables ) -> ( name, tables )) |> List.sortBy Tuple.first
+            erd.sources |> List.concatMap (.tables >> Dict.values) |> List.groupBy .schema |> Dict.toList |> List.map (\( name, tables ) -> ( name, tables )) |> List.sortBy Tuple.first
     in
     if List.length schemas > 1 then
         fieldset [ class "mt-6" ]
@@ -125,7 +125,7 @@ viewSchema removedSchemas ( schema, tables ) =
         ( views, realTables ) =
             tables |> List.partition .view
     in
-    viewCheckbox "" ("settings-schema-" ++ schema) [ bText schema, text (" (" ++ (realTables |> S.pluralizeL "table") ++ " & " ++ (views |> S.pluralizeL "views") ++ ")") ] (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSToggleSchema schema))
+    viewCheckbox "" ("settings-schema-" ++ schema) [ bText schema, text (" (" ++ (realTables |> String.pluralizeL "table") ++ " & " ++ (views |> String.pluralizeL "views") ++ ")") ] (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSToggleSchema schema))
 
 
 viewDisplaySettingsSection : Erd -> Html Msg
@@ -141,7 +141,7 @@ viewDisplaySettingsSection erd =
         , viewCheckbox (B.cond (viewsCount == 0) "hidden" "")
             "settings-no-views"
             [ bText "Remove views" |> Tooltip.tr "Check this if you don't want to have SQL views in Azimutt"
-            , text (" (" ++ (viewsCount |> S.pluralize "view") ++ ")")
+            , text (" (" ++ (viewsCount |> String.pluralize "view") ++ ")")
             ]
             erd.settings.removeViews
             (ProjectSettingsMsg PSToggleRemoveViews)

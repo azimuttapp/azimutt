@@ -2,8 +2,8 @@ module Models.Project.Relation exposing (Relation, RelationLike, decode, encode,
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.Origin as Origin exposing (Origin)
@@ -89,11 +89,11 @@ merge r1 r2 =
 
 encode : Relation -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "name", value.name |> RelationName.encode )
         , ( "src", value.src |> ColumnRef.encode )
         , ( "ref", value.ref |> ColumnRef.encode )
-        , ( "origins", value.origins |> E.withDefault (Encode.list Origin.encode) [] )
+        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
         ]
 
 
@@ -103,4 +103,4 @@ decode =
         (Decode.field "name" RelationName.decode)
         (Decode.field "src" ColumnRef.decode)
         (Decode.field "ref" ColumnRef.decode)
-        (D.defaultField "origins" (Decode.list Origin.decode) [])
+        (Decode.defaultField "origins" (Decode.list Origin.decode) [])

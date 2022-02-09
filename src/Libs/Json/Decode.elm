@@ -2,7 +2,7 @@ module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFi
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 
@@ -39,7 +39,7 @@ nel decoder =
 
 customNed : (String -> comparable) -> Decode.Decoder a -> Decode.Decoder (Ned comparable a)
 customNed buildKey decoder =
-    customDict buildKey decoder |> Decode.andThen (\d -> d |> Ned.fromDict |> M.mapOrElse Decode.succeed (Decode.fail "Non empty dict can't be empty"))
+    customDict buildKey decoder |> Decode.andThen (\d -> d |> Ned.fromDict |> Maybe.mapOrElse Decode.succeed (Decode.fail "Non empty dict can't be empty"))
 
 
 maybeField : String -> Decoder a -> Decoder (Maybe a)

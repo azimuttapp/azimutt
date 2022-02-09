@@ -1,7 +1,7 @@
 module Libs.Json.Encode exposing (maybe, ned, nel, notNullObject, withDefault, withDefaultDeep)
 
 import Json.Encode as Encode exposing (Value)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 
@@ -13,17 +13,17 @@ notNullObject attrs =
 
 maybe : (a -> Value) -> Maybe a -> Value
 maybe encoder value =
-    value |> M.mapOrElse encoder Encode.null
+    value |> Maybe.mapOrElse encoder Encode.null
 
 
 withDefault : (a -> Value) -> a -> a -> Value
 withDefault encode default value =
-    Just value |> M.filter (\v -> not (v == default)) |> maybe encode
+    Just value |> Maybe.filter (\v -> not (v == default)) |> maybe encode
 
 
 withDefaultDeep : (a -> a -> Value) -> a -> a -> Value
 withDefaultDeep encode default value =
-    Just value |> M.filter (\v -> not (v == default)) |> maybe (encode default)
+    Just value |> Maybe.filter (\v -> not (v == default)) |> maybe (encode default)
 
 
 nel : (a -> Value) -> Nel a -> Encode.Value

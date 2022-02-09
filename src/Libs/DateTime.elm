@@ -2,7 +2,7 @@ module Libs.DateTime exposing (format, formatDate, formatDatetime, formatTime, f
 
 import Iso8601
 import Libs.Duration as Duration exposing (Duration)
-import Libs.String as S
+import Libs.String as String
 import Time
 
 
@@ -104,7 +104,7 @@ human now date =
 
 humanText : Int -> Int -> String -> String -> String
 humanText diff unit one many =
-    toFloat diff / toFloat unit |> round |> abs |> S.plural one one many |> humanDirection diff
+    toFloat diff / toFloat unit |> round |> abs |> String.plural one one many |> humanDirection diff
 
 
 humanDirection : Int -> String -> String

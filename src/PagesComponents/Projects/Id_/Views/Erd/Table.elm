@@ -10,8 +10,8 @@ import Libs.Bool as B
 import Libs.Hotkey as Hotkey
 import Libs.Html.Attributes exposing (css)
 import Libs.Html.Events exposing (stopPointerDown)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
@@ -73,7 +73,7 @@ viewTable zoom cursorMode args index props table =
             , ref = { schema = table.schema, table = table.name }
             , label = table.label
             , isView = table.view
-            , columns = columns |> List.sortBy (\c -> props.shownColumns |> L.indexOf c.name |> Maybe.withDefault 0)
+            , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
                 [ { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
@@ -119,7 +119,7 @@ viewTable zoom cursorMode args index props table =
                 , hoverColumn = \col -> ToggleHoverColumn { table = table.id, column = col }
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
-                , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> L.has col) HideColumn ShowColumn
+                , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
                 , clickRelations =
                     \cols ->
                         case cols of
@@ -160,5 +160,5 @@ buildColumnRelation : ErdTableProps -> ErdColumnRef -> Table.Relation
 buildColumnRelation props relation =
     { column = { schema = relation.table |> Tuple.first, table = relation.table |> Tuple.second, column = relation.column }
     , nullable = relation.nullable
-    , tableShown = props.relatedTables |> Dict.get relation.table |> M.mapOrElse .shown False
+    , tableShown = props.relatedTables |> Dict.get relation.table |> Maybe.mapOrElse .shown False
     }

@@ -6,7 +6,7 @@ import Html exposing (Html, a, blockquote, div, figcaption, figure, h1, h2, img,
 import Html.Attributes exposing (alt, height, href, src, width)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, css, role)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Tailwind exposing (lg, sm)
 
 
@@ -39,7 +39,7 @@ centered model =
                     , span [ css [ "mt-2 block text-3xl text-center leading-8 font-extrabold tracking-tight text-gray-900", sm [ "text-4xl" ] ] ] [ text model.title ]
                     ]
                  ]
-                    ++ (model.introduction |> M.mapOrElse (\intro -> [ p [ css [ "mt-8 text-xl text-gray-500 leading-8" ] ] [ text intro ] ]) [])
+                    ++ (model.introduction |> Maybe.mapOrElse (\intro -> [ p [ css [ "mt-8 text-xl text-gray-500 leading-8" ] ] [ text intro ] ]) [])
                 )
             , div [ css [ "mt-6 prose prose-indigo prose-lg text-gray-500 mx-auto" ] ] model.content
             ]

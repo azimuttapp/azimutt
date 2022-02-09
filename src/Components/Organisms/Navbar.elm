@@ -10,7 +10,7 @@ import Html.Attributes exposing (alt, for, height, href, id, name, placeholder, 
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, css)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models exposing (Image, Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (TwClass, focus, focusWithin, focus_ring_offset_600, hover, lg, sm)
@@ -77,12 +77,12 @@ admin model state =
                     [ div [ css [ "flex-shrink-0" ] ] [ adminBrand model.brand ]
                     , div [ css [ "hidden", lg [ "block ml-10" ] ] ] [ adminNavigation model.navigation state.selectedMenu ]
                     ]
-                , model.search |> M.mapOrElse adminSearch (div [] [])
+                , model.search |> Maybe.mapOrElse adminSearch (div [] [])
                 , adminMobileMenuButton model.mobileMenu state.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
                     [ div [ css [ "flex items-center" ] ]
-                        [ model.notifications |> M.mapOrElse adminNotifications (div [] [])
-                        , model.profile |> M.mapOrElse (adminProfile state.profileOpen) (div [] [])
+                        [ model.notifications |> Maybe.mapOrElse adminNotifications (div [] [])
+                        , model.profile |> Maybe.mapOrElse (adminProfile state.profileOpen) (div [] [])
                         ]
                     ]
                 ]
@@ -162,7 +162,7 @@ adminMobileMenu navigation notifications profile mobileMenu activeMenu isOpen =
     div [ css [ lg [ "hidden" ], B.cond isOpen "" "hidden" ], id mobileMenu.id ]
         [ adminMobileNavigation navigation activeMenu
         , profile
-            |> M.mapOrElse
+            |> Maybe.mapOrElse
                 (\p ->
                     div [ css [ "pt-4 pb-3 border-t border-primary-700" ] ]
                         [ div [ css [ "px-5 flex items-center" ] ]
@@ -173,7 +173,7 @@ adminMobileMenu navigation notifications profile mobileMenu activeMenu isOpen =
                                 [ div [ css [ "text-base font-medium text-white" ] ] [ text (p.firstName ++ " " ++ p.lastName) ]
                                 , div [ css [ "text-sm font-medium text-primary-300" ] ] [ text p.email ]
                                 ]
-                            , notifications |> M.mapOrElse adminNotifications (div [] [])
+                            , notifications |> Maybe.mapOrElse adminNotifications (div [] [])
                             ]
                         , div [ css [ "mt-3 px-2 space-y-1" ] ]
                             (p.links |> List.map (\link -> a [ href link.url, css [ "block rounded-md py-2 px-3 text-base font-medium text-white", hover [ "bg-opacity-75 bg-primary-500" ] ] ] [ text link.text ]))

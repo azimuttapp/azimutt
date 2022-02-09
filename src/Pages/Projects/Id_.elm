@@ -9,9 +9,9 @@ import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
 import Libs.Dict as Dict
-import Libs.Json.Decode as D
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.Json.Decode as Decode
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Task as T
@@ -113,7 +113,7 @@ update req now msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SaveProject ->
-            ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> M.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+            ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
         ShowTable id ->
             model |> mapErdMCmd (showTable id)
@@ -149,7 +149,7 @@ update req now msg model =
             ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
 
         TableOrder id index ->
-            ( model |> mapErdM (mapShownTables (\tables -> tables |> L.move id (List.length tables - 1 - index))), Cmd.none )
+            ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
 
         SortColumns id kind ->
             ( model |> mapErdM (sortColumns id kind), Cmd.none )
@@ -198,20 +198,20 @@ update req now msg model =
 
         DragStart id pos ->
             model.dragging
-                |> M.mapOrElse (\d -> ( model, T.send (toastInfo ("Already dragging " ++ d.id)) ))
+                |> Maybe.mapOrElse (\d -> ( model, T.send (toastInfo ("Already dragging " ++ d.id)) ))
                     ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag d False), Cmd.none )
 
         DragMove pos ->
             ( model.dragging
                 |> Maybe.map (DragState.setLast pos)
-                |> M.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag d False) model
+                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag d False) model
             , Cmd.none
             )
 
         DragEnd pos ->
             ( model.dragging
                 |> Maybe.map (DragState.setLast pos)
-                |> M.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag d True) model
+                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag d True) model
             , Cmd.none
             )
 
@@ -222,7 +222,7 @@ update req now msg model =
             model.toastIdx |> String.fromInt |> (\key -> ( model |> setToastIdx (model.toastIdx + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (ToastShow millis key) ))
 
         ToastShow millis key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> M.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
+            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> Maybe.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
 
         ToastHide key ->
             ( model |> mapToasts (mapList .key key (setIsOpen False)), T.sendAfter 300 (ToastRemove key) )
@@ -256,18 +256,18 @@ handleJsMessage req message model =
             model |> updateSizes sizes
 
         GotProjects ( errors, projects ) ->
-            ( { model | loaded = True, erd = model.erd |> M.orElse (projects |> L.find (\p -> p.id == req.params.id) |> Maybe.map (Erd.create projects)) }
+            ( { model | loaded = True, erd = model.erd |> Maybe.orElse (projects |> List.find (\p -> p.id == req.params.id) |> Maybe.map (Erd.create projects)) }
             , Cmd.batch
                 ((model.erd
-                    |> M.mapOrElse (\_ -> [])
+                    |> Maybe.mapOrElse (\_ -> [])
                         [ Ports.observeSize Conf.ids.erd
-                        , Ports.observeTablesSize (projects |> L.find (\p -> p.id == req.params.id) |> M.mapOrElse (.layout >> .tables) [] |> List.map .id)
+                        , Ports.observeTablesSize (projects |> List.find (\p -> p.id == req.params.id) |> Maybe.mapOrElse (.layout >> .tables) [] |> List.map .id)
                         ]
                  )
                     ++ (errors
                             |> List.concatMap
                                 (\( name, err ) ->
-                                    [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ D.errorToHtml err))
+                                    [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err))
                                     , Ports.trackJsonError "decode-project" err
                                     ]
                                 )
@@ -290,7 +290,7 @@ handleJsMessage req message model =
             handleHotkey model hotkey
 
         Error err ->
-            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ D.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
 
 
 
@@ -303,7 +303,7 @@ subscriptions model =
         ([ Ports.onJsMessage JsMessage ]
             ++ B.cond (model.openedDropdown == "") [] [ Browser.Events.onClick (targetIdDecoder |> Decode.map (\id -> B.cond (id == model.openedDropdown) (Noop "dropdown opened twice") (DropdownToggle id))) ]
             ++ (model.dragging
-                    |> M.mapOrElse
+                    |> Maybe.mapOrElse
                         (\_ ->
                             [ Browser.Events.onMouseMove (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> DragMove))
                             , Browser.Events.onMouseUp (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> DragEnd))
@@ -311,7 +311,7 @@ subscriptions model =
                         )
                         []
                )
-            ++ (model.virtualRelation |> M.mapOrElse (\_ -> [ Browser.Events.onMouseMove (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> VRMove >> VirtualRelationMsg)) ]) [])
+            ++ (model.virtualRelation |> Maybe.mapOrElse (\_ -> [ Browser.Events.onMouseMove (Mouse.eventDecoder |> Decode.map (.pagePos >> Position.fromTuple >> VRMove >> VirtualRelationMsg)) ]) [])
         )
 
 
@@ -319,12 +319,12 @@ targetIdDecoder : Decoder HtmlId
 targetIdDecoder =
     Decode.field "target"
         (Decode.oneOf
-            [ Decode.at [ "id" ] Decode.string |> D.filter (\id -> id /= "")
-            , Decode.at [ "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
-            , Decode.at [ "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
-            , Decode.at [ "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
-            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
-            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> D.filter (\id -> id /= "")
+            [ Decode.at [ "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
             , Decode.succeed ""
             ]
         )
@@ -336,6 +336,6 @@ targetIdDecoder =
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    { title = model.erd |> M.mapOrElse (\e -> e.project.name ++ " - Azimutt") "Azimutt - Explore your database schema"
+    { title = model.erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") "Azimutt - Explore your database schema"
     , body = model |> viewProject shared
     }

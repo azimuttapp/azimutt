@@ -2,7 +2,7 @@ module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ra
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Encode as E
+import Libs.Json.Encode as Encode
 
 
 type alias Size =
@@ -46,7 +46,7 @@ ratio a b =
 
 encode : Size -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "width", value.width |> Encode.float )
         , ( "height", value.height |> Encode.float )
         ]

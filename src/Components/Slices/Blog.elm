@@ -6,7 +6,7 @@ import Html exposing (Html, a, div, form, h2, p, text, time)
 import Html.Attributes exposing (class, datetime, href)
 import Libs.DateTime as DateTime
 import Libs.Html.Attributes exposing (css)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Tailwind exposing (hover, lg, md, sm)
 import Time
 
@@ -40,7 +40,7 @@ articleList model =
                 , div [ css [ "mt-3", sm [ "mt-4" ], lg [ "grid grid-cols-2 gap-5 items-center" ] ] ]
                     ([ p [ class "text-xl text-gray-500" ] [ text model.headline ]
                      ]
-                        ++ (model.newsletter |> M.mapOrElse (\form -> [ Newsletter.small form ]) [])
+                        ++ (model.newsletter |> Maybe.mapOrElse (\form -> [ Newsletter.small form ]) [])
                     )
                 ]
             , div [ css [ "mt-6 pt-10 grid gap-16", lg [ "grid-cols-2 gap-x-5 gap-y-12" ] ] ] (model.articles |> List.map articleItem)

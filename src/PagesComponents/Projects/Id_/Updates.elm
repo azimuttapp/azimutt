@@ -4,7 +4,7 @@ import Conf
 import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
 import Libs.Dict as Dict
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
@@ -26,7 +26,7 @@ updateSize change model =
         model |> mapScreen (setPosition change.position >> setSize change.size)
 
     else
-        ( TableId.fromHtmlId change.id, model.erd |> M.mapOrElse (.canvas >> CanvasProps.viewport model.screen) Area.zero )
+        ( TableId.fromHtmlId change.id, model.erd |> Maybe.mapOrElse (.canvas >> CanvasProps.viewport model.screen) Area.zero )
             |> (\( tableId, viewport ) -> model |> mapErdM (mapTableProps (Dict.alter tableId (updateTable viewport change))))
 
 

@@ -9,8 +9,8 @@ import Html.Attributes exposing (autocomplete, class, for, id, name, placeholder
 import Html.Events exposing (onBlur, onFocus, onInput, onMouseDown)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css, role)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
@@ -47,7 +47,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                         , Conf.hotkeys
                             |> Dict.get "search-open"
                             |> Maybe.andThen List.head
-                            |> M.mapOrElse
+                            |> Maybe.mapOrElse
                                 (\h ->
                                     div [ class "absolute inset-y-0 right-0 flex py-1.5 pr-1.5" ]
                                         [ kbd [ class "inline-flex items-center border border-primary-300 rounded px-2 text-sm font-sans font-medium text-primary-300" ]
@@ -113,16 +113,16 @@ viewSearchResult searchId shownTables active index res =
     in
     case res of
         FoundTable table ->
-            viewItem (ShowTable table.id) Icon.Table [ text (TableId.show table.id) ] (shownTables |> L.has table.id)
+            viewItem (ShowTable table.id) Icon.Table [ text (TableId.show table.id) ] (shownTables |> List.has table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> L.has table.id)
+            viewItem (ShowTable table.id) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> List.has table.id)
 
         FoundRelation relation ->
-            if shownTables |> L.hasNot relation.src.table then
+            if shownTables |> List.hasNot relation.src.table then
                 viewItem (ShowTable relation.src.table) ExternalLink [ text relation.name ] False
 
-            else if shownTables |> L.hasNot relation.ref.table then
+            else if shownTables |> List.hasNot relation.ref.table then
                 viewItem (ShowTable relation.ref.table) ExternalLink [ text relation.name ] False
 
             else
@@ -171,8 +171,8 @@ tableMatch query table =
         Just ( 8 + shortBonus table.name, FoundTable table )
 
     else if
-        (table.comment |> M.any (.text >> String.contains query))
-            || (table.primaryKey |> M.any (.name >> String.contains query))
+        (table.comment |> Maybe.any (.text >> String.contains query))
+            || (table.primaryKey |> Maybe.any (.name >> String.contains query))
             || (table.uniques |> List.any (\u -> (u.name |> String.contains query) || (u.definition |> String.contains query)))
             || (table.indexes |> List.any (\i -> (i.name |> String.contains query) || (i.definition |> String.contains query)))
             || (table.checks |> List.any (\c -> (c.name |> String.contains query) || (c.predicate |> String.contains query)))
@@ -195,9 +195,9 @@ columnMatch query table column =
         Just ( 0.8, FoundColumn table column )
 
     else if
-        (column.comment |> M.any (.text >> String.contains query))
+        (column.comment |> Maybe.any (.text >> String.contains query))
             || (column.kind |> String.contains query)
-            || (column.default |> M.any (String.contains query))
+            || (column.default |> Maybe.any (String.contains query))
     then
         Just ( 0.7, FoundColumn table column )
 

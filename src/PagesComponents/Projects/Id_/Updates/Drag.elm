@@ -3,7 +3,7 @@ module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, moveCanva
 import Conf
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -20,7 +20,7 @@ handleDrag drag isEnd model =
     let
         canvas : CanvasProps
         canvas =
-            model.erd |> M.mapOrElse .canvas CanvasProps.zero
+            model.erd |> Maybe.mapOrElse .canvas CanvasProps.zero
     in
     if drag.id == Conf.ids.erd then
         if isEnd then
@@ -63,7 +63,7 @@ moveTables drag zoom tables =
 
         dragSelected : Bool
         dragSelected =
-            tables |> Dict.get tableId |> M.mapOrElse .selected False
+            tables |> Dict.get tableId |> Maybe.mapOrElse .selected False
     in
     tables
         |> Dict.map

@@ -2,7 +2,7 @@ module Libs.List exposing (addAt, appendIf, appendOn, dropRight, dropUntil, drop
 
 import Dict exposing (Dict)
 import Libs.Bool as B
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Random
 import Set
 
@@ -90,7 +90,7 @@ notMember x xs =
 
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
-    findBy matcher value list |> M.isJust
+    findBy matcher value list |> Maybe.isJust
 
 
 indexOf : a -> List a -> Maybe Int
@@ -128,17 +128,17 @@ filterZip f xs =
 
 moveIndex : Int -> Int -> List a -> List a
 moveIndex from to list =
-    list |> get from |> M.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
+    list |> get from |> Maybe.mapOrElse (\v -> list |> removeAt from |> addAt v to) list
 
 
 move : a -> Int -> List a -> List a
 move value position list =
-    list |> findIndex (\a -> a == value) |> M.mapOrElse (\index -> list |> moveIndex index position) list
+    list |> findIndex (\a -> a == value) |> Maybe.mapOrElse (\index -> list |> moveIndex index position) list
 
 
 moveBy : (a -> b) -> b -> Int -> List a -> List a
 moveBy matcher value position list =
-    list |> findIndexBy matcher value |> M.mapOrElse (\index -> list |> moveIndex index position) list
+    list |> findIndexBy matcher value |> Maybe.mapOrElse (\index -> list |> moveIndex index position) list
 
 
 removeAt : Int -> List a -> List a
@@ -313,12 +313,12 @@ uniqueBy matcher list =
 
 groupBy : (a -> comparable) -> List a -> Dict comparable (List a)
 groupBy key list =
-    List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> M.mapOrElse (\x -> a :: x) [ a ] |> Just)) Dict.empty list
+    List.foldr (\a dict -> dict |> Dict.update (key a) (\v -> v |> Maybe.mapOrElse (\x -> a :: x) [ a ] |> Just)) Dict.empty list
 
 
 merge : (a -> comparable) -> (a -> a -> a) -> List a -> List a -> List a
 merge getKey mergeValue l1 l2 =
-    (l1 |> List.map (\a1 -> l2 |> find (\a2 -> getKey a1 == getKey a2) |> M.mapOrElse (mergeValue a1) a1))
+    (l1 |> List.map (\a1 -> l2 |> find (\a2 -> getKey a1 == getKey a2) |> Maybe.mapOrElse (mergeValue a1) a1))
         ++ (l2 |> filterNot (\a2 -> l1 |> List.any (\a1 -> getKey a1 == getKey a2)))
 
 

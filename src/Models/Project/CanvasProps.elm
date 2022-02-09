@@ -3,7 +3,7 @@ module Models.Project.CanvasProps exposing (CanvasProps, adapt, decode, encode, 
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Libs.Area as Area exposing (Area)
-import Libs.Json.Encode as E
+import Libs.Json.Encode as Encode
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 import Models.ScreenProps exposing (ScreenProps)
@@ -30,7 +30,7 @@ viewport screen canvas =
 
 encode : CanvasProps -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "position", value.position |> Position.encode )
         , ( "zoom", value.zoom |> ZoomLevel.encode )
         ]

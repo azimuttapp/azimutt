@@ -13,7 +13,7 @@ import Html.Events exposing (onClick)
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
-import Libs.String as S
+import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project exposing (Project)
@@ -133,7 +133,7 @@ viewProjectCard zone project =
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ text project.name ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
-                [ li [] [ text ((project.tables |> S.pluralizeD "table") ++ ", " ++ (project.layouts |> S.pluralizeD "layout")) ]
+                [ li [] [ text ((project.tables |> String.pluralizeD "table") ++ ", " ++ (project.layouts |> String.pluralizeD "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]
                 ]
             ]

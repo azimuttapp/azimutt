@@ -3,7 +3,7 @@ module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps
 import Dict exposing (Dict)
 import Libs.Area exposing (Area)
 import Libs.Bool as B
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
@@ -160,7 +160,7 @@ setShownColumns shownColumns props =
                 shownColumns
                     |> ErdColumnProps.createAll props.position props.size props.color props.highlightedColumns props.selected
                     -- if the recomputed version is the same as the existing one, keep the older to preserve referential equality
-                    |> Dict.map (\c p -> props.columnProps |> Dict.get c |> M.mapOrElse (\prev -> B.cond (p == prev) prev p) p)
+                    |> Dict.map (\c p -> props.columnProps |> Dict.get c |> Maybe.mapOrElse (\prev -> B.cond (p == prev) prev p) p)
         }
 
 

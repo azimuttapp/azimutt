@@ -3,7 +3,7 @@ module Pages.Blog.Slug_ exposing (Model, Msg, page)
 import Gen.Params.Blog.Slug_ exposing (Params)
 import Http
 import Libs.Regex as Rgx
-import Libs.Result as R
+import Libs.Result as Result
 import Page
 import PagesComponents.Blog.Slug.Models as Models exposing (Model(..))
 import PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent)
@@ -55,7 +55,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg _ =
     case msg of
         GotArticle slug (Ok content) ->
-            ( content |> parseContent slug |> R.fold BadContent Loaded, Cmd.none )
+            ( content |> parseContent slug |> Result.fold BadContent Loaded, Cmd.none )
 
         GotArticle _ (Err err) ->
             ( BadSlug err, Cmd.none )

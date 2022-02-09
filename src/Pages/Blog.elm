@@ -8,7 +8,7 @@ import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Http exposing (errorToString)
 import Libs.Nel as Nel exposing (Nel)
-import Libs.Result as R
+import Libs.Result as Result
 import Page
 import PagesComponents.Blog.Models as Models
 import PagesComponents.Blog.Slug.Models exposing (Content)
@@ -68,7 +68,7 @@ update msg model =
         GotArticle slug (Ok body) ->
             ( body
                 |> parseContent slug
-                |> R.fold (buildBadArticle slug) (buildArticle slug)
+                |> Result.fold (buildBadArticle slug) (buildArticle slug)
                 |> (\article -> updateArticle slug article model)
             , Cmd.none
             )

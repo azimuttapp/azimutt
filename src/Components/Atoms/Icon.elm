@@ -5,7 +5,7 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, span)
 import Html.Attributes exposing (title)
 import Libs.Html.Attributes exposing (ariaHidden, role)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Svg.Attributes exposing (css, vectorEffect)
 import Libs.Tailwind exposing (TwClass)
 import Svg exposing (circle, path, svg)
@@ -1190,17 +1190,17 @@ icons =
 
 outline : Icon -> TwClass -> Html msg
 outline icon styles =
-    icons |> Dict.get (icon |> toString) |> M.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-6 w-6 " ++ styles))
+    icons |> Dict.get (icon |> toString) |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-6 w-6 " ++ styles))
 
 
 outline2x : Icon -> TwClass -> Html msg
 outline2x icon styles =
-    icons |> Dict.get (icon |> toString) |> M.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-12 w-12 " ++ styles))
+    icons |> Dict.get (icon |> toString) |> Maybe.mapOrElse .outline [] |> (\lines -> viewOutline lines ("h-12 w-12 " ++ styles))
 
 
 solid : Icon -> TwClass -> Html msg
 solid icon styles =
-    icons |> Dict.get (icon |> toString) |> M.mapOrElse .solid [] |> (\lines -> viewSolid lines ("h-5 w-5 " ++ styles))
+    icons |> Dict.get (icon |> toString) |> Maybe.mapOrElse .solid [] |> (\lines -> viewSolid lines ("h-5 w-5 " ++ styles))
 
 
 

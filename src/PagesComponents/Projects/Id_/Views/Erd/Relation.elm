@@ -3,7 +3,7 @@ module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelati
 import Components.Organisms.Relation as Relation
 import Conf
 import Libs.Bool as B
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
@@ -69,8 +69,8 @@ viewEmptyRelation =
 getColor : Maybe ErdColumnProps -> Maybe ErdColumnProps -> Maybe Color
 getColor src ref =
     (src |> Maybe.map .color)
-        |> M.orElse (ref |> Maybe.map .color)
-        |> M.filter (\_ -> (src |> M.any .selected) || (ref |> M.any .selected) || M.any2 (\s r -> s.highlighted && r.highlighted) src ref)
+        |> Maybe.orElse (ref |> Maybe.map .color)
+        |> Maybe.filter (\_ -> (src |> Maybe.any .selected) || (ref |> Maybe.any .selected) || Maybe.any2 (\s r -> s.highlighted && r.highlighted) src ref)
 
 
 headerHeight : Float

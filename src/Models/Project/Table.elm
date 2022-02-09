@@ -2,10 +2,10 @@ module Models.Project.Table exposing (Table, TableLike, decode, encode, inChecks
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
 import Models.Project.Check as Check exposing (Check)
@@ -54,7 +54,7 @@ type alias TableLike x y =
 
 inPrimaryKey : TableLike x y -> ColumnName -> Maybe PrimaryKey
 inPrimaryKey table column =
-    table.primaryKey |> M.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
+    table.primaryKey |> Maybe.filter (\{ columns } -> columns |> Nel.toList |> hasColumn column)
 
 
 inUniques : TableLike x y -> ColumnName -> List Unique
@@ -84,41 +84,41 @@ merge t1 t2 =
     , name = t1.name
     , view = t1.view
     , columns = Ned.merge Column.merge t1.columns t2.columns
-    , primaryKey = M.merge PrimaryKey.merge t1.primaryKey t2.primaryKey
-    , uniques = L.merge .name Unique.merge t1.uniques t2.uniques
-    , indexes = L.merge .name Index.merge t1.indexes t2.indexes
-    , checks = L.merge .name Check.merge t1.checks t2.checks
-    , comment = M.merge Comment.merge t1.comment t2.comment
+    , primaryKey = Maybe.merge PrimaryKey.merge t1.primaryKey t2.primaryKey
+    , uniques = List.merge .name Unique.merge t1.uniques t2.uniques
+    , indexes = List.merge .name Index.merge t1.indexes t2.indexes
+    , checks = List.merge .name Check.merge t1.checks t2.checks
+    , comment = Maybe.merge Comment.merge t1.comment t2.comment
     , origins = t1.origins ++ t2.origins
     }
 
 
 encode : Table -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "schema", value.schema |> SchemaName.encode )
         , ( "table", value.name |> TableName.encode )
-        , ( "view", value.view |> E.withDefault Encode.bool False )
-        , ( "columns", value.columns |> Ned.values |> Nel.sortBy .index |> E.nel Column.encode )
-        , ( "primaryKey", value.primaryKey |> E.maybe PrimaryKey.encode )
-        , ( "uniques", value.uniques |> E.withDefault (Encode.list Unique.encode) [] )
-        , ( "indexes", value.indexes |> E.withDefault (Encode.list Index.encode) [] )
-        , ( "checks", value.checks |> E.withDefault (Encode.list Check.encode) [] )
-        , ( "comment", value.comment |> E.maybe Comment.encode )
-        , ( "origins", value.origins |> E.withDefault (Encode.list Origin.encode) [] )
+        , ( "view", value.view |> Encode.withDefault Encode.bool False )
+        , ( "columns", value.columns |> Ned.values |> Nel.sortBy .index |> Encode.nel Column.encode )
+        , ( "primaryKey", value.primaryKey |> Encode.maybe PrimaryKey.encode )
+        , ( "uniques", value.uniques |> Encode.withDefault (Encode.list Unique.encode) [] )
+        , ( "indexes", value.indexes |> Encode.withDefault (Encode.list Index.encode) [] )
+        , ( "checks", value.checks |> Encode.withDefault (Encode.list Check.encode) [] )
+        , ( "comment", value.comment |> Encode.maybe Comment.encode )
+        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
         ]
 
 
 decode : Decode.Decoder Table
 decode =
-    D.map10 (\s t v c p u i ch co so -> Table ( s, t ) s t v c p u i ch co so)
+    Decode.map10 (\s t v c p u i ch co so -> Table ( s, t ) s t v c p u i ch co so)
         (Decode.field "schema" SchemaName.decode)
         (Decode.field "table" TableName.decode)
-        (D.defaultField "view" Decode.bool False)
-        (Decode.field "columns" (D.nel Column.decode |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
-        (D.maybeField "primaryKey" PrimaryKey.decode)
-        (D.defaultField "uniques" (Decode.list Unique.decode) [])
-        (D.defaultField "indexes" (Decode.list Index.decode) [])
-        (D.defaultField "checks" (Decode.list Check.decode) [])
-        (D.maybeField "comment" Comment.decode)
-        (D.defaultField "origins" (Decode.list Origin.decode) [])
+        (Decode.defaultField "view" Decode.bool False)
+        (Decode.field "columns" (Decode.nel Column.decode |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
+        (Decode.maybeField "primaryKey" PrimaryKey.decode)
+        (Decode.defaultField "uniques" (Decode.list Unique.decode) [])
+        (Decode.defaultField "indexes" (Decode.list Index.decode) [])
+        (Decode.defaultField "checks" (Decode.list Check.decode) [])
+        (Decode.maybeField "comment" Comment.decode)
+        (Decode.defaultField "origins" (Decode.list Origin.decode) [])

@@ -3,7 +3,7 @@ module DataSources.SqlParser.Parsers.CreateUnique exposing (ParsedUnique, parseC
 import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlConstraintName, SqlStatement, SqlTableRef)
 import Libs.Nel as Nel exposing (Nel)
-import Libs.Regex as R
+import Libs.Regex as Regex
 
 
 type alias ParsedUnique =
@@ -12,7 +12,7 @@ type alias ParsedUnique =
 
 parseCreateUniqueIndex : SqlStatement -> Result (List ParseError) ParsedUnique
 parseCreateUniqueIndex statement =
-    case statement |> buildSqlLine |> R.matches "^CREATE UNIQUE INDEX\\s+(?<name>[^ ]+)\\s+ON\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ (]+)\\s*(?<definition>.+);$" of
+    case statement |> buildSqlLine |> Regex.matches "^CREATE UNIQUE INDEX\\s+(?<name>[^ ]+)\\s+ON\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ (]+)\\s*(?<definition>.+);$" of
         (Just name) :: schema :: (Just table) :: (Just definition) :: [] ->
             parseIndexDefinition definition
                 |> Result.andThen (\columns -> Nel.fromList columns |> Result.fromMaybe [ "Unique index can't have empty columns" ])

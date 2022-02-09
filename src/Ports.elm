@@ -5,9 +5,9 @@ import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
 import Json.Encode as Encode
 import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
-import Libs.List as L
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
+import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -228,10 +228,10 @@ elmEncoder elm =
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         GetLocalFile project source file ->
-            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> E.maybe ProjectId.encode ), ( "source", source |> E.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
 
         GetRemoteFile project source url sample ->
-            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> E.maybe ProjectId.encode ), ( "source", source |> E.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> E.maybe Encode.string ) ]
+            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> Encode.maybe Encode.string ) ]
 
         GetSourceId src ref ->
             Encode.object [ ( "kind", "GetSourceId" |> Encode.string ), ( "src", src |> ColumnRef.encode ), ( "ref", ref |> ColumnRef.encode ) ]
@@ -254,7 +254,7 @@ elmEncoder elm =
 
 jsDecoder : Decoder JsMsg
 jsDecoder =
-    D.matchOn "kind"
+    Decode.matchOn "kind"
         (\kind ->
             case kind of
                 "GotSizes" ->
@@ -286,7 +286,7 @@ jsDecoder =
                         (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
-                        (D.maybeField "sample" Decode.string)
+                        (Decode.maybeField "sample" Decode.string)
 
                 "GotSourceId" ->
                     Decode.map4 GotSourceId
@@ -305,7 +305,7 @@ jsDecoder =
 
 projectsDecoder : Decoder ( List ( ProjectId, Decode.Error ), List Project )
 projectsDecoder =
-    Decode.list (D.tuple Decode.string Decode.value)
+    Decode.list (Decode.tuple Decode.string Decode.value)
         |> Decode.map
             (\list ->
                 list
@@ -315,7 +315,7 @@ projectsDecoder =
                                 |> Decode.decodeValue decodeProject
                                 |> Result.mapError (\e -> ( k, e ))
                         )
-                    |> L.resultCollect
+                    |> List.resultCollect
             )
 
 

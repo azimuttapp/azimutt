@@ -3,7 +3,7 @@ module Storage.ProjectV1Test exposing (..)
 import Dict
 import Expect
 import Json.Decode as Decode
-import Libs.Dict as D
+import Libs.Dict as Dict
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
@@ -56,7 +56,7 @@ project1 =
     , name = "Project 0"
     , sources = Nel (ProjectSourceV1 "src-1" "source 1" (LocalFileV1 "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
     , schema =
-        { tables = D.fromListMap .id [ TableV1 ( "public", "users" ) "public" "users" (Ned.singletonMap .name (ColumnV1 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
+        { tables = Dict.fromListMap .id [ TableV1 ( "public", "users" ) "public" "users" (Ned.singletonMap .name (ColumnV1 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
         , relations = []
         , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Tw.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
@@ -86,7 +86,7 @@ project2 =
     , sources = Nel (ProjectSourceV1 "src-1" "source 1" (LocalFileV1 "structure.sql" 10000 (time 200)) (time 1100) (time 1101)) []
     , schema =
         { tables =
-            D.fromListMap .id
+            Dict.fromListMap .id
                 [ { id = ( "public", "users" )
                   , schema = "public"
                   , name = "users"

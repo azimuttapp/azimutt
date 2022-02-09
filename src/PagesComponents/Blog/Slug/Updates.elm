@@ -5,10 +5,10 @@ import Dict exposing (Dict)
 import Gen.Route as Route
 import Http
 import Libs.DateTime as DateTime
-import Libs.Dict as D
-import Libs.Maybe as M
+import Libs.Dict as Dict
+import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
-import Libs.Result as R
+import Libs.Result as Result
 import PagesComponents.Blog.Slug.Models exposing (Content, Model(..), authors)
 
 
@@ -26,20 +26,20 @@ parseContent slug content =
                 |> parseFrontMatter
                 |> Result.andThen
                     (\props ->
-                        R.ap3
+                        Result.ap3
                             (\title author published ->
                                 { title = title
-                                , excerpt = (props |> D.getOrElse "excerpt" (mdStart |> String.trim)) |> String.left 280 |> String.trim
+                                , excerpt = (props |> Dict.getOrElse "excerpt" (mdStart |> String.trim)) |> String.left 280 |> String.trim
                                 , category = props |> Dict.get "category"
-                                , tags = props |> Dict.get "tags" |> M.mapOrElse (\tags -> tags |> String.split "," |> List.map String.trim) []
+                                , tags = props |> Dict.get "tags" |> Maybe.mapOrElse (\tags -> tags |> String.split "," |> List.map String.trim) []
                                 , author = author
                                 , published = published
                                 , body = (mdStart :: mdRest) |> String.join "---\n" |> String.trim |> extendMarkdown slug
                                 }
                             )
-                            (props |> D.getResult "title")
-                            (props |> D.getResult "author" |> Result.andThen (\author -> authors |> Dict.get author |> Result.fromMaybe ("Can't find '" ++ author ++ "' author")))
-                            (props |> D.getResult "published" |> Result.andThen DateTime.parse)
+                            (props |> Dict.getResult "title")
+                            (props |> Dict.getResult "author" |> Result.andThen (\author -> authors |> Dict.get author |> Result.fromMaybe ("Can't find '" ++ author ++ "' author")))
+                            (props |> Dict.getResult "published" |> Result.andThen DateTime.parse)
                     )
 
         _ :: _ :: _ :: _ ->
@@ -80,7 +80,7 @@ parseFrontMatter frontMatter =
                             ( errs, ( key |> String.trim, value |> String.join ":" |> String.trim ) :: res )
             )
             ( [], [] )
-        |> (\( errs, res ) -> Nel.fromList errs |> M.mapOrElse Err (Ok (Dict.fromList res)))
+        |> (\( errs, res ) -> Nel.fromList errs |> Maybe.mapOrElse Err (Ok (Dict.fromList res)))
 
 
 extendMarkdown : String -> String -> String

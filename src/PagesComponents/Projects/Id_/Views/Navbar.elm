@@ -14,12 +14,12 @@ import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Dict as Dict
-import Libs.Either as E
+import Libs.Either as Either
 import Libs.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, role)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
@@ -113,9 +113,9 @@ viewNavbarFeatures features htmlId openedDropdown =
                     |> List.map
                         (\btn ->
                             btn.action
-                                |> E.reduce
+                                |> Either.reduce
                                     (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", Dropdown.itemStyles ] ] [ btn.content ])
-                                    (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> M.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
+                                    (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> Maybe.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
                         )
                 )
         )
@@ -161,12 +161,12 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
             |> List.map
                 (\f ->
                     f.action
-                        |> E.reduce
+                        |> Either.reduce
                             (\url -> extLink url [ class btnStyle ] [ f.content ])
                             (\action -> button [ type_ "button", onClick action, class btnStyle ] [ f.content ])
                 )
          , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Cog "mr-3", text "Settings" ] ]
          ]
-            |> List.filter L.nonEmpty
+            |> List.filter List.nonEmpty
             |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, B.cond (i /= 0) groupBorder "" ] ] groupContent)
         )

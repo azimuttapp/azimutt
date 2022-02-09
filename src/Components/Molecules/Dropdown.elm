@@ -12,7 +12,7 @@ import Html.Attributes exposing (class, href, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, ariaLabelledby, ariaOrientation, css, role)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, hover)
@@ -96,7 +96,7 @@ submenuButton menu =
 
 hotkeyBtn : msg -> String -> Maybe (List String) -> Html msg
 hotkeyBtn action label hotkey =
-    btn "flex justify-between" action ([ text label ] ++ (hotkey |> M.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] k ]) []))
+    btn "flex justify-between" action ([ text label ] ++ (hotkey |> Maybe.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] k ]) []))
 
 
 btn : TwClass -> msg -> List (Html msg) -> Html msg

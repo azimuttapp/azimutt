@@ -3,8 +3,8 @@ module Components.Organisms.Relation exposing (doc, line)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (div)
 import Html.Attributes as Html
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Tailwind as Tw exposing (Color, stroke_500)
 import Svg exposing (Svg, svg, text)
@@ -39,13 +39,13 @@ line src ref nullable color label index =
 viewLine : Position -> Position -> Bool -> Maybe Color -> Svg msg
 viewLine p1 p2 nullable color =
     Svg.line
-        (L.prependIf nullable
+        (List.prependIf nullable
             (strokeDasharray "4")
             [ x1 (String.fromFloat p1.left)
             , y1 (String.fromFloat p1.top)
             , x2 (String.fromFloat p2.left)
             , y2 (String.fromFloat p2.top)
-            , class (color |> M.mapOrElse (\c -> stroke_500 c ++ " stroke-3") "stroke-default-400 stroke-2")
+            , class (color |> Maybe.mapOrElse (\c -> stroke_500 c ++ " stroke-3") "stroke-default-400 stroke-2")
             ]
         )
         []

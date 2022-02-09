@@ -8,11 +8,11 @@ import DataSources.SqlParser.StatementParser as StatementParser exposing (Comman
 import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, defaultCheckName, defaultFkName, defaultPkName)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Dict exposing (Dict)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent, FileLineContent)
 import Libs.Nel as Nel exposing (Nel)
-import Libs.Regex as R
+import Libs.Regex as Regex
 
 
 type alias SchemaError =
@@ -133,7 +133,7 @@ evolve ( statement, command ) tables =
             in
             tables
                 |> Dict.get id
-                |> M.mapOrElse (\_ -> Err [ "Table " ++ id ++ " already exists" ])
+                |> Maybe.mapOrElse (\_ -> Err [ "Table " ++ id ++ " already exists" ])
                     (buildTable tables statement table |> Result.map (\sqlTable -> tables |> Dict.insert id sqlTable))
 
         CreateView view ->
@@ -144,7 +144,7 @@ evolve ( statement, command ) tables =
             in
             tables
                 |> Dict.get id
-                |> M.mapOrElse (\_ -> Err [ "View " ++ id ++ " already exists" ])
+                |> Maybe.mapOrElse (\_ -> Err [ "View " ++ id ++ " already exists" ])
                     (Ok (tables |> Dict.insert id (buildView tables statement view)))
 
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
@@ -194,7 +194,7 @@ updateTable : SqlStatement -> SqlTableId -> (SqlTable -> Result (List SchemaErro
 updateTable statement id transform tables =
     tables
         |> Dict.get id
-        |> M.mapOrElse (transform >> Result.map (\newTable -> tables |> Dict.insert id newTable))
+        |> Maybe.mapOrElse (transform >> Result.map (\newTable -> tables |> Dict.insert id newTable))
             (Err [ "Table " ++ id ++ " does not exist (in '" ++ buildRawSql statement ++ "')" ])
 
 
@@ -205,7 +205,7 @@ updateColumn statement id name transform tables =
         (\table ->
             table.columns
                 |> Nel.find (\column -> column.name == name)
-                |> M.mapOrElse (\column -> transform column |> Result.map (\newColumn -> updateTableColumn name (\_ -> newColumn) table))
+                |> Maybe.mapOrElse (\column -> transform column |> Result.map (\newColumn -> updateTableColumn name (\_ -> newColumn) table))
                     (Err [ "Column '" ++ name ++ "' does not exist in table " ++ id ++ " (in '" ++ buildRawSql statement ++ "')" ])
         )
         tables
@@ -232,7 +232,7 @@ buildTable tables statement table =
     table.columns
         |> Nel.toList
         |> List.map (buildColumn tables statement table)
-        |> L.resultSeq
+        |> List.resultSeq
         |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "No valid column for table " ++ buildId table.schema table.table ])
         |> Result.map
             (\columns ->
@@ -243,7 +243,7 @@ buildTable tables statement table =
                 , primaryKey =
                     table.primaryKey
                         |> Maybe.map (\pk -> SqlPrimaryKey (pk.name |> Maybe.withDefault (defaultPkName table.table)) pk.columns statement)
-                        |> M.orElse (table.columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> SqlPrimaryKey pk (Nel c.name []) statement)) |> List.head)
+                        |> Maybe.orElse (table.columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> SqlPrimaryKey pk (Nel c.name []) statement)) |> List.head)
                 , uniques = table.uniques |> List.map (\i -> SqlUnique i.name i.columns i.definition statement)
                 , indexes = table.indexes |> List.map (\i -> SqlIndex i.name i.columns i.definition statement)
                 , checks =
@@ -258,9 +258,9 @@ buildTable tables statement table =
 buildColumn : SqlSchema -> SqlStatement -> ParsedTable -> ParsedColumn -> Result SchemaError SqlColumn
 buildColumn tables statement table column =
     column.foreignKey
-        |> M.orElse (table.foreignKeys |> List.filter (\fk -> fk.src == column.name) |> List.head |> Maybe.map (\fk -> ( fk.name |> Maybe.withDefault (defaultFkName table.table column.name), fk.ref )))
+        |> Maybe.orElse (table.foreignKeys |> List.filter (\fk -> fk.src == column.name) |> List.head |> Maybe.map (\fk -> ( fk.name |> Maybe.withDefault (defaultFkName table.table column.name), fk.ref )))
         |> Maybe.map (\( fk, ref ) -> buildFk tables statement fk ref.schema ref.table ref.column)
-        |> M.resultSeq
+        |> Maybe.resultSeq
         |> Result.map
             (\fk ->
                 { name = column.name
@@ -298,7 +298,7 @@ withPkColumn tables schema table name =
         Nothing ->
             tables
                 |> Dict.get (buildId schema table)
-                |> M.mapOrElse
+                |> Maybe.mapOrElse
                     (\t ->
                         case t.primaryKey |> Maybe.map .columns of
                             Just cols ->
@@ -337,17 +337,17 @@ buildViewColumn tables statement column =
                 -- FIXME should handle table alias (when table is renamed in select)
                 |> Maybe.andThen (\t -> tables |> Dict.get (buildId Nothing t))
                 |> Maybe.andThen (\t -> t.columns |> Nel.find (\col -> col.name == c.column))
-                |> M.mapOrElse
+                |> Maybe.mapOrElse
                     (\col ->
                         { col
                             | name = c.alias |> Maybe.withDefault c.column
-                            , default = Just ((c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
+                            , default = Just ((c.table |> Maybe.mapOrElse (\t -> t ++ ".") "") ++ c.column)
                         }
                     )
                     { name = c.alias |> Maybe.withDefault c.column
                     , kind = "unknown"
                     , nullable = False
-                    , default = Just ((c.table |> M.mapOrElse (\t -> t ++ ".") "") ++ c.column)
+                    , default = Just ((c.table |> Maybe.mapOrElse (\t -> t ++ ".") "") ++ c.column)
                     , foreignKey = Nothing
                     , comment = Nothing
                     , source = statement
@@ -419,12 +419,12 @@ buildStatements lines =
 
 hasKeyword : String -> SqlLine -> Bool
 hasKeyword keyword line =
-    (line.text |> R.contains ("[^A-Z_]" ++ keyword ++ "([^A-Z_]|$)")) && not (line.text |> R.contains ("'.*" ++ keyword ++ ".*'"))
+    (line.text |> Regex.contains ("[^A-Z_]" ++ keyword ++ "([^A-Z_]|$)")) && not (line.text |> Regex.contains ("'.*" ++ keyword ++ ".*'"))
 
 
 hasOnlyComment : SqlLine -> Bool
 hasOnlyComment line =
-    case line.text |> R.matches "^/\\*(.*)\\*/;$" of
+    case line.text |> Regex.matches "^/\\*(.*)\\*/;$" of
         _ :: [] ->
             True
 

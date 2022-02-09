@@ -2,7 +2,7 @@ module PagesComponents.Projects.Id_.Updates.FindPathTest exposing (..)
 
 import Dict exposing (Dict)
 import Expect
-import Libs.Dict as D
+import Libs.Dict as Dict
 import Libs.Ned as Ned
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
@@ -48,7 +48,7 @@ suite =
 
 basicTables : Dict TableId ErdTable
 basicTables =
-    [ usersTable, rolesTable, roleUserTable, credentialsTable ] |> D.fromListMap .id
+    [ usersTable, rolesTable, roleUserTable, credentialsTable ] |> Dict.fromListMap .id
 
 
 basicRelations : List ErdRelation

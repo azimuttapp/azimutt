@@ -2,10 +2,10 @@ module Models.Project.ProjectSettings exposing (ProjectSettings, decode, encode,
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
-import Libs.List as L
-import Libs.Regex as R
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
+import Libs.List as List
+import Libs.Regex as Regex
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
@@ -39,9 +39,9 @@ isTableRemoved removedTables =
     let
         values : List String
         values =
-            removedTables |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
+            removedTables |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    \t -> values |> List.any (\n -> t.name == n || R.contains ("^" ++ n ++ "$") t.name)
+    \t -> values |> List.any (\n -> t.name == n || Regex.contains ("^" ++ n ++ "$") t.name)
 
 
 isColumnHidden : String -> (ColumnName -> Bool)
@@ -49,29 +49,29 @@ isColumnHidden hiddenColumnsInput =
     let
         hiddenColumnNames : List String
         hiddenColumnNames =
-            hiddenColumnsInput |> String.split "," |> List.map String.trim |> L.filterNot String.isEmpty
+            hiddenColumnsInput |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    \columnName -> hiddenColumnNames |> List.any (\n -> columnName == n || R.contains ("^" ++ n ++ "$") columnName)
+    \columnName -> hiddenColumnNames |> List.any (\n -> columnName == n || Regex.contains ("^" ++ n ++ "$") columnName)
 
 
 encode : ProjectSettings -> ProjectSettings -> Value
 encode default value =
-    E.notNullObject
-        [ ( "findPath", value.findPath |> E.withDefaultDeep FindPathSettings.encode default.findPath )
-        , ( "removedSchemas", value.removedSchemas |> E.withDefault (Encode.list SchemaName.encode) default.removedSchemas )
-        , ( "removeViews", value.removeViews |> E.withDefault Encode.bool default.removeViews )
-        , ( "removedTables", value.removedTables |> E.withDefault Encode.string default.removedTables )
-        , ( "hiddenColumns", value.hiddenColumns |> E.withDefault Encode.string default.hiddenColumns )
-        , ( "columnOrder", value.columnOrder |> E.withDefault ColumnOrder.encode default.columnOrder )
+    Encode.notNullObject
+        [ ( "findPath", value.findPath |> Encode.withDefaultDeep FindPathSettings.encode default.findPath )
+        , ( "removedSchemas", value.removedSchemas |> Encode.withDefault (Encode.list SchemaName.encode) default.removedSchemas )
+        , ( "removeViews", value.removeViews |> Encode.withDefault Encode.bool default.removeViews )
+        , ( "removedTables", value.removedTables |> Encode.withDefault Encode.string default.removedTables )
+        , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefault Encode.string default.hiddenColumns )
+        , ( "columnOrder", value.columnOrder |> Encode.withDefault ColumnOrder.encode default.columnOrder )
         ]
 
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
     Decode.map6 ProjectSettings
-        (D.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
-        (D.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
-        (D.defaultField "removeViews" Decode.bool default.removeViews)
-        (D.defaultField "removedTables" Decode.string default.removedTables)
-        (D.defaultField "hiddenColumns" Decode.string default.hiddenColumns)
-        (D.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)
+        (Decode.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
+        (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
+        (Decode.defaultField "removeViews" Decode.bool default.removeViews)
+        (Decode.defaultField "removedTables" Decode.string default.removedTables)
+        (Decode.defaultField "hiddenColumns" Decode.string default.hiddenColumns)
+        (Decode.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)

@@ -8,7 +8,7 @@ import Html.Attributes exposing (accept, id, style, type_)
 import Html.Events as Events
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Time
 
 
@@ -31,8 +31,8 @@ type alias DropConfig msg =
 onDrop : DropConfig msg -> List (Attribute msg)
 onDrop config =
     filesOn "drop" config.onDrop
-        :: (config.onOver |> M.mapOrElse (\over -> [ filesOn "dragover" over ]) [])
-        ++ (config.onLeave |> M.mapOrElse (\leave -> [ id leave.id, onWithId leave.id "dragleave" leave.msg ]) [])
+        :: (config.onOver |> Maybe.mapOrElse (\over -> [ filesOn "dragover" over ]) [])
+        ++ (config.onLeave |> Maybe.mapOrElse (\leave -> [ id leave.id, onWithId leave.id "dragleave" leave.msg ]) [])
 
 
 hiddenInputSingle : String -> List String -> (File -> msg) -> Html msg

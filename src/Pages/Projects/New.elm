@@ -4,8 +4,8 @@ import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
-import Libs.Maybe as M
-import Libs.String as S
+import Libs.Maybe as Maybe
+import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
 import Page
@@ -57,7 +57,7 @@ init req =
          , Ports.trackPage "new-project"
          , Ports.loadProjects
          ]
-            ++ (req.query |> Dict.get "sample" |> M.mapOrElse (\sample -> [ T.send (sample |> SelectSample |> SQLSourceMsg) ]) [])
+            ++ (req.query |> Dict.get "sample" |> Maybe.mapOrElse (\sample -> [ T.send (sample |> SelectSample |> SQLSourceMsg) ]) [])
         )
     )
 
@@ -88,7 +88,7 @@ update req msg model =
             ( { model | parsing = SQLSource.init Nothing Nothing }, Cmd.none )
 
         CreateProject projectId source ->
-            Project.create projectId (S.unique (model.projects |> List.map .name) source.name) source
+            Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source
                 |> (\project ->
                         ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
                    )

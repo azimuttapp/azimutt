@@ -4,9 +4,9 @@ import Array exposing (Array)
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Dict as D
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
+import Libs.Dict as Dict
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Time as Time
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleName as SampleName exposing (SampleKey)
@@ -59,15 +59,15 @@ refreshWith new current =
 
 encode : Source -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "id", value.id |> SourceId.encode )
         , ( "name", value.name |> SourceName.encode )
         , ( "kind", value.kind |> SourceKind.encode )
         , ( "content", value.content |> Encode.array SourceLine.encode )
         , ( "tables", value.tables |> Dict.values |> Encode.list Table.encode )
         , ( "relations", value.relations |> Encode.list Relation.encode )
-        , ( "enabled", value.enabled |> E.withDefault Encode.bool True )
-        , ( "fromSample", value.fromSample |> E.maybe SampleName.encode )
+        , ( "enabled", value.enabled |> Encode.withDefault Encode.bool True )
+        , ( "fromSample", value.fromSample |> Encode.maybe SampleName.encode )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         ]
@@ -75,14 +75,14 @@ encode value =
 
 decode : Decode.Decoder Source
 decode =
-    D.map10 Source
+    Decode.map10 Source
         (Decode.field "id" SourceId.decode)
         (Decode.field "name" SourceName.decode)
         (Decode.field "kind" SourceKind.decode)
         (Decode.field "content" (Decode.array SourceLine.decode))
-        (Decode.field "tables" (Decode.list Table.decode) |> Decode.map (D.fromListMap .id))
+        (Decode.field "tables" (Decode.list Table.decode) |> Decode.map (Dict.fromListMap .id))
         (Decode.field "relations" (Decode.list Relation.decode))
-        (D.defaultField "enabled" Decode.bool True)
-        (D.maybeField "fromSample" SampleName.decode)
+        (Decode.defaultField "enabled" Decode.bool True)
+        (Decode.maybeField "fromSample" SampleName.decode)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)

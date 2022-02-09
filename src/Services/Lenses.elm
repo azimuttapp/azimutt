@@ -2,7 +2,7 @@ module Services.Lenses exposing (mapActive, mapCanvas, mapColumns, mapEachProjec
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
@@ -601,7 +601,7 @@ mapCmd get update transform item =
 
 mapMCmd : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
 mapMCmd get update transform item =
-    item |> get |> M.mapOrElse (transform >> Tuple.mapFirst (\value -> update (Just value) item)) ( item, Cmd.none )
+    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> update (Just value) item)) ( item, Cmd.none )
 
 
 

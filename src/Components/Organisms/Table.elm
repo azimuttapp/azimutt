@@ -16,12 +16,12 @@ import Libs.Bool as B
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
 import Libs.Html.Events exposing (onPointerUp)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.String as S
+import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
 import Track
@@ -190,7 +190,7 @@ viewHiddenColumns model =
     else
         div [ class "m-2 p-2 bg-gray-100 rounded-lg" ]
             [ div [ onClick model.actions.clickHiddenColumns, class "text-gray-400 uppercase font-bold text-sm cursor-pointer" ]
-                [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
+                [ text (model.hiddenColumns |> String.pluralizeL "hidden column") ]
             , Keyed.node "div"
                 [ css [ "rounded-lg pt-2", B.cond model.state.showHiddenColumns "" "hidden" ] ]
                 (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
@@ -209,7 +209,7 @@ viewColumn model isLast column =
             , B.cond isLast "rounded-b-lg" ""
             ]
          ]
-            ++ (model.actions.clickColumn |> M.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
+            ++ (model.actions.clickColumn |> Maybe.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
         , viewColumnName column
@@ -219,20 +219,20 @@ viewColumn model isLast column =
 
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
-    if column.outRelations |> L.nonEmpty then
+    if column.outRelations |> List.nonEmpty then
         div ([ class "w-6 h-6 cursor-pointer", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
-            [ Icon.solid ExternalLink "pt-2" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> M.mapOrElse (.column >> formatColumnRef) "")) ]
+            [ Icon.solid ExternalLink "pt-2" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
         div [ class "w-6 h-6" ] [ Icon.solid Key "pt-2" |> Tooltip.t "Primary key" ]
 
-    else if column.uniques |> L.nonEmpty then
+    else if column.uniques |> List.nonEmpty then
         div [ class "w-6 h-6" ] [ Icon.solid FingerPrint "pt-2" |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
-    else if column.indexes |> L.nonEmpty then
+    else if column.indexes |> List.nonEmpty then
         div [ class "w-6 h-6" ] [ Icon.solid SortDescending "pt-2" |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
-    else if column.checks |> L.nonEmpty then
+    else if column.checks |> List.nonEmpty then
         div [ class "w-6 h-6" ] [ Icon.solid Check "pt-2" |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
@@ -288,7 +288,7 @@ viewColumnIconDropdown model column icon =
                                 |> List.filter (\r -> not r.tableShown)
                                 |> (\relations ->
                                         if List.length relations > 1 then
-                                            [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> S.pluralizeL "table") ++ ")") ] ]
+                                            [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> String.pluralizeL "table") ++ ")") ] ]
 
                                         else
                                             []
@@ -310,7 +310,7 @@ viewColumnIconDropdownItem message content =
 viewColumnName : Column -> Html msg
 viewColumnName column =
     div [ css [ "flex flex-grow", B.cond column.isPrimaryKey "font-bold" "" ] ]
-        ([ text column.name ] |> L.appendOn column.comment viewComment)
+        ([ text column.name ] |> List.appendOn column.comment viewComment)
 
 
 viewComment : String -> Html msg
@@ -328,7 +328,7 @@ viewColumnKind model column =
         value : Html msg
         value =
             column.default
-                |> M.mapOrElse
+                |> Maybe.mapOrElse
                     (\default -> span [ css [ "underline", opacity ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
                     (span [ class opacity ] [ text column.kind ])
 

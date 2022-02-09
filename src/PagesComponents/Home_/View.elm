@@ -15,7 +15,7 @@ import Html exposing (Html, b, br, div, span, text)
 import Html.Attributes exposing (href)
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, track)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Tailwind as Tw
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Home_.Models exposing (Model)
@@ -29,7 +29,7 @@ viewHome model =
         heroCta =
             model.projects
                 |> List.head
-                |> M.mapOrElse
+                |> Maybe.mapOrElse
                     (\p ->
                         div []
                             [ Link.white5 Tw.indigo ([ href (Route.toHref (Route.Projects__Id_ { id = p.id })) ] ++ track (Track.openAppCta "last-project")) [ text ("Explore " ++ p.name) ]

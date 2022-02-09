@@ -2,7 +2,7 @@ module Libs.Models.Position exposing (Position, add, decode, diff, distance, div
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Encode as E
+import Libs.Json.Encode as Encode
 
 
 type alias Position =
@@ -61,7 +61,7 @@ distance to from =
 
 encode : Position -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "left", value.left |> Encode.float )
         , ( "top", value.top |> Encode.float )
         ]

@@ -6,7 +6,7 @@ import Html exposing (Html, a, blockquote, div, footer, h2, img, p, span, text)
 import Html.Attributes exposing (alt, class, href, src)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css, track)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models exposing (Image, TrackedLink)
 import Libs.Tailwind exposing (hover, lg, md, sm)
 
@@ -126,7 +126,7 @@ featureCta cta =
             ([ href cta.url
              , css [ "inline-flex px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-green-600 to-indigo-600", hover [ "text-white from-green-700 to-indigo-700" ] ]
              ]
-                ++ (cta.track |> M.mapOrElse track [])
+                ++ (cta.track |> Maybe.mapOrElse track [])
             )
             [ text cta.text ]
         ]

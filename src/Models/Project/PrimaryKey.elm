@@ -2,8 +2,8 @@ module Models.Project.PrimaryKey exposing (PrimaryKey, decode, encode, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Json.Decode as D
-import Libs.Json.Encode as E
+import Libs.Json.Decode as Decode
+import Libs.Json.Encode as Encode
 import Libs.Nel as Nel exposing (Nel)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.Origin as Origin exposing (Origin)
@@ -27,10 +27,10 @@ merge pk1 pk2 =
 
 encode : PrimaryKey -> Value
 encode value =
-    E.notNullObject
+    Encode.notNullObject
         [ ( "name", value.name |> PrimaryKeyName.encode )
-        , ( "columns", value.columns |> E.nel ColumnName.encode )
-        , ( "origins", value.origins |> E.withDefault (Encode.list Origin.encode) [] )
+        , ( "columns", value.columns |> Encode.nel ColumnName.encode )
+        , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
         ]
 
 
@@ -38,5 +38,5 @@ decode : Decode.Decoder PrimaryKey
 decode =
     Decode.map3 PrimaryKey
         (Decode.field "name" PrimaryKeyName.decode)
-        (Decode.field "columns" (D.nel ColumnName.decode))
-        (D.defaultField "origins" (Decode.list Origin.decode) [])
+        (Decode.field "columns" (Decode.nel ColumnName.decode))
+        (Decode.defaultField "origins" (Decode.list Origin.decode) [])

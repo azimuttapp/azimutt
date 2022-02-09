@@ -4,7 +4,7 @@ import Components.Atoms.Markdown exposing (markdown)
 import Components.Slices.Content as Content
 import Html exposing (Html, div, li, text, ul)
 import Html.Attributes exposing (style)
-import Libs.Http as H
+import Libs.Http as Http
 import Libs.Nel as Nel
 import PagesComponents.Blog.Slug.Models exposing (Model(..))
 import PagesComponents.Helpers as Helpers
@@ -28,7 +28,7 @@ viewArticle model =
                 { section = "Error"
                 , title = "Bad url"
                 , introduction = Nothing
-                , content = [ text (H.errorToString err) ]
+                , content = [ text (Http.errorToString err) ]
                 , dots = False
                 }
 

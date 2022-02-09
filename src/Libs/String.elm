@@ -2,8 +2,8 @@ module Libs.String exposing (filterStartsWith, hashCode, nonEmpty, plural, plura
 
 import Bitwise
 import Dict exposing (Dict)
-import Libs.Maybe as M
-import Libs.Regex as R
+import Libs.Maybe as Maybe
+import Libs.Regex as Regex
 
 
 nonEmpty : String -> Bool
@@ -38,12 +38,12 @@ updateHash char code =
 unique : List String -> String -> String
 unique takenIds id =
     if takenIds |> List.any (\taken -> taken == id) then
-        case id |> R.matches "^(.*?)([0-9]+)?(\\.[a-z]+)?$" of
+        case id |> Regex.matches "^(.*?)([0-9]+)?(\\.[a-z]+)?$" of
             (Just prefix) :: num :: extension :: [] ->
                 unique
                     takenIds
                     (prefix
-                        ++ (num |> Maybe.andThen String.toInt |> M.mapOrElse (\n -> n + 1) 2 |> String.fromInt)
+                        ++ (num |> Maybe.andThen String.toInt |> Maybe.mapOrElse (\n -> n + 1) 2 |> String.fromInt)
                         ++ (extension |> Maybe.withDefault "")
                     )
 

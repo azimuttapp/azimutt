@@ -3,7 +3,7 @@ module TestHelpers.ProjectFuzzers exposing (..)
 import Array exposing (Array)
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
-import Libs.Dict as D
+import Libs.Dict as Dict
 import Libs.Fuzz as F exposing (listN)
 import Libs.Models.Size as Size
 import Libs.Ned as Ned
@@ -71,7 +71,7 @@ sourceLines =
 
 tables : Fuzzer (Dict TableId Table)
 tables =
-    listSmall table |> Fuzz.map (D.fromListMap .id)
+    listSmall table |> Fuzz.map (Dict.fromListMap .id)
 
 
 table : Fuzzer Table

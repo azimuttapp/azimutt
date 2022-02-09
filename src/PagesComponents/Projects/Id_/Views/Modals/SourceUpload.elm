@@ -12,7 +12,7 @@ import Html.Events exposing (onClick)
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, role)
-import Libs.Maybe as M
+import Libs.Maybe as Maybe
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
@@ -39,7 +39,7 @@ viewSourceUpload zone now opened model =
         , onBackgroundClick = PSSourceUploadClose |> ProjectSettingsMsg |> ModalClose
         }
         (model.parsing.source
-            |> M.mapOrElse
+            |> Maybe.mapOrElse
                 (\source ->
                     case source.kind of
                         LocalFile filename _ updatedAt ->
@@ -76,8 +76,8 @@ localFileModal zone now titleId source fileName updatedAt model =
         , div [ class "mt-3" ] [ FileInput.basic "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
-                [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> M.filter (\_ -> name1 /= name2)
-                , Just [ text "You file is ", bText "older", text " than the previous one" ] |> M.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
+                [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
+                , Just [ text "You file is ", bText "older", text " than the previous one" ] |> Maybe.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
                 ]
                     |> List.filterMap identity
                     |> (\warnings ->
@@ -186,7 +186,7 @@ newSourceModal titleId model =
 
 primaryBtn : Maybe Msg -> String -> Html Msg
 primaryBtn clicked label =
-    Button.primary3 Tw.primary (clicked |> M.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
+    Button.primary3 Tw.primary (clicked |> Maybe.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
 
 
 closeBtn : Html Msg

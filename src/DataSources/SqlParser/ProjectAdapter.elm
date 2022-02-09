@@ -4,7 +4,7 @@ import Array
 import DataSources.SqlParser.FileParser exposing (SqlCheck, SqlColumn, SqlComment, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlUnique)
 import DataSources.SqlParser.Utils.Types exposing (SqlStatement)
 import Dict
-import Libs.Dict as D
+import Libs.Dict as Dict
 import Libs.Models exposing (FileLineContent)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
@@ -29,7 +29,7 @@ buildSourceFromSql sourceInfo lines schema =
     , name = sourceInfo.name
     , kind = sourceInfo.kind
     , content = Array.fromList lines
-    , tables = schema |> Dict.values |> List.map (buildTable sourceInfo.id) |> D.fromListMap .id
+    , tables = schema |> Dict.values |> List.map (buildTable sourceInfo.id) |> Dict.fromListMap .id
     , relations = schema |> Dict.values |> List.concatMap (buildRelations sourceInfo.id)
     , enabled = sourceInfo.enabled
     , fromSample = sourceInfo.fromSample

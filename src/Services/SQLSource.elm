@@ -13,15 +13,15 @@ import Dict exposing (Dict)
 import Html exposing (Html, div, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Libs.Bool as B
-import Libs.Dict as D
+import Libs.Dict as Dict
 import Libs.FileInput exposing (File)
 import Libs.Html exposing (bText)
-import Libs.List as L
-import Libs.Maybe as M
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent, FileLineContent)
 import Libs.Models.FileUrl exposing (FileUrl)
-import Libs.Result as R
-import Libs.String as S
+import Libs.Result as Result
+import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
 import Models.Project.ProjectId exposing (ProjectId)
@@ -174,7 +174,7 @@ parsingUpdate msg model =
             ( { model | lines = model.fileContent |> FileParser.parseLines |> Just }, model.buildMsg BuildStatements )
 
         BuildStatements ->
-            model.lines |> M.mapOrElse (\l -> l |> FileParser.parseStatements |> (\statements -> ( { model | statements = statements |> D.fromIndexedList |> Just }, model.buildMsg BuildCommand ))) ( model, model.buildMsg BuildStatements )
+            model.lines |> Maybe.mapOrElse (\l -> l |> FileParser.parseStatements |> (\statements -> ( { model | statements = statements |> Dict.fromIndexedList |> Just }, model.buildMsg BuildCommand ))) ( model, model.buildMsg BuildStatements )
 
         BuildCommand ->
             let
@@ -242,7 +242,7 @@ remoteSource url content =
 
 lastSegment : String -> String
 lastSegment path =
-    path |> String.split "/" |> List.filter (\p -> not (p == "")) |> L.last |> Maybe.withDefault path
+    path |> String.split "/" |> List.filter (\p -> not (p == "")) |> List.last |> Maybe.withDefault path
 
 
 
@@ -253,12 +253,12 @@ viewParsing : SQLSource msg -> Html msg
 viewParsing model =
     div []
         (((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
-            |> M.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
-            |> M.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample"))
+            |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
+            |> Maybe.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample"))
          )
             |> Maybe.map2
                 (\parsedSchema sourceText ->
-                    [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> M.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                    [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
                     , viewLogs sourceText parsedSchema
                     , viewErrorAlert parsedSchema
                     , model.source |> Maybe.map2 viewSourceDiff model.parsedSource |> Maybe.withDefault (div [] [])
@@ -273,18 +273,18 @@ viewLogs : String -> SQLParsing msg -> Html msg
 viewLogs source model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
         ([ div [] [ text ("Loaded " ++ source ++ ".") ] ]
-            ++ (model.lines |> M.mapOrElse (\l -> [ div [] [ text ("Found " ++ (l |> List.length |> String.fromInt) ++ " lines in the file.") ] ]) [])
-            ++ (model.statements |> M.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements.") ] ]) [])
+            ++ (model.lines |> Maybe.mapOrElse (\l -> [ div [] [ text ("Found " ++ (l |> List.length |> String.fromInt) ++ " lines in the file.") ] ]) [])
+            ++ (model.statements |> Maybe.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements.") ] ]) [])
             ++ (model.commands
-                    |> M.mapOrElse
+                    |> Maybe.mapOrElse
                         (\commands ->
                             commands
                                 |> Dict.toList
                                 |> List.sortBy (\( i, _ ) -> i)
-                                |> List.map (\( _, ( s, r ) ) -> r |> R.bimap (\e -> ( s, e )) (\c -> ( s, c )))
-                                |> R.partition
+                                |> List.map (\( _, ( s, r ) ) -> r |> Result.bimap (\e -> ( s, e )) (\c -> ( s, c )))
+                                |> Result.partition
                                 |> (\( errs, cmds ) ->
-                                        if (cmds |> List.length) == (model.statements |> M.mapOrElse Dict.size 0) then
+                                        if (cmds |> List.length) == (model.statements |> Maybe.mapOrElse Dict.size 0) then
                                             [ div [] [ text "All statements were correctly parsed." ] ]
 
                                         else if errs |> List.isEmpty then
@@ -303,7 +303,7 @@ viewLogs source model =
                 else
                     (model.schemaErrors |> List.map viewSchemaError) ++ [ div [] [ text ((model.schemaErrors |> List.length |> String.fromInt) ++ " statements can't be added to the schema.") ] ]
                )
-            ++ (model.schema |> M.mapOrElse (\s -> [ div [] [ text ("Schema built with " ++ (s |> Dict.size |> String.fromInt) ++ " tables.") ] ]) [])
+            ++ (model.schema |> Maybe.mapOrElse (\s -> [ div [] [ text ("Schema built with " ++ (s |> Dict.size |> String.fromInt) ++ " tables.") ] ]) [])
         )
 
 
@@ -328,7 +328,7 @@ viewErrorAlert model =
     let
         parseErrors : List (List ParseError)
         parseErrors =
-            model.commands |> Maybe.map (Dict.values >> List.filterMap (\( _, r ) -> r |> R.toErrMaybe)) |> Maybe.withDefault []
+            model.commands |> Maybe.map (Dict.values >> List.filterMap (\( _, r ) -> r |> Result.toErrMaybe)) |> Maybe.withDefault []
     in
     if (parseErrors |> List.isEmpty) && (model.schemaErrors |> List.isEmpty) then
         div [] []
@@ -387,20 +387,20 @@ viewSourceDiff : Source -> Source -> Html msg
 viewSourceDiff newSource oldSource =
     let
         ( removedTables, existingTables, newTables ) =
-            L.zipBy .id (oldSource.tables |> Dict.values) (newSource.tables |> Dict.values)
+            List.zipBy .id (oldSource.tables |> Dict.values) (newSource.tables |> Dict.values)
 
         updatedTables : List ( Table, Table )
         updatedTables =
             existingTables |> List.filter (\( oldTable, newTable ) -> oldTable /= newTable)
 
         ( removedRelations, existingRelations, newRelations ) =
-            L.zipBy .id oldSource.relations newSource.relations
+            List.zipBy .id oldSource.relations newSource.relations
 
         updatedRelations : List ( Relation, Relation )
         updatedRelations =
             existingRelations |> List.filter (\( oldRelation, newRelation ) -> oldRelation /= newRelation)
     in
-    if L.nonEmpty updatedTables || L.nonEmpty newTables || L.nonEmpty removedTables || L.nonEmpty updatedRelations || L.nonEmpty newRelations || L.nonEmpty removedRelations then
+    if List.nonEmpty updatedTables || List.nonEmpty newTables || List.nonEmpty removedTables || List.nonEmpty updatedRelations || List.nonEmpty newRelations || List.nonEmpty removedRelations then
         div [ class "mt-3" ]
             [ Alert.withDescription { color = Tw.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
                 [ ul [ class "list-disc list-inside" ]
@@ -430,7 +430,7 @@ viewSourceDiffItem label items =
         |> Maybe.map
             (\_ ->
                 li []
-                    [ bText (items |> S.pluralizeL label)
+                    [ bText (items |> String.pluralizeL label)
                     , text " ("
                     , span [] (items |> List.map (\item -> span [] [ text item ]) |> List.intersperse (text ", "))
                     , text ")"
