@@ -1,6 +1,6 @@
-module Models.Project.FindPathState exposing (FindPathState(..), map)
+module PagesComponents.Projects.Id_.Models.FindPathState exposing (FindPathState(..), map)
 
-import Models.Project.FindPathResult exposing (FindPathResult)
+import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
 
 
 type FindPathState

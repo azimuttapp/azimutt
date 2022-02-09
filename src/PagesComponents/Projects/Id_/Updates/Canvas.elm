@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
+module PagesComponents.Projects.Id_.Updates.Canvas exposing (computeFit, fitCanvas, handleWheel, performZoom, zoomCanvas)
 
 import Conf
 import Dict exposing (Dict)

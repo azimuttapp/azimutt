@@ -1,21 +1,13 @@
-module Models.Project exposing (Project, addSource, compute, computeRelations, computeTables, create, decode, deleteSource, encode, new, refreshSource, setSources, tablesArea, updateSource, viewportArea, viewportSize)
+module Models.Project exposing (Project, compute, computeRelations, computeTables, create, decode, encode, new)
 
-import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Area as Area exposing (Area)
 import Libs.Dict as Dict
-import Libs.DomInfo exposing (DomInfo)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
-import Libs.Maybe as Maybe
-import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size as Size exposing (Size)
 import Libs.Time as Time
-import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
@@ -23,10 +15,8 @@ import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source as Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table as Table exposing (Table)
-import Models.Project.TableId as TableId exposing (TableId)
-import Models.Project.TableProps exposing (TableProps)
+import Models.Project.TableId exposing (TableId)
 import Time
 
 
@@ -67,41 +57,6 @@ create id name source =
     new id name [ source ] (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init source.createdAt source.updatedAt
 
 
-setSources : (List Source -> List Source) -> Project -> Project
-setSources transform project =
-    transform project.sources |> (\sources -> { project | sources = sources } |> compute)
-
-
-updateSource : SourceId -> (Source -> Source) -> Project -> Project
-updateSource id transform project =
-    setSources
-        (List.map
-            (\source ->
-                if source.id == id then
-                    transform source
-
-                else
-                    source
-            )
-        )
-        project
-
-
-refreshSource : Source -> Project -> Project
-refreshSource source project =
-    project |> updateSource source.id (Source.refreshWith source)
-
-
-addSource : Source -> Project -> Project
-addSource source project =
-    setSources (\sources -> sources ++ [ source ]) project
-
-
-deleteSource : SourceId -> Project -> Project
-deleteSource id project =
-    setSources (List.filter (\s -> s.id /= id)) project
-
-
 compute : Project -> Project
 compute project =
     { project
@@ -139,44 +94,6 @@ shouldDisplayTable settings table =
 computeRelations : List Source -> List Relation
 computeRelations sources =
     sources |> List.filter .enabled |> List.map .relations |> List.foldr (List.merge .id Relation.merge) []
-
-
-viewportSize : Dict HtmlId DomInfo -> Maybe Size
-viewportSize domInfos =
-    -- TODO remove, used to inject into viewportArea most of the time
-    domInfos |> Dict.get Conf.ids.erd |> Maybe.map .size
-
-
-viewportArea : Size -> CanvasProps -> Area
-viewportArea size canvas =
-    -- TODO use CanvasProps.viewport instead
-    Area (canvas.position |> Position.negate) size |> Area.div canvas.zoom
-
-
-tablesArea : Dict HtmlId DomInfo -> List TableProps -> Area
-tablesArea domInfos tables =
-    let
-        positions : List ( TableProps, Size )
-        positions =
-            tables |> List.zipWith (\t -> domInfos |> Dict.get (TableId.toHtmlId t.id) |> Maybe.mapOrElse .size Size.zero)
-
-        left : Float
-        left =
-            positions |> List.map (\( t, _ ) -> t.position.left) |> List.minimum |> Maybe.withDefault 0
-
-        top : Float
-        top =
-            positions |> List.map (\( t, _ ) -> t.position.top) |> List.minimum |> Maybe.withDefault 0
-
-        right : Float
-        right =
-            positions |> List.map (\( t, s ) -> t.position.left + s.width) |> List.maximum |> Maybe.withDefault 0
-
-        bottom : Float
-        bottom =
-            positions |> List.map (\( t, s ) -> t.position.top + s.height) |> List.maximum |> Maybe.withDefault 0
-    in
-    Area (Position left top) (Size (right - left) (bottom - top))
 
 
 currentVersion : Int

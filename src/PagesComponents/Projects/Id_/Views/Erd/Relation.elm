@@ -15,8 +15,8 @@ import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (class, height, width)
 
 
-viewRelation : Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg msg
-viewRelation srcProps refProps relation =
+viewRelation : Bool -> Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg msg
+viewRelation dragging srcProps refProps relation =
     let
         label : String
         label =
@@ -32,15 +32,15 @@ viewRelation srcProps refProps relation =
 
         ( Just { index, position, size }, Nothing ) ->
             { left = position.left + size.width, top = positionTop position index }
-                |> (\srcPos -> Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index))
+                |> (\srcPos -> Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
 
         ( Nothing, Just { index, position } ) ->
             { left = position.left, top = positionTop position index }
-                |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index))
+                |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
 
         ( Just src, Just ref ) ->
             ( positionLeft src.position src.size ref.position ref.size, ( positionTop src.position src.index, positionTop ref.position ref.index ) )
-                |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables + min src.index ref.index))
+                |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables + min src.index ref.index + B.cond dragging 1000 0))
 
 
 viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg msg
@@ -63,19 +63,14 @@ viewVirtualRelation ( ( maybeProps, column ), position ) =
 
 viewEmptyRelation : Svg msg
 viewEmptyRelation =
-    svg [ class "tw-empty-relation", width "0px", height "0px" ] []
+    svg [ class "az-empty-relation", width "0px", height "0px" ] []
 
 
 getColor : Maybe ErdColumnProps -> Maybe ErdColumnProps -> Maybe Color
 getColor src ref =
     (src |> Maybe.map .color)
         |> M.orElse (ref |> Maybe.map .color)
-        |> M.filter (\_ -> shouldHighlight src || shouldHighlight ref)
-
-
-shouldHighlight : Maybe ErdColumnProps -> Bool
-shouldHighlight props =
-    props |> M.any (\p -> p.selected || p.highlighted)
+        |> M.filter (\_ -> (src |> M.any .selected) || (ref |> M.any .selected) || M.any2 (\s r -> s.highlighted && r.highlighted) src ref)
 
 
 headerHeight : Float

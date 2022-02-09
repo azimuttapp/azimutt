@@ -42,7 +42,7 @@ viewProject shared model =
 
 viewApp : Model -> HtmlId -> Erd -> Html Msg
 viewApp model htmlId erd =
-    div [ class "tw-app" ]
+    div [ class "az-app h-full" ]
         [ Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
         , Lazy.lazy7 viewErd model.screen erd model.cursorMode model.selectionBox model.virtualRelation model.openedDropdown model.dragging
         , Lazy.lazy5 viewCommands model.cursorMode erd.canvas.zoom (erd.tableProps |> Dict.isEmpty) (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
@@ -51,7 +51,7 @@ viewApp model htmlId erd =
 
 viewLoader : Html msg
 viewLoader =
-    div [ class "tw-loader flex justify-center items-center h-screen" ]
+    div [ class "az-loader flex justify-center items-center h-screen" ]
         [ div [ class "animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-500" ] []
         ]
 
@@ -78,7 +78,7 @@ viewNotFound =
 viewModal : Time.Zone -> Time.Posix -> Model -> Html Msg
 viewModal zone now model =
     Keyed.node "div"
-        [ class "tw-modals" ]
+        [ class "az-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> L.has m.id) m ))
          , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout (model.openedDialogs |> L.has m.id) m ))
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> L.has m.id) e.tables e.settings.findPath m )) model.erd
@@ -93,4 +93,4 @@ viewModal zone now model =
 
 viewToasts : List Toast.Model -> Html Msg
 viewToasts toasts =
-    div [ class "tw-toasts" ] [ Toast.container toasts ToastHide ]
+    div [ class "az-toasts" ] [ Toast.container toasts ToastHide ]

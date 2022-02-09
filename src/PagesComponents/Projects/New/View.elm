@@ -100,14 +100,14 @@ viewSchemaUpload openedCollapse =
                 ]
             ]
         , div [ css [ "mt-3" ] ]
-            [ div [ onClick (ToggleCollapse "get-schema"), css [ "tw-link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
+            [ div [ onClick (ToggleCollapse "get-schema"), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
             , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == "get-schema") "" "hidden" ] ]
                 [ p []
                     [ text "An "
                     , bText "SQL schema"
                     , text " is a SQL file with all the needed instructions to create your database, so it contains your database structure. Here are some ways to get it:"
                     , ul [ css [ "list-disc list-inside pl-3" ] ]
-                        [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", extLink "https://stackoverflow.com/a/54504510/15051232" [ css [ "tw-link" ] ] [ text "DBeaver" ], text ")" ]
+                        [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", extLink "https://stackoverflow.com/a/54504510/15051232" [ css [ "link" ] ] [ text "DBeaver" ], text ")" ]
                         , li [] [ bText "Find it", text " in your project: some frameworks like Rails store the schema in your project, so you may have it (ex: with Rails it's ", Kbd.badge [] [ "db/structure.sql" ], text " if you use the SQL version)" ]
                         ]
                     ]
@@ -115,7 +115,7 @@ viewSchemaUpload openedCollapse =
                 ]
             ]
         , div []
-            [ div [ onClick (ToggleCollapse "data-privacy"), css [ "tw-link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
+            [ div [ onClick (ToggleCollapse "data-privacy"), css [ "link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
             , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == "data-privacy") "" "hidden" ] ]
                 [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
                 , p [ css [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]

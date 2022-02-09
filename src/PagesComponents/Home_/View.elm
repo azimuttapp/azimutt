@@ -4,6 +4,7 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
 import Components.Molecules.Feature as Feature
+import Components.Molecules.Tooltip as Tooltip
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
@@ -11,8 +12,7 @@ import Components.Slices.Hero as Hero
 import Conf
 import Gen.Route as Route
 import Html exposing (Html, b, br, div, span, text)
-import Html.Attributes exposing (href, title)
-import Libs.Bootstrap exposing (Toggle(..), bsToggle)
+import Html.Attributes exposing (href)
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as M
@@ -136,7 +136,7 @@ viewHome model =
             , content =
                 [ text """Sometimes, easily following relations is not enough, especially when you don't know in which direction to go.
                               And looking at every possible relation can be tedious. So let's grab a """
-                , span [ title "drink", bsToggle Tooltip ] [ text "🍹" ]
+                , span [] [ text "🍹" ] |> Tooltip.t "drink"
                 , text """ and watch Azimutt do the work for you."""
                 , br [] []
                 , text """It will look for every relation and build possible paths between two tables you want to join.
@@ -144,7 +144,7 @@ viewHome model =
                 , br [] []
                 , Badge.basic Tw.red [] [ text "soon" ]
                 , text " It will make you a "
-                , span [ title "coffee", bsToggle Tooltip ] [ text "☕️" ]
+                , span [] [ text "☕️" ] |> Tooltip.t "coffee"
                 , text ", just as you like!"
                 ]
             }
@@ -168,7 +168,7 @@ viewHome model =
               }
             ]
         }
-    , Cta.slice
+    , Cta.slice (Route.toHref Route.Projects)
     , Helpers.newsletterSection
     , Helpers.publicFooter
     ]

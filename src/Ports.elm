@@ -1,4 +1,4 @@
-port module Ports exposing (HtmlContainers, JsMsg(..), activateTooltipsAndPopovers, autofocusWithin, blur, click, dropProject, focus, getSourceId, hideModal, hideOffcanvas, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, showModal, toastError, toastInfo, toastWarning, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, dropProject, focus, getSourceId, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -8,7 +8,7 @@ import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Json.Decode as D
 import Libs.Json.Encode as E
 import Libs.List as L
-import Libs.Models exposing (FileContent, SizeChange, Text, TrackEvent)
+import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
@@ -56,46 +56,6 @@ autofocusWithin id =
 setClasses : HtmlContainers -> Cmd msg
 setClasses payload =
     messageToJs (SetClasses payload)
-
-
-showModal : HtmlId -> Cmd msg
-showModal id =
-    messageToJs (ShowModal id)
-
-
-hideModal : HtmlId -> Cmd msg
-hideModal id =
-    messageToJs (HideModal id)
-
-
-hideOffcanvas : HtmlId -> Cmd msg
-hideOffcanvas id =
-    messageToJs (HideOffcanvas id)
-
-
-activateTooltipsAndPopovers : Cmd msg
-activateTooltipsAndPopovers =
-    messageToJs ActivateTooltipsAndPopovers
-
-
-toastInfo : Text -> Cmd msg
-toastInfo message =
-    showToast { kind = "info", message = message }
-
-
-toastWarning : Text -> Cmd msg
-toastWarning message =
-    showToast { kind = "warning", message = message }
-
-
-toastError : Text -> Cmd msg
-toastError message =
-    showToast { kind = "error", message = message }
-
-
-showToast : Toast -> Cmd msg
-showToast toast =
-    messageToJs (ShowToast toast)
 
 
 loadProjects : Cmd msg
@@ -193,11 +153,6 @@ type ElmMsg
     | ScrollTo HtmlId String
     | SetClasses HtmlContainers
     | AutofocusWithin HtmlId
-    | ShowModal HtmlId
-    | HideModal HtmlId
-    | HideOffcanvas HtmlId
-    | ActivateTooltipsAndPopovers
-    | ShowToast Toast
     | LoadProjects
     | SaveProject Project
     | DropProject Project
@@ -219,10 +174,6 @@ type JsMsg
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
     | Error Decode.Error
-
-
-type alias Toast =
-    { kind : String, message : Text }
 
 
 messageToJs : ElmMsg -> Cmd msg
@@ -267,21 +218,6 @@ elmEncoder elm =
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
-        ShowModal id ->
-            Encode.object [ ( "kind", "ShowModal" |> Encode.string ), ( "id", id |> Encode.string ) ]
-
-        HideModal id ->
-            Encode.object [ ( "kind", "HideModal" |> Encode.string ), ( "id", id |> Encode.string ) ]
-
-        HideOffcanvas id ->
-            Encode.object [ ( "kind", "HideOffcanvas" |> Encode.string ), ( "id", id |> Encode.string ) ]
-
-        ActivateTooltipsAndPopovers ->
-            Encode.object [ ( "kind", "ActivateTooltipsAndPopovers" |> Encode.string ) ]
-
-        ShowToast toast ->
-            Encode.object [ ( "kind", "ShowToast" |> Encode.string ), ( "toast", toast |> toastEncoder ) ]
-
         LoadProjects ->
             Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
 
@@ -314,11 +250,6 @@ elmEncoder elm =
 
         TrackError name details ->
             Encode.object [ ( "kind", "TrackError" |> Encode.string ), ( "name", name |> Encode.string ), ( "details", details ) ]
-
-
-toastEncoder : Toast -> Value
-toastEncoder toast =
-    Encode.object [ ( "kind", toast.kind |> Encode.string ), ( "message", toast.message |> Encode.string ) ]
 
 
 jsDecoder : Decoder JsMsg

@@ -91,15 +91,10 @@ ui =
 
 ids :
     { searchInput : HtmlId
-    , navFeaturesDropdown : HtmlId
-    , navProjectDropdown : HtmlId
-    , navLayoutDropdown : HtmlId
-    , menu : HtmlId
     , settingsDialog : HtmlId
     , sourceUploadDialog : HtmlId
     , erd : HtmlId
     , selectionBox : HtmlId
-    , projectSwitchModal : HtmlId
     , newLayoutDialog : HtmlId
     , findPathDialog : HtmlId
     , helpDialog : HtmlId
@@ -108,15 +103,10 @@ ids :
     }
 ids =
     { searchInput = "app-nav-search"
-    , navFeaturesDropdown = "navbar-features-dropdown"
-    , navProjectDropdown = "navbar-project-dropdown"
-    , navLayoutDropdown = "navbar-layout-dropdown"
-    , menu = "menu"
     , settingsDialog = "settings-dialog"
     , sourceUploadDialog = "source-upload-dialog"
     , erd = "erd"
     , selectionBox = "selection-box"
-    , projectSwitchModal = "project-switch-modal"
     , newLayoutDialog = "new-layout-dialog"
     , findPathDialog = "find-path-dialog"
     , helpDialog = "help-dialog"

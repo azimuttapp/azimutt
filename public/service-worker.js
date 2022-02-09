@@ -11,13 +11,10 @@ const assets = [
     '/assets/images/gospeak-layouts.jpg',
     '/assets/images/gospeak-schema-full.png',
     '/assets/images/gospeak-schema-light.png',
-    '/assets/bootstrap.bundle.min.js',
-    '/assets/bootstrap.bundle.min.js.map',
-    '/assets/bootstrap.min.css',
-    '/assets/bootstrap.min.css.map',
     '/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js',
     '/assets/uuidv4.min.js',
     '/dist/elm.js',
+    '/dist/styles.css',
     '/samples/basic.sql',
     '/samples/gospeak.sql',
     '/samples/wordpress.sql',
@@ -32,7 +29,6 @@ const assets = [
     '/mstile-150x150.png',
     '/safari-pinned-tab.svg',
     '/script.js',
-    '/styles.css',
     '/site.webmanifest',
 ]
 

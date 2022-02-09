@@ -53,7 +53,7 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
         canResetCanvas =
             erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
     in
-    nav [ css [ "tw-navbar relative z-max bg-primary-600" ] ]
+    nav [ css [ "az-navbar relative z-max bg-primary-600" ] ]
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]

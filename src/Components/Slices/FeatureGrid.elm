@@ -2,15 +2,14 @@ module Components.Slices.FeatureGrid exposing (CardItemModel, CardModel, cardSli
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
-import Gen.Route as Route
 import Html exposing (Html, a, br, div, h2, h3, p, span, text)
 import Html.Attributes exposing (class, href)
 import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (lg, sm)
 
 
-coloredSlice : Html msg
-coloredSlice =
+coloredSlice : String -> Html msg
+coloredSlice url =
     div [ css [ "bg-gradient-to-r from-green-800 to-indigo-700" ] ]
         [ div [ css [ "max-w-4xl mx-auto px-4 py-16", sm [ "px-6 pt-20 pb-24" ], lg [ "max-w-7xl pt-24 px-8" ] ] ]
             [ h2 [ css [ "text-3xl font-extrabold text-white tracking-tight" ] ]
@@ -41,7 +40,7 @@ coloredSlice =
                 , item (Icon.outline Link "")
                     "Lorem Ipsum"
                     [ text "You came this far ??? Awesome! You seem quite interested and ready to dig in ^^", br [] [], text """
-                            The best you can do now is to """, a [ href (Route.toHref Route.App), class "link" ] [ text "try it out" ], text " right away :D" ]
+                            The best you can do now is to """, a [ href url, class "link" ] [ text "try it out" ], text " right away :D" ]
                 ]
             ]
         ]
@@ -128,6 +127,6 @@ doc : Chapter x
 doc =
     chapter "FeatureGrid"
         |> renderComponentList
-            [ ( "coloredSlice", coloredSlice )
+            [ ( "coloredSlice", coloredSlice "#" )
             , ( "cardsSlice", cardSlice cardModel )
             ]

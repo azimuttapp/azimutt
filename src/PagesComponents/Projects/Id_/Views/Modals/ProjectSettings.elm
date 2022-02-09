@@ -79,8 +79,8 @@ viewSource _ zone source =
                             ]
                         ]
                     , div [ class "flex justify-between" ]
-                        [ span [ class "tw-text-muted" ] [ text ((tables |> S.pluralizeL "table") ++ ", " ++ (views |> S.pluralizeL "view") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
-                        , span [ class "tw-text-muted" ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.tl (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
+                        [ span [ class "text-sm text-gray-500" ] [ text ((tables |> S.pluralizeL "table") ++ ", " ++ (views |> S.pluralizeL "view") ++ " & " ++ (source.relations |> S.pluralizeL "relation")) ]
+                        , span [ class "text-sm text-gray-500" ] [ text (DateTime.formatDate zone updatedAt) ] |> Tooltip.tl (updatedAtText ++ DateTime.formatDatetime zone updatedAt)
                         ]
                     ]
     in

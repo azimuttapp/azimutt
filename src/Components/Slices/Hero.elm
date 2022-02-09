@@ -4,7 +4,6 @@ import Components.Atoms.Dots as Dots
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
-import Gen.Route as Route
 import Html exposing (Html, a, button, div, h1, img, main_, nav, p, span, text)
 import Html.Attributes exposing (alt, href, src, type_)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHidden, ariaLabel, css)
@@ -12,8 +11,8 @@ import Libs.Models exposing (Image)
 import Libs.Tailwind as Tw exposing (batch, focus, hover, lg, md, sm, xl)
 
 
-basicSlice : Html msg
-basicSlice =
+basicSlice : String -> Html msg
+basicSlice url =
     div [ css [ "relative bg-gray-50 overflow-hidden" ] ]
         [ div [ css [ "hidden", sm [ "block absolute inset-y-0 h-full w-full" ] ], ariaHidden True ]
             [ div [ css [ "relative h-full max-w-7xl mx-auto" ] ]
@@ -70,7 +69,7 @@ basicSlice =
                         [ text "Easily visualize your database schema and see how everything fits together." ]
                     , div [ css [ "mt-5 max-w-md mx-auto", sm [ "flex justify-center" ], md [ "mt-8" ] ] ]
                         [ div [ css [ "rounded-md shadow" ] ]
-                            [ a [ href (Route.toHref Route.App), css [ "w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600", hover [ "bg-blue-800" ], md [ "py-4 text-lg px-10" ] ] ]
+                            [ a [ href url, css [ "w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600", hover [ "bg-blue-800" ], md [ "py-4 text-lg px-10" ] ] ]
                                 [ text "Get started" ]
                             ]
                         ]
@@ -125,6 +124,6 @@ doc : Chapter x
 doc =
     chapter "Hero"
         |> renderComponentList
-            [ ( "basicSlice", basicSlice )
+            [ ( "basicSlice", basicSlice "#" )
             , ( "backgroundImageSlice", backgroundImageSlice docModel )
             ]
