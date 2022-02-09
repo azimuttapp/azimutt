@@ -189,7 +189,7 @@ viewHiddenColumns model =
 
     else
         div [ class "m-2 p-2 bg-gray-100 rounded-lg" ]
-            [ div [ onClick model.actions.clickHiddenColumns, class "text-gray-400 uppercase font-bold text-sm" ]
+            [ div [ onClick model.actions.clickHiddenColumns, class "text-gray-400 uppercase font-bold text-sm cursor-pointer" ]
                 [ text (model.hiddenColumns |> S.pluralizeL "hidden column") ]
             , Keyed.node "div"
                 [ css [ "rounded-lg pt-2", B.cond model.state.showHiddenColumns "" "hidden" ] ]

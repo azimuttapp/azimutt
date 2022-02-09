@@ -94,7 +94,7 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
             [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
-            , Lazy.lazy2 viewRelations displayedTables displayedRelations
+            , Lazy.lazy3 viewRelations dragging displayedTables displayedRelations
             , selectionBox |> M.filterNot (\_ -> tableProps |> Dict.isEmpty) |> M.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> M.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
@@ -133,8 +133,8 @@ viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps ta
         )
 
 
-viewRelations : Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
-viewRelations tableProps relations =
+viewRelations : Maybe DragState -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
+viewRelations dragging tableProps relations =
     let
         getColumnProps : ErdColumnRef -> Maybe ErdColumnProps
         getColumnProps ref =
@@ -142,7 +142,18 @@ viewRelations tableProps relations =
     in
     Keyed.node "div"
         [ class "az-relations" ]
-        (relations |> List.map (\r -> ( r.name, Lazy.lazy3 viewRelation (getColumnProps r.src) (getColumnProps r.ref) r )))
+        (relations
+            |> List.map
+                (\r ->
+                    ( r.name
+                    , Lazy.lazy4 viewRelation
+                        (dragging |> M.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
+                        (getColumnProps r.src)
+                        (getColumnProps r.ref)
+                        r
+                    )
+                )
+        )
 
 
 viewSelectionBox : Area -> Html Msg
