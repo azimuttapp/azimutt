@@ -10,11 +10,11 @@ import DataSources.SqlParser.ProjectAdapter as ProjectAdapter
 import DataSources.SqlParser.StatementParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
+import FileValue exposing (File)
 import Html exposing (Html, div, li, p, span, text, ul)
 import Html.Attributes exposing (class, href)
 import Libs.Bool as B
 import Libs.Dict as Dict
-import Libs.FileInput exposing (File)
 import Libs.Html exposing (bText)
 import Libs.List as List
 import Libs.Maybe as Maybe
