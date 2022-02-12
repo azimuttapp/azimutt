@@ -16,7 +16,7 @@ line src ref nullable color label index =
     let
         padding : Float
         padding =
-            10
+            12
 
         origin : Position
         origin =

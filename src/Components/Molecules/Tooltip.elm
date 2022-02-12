@@ -55,7 +55,7 @@ br =
 
 tooltip : TwClass -> TwClass -> String -> Html msg -> Html msg
 tooltip bubble caret value content =
-    div [ class "group relative inline-flex flex-col items-center" ]
+    div [ class "group relative inline-flex flex-col items-center align-middle" ]
         [ content
         , div [ class ("group-hover:flex hidden absolute flex-col z-max " ++ bubble) ]
             [ div [ class ("absolute w-3 h-3 bg-black transform rotate-45 " ++ caret) ] []

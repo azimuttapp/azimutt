@@ -236,7 +236,7 @@ viewColumn model isLast column =
          , onMouseLeave (model.actions.hoverColumn column.name False)
          , onDoubleClick (model.actions.dblClickColumn column.name)
          , css
-            [ "items-center flex px-2 whitespace-nowrap"
+            [ "h-6 px-2 flex items-center align-middle whitespace-nowrap"
             , B.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
             , B.cond isLast "rounded-b-lg" ""
             ]
@@ -252,23 +252,23 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> List.nonEmpty then
-        div ([ class "w-6 h-6 cursor-pointer", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
-            [ Icon.solid ExternalLink "pt-2" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
+        div ([ class "cursor-pointer", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
+            [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
-        div [ class "w-6 h-6" ] [ Icon.solid Key "pt-2" |> Tooltip.t "Primary key" ]
+        div [] [ Icon.solid Key "w-4 h-4" |> Tooltip.t "Primary key" ]
 
     else if column.uniques |> List.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid FingerPrint "pt-2" |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [] [ Icon.solid FingerPrint "w-4 h-4" |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
 
     else if column.indexes |> List.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid SortDescending "pt-2" |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [] [ Icon.solid SortDescending "w-4 h-4" |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
 
     else if column.checks |> List.nonEmpty then
-        div [ class "w-6 h-6" ] [ Icon.solid Check "pt-2" |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [] [ Icon.solid Check "w-4 h-4" |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
 
     else
-        div [ class "w-6 h-6" ] [ Icon.solid Empty "pt-2" ]
+        div [] [ Icon.solid Empty "w-4 h-4" ]
 
 
 viewColumnIconDropdown : Model msg -> Column -> Html msg -> Html msg
@@ -341,7 +341,7 @@ viewColumnIconDropdownItem message content =
 
 viewColumnName : Column -> Html msg
 viewColumnName column =
-    div [ css [ "flex flex-grow", B.cond column.isPrimaryKey "font-bold" "" ] ]
+    div [ css [ "ml-1 flex flex-grow", B.cond column.isPrimaryKey "font-bold" "" ] ]
         ([ text column.name ] |> List.appendOn column.comment viewComment)
 
 
