@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 
 User-agent: *
-Disallow: /app
+Disallow: /projects

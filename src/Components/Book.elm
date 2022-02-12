@@ -7,6 +7,7 @@ import Components.Atoms.Icon as Icon
 import Components.Atoms.Input as Input
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
+import Components.Atoms.Loader as Loader
 import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
@@ -78,7 +79,7 @@ main =
         |> ElmBook.withChapterGroups
             -- sorted alphabetically
             [ ( "", [ docs ] )
-            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Markdown.doc ] )
+            , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc ] )

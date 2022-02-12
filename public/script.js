@@ -79,6 +79,7 @@ window.addEventListener('load', function() {
         const values = Object.keys(localStorage)
             .filter(key => key.startsWith(projectPrefix))
             .map(key => [key.replace(projectPrefix, ''), safeParse(localStorage.getItem(key))])
+        window.projects = values.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
         sendToElm({kind: 'GotProjects', projects: values})
     }
     function saveProject(project) {
@@ -92,9 +93,9 @@ window.addEventListener('load', function() {
             loadProjects()
         } catch (e) {
             if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-                showToast({kind: 'error', message: "Can't save project, storage quota exceeded. Use a smaller schema or clean unused projects."})
+                showMessage({kind: 'error', message: "Can't save project, storage quota exceeded. Use a smaller schema or clean unused projects."})
             } else {
-                showToast({kind: 'error', message: "Can't save project: " + e.message})
+                showMessage({kind: 'error', message: "Can't save project: " + e.message})
             }
             const name = 'local-storage'
             const details = {error: e.name, message: e.message}
@@ -130,7 +131,7 @@ window.addEventListener('load', function() {
                 content,
                 sample
             }))
-            .catch(err => showToast({kind: 'error', message: err}))
+            .catch(err => showMessage({kind: 'error', message: err}))
     }
 
     function getSourceId(src, ref) {
@@ -247,6 +248,16 @@ window.addEventListener('load', function() {
             return Promise.resolve({
                 trackError: (name, details) => console.log('error.track', name, details)
             })
+        }
+    }
+
+    function showMessage({kind, message}) {
+        // TODO track message in sentry and show it in toast using ports
+        switch (kind) {
+            case 'error': console.error(message); break;
+            case 'warn': console.warn(message); break;
+            case 'log': console.log(message); break;
+            default: console.error(message)
         }
     }
 

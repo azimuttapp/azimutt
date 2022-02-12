@@ -1,5 +1,6 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
+import Components.Atoms.Loader as Loader
 import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
@@ -34,7 +35,7 @@ viewProject shared model =
         model.erd |> Maybe.mapOrElse (viewApp model "app") viewNotFound
 
       else
-        viewLoader
+        Loader.fullScreen
     , Lazy.lazy3 viewModal shared.zone shared.now model
     , Lazy.lazy viewToasts model.toasts
     ]
@@ -46,13 +47,6 @@ viewApp model htmlId erd =
         [ Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
         , Lazy.lazy7 viewErd model.screen erd model.cursorMode model.selectionBox model.virtualRelation model.openedDropdown model.dragging
         , Lazy.lazy5 viewCommands model.cursorMode erd.canvas.zoom (erd.tableProps |> Dict.isEmpty) (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
-        ]
-
-
-viewLoader : Html msg
-viewLoader =
-    div [ class "az-loader flex justify-center items-center h-screen" ]
-        [ div [ class "animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-primary-500" ] []
         ]
 
 
