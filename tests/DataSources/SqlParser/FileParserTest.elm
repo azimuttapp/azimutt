@@ -1,6 +1,6 @@
 module DataSources.SqlParser.FileParserTest exposing (..)
 
-import DataSources.SqlParser.FileParser exposing (buildSqlLines, buildStatements, parseLines)
+import DataSources.SqlParser.FileParser exposing (buildSqlLines, buildStatements, hasKeyword, parseLines)
 import Expect
 import Libs.Nel as Nel
 import Test exposing (Test, describe, test)
@@ -93,6 +93,15 @@ suite =
                      ;
                      end;"""
                 ]
+            ]
+        , describe "hasKeyword"
+            [ test "keyword" (\_ -> { line = 0, text = "  END" } |> hasKeyword "END" |> Expect.equal True)
+            , test "lowercase at the end" (\_ -> { line = 0, text = "  end;" } |> hasKeyword "END" |> Expect.equal True)
+            , test "column name" (\_ -> { line = 0, text = "  `end` timestamp," } |> hasKeyword "END" |> Expect.equal False)
+            , test "inside column name" (\_ -> { line = 0, text = "  pending bool," } |> hasKeyword "END" |> Expect.equal False)
+            , test "start column name" (\_ -> { line = 0, text = "  end_at timestamp," } |> hasKeyword "END" |> Expect.equal False)
+            , test "inside name" (\_ -> { line = 0, text = "CREATE TABLE job_end (" } |> hasKeyword "END" |> Expect.equal False)
+            , test "inside string" (\_ -> { line = 0, text = "COMMENT ON COLUMN public.t1.c1 IS 'Item end date'" } |> hasKeyword "END" |> Expect.equal False)
             ]
         ]
 

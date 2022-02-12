@@ -1,4 +1,4 @@
-module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlComment, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildSqlLines, buildStatements, evolve, parseCommand, parseLines, parseSchema, parseStatements)
+module DataSources.SqlParser.FileParser exposing (SchemaError, SqlCheck, SqlColumn, SqlComment, SqlForeignKey, SqlIndex, SqlPrimaryKey, SqlSchema, SqlTable, SqlTableId, SqlUnique, buildSqlLines, buildStatements, evolve, hasKeyword, parseCommand, parseLines, parseStatements)
 
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
@@ -97,29 +97,6 @@ parseStatements lines =
 parseCommand : SqlStatement -> Result (List ParseError) Command
 parseCommand statement =
     statement |> StatementParser.parse |> Result.map (\( _, c ) -> c)
-
-
-parseSchema : FileContent -> ( List SchemaError, ( List FileLineContent, SqlSchema ) )
-parseSchema fileContent =
-    let
-        lines : List FileLineContent
-        lines =
-            parseLines fileContent
-    in
-    lines
-        |> buildSqlLines
-        |> buildStatements
-        |> List.foldl
-            (\statement ( errs, schema ) ->
-                case statement |> StatementParser.parse |> Result.andThen (\command -> schema |> evolve command) of
-                    Ok newSchema ->
-                        ( errs, newSchema )
-
-                    Err e ->
-                        ( errs ++ e, schema )
-            )
-            ( [], Dict.empty )
-        |> (\( errs, schema ) -> ( errs, ( lines, schema ) ))
 
 
 evolve : ( SqlStatement, Command ) -> SqlSchema -> Result (List SchemaError) SqlSchema
@@ -414,12 +391,12 @@ buildStatements lines =
             )
             ( [], [], 0 )
         |> (\( cur, res, _ ) -> addStatement cur res)
-        |> List.filter (\s -> not (statementIsEmpty s))
+        |> List.filterNot statementIsEmpty
 
 
 hasKeyword : String -> SqlLine -> Bool
 hasKeyword keyword line =
-    (line.text |> Regex.contains ("[^A-Z_]" ++ keyword ++ "([^A-Z_]|$)")) && not (line.text |> Regex.contains ("'.*" ++ keyword ++ ".*'"))
+    (line.text |> Regex.contains ("[^A-Z_\"'`]" ++ keyword ++ "([^A-Z_\"'`]|$)")) && not (line.text |> Regex.contains ("'.*" ++ keyword ++ ".*'"))
 
 
 hasOnlyComment : SqlLine -> Bool
