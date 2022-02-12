@@ -16,6 +16,7 @@ import Components.Molecules.Feature as Feature
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
+import Components.Molecules.Popover as Popover
 import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Toast as Toast
 import Components.Molecules.Tooltip as Tooltip
@@ -48,6 +49,7 @@ type alias DocState =
     , inputDocState : Input.DocState
     , modalDocState : Modal.DocState
     , navbarDocState : Navbar.DocState
+    , popoverDocState : Popover.DocState
     , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
     , toastDocState : Toast.DocState
@@ -60,6 +62,7 @@ init =
     , inputDocState = Input.initDocState
     , modalDocState = Modal.initDocState
     , navbarDocState = Navbar.initDocState
+    , popoverDocState = Popover.initDocState
     , slideoverDocState = Slideover.initDocState
     , tableDocState = Table.initDocState
     , toastDocState = Toast.initDocState
@@ -80,7 +83,7 @@ main =
             -- sorted alphabetically
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc, Markdown.doc ] )
-            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Popover.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc ] )
             ]

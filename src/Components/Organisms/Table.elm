@@ -2,6 +2,7 @@ module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, Co
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Dropdown as Dropdown exposing (Direction(..), MenuItem)
+import Components.Molecules.Popover as Popover
 import Components.Molecules.Tooltip as Tooltip
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
@@ -88,6 +89,7 @@ type alias State =
     , selected : Bool
     , dragging : Bool
     , openedDropdown : HtmlId
+    , openedPopover : HtmlId
     , showHiddenColumns : Bool
     }
 
@@ -99,6 +101,7 @@ type alias Actions msg =
     , clickColumn : Maybe (String -> Position -> msg)
     , dblClickColumn : String -> msg
     , clickRelations : List Relation -> msg
+    , hoverHiddenColumns : HtmlId -> msg
     , clickHiddenColumns : msg
     , clickDropdown : HtmlId -> msg
     }
@@ -188,12 +191,41 @@ viewHiddenColumns model =
         div [] []
 
     else
+        let
+            popoverId : HtmlId
+            popoverId =
+                model.id
+
+            showPopover : Bool
+            showPopover =
+                model.state.openedPopover == popoverId && not model.state.showHiddenColumns
+
+            popover : Html msg
+            popover =
+                if showPopover then
+                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
+
+                else
+                    div [] []
+
+            hiddenColumns : Html msg
+            hiddenColumns =
+                if model.state.showHiddenColumns then
+                    Keyed.node "div" [ css [ "pt-2 rounded-lg" ] ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
+
+                else
+                    div [] []
+        in
         div [ class "m-2 p-2 bg-gray-100 rounded-lg" ]
-            [ div [ onClick model.actions.clickHiddenColumns, class "text-gray-400 uppercase font-bold text-sm cursor-pointer" ]
+            [ div
+                [ onClick model.actions.clickHiddenColumns
+                , onMouseEnter (model.actions.hoverHiddenColumns popoverId)
+                , onMouseLeave (model.actions.hoverHiddenColumns "")
+                , class "text-gray-400 uppercase font-bold text-sm cursor-pointer"
+                ]
                 [ text (model.hiddenColumns |> String.pluralizeL "hidden column") ]
-            , Keyed.node "div"
-                [ css [ "rounded-lg pt-2", B.cond model.state.showHiddenColumns "" "hidden" ] ]
-                (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
+                |> Popover.r popover showPopover
+            , hiddenColumns
             ]
 
 
@@ -425,6 +457,7 @@ sample =
         , selected = False
         , dragging = False
         , openedDropdown = ""
+        , openedPopover = ""
         , showHiddenColumns = False
         }
     , actions =
@@ -434,7 +467,8 @@ sample =
         , clickColumn = Nothing
         , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
         , clickRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
-        , clickHiddenColumns = logAction "hidden columns"
+        , hoverHiddenColumns = \id -> logAction ("hover hidden columns: " ++ id)
+        , clickHiddenColumns = logAction "click hidden columns"
         , clickDropdown = \id -> logAction ("open " ++ id)
         }
     , zoom = 1
@@ -458,6 +492,7 @@ doc =
                                 , clickColumn = Nothing
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
                                 , clickRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+                                , hoverHiddenColumns = \id -> updateDocState (\s -> { s | openedPopover = id })
                                 , clickHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
                                 , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
                                 }

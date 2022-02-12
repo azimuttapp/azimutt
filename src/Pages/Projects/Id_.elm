@@ -37,7 +37,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setOpenedPopover, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SQLSource as SQLSource
 import Shared exposing (StoredProjects(..))
 import Time
@@ -84,6 +84,7 @@ init =
       , sourceUpload = Nothing
       , help = Nothing
       , openedDropdown = ""
+      , openedPopover = ""
       , dragging = Nothing
       , toastIdx = 0
       , toasts = []
@@ -195,6 +196,9 @@ update req now msg model =
 
         DropdownToggle id ->
             ( model |> mapOpenedDropdown (\d -> B.cond (d == id) "" id), Cmd.none )
+
+        PopoverSet id ->
+            ( model |> setOpenedPopover id, Cmd.none )
 
         DragStart id pos ->
             model.dragging

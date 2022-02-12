@@ -28,25 +28,25 @@ type alias TableArgs =
     String
 
 
-argsToString : String -> Bool -> Bool -> TableArgs
-argsToString openedDropdown dragging virtualRelation =
-    openedDropdown ++ "#" ++ B.cond dragging "Y" "N" ++ "#" ++ B.cond virtualRelation "Y" "N"
+argsToString : String -> String -> Bool -> Bool -> TableArgs
+argsToString openedDropdown openedPopover dragging virtualRelation =
+    openedDropdown ++ "#" ++ openedPopover ++ "#" ++ B.cond dragging "Y" "N" ++ "#" ++ B.cond virtualRelation "Y" "N"
 
 
-stringToArgs : TableArgs -> ( String, Bool, Bool )
+stringToArgs : TableArgs -> ( ( String, String ), ( Bool, Bool ) )
 stringToArgs args =
     case args |> String.split "#" of
-        [ openedDropdown, dragging, virtualRelation ] ->
-            ( openedDropdown, dragging == "Y", virtualRelation == "Y" )
+        [ openedDropdown, openedPopover, dragging, virtualRelation ] ->
+            ( ( openedDropdown, openedPopover ), ( dragging == "Y", virtualRelation == "Y" ) )
 
         _ ->
-            ( "", False, False )
+            ( ( "", "" ), ( False, False ) )
 
 
 viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
 viewTable zoom cursorMode args index props table =
     let
-        ( openedDropdown, dragging, virtualRelation ) =
+        ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
@@ -112,6 +112,7 @@ viewTable zoom cursorMode args index props table =
                 , selected = props.selected
                 , dragging = dragging
                 , openedDropdown = openedDropdown
+                , openedPopover = openedPopover
                 , showHiddenColumns = props.showHiddenColumns
                 }
             , actions =
@@ -131,6 +132,7 @@ viewTable zoom cursorMode args index props table =
 
                             _ ->
                                 ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table )))
+                , hoverHiddenColumns = PopoverSet
                 , clickHiddenColumns = ToggleHiddenColumns table.id
                 , clickDropdown = DropdownToggle
                 }

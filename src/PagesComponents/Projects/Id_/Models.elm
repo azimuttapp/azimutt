@@ -48,6 +48,7 @@ type alias Model =
 
     -- global attrs
     , openedDropdown : HtmlId
+    , openedPopover : HtmlId
     , dragging : Maybe DragState
     , toastIdx : Int
     , toasts : List Toast.Model
@@ -127,6 +128,7 @@ type Msg
       -- global messages
     | Focus HtmlId
     | DropdownToggle HtmlId
+    | PopoverSet HtmlId
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position

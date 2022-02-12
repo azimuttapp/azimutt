@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Erd exposing (viewErd)
+module PagesComponents.Projects.Id_.Views.Erd exposing (ErdArgs, argsToString, stringToArgs, viewErd)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -40,9 +40,31 @@ import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelati
 import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable)
 
 
-viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> Html Msg
-viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown dragging =
+type alias ErdArgs =
+    String
+
+
+argsToString : String -> String -> ErdArgs
+argsToString openedDropdown openedPopover =
+    openedDropdown ++ "#" ++ openedPopover
+
+
+stringToArgs : ErdArgs -> ( String, String )
+stringToArgs args =
+    case args |> String.split "#" of
+        [ openedDropdown, openedPopover ] ->
+            ( openedDropdown, openedPopover )
+
+        _ ->
+            ( "", "" )
+
+
+viewErd : ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
+viewErd screen erd cursorMode selectionBox virtualRelation args dragging =
     let
+        ( openedDropdown, openedPopover ) =
+            stringToArgs args
+
         canvas : CanvasProps
         canvas =
             dragging |> Maybe.filter (\d -> d.id == Conf.ids.erd) |> Maybe.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
@@ -93,7 +115,7 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
             [ class "az-canvas origin-top-left"
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
-            [ viewTables cursorMode virtualRelation openedDropdown dragging canvas.zoom tableProps erd.tables erd.shownTables
+            [ viewTables cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom tableProps erd.tables erd.shownTables
             , Lazy.lazy3 viewRelations dragging displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse viewVirtualRelation viewEmptyRelation
@@ -106,8 +128,8 @@ viewErd screen erd cursorMode selectionBox virtualRelation openedDropdown draggi
         ]
 
 
-viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
-viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps tables shownTables =
+viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables cursorMode virtualRelation openedDropdown openedPopover dragging zoom tableProps tables shownTables =
     Keyed.node "div"
         [ class "az-tables" ]
         (shownTables
@@ -122,6 +144,7 @@ viewTables cursorMode virtualRelation openedDropdown dragging zoom tableProps ta
                         cursorMode
                         (Table.argsToString
                             (B.cond (openedDropdown |> String.startsWith table.htmlId) openedDropdown "")
+                            (B.cond (openedPopover |> String.startsWith table.htmlId) openedPopover "")
                             (dragging |> Maybe.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (virtualRelation /= Nothing)
                         )
