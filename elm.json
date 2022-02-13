@@ -8,7 +8,7 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
-            "dtwrks/elm-book": "1.2.0",
+            "dtwrks/elm-book": "1.4.0",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",
@@ -27,7 +27,7 @@
             "toastal/either": "3.6.3"
         },
         "indirect": {
-            "dillonkearns/elm-markdown": "6.0.1",
+            "dillonkearns/elm-markdown": "7.0.0",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
             "elm/parser": "1.1.0",
