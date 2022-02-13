@@ -3,20 +3,24 @@ module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps
 import Dict exposing (Dict)
 import Libs.Area exposing (Area)
 import Libs.Bool as B
+import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Position exposing (Position)
-import Libs.Models.Size exposing (Size)
-import Libs.Tailwind exposing (Color)
+import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Size as Size exposing (Size)
+import Libs.Ned as Ned
+import Libs.Nel as Nel
+import Libs.String as String
+import Libs.Tailwind as Tw exposing (Color)
+import Models.ColumnOrder as ColumnOrder
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation exposing (Relation)
-import Models.Project.Table exposing (Table)
+import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
+import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.TableId exposing (TableId)
-import Models.Project.TableProps as TableProps exposing (TableProps)
+import Models.Project.TableProps exposing (TableProps)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdRelationProps as ErdRelationProps exposing (ErdRelationProps)
-import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import Services.Lenses exposing (setHighlighted)
 import Set exposing (Set)
 
@@ -94,12 +98,44 @@ init settings erdRelations shownTables erdTable =
         relations : List Relation
         relations =
             erdRelations |> List.map ErdRelation.unpack
-
-        table : Table
-        table =
-            erdTable |> ErdTable.unpack
     in
-    TableProps.init settings relations table |> create relations shownTables
+    initTableProps settings relations erdTable |> create relations shownTables
+
+
+initTableProps : ProjectSettings -> List Relation -> ErdTable -> TableProps
+initTableProps settings relations table =
+    { id = table.id
+    , position = Position.zero
+    , size = Size.zero
+    , color = computeColor table.id
+    , columns = table.columns |> Ned.values |> Nel.toList |> List.map .name |> computeColumns settings relations table
+    , selected = False
+    , hiddenColumns = False
+    }
+
+
+computeColumns : ProjectSettings -> List Relation -> ErdTable -> List ColumnName -> List ColumnName
+computeColumns settings relations table columns =
+    let
+        tableRelations : List Relation
+        tableRelations =
+            relations |> Relation.withTableSrc table.id
+    in
+    columns
+        |> List.filterMap (\c -> table.columns |> Ned.get c)
+        |> List.filterNot (ProjectSettings.hideColumn settings.hiddenColumns)
+        |> ColumnOrder.sortBy settings.columnOrder table tableRelations
+        |> List.map .name
+
+
+computeColor : TableId -> Color
+computeColor ( _, table ) =
+    String.wordSplit table
+        |> List.head
+        |> Maybe.map String.hashCode
+        |> Maybe.map (modBy (List.length Tw.list))
+        |> Maybe.andThen (\index -> Tw.list |> List.get index)
+        |> Maybe.withDefault Tw.default
 
 
 area : ErdTableProps -> Area

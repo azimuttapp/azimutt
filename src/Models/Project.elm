@@ -86,7 +86,7 @@ shouldDisplayTable settings table =
 
         isTableRemoved : Bool
         isTableRemoved =
-            table |> ProjectSettings.isTableRemoved settings.removedTables
+            table |> ProjectSettings.removeTable settings.removedTables
     in
     not isSchemaRemoved && not isViewRemoved && not isTableRemoved
 

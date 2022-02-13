@@ -15,7 +15,6 @@ import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Time as Time
-import Models.ColumnOrder exposing (ColumnOrder(..))
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.Check exposing (Check)
@@ -25,7 +24,7 @@ import Models.Project.Index exposing (Index)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
-import Models.Project.ProjectSettings exposing (ProjectSettings)
+import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
@@ -276,7 +275,7 @@ upgrade project =
     , layout = project.schema.layout |> upgradeLayout
     , usedLayout = project.currentLayout
     , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)
-    , settings = ProjectSettings project.settings.findPath [] False "" "" SqlOrder
+    , settings = ProjectSettings.init |> (\s -> { s | findPath = project.settings.findPath })
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }

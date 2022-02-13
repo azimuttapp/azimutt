@@ -1,4 +1,4 @@
-module Models.Project.ProjectSettings exposing (ProjectSettings, decode, encode, init, isColumnHidden, isTableRemoved)
+module Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings, RemovedTables, decode, encode, hideColumn, init, removeTable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -7,20 +7,28 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Regex as Regex
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
-import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
-import Models.Project.Table exposing (TableLike)
+import Models.Project.Table exposing (Table)
+import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 
 
 type alias ProjectSettings =
     { findPath : FindPathSettings
     , removedSchemas : List SchemaName
     , removeViews : Bool
-    , removedTables : String
-    , hiddenColumns : String
+    , removedTables : RemovedTables
+    , hiddenColumns : HiddenColumns
     , columnOrder : ColumnOrder
     }
+
+
+type alias RemovedTables =
+    String
+
+
+type alias HiddenColumns =
+    { list : String, props : Bool, relations : Bool }
 
 
 init : ProjectSettings
@@ -29,29 +37,41 @@ init =
     , removedSchemas = []
     , removeViews = False
     , removedTables = ""
-    , hiddenColumns = ""
+    , hiddenColumns = { list = "", props = False, relations = False }
     , columnOrder = ColumnOrder.SqlOrder
     }
 
 
-isTableRemoved : String -> (TableLike x y -> Bool)
-isTableRemoved removedTables =
+removeTable : RemovedTables -> Table -> Bool
+removeTable removedTables table =
     let
-        values : List String
-        values =
+        names : List String
+        names =
             removedTables |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    \t -> values |> List.any (\n -> t.name == n || Regex.contains ("^" ++ n ++ "$") t.name)
+    names |> List.any (\name -> table.name == name || Regex.contains ("^" ++ name ++ "$") table.name)
 
 
-isColumnHidden : String -> (ColumnName -> Bool)
-isColumnHidden hiddenColumnsInput =
+hideColumn : HiddenColumns -> ErdColumn -> Bool
+hideColumn hiddenColumns column =
     let
-        hiddenColumnNames : List String
-        hiddenColumnNames =
-            hiddenColumnsInput |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
+        names : List String
+        names =
+            hiddenColumns.list |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    \columnName -> hiddenColumnNames |> List.any (\n -> columnName == n || Regex.contains ("^" ++ n ++ "$") columnName)
+    (names |> List.any (\name -> column.name == name || Regex.contains ("^" ++ name ++ "$") column.name))
+        || (hiddenColumns.relations && (column |> hasRelation |> not))
+        || (hiddenColumns.props && (column |> hasProperty |> not))
+
+
+hasRelation : ErdColumn -> Bool
+hasRelation column =
+    List.nonEmpty column.inRelations || List.nonEmpty column.outRelations
+
+
+hasProperty : ErdColumn -> Bool
+hasProperty c =
+    c.isPrimaryKey || List.nonEmpty c.inRelations || List.nonEmpty c.outRelations || List.nonEmpty c.uniques || List.nonEmpty c.indexes || List.nonEmpty c.checks
 
 
 encode : ProjectSettings -> ProjectSettings -> Value
@@ -61,7 +81,7 @@ encode default value =
         , ( "removedSchemas", value.removedSchemas |> Encode.withDefault (Encode.list SchemaName.encode) default.removedSchemas )
         , ( "removeViews", value.removeViews |> Encode.withDefault Encode.bool default.removeViews )
         , ( "removedTables", value.removedTables |> Encode.withDefault Encode.string default.removedTables )
-        , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefault Encode.string default.hiddenColumns )
+        , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefaultDeep encodeHiddenColumns default.hiddenColumns )
         , ( "columnOrder", value.columnOrder |> Encode.withDefault ColumnOrder.encode default.columnOrder )
         ]
 
@@ -73,5 +93,26 @@ decode default =
         (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
         (Decode.defaultField "removeViews" Decode.bool default.removeViews)
         (Decode.defaultField "removedTables" Decode.string default.removedTables)
-        (Decode.defaultField "hiddenColumns" Decode.string default.hiddenColumns)
+        (Decode.defaultFieldDeep "hiddenColumns" decodeHiddenColumns default.hiddenColumns)
         (Decode.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)
+
+
+encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value
+encodeHiddenColumns default value =
+    Encode.notNullObject
+        [ ( "list", value.list |> Encode.withDefault Encode.string default.list )
+        , ( "props", value.props |> Encode.withDefault Encode.bool default.props )
+        , ( "relations", value.relations |> Encode.withDefault Encode.bool default.relations )
+        ]
+
+
+decodeHiddenColumns : HiddenColumns -> Decode.Decoder HiddenColumns
+decodeHiddenColumns default =
+    Decode.oneOf
+        [ Decode.map3 HiddenColumns
+            (Decode.defaultField "list" Decode.string default.list)
+            (Decode.defaultField "props" Decode.bool default.props)
+            (Decode.defaultField "relations" Decode.bool default.relations)
+        , Decode.map (\list -> { list = list, props = default.props, relations = default.relations })
+            Decode.string
+        ]

@@ -11,26 +11,30 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (TwClass, focus, sm)
 
 
-textWithLabelAndHelp : TwClass -> HtmlId -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg
-textWithLabelAndHelp styles fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldValue fieldChange =
+textWithLabelAndHelp : TwClass -> HtmlId -> String -> String -> String -> String -> (String -> msg) -> Html msg
+textWithLabelAndHelp styles fieldId fieldLabel fieldHelp fieldPlaceholder fieldValue fieldChange =
     div [ class styles ]
-        [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text fieldLabel ]
-        , div [ class "mt-1" ]
-            [ input [ type_ fieldType, name fieldId, id fieldId, value fieldValue, onInput fieldChange, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
+        [ label [ for fieldId, class "block" ]
+            [ span [ class "text-sm font-medium text-gray-700" ] [ text fieldLabel ]
+            , p [ id (fieldId ++ "-help"), class "text-sm text-gray-500" ] [ text fieldHelp ]
             ]
-        , p [ id (fieldId ++ "-help"), class "mt-2 text-sm text-gray-500" ] [ text fieldHelp ]
+        , div [ class "mt-1" ]
+            [ input [ type_ "text", name fieldId, id fieldId, value fieldValue, onInput fieldChange, placeholder fieldPlaceholder, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
+            ]
         ]
 
 
 selectWithLabelAndHelp : TwClass -> HtmlId -> String -> String -> List ( String, String ) -> String -> (String -> msg) -> Html msg
 selectWithLabelAndHelp styles fieldId fieldLabel fieldHelp fieldOptions fieldValue fieldChange =
     div [ class styles ]
-        [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text fieldLabel ]
+        [ label [ for fieldId, class "block" ]
+            [ span [ class "text-sm font-medium text-gray-700" ] [ text fieldLabel ]
+            , p [ id (fieldId ++ "-help"), class "text-sm text-gray-500" ] [ text fieldHelp ]
+            ]
         , div [ class "mt-1" ]
             [ select [ name fieldId, id fieldId, onInput fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]
                 (fieldOptions |> List.map (\( optionId, optionLabel ) -> option [ value optionId, selected (optionId == fieldValue) ] [ text optionLabel ]))
             ]
-        , p [ id (fieldId ++ "-help"), class "mt-2 text-sm text-gray-500" ] [ text fieldHelp ]
         ]
 
 
@@ -74,7 +78,7 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Input"
         |> Chapter.renderStatefulComponentList
-            [ ( "textWithLabelAndHelp", \{ inputDocState } -> textWithLabelAndHelp "" "email" "email" "Email" "you@example.com" "We'll only use this for spam." inputDocState.text (\value -> updateDocState (\state -> { state | text = value })) )
+            [ ( "textWithLabelAndHelp", \{ inputDocState } -> textWithLabelAndHelp "" "email" "Email" "We'll only use this for spam." "you@example.com" inputDocState.text (\value -> updateDocState (\state -> { state | text = value })) )
             , ( "selectWithLabelAndHelp", \{ inputDocState } -> selectWithLabelAndHelp "" "role" "Role" "Choose the correct role" [ ( "admin", "Admin" ), ( "guest", "Guest" ), ( "demo", "Demo" ) ] inputDocState.select (\value -> updateDocState (\state -> { state | select = value })) )
             , ( "checkbox", \{ inputDocState } -> checkbox "" "comments" "Comments" "Get notified when someones posts a comment on a posting." inputDocState.checkbox (updateDocState (\state -> { state | checkbox = not state.checkbox })) )
             ]

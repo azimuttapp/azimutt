@@ -9,14 +9,15 @@ import Libs.Ned as Ned
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ProjectSettings as ProjectSettings
+import Models.Project.ProjectSettings as ProjectSettings exposing (HiddenColumns)
 import Models.Project.Source as Source
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, toastInfo)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapEnabled, mapErdM, mapParsingCmd, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setHiddenColumns, setRemovedTables, setSettings, setSourceUpload)
+import Services.Lenses exposing (mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
 import Services.SQLSource as SQLSource
 import Track
 
@@ -38,7 +39,7 @@ handleProjectSettings msg model =
         PSClose ->
             ( model |> setSettings Nothing, Cmd.none )
 
-        PSToggleSource source ->
+        PSSourceToggle source ->
             ( model |> mapErdM (Erd.mapSource source.id (mapEnabled not))
             , Cmd.batch
                 [ Ports.observeTablesSize (model.erd |> Maybe.mapOrElse .shownTables [])
@@ -46,7 +47,7 @@ handleProjectSettings msg model =
                 ]
             )
 
-        PSDeleteSource source ->
+        PSSourceDelete source ->
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
 
         PSSourceUploadOpen source ->
@@ -64,25 +65,36 @@ handleProjectSettings msg model =
         PSSourceAdd source ->
             ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ source ])), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.addSource source) ] )
 
-        PSToggleSchema schema ->
+        PSSchemaToggle schema ->
             model |> mapErdM (Erd.mapSettings (mapRemovedSchemas (List.toggle schema))) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
-        PSToggleRemoveViews ->
+        PSRemoveViewsToggle ->
             model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
-        PSUpdateRemovedTables values ->
+        PSRemovedTablesUpdate values ->
             model |> mapErdM (Erd.mapSettings (setRemovedTables values)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
-        PSUpdateHiddenColumns values ->
-            ( model |> mapErdM (\e -> e |> Erd.mapSettings (setHiddenColumns values) |> mapTableProps (hideColumns (ProjectSettings.isColumnHidden values))), Cmd.none )
+        PSHiddenColumnsListUpdate values ->
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
 
-        PSUpdateColumnOrder order ->
+        PSHiddenColumnsPropsToggle ->
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
+
+        PSHiddenColumnsRelationsToggle ->
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapRelations not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
+
+        PSColumnOrderUpdate order ->
             ( model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order) |> mapTableProps (sortColumns order e)), Cmd.none )
 
 
-hideColumns : (ColumnName -> Bool) -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
-hideColumns isColumnHidden tableProps =
-    tableProps |> Dict.map (\_ -> ErdTableProps.mapShownColumns (List.filterNot isColumnHidden))
+hideColumns : Dict TableId ErdTable -> HiddenColumns -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+hideColumns tables hiddenColumns tableProps =
+    tableProps |> Dict.map (\tableId props -> tables |> Dict.get tableId |> Maybe.mapOrElse (\table -> props |> ErdTableProps.mapShownColumns (shouldHideColumns hiddenColumns table)) props)
+
+
+shouldHideColumns : HiddenColumns -> ErdTable -> List ColumnName -> List ColumnName
+shouldHideColumns hiddenColumns table columns =
+    columns |> List.filterMap (\c -> table.columns |> Ned.get c) |> List.filterNot (ProjectSettings.hideColumn hiddenColumns) |> List.map .name
 
 
 sortColumns : ColumnOrder -> Erd -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps

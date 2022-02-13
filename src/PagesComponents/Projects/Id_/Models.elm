@@ -178,18 +178,20 @@ type FindPathMsg
 type ProjectSettingsMsg
     = PSOpen
     | PSClose
-    | PSToggleSource Source
-    | PSDeleteSource Source
+    | PSSourceToggle Source
+    | PSSourceDelete Source
     | PSSourceUploadOpen (Maybe Source)
     | PSSourceUploadClose
     | PSSQLSourceMsg SQLSourceMsg
     | PSSourceRefresh Source
     | PSSourceAdd Source
-    | PSToggleSchema SchemaName
-    | PSToggleRemoveViews
-    | PSUpdateRemovedTables String
-    | PSUpdateHiddenColumns String
-    | PSUpdateColumnOrder ColumnOrder
+    | PSSchemaToggle SchemaName
+    | PSRemoveViewsToggle
+    | PSRemovedTablesUpdate String
+    | PSHiddenColumnsListUpdate String
+    | PSHiddenColumnsPropsToggle
+    | PSHiddenColumnsRelationsToggle
+    | PSColumnOrderUpdate ColumnOrder
 
 
 type HelpMsg

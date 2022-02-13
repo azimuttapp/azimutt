@@ -6,13 +6,14 @@ import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Tooltip as Tooltip
 import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
-import Html.Attributes exposing (checked, class, for, id, type_, value)
+import Html.Attributes exposing (checked, class, for, id, name, type_, value)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass, focus)
 import Models.ColumnOrder as ColumnOrder
@@ -37,24 +38,24 @@ viewProjectSettings zone opened erd model =
         , onClickOverlay = ModalClose (ProjectSettingsMsg PSClose)
         }
         (div []
-            [ viewSourcesSection zone erd
-            , viewSchemasSection erd
-            , viewDisplaySettingsSection erd
+            [ viewSourcesSection (model.id ++ "-sources") zone erd
+            , viewSchemasSection (model.id ++ "-schemas") erd
+            , viewDisplaySettingsSection (model.id ++ "-display") erd
             ]
         )
 
 
-viewSourcesSection : Time.Zone -> Erd -> Html Msg
-viewSourcesSection zone erd =
+viewSourcesSection : HtmlId -> Time.Zone -> Erd -> Html Msg
+viewSourcesSection htmlId zone erd =
     fieldset []
         [ legend [ class "font-medium text-gray-900" ] [ text "Project sources" ]
         , div [ class "mt-1 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
-            ((erd.sources |> List.map (viewSource erd.project.id zone)) ++ [ viewAddSource erd.project.id ])
+            ((erd.sources |> List.map (viewSource htmlId erd.project.id zone)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
         ]
 
 
-viewSource : ProjectId -> Time.Zone -> Source -> Html Msg
-viewSource _ zone source =
+viewSource : HtmlId -> ProjectId -> Time.Zone -> Source -> Html Msg
+viewSource htmlId _ zone source =
     let
         ( views, tables ) =
             source.tables |> Dict.values |> List.partition .view
@@ -64,16 +65,16 @@ viewSource _ zone source =
             \icon updatedAtText updatedAt labelTitle ->
                 div [ class "px-4 py-2" ]
                     [ div [ class "flex justify-between" ]
-                        [ viewCheckbox ""
-                            ("settings-source-" ++ SourceId.toString source.id)
+                        [ viewCheckbox "mt-3"
+                            (htmlId ++ "-" ++ SourceId.toString source.id)
                             [ span [] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
                             source.enabled
-                            (ProjectSettingsMsg (PSToggleSource source))
+                            (ProjectSettingsMsg (PSSourceToggle source))
                         , div []
                             [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ focus [ "outline-none" ], B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
                                 [ Icon.solid Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
-                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSDeleteSource source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
+                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceDelete source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
                             ]
@@ -95,14 +96,14 @@ viewSource _ zone source =
             view User "Last edited on " source.updatedAt "Created by you"
 
 
-viewAddSource : ProjectId -> Html Msg
-viewAddSource _ =
+viewAddSource : HtmlId -> ProjectId -> Html Msg
+viewAddSource _ _ =
     button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ "inline-flex items-center px-3 py-2 w-full text-left", focus [ "outline-none" ] ] ]
         [ Icon.solid Plus "inline", text "Add source" ]
 
 
-viewSchemasSection : Erd -> Html Msg
-viewSchemasSection erd =
+viewSchemasSection : HtmlId -> Erd -> Html Msg
+viewSchemasSection htmlId erd =
     let
         schemas : List ( SchemaName, List Table )
         schemas =
@@ -112,24 +113,24 @@ viewSchemasSection erd =
         fieldset [ class "mt-6" ]
             [ legend [ class "font-medium text-gray-900" ] [ text "Project schemas" ]
             , p [ class "text-sm text-gray-500" ] [ text "Allow you to enable or not SQL schemas in your project." ]
-            , div [ class "list-group" ] (schemas |> List.map (viewSchema erd.settings.removedSchemas))
+            , div [ class "list-group" ] (schemas |> List.map (viewSchema htmlId erd.settings.removedSchemas))
             ]
 
     else
         fieldset [] []
 
 
-viewSchema : List SchemaName -> ( SchemaName, List Table ) -> Html Msg
-viewSchema removedSchemas ( schema, tables ) =
+viewSchema : HtmlId -> List SchemaName -> ( SchemaName, List Table ) -> Html Msg
+viewSchema htmlId removedSchemas ( schema, tables ) =
     let
         ( views, realTables ) =
             tables |> List.partition .view
     in
-    viewCheckbox "" ("settings-schema-" ++ schema) [ bText schema, text (" (" ++ (realTables |> String.pluralizeL "table") ++ " & " ++ (views |> String.pluralizeL "views") ++ ")") ] (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSToggleSchema schema))
+    viewCheckbox "mt-3" (htmlId ++ "-" ++ schema) [ bText schema, text (" (" ++ (realTables |> String.pluralizeL "table") ++ " & " ++ (views |> String.pluralizeL "views") ++ ")") ] (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSSchemaToggle schema))
 
 
-viewDisplaySettingsSection : Erd -> Html Msg
-viewDisplaySettingsSection erd =
+viewDisplaySettingsSection : HtmlId -> Erd -> Html Msg
+viewDisplaySettingsSection htmlId erd =
     let
         viewsCount : Int
         viewsCount =
@@ -137,37 +138,37 @@ viewDisplaySettingsSection erd =
     in
     fieldset [ class "mt-6" ]
         [ legend [ class "font-medium text-gray-900" ] [ text "Display options" ]
-        , p [ class "text-sm text-gray-500" ] [ text "Configure global options for Azimutt ERD." ]
-        , viewCheckbox (B.cond (viewsCount == 0) "hidden" "")
-            "settings-no-views"
+        , p [ class "text-sm text-gray-500" ] [ text "Configure global options for this project." ]
+        , viewCheckbox (B.cond (viewsCount == 0) "mt-3 hidden" "mt-3")
+            (htmlId ++ "-no-views")
             [ bText "Remove views" |> Tooltip.tr "Check this if you don't want to have SQL views in Azimutt"
             , text (" (" ++ (viewsCount |> String.pluralize "view") ++ ")")
             ]
             erd.settings.removeViews
-            (ProjectSettingsMsg PSToggleRemoveViews)
+            (ProjectSettingsMsg PSRemoveViewsToggle)
         , Input.textWithLabelAndHelp "mt-3"
-            "settings-removed-tables"
-            "text"
-            "Removed tables"
-            "Add technical tables, ex: flyway_schema_history..."
-            "Some tables are not useful and can clutter search, find path or even UI. Remove them by name or even regex."
+            (htmlId ++ "-remove-tables")
+            "Remove tables"
+            "Some tables are not useful, remove them."
+            "ex: flyway_.+, versions, env"
             erd.settings.removedTables
-            (PSUpdateRemovedTables >> ProjectSettingsMsg)
+            (PSRemovedTablesUpdate >> ProjectSettingsMsg)
         , Input.textWithLabelAndHelp "mt-3"
-            "settings-hidden-columns"
-            "text"
-            "Hidden columns"
-            "Add technical columns, ex: created_at..."
-            "Some columns are less interesting, hide them by default when showing a table. Use name or regex."
-            erd.settings.hiddenColumns
-            (PSUpdateHiddenColumns >> ProjectSettingsMsg)
+            (htmlId ++ "-hide-columns-list")
+            "Hide columns"
+            "Some columns are not interesting, hide them by default."
+            "ex: created_at, updated_.+"
+            erd.settings.hiddenColumns.list
+            (PSHiddenColumnsListUpdate >> ProjectSettingsMsg)
+        , viewCheckbox "mt-1" (htmlId ++ "-hide-columns-props") [ text "Hide columns without special property" ] erd.settings.hiddenColumns.props (PSHiddenColumnsPropsToggle |> ProjectSettingsMsg)
+        , viewCheckbox "mt-1" (htmlId ++ "-hide-columns-relation") [ text "Hide columns without relation" ] erd.settings.hiddenColumns.relations (PSHiddenColumnsRelationsToggle |> ProjectSettingsMsg)
         , Input.selectWithLabelAndHelp "mt-3"
-            "settings-columns-order"
+            (htmlId ++ "-columns-order")
             "Columns order"
-            "Select the default column order for tables, will also update order of tables already shown."
+            "Choose the default column order for tables."
             (ColumnOrder.all |> List.map (\o -> ( ColumnOrder.toString o, ColumnOrder.show o )))
             (ColumnOrder.toString erd.settings.columnOrder)
-            (ColumnOrder.fromString >> PSUpdateColumnOrder >> ProjectSettingsMsg)
+            (ColumnOrder.fromString >> PSColumnOrderUpdate >> ProjectSettingsMsg)
         ]
 
 
@@ -177,7 +178,7 @@ viewDisplaySettingsSection erd =
 
 viewCheckbox : TwClass -> String -> List (Html msg) -> Bool -> msg -> Html msg
 viewCheckbox styles fieldId fieldLabel value msg =
-    div [ css [ "mt-3 relative flex items-start", styles ] ]
+    div [ css [ "relative flex items-start", styles ] ]
         [ div [ class "flex items-center h-5" ]
             [ input [ type_ "checkbox", id fieldId, checked value, onClick msg, css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus [ "ring-indigo-500" ] ] ] []
             ]

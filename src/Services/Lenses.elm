@@ -1,4 +1,4 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIsOpen, setLast, setLayout, setLayouts, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
+module Services.Lenses exposing (mapActive, mapCanvas, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProps, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -185,6 +185,11 @@ mapLayouts =
     map .layouts setLayouts
 
 
+setList : v -> { item | list : v } -> { item | list : v }
+setList =
+    set .list (\value item -> { item | list = value })
+
+
 setLoading : v -> { item | loading : v } -> { item | loading : v }
 setLoading =
     set .loading (\value item -> { item | loading = value })
@@ -313,6 +318,16 @@ mapProjectM =
 mapProjectMCmd : (v -> ( v, Cmd msg )) -> { item | project : Maybe v } -> ( { item | project : Maybe v }, Cmd msg )
 mapProjectMCmd =
     mapMCmd .project setProject
+
+
+setProps : v -> { item | props : v } -> { item | props : v }
+setProps =
+    set .props (\value item -> { item | props = value })
+
+
+mapProps : (v -> v) -> { item | props : v } -> { item | props : v }
+mapProps =
+    map .props setProps
 
 
 setRelations : v -> { item | relations : v } -> { item | relations : v }

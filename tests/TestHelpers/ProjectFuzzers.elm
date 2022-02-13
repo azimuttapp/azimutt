@@ -30,7 +30,7 @@ import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
-import Models.Project.ProjectSettings exposing (ProjectSettings)
+import Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.SampleName exposing (SampleKey)
@@ -151,12 +151,17 @@ tableProps =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    F.map6 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool stringSmall stringSmall columnOrder
+    F.map6 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder
 
 
 findPathSettings : Fuzzer FindPathSettings
 findPathSettings =
     Fuzz.map3 FindPathSettings intPosSmall (listSmall tableId) (listSmall columnName)
+
+
+findHiddenColumns : Fuzzer HiddenColumns
+findHiddenColumns =
+    Fuzz.map3 HiddenColumns stringSmall Fuzz.bool Fuzz.bool
 
 
 projectId : Fuzzer ProjectId
