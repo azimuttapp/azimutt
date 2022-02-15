@@ -203,7 +203,7 @@ viewHiddenColumns model =
             popover : Html msg
             popover =
                 if showPopover then
-                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
+                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md z-max" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
 
                 else
                     div [] []
