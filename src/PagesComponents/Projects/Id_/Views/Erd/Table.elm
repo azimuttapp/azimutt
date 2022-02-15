@@ -12,7 +12,6 @@ import Libs.Html.Attributes exposing (css)
 import Libs.Html.Events exposing (stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Position
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned

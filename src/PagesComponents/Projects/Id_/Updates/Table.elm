@@ -6,7 +6,6 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Position
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Task as T
