@@ -22,6 +22,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnPro
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Time
 
@@ -96,7 +97,7 @@ createLayout relationsByTable layout =
             layout.tables ++ layout.hiddenTables
     in
     ( layout.canvas
-    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) p )) |> Dict.fromList
+    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) Nothing p )) |> Dict.fromList
     , layout.tables |> List.map .id
     )
 
@@ -130,9 +131,9 @@ isShown table erd =
     erd.shownTables |> List.member table
 
 
-initTable : ErdTable -> Erd -> ErdTableProps
-initTable table erd =
-    ErdTableProps.init erd.settings erd.relations erd.shownTables table
+initTable : Erd -> Maybe PositionHint -> ErdTable -> ErdTableProps
+initTable erd hint table =
+    ErdTableProps.init erd.settings erd.relations erd.shownTables hint table
 
 
 computeSchema : Erd -> Erd

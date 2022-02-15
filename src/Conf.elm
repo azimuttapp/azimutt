@@ -84,9 +84,9 @@ schema =
     { default = "public" }
 
 
-ui : { openDuration : Int, closeDuration : Int }
+ui : { openDuration : Int, closeDuration : Int, tableHeaderHeight : Float, tableColumnHeight : Float }
 ui =
-    { openDuration = 200, closeDuration = 300 }
+    { openDuration = 200, closeDuration = 300, tableHeaderHeight = 45, tableColumnHeight = 24 }
 
 
 ids :

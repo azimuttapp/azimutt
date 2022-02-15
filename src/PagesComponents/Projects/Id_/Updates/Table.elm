@@ -1,10 +1,12 @@
 module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 
+import Conf
 import Dict exposing (Dict)
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Position
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Libs.Task as T
@@ -19,38 +21,39 @@ import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.PositionHint as PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapShownTables, mapTableProps, setHoverColumn, setShownTables)
 import Set
 
 
-showTable : TableId -> Erd -> ( Erd, Cmd Msg )
-showTable id erd =
+showTable : TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
+showTable id hint erd =
     case erd.tables |> Dict.get id of
         Just table ->
             if erd |> Erd.isShown id then
                 ( erd, T.send (toastInfo ("Table " ++ TableId.show id ++ " already shown")) )
 
             else
-                ( erd |> performShowTable table, Cmd.batch [ Ports.observeTableSize id ] )
+                ( erd |> performShowTable table hint, Cmd.batch [ Ports.observeTableSize id ] )
 
         Nothing ->
             ( erd, T.send (toastError ("Can't show table " ++ TableId.show id ++ ": not found")) )
 
 
-showTables : List TableId -> Erd -> ( Erd, Cmd Msg )
-showTables ids erd =
+showTables : List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
+showTables ids hint erd =
     ids
-        |> List.zipWith (\id -> erd.tables |> Dict.get id)
-        |> List.foldr
-            (\( id, maybeTable ) ( e, ( found, shown, notFound ) ) ->
+        |> List.indexedMap (\i id -> ( id, erd.tables |> Dict.get id, hint |> Maybe.map (PositionHint.move { left = 0, top = Conf.ui.tableHeaderHeight * toFloat i }) ))
+        |> List.foldl
+            (\( id, maybeTable, tableHint ) ( e, ( found, shown, notFound ) ) ->
                 case maybeTable of
                     Just table ->
                         if erd |> Erd.isShown id then
                             ( e, ( found, id :: shown, notFound ) )
 
                         else
-                            ( e |> performShowTable table, ( id :: found, shown, notFound ) )
+                            ( e |> performShowTable table tableHint, ( id :: found, shown, notFound ) )
 
                     Nothing ->
                         ( e, ( found, shown, id :: notFound ) )
@@ -72,7 +75,7 @@ showAllTables erd =
     let
         tablesToInit : Dict TableId ErdTableProps
         tablesToInit =
-            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ t -> erd |> Erd.initTable t)
+            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ -> Erd.initTable erd Nothing)
 
         tablesHidden : List TableId
         tablesHidden =
@@ -239,10 +242,10 @@ isSame ref erdRef =
     ref.table == erdRef.table && ref.column == erdRef.column
 
 
-performShowTable : ErdTable -> Erd -> Erd
-performShowTable table erd =
+performShowTable : ErdTable -> Maybe PositionHint -> Erd -> Erd
+performShowTable table hint erd =
     erd
-        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (erd |> Erd.initTable table))))
+        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (table |> Erd.initTable erd hint))))
         |> mapShownTables (\t -> B.cond (t |> List.member table.id) t (table.id :: t))
 
 

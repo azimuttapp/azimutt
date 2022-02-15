@@ -1,4 +1,4 @@
-module Libs.Area exposing (Area, center, div, from, inside, merge, move, mult, normalize, overlap, zero)
+module Libs.Area exposing (Area, AreaLike, center, div, from, inside, merge, move, mult, normalize, overlap, zero)
 
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
@@ -6,6 +6,10 @@ import Libs.Models.Size as Size exposing (Size)
 
 type alias Area =
     { position : Position, size : Size }
+
+
+type alias AreaLike x =
+    { x | position : Position, size : Size }
 
 
 zero : Area
@@ -18,7 +22,7 @@ from p1 p2 =
     { position = Position (min p1.left p2.left) (min p1.top p2.top), size = Size (abs (p2.left - p1.left)) (abs (p2.top - p1.top)) }
 
 
-center : Area -> Position
+center : AreaLike x -> Position
 center area =
     area.position |> Position.add (area.size |> Size.div 2 |> Size.toTuple |> Position.fromTuple)
 

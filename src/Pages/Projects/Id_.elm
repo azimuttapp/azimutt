@@ -116,11 +116,11 @@ update req now msg model =
         SaveProject ->
             ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
-        ShowTable id ->
-            model |> mapErdMCmd (showTable id)
+        ShowTable id hint ->
+            model |> mapErdMCmd (showTable id hint)
 
-        ShowTables ids ->
-            model |> mapErdMCmd (showTables ids)
+        ShowTables ids hint ->
+            model |> mapErdMCmd (showTables ids hint)
 
         ShowAllTables ->
             model |> mapErdMCmd showAllTables

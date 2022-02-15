@@ -216,7 +216,7 @@ viewEmptyState tables =
                     [ text "Your project has "
                     , bText (tables |> String.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ❤️ Azimutt, "
