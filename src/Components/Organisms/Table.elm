@@ -252,8 +252,13 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> List.nonEmpty then
-        div ([ class "cursor-pointer", onClick (model.actions.clickRelations column.outRelations True) ] ++ track Track.showTableWithForeignKey)
-            [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
+        if column.outRelations |> List.filter .tableShown |> List.nonEmpty then
+            div [ css [ "cursor-pointer" ] ]
+                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
+
+        else
+            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.clickRelations column.outRelations True) ] ++ track Track.showTableWithForeignKey)
+                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
         div [] [ Icon.solid Key "w-4 h-4" |> Tooltip.t "Primary key" ]
@@ -277,6 +282,10 @@ viewColumnIconDropdown model column icon =
         dropdownId : HtmlId
         dropdownId =
             model.id ++ "-" ++ column.name ++ "-dropdown"
+
+        tablesToShow : List Relation
+        tablesToShow =
+            column.inRelations |> List.filterNot .tableShown
     in
     if column.inRelations |> List.isEmpty then
         div [] [ button [ type_ "button", id dropdownId, css [ "cursor-default", focus [ "outline-none" ] ] ] [ icon ] ]
@@ -290,7 +299,7 @@ viewColumnIconDropdown model column icon =
                      , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
-                     , css [ focus [ "outline-none" ] ]
+                     , css [ B.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
                      ]
                         ++ track Track.openIncomingRelationsDropdown
                     )
@@ -316,15 +325,11 @@ viewColumnIconDropdown model column icon =
                                     viewColumnIconDropdownItem (model.actions.clickRelations [ r ] False) content
                             )
                      )
-                        ++ (column.inRelations
-                                |> List.filter (\r -> not r.tableShown)
-                                |> (\relations ->
-                                        if List.length relations > 1 then
-                                            [ viewColumnIconDropdownItem (model.actions.clickRelations relations False) [ text ("Show all (" ++ (relations |> String.pluralizeL "table") ++ ")") ] ]
+                        ++ (if List.length tablesToShow > 1 then
+                                [ viewColumnIconDropdownItem (model.actions.clickRelations tablesToShow False) [ text ("Show all (" ++ (tablesToShow |> String.pluralizeL "table") ++ ")") ] ]
 
-                                        else
-                                            []
-                                   )
+                            else
+                                []
                            )
                     )
             )
