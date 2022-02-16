@@ -38,7 +38,7 @@ import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setOpenedPopover, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
-import Services.SQLSource as SQLSource
+import Services.SqlSourceUpload as SqlSourceUpload
 import Shared exposing (StoredProjects(..))
 import Time
 import Track
@@ -282,11 +282,11 @@ handleJsMessage req message model =
                 )
             )
 
-        GotLocalFile now projectId sourceId file content ->
-            ( model, T.send (SQLSource.gotLocalFile now projectId sourceId file content |> PSSQLSourceMsg |> ProjectSettingsMsg) )
+        GotLocalFile now projectId sourceId file _ content ->
+            ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotRemoteFile now projectId sourceId url content sample ->
-            ( model, T.send (SQLSource.gotRemoteFile now projectId sourceId url content sample |> PSSQLSourceMsg |> ProjectSettingsMsg) )
+            ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotSourceId now sourceId src ref ->
             ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [ Relation.virtual src ref sourceId ] now ]))

@@ -14,10 +14,11 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Models.Size as Size
+import Models.FileKind as FileKind exposing (FileKind)
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
-import Models.Project.SampleName exposing (SampleKey)
+import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Storage.ProjectV2 exposing (decodeProject)
@@ -79,9 +80,9 @@ dropProject project =
     messageToJs (DropProject project)
 
 
-readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> Cmd msg
-readLocalFile project source file =
-    messageToJs (GetLocalFile project source file)
+readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> FileKind -> Cmd msg
+readLocalFile project source file fileKind =
+    messageToJs (GetLocalFile project source file fileKind)
 
 
 readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleKey -> Cmd msg
@@ -163,7 +164,7 @@ type ElmMsg
     | SaveProject Project
     | DownloadFile FileName FileContent
     | DropProject Project
-    | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
+    | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File FileKind
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
     | GetSourceId ColumnRef ColumnRef
     | ObserveSizes (List HtmlId)
@@ -176,7 +177,7 @@ type ElmMsg
 type JsMsg
     = GotSizes (List SizeChange)
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
-    | GotLocalFile Time.Posix ProjectId SourceId File FileContent
+    | GotLocalFile Time.Posix ProjectId SourceId File FileKind FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
@@ -237,8 +238,8 @@ elmEncoder elm =
         DropProject project ->
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
-        GetLocalFile project source file ->
-            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
+        GetLocalFile project source file fileKind ->
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ), ( "fileKind", fileKind |> FileKind.encode ) ]
 
         GetRemoteFile project source url sample ->
             Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> Encode.maybe Encode.string ) ]
@@ -282,11 +283,12 @@ jsDecoder =
                     Decode.field "projects" projectsDecoder |> Decode.map GotProjects
 
                 "GotLocalFile" ->
-                    Decode.map5 GotLocalFile
+                    Decode.map6 GotLocalFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
                         (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "file" FileValue.decoder)
+                        (Decode.field "fileKind" FileKind.decode)
                         (Decode.field "content" Decode.string)
 
                 "GotRemoteFile" ->

@@ -27,7 +27,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Ports exposing (JsMsg)
-import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
+import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
 import Shared exposing (Confirm)
 
 
@@ -86,7 +86,7 @@ type alias ProjectSettingsDialog =
 
 
 type alias SourceUploadDialog =
-    { id : HtmlId, parsing : SQLSource Msg }
+    { id : HtmlId, parsing : SqlSourceUpload Msg }
 
 
 type alias HelpDialog =
@@ -184,7 +184,7 @@ type ProjectSettingsMsg
     | PSSourceDelete Source
     | PSSourceUploadOpen (Maybe Source)
     | PSSourceUploadClose
-    | PSSQLSourceMsg SQLSourceMsg
+    | PSSqlSourceMsg SqlSourceUploadMsg
     | PSSourceRefresh Source
     | PSSourceAdd Source
     | PSSchemaToggle SchemaName

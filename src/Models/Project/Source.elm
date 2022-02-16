@@ -9,7 +9,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.Time as Time
 import Models.Project.Relation as Relation exposing (Relation)
-import Models.Project.SampleName as SampleName exposing (SampleKey)
+import Models.Project.SampleKey as SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
@@ -67,7 +67,7 @@ encode value =
         , ( "tables", value.tables |> Dict.values |> Encode.list Table.encode )
         , ( "relations", value.relations |> Encode.list Relation.encode )
         , ( "enabled", value.enabled |> Encode.withDefault Encode.bool True )
-        , ( "fromSample", value.fromSample |> Encode.maybe SampleName.encode )
+        , ( "fromSample", value.fromSample |> Encode.maybe SampleKey.encode )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         ]
@@ -83,6 +83,6 @@ decode =
         (Decode.field "tables" (Decode.list Table.decode) |> Decode.map (Dict.fromListMap .id))
         (Decode.field "relations" (Decode.list Relation.decode))
         (Decode.defaultField "enabled" Decode.bool True)
-        (Decode.maybeField "fromSample" SampleName.decode)
+        (Decode.maybeField "fromSample" SampleKey.decode)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)

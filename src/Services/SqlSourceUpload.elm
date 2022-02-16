@@ -1,4 +1,4 @@
-module Services.SQLSource exposing (ParsingMsg(..), SQLParsing, SQLSource, SQLSourceMsg(..), gotLocalFile, gotRemoteFile, init, update, viewParsing)
+module Services.SqlSourceUpload exposing (ParsingMsg(..), SqlParsing, SqlSourceUpload, SqlSourceUploadMsg(..), gotLocalFile, gotRemoteFile, init, update, viewParsing)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
@@ -24,10 +24,11 @@ import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
+import Models.FileKind exposing (FileKind(..))
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId
-import Models.Project.SampleName exposing (SampleKey)
+import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
@@ -40,19 +41,19 @@ import Track
 import Url exposing (percentEncode)
 
 
-type alias SQLSource msg =
+type alias SqlSourceUpload msg =
     { project : Maybe ProjectId
     , source : Maybe Source
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe FileUrl
     , selectedSample : Maybe String
     , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
-    , parsedSchema : Maybe (SQLParsing msg)
+    , parsedSchema : Maybe (SqlParsing msg)
     , parsedSource : Maybe Source
     }
 
 
-type alias SQLParsing msg =
+type alias SqlParsing msg =
     { cpt : Int
     , fileContent : FileContent
     , lines : Maybe (List FileLineContent)
@@ -66,7 +67,7 @@ type alias SQLParsing msg =
     }
 
 
-type SQLSourceMsg
+type SqlSourceUploadMsg
     = SelectLocalFile File
     | SelectRemoteFile FileUrl
     | SelectSample String
@@ -86,7 +87,7 @@ type ParsingMsg
 -- INIT
 
 
-init : Maybe ProjectId -> Maybe Source -> SQLSource msg
+init : Maybe ProjectId -> Maybe Source -> SqlSourceUpload msg
 init project source =
     { project = project
     , source = source
@@ -99,7 +100,7 @@ init project source =
     }
 
 
-parsingInit : FileContent -> (ParsingMsg -> msg) -> msg -> SQLParsing msg
+parsingInit : FileContent -> (ParsingMsg -> msg) -> msg -> SqlParsing msg
 parsingInit fileContent buildMsg buildProject =
     { cpt = 0
     , fileContent = fileContent
@@ -118,12 +119,12 @@ parsingInit fileContent buildMsg buildProject =
 -- UPDATE
 
 
-update : SQLSourceMsg -> (SQLSourceMsg -> msg) -> SQLSource msg -> ( SQLSource msg, Cmd msg )
+update : SqlSourceUploadMsg -> (SqlSourceUploadMsg -> msg) -> SqlSourceUpload msg -> ( SqlSourceUpload msg, Cmd msg )
 update msg wrap model =
     case msg of
         SelectLocalFile file ->
             ( init model.project model.source |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file
+            , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file SqlSourceFile
             )
 
         SelectRemoteFile url ->
@@ -167,7 +168,7 @@ update msg wrap model =
                 |> Maybe.withDefault ( model, Cmd.none )
 
 
-parsingUpdate : ParsingMsg -> SQLParsing msg -> ( SQLParsing msg, msg )
+parsingUpdate : ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )
 parsingUpdate msg model =
     (case msg of
         BuildLines ->
@@ -211,7 +212,7 @@ parsingUpdate msg model =
         |> Tuple.mapFirst parsingCptInc
 
 
-parsingCptInc : SQLParsing msg -> SQLParsing msg
+parsingCptInc : SqlParsing msg -> SqlParsing msg
 parsingCptInc model =
     { model | cpt = model.cpt + 1 }
 
@@ -220,12 +221,12 @@ parsingCptInc model =
 -- SUBSCRIPTIONS
 
 
-gotLocalFile : Time.Posix -> ProjectId -> SourceId -> File -> FileContent -> SQLSourceMsg
+gotLocalFile : Time.Posix -> ProjectId -> SourceId -> File -> FileContent -> SqlSourceUploadMsg
 gotLocalFile now projectId sourceId file content =
     FileLoaded projectId (SourceInfo sourceId (lastSegment file.name) (localSource file) True Nothing now now) content
 
 
-gotRemoteFile : Time.Posix -> ProjectId -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SQLSourceMsg
+gotRemoteFile : Time.Posix -> ProjectId -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SqlSourceUploadMsg
 gotRemoteFile now projectId sourceId url content sample =
     FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content
 
@@ -249,27 +250,26 @@ lastSegment path =
 -- VIEW
 
 
-viewParsing : SQLSource msg -> Html msg
+viewParsing : SqlSourceUpload msg -> Html msg
 viewParsing model =
-    div []
-        (((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
-            |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
-            |> Maybe.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample"))
-         )
-            |> Maybe.map2
-                (\parsedSchema sourceText ->
+    ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
+        |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
+        |> Maybe.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample"))
+    )
+        |> Maybe.map2
+            (\parsedSchema sourceText ->
+                div []
                     [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
                     , viewLogs sourceText parsedSchema
                     , viewErrorAlert parsedSchema
                     , model.source |> Maybe.map2 viewSourceDiff model.parsedSource |> Maybe.withDefault (div [] [])
                     ]
-                )
-                model.parsedSchema
-            |> Maybe.withDefault []
-        )
+            )
+            model.parsedSchema
+        |> Maybe.withDefault (div [] [])
 
 
-viewLogs : String -> SQLParsing msg -> Html msg
+viewLogs : String -> SqlParsing msg -> Html msg
 viewLogs source model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
         ([ div [] [ text ("Loaded " ++ source ++ ".") ] ]
@@ -323,7 +323,7 @@ viewSchemaError errors =
         )
 
 
-viewErrorAlert : SQLParsing msg -> Html msg
+viewErrorAlert : SqlParsing msg -> Html msg
 viewErrorAlert model =
     let
         parseErrors : List (List ParseError)

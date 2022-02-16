@@ -5,38 +5,46 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
+import Components.Molecules.Modal as Modal
 import Conf
 import Dict
 import Gen.Route as Route
 import Html exposing (Html, a, aside, div, form, h2, li, nav, p, span, text, ul)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
+import Html.Keyed as Keyed
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaCurrent, css)
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
-import Models.Project.ProjectId exposing (ProjectId)
-import Models.Project.Source exposing (Source)
+import Models.Project exposing (Project)
 import PagesComponents.Helpers exposing (appShell)
-import PagesComponents.Projects.New.Models exposing (Model, Msg(..), Tab(..))
-import Services.SQLSource as SQLSource exposing (SQLSourceMsg(..))
+import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
+import Services.ProjectImport as ProjectImport exposing (ProjectImport)
+import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload)
+import Time
 
 
-viewNewProject : Model -> List (Html Msg)
-viewNewProject model =
+viewNewProject : Time.Zone -> Model -> List (Html Msg)
+viewNewProject zone model =
     appShell (\link -> SelectMenu link.text)
         ToggleMobileMenu
         model
         [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
-        [ viewContent model
+        [ viewContent "new-project"
+            zone
+            model
             { tabs =
                 [ { tab = Schema, icon = DocumentText, text = "From SQL schema" }
+                , { tab = Import, icon = FolderOpen, text = "Import project" }
                 , { tab = Sample, icon = Collection, text = "From sample" }
                 ]
             }
         ]
-        []
+        [ viewModal model ]
 
 
 type alias PageModel =
@@ -48,13 +56,13 @@ type alias TabModel tab =
     { tab : tab, icon : Icon, text : String }
 
 
-viewContent : Model -> PageModel -> Html Msg
-viewContent model page =
+viewContent : HtmlId -> Time.Zone -> Model -> PageModel -> Html Msg
+viewContent htmlId zone model page =
     div [ css [ "divide-y", lg [ "grid grid-cols-12 divide-x" ] ] ]
         [ aside [ css [ "py-6", lg [ "col-span-3" ] ] ]
             [ nav [ css [ "space-y-1" ] ] (page.tabs |> List.map (viewTab model.selectedTab)) ]
         , div [ css [ "px-4 py-6", sm [ "p-6" ], lg [ "pb-8 col-span-9 rounded-r-lg" ] ] ]
-            [ viewTabContent model ]
+            [ viewTabContent (htmlId ++ "-tab") zone model ]
         ]
 
 
@@ -73,35 +81,33 @@ viewTab selected tab =
             ]
 
 
-viewTabContent : Model -> Html Msg
-viewTabContent model =
-    div []
-        ([ case model.selectedTab of
-            Schema ->
-                viewSchemaUpload model.openedCollapse
+viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
+viewTabContent htmlId zone model =
+    case model.selectedTab of
+        Schema ->
+            viewSchemaUploadTab (htmlId ++ "-schema") model.sqlSourceUpload model.openedCollapse
 
-            Sample ->
-                viewSampleSelection model.parsing.selectedSample
-         , SQLSource.viewParsing model.parsing
-         ]
-            ++ (model.parsing.parsedSource |> Maybe.map2 (\( projectId, _, _ ) source -> [ viewActions projectId source ]) model.parsing.loadedFile |> Maybe.withDefault [])
-        )
+        Import ->
+            viewProjectImportTab (htmlId ++ "-import") zone model.projects model.projectImport
+
+        Sample ->
+            viewSampleSelectionTab model.sqlSourceUpload
 
 
-viewSchemaUpload : HtmlId -> Html Msg
-viewSchemaUpload openedCollapse =
+viewSchemaUploadTab : HtmlId -> SqlSourceUpload Msg -> HtmlId -> Html Msg
+viewSchemaUploadTab htmlId sqlSourceUpload openedCollapse =
     div []
         [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ FileInput.basic "file-upload" (SelectLocalFile >> SQLSourceMsg) Noop
+                    [ FileInput.schemaFile (htmlId ++ "-file-upload") (SqlSourceUpload.SelectLocalFile >> SqlSourceUploadMsg) Noop
                     ]
                 ]
             ]
         , div [ css [ "mt-3" ] ]
-            [ div [ onClick (ToggleCollapse "get-schema"), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
-            , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == "get-schema") "" "hidden" ] ]
+            [ div [ onClick (ToggleCollapse (htmlId ++ "-get-schema")), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
+            , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-get-schema")) "" "hidden" ] ]
                 [ p []
                     [ text "An "
                     , bText "SQL schema"
@@ -115,17 +121,33 @@ viewSchemaUpload openedCollapse =
                 ]
             ]
         , div []
-            [ div [ onClick (ToggleCollapse "data-privacy"), css [ "link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
-            , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == "data-privacy") "" "hidden" ] ]
+            [ div [ onClick (ToggleCollapse (htmlId ++ "-data-privacy")), css [ "link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
+            , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-data-privacy")) "" "hidden" ] ]
                 [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
                 , p [ css [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
                 ]
             ]
+        , viewSqlSourceUpload sqlSourceUpload
         ]
 
 
-viewSampleSelection : Maybe String -> Html Msg
-viewSampleSelection selectedSample =
+viewProjectImportTab : HtmlId -> Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewProjectImportTab htmlId zone projects projectImport =
+    div []
+        [ viewHeading "Import an existing project" "If you have an Azimutt project, you can load it here."
+        , form []
+            [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
+                [ div [ css [ sm [ "col-span-6" ] ] ]
+                    [ FileInput.projectFile (htmlId ++ "-file-upload") (ProjectImport.SelectLocalFile >> ProjectImportMsg) Noop
+                    ]
+                ]
+            ]
+        , viewProjectImport zone projects projectImport
+        ]
+
+
+viewSampleSelectionTab : SqlSourceUpload Msg -> Html Msg
+viewSampleSelectionTab sqlSourceUpload =
     div []
         [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
         , ItemList.withIcons
@@ -138,11 +160,12 @@ viewSampleSelection selectedSample =
                         , icon = s.icon
                         , title = s.name ++ " (" ++ (s.tables |> String.fromInt) ++ " tables)"
                         , description = s.description
-                        , active = selectedSample == Nothing || selectedSample == Just s.key
-                        , onClick = SQLSourceMsg (SelectSample s.key)
+                        , active = sqlSourceUpload.selectedSample == Nothing || sqlSourceUpload.selectedSample == Just s.key
+                        , onClick = SqlSourceUploadMsg (SqlSourceUpload.SelectSample s.key)
                         }
                     )
             )
+        , viewSqlSourceUpload sqlSourceUpload
         ]
 
 
@@ -154,11 +177,75 @@ viewHeading title description =
         ]
 
 
-viewActions : ProjectId -> Source -> Html Msg
-viewActions projectId source =
-    div [ css [ "mt-6" ] ]
-        [ div [ css [ "flex justify-end" ] ]
-            [ Button.white3 Tw.primary [ onClick DropSchema ] [ text "Trash this" ]
-            , Button.primary3 Tw.primary [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
-            ]
+viewSqlSourceUpload : SqlSourceUpload Msg -> Html Msg
+viewSqlSourceUpload sqlSourceUpload =
+    div []
+        [ SqlSourceUpload.viewParsing sqlSourceUpload
+        , Maybe.map2
+            (\( projectId, _, _ ) source ->
+                div [ css [ "mt-6" ] ]
+                    [ div [ css [ "flex justify-end" ] ]
+                        [ Button.white3 Tw.primary [ onClick DropSchema ] [ text "Trash this" ]
+                        , Button.primary3 Tw.primary [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
+                        ]
+                    ]
+            )
+            sqlSourceUpload.loadedFile
+            sqlSourceUpload.parsedSource
+            |> Maybe.withDefault (div [] [])
         ]
+
+
+viewProjectImport : Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewProjectImport zone projects projectImport =
+    div []
+        [ ProjectImport.viewParsing zone projects projectImport
+        , projectImport.parsedProject
+            |> Maybe.andThen (\( id, res ) -> res |> Result.toMaybe |> Maybe.map (\p -> ( id, p )))
+            |> Maybe.map
+                (\( id, project ) ->
+                    div [ css [ "mt-6" ] ]
+                        [ div [ css [ "flex justify-end" ] ]
+                            (Button.white3 Tw.primary [ onClick DropProject ] [ text "Don't import" ]
+                                :: (projects
+                                        |> List.find (\p -> p.id == project.id)
+                                        |> Maybe.mapOrElse
+                                            (\p ->
+                                                [ Button.primary3 Tw.red [ onClick (ImportProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
+                                                , Button.primary3 Tw.primary [ onClick (ImportNewProject id project), css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                ]
+                                            )
+                                            [ Button.primary3 Tw.primary [ onClick (ImportProject project), css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                   )
+                            )
+                        ]
+                )
+            |> Maybe.withDefault (div [] [])
+        ]
+
+
+viewModal : Model -> Html Msg
+viewModal model =
+    Keyed.node "div"
+        [ class "az-modals" ]
+        ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
+         ]
+            |> List.filterMap identity
+            |> List.sortBy (\( id, _ ) -> model.openedDialogs |> List.indexOf id |> Maybe.withDefault 0 |> negate)
+        )
+
+
+viewConfirm : Bool -> ConfirmDialog -> Html Msg
+viewConfirm opened model =
+    Modal.confirm
+        { id = model.id
+        , icon = model.content.icon
+        , color = model.content.color
+        , title = model.content.title
+        , message = model.content.message
+        , confirm = model.content.confirm
+        , cancel = model.content.cancel
+        , onConfirm = ModalClose (ConfirmAnswer True model.content.onConfirm)
+        , onCancel = ModalClose (ConfirmAnswer False Cmd.none)
+        }
+        opened
