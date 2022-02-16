@@ -25,6 +25,7 @@ import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
+import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Ports exposing (JsMsg)
 import Services.SQLSource exposing (SQLSource, SQLSourceMsg)
 import Shared exposing (Confirm)
@@ -100,8 +101,8 @@ type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | SaveProject
-    | ShowTable TableId
-    | ShowTables (List TableId)
+    | ShowTable TableId (Maybe PositionHint)
+    | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables
     | HideTable TableId
     | HideAllTables

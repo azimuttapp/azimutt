@@ -100,7 +100,7 @@ type alias Actions msg =
     , clickHeader : Bool -> msg
     , clickColumn : Maybe (String -> Position -> msg)
     , dblClickColumn : String -> msg
-    , clickRelations : List Relation -> msg
+    , clickRelations : List Relation -> Bool -> msg
     , hoverHiddenColumns : HtmlId -> msg
     , clickHiddenColumns : msg
     , clickDropdown : HtmlId -> msg
@@ -252,7 +252,7 @@ viewColumn model isLast column =
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
     if column.outRelations |> List.nonEmpty then
-        div ([ class "cursor-pointer", onClick (model.actions.clickRelations column.outRelations) ] ++ track Track.showTableWithForeignKey)
+        div ([ class "cursor-pointer", onClick (model.actions.clickRelations column.outRelations True) ] ++ track Track.showTableWithForeignKey)
             [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
 
     else if column.isPrimaryKey then
@@ -313,14 +313,14 @@ viewColumnIconDropdown model column icon =
                                     Dropdown.btnDisabled "py-1" content
 
                                 else
-                                    viewColumnIconDropdownItem (model.actions.clickRelations [ r ]) content
+                                    viewColumnIconDropdownItem (model.actions.clickRelations [ r ] False) content
                             )
                      )
                         ++ (column.inRelations
                                 |> List.filter (\r -> not r.tableShown)
                                 |> (\relations ->
                                         if List.length relations > 1 then
-                                            [ viewColumnIconDropdownItem (model.actions.clickRelations relations) [ text ("Show all (" ++ (relations |> String.pluralizeL "table") ++ ")") ] ]
+                                            [ viewColumnIconDropdownItem (model.actions.clickRelations relations False) [ text ("Show all (" ++ (relations |> String.pluralizeL "table") ++ ")") ] ]
 
                                         else
                                             []
@@ -466,7 +466,7 @@ sample =
         , clickHeader = \_ -> logAction "selected"
         , clickColumn = Nothing
         , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
-        , clickRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+        , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
         , hoverHiddenColumns = \id -> logAction ("hover hidden columns: " ++ id)
         , clickHiddenColumns = logAction "click hidden columns"
         , clickDropdown = \id -> logAction ("open " ++ id)
@@ -491,7 +491,7 @@ doc =
                                 , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , clickColumn = Nothing
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
-                                , clickRelations = \refs -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+                                , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
                                 , hoverHiddenColumns = \id -> updateDocState (\s -> { s | openedPopover = id })
                                 , clickHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
                                 , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })

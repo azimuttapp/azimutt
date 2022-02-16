@@ -22,6 +22,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 
 
 type alias TableArgs =
@@ -122,16 +123,19 @@ viewTable zoom cursorMode args index props table =
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
                 , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
                 , clickRelations =
-                    \cols ->
-                        case cols of
-                            [] ->
-                                Noop "No table to show"
+                    \cols isOut ->
+                        Just (B.cond isOut (PlaceRight props.position props.size) (PlaceLeft props.position))
+                            |> (\hint ->
+                                    case cols of
+                                        [] ->
+                                            Noop "No table to show"
 
-                            col :: [] ->
-                                ShowTable ( col.column.schema, col.column.table )
+                                        col :: [] ->
+                                            ShowTable ( col.column.schema, col.column.table ) hint
 
-                            _ ->
-                                ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table )))
+                                        _ ->
+                                            ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table ))) hint
+                               )
                 , hoverHiddenColumns = PopoverSet
                 , clickHiddenColumns = ToggleHiddenColumns table.id
                 , clickDropdown = DropdownToggle

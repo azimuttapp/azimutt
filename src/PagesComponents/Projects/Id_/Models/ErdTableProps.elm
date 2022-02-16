@@ -21,6 +21,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps as ErdColumnProps expo
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdRelationProps as ErdRelationProps exposing (ErdRelationProps)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Services.Lenses exposing (setHighlighted)
 import Set exposing (Set)
 
@@ -34,6 +35,7 @@ import Set exposing (Set)
 
 type alias ErdTableProps =
     { id : TableId
+    , positionHint : Maybe PositionHint
     , position : Position
     , size : Size
     , isHover : Bool
@@ -47,9 +49,10 @@ type alias ErdTableProps =
     }
 
 
-create : List Relation -> List TableId -> TableProps -> ErdTableProps
-create tableRelations shownTables props =
+create : List Relation -> List TableId -> Maybe PositionHint -> TableProps -> ErdTableProps
+create tableRelations shownTables hint props =
     { id = props.id
+    , positionHint = hint
     , position = props.position
     , size = props.size
     , isHover = False
@@ -92,18 +95,13 @@ unpack props =
     }
 
 
-init : ProjectSettings -> List ErdRelation -> List TableId -> ErdTable -> ErdTableProps
-init settings erdRelations shownTables erdTable =
+init : ProjectSettings -> List ErdRelation -> List TableId -> Maybe PositionHint -> ErdTable -> ErdTableProps
+init settings erdRelations shownTables hint table =
     let
         relations : List Relation
         relations =
             erdRelations |> List.map ErdRelation.unpack
     in
-    initTableProps settings relations erdTable |> create relations shownTables
-
-
-initTableProps : ProjectSettings -> List Relation -> ErdTable -> TableProps
-initTableProps settings relations table =
     { id = table.id
     , position = Position.zero
     , size = Size.zero
@@ -112,6 +110,7 @@ initTableProps settings relations table =
     , selected = False
     , hiddenColumns = False
     }
+        |> create relations shownTables hint
 
 
 computeColumns : ProjectSettings -> List Relation -> ErdTable -> List ColumnName -> List ColumnName

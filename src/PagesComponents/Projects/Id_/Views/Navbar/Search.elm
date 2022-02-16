@@ -113,20 +113,20 @@ viewSearchResult searchId shownTables active index res =
     in
     case res of
         FoundTable table ->
-            viewItem (ShowTable table.id) Icon.Table [ text (TableId.show table.id) ] (shownTables |> List.has table.id)
+            viewItem (ShowTable table.id Nothing) Icon.Table [ text (TableId.show table.id) ] (shownTables |> List.has table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> List.has table.id)
+            viewItem (ShowTable table.id Nothing) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> List.has table.id)
 
         FoundRelation relation ->
             if shownTables |> List.hasNot relation.src.table then
-                viewItem (ShowTable relation.src.table) ExternalLink [ text relation.name ] False
+                viewItem (ShowTable relation.src.table Nothing) ExternalLink [ text relation.name ] False
 
             else if shownTables |> List.hasNot relation.ref.table then
-                viewItem (ShowTable relation.ref.table) ExternalLink [ text relation.name ] False
+                viewItem (ShowTable relation.ref.table Nothing) ExternalLink [ text relation.name ] False
 
             else
-                viewItem (ShowTable relation.src.table) ExternalLink [ text relation.name ] True
+                viewItem (ShowTable relation.src.table Nothing) ExternalLink [ text relation.name ] True
 
 
 performSearch : Dict TableId ErdTable -> List ErdRelation -> String -> List SearchResult

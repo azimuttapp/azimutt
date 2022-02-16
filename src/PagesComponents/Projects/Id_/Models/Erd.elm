@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, initTable, isShown, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, unpackLayout)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, isShown, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, unpackLayout)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -96,7 +96,7 @@ createLayout relationsByTable layout =
             layout.tables ++ layout.hiddenTables
     in
     ( layout.canvas
-    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) p )) |> Dict.fromList
+    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) Nothing p )) |> Dict.fromList
     , layout.tables |> List.map .id
     )
 
@@ -128,11 +128,6 @@ getColumnProps table column erd =
 isShown : TableId -> Erd -> Bool
 isShown table erd =
     erd.shownTables |> List.member table
-
-
-initTable : ErdTable -> Erd -> ErdTableProps
-initTable table erd =
-    ErdTableProps.init erd.settings erd.relations erd.shownTables table
 
 
 computeSchema : Erd -> Erd

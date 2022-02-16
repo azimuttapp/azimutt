@@ -81,19 +81,9 @@ getColor src ref =
             Nothing
 
 
-headerHeight : Float
-headerHeight =
-    45
-
-
-columnHeight : Float
-columnHeight =
-    24
-
-
 positionTop : Position -> Int -> Float
 positionTop position index =
-    position.top + headerHeight + (columnHeight * (0.5 + (index |> toFloat)))
+    position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
 
 
 positionLeft : Position -> Size -> Position -> Size -> ( Float, Float )
