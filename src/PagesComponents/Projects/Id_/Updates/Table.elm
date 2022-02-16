@@ -22,7 +22,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint as PositionHint exposing (PositionHint)
 import Ports
-import Services.Lenses exposing (mapShownTables, mapTableProps, setHoverColumn, setShownTables)
+import Services.Lenses exposing (mapRelatedTables, mapShown, mapShownTables, mapTableProps, setHoverColumn, setShownTables)
 import Set
 
 
@@ -74,25 +74,32 @@ showAllTables erd =
     let
         tablesToInit : Dict TableId ErdTableProps
         tablesToInit =
-            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ -> Erd.initTable erd Nothing)
+            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ -> ErdTableProps.init erd.settings erd.relations erd.shownTables Nothing)
 
         tablesHidden : List TableId
         tablesHidden =
             erd.tables |> Dict.keys |> List.filter (\id -> (erd.tableProps |> Dict.member id) && (erd.shownTables |> List.notMember id))
     in
-    ( erd |> mapTableProps (tablesToInit |> Dict.union) |> mapShownTables (\tables -> (tablesToInit |> Dict.keys) ++ tablesHidden ++ tables)
+    ( erd
+        |> mapTableProps (tablesToInit |> Dict.union)
+        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.map (\_ -> mapShown (\_ -> True)))))
+        |> mapShownTables (\tables -> (tablesToInit |> Dict.keys) ++ tablesHidden ++ tables)
     , Cmd.batch [ Ports.observeTablesSize ((tablesToInit |> Dict.keys) ++ tablesHidden) ]
     )
 
 
 hideTable : TableId -> Erd -> Erd
 hideTable id erd =
-    erd |> mapShownTables (List.filter (\t -> t /= id))
+    erd
+        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.update id (Maybe.map (mapShown (\_ -> False))))))
+        |> mapShownTables (List.filter (\t -> t /= id))
 
 
 hideAllTables : Erd -> Erd
 hideAllTables erd =
-    erd |> setShownTables []
+    erd
+        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.map (\_ -> mapShown (\_ -> False)))))
+        |> setShownTables []
 
 
 showColumn : TableId -> ColumnName -> Erd -> Erd
@@ -244,7 +251,8 @@ isSame ref erdRef =
 performShowTable : ErdTable -> Maybe PositionHint -> Erd -> Erd
 performShowTable table hint erd =
     erd
-        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (table |> Erd.initTable erd hint))))
+        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (ErdTableProps.init erd.settings erd.relations erd.shownTables hint table))))
+        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.update table.id (Maybe.map (mapShown (\_ -> True))))))
         |> mapShownTables (\t -> B.cond (t |> List.member table.id) t (table.id :: t))
 
 

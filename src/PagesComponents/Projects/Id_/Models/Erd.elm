@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, initTable, isShown, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, unpackLayout)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, isShown, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, unpackLayout)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -22,7 +22,6 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnPro
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
-import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Time
 
@@ -129,11 +128,6 @@ getColumnProps table column erd =
 isShown : TableId -> Erd -> Bool
 isShown table erd =
     erd.shownTables |> List.member table
-
-
-initTable : Erd -> Maybe PositionHint -> ErdTable -> ErdTableProps
-initTable erd hint table =
-    ErdTableProps.init erd.settings erd.relations erd.shownTables hint table
 
 
 computeSchema : Erd -> Erd
