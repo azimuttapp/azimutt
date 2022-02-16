@@ -249,6 +249,9 @@ update req now msg model =
         JsMessage message ->
             model |> handleJsMessage req message
 
+        Send cmd ->
+            ( model, cmd )
+
         Noop _ ->
             ( model, Cmd.none )
 

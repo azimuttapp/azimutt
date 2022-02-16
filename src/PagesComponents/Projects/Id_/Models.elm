@@ -143,6 +143,7 @@ type Msg
     | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
+    | Send (Cmd Msg)
     | Noop String
 
 

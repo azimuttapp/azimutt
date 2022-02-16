@@ -1,4 +1,4 @@
-port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, dropProject, focus, getSourceId, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, getSourceId, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -9,6 +9,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
+import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
@@ -66,6 +67,11 @@ loadProjects =
 saveProject : Project -> Cmd msg
 saveProject project =
     messageToJs (SaveProject project)
+
+
+downloadFile : FileName -> FileContent -> Cmd msg
+downloadFile filename content =
+    messageToJs (DownloadFile filename content)
 
 
 dropProject : Project -> Cmd msg
@@ -155,6 +161,7 @@ type ElmMsg
     | AutofocusWithin HtmlId
     | LoadProjects
     | SaveProject Project
+    | DownloadFile FileName FileContent
     | DropProject Project
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
@@ -223,6 +230,9 @@ elmEncoder elm =
 
         SaveProject project ->
             Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        DownloadFile filename content ->
+            Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]
 
         DropProject project ->
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]

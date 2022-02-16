@@ -37,6 +37,7 @@ window.addEventListener('load', function() {
                 case 'AutofocusWithin': autofocusWithin(port.id); break;
                 case 'LoadProjects':    loadProjects(); break;
                 case 'SaveProject':     saveProject(port.project); break;
+                case 'DownloadFile':    downloadFile(port.filename, port.content); break;
                 case 'DropProject':     dropProject(port.project); break;
                 case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file); break;
                 case 'GetRemoteFile':   getRemoteFile(port.project, port.source, port.url, port.sample); break;
@@ -319,6 +320,19 @@ window.addEventListener('load', function() {
             script.addEventListener('error', reject)
             document.getElementsByTagName('head')[0].appendChild(script)
         })
+    }
+
+    function downloadFile(filename, content) {
+        const element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+        element.setAttribute('download', filename);
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
     }
 
     /* polyfills */

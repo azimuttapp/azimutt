@@ -1,4 +1,4 @@
-module Models.Project.SampleName exposing (SampleKey, decode, encode)
+module Models.Project.SampleKey exposing (SampleKey, decode, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
