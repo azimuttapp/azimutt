@@ -1,4 +1,4 @@
-module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, filter, map10, map11, map12, map9, matchOn, maybeField, maybeWithDefault, nel, tuple)
+module Libs.Json.Decode exposing (customDict, customNed, defaultField, defaultFieldDeep, errorToHtml, errorToStringNoValue, filter, map10, map11, map12, map9, matchOn, maybeField, maybeWithDefault, nel, tuple)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Decoder)
@@ -70,6 +70,99 @@ matchOn field decode =
 errorToHtml : Decode.Error -> String
 errorToHtml error =
     "<pre>" ++ Decode.errorToString error ++ "</pre>"
+
+
+errorToStringNoValue : Decode.Error -> String
+errorToStringNoValue error =
+    errorToStringNoValueInternal error []
+
+
+errorToStringNoValueInternal : Decode.Error -> List String -> String
+errorToStringNoValueInternal error context =
+    case error of
+        Decode.Field f err ->
+            let
+                isSimple : Bool
+                isSimple =
+                    case String.uncons f of
+                        Nothing ->
+                            False
+
+                        Just ( char, rest ) ->
+                            Char.isAlpha char && String.all Char.isAlphaNum rest
+
+                fieldName : String
+                fieldName =
+                    if isSimple then
+                        "." ++ f
+
+                    else
+                        "['" ++ f ++ "']"
+            in
+            errorToStringNoValueInternal err (fieldName :: context)
+
+        Decode.Index i err ->
+            let
+                indexName : String
+                indexName =
+                    "[" ++ String.fromInt i ++ "]"
+            in
+            errorToStringNoValueInternal err (indexName :: context)
+
+        Decode.OneOf errors ->
+            case errors of
+                [] ->
+                    "Ran into a Json.Decode.oneOf with no possibilities"
+                        ++ (case context of
+                                [] ->
+                                    "!"
+
+                                _ ->
+                                    " at json" ++ String.join "" (List.reverse context)
+                           )
+
+                [ err ] ->
+                    errorToStringNoValueInternal err context
+
+                _ ->
+                    let
+                        starter : String
+                        starter =
+                            case context of
+                                [] ->
+                                    "Json.Decode.oneOf"
+
+                                _ ->
+                                    "The Json.Decode.oneOf at json" ++ String.join "" (List.reverse context)
+
+                        introduction : String
+                        introduction =
+                            starter ++ " failed in the following " ++ String.fromInt (List.length errors) ++ " ways:"
+                    in
+                    String.join "\n\n" (introduction :: List.indexedMap errorOneOf errors)
+
+        Decode.Failure msg _ ->
+            let
+                introduction : String
+                introduction =
+                    case context of
+                        [] ->
+                            ""
+
+                        _ ->
+                            "Problem at '" ++ String.join "" (List.reverse context) ++ "': "
+            in
+            introduction ++ msg
+
+
+errorOneOf : Int -> Decode.Error -> String
+errorOneOf i error =
+    "\n\n(" ++ String.fromInt (i + 1) ++ ") " ++ indent (errorToStringNoValue error)
+
+
+indent : String -> String
+indent str =
+    String.join "\n    " (String.split "\n" str)
 
 
 map9 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> value) -> Decode.Decoder a -> Decode.Decoder b -> Decode.Decoder c -> Decode.Decoder d -> Decode.Decoder e -> Decode.Decoder f -> Decode.Decoder g -> Decode.Decoder h -> Decode.Decoder i -> Decode.Decoder value

@@ -92,7 +92,7 @@ viewHome model =
                 }
         }
     , FeatureSideBySide.imageSlice
-        { image = { src = "/assets/images/gospeak-incoming-relation.jpg", alt = "Gospeak.io incoming relations by Azimutt" }
+        { image = { src = "/assets/images/gospeak-incoming-relation.png", alt = "Gospeak.io incoming relations by Azimutt" }
         , imagePosition = Right
         , icon = Just LightBulb -- arrows-expand / light-bulb / lightning-bolt
         , description =
@@ -112,7 +112,7 @@ viewHome model =
         , quote = Nothing
         }
     , FeatureSideBySide.imageSlice
-        { image = { src = "/assets/images/gospeak-layouts.jpg", alt = "Gospeak.io layouts by Azimutt" }
+        { image = { src = "/assets/images/gospeak-layouts.png", alt = "Gospeak.io layouts by Azimutt" }
         , imagePosition = Left
         , icon = Just ColorSwatch -- chat-alt-2 / collection / color-swatch
         , description =

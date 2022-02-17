@@ -1,5 +1,6 @@
 module PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 
+import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Input as Input
 import Components.Molecules.Slideover as Slideover
@@ -8,6 +9,7 @@ import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
 import Html.Attributes exposing (checked, class, for, id, name, type_, value)
 import Html.Events exposing (onClick)
+import Json.Encode as Encode
 import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
@@ -15,8 +17,9 @@ import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind exposing (TwClass, focus)
+import Libs.Tailwind as Tw exposing (TwClass, focus)
 import Models.ColumnOrder as ColumnOrder
+import Models.Project as Project
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -24,7 +27,8 @@ import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
-import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import Ports
 import Time
 
 
@@ -41,6 +45,7 @@ viewProjectSettings zone opened erd model =
             [ viewSourcesSection (model.id ++ "-sources") zone erd
             , viewSchemasSection (model.id ++ "-schemas") erd
             , viewDisplaySettingsSection (model.id ++ "-display") erd
+            , viewDownloadSection (model.id ++ "-download") erd
             ]
         )
 
@@ -170,6 +175,24 @@ viewDisplaySettingsSection htmlId erd =
             (ColumnOrder.toString erd.settings.columnOrder)
             (ColumnOrder.fromString >> PSColumnOrderUpdate >> ProjectSettingsMsg)
         ]
+
+
+viewDownloadSection : HtmlId -> Erd -> Html Msg
+viewDownloadSection _ erd =
+    fieldset [ class "mt-6" ]
+        [ legend [ class "font-medium text-gray-900" ] [ text "Download project" ]
+        , p [ class "text-sm text-gray-500" ] [ text "To save it on you computer or share with others." ]
+        , div [ class "mt-1" ]
+            [ Button.primary3 Tw.primary
+                [ onClick (Send (Ports.downloadFile (projectFilename erd) (erd |> Erd.unpack |> Project.encode |> Encode.encode 0))) ]
+                [ text "Download project" ]
+            ]
+        ]
+
+
+projectFilename : Erd -> String
+projectFilename erd =
+    (erd.project.name |> String.replace ".sql" "") ++ ".azimutt.json"
 
 
 

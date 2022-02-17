@@ -21,7 +21,7 @@ import Libs.Tailwind as Tw exposing (sm)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsMsg(..), SourceUploadDialog)
-import Services.SQLSource as SQLSource exposing (SQLSource, SQLSourceMsg(..))
+import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg(..))
 import Time
 
 
@@ -55,7 +55,7 @@ viewSourceUpload zone now opened model =
         )
 
 
-localFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SQLSource Msg -> List (Html Msg)
+localFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SqlSourceUpload Msg -> List (Html Msg)
 localFileModal zone now titleId source fileName updatedAt model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
@@ -73,7 +73,7 @@ localFileModal zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.basic "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
+        , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
@@ -95,7 +95,7 @@ localFileModal zone now titleId source fileName updatedAt model =
 
             _ ->
                 div [] []
-        , SQLSource.viewParsing model
+        , SqlSourceUpload.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -104,7 +104,7 @@ localFileModal zone now titleId source fileName updatedAt model =
     ]
 
 
-remoteFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> SQLSource Msg -> List (Html Msg)
+remoteFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> SqlSourceUpload Msg -> List (Html Msg)
 remoteFileModal zone now titleId source fileUrl model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
@@ -123,9 +123,9 @@ remoteFileModal zone now titleId source fileUrl model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (fileUrl |> SelectRemoteFile |> PSSQLSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
+            [ Button.primary5 Tw.primary [ onClick (fileUrl |> SelectRemoteFile |> PSSqlSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
             ]
-        , SQLSource.viewParsing model
+        , SqlSourceUpload.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -157,7 +157,7 @@ userDefinedModal titleId =
     ]
 
 
-newSourceModal : HtmlId -> SQLSource Msg -> List (Html Msg)
+newSourceModal : HtmlId -> SqlSourceUpload Msg -> List (Html Msg)
 newSourceModal titleId model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
@@ -170,8 +170,8 @@ newSourceModal titleId model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.basic "file-upload" (SelectLocalFile >> PSSQLSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
-        , SQLSource.viewParsing model
+        , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
+        , SqlSourceUpload.viewParsing model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceAdd >> ProjectSettingsMsg)) "Add source"

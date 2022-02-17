@@ -18,7 +18,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
 import Services.Lenses exposing (mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
-import Services.SQLSource as SQLSource
+import Services.SqlSourceUpload as SqlSourceUpload
 import Track
 
 
@@ -51,13 +51,13 @@ handleProjectSettings msg model =
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
 
         PSSourceUploadOpen source ->
-            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SQLSource.init (model.erd |> Maybe.map (\p -> p.project.id)) source }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SqlSourceUpload.init (model.erd |> Maybe.map (\p -> p.project.id)) source }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
 
         PSSourceUploadClose ->
             ( model |> setSourceUpload Nothing, Cmd.none )
 
-        PSSQLSourceMsg message ->
-            model |> mapSourceUploadMCmd (mapParsingCmd (SQLSource.update message (PSSQLSourceMsg >> ProjectSettingsMsg)))
+        PSSqlSourceMsg message ->
+            model |> mapSourceUploadMCmd (mapParsingCmd (SqlSourceUpload.update message (PSSqlSourceMsg >> ProjectSettingsMsg)))
 
         PSSourceRefresh source ->
             ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.refreshSource source) ] )
