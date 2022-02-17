@@ -1,4 +1,4 @@
-module Libs.Regex exposing (contains, matches, replace)
+module Libs.Regex exposing (match, matches, replace)
 
 import Regex exposing (Regex)
 
@@ -8,8 +8,8 @@ matches regex text =
     regex |> asRegex |> (\r -> Regex.find r text) |> List.concatMap .submatches
 
 
-contains : String -> String -> Bool
-contains regex text =
+match : String -> String -> Bool
+match regex text =
     regex |> asRegex |> (\r -> Regex.contains r text)
 
 

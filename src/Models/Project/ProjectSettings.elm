@@ -49,7 +49,7 @@ removeTable removedTables table =
         names =
             removedTables |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    names |> List.any (\name -> table.name == name || Regex.contains ("^" ++ name ++ "$") table.name)
+    names |> List.any (\name -> table.name == name || Regex.match ("^" ++ name ++ "$") table.name)
 
 
 hideColumn : HiddenColumns -> ErdColumn -> Bool
@@ -59,7 +59,7 @@ hideColumn hiddenColumns column =
         names =
             hiddenColumns.list |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    (names |> List.any (\name -> column.name == name || Regex.contains ("^" ++ name ++ "$") column.name))
+    (names |> List.any (\name -> column.name == name || Regex.match ("^" ++ name ++ "$") column.name))
         || (hiddenColumns.relations && (column |> hasRelation |> not))
         || (hiddenColumns.props && (column |> hasProperty |> not))
 

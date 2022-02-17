@@ -396,7 +396,7 @@ buildStatements lines =
 
 hasKeyword : String -> SqlLine -> Bool
 hasKeyword keyword line =
-    (line.text |> Regex.contains ("[^A-Z_\"'`]" ++ keyword ++ "([^A-Z_\"'`]|$)")) && not (line.text |> Regex.contains ("'.*" ++ keyword ++ ".*'"))
+    (line.text |> Regex.match ("[^A-Z_\"'`]" ++ keyword ++ "([^A-Z_\"'`]|$)")) && not (line.text |> Regex.match ("'.*" ++ keyword ++ ".*'"))
 
 
 hasOnlyComment : SqlLine -> Bool
