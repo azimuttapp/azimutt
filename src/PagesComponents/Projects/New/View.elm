@@ -1,5 +1,6 @@
 module PagesComponents.Projects.New.View exposing (viewNewProject)
 
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
@@ -38,25 +39,25 @@ viewNewProject zone model =
             zone
             model
             { tabs =
-                [ { tab = Schema, icon = DocumentText, text = "From SQL schema" }
-                , { tab = Import, icon = FolderOpen, text = "Import project" }
-                , { tab = Sample, icon = Collection, text = "From sample" }
+                [ { tab = Schema, icon = DocumentText, content = [ text "From SQL schema" ] }
+                , { tab = Import, icon = FolderDownload, content = [ text "Import project", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = Sample, icon = Gift, content = [ text "From sample" ] }
                 ]
             }
         ]
         [ viewModal model ]
 
 
-type alias PageModel =
-    { tabs : List (TabModel Tab)
+type alias PageModel msg =
+    { tabs : List (TabModel Tab msg)
     }
 
 
-type alias TabModel tab =
-    { tab : tab, icon : Icon, text : String }
+type alias TabModel tab msg =
+    { tab : tab, icon : Icon, content : List (Html msg) }
 
 
-viewContent : HtmlId -> Time.Zone -> Model -> PageModel -> Html Msg
+viewContent : HtmlId -> Time.Zone -> Model -> PageModel Msg -> Html Msg
 viewContent htmlId zone model page =
     div [ css [ "divide-y", lg [ "grid grid-cols-12 divide-x" ] ] ]
         [ aside [ css [ "py-6", lg [ "col-span-3" ] ] ]
@@ -66,18 +67,18 @@ viewContent htmlId zone model page =
         ]
 
 
-viewTab : Tab -> TabModel Tab -> Html Msg
+viewTab : Tab -> TabModel Tab Msg -> Html Msg
 viewTab selected tab =
     if tab.tab == selected then
         a [ href "", css [ "bg-primary-50 border-primary-500 text-primary-700 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-primary-50 text-primary-700" ] ], ariaCurrent "page" ]
             [ Icon.outline tab.icon "-ml-1 mr-3 text-primary-500"
-            , span [ css [ "truncate" ] ] [ text tab.text ]
+            , span [ css [ "truncate" ] ] tab.content
             ]
 
     else
         a [ href "", onClick (SelectTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-gray-50 text-gray-900" ] ] ]
             [ Icon.outline tab.icon "-ml-1 mr-3 text-gray-400"
-            , span [ css [ "truncate" ] ] [ text tab.text ]
+            , span [ css [ "truncate" ] ] tab.content
             ]
 
 
@@ -142,6 +143,7 @@ viewProjectImportTab htmlId zone projects projectImport =
                     ]
                 ]
             ]
+        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "If you have an existing project, you can download it at the bottom of project settings (top right cog)." ]
         , viewProjectImport zone projects projectImport
         ]
 
@@ -211,7 +213,7 @@ viewProjectImport zone projects projectImport =
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.mapOrElse
                                             (\p ->
-                                                [ Button.primary3 Tw.red [ onClick (ImportProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
+                                                [ Button.secondary3 Tw.red [ onClick (ImportProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
                                                 , Button.primary3 Tw.primary [ onClick (ImportNewProject id project), css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                 ]
                                             )
