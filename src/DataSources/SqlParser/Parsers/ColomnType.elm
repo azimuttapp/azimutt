@@ -24,13 +24,13 @@ parse kind =
     if kind |> String.endsWith "[]" then
         Array (parse (kind |> String.dropRight 2))
 
-    else if kind == "text" || (kind |> Regex.match "character(\\(\\d+\\))?") then
+    else if (kind |> Regex.match "^(tiny|medium|long)?text$") || (kind |> Regex.match "^character( varying)?(\\(\\d+\\))?$") || (kind |> Regex.match "^varchar(\\(\\d+\\))?$") then
         String
 
-    else if kind == "integer" || kind == "bigint" || kind == "smallint" then
+    else if kind == "integer" || (kind |> Regex.match "^(tiny|small|big)?int(\\(\\d+\\))?( unsigned)?$") then
         Int
 
-    else if kind == "double precision" || (kind |> Regex.match "numeric(\\(\\d+,\\d+\\))?") then
+    else if kind == "double precision" || (kind |> Regex.match "^numeric(\\(\\d+,\\d+\\))?$") then
         Float
 
     else if kind == "boolean" then
@@ -42,7 +42,7 @@ parse kind =
     else if kind |> Regex.match "^time(\\(\\d+\\))?( with(out)? time zone)?$" then
         Time
 
-    else if kind |> Regex.match "^timestamp(\\(\\d+\\))?( with(out)? time zone)?$" then
+    else if kind == "datetime" || (kind |> Regex.match "^timestamp(\\(\\d+\\))?( with(out)? time zone)?$") then
         DateTime
 
     else if kind |> Regex.match "^interval(\\(\\d+\\))?$" then
