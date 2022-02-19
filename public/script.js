@@ -7,6 +7,9 @@ window.addEventListener('load', function() {
     const flags = {now: Date.now()}
     const app = Elm.Main.init({flags})
 
+    const databaseName = 'azimut'
+    const databaseObjectStoreName = 'saves'
+    const databaseVersion = 1
 
     /* PWA service worker */
 
@@ -75,37 +78,73 @@ window.addEventListener('load', function() {
         getElementById(id).querySelector('[autofocus]')?.focus()
     }
 
-    const projectPrefix = 'project-'
+    function getConfiguredDb() {
+        return new Promise((resolve, reject) => {
+            const openRequest = indexedDB.open(databaseName, databaseVersion)
+            openRequest.onupgradeneeded = function() {
+              const db = openRequest.result
+              if (!db.objectStoreNames.contains(databaseObjectStoreName)) {
+                db.createObjectStore(databaseObjectStoreName, {keyPath: 'id'})
+              }
+            }
+            openRequest.onsuccess = function() {
+                const db = openRequest.result;
+                resolve(db)
+            }
+        })
+    }
+
+    function getDbObjectStore(transactionType) {
+        return new Promise((resolve, reject) => {
+            getConfiguredDb().then((db => {
+                const transaction = db.transaction(
+                    databaseObjectStoreName,
+                    typeof(transactionType) === 'undefined' ? 'readonly' : transactionType
+                )
+                resolve(transaction.objectStore(databaseObjectStoreName))
+            }))
+        })
+    }
+
     function loadProjects() {
-        const values = Object.keys(localStorage)
-            .filter(key => key.startsWith(projectPrefix))
-            .map(key => [key.replace(projectPrefix, ''), safeParse(localStorage.getItem(key))])
-        window.projects = values.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
-        sendToElm({kind: 'GotProjects', projects: values})
+        getDbObjectStore().then((store) => {
+            let projects = []
+            store.openCursor().onsuccess = function(event) {
+                const cursor = event.target.result
+                if (cursor) {
+                    projects.push(cursor.value)
+                    cursor.continue()
+                }
+                else {
+                    window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
+                    sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
+                }
+            }
+        })
     }
     function saveProject(project) {
-        const key = projectPrefix + project.id
-        // setting dates should be done in Elm but can't find how to run a Task before calling a Port
-        const now = Date.now()
-        project.updatedAt = now
-        if (localStorage.getItem(key) === null) { project.createdAt = now }
-        try {
-            localStorage.setItem(key, JSON.stringify(project))
-            loadProjects()
-        } catch (e) {
-            if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-                showMessage({kind: 'error', message: "Can't save project, storage quota exceeded. Use a smaller schema or clean unused projects."})
-            } else {
-                showMessage({kind: 'error', message: "Can't save project: " + e.message})
+        getDbObjectStore('readwrite').then((store) => {
+            const now = Date.now()
+            project.updatedAt = now
+
+            const afterUpdate = function() {
+                loadProjects()
             }
-            const name = 'local-storage'
-            const details = {error: e.name, message: e.message}
-            analytics.then(a => a.trackError(name, details)); errorTracking.then(e => e.track(name, details));
-        }
+
+            if (!store.get(project.id)) {
+                project.createdAt = now
+                store.add(project).onsuccess = afterUpdate
+            } else {
+                store.put(project).onsuccess = afterUpdate
+            }
+        })
     }
     function dropProject(project) {
-        localStorage.removeItem(projectPrefix + project.id)
-        loadProjects()
+        getDbObjectStore('readwrite').then((store) => {
+            store.delete(project.id).onsuccess = function() {
+                loadProjects()
+            }
+        })
     }
 
     function getLocalFile(maybeProjectId, maybeSourceId, file, fileKind) {
