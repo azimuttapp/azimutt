@@ -20,7 +20,7 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
 
@@ -43,7 +43,10 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ [ Dropdown.btn "" SaveProject [ text "Save project" ] ] ]
+                (([ [ Dropdown.btn "" SaveProject [ text "Save project" ]
+                    , Dropdown.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
+                    ]
+                  ]
                     ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
                     ++ [ [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )

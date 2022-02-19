@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -16,6 +16,7 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
@@ -28,7 +29,7 @@ import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDial
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Ports exposing (JsMsg)
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
-import Shared exposing (Confirm)
+import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
@@ -54,6 +55,7 @@ type alias Model =
     , toastIdx : Int
     , toasts : List Toast.Model
     , confirm : Maybe ConfirmDialog
+    , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
     }
 
@@ -97,10 +99,15 @@ type alias ConfirmDialog =
     { id : HtmlId, content : Confirm Msg }
 
 
+type alias PromptDialog =
+    { id : HtmlId, content : Prompt Msg, input : String }
+
+
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | SaveProject
+    | RenameProject ProjectName
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables
@@ -140,6 +147,9 @@ type Msg
     | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
+    | PromptOpen (Prompt Msg) String
+    | PromptUpdate String
+    | PromptAnswer (Cmd Msg)
     | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
@@ -234,6 +244,20 @@ confirm title content message =
         , cancel = "Nope"
         , onConfirm = T.send message
         }
+
+
+prompt : String -> Html Msg -> String -> (String -> Msg) -> Msg
+prompt title content input message =
+    PromptOpen
+        { color = Tw.blue
+        , icon = QuestionMarkCircle
+        , title = title
+        , message = content
+        , confirm = "Ok"
+        , cancel = "Cancel"
+        , onConfirm = message >> T.send
+        }
+        input
 
 
 resetCanvas : Msg

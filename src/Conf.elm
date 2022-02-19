@@ -99,6 +99,7 @@ ids :
     , findPathDialog : HtmlId
     , helpDialog : HtmlId
     , confirmDialog : HtmlId
+    , promptDialog : HtmlId
     , modal : HtmlId
     }
 ids =
@@ -111,6 +112,7 @@ ids =
     , findPathDialog = "find-path-dialog"
     , helpDialog = "help-dialog"
     , confirmDialog = "confirm-dialog"
+    , promptDialog = "prompt-dialog"
     , modal = "modal"
     }
 

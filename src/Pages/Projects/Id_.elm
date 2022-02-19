@@ -37,7 +37,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setOpenedPopover, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPrompt, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Shared exposing (StoredProjects(..))
 import Time
@@ -89,6 +89,7 @@ init =
       , toastIdx = 0
       , toasts = []
       , confirm = Nothing
+      , prompt = Nothing
       , openedDialogs = []
       }
     , Cmd.batch
@@ -115,6 +116,9 @@ update req now msg model =
 
         SaveProject ->
             ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+
+        RenameProject name ->
+            ( model |> mapErdM (mapProject (setName name)), Cmd.none )
 
         ShowTable id hint ->
             model |> mapErdMCmd (showTable id hint)
@@ -239,6 +243,15 @@ update req now msg model =
 
         ConfirmAnswer answer cmd ->
             ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none )
+
+        PromptOpen prompt input ->
+            ( model |> setPrompt (Just { id = Conf.ids.promptDialog, content = prompt, input = input }), T.sendAfter 1 (ModalOpen Conf.ids.promptDialog) )
+
+        PromptUpdate input ->
+            ( model |> mapPromptM (setInput input), Cmd.none )
+
+        PromptAnswer cmd ->
+            ( model |> setPrompt Nothing, cmd )
 
         ModalOpen id ->
             ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id )
