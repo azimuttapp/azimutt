@@ -6,7 +6,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Regex as Regex
-import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder(..))
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (Table)
@@ -38,9 +38,9 @@ init =
     , removedSchemas = []
     , removeViews = False
     , removedTables = ""
-    , hiddenColumns = { list = "", props = False, relations = False }
-    , columnOrder = ColumnOrder.SqlOrder
-    , columnBasicTypes = False
+    , hiddenColumns = { list = "created_.+, updated_.+", props = False, relations = False }
+    , columnOrder = OrderByProperty
+    , columnBasicTypes = True
     }
 
 
