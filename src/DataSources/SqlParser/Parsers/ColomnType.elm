@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Parsers.ColomnType exposing (ParsedColumnType(..), parseColumnType, toString)
+module DataSources.SqlParser.Parsers.ColomnType exposing (ParsedColumnType(..), parse, toString)
 
 import DataSources.SqlParser.Utils.Types exposing (SqlColumnType)
 import Libs.Regex as Regex
@@ -19,10 +19,10 @@ type ParsedColumnType
     | Binary
 
 
-parseColumnType : SqlColumnType -> ParsedColumnType
-parseColumnType kind =
+parse : SqlColumnType -> ParsedColumnType
+parse kind =
     if kind |> String.endsWith "[]" then
-        Array (parseColumnType (kind |> String.dropRight 2))
+        Array (parse (kind |> String.dropRight 2))
 
     else if kind == "text" || (kind |> Regex.match "character(\\(\\d+\\))?") then
         String

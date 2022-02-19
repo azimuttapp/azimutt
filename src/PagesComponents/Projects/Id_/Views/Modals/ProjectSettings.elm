@@ -174,6 +174,13 @@ viewDisplaySettingsSection htmlId erd =
             (ColumnOrder.all |> List.map (\o -> ( ColumnOrder.toString o, ColumnOrder.show o )))
             (ColumnOrder.toString erd.settings.columnOrder)
             (ColumnOrder.fromString >> PSColumnOrderUpdate >> ProjectSettingsMsg)
+        , Input.checkboxWithLabelAndHelp "mt-3"
+            (htmlId ++ "-basic-types")
+            "Column types"
+            ""
+            "Use basic types for columns to gain some space"
+            erd.settings.columnBasicTypes
+            (PSColumnBasicTypesToggle |> ProjectSettingsMsg)
         ]
 
 

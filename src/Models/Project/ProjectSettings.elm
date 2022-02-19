@@ -20,6 +20,7 @@ type alias ProjectSettings =
     , removedTables : RemovedTables
     , hiddenColumns : HiddenColumns
     , columnOrder : ColumnOrder
+    , columnBasicTypes : Bool
     }
 
 
@@ -39,6 +40,7 @@ init =
     , removedTables = ""
     , hiddenColumns = { list = "", props = False, relations = False }
     , columnOrder = ColumnOrder.SqlOrder
+    , columnBasicTypes = False
     }
 
 
@@ -83,18 +85,20 @@ encode default value =
         , ( "removedTables", value.removedTables |> Encode.withDefault Encode.string default.removedTables )
         , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefaultDeep encodeHiddenColumns default.hiddenColumns )
         , ( "columnOrder", value.columnOrder |> Encode.withDefault ColumnOrder.encode default.columnOrder )
+        , ( "columnBasicTypes", value.columnBasicTypes |> Encode.withDefault Encode.bool default.columnBasicTypes )
         ]
 
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
-    Decode.map6 ProjectSettings
+    Decode.map7 ProjectSettings
         (Decode.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
         (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
         (Decode.defaultField "removeViews" Decode.bool default.removeViews)
         (Decode.defaultField "removedTables" Decode.string default.removedTables)
         (Decode.defaultFieldDeep "hiddenColumns" decodeHiddenColumns default.hiddenColumns)
         (Decode.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)
+        (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
 
 
 encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value

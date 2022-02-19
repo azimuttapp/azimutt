@@ -151,7 +151,7 @@ tableProps =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    F.map6 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder
+    F.map7 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder Fuzz.bool
 
 
 findPathSettings : Fuzzer FindPathSettings

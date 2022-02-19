@@ -1,4 +1,4 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProjectImportCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
+module Services.Lenses exposing (mapActive, mapCanvas, mapColumnBasicTypes, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProjectImportCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -48,6 +48,16 @@ setColumns =
 mapColumns : (v -> v) -> { item | columns : v } -> { item | columns : v }
 mapColumns =
     map .columns setColumns
+
+
+setColumnBasicTypes : v -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
+setColumnBasicTypes =
+    set .columnBasicTypes (\value item -> { item | columnBasicTypes = value })
+
+
+mapColumnBasicTypes : (v -> v) -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
+mapColumnBasicTypes =
+    map .columnBasicTypes setColumnBasicTypes
 
 
 setColumnOrder : v -> { item | columnOrder : v } -> { item | columnOrder : v }

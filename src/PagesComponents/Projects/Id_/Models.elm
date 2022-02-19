@@ -194,6 +194,7 @@ type ProjectSettingsMsg
     | PSHiddenColumnsPropsToggle
     | PSHiddenColumnsRelationsToggle
     | PSColumnOrderUpdate ColumnOrder
+    | PSColumnBasicTypesToggle
 
 
 type HelpMsg

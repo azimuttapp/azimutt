@@ -115,7 +115,7 @@ viewErd screen erd cursorMode selectionBox virtualRelation args dragging =
             [ class "az-canvas origin-top-left"
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
-            [ viewTables cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom tableProps erd.tables erd.shownTables
+            [ viewTables cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
             , Lazy.lazy3 viewRelations dragging displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse viewVirtualRelation viewEmptyRelation
@@ -128,8 +128,8 @@ viewErd screen erd cursorMode selectionBox virtualRelation args dragging =
         ]
 
 
-viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
-viewTables cursorMode virtualRelation openedDropdown openedPopover dragging zoom tableProps tables shownTables =
+viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables cursorMode virtualRelation openedDropdown openedPopover dragging zoom useBasicTypes tableProps tables shownTables =
     Keyed.node "div"
         [ class "az-tables" ]
         (shownTables
@@ -147,6 +147,7 @@ viewTables cursorMode virtualRelation openedDropdown openedPopover dragging zoom
                             (B.cond (openedPopover |> String.startsWith table.htmlId) openedPopover "")
                             (dragging |> Maybe.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (virtualRelation /= Nothing)
+                            useBasicTypes
                         )
                         index
                         props

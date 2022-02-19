@@ -1,4 +1,4 @@
-module Components.Atoms.Input exposing (DocState, SharedDocState, checkbox, doc, initDocState, selectWithLabelAndHelp, textWithLabelAndHelp)
+module Components.Atoms.Input exposing (DocState, SharedDocState, checkbox, checkboxBold, checkboxWithLabelAndHelp, doc, initDocState, selectWithLabelAndHelp, textWithLabelAndHelp)
 
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
@@ -38,8 +38,32 @@ selectWithLabelAndHelp styles fieldId fieldLabel fieldHelp fieldOptions fieldVal
         ]
 
 
-checkbox : TwClass -> String -> String -> String -> Bool -> msg -> Html msg
-checkbox styles fieldId fieldLabel fieldHelp fieldValue fieldChange =
+checkboxWithLabelAndHelp : TwClass -> HtmlId -> String -> String -> String -> Bool -> msg -> Html msg
+checkboxWithLabelAndHelp styles fieldId fieldLabel fieldHelp fieldDescription fieldValue fieldChange =
+    div [ class styles ]
+        [ label [ for fieldId, class "block" ]
+            [ span [ class "text-sm font-medium text-gray-700" ] [ text fieldLabel ]
+            , p [ id (fieldId ++ "-help"), class "text-sm text-gray-500" ] [ text fieldHelp ]
+            ]
+        , checkbox "mt-1" fieldId fieldDescription fieldValue fieldChange
+        ]
+
+
+checkbox : TwClass -> String -> String -> Bool -> msg -> Html msg
+checkbox styles fieldId fieldLabel fieldValue fieldChange =
+    -- TODO: fieldLabel, replace String with (List (Html msg))
+    div [ css [ "relative flex items-start", styles ] ]
+        [ div [ class "flex items-center h-5" ]
+            [ input [ type_ "checkbox", name fieldId, id fieldId, checked fieldValue, onClick fieldChange, ariaDescribedby (fieldId ++ "-help"), css [ "h-4 w-4 text-indigo-600 border-gray-300 rounded", focus [ "ring-indigo-500" ] ] ] []
+            ]
+        , div [ class "ml-3 text-sm" ]
+            [ label [ for fieldId, class "text-gray-700" ] [ text fieldLabel ]
+            ]
+        ]
+
+
+checkboxBold : TwClass -> String -> String -> String -> Bool -> msg -> Html msg
+checkboxBold styles fieldId fieldLabel fieldHelp fieldValue fieldChange =
     -- TODO: fieldLabel, replace String with (List (Html msg))
     div [ css [ "relative flex items-start", styles ] ]
         [ div [ class "flex items-center h-5" ]
@@ -80,5 +104,7 @@ doc =
         |> Chapter.renderStatefulComponentList
             [ ( "textWithLabelAndHelp", \{ inputDocState } -> textWithLabelAndHelp "" "email" "Email" "We'll only use this for spam." "you@example.com" inputDocState.text (\value -> updateDocState (\state -> { state | text = value })) )
             , ( "selectWithLabelAndHelp", \{ inputDocState } -> selectWithLabelAndHelp "" "role" "Role" "Choose the correct role" [ ( "admin", "Admin" ), ( "guest", "Guest" ), ( "demo", "Demo" ) ] inputDocState.select (\value -> updateDocState (\state -> { state | select = value })) )
-            , ( "checkbox", \{ inputDocState } -> checkbox "" "comments" "Comments" "Get notified when someones posts a comment on a posting." inputDocState.checkbox (updateDocState (\state -> { state | checkbox = not state.checkbox })) )
+            , ( "checkboxWithLabelAndHelp", \{ inputDocState } -> checkboxWithLabelAndHelp "" "comments" "Comments" "Get notified when someones posts a comment on a posting." "Check this!" inputDocState.checkbox (updateDocState (\state -> { state | checkbox = not state.checkbox })) )
+            , ( "checkbox", \{ inputDocState } -> checkbox "" "comments" "Comments" inputDocState.checkbox (updateDocState (\state -> { state | checkbox = not state.checkbox })) )
+            , ( "checkboxBold", \{ inputDocState } -> checkboxBold "" "comments" "Comments" "Get notified when someones posts a comment on a posting." inputDocState.checkbox (updateDocState (\state -> { state | checkbox = not state.checkbox })) )
             ]

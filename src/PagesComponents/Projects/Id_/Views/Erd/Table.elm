@@ -2,6 +2,7 @@ module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToS
 
 import Components.Organisms.Table as Table
 import Conf
+import DataSources.SqlParser.Parsers.ColomnType as ColumnType
 import Dict
 import Either exposing (Either(..))
 import Html exposing (Attribute, Html, div)
@@ -29,29 +30,29 @@ type alias TableArgs =
     String
 
 
-argsToString : String -> String -> Bool -> Bool -> TableArgs
-argsToString openedDropdown openedPopover dragging virtualRelation =
-    openedDropdown ++ "#" ++ openedPopover ++ "#" ++ B.cond dragging "Y" "N" ++ "#" ++ B.cond virtualRelation "Y" "N"
+argsToString : String -> String -> Bool -> Bool -> Bool -> TableArgs
+argsToString openedDropdown openedPopover dragging virtualRelation useBasicTypes =
+    openedDropdown ++ "#" ++ openedPopover ++ "#" ++ B.cond dragging "Y" "N" ++ "#" ++ B.cond virtualRelation "Y" "N" ++ "#" ++ B.cond useBasicTypes "Y" "N"
 
 
-stringToArgs : TableArgs -> ( ( String, String ), ( Bool, Bool ) )
+stringToArgs : TableArgs -> ( ( String, String ), ( Bool, Bool, Bool ) )
 stringToArgs args =
     case args |> String.split "#" of
-        [ openedDropdown, openedPopover, dragging, virtualRelation ] ->
-            ( ( openedDropdown, openedPopover ), ( dragging == "Y", virtualRelation == "Y" ) )
+        [ openedDropdown, openedPopover, dragging, virtualRelation, useBasicTypes ] ->
+            ( ( openedDropdown, openedPopover ), ( dragging == "Y", virtualRelation == "Y", useBasicTypes == "Y" ) )
 
         _ ->
-            ( ( "", "" ), ( False, False ) )
+            ( ( "", "" ), ( False, False, False ) )
 
 
 viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
 viewTable zoom cursorMode args index props table =
     let
-        ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation ) ) =
+        ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation, useBasicTypes ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Ned.values |> Nel.map (buildColumn props) |> Nel.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
+            table.columns |> Ned.values |> Nel.map (buildColumn useBasicTypes props) |> Nel.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
 
         drag : List (Attribute Msg)
         drag =
@@ -145,11 +146,16 @@ viewTable zoom cursorMode args index props table =
         ]
 
 
-buildColumn : ErdTableProps -> ErdColumn -> Table.Column
-buildColumn props column =
+buildColumn : Bool -> ErdTableProps -> ErdColumn -> Table.Column
+buildColumn useBasicTypes props column =
     { index = column.index
     , name = column.name
-    , kind = column.kind
+    , kind =
+        if useBasicTypes then
+            column.kind |> ColumnType.parse |> ColumnType.toString
+
+        else
+            column.kind
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment |> Maybe.map .text
