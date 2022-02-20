@@ -1,4 +1,4 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapColumnBasicTypes, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProject, mapProjectImportCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
+module Services.Lenses exposing (mapActive, mapCanvas, mapColumnBasicTypes, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProject, mapProjectImportCmd, mapProjectImportM, mapProjectImportMCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapSampleSelectionM, mapSampleSelectionMCmd, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setSampleSelection, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -345,9 +345,19 @@ setProjectImport =
     set .projectImport (\value item -> { item | projectImport = value })
 
 
+mapProjectImportM : (v -> v) -> { item | projectImport : Maybe v } -> { item | projectImport : Maybe v }
+mapProjectImportM =
+    mapM .projectImport setProjectImport
+
+
 mapProjectImportCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : v } -> ( { item | projectImport : v }, Cmd msg )
 mapProjectImportCmd =
     mapCmd .projectImport setProjectImport
+
+
+mapProjectImportMCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : Maybe v } -> ( { item | projectImport : Maybe v }, Cmd msg )
+mapProjectImportMCmd =
+    mapMCmd .projectImport setProjectImport
 
 
 setPrompt : v -> { item | prompt : v } -> { item | prompt : v }
@@ -428,6 +438,21 @@ setResult =
 mapResult : (v -> v) -> { item | result : v } -> { item | result : v }
 mapResult =
     map .result setResult
+
+
+setSampleSelection : v -> { item | sampleSelection : v } -> { item | sampleSelection : v }
+setSampleSelection =
+    set .sampleSelection (\value item -> { item | sampleSelection = value })
+
+
+mapSampleSelectionM : (v -> v) -> { item | sampleSelection : Maybe v } -> { item | sampleSelection : Maybe v }
+mapSampleSelectionM =
+    mapM .sampleSelection setSampleSelection
+
+
+mapSampleSelectionMCmd : (v -> ( v, Cmd msg )) -> { item | sampleSelection : Maybe v } -> ( { item | sampleSelection : Maybe v }, Cmd msg )
+mapSampleSelectionMCmd =
+    mapMCmd .sampleSelection setSampleSelection
 
 
 setScreen : v -> { item | screen : v } -> { item | screen : v }
@@ -570,9 +595,19 @@ setSqlSourceUpload =
     set .sqlSourceUpload (\value item -> { item | sqlSourceUpload = value })
 
 
+mapSqlSourceUploadM : (v -> v) -> { item | sqlSourceUpload : Maybe v } -> { item | sqlSourceUpload : Maybe v }
+mapSqlSourceUploadM =
+    mapM .sqlSourceUpload setSqlSourceUpload
+
+
 mapSqlSourceUploadCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : v } -> ( { item | sqlSourceUpload : v }, Cmd msg )
 mapSqlSourceUploadCmd =
     mapCmd .sqlSourceUpload setSqlSourceUpload
+
+
+mapSqlSourceUploadMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : Maybe v } -> ( { item | sqlSourceUpload : Maybe v }, Cmd msg )
+mapSqlSourceUploadMCmd =
+    mapMCmd .sqlSourceUpload setSqlSourceUpload
 
 
 setSwitch : v -> { item | switch : v } -> { item | switch : v }

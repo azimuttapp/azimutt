@@ -295,7 +295,7 @@ handleJsMessage req message model =
                 )
             )
 
-        GotLocalFile now projectId sourceId file _ content ->
+        GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotRemoteFile now projectId sourceId url content sample ->

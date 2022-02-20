@@ -39,7 +39,7 @@ window.addEventListener('load', function() {
                 case 'SaveProject':     saveProject(port.project); break;
                 case 'DownloadFile':    downloadFile(port.filename, port.content); break;
                 case 'DropProject':     dropProject(port.project); break;
-                case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file, port.fileKind); break;
+                case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file); break;
                 case 'GetRemoteFile':   getRemoteFile(port.project, port.source, port.url, port.sample); break;
                 case 'GetSourceId':     getSourceId(port.src, port.ref); break;
                 case 'ObserveSizes':    observeSizes(port.ids); break;
@@ -110,7 +110,7 @@ window.addEventListener('load', function() {
         loadProjects()
     }
 
-    function getLocalFile(maybeProjectId, maybeSourceId, file, fileKind) {
+    function getLocalFile(maybeProjectId, maybeSourceId, file) {
         const reader = new FileReader()
         reader.onload = e => sendToElm({
             kind: 'GotLocalFile',
@@ -118,7 +118,6 @@ window.addEventListener('load', function() {
             projectId: maybeProjectId || randomUID(),
             sourceId: maybeSourceId || randomUID(),
             file,
-            fileKind,
             content: e.target.result
         })
         reader.readAsText(file)
