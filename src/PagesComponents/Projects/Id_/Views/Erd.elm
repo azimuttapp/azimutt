@@ -7,13 +7,14 @@ import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, main_, p, text)
 import Html.Attributes exposing (class, classList, id, style)
 import Html.Events exposing (onClick)
+import Html.Events.Extra.Mouse exposing (Button(..))
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
-import Libs.Html.Events exposing (onWheel, stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -109,7 +110,7 @@ viewErd screen erd cursorMode selectionBox virtualRelation args dragging =
             ]
         , id Conf.ids.erd
         , onWheel OnWheel
-        , stopPointerDown (.position >> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        , stopPointerDown (handleErdPointerDown cursorMode)
         ]
         [ div
             [ class "az-canvas origin-top-left"
@@ -126,6 +127,18 @@ viewErd screen erd cursorMode selectionBox virtualRelation args dragging =
           else
             div [] []
         ]
+
+
+handleErdPointerDown : CursorMode -> PointerEvent -> Msg
+handleErdPointerDown cursorMode e =
+    if e.button == MainButton then
+        e |> .position |> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox)
+
+    else if e.button == MiddleButton then
+        e |> .position |> DragStart Conf.ids.erd
+
+    else
+        Noop ""
 
 
 viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg

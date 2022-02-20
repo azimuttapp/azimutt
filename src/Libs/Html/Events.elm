@@ -2,6 +2,7 @@ module Libs.Html.Events exposing (PointerEvent, WheelEvent, onPointerDown, onPoi
 
 import Html exposing (Attribute)
 import Html.Events exposing (preventDefaultOn, stopPropagationOn)
+import Html.Events.Extra.Mouse exposing (Button)
 import Html.Events.Extra.Pointer as Pointer
 import Json.Decode as Decode
 import Libs.Delta exposing (Delta)
@@ -13,7 +14,7 @@ import Libs.Models.Position as Position exposing (Position)
 
 
 type alias PointerEvent =
-    { position : Position, ctrl : Bool, alt : Bool, shift : Bool }
+    { position : Position, ctrl : Bool, alt : Bool, shift : Bool, button : Button }
 
 
 onPointerDown : (PointerEvent -> msg) -> Attribute msg
@@ -110,6 +111,7 @@ pointerDecoder =
                 , ctrl = e.pointer.keys.ctrl
                 , alt = e.pointer.keys.alt
                 , shift = e.pointer.keys.shift
+                , button = e.pointer.button
                 }
             )
 

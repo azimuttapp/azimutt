@@ -7,12 +7,14 @@ import Dict
 import Either exposing (Either(..))
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (style)
+import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
 import Libs.Html.Attributes exposing (css)
-import Libs.Html.Events exposing (stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
@@ -56,7 +58,7 @@ viewTable zoom cursorMode args index props table =
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (cursorMode == CursorDrag) [] [ stopPointerDown (.position >> DragStart table.htmlId) ]
+            B.cond (cursorMode == CursorDrag) [] [ stopPointerDown (handleTablePointerDown table.htmlId) ]
 
         zIndex : Int
         zIndex =
@@ -144,6 +146,18 @@ viewTable zoom cursorMode args index props table =
             , zoom = zoom
             }
         ]
+
+
+handleTablePointerDown : HtmlId -> PointerEvent -> Msg
+handleTablePointerDown htmlId e =
+    if e.button == MainButton then
+        e |> .position |> DragStart htmlId
+
+    else if e.button == MiddleButton then
+        e |> .position |> DragStart Conf.ids.erd
+
+    else
+        Noop ""
 
 
 buildColumn : Bool -> ErdTableProps -> ErdColumn -> Table.Column
