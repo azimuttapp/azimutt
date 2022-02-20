@@ -80,8 +80,10 @@ window.addEventListener('load', function() {
         const values = Object.keys(localStorage)
             .filter(key => key.startsWith(projectPrefix))
             .map(key => [key.replace(projectPrefix, ''), safeParse(localStorage.getItem(key))])
-        window.projects = values.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
         sendToElm({kind: 'GotProjects', projects: values})
+        window.projects = values.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
+        const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
+        id ? window.project = window.projects[id] : undefined
     }
     function saveProject(project) {
         const key = projectPrefix + project.id
