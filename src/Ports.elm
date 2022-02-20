@@ -181,6 +181,7 @@ type JsMsg
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
+    | GotKeyHold String Bool
     | Error Decode.Error
 
 
@@ -309,6 +310,11 @@ jsDecoder =
 
                 "GotHotkey" ->
                     Decode.field "id" Decode.string |> Decode.map GotHotkey
+
+                "GotKeyHold" ->
+                    Decode.map2 GotKeyHold
+                        (Decode.field "key" Decode.string)
+                        (Decode.field "start" Decode.bool)
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")

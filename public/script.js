@@ -165,7 +165,7 @@ window.addEventListener('load', function() {
 
     const hotkeys = {}
     // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
-    document.addEventListener('keydown', e => {
+    function keydownHotkey(e) {
         const matches = (hotkeys[e.key] || []).filter(hotkey =>
             (hotkey.ctrl === e.ctrlKey) &&
             (!hotkey.shift || e.shiftKey) &&
@@ -182,7 +182,7 @@ window.addEventListener('load', function() {
             sendToElm({kind: 'GotHotkey', id: hotkey.id})
         })
         if(matches.length === 0 && e.key === "Escape" && e.target.localName === 'input') { e.target.blur() }
-    })
+    }
     function listenHotkeys(keys) {
         Object.keys(hotkeys).forEach(key => hotkeys[key] = [])
         Object.entries(keys).forEach(([id, alternatives]) => {
@@ -195,19 +195,52 @@ window.addEventListener('load', function() {
         })
     }
 
-    // listen at every click to handle tracked events
-    document.addEventListener('click', event => {
-        const tracked = findParent(event.target, e => e.getAttribute('data-track-event'))
+
+    // handle key hold
+    const holdKeyState = {}
+    function keydownHoldKey(e) {
+        if (e.code === 'Space') {
+            if (!holdKeyState['drag'] && e.target.localName !== 'input') {
+                sendToElm({kind: 'GotKeyHold', key: e.code, start: true})
+            }
+            holdKeyState['drag'] = true
+        }
+    }
+    function keyupHoldKey(e) {
+        if (e.code === 'Space') {
+            if (holdKeyState['drag']) {
+                sendToElm({kind: 'GotKeyHold', key: e.code, start: false})
+            }
+            holdKeyState['drag'] = false
+        }
+    }
+
+
+    // listen at every click to handle tracking events
+    function trackClick(e) {
+        const tracked = findParent(e.target, e => e.getAttribute('data-track-event'))
         if (tracked) {
             const eventName = tracked.getAttribute('data-track-event')
             const details = {label: tracked.textContent.trim()}
-            for (const attr of event.target.attributes) {
+            for (const attr of e.target.attributes) {
                 if (attr.name.startsWith('data-track-event-')) {
                     details[attr.name.replace('data-track-event-', '')] = attr.value
                 }
             }
             analytics.then(a => a.trackEvent(eventName, details))
         }
+    }
+
+    // listeners
+    document.addEventListener('click', e => {
+        trackClick(e)
+    })
+    document.addEventListener('keydown', e => {
+        keydownHotkey(e)
+        keydownHoldKey(e)
+    })
+    document.addEventListener('keyup', e => {
+        keyupHoldKey(e)
     })
 
 

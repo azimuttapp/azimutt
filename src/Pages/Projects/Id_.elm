@@ -309,6 +309,17 @@ handleJsMessage req message model =
         GotHotkey hotkey ->
             handleHotkey model hotkey
 
+        GotKeyHold key start ->
+            if key == "Space" then
+                if start then
+                    ( model |> setCursorMode CursorDrag, Cmd.none )
+
+                else
+                    ( model |> setCursorMode CursorSelect, Cmd.none )
+
+            else
+                ( model, Cmd.none )
+
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
 
