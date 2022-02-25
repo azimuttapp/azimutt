@@ -72,10 +72,10 @@ handleProjectSettings msg model =
             model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSRemovedTablesUpdate values ->
-            model |> mapErdM (Erd.mapSettings (setRemovedTables values)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
+            model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSHiddenColumnsListUpdate values ->
-            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
 
         PSHiddenColumnsPropsToggle ->
             ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )

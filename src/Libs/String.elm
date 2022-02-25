@@ -1,4 +1,4 @@
-module Libs.String exposing (filterStartsWith, hashCode, nonEmpty, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
+module Libs.String exposing (filterStartsWith, hashCode, nonEmpty, orElse, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
 
 import Bitwise
 import Dict exposing (Dict)
@@ -9,6 +9,15 @@ import Libs.Regex as Regex
 nonEmpty : String -> Bool
 nonEmpty string =
     string /= ""
+
+
+orElse : String -> String -> String
+orElse other str =
+    if str == "" then
+        other
+
+    else
+        str
 
 
 filterStartsWith : String -> String -> String

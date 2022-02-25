@@ -200,8 +200,8 @@ findPathResults result =
     { name = "find-path-results"
     , details =
         [ ( "found-paths", String.fromInt (result.paths |> List.length) )
-        , ( "ignored-columns", String.fromInt (result.settings.ignoredColumns |> List.length) )
-        , ( "ignored-tables", String.fromInt (result.settings.ignoredTables |> List.length) )
+        , ( "ignored-columns", String.fromInt (result.settings.ignoredColumns |> String.split "," |> List.length) )
+        , ( "ignored-tables", String.fromInt (result.settings.ignoredTables |> String.split "," |> List.length) )
         , ( "max-path-length", String.fromInt result.settings.maxPathLength )
         ]
     , enabled = True

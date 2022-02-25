@@ -8,6 +8,7 @@ import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
+import Libs.Delta as Delta
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.List as List
@@ -37,7 +38,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPrompt, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPrompt, setShow, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Shared exposing (StoredProjects(..))
 import Time
@@ -85,6 +86,7 @@ init =
       , help = Nothing
       , openedDropdown = ""
       , openedPopover = ""
+      , contextMenu = Nothing
       , dragging = Nothing
       , toastIdx = 0
       , toasts = []
@@ -151,13 +153,23 @@ update req now msg model =
             ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapShowHiddenColumns not))), Cmd.none )
 
         SelectTable tableId ctrl ->
-            ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
+            if model.dragging |> Maybe.any DragState.hasMoved then
+                ( model, Cmd.none )
+
+            else
+                ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
+
+        TableMove id delta ->
+            ( model |> mapErdM (mapTableProps (\tables -> tables |> Dict.map (\_ t -> B.cond (t.id == id) (t |> ErdTableProps.mapPosition (\p -> delta |> Delta.move p)) t))), Cmd.none )
 
         TableOrder id index ->
             ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
 
         SortColumns id kind ->
             ( model |> mapErdM (sortColumns id kind), Cmd.none )
+
+        MoveColumn column position ->
+            ( model |> mapErdM (mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position)))), Cmd.none )
 
         ToggleHoverTable table on ->
             ( { model | hoverTable = B.cond on (Just table) Nothing } |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
@@ -203,6 +215,15 @@ update req now msg model =
 
         PopoverSet id ->
             ( model |> setOpenedPopover id, Cmd.none )
+
+        ContextMenuCreate content event ->
+            ( model |> setContextMenu (Just { content = content, position = event.position, show = False }), T.sendAfter 1 ContextMenuShow )
+
+        ContextMenuShow ->
+            ( model |> mapContextMenuM (setShow True), Cmd.none )
+
+        ContextMenuClose ->
+            ( model |> setContextMenu Nothing, Cmd.none )
 
         DragStart id pos ->
             model.dragging
@@ -333,6 +354,7 @@ subscriptions model =
     Sub.batch
         ([ Ports.onJsMessage JsMessage ]
             ++ B.cond (model.openedDropdown == "") [] [ Browser.Events.onClick (targetIdDecoder |> Decode.map (\id -> B.cond (id == model.openedDropdown) (Noop "dropdown opened twice") (DropdownToggle id))) ]
+            ++ B.cond (model.contextMenu == Nothing) [] [ Browser.Events.onClick (Decode.succeed ContextMenuClose) ]
             ++ (model.dragging
                     |> Maybe.mapOrElse
                         (\_ ->

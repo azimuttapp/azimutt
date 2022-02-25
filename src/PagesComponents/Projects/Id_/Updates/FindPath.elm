@@ -3,10 +3,13 @@ module PagesComponents.Projects.Id_.Updates.FindPath exposing (Model, computeFin
 import Conf
 import Dict exposing (Dict)
 import Libs.Bool as B
+import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Nel as Nel
 import Libs.Task as T
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -34,7 +37,11 @@ handleFindPath : FindPathMsg -> Model x -> ( Model x, Cmd Msg )
 handleFindPath msg model =
     case msg of
         FPOpen from to ->
-            ( model |> setFindPath (Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ] )
+            ( model
+                |> setFindPath (Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty })
+                |> mapErdM (mapSettings ProjectSettings.fillFindPath)
+            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ]
+            )
 
         FPToggleSettings ->
             ( model |> mapFindPathM (mapShowSettings not), Cmd.none )
@@ -71,17 +78,17 @@ computeFindPath tables relations from to settings =
 
 filterRelations : FindPathSettings -> List ErdRelation -> List ErdRelation
 filterRelations settings relations =
-    -- ugly hack to keep computing low
-    relations
-        |> List.filter
-            (\r ->
-                not
-                    (List.member r.src.table settings.ignoredTables
-                        || List.member r.ref.table settings.ignoredTables
-                        || List.member r.src.column settings.ignoredColumns
-                        || List.member r.ref.column settings.ignoredColumns
-                    )
-            )
+    -- hack to keep computing low
+    let
+        removeTable : TableId -> Bool
+        removeTable =
+            ProjectSettings.removeTable settings.ignoredTables
+
+        removeColumn : ColumnName -> Bool
+        removeColumn =
+            ProjectSettings.removeColumn settings.ignoredColumns
+    in
+    relations |> List.filterNot (\r -> removeTable r.src.table || removeTable r.ref.table || removeColumn r.src.column || removeColumn r.ref.column)
 
 
 buildPaths : Dict TableId ErdTable -> List ErdRelation -> FindPathSettings -> TableId -> (ErdTable -> Bool) -> List FindPathStep -> List FindPathPath

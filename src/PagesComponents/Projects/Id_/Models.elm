@@ -1,11 +1,12 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
-import Libs.Html.Events exposing (WheelEvent)
+import Libs.Delta exposing (Delta)
+import Libs.Html.Events exposing (PointerEvent, WheelEvent)
 import Libs.Models exposing (Millis, ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -51,6 +52,7 @@ type alias Model =
     -- global attrs
     , openedDropdown : HtmlId
     , openedPopover : HtmlId
+    , contextMenu : Maybe ContextMenu
     , dragging : Maybe DragState
     , toastIdx : Int
     , toasts : List Toast.Model
@@ -95,6 +97,10 @@ type alias HelpDialog =
     { id : HtmlId, openedSection : String }
 
 
+type alias ContextMenu =
+    { content : Html Msg, position : Position, show : Bool }
+
+
 type alias ConfirmDialog =
     { id : HtmlId, content : Confirm Msg }
 
@@ -119,8 +125,10 @@ type Msg
     | HideColumns TableId String
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
+    | TableMove TableId Delta
     | TableOrder TableId Int
     | SortColumns TableId ColumnOrder
+    | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
     | ResetCanvas
@@ -137,6 +145,9 @@ type Msg
     | Focus HtmlId
     | DropdownToggle HtmlId
     | PopoverSet HtmlId
+    | ContextMenuCreate (Html Msg) PointerEvent
+    | ContextMenuShow
+    | ContextMenuClose
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position

@@ -156,7 +156,7 @@ projectSettings =
 
 findPathSettings : Fuzzer FindPathSettings
 findPathSettings =
-    Fuzz.map3 FindPathSettings intPosSmall (listSmall tableId) (listSmall columnName)
+    Fuzz.map3 FindPathSettings intPosSmall Fuzz.string Fuzz.string
 
 
 findHiddenColumns : Fuzzer HiddenColumns

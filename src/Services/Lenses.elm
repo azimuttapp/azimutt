@@ -1,4 +1,4 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapColumnBasicTypes, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProject, mapProjectImportCmd, mapProjectImportM, mapProjectImportMCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapSampleSelectionM, mapSampleSelectionMCmd, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setSampleSelection, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
+module Services.Lenses exposing (mapActive, mapCanvas, mapColumnBasicTypes, mapColumns, mapContextMenuM, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPath, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProject, mapProjectImportCmd, mapProjectImportM, mapProjectImportMCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapSampleSelectionM, mapSampleSelectionMCmd, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setConfirm, setContextMenu, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIgnoredColumns, setIgnoredTables, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setSampleSelection, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShow, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -70,6 +70,16 @@ setConfirm =
     set .confirm (\value item -> { item | confirm = value })
 
 
+setContextMenu : v -> { item | contextMenu : v } -> { item | contextMenu : v }
+setContextMenu =
+    set .contextMenu (\value item -> { item | contextMenu = value })
+
+
+mapContextMenuM : (v -> v) -> { item | contextMenu : Maybe v } -> { item | contextMenu : Maybe v }
+mapContextMenuM =
+    mapM .contextMenu setContextMenu
+
+
 setCursorMode : v -> { item | cursorMode : v } -> { item | cursorMode : v }
 setCursorMode =
     set .cursorMode (\value item -> { item | cursorMode = value })
@@ -113,6 +123,11 @@ mapErdMCmd =
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
 setFindPath =
     set .findPath (\value item -> { item | findPath = value })
+
+
+mapFindPath : (v -> v) -> { item | findPath : v } -> { item | findPath : v }
+mapFindPath =
+    map .findPath setFindPath
 
 
 mapFindPathM : (v -> v) -> { item | findPath : Maybe v } -> { item | findPath : Maybe v }
@@ -163,6 +178,16 @@ mapHover =
 setHoverColumn : v -> { item | hoverColumn : v } -> { item | hoverColumn : v }
 setHoverColumn =
     set .hoverColumn (\value item -> { item | hoverColumn = value })
+
+
+setIgnoredColumns : v -> { item | ignoredColumns : v } -> { item | ignoredColumns : v }
+setIgnoredColumns =
+    set .ignoredColumns (\value item -> { item | ignoredColumns = value })
+
+
+setIgnoredTables : v -> { item | ignoredTables : v } -> { item | ignoredTables : v }
+setIgnoredTables =
+    set .ignoredTables (\value item -> { item | ignoredTables = value })
 
 
 setInput : v -> { item | input : v } -> { item | input : v }
@@ -508,6 +533,11 @@ setSelectionBox =
 mapSelectionBox : (v -> v) -> { item | selectionBox : v } -> { item | selectionBox : v }
 mapSelectionBox =
     map .selectionBox setSelectionBox
+
+
+setShow : v -> { item | show : v } -> { item | show : v }
+setShow =
+    set .show (\value item -> { item | show = value })
 
 
 setShown : v -> { item | shown : v } -> { item | shown : v }

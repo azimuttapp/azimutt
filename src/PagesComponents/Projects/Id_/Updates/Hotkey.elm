@@ -2,6 +2,7 @@ module PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 
 import Conf
 import Dict
+import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
@@ -18,13 +19,13 @@ handleHotkey model hotkey =
             ( model, Ports.focus Conf.ids.searchInput )
 
         "search-up" ->
-            ( model |> mapNavbar (mapSearch (mapActive (\a -> a - 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> mapNavbar (mapSearch (mapActive (\a -> a - 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active-item") "end" )
 
         "search-down" ->
-            ( model |> mapNavbar (mapSearch (mapActive (\a -> a + 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active") "end" )
+            ( model |> mapNavbar (mapSearch (mapActive (\a -> a + 1))), Ports.scrollTo (Conf.ids.searchInput ++ "-active-item") "end" )
 
         "search-confirm" ->
-            ( model, Cmd.batch [ Ports.mouseDown (Conf.ids.searchInput ++ "-active"), Ports.blur Conf.ids.searchInput ] )
+            ( model, Cmd.batch [ Ports.mouseDown (Conf.ids.searchInput ++ "-active-item"), Ports.blur Conf.ids.searchInput ] )
 
         "remove" ->
             ( model, removeElement model )
@@ -32,17 +33,41 @@ handleHotkey model hotkey =
         "save" ->
             ( model, T.send SaveProject )
 
+        "move-up" ->
+            ( model, moveTables { dx = 0, dy = -1 } model )
+
+        "move-right" ->
+            ( model, moveTables { dx = 1, dy = 0 } model )
+
+        "move-down" ->
+            ( model, moveTables { dx = 0, dy = 1 } model )
+
+        "move-left" ->
+            ( model, moveTables { dx = -1, dy = 0 } model )
+
+        "move-up-big" ->
+            ( model, moveTables { dx = 0, dy = -10 } model )
+
+        "move-right-big" ->
+            ( model, moveTables { dx = 10, dy = 0 } model )
+
+        "move-down-big" ->
+            ( model, moveTables { dx = 0, dy = 10 } model )
+
+        "move-left-big" ->
+            ( model, moveTables { dx = -10, dy = 0 } model )
+
         "move-forward" ->
-            ( model, moveTables 1 model )
+            ( model, moveTablesOrder 1 model )
 
         "move-backward" ->
-            ( model, moveTables -1 model )
+            ( model, moveTablesOrder -1 model )
 
         "move-to-top" ->
-            ( model, moveTables 1000 model )
+            ( model, moveTablesOrder 1000 model )
 
         "move-to-back" ->
-            ( model, moveTables -1000 model )
+            ( model, moveTablesOrder -1000 model )
 
         "select-all" ->
             ( model |> mapErdM (mapTableProps (Dict.map (\_ -> ErdTableProps.setSelected True))), Cmd.none )
@@ -91,7 +116,8 @@ removeElement model =
 cancelElement : Model -> Cmd Msg
 cancelElement model =
     T.send
-        ((model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
+        ((model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
+            |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
             |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
             |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
             |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
@@ -104,8 +130,22 @@ cancelElement model =
         )
 
 
-moveTables : Int -> Model -> Cmd Msg
+moveTables : Delta -> Model -> Cmd Msg
 moveTables delta model =
+    let
+        selectedTables : List ErdTableProps
+        selectedTables =
+            model.erd |> Maybe.mapOrElse (\e -> e.shownTables |> List.filterMap (\id -> e.tableProps |> Dict.get id) |> List.filter .selected) []
+    in
+    if List.nonEmpty selectedTables then
+        Cmd.batch (selectedTables |> List.map (\t -> T.send (TableMove t.id delta)))
+
+    else
+        Cmd.none
+
+
+moveTablesOrder : Int -> Model -> Cmd Msg
+moveTablesOrder delta model =
     let
         tables : List ErdTableProps
         tables =

@@ -26,6 +26,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
+import PagesComponents.Projects.Id_.Views.Modals.ColumnContextMenu exposing (viewColumnContextMenu, viewHiddenColumnContextMenu)
 
 
 type alias TableArgs =
@@ -124,6 +125,7 @@ viewTable zoom cursorMode args index props table =
                 , hoverColumn = \col -> ToggleHoverColumn { table = table.id, column = col }
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
+                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu i { table = table.id, column = col })
                 , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
                 , clickRelations =
                     \cols isOut ->

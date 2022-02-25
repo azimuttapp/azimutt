@@ -1,7 +1,8 @@
 module PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Html exposing (Html, button, div, span, text)
@@ -49,13 +50,13 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
                 )
                 (\_ ->
                     div []
-                        [ Dropdown.btn "" (Zoom (Conf.canvas.zoom.min - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
-                        , Dropdown.btn "" (Zoom (0.25 - canvasZoom)) [ text "25%" ]
-                        , Dropdown.btn "" (Zoom (0.5 - canvasZoom)) [ text "50%" ]
-                        , Dropdown.btn "" (Zoom (1 - canvasZoom)) [ text "100%" ]
-                        , Dropdown.btn "" (Zoom (1.5 - canvasZoom)) [ text "150%" ]
-                        , Dropdown.btn "" (Zoom (2 - canvasZoom)) [ text "200%" ]
-                        , Dropdown.btn "" (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
+                        [ ContextMenu.btn "" (Zoom (Conf.canvas.zoom.min - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
+                        , ContextMenu.btn "" (Zoom (0.25 - canvasZoom)) [ text "25%" ]
+                        , ContextMenu.btn "" (Zoom (0.5 - canvasZoom)) [ text "50%" ]
+                        , ContextMenu.btn "" (Zoom (1 - canvasZoom)) [ text "100%" ]
+                        , ContextMenu.btn "" (Zoom (1.5 - canvasZoom)) [ text "150%" ]
+                        , ContextMenu.btn "" (Zoom (2 - canvasZoom)) [ text "200%" ]
+                        , ContextMenu.btn "" (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
                         ]
                 )
             , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus "" ]

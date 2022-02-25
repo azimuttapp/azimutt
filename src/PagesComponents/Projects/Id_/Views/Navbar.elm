@@ -3,7 +3,8 @@ module PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict
 import Either exposing (Either(..))
@@ -114,8 +115,8 @@ viewNavbarFeatures features htmlId openedDropdown =
                         (\btn ->
                             btn.action
                                 |> Either.reduce
-                                    (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", Dropdown.itemStyles ] ] [ btn.content ])
-                                    (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> Maybe.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
+                                    (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", ContextMenu.itemStyles ] ] [ btn.content ])
+                                    (\action -> ContextMenu.btn "flex justify-between" action (btn.content :: (btn.hotkey |> Maybe.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
                         )
                 )
         )

@@ -1,7 +1,8 @@
 module PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Attribute, Html, button, div, input, kbd, label, span, text)
@@ -60,7 +61,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                 (\m ->
                     if search.text == "" then
                         div []
-                            [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", Dropdown.itemDisabledStyles ] ]
+                            [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
                                 [ text "Type to search into tables (", Icon.solid Icon.Table "", text "), columns (", Icon.solid Tag "", text ") and relations (", Icon.solid ExternalLink "", text ")" ]
                             ]
 
@@ -69,7 +70,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
-                                            [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", Dropdown.itemDisabledStyles ] ]
+                                            [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
                                                 [ text "No result :(" ]
                                             ]
 
@@ -97,18 +98,18 @@ viewSearchResult searchId shownTables active index res =
                 let
                     commonAttrs : List (Attribute msg)
                     commonAttrs =
-                        [ role "menuitem", tabindex -1 ] ++ B.cond (active == index) [ id (searchId ++ "-active") ] []
+                        [ role "menuitem", tabindex -1 ] ++ B.cond (active == index) [ id (searchId ++ "-active-item") ] []
 
                     commonStyles : TwClass
                     commonStyles =
                         "flex w-full items-center"
                 in
                 if disabled then
-                    span (commonAttrs ++ [ css [ commonStyles, B.cond (active == index) Dropdown.itemDisabledActiveStyles Dropdown.itemDisabledStyles ] ])
+                    span (commonAttrs ++ [ css [ commonStyles, B.cond (active == index) ContextMenu.itemDisabledActiveStyles ContextMenu.itemDisabledStyles ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
 
                 else
-                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, focus [ "outline-none" ], B.cond (active == index) Dropdown.itemActiveStyles Dropdown.itemStyles ] ])
+                    button (commonAttrs ++ [ type_ "button", onMouseDown msg, css [ commonStyles, focus [ "outline-none" ], B.cond (active == index) ContextMenu.itemActiveStyles ContextMenu.itemStyles ] ])
                         ([ Icon.solid icon "mr-3" ] ++ content)
     in
     case res of

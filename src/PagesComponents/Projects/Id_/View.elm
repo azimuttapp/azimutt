@@ -1,20 +1,21 @@
 module PagesComponents.Projects.Id_.View exposing (viewProject)
 
 import Components.Atoms.Loader as Loader
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Dict
 import Gen.Route as Route
 import Html exposing (Html, div)
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, style)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 import PagesComponents.Projects.Id_.Views.Erd as Erd exposing (viewErd)
@@ -39,6 +40,7 @@ viewProject shared model =
         Loader.fullScreen
     , Lazy.lazy3 viewModal shared.zone shared.now model
     , Lazy.lazy viewToasts model.toasts
+    , Lazy.lazy viewContextMenu model.contextMenu
     ]
 
 
@@ -90,3 +92,18 @@ viewModal zone now model =
 viewToasts : List Toast.Model -> Html Msg
 viewToasts toasts =
     div [ class "az-toasts" ] [ Toast.container toasts ToastHide ]
+
+
+viewContextMenu : Maybe ContextMenu -> Html Msg
+viewContextMenu menu =
+    menu
+        |> Maybe.mapOrElse
+            (\m ->
+                div
+                    [ class "az-context-menu absolute"
+                    , style "left" (String.fromFloat m.position.left ++ "px")
+                    , style "top" (String.fromFloat m.position.top ++ "px")
+                    ]
+                    [ ContextMenu.menu "" BottomRight 0 m.show m.content ]
+            )
+            (div [ class "az-context-menu" ] [])
