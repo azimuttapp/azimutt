@@ -39,7 +39,7 @@ window.addEventListener('load', function() {
                 case 'SetClasses':      setClasses(port.html, port.body); break;
                 case 'AutofocusWithin': autofocusWithin(port.id); break;
                 case 'LoadProjects':    loadProjects(); break;
-                case 'SaveProject':     saveProject(port.project); break;
+                case 'SaveProject':     saveProject(port.project, loadProjects); break;
                 case 'DownloadFile':    downloadFile(port.filename, port.content); break;
                 case 'DropProject':     dropProject(port.project); break;
                 case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file, port.fileKind); break;
@@ -106,6 +106,22 @@ window.addEventListener('load', function() {
         })
     }
 
+    const localStorageProjectPrefix = 'project-'
+    function getLocalStorageProjects() {
+        return Object.keys(localStorage)
+            .filter(key => key.startsWith(localStorageProjectPrefix))
+            .map(key => safeParse(localStorage.getItem(key)))
+    }
+    function dropLocalStorageProject(project) {
+        localStorage.removeItem(localStorageProjectPrefix + project.id)
+    }
+    function loadAndMigrateLocaleStorageProjects() {
+        const projects = getLocalStorageProjects()
+        projects.forEach(p => saveProject(p, () => dropLocalStorageProject(p)))
+
+        return projects
+    }
+
     function loadProjects() {
         getDbObjectStore().then((store) => {
             let projects = []
@@ -116,26 +132,24 @@ window.addEventListener('load', function() {
                     cursor.continue()
                 }
                 else {
+                    projects = projects.concat(loadAndMigrateLocaleStorageProjects())
+
                     window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
                     sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
                 }
             }
         })
     }
-    function saveProject(project) {
+    function saveProject(project, callback) {
         getDbObjectStore('readwrite').then((store) => {
             const now = Date.now()
             project.updatedAt = now
 
-            const afterUpdate = function() {
-                loadProjects()
-            }
-
             if (!store.get(project.id)) {
                 project.createdAt = now
-                store.add(project).onsuccess = afterUpdate
+                store.add(project).onsuccess = callback
             } else {
-                store.put(project).onsuccess = afterUpdate
+                store.put(project).onsuccess = callback
             }
         })
     }
