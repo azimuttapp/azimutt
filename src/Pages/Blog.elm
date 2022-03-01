@@ -41,7 +41,9 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    [ "the-story-behind-azimutt" ]
+    [ "the-story-behind-azimutt"
+    , "how-to-explore-your-database-schema-with-azimutt"
+    ]
         |> (\slugs ->
                 ( { articles = slugs |> List.map (\slug -> ( slug, buildInitArticle slug )) }
                 , Cmd.batch
