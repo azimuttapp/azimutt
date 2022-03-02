@@ -54,6 +54,7 @@ viewSourcesSection : HtmlId -> Time.Zone -> Erd -> Html Msg
 viewSourcesSection htmlId zone erd =
     fieldset []
         [ legend [ class "font-medium text-gray-900" ] [ text "Project sources" ]
+        , p [ class "text-sm text-gray-500" ] [ text "Active sources are merged to create your project schema." ]
         , div [ class "mt-1 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
             ((erd.sources |> List.map (viewSource htmlId erd.project.id zone)) ++ [ viewAddSource (htmlId ++ "-new") erd.project.id ])
         ]
