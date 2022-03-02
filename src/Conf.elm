@@ -97,6 +97,7 @@ ids :
     , selectionBox : HtmlId
     , newLayoutDialog : HtmlId
     , findPathDialog : HtmlId
+    , schemaAnalysisDialog : HtmlId
     , helpDialog : HtmlId
     , confirmDialog : HtmlId
     , promptDialog : HtmlId
@@ -110,6 +111,7 @@ ids =
     , selectionBox = "selection-box"
     , newLayoutDialog = "new-layout-dialog"
     , findPathDialog = "find-path-dialog"
+    , schemaAnalysisDialog = "schema-analysis-dialog"
     , helpDialog = "help-dialog"
     , confirmDialog = "confirm-dialog"
     , promptDialog = "prompt-dialog"

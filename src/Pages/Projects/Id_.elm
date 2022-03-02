@@ -17,11 +17,10 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Task as T
 import Models.Project.CanvasProps as CanvasProps
-import Models.Project.Relation as Relation
 import Models.Project.Source as Source
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps
@@ -33,12 +32,13 @@ import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
+import PagesComponents.Projects.Id_.Updates.Source as Source
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPrompt, setShow, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPrompt, setSchemaAnalysis, setShow, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Shared exposing (StoredProjects(..))
 import Time
@@ -81,6 +81,7 @@ init =
       , newLayout = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
+      , schemaAnalysis = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , help = Nothing
@@ -177,6 +178,9 @@ update req now msg model =
         ToggleHoverColumn column on ->
             ( { model | hoverColumn = B.cond on (Just column) Nothing } |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
+        CreateRelation src ref ->
+            model |> mapErdMCmd (Source.addRelation src ref)
+
         ResetCanvas ->
             ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )
 
@@ -188,6 +192,12 @@ update req now msg model =
 
         FindPathMsg message ->
             model |> handleFindPath message
+
+        SchemaAnalysisMsg SAOpen ->
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Ports.track Track.openSchemaAnalysis ] )
+
+        SchemaAnalysisMsg SAClose ->
+            ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message
@@ -323,8 +333,8 @@ handleJsMessage req message model =
             ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotSourceId now sourceId src ref ->
-            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [ Relation.virtual src ref sourceId ] now ]))
-            , T.send (toastInfo "Created a user source to add the relation.")
+            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [] now ]))
+            , Cmd.batch [ T.send (toastInfo "Created a user source to add the relation."), T.send (CreateRelation src ref) ]
             )
 
         GotHotkey hotkey ->

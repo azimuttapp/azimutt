@@ -104,7 +104,7 @@ human now date =
 
 humanText : Int -> Int -> String -> String -> String
 humanText diff unit one many =
-    toFloat diff / toFloat unit |> round |> abs |> String.plural one one many |> humanDirection diff
+    toFloat diff / toFloat unit |> round |> abs |> String.inflect one one many |> humanDirection diff
 
 
 humanDirection : Int -> String -> String

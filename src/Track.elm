@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSettings, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSchemaAnalysis, openSettings, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
@@ -132,6 +132,11 @@ externalLink url =
 openFindPath : TrackEvent
 openFindPath =
     { name = "open-find-path", details = [], enabled = True }
+
+
+openSchemaAnalysis : TrackEvent
+openSchemaAnalysis =
+    { name = "open-schema-analysis", details = [], enabled = True }
 
 
 findPathResult : FindPathResult -> TrackEvent

@@ -1,6 +1,7 @@
-module Libs.Ned exposing (Ned, build, buildMap, fromDict, fromList, fromNel, fromNelMap, get, map, merge, singleton, singletonMap, size, toDict, values)
+module Libs.Ned exposing (Ned, build, buildMap, find, fromDict, fromList, fromNel, fromNelMap, get, map, merge, singleton, singletonMap, size, toDict, values)
 
 import Dict exposing (Dict)
+import Libs.Dict as Dict
 import Libs.Nel as Nel exposing (Nel)
 
 
@@ -24,6 +25,15 @@ get key ned =
 
     else
         ned.tail |> Dict.get key
+
+
+find : (comparable -> v -> Bool) -> Ned comparable v -> Maybe ( comparable, v )
+find predicate ned =
+    if ned.head |> (\( k, v ) -> predicate k v) then
+        Just ned.head
+
+    else
+        ned.tail |> Dict.find predicate
 
 
 size : Ned k a -> Int

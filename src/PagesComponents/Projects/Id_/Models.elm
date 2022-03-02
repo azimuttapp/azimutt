@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -45,6 +45,7 @@ type alias Model =
     , newLayout : Maybe LayoutDialog
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
+    , schemaAnalysis : Maybe SchemaAnalysisDialog
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
     , help : Maybe HelpDialog
@@ -83,6 +84,10 @@ type alias LayoutDialog =
 
 type alias VirtualRelation =
     { src : Maybe ColumnRef, mouse : Position }
+
+
+type alias SchemaAnalysisDialog =
+    { id : HtmlId }
 
 
 type alias ProjectSettingsDialog =
@@ -131,10 +136,12 @@ type Msg
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
+    | CreateRelation ColumnRef ColumnRef
     | ResetCanvas
     | LayoutMsg LayoutMsg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
+    | SchemaAnalysisMsg SchemaAnalysisMsg
     | ProjectSettingsMsg ProjectSettingsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
@@ -196,6 +203,11 @@ type FindPathMsg
     | FPToggleResult Int
     | FPSettingsUpdate FindPathSettings
     | FPClose
+
+
+type SchemaAnalysisMsg
+    = SAOpen
+    | SAClose
 
 
 type ProjectSettingsMsg
