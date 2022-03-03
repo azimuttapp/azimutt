@@ -87,7 +87,7 @@ type alias VirtualRelation =
 
 
 type alias SchemaAnalysisDialog =
-    { id : HtmlId }
+    { id : HtmlId, opened : HtmlId }
 
 
 type alias ProjectSettingsDialog =
@@ -207,6 +207,7 @@ type FindPathMsg
 
 type SchemaAnalysisMsg
     = SAOpen
+    | SASectionToggle HtmlId
     | SAClose
 
 
