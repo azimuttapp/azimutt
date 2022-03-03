@@ -17,4 +17,8 @@
     <loc>https://azimutt.app/blog/how-to-explore-your-database-schema-with-azimutt</loc>
     <lastmod>2022-03-01</lastmod>
   </url>
+  <url>
+    <loc>https://azimutt.app/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them</loc>
+    <lastmod>2022-03-07</lastmod>
+  </url>
 </urlset>

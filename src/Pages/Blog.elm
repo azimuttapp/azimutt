@@ -43,6 +43,8 @@ init : ( Model, Cmd Msg )
 init =
     [ "the-story-behind-azimutt"
     , "how-to-explore-your-database-schema-with-azimutt"
+
+    -- , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
     ]
         |> (\slugs ->
                 ( { articles = slugs |> List.map (\slug -> ( slug, buildInitArticle slug )) }

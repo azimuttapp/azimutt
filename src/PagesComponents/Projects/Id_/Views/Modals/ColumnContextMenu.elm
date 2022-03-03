@@ -13,9 +13,9 @@ viewColumnContextMenu : Int -> ColumnRef -> Html Msg
 viewColumnContextMenu index column =
     div []
         [ ContextMenu.btnHotkey (HideColumn column) "Hide column" (Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys)
-        , ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ]
         , ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ]
         , ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ]
+        , ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ]
         , ContextMenu.btn "" (MoveColumn column 100) [ text "Move bottom" ]
         ]
 
