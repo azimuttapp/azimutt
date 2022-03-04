@@ -24,7 +24,8 @@ type alias Subscribe =
 
 
 type alias Article =
-    { date : Time.Posix
+    { slug : String
+    , date : Time.Posix
     , link : String
     , title : String
     , excerpt : String
@@ -81,7 +82,8 @@ article model =
 
 articleDoc : Article
 articleDoc =
-    { date = "2020-03-16" |> DateTime.unsafeParse
+    { slug = "slug"
+    , date = "2020-03-16" |> DateTime.unsafeParse
     , link = "#"
     , title = "Boost your conversion rate"
     , excerpt = "Illo sint voluptas. Error voluptates culpa eligendi. Hic vel totam vitae illo. Non aliquid explicabo necessitatibus unde. Sed exercitationem placeat consectetur nulla deserunt vel. Iusto corrupti dicta."
@@ -95,17 +97,20 @@ modelDoc =
     , newsletter = Just Newsletter.formDoc
     , articles =
         [ articleDoc
-        , { date = "2020-03-10" |> DateTime.unsafeParse
+        , { slug = "slug"
+          , date = "2020-03-10" |> DateTime.unsafeParse
           , link = "#"
           , title = "How to use search engine optimization to drive sales"
           , excerpt = "Optio cum necessitatibus dolor voluptatum provident commodi et. Qui aperiam fugiat nemo cumque."
           }
-        , { date = "2020-02-12" |> DateTime.unsafeParse
+        , { slug = "slug"
+          , date = "2020-02-12" |> DateTime.unsafeParse
           , link = "#"
           , title = "Improve your customer experience"
           , excerpt = "Cupiditate maiores ullam eveniet adipisci in doloribus nulla minus. Voluptas iusto libero adipisci rem et corporis."
           }
-        , { date = "2020-01-29" |> DateTime.unsafeParse
+        , { slug = "slug"
+          , date = "2020-01-29" |> DateTime.unsafeParse
           , link = "#"
           , title = "Writing effective landing page copy"
           , excerpt = "Ipsum voluptates quia doloremque culpa qui eius. Id qui id officia molestias quaerat deleniti. Qui facere numquam autem libero quae cupiditate asperiores vitae cupiditate. Cumque id deleniti explicabo."

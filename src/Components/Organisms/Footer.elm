@@ -25,7 +25,7 @@ slice =
                 ]
             ]
         , p [ css [ "mt-8 text-base text-gray-400", md [ "mt-0 order-1" ] ] ]
-            [ text "© 2021 Azimutt" ]
+            [ text "© 2022 Azimutt" ]
         ]
 
 

@@ -1,4 +1,4 @@
-module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
+module Conf exposing (SampleSchema, blogPosts, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
@@ -151,3 +151,14 @@ hotkeys =
         , ( "cancel", [ { hotkey | key = "Escape" } ] )
         , ( "help", [ { hotkey | key = "?" } ] )
         ]
+
+
+blogPosts : List String
+blogPosts =
+    [ "the-story-behind-azimutt"
+    , "how-to-explore-your-database-schema-with-azimutt"
+
+    --, "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
+    --, "azimutt-analyze-your-database-schema-so-you-can-improve-it"
+    --, "entity-relationship-diagram-landscape-how-to-choose"
+    ]

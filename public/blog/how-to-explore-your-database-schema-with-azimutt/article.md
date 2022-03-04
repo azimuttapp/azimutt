@@ -1,7 +1,7 @@
 ---
 title: How to explore your database schema with Azimutt
 excerpt: Relational databases can be complex and hard to understand. Having a visual tool, like an entity relationship diagram (erd), help a lot. The best is when it's fully interactive and can follow your mind. Let's dig into Azimutt's abilities...
-category: features
+category: azimutt feature
 tags: entity relationship diagram
 author: loic
 published: 2022-03-01

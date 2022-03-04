@@ -29,6 +29,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 
 
 -- other possible analysis:
+--  - polymorphic relations
 --  - '_at' columns not of date type
 
 
@@ -72,7 +73,9 @@ viewAnalysis opened tables =
 viewFooter : Html Msg
 viewFooter =
     div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
-        [ Button.primary3 Tw.primary [ onClick (ModalClose (SchemaAnalysisMsg SAClose)) ] [ text "Close" ] ]
+        [ Button.primary3 Tw.primary [ class "ml-3", onClick (ModalClose (SchemaAnalysisMsg SAClose)) ] [ text "Close" ]
+        , span [] [ text "If you think about any improvement, ", extLink "https://github.com/azimuttapp/azimutt/discussions/75" [ class "link" ] [ text "please let us know" ], text "." ]
+        ]
 
 
 
@@ -170,7 +173,7 @@ viewMissingRelations htmlId opened ( missingRels, missingRefs ) =
                             [ div []
                                 [ text (TableId.show rel.ref.table)
                                 , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.ref.column "") ]
-                                , text " ← "
+                                , Icon.solid ArrowNarrowLeft "inline mx-1"
                                 , text (TableId.show rel.src.table)
                                 , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
                                 ]

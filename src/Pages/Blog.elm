@@ -1,6 +1,7 @@
 module Pages.Blog exposing (Model, Msg, page)
 
 import Components.Slices.Blog exposing (Article)
+import Conf
 import Gen.Params.Blog exposing (Params)
 import Gen.Route as Route
 import Http
@@ -41,11 +42,7 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    [ "the-story-behind-azimutt"
-    , "how-to-explore-your-database-schema-with-azimutt"
-
-    -- , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
-    ]
+    Conf.blogPosts
         |> (\slugs ->
                 ( { articles = slugs |> List.map (\slug -> ( slug, buildInitArticle slug )) }
                 , Cmd.batch
@@ -83,12 +80,13 @@ update msg model =
 
 defaultDate : Time.Posix
 defaultDate =
-    "2022-01-01" |> DateTime.unsafeParse
+    "2023-01-01" |> DateTime.unsafeParse
 
 
 buildArticle : String -> Content -> Article
 buildArticle slug content =
-    { date = content.published
+    { slug = slug
+    , date = content.published
     , link = Route.toHref (Route.Blog__Slug_ { slug = slug })
     , title = content.title
     , excerpt = content.excerpt
@@ -97,7 +95,8 @@ buildArticle slug content =
 
 buildInitArticle : String -> Article
 buildInitArticle slug =
-    { date = defaultDate
+    { slug = slug
+    , date = defaultDate
     , link = "#"
     , title = "Loading " ++ slug
     , excerpt = "Loading..."
@@ -106,7 +105,8 @@ buildInitArticle slug =
 
 buildBadArticle : String -> Nel String -> Article
 buildBadArticle slug errors =
-    { date = defaultDate
+    { slug = slug
+    , date = defaultDate
     , link = "#"
     , title = "Bad " ++ slug ++ " article"
     , excerpt = "Errors: " ++ (errors |> Nel.toList |> String.join ", ")
@@ -115,7 +115,8 @@ buildBadArticle slug errors =
 
 buildErrArticle : String -> Http.Error -> Article
 buildErrArticle slug error =
-    { date = defaultDate
+    { slug = slug
+    , date = defaultDate
     , link = "#"
     , title = slug ++ " in error"
     , excerpt = errorToString error

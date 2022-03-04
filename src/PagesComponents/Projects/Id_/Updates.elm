@@ -14,7 +14,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
-import Services.Lenses exposing (mapErdM, mapScreen, mapTableProps, setPosition, setSize)
+import Services.Lenses exposing (mapErdM, mapScreen, mapTableProps, mapTop, setPosition, setSize)
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -56,7 +56,7 @@ computeInitialPosition allProps viewport change hint =
                         position |> Position.add { left = size.width + 50, top = 0 } |> moveDownIfExists (allProps |> Dict.values) change.size
             )
             (if allProps |> Dict.filter (\_ p -> p.size /= Size.zero) |> Dict.isEmpty then
-                viewport |> Area.center |> Position.sub (change |> Area.center)
+                viewport |> Area.center |> Position.sub (change |> Area.center) |> mapTop (max viewport.position.top)
 
              else
                 { left = viewport.position.left + change.seeds.left * max 0 (viewport.size.width - change.size.width)

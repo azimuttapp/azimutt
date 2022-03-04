@@ -3,7 +3,7 @@ module PagesComponents.Blog.Slug.View exposing (viewArticle)
 import Components.Atoms.Markdown exposing (markdown)
 import Components.Slices.Content as Content
 import Html exposing (Html, div, li, text, ul)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (class, style)
 import Libs.Http as Http
 import Libs.Nel as Nel
 import PagesComponents.Blog.Slug.Models exposing (Model(..))
@@ -19,7 +19,7 @@ viewArticle model =
                 { section = "Loading"
                 , title = "Loading"
                 , introduction = Nothing
-                , content = [ div [ style "margin-top" "20rem", style "margin-bottom" "20rem", style "text-align" "center" ] [ text "Loading" ] ]
+                , content = [ div [ class "my-64 text-center", style "height" "5000px" ] [ text "Loading" ] ]
                 , dots = False
                 }
 
