@@ -94,6 +94,9 @@ parse statement =
      else if firstLine |> String.startsWith "CREATE DATABASE " then
         Ok (Ignored statement)
 
+     else if firstLine |> String.startsWith "DROP DATABASE " then
+        Ok (Ignored statement)
+
      else if firstLine |> String.startsWith "CREATE SCHEMA " then
         Ok (Ignored statement)
 

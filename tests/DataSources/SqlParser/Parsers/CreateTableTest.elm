@@ -36,6 +36,17 @@ suite =
             , testParse ( parseCreateTable, "with db" )
                 "CREATE TABLE db.schema.table (column int);"
                 { parsedTable | schema = Just "schema", table = "table", columns = Nel { parsedColumn | name = "column", kind = "int" } [] }
+            , testParse ( parseCreateTable, "with references" )
+                "create table students (id serial primary key, name varchar(50) not null, year integer not null, house_id integer references houses(id));"
+                { parsedTable
+                    | table = "students"
+                    , columns =
+                        Nel { parsedColumn | name = "id", kind = "serial", primaryKey = Just "students_pk_az" }
+                            [ { parsedColumn | name = "name", kind = "varchar(50)", nullable = False }
+                            , { parsedColumn | name = "year", kind = "integer", nullable = False }
+                            , { parsedColumn | name = "house_id", kind = "integer", foreignKey = Just ( Nothing, { schema = Nothing, table = "houses", column = Just "id" } ) }
+                            ]
+                }
             ]
         , describe "parseCreateTableColumn"
             [ testParseSql ( parseCreateTableColumn "", "basic" )
@@ -61,13 +72,16 @@ suite =
                 { parsedColumn | name = "id", kind = "bigint", nullable = False, primaryKey = Just "users_pk" }
             , testParseSql ( parseCreateTableColumn "", "with foreign key having schema, table & column" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES public.users.id"
-                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( "users_fk", { schema = Just "public", table = "users", column = Just "id" } ) }
+                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Just "public", table = "users", column = Just "id" } ) }
             , testParseSql ( parseCreateTableColumn "", "with foreign key having table & column" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES users.id"
-                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( "users_fk", { schema = Nothing, table = "users", column = Just "id" } ) }
+                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Nothing, table = "users", column = Just "id" } ) }
+            , testParseSql ( parseCreateTableColumn "", "with foreign key having table & column in parenthesis" )
+                "user_id bigint references users(id)"
+                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Nothing, { schema = Nothing, table = "users", column = Just "id" } ) }
             , testParseSql ( parseCreateTableColumn "", "with foreign key having only table" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES users"
-                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( "users_fk", { schema = Nothing, table = "users", column = Nothing } ) }
+                { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Nothing, table = "users", column = Nothing } ) }
             , testParseSql ( parseCreateTableColumn "", "with check" )
                 "state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable'))"
                 { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
