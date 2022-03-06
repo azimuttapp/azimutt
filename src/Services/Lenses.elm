@@ -1,4 +1,4 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapColumnBasicTypes, mapColumns, mapContextMenuM, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPath, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProject, mapProjectImportCmd, mapProjectImportM, mapProjectImportMCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapSampleSelectionM, mapSampleSelectionMCmd, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapTop, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setConfirm, setContextMenu, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIgnoredColumns, setIgnoredTables, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setSampleSelection, setSchemaAnalysis, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShow, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setTop, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
+module Services.Lenses exposing (mapActive, mapCanvas, mapChecks, mapColumnBasicTypes, mapColumns, mapComment, mapCommentM, mapContextMenuM, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPath, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapIndexes, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapPrimaryKey, mapPrimaryKeyM, mapProject, mapProjectImportCmd, mapProjectImportM, mapProjectImportMCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapSampleSelectionM, mapSampleSelectionMCmd, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapTop, mapUniques, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setChecks, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setComment, setConfirm, setContextMenu, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIgnoredColumns, setIgnoredTables, setIndexes, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setOrigins, setParsing, setPosition, setPrimaryKey, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setSampleSelection, setSchemaAnalysis, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShow, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setTop, setUniques, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -35,6 +35,16 @@ mapCanvas =
     map .canvas setCanvas
 
 
+setChecks : v -> { item | checks : v } -> { item | checks : v }
+setChecks =
+    set .checks (\value item -> { item | checks = value })
+
+
+mapChecks : (v -> v) -> { item | checks : v } -> { item | checks : v }
+mapChecks =
+    map .checks setChecks
+
+
 setColumn : v -> { item | column : v } -> { item | column : v }
 setColumn =
     set .column (\value item -> { item | column = value })
@@ -63,6 +73,21 @@ mapColumnBasicTypes =
 setColumnOrder : v -> { item | columnOrder : v } -> { item | columnOrder : v }
 setColumnOrder =
     set .columnOrder (\value item -> { item | columnOrder = value })
+
+
+setComment : v -> { item | comment : v } -> { item | comment : v }
+setComment =
+    set .comment (\value item -> { item | comment = value })
+
+
+mapComment : (v -> v) -> { item | comment : v } -> { item | comment : v }
+mapComment =
+    map .comment setComment
+
+
+mapCommentM : (v -> v) -> { item | comment : Maybe v } -> { item | comment : Maybe v }
+mapCommentM =
+    mapM .comment setComment
 
 
 setConfirm : v -> { item | confirm : v } -> { item | confirm : v }
@@ -188,6 +213,16 @@ setIgnoredColumns =
 setIgnoredTables : v -> { item | ignoredTables : v } -> { item | ignoredTables : v }
 setIgnoredTables =
     set .ignoredTables (\value item -> { item | ignoredTables = value })
+
+
+setIndexes : v -> { item | indexes : v } -> { item | indexes : v }
+setIndexes =
+    set .indexes (\value item -> { item | indexes = value })
+
+
+mapIndexes : (v -> v) -> { item | indexes : v } -> { item | indexes : v }
+mapIndexes =
+    map .indexes setIndexes
 
 
 setInput : v -> { item | input : v } -> { item | input : v }
@@ -320,6 +355,11 @@ mapOpenedDialogs =
     map .openedDialogs setOpenedDialogs
 
 
+setOrigins : v -> { item | origins : v } -> { item | origins : v }
+setOrigins =
+    set .origins (\value item -> { item | origins = value })
+
+
 setParsing : v -> { item | parsing : v } -> { item | parsing : v }
 setParsing =
     set .parsing (\value item -> { item | parsing = value })
@@ -343,6 +383,21 @@ setPosition =
 mapPosition : (v -> v) -> { item | position : v } -> { item | position : v }
 mapPosition =
     map .position setPosition
+
+
+setPrimaryKey : v -> { item | primaryKey : v } -> { item | primaryKey : v }
+setPrimaryKey =
+    set .primaryKey (\value item -> { item | primaryKey = value })
+
+
+mapPrimaryKey : (v -> v) -> { item | primaryKey : v } -> { item | primaryKey : v }
+mapPrimaryKey =
+    map .primaryKey setPrimaryKey
+
+
+mapPrimaryKeyM : (v -> v) -> { item | primaryKey : Maybe v } -> { item | primaryKey : Maybe v }
+mapPrimaryKeyM =
+    mapM .primaryKey setPrimaryKey
 
 
 setProject : v -> { item | project : v } -> { item | project : v }
@@ -728,6 +783,16 @@ setTop =
 mapTop : (v -> v) -> { item | top : v } -> { item | top : v }
 mapTop =
     map .top setTop
+
+
+setUniques : v -> { item | uniques : v } -> { item | uniques : v }
+setUniques =
+    set .uniques (\value item -> { item | uniques = value })
+
+
+mapUniques : (v -> v) -> { item | uniques : v } -> { item | uniques : v }
+mapUniques =
+    map .uniques setUniques
 
 
 setUsedLayout : v -> { item | usedLayout : v } -> { item | usedLayout : v }
