@@ -8,6 +8,7 @@ import Gen.Params.Projects.Id_ exposing (Params)
 import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
+import Libs.Delta as Delta
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.List as List
@@ -16,11 +17,10 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Task as T
 import Models.Project.CanvasProps as CanvasProps
-import Models.Project.Relation as Relation
 import Models.Project.Source as Source
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelationMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps
@@ -32,12 +32,13 @@ import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
+import PagesComponents.Projects.Id_.Updates.Source as Source
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.View exposing (viewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapCanvas, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpenedDialogs, mapOpenedDropdown, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setCursorMode, setDragging, setIsOpen, setOpenedPopover, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSchemaAnalysisM, mapSearch, mapShownTables, mapTableProps, mapToasts, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPrompt, setSchemaAnalysis, setShow, setShownTables, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Shared exposing (StoredProjects(..))
 import Time
@@ -80,15 +81,18 @@ init =
       , newLayout = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
+      , schemaAnalysis = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , help = Nothing
       , openedDropdown = ""
       , openedPopover = ""
+      , contextMenu = Nothing
       , dragging = Nothing
       , toastIdx = 0
       , toasts = []
       , confirm = Nothing
+      , prompt = Nothing
       , openedDialogs = []
       }
     , Cmd.batch
@@ -115,6 +119,9 @@ update req now msg model =
 
         SaveProject ->
             ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+
+        RenameProject name ->
+            ( model |> mapErdM (mapProject (setName name)), Cmd.none )
 
         ShowTable id hint ->
             model |> mapErdMCmd (showTable id hint)
@@ -147,7 +154,14 @@ update req now msg model =
             ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapShowHiddenColumns not))), Cmd.none )
 
         SelectTable tableId ctrl ->
-            ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
+            if model.dragging |> Maybe.any DragState.hasMoved then
+                ( model, Cmd.none )
+
+            else
+                ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
+
+        TableMove id delta ->
+            ( model |> mapErdM (mapTableProps (\tables -> tables |> Dict.map (\_ t -> B.cond (t.id == id) (t |> ErdTableProps.mapPosition (\p -> delta |> Delta.move p)) t))), Cmd.none )
 
         TableOrder id index ->
             ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
@@ -155,11 +169,17 @@ update req now msg model =
         SortColumns id kind ->
             ( model |> mapErdM (sortColumns id kind), Cmd.none )
 
+        MoveColumn column position ->
+            ( model |> mapErdM (mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position)))), Cmd.none )
+
         ToggleHoverTable table on ->
             ( { model | hoverTable = B.cond on (Just table) Nothing } |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
 
         ToggleHoverColumn column on ->
             ( { model | hoverColumn = B.cond on (Just column) Nothing } |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
+
+        CreateRelation src ref ->
+            model |> mapErdMCmd (Source.addRelation src ref)
 
         ResetCanvas ->
             ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )
@@ -172,6 +192,15 @@ update req now msg model =
 
         FindPathMsg message ->
             model |> handleFindPath message
+
+        SchemaAnalysisMsg SAOpen ->
+            ( model |> setSchemaAnalysis (Just { id = Conf.ids.schemaAnalysisDialog, opened = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.schemaAnalysisDialog), Ports.track Track.openSchemaAnalysis ] )
+
+        SchemaAnalysisMsg (SASectionToggle section) ->
+            ( model |> mapSchemaAnalysisM (mapOpened (\opened -> B.cond (opened == section) "" section)), Cmd.none )
+
+        SchemaAnalysisMsg SAClose ->
+            ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message
@@ -199,6 +228,15 @@ update req now msg model =
 
         PopoverSet id ->
             ( model |> setOpenedPopover id, Cmd.none )
+
+        ContextMenuCreate content event ->
+            ( model |> setContextMenu (Just { content = content, position = event.position, show = False }), T.sendAfter 1 ContextMenuShow )
+
+        ContextMenuShow ->
+            ( model |> mapContextMenuM (setShow True), Cmd.none )
+
+        ContextMenuClose ->
+            ( model |> setContextMenu Nothing, Cmd.none )
 
         DragStart id pos ->
             model.dragging
@@ -239,6 +277,15 @@ update req now msg model =
 
         ConfirmAnswer answer cmd ->
             ( model |> setConfirm Nothing, B.cond answer cmd Cmd.none )
+
+        PromptOpen prompt input ->
+            ( model |> setPrompt (Just { id = Conf.ids.promptDialog, content = prompt, input = input }), T.sendAfter 1 (ModalOpen Conf.ids.promptDialog) )
+
+        PromptUpdate input ->
+            ( model |> mapPromptM (setInput input), Cmd.none )
+
+        PromptAnswer cmd ->
+            ( model |> setPrompt Nothing, cmd )
 
         ModalOpen id ->
             ( model |> mapOpenedDialogs (\dialogs -> id :: dialogs), Ports.autofocusWithin id )
@@ -282,19 +329,30 @@ handleJsMessage req message model =
                 )
             )
 
-        GotLocalFile now projectId sourceId file _ content ->
+        GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotRemoteFile now projectId sourceId url content sample ->
             ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotSourceId now sourceId src ref ->
-            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [ Relation.virtual src ref sourceId ] now ]))
-            , T.send (toastInfo "Created a user source to add the relation.")
+            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [] now ]))
+            , Cmd.batch [ T.send (toastInfo "Created a user source to add the relation."), T.send (CreateRelation src ref) ]
             )
 
         GotHotkey hotkey ->
             handleHotkey model hotkey
+
+        GotKeyHold key start ->
+            if key == "Space" then
+                if start then
+                    ( model |> setCursorMode CursorDrag, Cmd.none )
+
+                else
+                    ( model |> setCursorMode CursorSelect, Cmd.none )
+
+            else
+                ( model, Cmd.none )
 
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
@@ -309,6 +367,7 @@ subscriptions model =
     Sub.batch
         ([ Ports.onJsMessage JsMessage ]
             ++ B.cond (model.openedDropdown == "") [] [ Browser.Events.onClick (targetIdDecoder |> Decode.map (\id -> B.cond (id == model.openedDropdown) (Noop "dropdown opened twice") (DropdownToggle id))) ]
+            ++ B.cond (model.contextMenu == Nothing) [] [ Browser.Events.onClick (Decode.succeed ContextMenuClose) ]
             ++ (model.dragging
                     |> Maybe.mapOrElse
                         (\_ ->

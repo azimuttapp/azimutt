@@ -1,7 +1,8 @@
 module PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
 import Dict exposing (Dict)
 import Gen.Route as Route
@@ -20,7 +21,7 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
 
@@ -43,9 +44,12 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ [ Dropdown.btn "" SaveProject [ text "Save project" ] ] ]
-                    ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
-                    ++ [ [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
+                (([ [ ContextMenu.btn "" SaveProject [ text "Save project" ]
+                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
+                    ]
+                  ]
+                    ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> ContextMenu.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
+                    ++ [ [ ContextMenu.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)
@@ -78,12 +82,12 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
                 (List.prependOn usedLayout
                     (\l ->
                         div [ role "none", class "py-1" ]
-                            [ Dropdown.btn "" (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
-                            , Dropdown.btn "" (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
+                            [ ContextMenu.btn "" (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
+                            , ContextMenu.btn "" (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
                             ]
                     )
                     [ div [ role "none", class "py-1" ]
-                        [ Dropdown.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
+                        [ ContextMenu.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
                     , div [ role "none", class "py-1" ]
                         (layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
                     ]
@@ -93,7 +97,7 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
 
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
-    span [ role "menuitem", tabindex -1, css [ "flex", Dropdown.itemStyles ] ]
+    span [ role "menuitem", tabindex -1, css [ "flex", ContextMenu.itemStyles ] ]
         [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ focus [ "outline-none" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
         , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ "mx-2", focus [ "outline-none" ] ] ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left", focus [ "outline-none" ] ] ]

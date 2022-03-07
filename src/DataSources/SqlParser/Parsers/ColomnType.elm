@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Parsers.ColomnType exposing (ParsedColumnType(..), parseColumnType, toString)
+module DataSources.SqlParser.Parsers.ColomnType exposing (ParsedColumnType(..), parse, toString)
 
 import DataSources.SqlParser.Utils.Types exposing (SqlColumnType)
 import Libs.Regex as Regex
@@ -19,18 +19,18 @@ type ParsedColumnType
     | Binary
 
 
-parseColumnType : SqlColumnType -> ParsedColumnType
-parseColumnType kind =
+parse : SqlColumnType -> ParsedColumnType
+parse kind =
     if kind |> String.endsWith "[]" then
-        Array (parseColumnType (kind |> String.dropRight 2))
+        Array (parse (kind |> String.dropRight 2))
 
-    else if kind == "text" || (kind |> Regex.match "character(\\(\\d+\\))?") then
+    else if (kind |> Regex.match "^(tiny|medium|long)?text$") || (kind |> Regex.match "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.match "^varchar ?(\\(\\d+\\))?$") then
         String
 
-    else if kind == "integer" || kind == "bigint" || kind == "smallint" then
+    else if kind == "integer" || kind == "serial" || (kind |> Regex.match "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
         Int
 
-    else if kind == "double precision" || (kind |> Regex.match "numeric(\\(\\d+,\\d+\\))?") then
+    else if kind == "double precision" || (kind |> Regex.match "^numeric ?(\\(\\d+,\\d+\\))?$") then
         Float
 
     else if kind == "boolean" then
@@ -39,13 +39,13 @@ parseColumnType kind =
     else if kind == "date" then
         Date
 
-    else if kind |> Regex.match "^time(\\(\\d+\\))?( with(out)? time zone)?$" then
+    else if kind |> Regex.match "^time ?(\\(\\d+\\))?( with(out)? time zone)?$" then
         Time
 
-    else if kind |> Regex.match "^timestamp(\\(\\d+\\))?( with(out)? time zone)?$" then
+    else if kind == "datetime" || (kind |> Regex.match "^timestamp ?(\\(\\d+\\))?( with(out)? time zone)?$") then
         DateTime
 
-    else if kind |> Regex.match "^interval(\\(\\d+\\))?$" then
+    else if kind |> Regex.match "^interval ?(\\(\\d+\\))?$" then
         Interval
 
     else if kind == "uuid" then

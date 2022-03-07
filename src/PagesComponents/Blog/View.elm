@@ -10,6 +10,7 @@ import Libs.Html.Attributes exposing (css)
 import Libs.Tailwind exposing (hover)
 import PagesComponents.Blog.Models exposing (Model)
 import PagesComponents.Helpers as Helpers
+import Time
 
 
 viewBlog : Model -> List (Html msg)
@@ -28,8 +29,13 @@ viewBlog model =
         ]
     , div [ css [ "mt-12" ] ] [ Newsletter.centered Conf.newsletter ]
     , hr [ css [ "w-full bg-gray-100 my-12" ], style "height" "1px" ] []
-    , div [ css [ "mt-16 mb-24 max-w-prose mx-auto" ] ] (model.articles |> List.map Tuple.second |> List.map Blog.article |> List.intersperse (hr [ css [ "w-full bg-gray-100 my-12" ], style "height" "1px" ] []))
-
-    -- add it when out of initial page, Helpers.newsletterSection
+    , div [ css [ "mt-16 mb-24 max-w-prose mx-auto" ] ]
+        (model.articles
+            |> List.map Tuple.second
+            |> List.sortBy (\a -> 0 - Time.posixToMillis a.date)
+            |> List.map Blog.article
+            |> List.intersperse (hr [ css [ "w-full bg-gray-100 my-12" ], style "height" "1px" ] [])
+        )
+    , Helpers.newsletterSection
     , Helpers.publicFooter
     ]

@@ -10,30 +10,30 @@ import Models.Project.Table as Table exposing (TableLike)
 
 
 type ColumnOrder
-    = SqlOrder
-    | Property
-    | Name
-    | Type
+    = OrderByIndex
+    | OrderByProperty
+    | OderByName
+    | OderByType
 
 
 all : List ColumnOrder
 all =
-    [ Property, Name, SqlOrder, Type ]
+    [ OrderByProperty, OderByName, OrderByIndex, OderByType ]
 
 
 show : ColumnOrder -> String
 show order =
     case order of
-        SqlOrder ->
+        OrderByIndex ->
             "By SQL order"
 
-        Property ->
+        OrderByProperty ->
             "By property"
 
-        Name ->
+        OderByName ->
             "By name"
 
-        Type ->
+        OderByType ->
             "By type"
 
 
@@ -45,10 +45,10 @@ sortBy order table relations columns =
             relations |> Relation.withTableSrc table.id
     in
     case order of
-        SqlOrder ->
+        OrderByIndex ->
             columns |> List.sortBy .index
 
-        Property ->
+        OrderByProperty ->
             columns
                 |> List.sortBy
                     (\c ->
@@ -68,10 +68,10 @@ sortBy order table relations columns =
                             ( 4 + sortOffset c.nullable, c.name |> String.toLower )
                     )
 
-        Name ->
+        OderByName ->
             columns |> List.sortBy (\c -> c.name |> String.toLower)
 
-        Type ->
+        OderByType ->
             columns |> List.sortBy (\c -> c.kind |> String.toLower |> Column.withNullable c)
 
 
@@ -87,16 +87,16 @@ sortOffset b =
 toString : ColumnOrder -> String
 toString order =
     case order of
-        SqlOrder ->
+        OrderByIndex ->
             "sql"
 
-        Property ->
+        OrderByProperty ->
             "property"
 
-        Name ->
+        OderByName ->
             "name"
 
-        Type ->
+        OderByType ->
             "type"
 
 
@@ -104,19 +104,19 @@ fromString : String -> ColumnOrder
 fromString order =
     case order of
         "sql" ->
-            SqlOrder
+            OrderByIndex
 
         "property" ->
-            Property
+            OrderByProperty
 
         "name" ->
-            Name
+            OderByName
 
         "type" ->
-            Type
+            OderByType
 
         _ ->
-            SqlOrder
+            OrderByIndex
 
 
 encode : ColumnOrder -> Value

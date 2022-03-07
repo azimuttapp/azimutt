@@ -59,10 +59,8 @@ create id name source =
 
 compute : Project -> Project
 compute project =
-    { project
-        | tables = project.sources |> computeTables project.settings
-        , relations = project.sources |> computeRelations
-    }
+    (project.sources |> computeTables project.settings)
+        |> (\tables -> { project | tables = tables, relations = project.sources |> computeRelations tables })
 
 
 computeTables : ProjectSettings -> List Source -> Dict TableId Table
@@ -86,14 +84,22 @@ shouldDisplayTable settings table =
 
         isTableRemoved : Bool
         isTableRemoved =
-            table |> ProjectSettings.removeTable settings.removedTables
+            table.id |> ProjectSettings.removeTable settings.removedTables
     in
     not isSchemaRemoved && not isViewRemoved && not isTableRemoved
 
 
-computeRelations : List Source -> List Relation
-computeRelations sources =
-    sources |> List.filter .enabled |> List.map .relations |> List.foldr (List.merge .id Relation.merge) []
+computeRelations : Dict TableId Table -> List Source -> List Relation
+computeRelations tables sources =
+    sources
+        |> List.filter .enabled
+        |> List.map (\s -> s.relations |> List.filter (shouldDisplayRelation tables))
+        |> List.foldr (List.merge .id Relation.merge) []
+
+
+shouldDisplayRelation : Dict TableId Table -> Relation -> Bool
+shouldDisplayRelation tables relation =
+    (tables |> Dict.member relation.src.table) && (tables |> Dict.member relation.ref.table)
 
 
 currentVersion : Int

@@ -118,4 +118,4 @@ buildRelation ( fromTable, fromCol ) ( toTable, toCol ) =
 
 settings : FindPathSettings
 settings =
-    FindPathSettings 10 [] []
+    FindPathSettings 10 "" ""

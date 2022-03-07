@@ -1,7 +1,9 @@
-module PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
+module PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm, toastError)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import Components.Molecules.Toast as Toast exposing (Content(..))
 import Html exposing (Html)
+import Libs.Models exposing (Millis)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw
 import Libs.Task as T
@@ -20,8 +22,11 @@ type alias Model =
     , openedCollapse : HtmlId
     , projects : List Project
     , selectedTab : Tab
-    , sqlSourceUpload : SqlSourceUpload Msg
-    , projectImport : ProjectImport
+    , sqlSourceUpload : Maybe (SqlSourceUpload Msg)
+    , projectImport : Maybe ProjectImport
+    , sampleSelection : Maybe ProjectImport
+    , toastIdx : Int
+    , toasts : List Toast.Model
     , confirm : Maybe ConfirmDialog
     , openedDialogs : List HtmlId
     }
@@ -43,18 +48,30 @@ type Msg
     | ToggleCollapse HtmlId
     | SelectTab Tab
     | SqlSourceUploadMsg SqlSourceUploadMsg
-    | DropSchema
-    | CreateProject ProjectId Source
+    | SqlSourceUploadDrop
+    | SqlSourceUploadCreate ProjectId Source
     | ProjectImportMsg ProjectImportMsg
-    | DropProject
-    | ImportProject Project
-    | ImportNewProject ProjectId Project
+    | ProjectImportDrop
+    | ProjectImportCreate Project
+    | ProjectImportCreateNew ProjectId Project
+    | SampleSelectMsg ProjectImportMsg
+    | SampleSelectDrop
+    | SampleSelectCreate Project
+    | ToastAdd (Maybe Millis) Toast.Content
+    | ToastShow (Maybe Millis) String
+    | ToastHide String
+    | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
     | Noop
+
+
+toastError : String -> Msg
+toastError message =
+    ToastAdd Nothing (Simple { color = Tw.red, icon = Exclamation, title = message, message = "" })
 
 
 confirm : String -> Html Msg -> Msg -> Msg

@@ -139,7 +139,7 @@ computeSchema erd =
 
         relations : List Relation
         relations =
-            erd.sources |> Project.computeRelations
+            erd.sources |> Project.computeRelations tables
 
         relationsByTable : Dict TableId (List Relation)
         relationsByTable =

@@ -1,11 +1,12 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
-import Libs.Html.Events exposing (WheelEvent)
+import Libs.Delta exposing (Delta)
+import Libs.Html.Events exposing (PointerEvent, WheelEvent)
 import Libs.Models exposing (Millis, ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -16,6 +17,7 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
@@ -28,7 +30,7 @@ import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDial
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Ports exposing (JsMsg)
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
-import Shared exposing (Confirm)
+import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
@@ -43,6 +45,7 @@ type alias Model =
     , newLayout : Maybe LayoutDialog
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
+    , schemaAnalysis : Maybe SchemaAnalysisDialog
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
     , help : Maybe HelpDialog
@@ -50,10 +53,12 @@ type alias Model =
     -- global attrs
     , openedDropdown : HtmlId
     , openedPopover : HtmlId
+    , contextMenu : Maybe ContextMenu
     , dragging : Maybe DragState
     , toastIdx : Int
     , toasts : List Toast.Model
     , confirm : Maybe ConfirmDialog
+    , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
     }
 
@@ -81,6 +86,10 @@ type alias VirtualRelation =
     { src : Maybe ColumnRef, mouse : Position }
 
 
+type alias SchemaAnalysisDialog =
+    { id : HtmlId, opened : HtmlId }
+
+
 type alias ProjectSettingsDialog =
     { id : HtmlId }
 
@@ -93,14 +102,23 @@ type alias HelpDialog =
     { id : HtmlId, openedSection : String }
 
 
+type alias ContextMenu =
+    { content : Html Msg, position : Position, show : Bool }
+
+
 type alias ConfirmDialog =
     { id : HtmlId, content : Confirm Msg }
+
+
+type alias PromptDialog =
+    { id : HtmlId, content : Prompt Msg, input : String }
 
 
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | SaveProject
+    | RenameProject ProjectName
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables
@@ -112,14 +130,18 @@ type Msg
     | HideColumns TableId String
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
+    | TableMove TableId Delta
     | TableOrder TableId Int
     | SortColumns TableId ColumnOrder
+    | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
+    | CreateRelation ColumnRef ColumnRef
     | ResetCanvas
     | LayoutMsg LayoutMsg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
+    | SchemaAnalysisMsg SchemaAnalysisMsg
     | ProjectSettingsMsg ProjectSettingsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
@@ -130,6 +152,9 @@ type Msg
     | Focus HtmlId
     | DropdownToggle HtmlId
     | PopoverSet HtmlId
+    | ContextMenuCreate (Html Msg) PointerEvent
+    | ContextMenuShow
+    | ContextMenuClose
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position
@@ -140,6 +165,9 @@ type Msg
     | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
+    | PromptOpen (Prompt Msg) String
+    | PromptUpdate String
+    | PromptAnswer (Cmd Msg)
     | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
@@ -177,6 +205,12 @@ type FindPathMsg
     | FPClose
 
 
+type SchemaAnalysisMsg
+    = SAOpen
+    | SASectionToggle HtmlId
+    | SAClose
+
+
 type ProjectSettingsMsg
     = PSOpen
     | PSClose
@@ -194,6 +228,7 @@ type ProjectSettingsMsg
     | PSHiddenColumnsPropsToggle
     | PSHiddenColumnsRelationsToggle
     | PSColumnOrderUpdate ColumnOrder
+    | PSColumnBasicTypesToggle
 
 
 type HelpMsg
@@ -233,6 +268,20 @@ confirm title content message =
         , cancel = "Nope"
         , onConfirm = T.send message
         }
+
+
+prompt : String -> Html Msg -> String -> (String -> Msg) -> Msg
+prompt title content input message =
+    PromptOpen
+        { color = Tw.blue
+        , icon = QuestionMarkCircle
+        , title = title
+        , message = content
+        , confirm = "Ok"
+        , cancel = "Cancel"
+        , onConfirm = message >> T.send
+        }
+        input
 
 
 resetCanvas : Msg

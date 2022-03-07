@@ -1,9 +1,11 @@
 module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..), MenuItem)
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), MenuItem)
+import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
 import Components.Molecules.Tooltip as Tooltip
+import Dict
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
@@ -13,15 +15,16 @@ import Html.Attributes exposing (class, id, style, tabindex, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
-import Libs.Bool as B
+import Libs.Bool as Bool
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
-import Libs.Html.Events exposing (onPointerUp)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
@@ -99,6 +102,7 @@ type alias Actions msg =
     , hoverColumn : String -> Bool -> msg
     , clickHeader : Bool -> msg
     , clickColumn : Maybe (String -> Position -> msg)
+    , contextMenuColumn : Int -> String -> PointerEvent -> msg
     , dblClickColumn : String -> msg
     , clickRelations : List Relation -> Bool -> msg
     , hoverHiddenColumns : HtmlId -> msg
@@ -115,9 +119,9 @@ table model =
         , onMouseLeave (model.actions.hoverTable False)
         , css
             [ "inline-block bg-white rounded-lg"
-            , B.cond model.state.isHover "shadow-lg" "shadow-md"
-            , B.cond model.state.selected ("ring-4 " ++ ring_500 model.state.color) ""
-            , B.cond model.state.dragging "cursor-move" ""
+            , Bool.cond model.state.isHover "shadow-lg" "shadow-md"
+            , Bool.cond model.state.selected ("ring-4 " ++ ring_500 model.state.color) ""
+            , Bool.cond model.state.dragging "cursor-move" ""
             ]
         ]
         [ Lazy.lazy viewHeader model
@@ -145,7 +149,7 @@ viewHeader model =
         [ css
             [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b border-b-default-200"
             , border_500 model.state.color
-            , bg_50 (B.cond model.state.isHover model.state.color Tw.default)
+            , bg_50 (Bool.cond model.state.isHover model.state.color Tw.default)
             ]
         ]
         [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), class "flex-grow text-center" ]
@@ -171,7 +175,7 @@ viewHeader model =
                     , Icon.solid DotsVertical ""
                     ]
             )
-            (\_ -> div [ class "z-max" ] (model.settings |> List.map Dropdown.submenuButton))
+            (\_ -> div [ class "z-max" ] (model.settings |> List.map ContextMenu.btnSubmenu))
         ]
 
 
@@ -182,7 +186,7 @@ viewColumns model =
         count =
             (model.columns |> List.length) + (model.hiddenColumns |> List.length)
     in
-    Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy3 viewColumn model (i + 1 == count) c )))
+    Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy4 viewColumn model (i + 1 == count) i c )))
 
 
 viewHiddenColumns : Model msg -> Html msg
@@ -203,7 +207,7 @@ viewHiddenColumns model =
             popover : Html msg
             popover =
                 if showPopover then
-                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md z-max" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
+                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md z-max" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy4 viewColumn model False -1 c )))
 
                 else
                     div [] []
@@ -211,7 +215,7 @@ viewHiddenColumns model =
             hiddenColumns : Html msg
             hiddenColumns =
                 if model.state.showHiddenColumns then
-                    Keyed.node "div" [ css [ "pt-2 rounded-lg" ] ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy3 viewColumn model False c )))
+                    Keyed.node "div" [ css [ "pt-2 rounded-lg" ] ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy4 viewColumn model False -1 c )))
 
                 else
                     div [] []
@@ -229,16 +233,17 @@ viewHiddenColumns model =
             ]
 
 
-viewColumn : Model msg -> Bool -> Column -> Html msg
-viewColumn model isLast column =
+viewColumn : Model msg -> Bool -> Int -> Column -> Html msg
+viewColumn model isLast index column =
     div
         ([ onMouseEnter (model.actions.hoverColumn column.name True)
          , onMouseLeave (model.actions.hoverColumn column.name False)
+         , onContextMenu (model.actions.contextMenuColumn index column.name)
          , onDoubleClick (model.actions.dblClickColumn column.name)
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap"
-            , B.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
-            , B.cond isLast "rounded-b-lg" ""
+            , Bool.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
+            , Bool.cond isLast "rounded-b-lg" ""
             ]
          ]
             ++ (model.actions.clickColumn |> Maybe.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
@@ -251,26 +256,38 @@ viewColumn model isLast column =
 
 viewColumnIcon : Model msg -> Column -> Html msg
 viewColumnIcon model column =
+    let
+        tooltip : String
+        tooltip =
+            [ Bool.maybe column.isPrimaryKey "Primary key"
+            , Bool.maybe (column.outRelations |> List.nonEmpty) ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) ""))
+            , Bool.maybe (column.uniques |> List.nonEmpty) ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", "))
+            , Bool.maybe (column.indexes |> List.nonEmpty) ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", "))
+            , Bool.maybe (column.checks |> List.nonEmpty) ("In checks " ++ (column.checks |> List.map .name |> String.join ", "))
+            ]
+                |> List.filterMap (\a -> a)
+                |> String.join ", "
+    in
     if column.outRelations |> List.nonEmpty then
         if column.outRelations |> List.filter .tableShown |> List.nonEmpty then
             div [ css [ "cursor-pointer" ] ]
-                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
+                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
             div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.clickRelations column.outRelations True) ] ++ track Track.showTableWithForeignKey)
-                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) "")) ]
+                [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.isPrimaryKey then
-        div [] [ Icon.solid Key "w-4 h-4" |> Tooltip.t "Primary key" ]
+        div [] [ Icon.solid Key "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.uniques |> List.nonEmpty then
-        div [] [ Icon.solid FingerPrint "w-4 h-4" |> Tooltip.t ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", ")) ]
+        div [] [ Icon.solid FingerPrint "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.indexes |> List.nonEmpty then
-        div [] [ Icon.solid SortDescending "w-4 h-4" |> Tooltip.t ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", ")) ]
+        div [] [ Icon.solid SortDescending "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.checks |> List.nonEmpty then
-        div [] [ Icon.solid Check "w-4 h-4" |> Tooltip.t ("In checks " ++ (column.checks |> List.map .name |> String.join ", ")) ]
+        div [] [ Icon.solid Check "w-4 h-4" |> Tooltip.t tooltip ]
 
     else
         div [] [ Icon.solid Empty "w-4 h-4" ]
@@ -299,7 +316,7 @@ viewColumnIconDropdown model column icon =
                      , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup True
-                     , css [ B.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
+                     , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
                      ]
                         ++ track Track.openIncomingRelationsDropdown
                     )
@@ -308,21 +325,24 @@ viewColumnIconDropdown model column icon =
             (\_ ->
                 div []
                     ((column.inRelations
+                        |> List.groupBy (\r -> r.column.schema ++ "-" ++ r.column.table)
+                        |> Dict.values
+                        |> List.filterMap (List.sortBy (.column >> .column) >> Nel.fromList)
                         |> List.map
-                            (\r ->
+                            (\rels ->
                                 let
                                     content : List (Html msg)
                                     content =
                                         [ Icon.solid ExternalLink "inline"
-                                        , bText (formatTableRef { schema = r.column.schema, table = r.column.table })
-                                        , text ("." ++ r.column.column ++ B.cond r.nullable "?" "")
+                                        , bText (formatTableRef { schema = rels.head.column.schema, table = rels.head.column.table })
+                                        , text ("." ++ (rels |> Nel.toList |> List.map (\r -> r.column.column ++ Bool.cond r.nullable "?" "") |> String.join ", "))
                                         ]
                                 in
-                                if r.tableShown then
-                                    Dropdown.btnDisabled "py-1" content
+                                if rels.head.tableShown then
+                                    ContextMenu.btnDisabled "py-1" content
 
                                 else
-                                    viewColumnIconDropdownItem (model.actions.clickRelations [ r ] False) content
+                                    viewColumnIconDropdownItem (model.actions.clickRelations [ rels.head ] False) content
                             )
                      )
                         ++ (if List.length tablesToShow > 1 then
@@ -338,7 +358,7 @@ viewColumnIconDropdown model column icon =
 viewColumnIconDropdownItem : msg -> List (Html msg) -> Html msg
 viewColumnIconDropdownItem message content =
     button
-        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], Dropdown.itemStyles ] ]
+        ([ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "py-1 block w-full text-left", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
             ++ track Track.showTableWithIncomingRelationsDropdown
         )
         content
@@ -346,7 +366,7 @@ viewColumnIconDropdownItem message content =
 
 viewColumnName : Column -> Html msg
 viewColumnName column =
-    div [ css [ "ml-1 flex flex-grow", B.cond column.isPrimaryKey "font-bold" "" ] ]
+    div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "" ] ]
         ([ text column.name ] |> List.appendOn column.comment viewComment)
 
 
@@ -360,7 +380,7 @@ viewColumnKind model column =
     let
         opacity : TwClass
         opacity =
-            B.cond (isHighlightedColumn model column) "opacity-100" "opacity-50"
+            Bool.cond (isHighlightedColumn model column) "opacity-100" "opacity-50"
 
         value : Html msg
         value =
@@ -466,10 +486,11 @@ sample =
         , showHiddenColumns = False
         }
     , actions =
-        { hoverTable = \h -> logAction ("hover table " ++ B.cond h "on" " off")
-        , hoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ B.cond h "on" " off")
+        { hoverTable = \h -> logAction ("hover table " ++ Bool.cond h "on" " off")
+        , hoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ Bool.cond h "on" " off")
         , clickHeader = \_ -> logAction "selected"
         , clickColumn = Nothing
+        , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
         , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
         , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
         , hoverHiddenColumns = \id -> logAction ("hover hidden columns: " ++ id)
@@ -492,14 +513,15 @@ doc =
                             , state = tableDocState
                             , actions =
                                 { hoverTable = \h -> updateDocState (\s -> { s | isHover = h })
-                                , hoverColumn = \c h -> updateDocState (\s -> { s | highlightedColumns = B.cond h (Set.fromList [ c ]) Set.empty })
+                                , hoverColumn = \c h -> updateDocState (\s -> { s | highlightedColumns = Bool.cond h (Set.fromList [ c ]) Set.empty })
                                 , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , clickColumn = Nothing
+                                , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
                                 , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
                                 , hoverHiddenColumns = \id -> updateDocState (\s -> { s | openedPopover = id })
                                 , clickHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
-                                , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = B.cond (id == s.openedDropdown) "" id })
+                                , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = Bool.cond (id == s.openedDropdown) "" id })
                                 }
                         }
               )

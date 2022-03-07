@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -139,6 +139,11 @@ move value position list =
 moveBy : (a -> b) -> b -> Int -> List a -> List a
 moveBy matcher value position list =
     list |> findIndexBy matcher value |> Maybe.mapOrElse (\index -> list |> moveIndex index position) list
+
+
+moveByRel : (a -> b) -> b -> Int -> List a -> List a
+moveByRel matcher value delta list =
+    list |> findIndexBy matcher value |> Maybe.mapOrElse (\index -> list |> moveIndex index (index + delta)) list
 
 
 removeAt : Int -> List a -> List a

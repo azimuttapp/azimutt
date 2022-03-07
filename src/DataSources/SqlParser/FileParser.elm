@@ -128,7 +128,7 @@ evolve ( statement, command ) tables =
             updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just (SqlPrimaryKey (constraintName |> Maybe.withDefault (defaultPkName table)) pk statement) }) tables
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fk)) ->
-            updateColumn statement (buildId schema table) fk.column (\c -> buildFk tables statement constraint fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
+            updateColumn statement (buildId schema table) fk.column (\c -> buildFk tables statement table fk.column (Just constraint) fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
 
         AlterTable (AddTableConstraint schema table (ParsedUnique constraint unique)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ SqlUnique constraint unique.columns unique.definition statement ] }) tables
@@ -235,8 +235,8 @@ buildTable tables statement table =
 buildColumn : SqlSchema -> SqlStatement -> ParsedTable -> ParsedColumn -> Result SchemaError SqlColumn
 buildColumn tables statement table column =
     column.foreignKey
-        |> Maybe.orElse (table.foreignKeys |> List.filter (\fk -> fk.src == column.name) |> List.head |> Maybe.map (\fk -> ( fk.name |> Maybe.withDefault (defaultFkName table.table column.name), fk.ref )))
-        |> Maybe.map (\( fk, ref ) -> buildFk tables statement fk ref.schema ref.table ref.column)
+        |> Maybe.orElse (table.foreignKeys |> List.filter (\fk -> fk.src == column.name) |> List.head |> Maybe.map (\fk -> ( fk.name, fk.ref )))
+        |> Maybe.map (\( fk, ref ) -> buildFk tables statement table.table column.name fk ref.schema ref.table ref.column)
         |> Maybe.resultSeq
         |> Result.map
             (\fk ->
@@ -251,13 +251,13 @@ buildColumn tables statement table column =
             )
 
 
-buildFk : SqlSchema -> SqlStatement -> SqlConstraintName -> Maybe SqlSchemaName -> SqlTableName -> Maybe SqlColumnName -> Result SchemaError SqlForeignKey
-buildFk tables statement constraint schema table column =
+buildFk : SqlSchema -> SqlStatement -> SqlTableName -> SqlColumnName -> Maybe SqlConstraintName -> Maybe SqlSchemaName -> SqlTableName -> Maybe SqlColumnName -> Result SchemaError SqlForeignKey
+buildFk tables statement srcTable srcColumn constraint schema table column =
     column
         |> withPkColumn tables schema table
         |> Result.map
             (\col ->
-                { name = constraint
+                { name = constraint |> Maybe.withDefault (defaultFkName srcTable srcColumn)
                 , schema = schema |> withDefaultSchema
                 , table = table
                 , column = col

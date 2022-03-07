@@ -7,13 +7,14 @@ import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, main_, p, text)
 import Html.Attributes exposing (class, classList, id, style)
 import Html.Events exposing (onClick)
+import Html.Events.Extra.Mouse exposing (Button(..))
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
-import Libs.Html.Events exposing (onWheel, stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -109,13 +110,13 @@ viewErd screen erd cursorMode selectionBox virtualRelation args dragging =
             ]
         , id Conf.ids.erd
         , onWheel OnWheel
-        , stopPointerDown (.position >> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox))
+        , stopPointerDown (handleErdPointerDown cursorMode)
         ]
         [ div
             [ class "az-canvas origin-top-left"
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
-            [ viewTables cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom tableProps erd.tables erd.shownTables
+            [ viewTables cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
             , Lazy.lazy3 viewRelations dragging displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse viewVirtualRelation viewEmptyRelation
@@ -128,8 +129,20 @@ viewErd screen erd cursorMode selectionBox virtualRelation args dragging =
         ]
 
 
-viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
-viewTables cursorMode virtualRelation openedDropdown openedPopover dragging zoom tableProps tables shownTables =
+handleErdPointerDown : CursorMode -> PointerEvent -> Msg
+handleErdPointerDown cursorMode e =
+    if e.button == MainButton then
+        e |> .position |> DragStart (B.cond (cursorMode == CursorDrag) Conf.ids.erd Conf.ids.selectionBox)
+
+    else if e.button == MiddleButton then
+        e |> .position |> DragStart Conf.ids.erd
+
+    else
+        Noop ""
+
+
+viewTables : CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables cursorMode virtualRelation openedDropdown openedPopover dragging zoom useBasicTypes tableProps tables shownTables =
     Keyed.node "div"
         [ class "az-tables" ]
         (shownTables
@@ -147,6 +160,7 @@ viewTables cursorMode virtualRelation openedDropdown openedPopover dragging zoom
                             (B.cond (openedPopover |> String.startsWith table.htmlId) openedPopover "")
                             (dragging |> Maybe.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (virtualRelation /= Nothing)
+                            useBasicTypes
                         )
                         index
                         props

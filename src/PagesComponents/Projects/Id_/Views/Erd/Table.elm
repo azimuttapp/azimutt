@@ -2,16 +2,19 @@ module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToS
 
 import Components.Organisms.Table as Table
 import Conf
+import DataSources.SqlParser.Parsers.ColomnType as ColumnType
 import Dict
 import Either exposing (Either(..))
 import Html exposing (Attribute, Html, div)
 import Html.Attributes exposing (style)
+import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as B
 import Libs.Hotkey as Hotkey
 import Libs.Html.Attributes exposing (css)
-import Libs.Html.Events exposing (stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
@@ -23,39 +26,40 @@ import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
+import PagesComponents.Projects.Id_.Views.Modals.ColumnContextMenu exposing (viewColumnContextMenu, viewHiddenColumnContextMenu)
 
 
 type alias TableArgs =
     String
 
 
-argsToString : String -> String -> Bool -> Bool -> TableArgs
-argsToString openedDropdown openedPopover dragging virtualRelation =
-    openedDropdown ++ "#" ++ openedPopover ++ "#" ++ B.cond dragging "Y" "N" ++ "#" ++ B.cond virtualRelation "Y" "N"
+argsToString : String -> String -> Bool -> Bool -> Bool -> TableArgs
+argsToString openedDropdown openedPopover dragging virtualRelation useBasicTypes =
+    openedDropdown ++ "#" ++ openedPopover ++ "#" ++ B.cond dragging "Y" "N" ++ "#" ++ B.cond virtualRelation "Y" "N" ++ "#" ++ B.cond useBasicTypes "Y" "N"
 
 
-stringToArgs : TableArgs -> ( ( String, String ), ( Bool, Bool ) )
+stringToArgs : TableArgs -> ( ( String, String ), ( Bool, Bool, Bool ) )
 stringToArgs args =
     case args |> String.split "#" of
-        [ openedDropdown, openedPopover, dragging, virtualRelation ] ->
-            ( ( openedDropdown, openedPopover ), ( dragging == "Y", virtualRelation == "Y" ) )
+        [ openedDropdown, openedPopover, dragging, virtualRelation, useBasicTypes ] ->
+            ( ( openedDropdown, openedPopover ), ( dragging == "Y", virtualRelation == "Y", useBasicTypes == "Y" ) )
 
         _ ->
-            ( ( "", "" ), ( False, False ) )
+            ( ( "", "" ), ( False, False, False ) )
 
 
 viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
 viewTable zoom cursorMode args index props table =
     let
-        ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation ) ) =
+        ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation, useBasicTypes ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Ned.values |> Nel.map (buildColumn props) |> Nel.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
+            table.columns |> Ned.values |> Nel.map (buildColumn useBasicTypes props) |> Nel.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (cursorMode == CursorDrag) [] [ stopPointerDown (.position >> DragStart table.htmlId) ]
+            B.cond (cursorMode == CursorDrag) [] [ stopPointerDown (handleTablePointerDown table.htmlId) ]
 
         zIndex : Int
         zIndex =
@@ -98,9 +102,9 @@ viewTable zoom cursorMode args index props table =
                 , { label = "Order"
                   , action =
                         Left
-                            [ { label = "Bring to front", action = TableOrder table.id 1000, hotkey = Conf.hotkeys |> Dict.get "move-to-top" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
-                            , { label = "Bring forward", action = TableOrder table.id (index + 1), hotkey = Conf.hotkeys |> Dict.get "move-forward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                            [ { label = "Bring forward", action = TableOrder table.id (index + 1), hotkey = Conf.hotkeys |> Dict.get "move-forward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             , { label = "Send backward", action = TableOrder table.id (index - 1), hotkey = Conf.hotkeys |> Dict.get "move-backward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                            , { label = "Bring to front", action = TableOrder table.id 1000, hotkey = Conf.hotkeys |> Dict.get "move-to-top" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             , { label = "Send to back", action = TableOrder table.id 0, hotkey = Conf.hotkeys |> Dict.get "move-to-back" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             ]
                   }
@@ -121,6 +125,7 @@ viewTable zoom cursorMode args index props table =
                 , hoverColumn = \col -> ToggleHoverColumn { table = table.id, column = col }
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
+                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu i { table = table.id, column = col })
                 , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
                 , clickRelations =
                     \cols isOut ->
@@ -145,11 +150,28 @@ viewTable zoom cursorMode args index props table =
         ]
 
 
-buildColumn : ErdTableProps -> ErdColumn -> Table.Column
-buildColumn props column =
+handleTablePointerDown : HtmlId -> PointerEvent -> Msg
+handleTablePointerDown htmlId e =
+    if e.button == MainButton then
+        e |> .position |> DragStart htmlId
+
+    else if e.button == MiddleButton then
+        e |> .position |> DragStart Conf.ids.erd
+
+    else
+        Noop ""
+
+
+buildColumn : Bool -> ErdTableProps -> ErdColumn -> Table.Column
+buildColumn useBasicTypes props column =
     { index = column.index
     , name = column.name
-    , kind = column.kind
+    , kind =
+        if useBasicTypes then
+            column.kind |> ColumnType.parse |> ColumnType.toString
+
+        else
+            column.kind
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment |> Maybe.map .text

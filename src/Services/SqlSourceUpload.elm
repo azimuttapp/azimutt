@@ -24,15 +24,14 @@ import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
-import Models.FileKind exposing (FileKind(..))
 import Models.Project.ProjectId exposing (ProjectId)
-import Models.Project.Relation exposing (Relation)
+import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationId as RelationId
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId
 import Models.SourceInfo exposing (SourceInfo)
 import Ports
@@ -46,7 +45,6 @@ type alias SqlSourceUpload msg =
     , source : Maybe Source
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe FileUrl
-    , selectedSample : Maybe String
     , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
     , parsedSchema : Maybe (SqlParsing msg)
     , parsedSource : Maybe Source
@@ -70,7 +68,6 @@ type alias SqlParsing msg =
 type SqlSourceUploadMsg
     = SelectLocalFile File
     | SelectRemoteFile FileUrl
-    | SelectSample String
     | FileLoaded ProjectId SourceInfo FileContent
     | ParseMsg ParsingMsg
     | BuildSource
@@ -93,7 +90,6 @@ init project source =
     , source = source
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
-    , selectedSample = Nothing
     , loadedFile = Nothing
     , parsedSchema = Nothing
     , parsedSource = Nothing
@@ -124,17 +120,12 @@ update msg wrap model =
     case msg of
         SelectLocalFile file ->
             ( init model.project model.source |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file SqlSourceFile
+            , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file
             )
 
         SelectRemoteFile url ->
             ( init model.project model.source |> (\m -> { m | selectedRemoteFile = Just url })
             , Ports.readRemoteFile model.project (model.source |> Maybe.map .id) url Nothing
-            )
-
-        SelectSample sample ->
-            ( init model.project model.source |> (\m -> { m | selectedSample = Just sample })
-            , Conf.schemaSamples |> Dict.get sample |> Maybe.map (\s -> Ports.readRemoteFile model.project (model.source |> Maybe.map .id) s.url (Just s.key)) |> Maybe.withDefault Cmd.none
             )
 
         FileLoaded projectId sourceInfo fileContent ->
@@ -254,13 +245,12 @@ viewParsing : SqlSourceUpload msg -> Html msg
 viewParsing model =
     ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
         |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
-        |> Maybe.orElse (model.selectedSample |> Maybe.map (\s -> s ++ " sample"))
     )
         |> Maybe.map2
-            (\parsedSchema sourceText ->
+            (\parsedSchema fileName ->
                 div []
                     [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                    , viewLogs sourceText parsedSchema
+                    , viewLogs fileName parsedSchema
                     , viewErrorAlert parsedSchema
                     , model.source |> Maybe.map2 viewSourceDiff model.parsedSource |> Maybe.withDefault (div [] [])
                     ]
@@ -270,9 +260,9 @@ viewParsing model =
 
 
 viewLogs : String -> SqlParsing msg -> Html msg
-viewLogs source model =
+viewLogs fileName model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
-        ([ div [] [ text ("Loaded " ++ source ++ ".") ] ]
+        ([ div [] [ text ("Loaded " ++ fileName ++ ".") ] ]
             ++ (model.lines |> Maybe.mapOrElse (\l -> [ div [] [ text ("Found " ++ (l |> List.length |> String.fromInt) ++ " lines in the file.") ] ]) [])
             ++ (model.statements |> Maybe.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements.") ] ]) [])
             ++ (model.commands
@@ -391,14 +381,14 @@ viewSourceDiff newSource oldSource =
 
         updatedTables : List ( Table, Table )
         updatedTables =
-            existingTables |> List.filter (\( oldTable, newTable ) -> oldTable /= newTable)
+            existingTables |> List.filter (\( oldTable, newTable ) -> Table.clearOrigins oldTable /= Table.clearOrigins newTable)
 
         ( removedRelations, existingRelations, newRelations ) =
             List.zipBy .id oldSource.relations newSource.relations
 
         updatedRelations : List ( Relation, Relation )
         updatedRelations =
-            existingRelations |> List.filter (\( oldRelation, newRelation ) -> oldRelation /= newRelation)
+            existingRelations |> List.filter (\( oldRelation, newRelation ) -> Relation.clearOrigins oldRelation /= Relation.clearOrigins newRelation)
     in
     if List.nonEmpty updatedTables || List.nonEmpty newTables || List.nonEmpty removedTables || List.nonEmpty updatedRelations || List.nonEmpty newRelations || List.nonEmpty removedRelations then
         div [ class "mt-3" ]

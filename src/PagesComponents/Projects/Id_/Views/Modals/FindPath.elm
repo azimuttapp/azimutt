@@ -17,7 +17,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
-import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.Project.ColumnRef as ColumnRef
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
@@ -94,15 +93,15 @@ viewSettings modalId isOpen settings =
                 "Ignored tables"
                 "ex: users, accounts..."
                 "Some columns does not have meaningful links so ignore them for better results."
-                (settings.ignoredTables |> List.map TableId.show |> String.join ", ")
-                (\v -> { settings | ignoredTables = v |> stringList |> List.map TableId.parse } |> FPSettingsUpdate |> FindPathMsg)
+                settings.ignoredTables
+                (\v -> { settings | ignoredTables = v } |> FPSettingsUpdate |> FindPathMsg)
             , viewSettingsInput (modalId ++ "-settings-ignored-columns")
                 "text"
                 "Ignored columns"
                 "ex: created_by, updated_by, owner..."
                 "Some tables are big hubs which leads to bad results and performance, ignore them."
-                (settings.ignoredColumns |> String.join ", ")
-                (\v -> { settings | ignoredColumns = v |> stringList } |> FPSettingsUpdate |> FindPathMsg)
+                settings.ignoredColumns
+                (\v -> { settings | ignoredColumns = v } |> FPSettingsUpdate |> FindPathMsg)
             , viewSettingsInput (modalId ++ "-settings-path-max-length")
                 "number"
                 "Max path length"
@@ -112,11 +111,6 @@ viewSettings modalId isOpen settings =
                 (\v -> { settings | maxPathLength = v |> String.toInt |> Maybe.withDefault FindPathSettings.init.maxPathLength } |> FPSettingsUpdate |> FindPathMsg)
             ]
         ]
-
-
-stringList : String -> List String
-stringList str =
-    str |> String.split "," |> List.map String.trim |> List.filter String.nonEmpty
 
 
 viewSettingsInput : String -> String -> String -> String -> String -> String -> (String -> msg) -> Html msg

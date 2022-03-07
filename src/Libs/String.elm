@@ -1,4 +1,4 @@
-module Libs.String exposing (filterStartsWith, hashCode, nonEmpty, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
+module Libs.String exposing (filterStartsWith, hashCode, inflect, nonEmpty, orElse, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
 
 import Bitwise
 import Dict exposing (Dict)
@@ -9,6 +9,15 @@ import Libs.Regex as Regex
 nonEmpty : String -> Bool
 nonEmpty string =
     string /= ""
+
+
+orElse : String -> String -> String
+orElse other str =
+    if str == "" then
+        other
+
+    else
+        str
 
 
 filterStartsWith : String -> String -> String
@@ -54,8 +63,8 @@ unique takenIds id =
         id
 
 
-plural : String -> String -> String -> Int -> String
-plural none one many count =
+inflect : String -> String -> String -> Int -> String
+inflect none one many count =
     if count == 0 then
         none
 
@@ -63,13 +72,22 @@ plural none one many count =
         one
 
     else
-        String.fromInt count ++ " " ++ many
+        many
+
+
+plural : String -> String
+plural word =
+    -- trivial pluralize that works only for usual words, use `inflect` for more flexibility
+    if word |> String.endsWith "y" then
+        (word |> String.dropRight 1) ++ "ies"
+
+    else
+        word ++ "s"
 
 
 pluralize : String -> Int -> String
-pluralize word =
-    -- trivial pluralize that works only for "regular" words, use `plural` for more flexibility
-    plural ("0 " ++ word) ("1 " ++ word) (word ++ "s")
+pluralize word count =
+    count |> inflect ("0 " ++ word) ("1 " ++ word) (String.fromInt count ++ " " ++ plural word)
 
 
 pluralizeL : String -> List a -> String

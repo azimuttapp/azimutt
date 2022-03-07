@@ -3,7 +3,8 @@ module PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict
 import Either exposing (Either(..))
@@ -24,7 +25,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.Project.CanvasProps as CanvasProps
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
@@ -46,6 +47,7 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
                 |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
                 |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
             , { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
+            , { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema", hotkey = Nothing }
             , { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkey = Nothing }
             ]
 
@@ -114,8 +116,8 @@ viewNavbarFeatures features htmlId openedDropdown =
                         (\btn ->
                             btn.action
                                 |> Either.reduce
-                                    (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", Dropdown.itemStyles ] ] [ btn.content ])
-                                    (\action -> Dropdown.btn "flex justify-between" action (btn.content :: (btn.hotkey |> Maybe.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
+                                    (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", ContextMenu.itemStyles ] ] [ btn.content ])
+                                    (\action -> ContextMenu.btn "flex justify-between" action (btn.content :: (btn.hotkey |> Maybe.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
                         )
                 )
         )

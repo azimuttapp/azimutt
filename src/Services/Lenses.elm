@@ -1,4 +1,4 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapColumns, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapProjectImportCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setColumn, setColumnOrder, setColumns, setConfirm, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setParsing, setPosition, setProject, setProjectImport, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
+module Services.Lenses exposing (mapActive, mapCanvas, mapChecks, mapColumnBasicTypes, mapColumns, mapComment, mapCommentM, mapContextMenuM, mapEachProjectMLayoutTables, mapEachTable, mapEnabled, mapErdM, mapErdMCmd, mapFindPath, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapIndexes, mapLayout, mapLayouts, mapList, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsing, mapParsingCmd, mapPosition, mapPrimaryKey, mapPrimaryKeyM, mapProject, mapProjectImportCmd, mapProjectImportM, mapProjectImportMCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapSampleSelectionM, mapSampleSelectionMCmd, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTables, mapTime, mapToasts, mapTop, mapUniques, mapUsedLayout, mapVirtualRelationM, setActive, setCanvas, setChecks, setColumn, setColumnBasicTypes, setColumnOrder, setColumns, setComment, setConfirm, setContextMenu, setCursorMode, setDragState, setDragging, setEnabled, setErd, setFindPath, setFrom, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setIgnoredColumns, setIgnoredTables, setIndexes, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setOrigins, setParsing, setPosition, setPrimaryKey, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setSampleSelection, setSchemaAnalysis, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setShow, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setText, setTime, setTo, setToastIdx, setToasts, setTop, setUniques, setUsedLayout, setVirtualRelation, setZone, setZoom, updatePosition)
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -35,6 +35,16 @@ mapCanvas =
     map .canvas setCanvas
 
 
+setChecks : v -> { item | checks : v } -> { item | checks : v }
+setChecks =
+    set .checks (\value item -> { item | checks = value })
+
+
+mapChecks : (v -> v) -> { item | checks : v } -> { item | checks : v }
+mapChecks =
+    map .checks setChecks
+
+
 setColumn : v -> { item | column : v } -> { item | column : v }
 setColumn =
     set .column (\value item -> { item | column = value })
@@ -50,14 +60,49 @@ mapColumns =
     map .columns setColumns
 
 
+setColumnBasicTypes : v -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
+setColumnBasicTypes =
+    set .columnBasicTypes (\value item -> { item | columnBasicTypes = value })
+
+
+mapColumnBasicTypes : (v -> v) -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
+mapColumnBasicTypes =
+    map .columnBasicTypes setColumnBasicTypes
+
+
 setColumnOrder : v -> { item | columnOrder : v } -> { item | columnOrder : v }
 setColumnOrder =
     set .columnOrder (\value item -> { item | columnOrder = value })
 
 
+setComment : v -> { item | comment : v } -> { item | comment : v }
+setComment =
+    set .comment (\value item -> { item | comment = value })
+
+
+mapComment : (v -> v) -> { item | comment : v } -> { item | comment : v }
+mapComment =
+    map .comment setComment
+
+
+mapCommentM : (v -> v) -> { item | comment : Maybe v } -> { item | comment : Maybe v }
+mapCommentM =
+    mapM .comment setComment
+
+
 setConfirm : v -> { item | confirm : v } -> { item | confirm : v }
 setConfirm =
     set .confirm (\value item -> { item | confirm = value })
+
+
+setContextMenu : v -> { item | contextMenu : v } -> { item | contextMenu : v }
+setContextMenu =
+    set .contextMenu (\value item -> { item | contextMenu = value })
+
+
+mapContextMenuM : (v -> v) -> { item | contextMenu : Maybe v } -> { item | contextMenu : Maybe v }
+mapContextMenuM =
+    mapM .contextMenu setContextMenu
 
 
 setCursorMode : v -> { item | cursorMode : v } -> { item | cursorMode : v }
@@ -103,6 +148,11 @@ mapErdMCmd =
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
 setFindPath =
     set .findPath (\value item -> { item | findPath = value })
+
+
+mapFindPath : (v -> v) -> { item | findPath : v } -> { item | findPath : v }
+mapFindPath =
+    map .findPath setFindPath
 
 
 mapFindPathM : (v -> v) -> { item | findPath : Maybe v } -> { item | findPath : Maybe v }
@@ -153,6 +203,31 @@ mapHover =
 setHoverColumn : v -> { item | hoverColumn : v } -> { item | hoverColumn : v }
 setHoverColumn =
     set .hoverColumn (\value item -> { item | hoverColumn = value })
+
+
+setIgnoredColumns : v -> { item | ignoredColumns : v } -> { item | ignoredColumns : v }
+setIgnoredColumns =
+    set .ignoredColumns (\value item -> { item | ignoredColumns = value })
+
+
+setIgnoredTables : v -> { item | ignoredTables : v } -> { item | ignoredTables : v }
+setIgnoredTables =
+    set .ignoredTables (\value item -> { item | ignoredTables = value })
+
+
+setIndexes : v -> { item | indexes : v } -> { item | indexes : v }
+setIndexes =
+    set .indexes (\value item -> { item | indexes = value })
+
+
+mapIndexes : (v -> v) -> { item | indexes : v } -> { item | indexes : v }
+mapIndexes =
+    map .indexes setIndexes
+
+
+setInput : v -> { item | input : v } -> { item | input : v }
+setInput =
+    set .input (\value item -> { item | input = value })
 
 
 setIsOpen : v -> { item | isOpen : v } -> { item | isOpen : v }
@@ -280,6 +355,11 @@ mapOpenedDialogs =
     map .openedDialogs setOpenedDialogs
 
 
+setOrigins : v -> { item | origins : v } -> { item | origins : v }
+setOrigins =
+    set .origins (\value item -> { item | origins = value })
+
+
 setParsing : v -> { item | parsing : v } -> { item | parsing : v }
 setParsing =
     set .parsing (\value item -> { item | parsing = value })
@@ -305,9 +385,29 @@ mapPosition =
     map .position setPosition
 
 
+setPrimaryKey : v -> { item | primaryKey : v } -> { item | primaryKey : v }
+setPrimaryKey =
+    set .primaryKey (\value item -> { item | primaryKey = value })
+
+
+mapPrimaryKey : (v -> v) -> { item | primaryKey : v } -> { item | primaryKey : v }
+mapPrimaryKey =
+    map .primaryKey setPrimaryKey
+
+
+mapPrimaryKeyM : (v -> v) -> { item | primaryKey : Maybe v } -> { item | primaryKey : Maybe v }
+mapPrimaryKeyM =
+    mapM .primaryKey setPrimaryKey
+
+
 setProject : v -> { item | project : v } -> { item | project : v }
 setProject =
     set .project (\value item -> { item | project = value })
+
+
+mapProject : (v -> v) -> { item | project : v } -> { item | project : v }
+mapProject =
+    map .project setProject
 
 
 mapProjectM : (v -> v) -> { item | project : Maybe v } -> { item | project : Maybe v }
@@ -325,9 +425,34 @@ setProjectImport =
     set .projectImport (\value item -> { item | projectImport = value })
 
 
+mapProjectImportM : (v -> v) -> { item | projectImport : Maybe v } -> { item | projectImport : Maybe v }
+mapProjectImportM =
+    mapM .projectImport setProjectImport
+
+
 mapProjectImportCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : v } -> ( { item | projectImport : v }, Cmd msg )
 mapProjectImportCmd =
     mapCmd .projectImport setProjectImport
+
+
+mapProjectImportMCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : Maybe v } -> ( { item | projectImport : Maybe v }, Cmd msg )
+mapProjectImportMCmd =
+    mapMCmd .projectImport setProjectImport
+
+
+setPrompt : v -> { item | prompt : v } -> { item | prompt : v }
+setPrompt =
+    set .prompt (\value item -> { item | prompt = value })
+
+
+mapPrompt : (v -> v) -> { item | prompt : v } -> { item | prompt : v }
+mapPrompt =
+    map .prompt setPrompt
+
+
+mapPromptM : (v -> v) -> { item | prompt : Maybe v } -> { item | prompt : Maybe v }
+mapPromptM =
+    mapM .prompt setPrompt
 
 
 setProps : v -> { item | props : v } -> { item | props : v }
@@ -395,6 +520,31 @@ mapResult =
     map .result setResult
 
 
+setSampleSelection : v -> { item | sampleSelection : v } -> { item | sampleSelection : v }
+setSampleSelection =
+    set .sampleSelection (\value item -> { item | sampleSelection = value })
+
+
+mapSampleSelectionM : (v -> v) -> { item | sampleSelection : Maybe v } -> { item | sampleSelection : Maybe v }
+mapSampleSelectionM =
+    mapM .sampleSelection setSampleSelection
+
+
+mapSampleSelectionMCmd : (v -> ( v, Cmd msg )) -> { item | sampleSelection : Maybe v } -> ( { item | sampleSelection : Maybe v }, Cmd msg )
+mapSampleSelectionMCmd =
+    mapMCmd .sampleSelection setSampleSelection
+
+
+setSchemaAnalysis : v -> { item | schemaAnalysis : v } -> { item | schemaAnalysis : v }
+setSchemaAnalysis =
+    set .schemaAnalysis (\value item -> { item | schemaAnalysis = value })
+
+
+mapSchemaAnalysisM : (v -> v) -> { item | schemaAnalysis : Maybe v } -> { item | schemaAnalysis : Maybe v }
+mapSchemaAnalysisM =
+    mapM .schemaAnalysis setSchemaAnalysis
+
+
 setScreen : v -> { item | screen : v } -> { item | screen : v }
 setScreen =
     set .screen (\value item -> { item | screen = value })
@@ -448,6 +598,11 @@ setSelectionBox =
 mapSelectionBox : (v -> v) -> { item | selectionBox : v } -> { item | selectionBox : v }
 mapSelectionBox =
     map .selectionBox setSelectionBox
+
+
+setShow : v -> { item | show : v } -> { item | show : v }
+setShow =
+    set .show (\value item -> { item | show = value })
 
 
 setShown : v -> { item | shown : v } -> { item | shown : v }
@@ -535,9 +690,19 @@ setSqlSourceUpload =
     set .sqlSourceUpload (\value item -> { item | sqlSourceUpload = value })
 
 
+mapSqlSourceUploadM : (v -> v) -> { item | sqlSourceUpload : Maybe v } -> { item | sqlSourceUpload : Maybe v }
+mapSqlSourceUploadM =
+    mapM .sqlSourceUpload setSqlSourceUpload
+
+
 mapSqlSourceUploadCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : v } -> ( { item | sqlSourceUpload : v }, Cmd msg )
 mapSqlSourceUploadCmd =
     mapCmd .sqlSourceUpload setSqlSourceUpload
+
+
+mapSqlSourceUploadMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : Maybe v } -> ( { item | sqlSourceUpload : Maybe v }, Cmd msg )
+mapSqlSourceUploadMCmd =
+    mapMCmd .sqlSourceUpload setSqlSourceUpload
 
 
 setSwitch : v -> { item | switch : v } -> { item | switch : v }
@@ -608,6 +773,26 @@ mapToasts =
 setToastIdx : v -> { item | toastIdx : v } -> { item | toastIdx : v }
 setToastIdx =
     set .toastIdx (\value item -> { item | toastIdx = value })
+
+
+setTop : v -> { item | top : v } -> { item | top : v }
+setTop =
+    set .top (\value item -> { item | top = value })
+
+
+mapTop : (v -> v) -> { item | top : v } -> { item | top : v }
+mapTop =
+    map .top setTop
+
+
+setUniques : v -> { item | uniques : v } -> { item | uniques : v }
+setUniques =
+    set .uniques (\value item -> { item | uniques = value })
+
+
+mapUniques : (v -> v) -> { item | uniques : v } -> { item | uniques : v }
+mapUniques =
+    map .uniques setUniques
 
 
 setUsedLayout : v -> { item | usedLayout : v } -> { item | usedLayout : v }

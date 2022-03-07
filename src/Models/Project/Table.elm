@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques, merge)
+module Models.Project.Table exposing (Table, TableLike, clearOrigins, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -19,6 +19,7 @@ import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName as TableName exposing (TableName)
 import Models.Project.Unique as Unique exposing (Unique)
+import Services.Lenses exposing (mapChecks, mapColumns, mapCommentM, mapIndexes, mapPrimaryKeyM, mapUniques, setOrigins)
 
 
 type alias Table =
@@ -91,6 +92,18 @@ merge t1 t2 =
     , comment = Maybe.merge Comment.merge t1.comment t2.comment
     , origins = t1.origins ++ t2.origins
     }
+
+
+clearOrigins : Table -> Table
+clearOrigins table =
+    table
+        |> setOrigins []
+        |> mapColumns (Ned.map (\_ c -> c |> setOrigins [] |> mapCommentM (setOrigins [])))
+        |> mapPrimaryKeyM (setOrigins [])
+        |> mapUniques (List.map (setOrigins []))
+        |> mapIndexes (List.map (setOrigins []))
+        |> mapChecks (List.map (setOrigins []))
+        |> mapCommentM (setOrigins [])
 
 
 encode : Table -> Value

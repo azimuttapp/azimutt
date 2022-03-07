@@ -20,6 +20,7 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Index exposing (Index)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
@@ -30,6 +31,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
+import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Time
@@ -275,19 +277,9 @@ upgrade project =
     , layout = project.schema.layout |> upgradeLayout
     , usedLayout = project.currentLayout
     , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)
-    , settings = ProjectSettings.init |> (\s -> { s | findPath = project.settings.findPath })
+    , settings = ProjectSettings.init |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
-    }
-
-
-upgradeLayout : LayoutV1 -> Layout
-upgradeLayout layout =
-    { canvas = layout.canvas
-    , tables = layout.tables |> List.map upgradeTableProps
-    , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
-    , createdAt = layout.createdAt
-    , updatedAt = layout.updatedAt
     }
 
 
@@ -395,6 +387,24 @@ upgradeRelation relation =
 upgradeSource : SourceV1 -> Origin
 upgradeSource source =
     { id = SourceId.new source.id, lines = source.lines |> Nel.toList |> List.map .no }
+
+
+upgradeLayout : LayoutV1 -> Layout
+upgradeLayout layout =
+    { canvas = layout.canvas
+    , tables = layout.tables |> List.map upgradeTableProps
+    , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
+    , createdAt = layout.createdAt
+    , updatedAt = layout.updatedAt
+    }
+
+
+upgradeFindPath : FindPathSettingsV1 -> FindPathSettings
+upgradeFindPath fp =
+    { maxPathLength = fp.maxPathLength
+    , ignoredTables = fp.ignoredTables |> List.map TableId.show |> String.join ", "
+    , ignoredColumns = fp.ignoredColumns |> String.join ", "
+    }
 
 
 

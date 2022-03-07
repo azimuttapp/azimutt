@@ -1,7 +1,8 @@
 module Components.Organisms.Navbar exposing (AdminBrand, AdminMobileMenu, AdminModel, AdminNavigation, AdminNotifications, AdminProfile, AdminSearch, AdminState, DocState, SharedDocState, admin, doc, initDocState)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -154,7 +155,7 @@ adminProfile isOpen profile =
                 , img [ css [ "rounded-full h-8 w-8" ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]
         )
-        (\_ -> div [] (profile.links |> List.map Dropdown.link))
+        (\_ -> div [] (profile.links |> List.map ContextMenu.link))
 
 
 adminMobileMenu : AdminNavigation msg -> Maybe AdminNotifications -> Maybe (AdminProfile msg) -> AdminMobileMenu msg -> String -> Bool -> Html msg

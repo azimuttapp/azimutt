@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSettings, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSchemaAnalysis, openSettings, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
@@ -134,6 +134,11 @@ openFindPath =
     { name = "open-find-path", details = [], enabled = True }
 
 
+openSchemaAnalysis : TrackEvent
+openSchemaAnalysis =
+    { name = "open-schema-analysis", details = [], enabled = True }
+
+
 findPathResult : FindPathResult -> TrackEvent
 findPathResult =
     findPathResults
@@ -200,8 +205,8 @@ findPathResults result =
     { name = "find-path-results"
     , details =
         [ ( "found-paths", String.fromInt (result.paths |> List.length) )
-        , ( "ignored-columns", String.fromInt (result.settings.ignoredColumns |> List.length) )
-        , ( "ignored-tables", String.fromInt (result.settings.ignoredTables |> List.length) )
+        , ( "ignored-columns", String.fromInt (result.settings.ignoredColumns |> String.split "," |> List.length) )
+        , ( "ignored-tables", String.fromInt (result.settings.ignoredTables |> String.split "," |> List.length) )
         , ( "max-path-length", String.fromInt result.settings.maxPathLength )
         ]
     , enabled = True

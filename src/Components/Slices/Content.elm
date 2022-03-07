@@ -34,10 +34,8 @@ centered model =
             (div [] [])
         , div [ css [ "relative px-4", sm [ "px-6" ], lg [ "px-8" ] ] ]
             [ div [ css [ "text-lg max-w-prose mx-auto" ] ]
-                ([ h1 []
-                    [ span [ css [ "block text-base text-center text-indigo-600 font-semibold tracking-wide uppercase" ] ] [ text model.section ]
-                    , span [ css [ "mt-2 block text-3xl text-center leading-8 font-extrabold tracking-tight text-gray-900", sm [ "text-4xl" ] ] ] [ text model.title ]
-                    ]
+                ([ span [ css [ "block text-base text-center text-indigo-600 font-semibold tracking-wide uppercase" ] ] [ text model.section ]
+                 , h1 [ css [ "mt-2 block text-3xl text-center leading-8 font-extrabold tracking-tight text-gray-900", sm [ "text-4xl" ] ] ] [ text model.title ]
                  ]
                     ++ (model.introduction |> Maybe.mapOrElse (\intro -> [ p [ css [ "mt-8 text-xl text-gray-500 leading-8" ] ] [ text intro ] ]) [])
                 )
