@@ -7,10 +7,6 @@ window.addEventListener('load', function() {
     const flags = {now: Date.now()}
     const app = Elm.Main.init({flags})
 
-    const databaseName = 'azimut'
-    const databaseObjectStoreName = 'saves'
-    const databaseVersion = 1
-
     /* PWA service worker */
 
     if ('serviceWorker' in navigator && isProd) {
@@ -78,31 +74,46 @@ window.addEventListener('load', function() {
         getElementById(id).querySelector('[autofocus]')?.focus()
     }
 
+    const databaseName = 'azimutt'
+    const databaseVersion = 1
+    const databaseObjectStoreName = 'projects'
     function getConfiguredDb() {
         return new Promise((resolve, reject) => {
-            const openRequest = indexedDB.open(databaseName, databaseVersion)
-            openRequest.onupgradeneeded = function() {
-              const db = openRequest.result
-              if (!db.objectStoreNames.contains(databaseObjectStoreName)) {
-                db.createObjectStore(databaseObjectStoreName, {keyPath: 'id'})
-              }
+            if (!window.indexedDB) {
+                alert("Azimutt use IndexedDB but it's not available, please use a browser that support it!")
+                reject('IndexedDB not available!')
+                return
             }
-            openRequest.onsuccess = function() {
-                const db = openRequest.result;
+            const openRequest = window.indexedDB.open(databaseName, databaseVersion)
+            openRequest.onerror = function(event) {
+                console.warn("Can't open IndexedDB", event)
+                alert("Can't open IndexedDB, but Azimutt needs it. Please make it available.")
+            }
+            openRequest.onsuccess = function(event) {
+                const db = event.target.result
+                db.onerror = function(event) {
+                    // Gestionnaire d'erreur générique pour toutes les erreurs de requêtes de cette base
+                    alert("Database error: " + event.target.errorCode)
+                }
                 resolve(db)
+            }
+            openRequest.onupgradeneeded = function(event) {
+                const db = event.target.result
+                if (!db.objectStoreNames.contains(databaseObjectStoreName)) {
+                    db.createObjectStore(databaseObjectStoreName, {keyPath: 'id'})
+                }
             }
         })
     }
-
     function getDbObjectStore(transactionType) {
         return new Promise((resolve, reject) => {
-            getConfiguredDb().then((db => {
+            getConfiguredDb().then(db => {
                 const transaction = db.transaction(
                     databaseObjectStoreName,
-                    typeof(transactionType) === 'undefined' ? 'readonly' : transactionType
+                    typeof transactionType === 'undefined' ? 'readonly' : transactionType
                 )
                 resolve(transaction.objectStore(databaseObjectStoreName))
-            }))
+            })
         })
     }
 
@@ -118,20 +129,18 @@ window.addEventListener('load', function() {
     function loadAndMigrateLocaleStorageProjects() {
         const projects = getLocalStorageProjects()
         projects.forEach(p => saveProject(p, () => dropLocalStorageProject(p)))
-
         return projects
     }
 
     function loadProjects() {
-        getDbObjectStore().then((store) => {
+        getDbObjectStore().then(store => {
             let projects = []
             store.openCursor().onsuccess = function(event) {
                 const cursor = event.target.result
                 if (cursor) {
                     projects.push(cursor.value)
                     cursor.continue()
-                }
-                else {
+                } else {
                     projects = projects.concat(loadAndMigrateLocaleStorageProjects())
 
                     sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
@@ -143,7 +152,7 @@ window.addEventListener('load', function() {
         })
     }
     function saveProject(project, callback) {
-        getDbObjectStore('readwrite').then((store) => {
+        getDbObjectStore('readwrite').then(store => {
             const now = Date.now()
             project.updatedAt = now
 
@@ -156,7 +165,7 @@ window.addEventListener('load', function() {
         })
     }
     function dropProject(project) {
-        getDbObjectStore('readwrite').then((store) => {
+        getDbObjectStore('readwrite').then(store => {
             store.delete(project.id).onsuccess = function() {
                 loadProjects()
             }
