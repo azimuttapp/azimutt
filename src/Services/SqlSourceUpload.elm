@@ -1,4 +1,4 @@
-module Services.SqlSourceUpload exposing (ParsingMsg(..), SqlParsing, SqlSourceUpload, SqlSourceUploadMsg(..), gotLocalFile, gotRemoteFile, init, update, viewParsing)
+module Services.SqlSourceUpload exposing (ParsingMsg(..), SqlParsing, SqlSourceUpload, SqlSourceUploadMsg(..), UiMsg, gotLocalFile, gotRemoteFile, init, update, viewParsing)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
@@ -8,11 +8,13 @@ import Conf
 import DataSources.SqlParser.FileParser as FileParser exposing (SchemaError, SqlSchema)
 import DataSources.SqlParser.ProjectAdapter as ProjectAdapter
 import DataSources.SqlParser.StatementParser exposing (Command)
+import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
 import FileValue exposing (File)
-import Html exposing (Html, div, li, p, span, text, ul)
+import Html exposing (Html, div, li, p, pre, span, text, ul)
 import Html.Attributes exposing (class, href)
+import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText)
@@ -20,6 +22,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent, FileLineContent)
 import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
@@ -35,6 +38,7 @@ import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId
 import Models.SourceInfo exposing (SourceInfo)
 import Ports
+import Services.Lenses exposing (mapParsedSchemaM, mapShow)
 import Time
 import Track
 import Url exposing (percentEncode)
@@ -60,6 +64,7 @@ type alias SqlParsing msg =
     , schemaIndex : Int
     , schemaErrors : List (List SchemaError)
     , schema : Maybe SqlSchema
+    , show : HtmlId
     , buildMsg : ParsingMsg -> msg
     , buildProject : msg
     }
@@ -70,6 +75,7 @@ type SqlSourceUploadMsg
     | SelectRemoteFile FileUrl
     | FileLoaded ProjectId SourceInfo FileContent
     | ParseMsg ParsingMsg
+    | UiMsg UiMsg
     | BuildSource
 
 
@@ -78,6 +84,10 @@ type ParsingMsg
     | BuildStatements
     | BuildCommand
     | EvolveSchema
+
+
+type UiMsg
+    = Toggle HtmlId
 
 
 
@@ -106,6 +116,7 @@ parsingInit fileContent buildMsg buildProject =
     , schemaIndex = 0
     , schemaErrors = []
     , schema = Nothing
+    , show = ""
     , buildMsg = buildMsg
     , buildProject = buildProject
     }
@@ -151,6 +162,9 @@ update msg wrap model =
                                )
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
+
+        UiMsg (Toggle htmlId) ->
+            ( model |> mapParsedSchemaM (mapShow (\s -> B.cond (s == htmlId) "" htmlId)), Cmd.none )
 
         BuildSource ->
             model.parsedSchema
@@ -241,8 +255,8 @@ lastSegment path =
 -- VIEW
 
 
-viewParsing : SqlSourceUpload msg -> Html msg
-viewParsing model =
+viewParsing : (SqlSourceUploadMsg -> msg) -> SqlSourceUpload msg -> Html msg
+viewParsing wrap model =
     ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
         |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
     )
@@ -250,7 +264,7 @@ viewParsing model =
             (\parsedSchema fileName ->
                 div []
                     [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                    , viewLogs fileName parsedSchema
+                    , viewLogs wrap fileName parsedSchema
                     , viewErrorAlert parsedSchema
                     , model.source |> Maybe.map2 viewSourceDiff model.parsedSource |> Maybe.withDefault (div [] [])
                     ]
@@ -259,48 +273,110 @@ viewParsing model =
         |> Maybe.withDefault (div [] [])
 
 
-viewLogs : String -> SqlParsing msg -> Html msg
-viewLogs fileName model =
+viewLogs : (SqlSourceUploadMsg -> msg) -> String -> SqlParsing msg -> Html msg
+viewLogs wrap filename model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
-        ([ div [] [ text ("Loaded " ++ fileName ++ ".") ] ]
-            ++ (model.lines |> Maybe.mapOrElse (\l -> [ div [] [ text ("Found " ++ (l |> List.length |> String.fromInt) ++ " lines in the file.") ] ]) [])
-            ++ (model.statements |> Maybe.mapOrElse (\s -> [ div [] [ text ("Found " ++ (s |> Dict.size |> String.fromInt) ++ " SQL statements.") ] ]) [])
-            ++ (model.commands
-                    |> Maybe.mapOrElse
-                        (\commands ->
-                            commands
-                                |> Dict.toList
-                                |> List.sortBy (\( i, _ ) -> i)
-                                |> List.map (\( _, ( s, r ) ) -> r |> Result.bimap (\e -> ( s, e )) (\c -> ( s, c )))
-                                |> Result.partition
-                                |> (\( errs, cmds ) ->
-                                        if (cmds |> List.length) == (model.statements |> Maybe.mapOrElse Dict.size 0) then
-                                            [ div [] [ text "All statements were correctly parsed." ] ]
+        [ viewLogsFile filename
+        , model.lines |> Maybe.mapOrElse (viewLogsLines wrap model.show) (div [] [])
+        , model.statements |> Maybe.mapOrElse (viewLogsStatements wrap model.show) (div [] [])
+        , model.commands |> Maybe.mapOrElse (viewLogsCommands model.statements) (div [] [])
+        , viewLogsErrors model.schemaErrors
+        , model.schema |> Maybe.mapOrElse viewLogsSchema (div [] [])
+        ]
 
-                                        else if errs |> List.isEmpty then
-                                            [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed.") ] ]
 
-                                        else
-                                            (errs |> List.map (\( s, e ) -> viewParseError s e))
-                                                ++ [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed, " ++ (errs |> List.length |> String.fromInt) ++ " were in error.") ] ]
-                                   )
+viewLogsFile : String -> Html msg
+viewLogsFile filename =
+    div [] [ text ("Loaded " ++ filename ++ ".") ]
+
+
+viewLogsLines : (SqlSourceUploadMsg -> msg) -> HtmlId -> List FileLineContent -> Html msg
+viewLogsLines wrap show lines =
+    div []
+        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "lines"))) ] [ text ("Found " ++ (lines |> List.length |> String.fromInt) ++ " lines in the file.") ]
+        , if show == "lines" then
+            div []
+                (lines
+                    |> List.indexedMap
+                        (\i l ->
+                            div [ class "flex items-start" ]
+                                [ pre [ class "select-none mr-1" ] [ text (String.fromInt (i + 1) ++ ". ") ]
+                                , pre [ class "whitespace-pre font-mono" ] [ text l ]
+                                ]
                         )
-                        []
-               )
-            ++ (if model.schemaErrors |> List.isEmpty then
-                    []
+                )
 
-                else
-                    (model.schemaErrors |> List.map viewSchemaError) ++ [ div [] [ text ((model.schemaErrors |> List.length |> String.fromInt) ++ " statements can't be added to the schema.") ] ]
+          else
+            div [] []
+        ]
+
+
+viewLogsStatements : (SqlSourceUploadMsg -> msg) -> HtmlId -> Dict Int SqlStatement -> Html msg
+viewLogsStatements wrap show statements =
+    div []
+        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "statements"))) ] [ text ("Found " ++ (statements |> Dict.size |> String.fromInt) ++ " SQL statements.") ]
+        , if show == "statements" then
+            div []
+                (statements
+                    |> Dict.toList
+                    |> List.sortBy Tuple.first
+                    |> List.map
+                        (\( i, s ) ->
+                            div [ class "flex items-start mt-3" ]
+                                [ pre [ class "select-none mr-1" ] [ text (String.fromInt (i + 1) ++ ". ") ]
+                                , pre [ class "whitespace-pre font-mono" ] [ text (buildRawSql s) ]
+                                ]
+                        )
+                )
+
+          else
+            div [] []
+        ]
+
+
+viewLogsCommands : Maybe (Dict Int SqlStatement) -> Dict Int ( SqlStatement, Result (List ParseError) Command ) -> Html msg
+viewLogsCommands statements commands =
+    div []
+        (commands
+            |> Dict.toList
+            |> List.sortBy (\( i, _ ) -> i)
+            |> List.map (\( _, ( s, r ) ) -> r |> Result.bimap (\e -> ( s, e )) (\c -> ( s, c )))
+            |> Result.partition
+            |> (\( errs, cmds ) ->
+                    if (cmds |> List.length) == (statements |> Maybe.mapOrElse Dict.size 0) then
+                        [ div [] [ text "All statements were correctly parsed." ] ]
+
+                    else if errs |> List.isEmpty then
+                        [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed.") ] ]
+
+                    else
+                        (errs |> List.map (\( s, e ) -> viewParseError s e))
+                            ++ [ div [] [ text ((cmds |> List.length |> String.fromInt) ++ " statements were correctly parsed, " ++ (errs |> List.length |> String.fromInt) ++ " were in error.") ] ]
                )
-            ++ (model.schema |> Maybe.mapOrElse (\s -> [ div [] [ text ("Schema built with " ++ (s |> Dict.size |> String.fromInt) ++ " tables.") ] ]) [])
         )
+
+
+viewLogsErrors : List (List SchemaError) -> Html msg
+viewLogsErrors schemaErrors =
+    if schemaErrors |> List.isEmpty then
+        div [] []
+
+    else
+        div []
+            ((schemaErrors |> List.map viewSchemaError)
+                ++ [ div [] [ text ((schemaErrors |> List.length |> String.fromInt) ++ " statements can't be added to the schema.") ] ]
+            )
+
+
+viewLogsSchema : SqlSchema -> Html msg
+viewLogsSchema schema =
+    div [] [ text ("Schema built with " ++ (schema |> Dict.size |> String.fromInt) ++ " tables.") ]
 
 
 viewParseError : SqlStatement -> List ParseError -> Html msg
 viewParseError statement errors =
     div [ class "text-red-500" ]
-        (div [] [ text ("Paring error line " ++ (statement.head.line |> String.fromInt) ++ ":") ]
+        (div [] [ text ("Parsing error line " ++ (1 + statement.head.line |> String.fromInt) ++ ":") ]
             :: (errors |> List.map (\error -> div [ class "pl-3" ] [ text error ]))
         )
 

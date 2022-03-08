@@ -96,8 +96,8 @@ parseCreateTable statement =
 
 parseCreateTableColumn : SqlTableName -> RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn table sql =
-    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?(?: CHECK\\((?<check>.*?)\\))?$" of
-        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybeReference :: maybePrimary :: maybeCheck :: [] ->
+    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?$" of
+        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybeReference :: maybePrimary :: maybeCheck :: maybeGenerated :: [] ->
             maybeConstraint
                 |> Maybe.map
                     (\constraint ->
@@ -121,7 +121,7 @@ parseCreateTableColumn table sql =
                         { name = name |> buildColumnName
                         , kind = kind
                         , nullable = nullable == Nothing && nullable2
-                        , default = default1 |> Maybe.orElse default2
+                        , default = default1 |> Maybe.orElse default2 |> Maybe.orElse (maybeGenerated |> Maybe.map String.trim)
                         , primaryKey = pk
                         , foreignKey = fk
                         , check = maybeCheck

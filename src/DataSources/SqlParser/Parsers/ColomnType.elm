@@ -16,6 +16,8 @@ type ParsedColumnType
     | DateTime
     | Interval
     | Uuid
+    | Ip
+    | Json
     | Binary
 
 
@@ -42,7 +44,7 @@ parse kind =
     else if kind |> Regex.match "^time ?(\\(\\d+\\))?( with(out)? time zone)?$" then
         Time
 
-    else if kind == "datetime" || (kind |> Regex.match "^timestamp ?(\\(\\d+\\))?( with(out)? time zone)?$") then
+    else if kind == "datetime" || (kind |> Regex.match "^timestamp(tz)? ?(\\(\\d+\\))?( with(out)? time zone)?$") then
         DateTime
 
     else if kind |> Regex.match "^interval ?(\\(\\d+\\))?$" then
@@ -50,6 +52,12 @@ parse kind =
 
     else if kind == "uuid" then
         Uuid
+
+    else if kind == "cidr" || kind == "inet" then
+        Ip
+
+    else if kind |> Regex.match "^jsonb?$" then
+        Json
 
     else if kind == "bytea" then
         Binary
@@ -93,6 +101,12 @@ toString kind =
 
         Uuid ->
             "Uuid"
+
+        Ip ->
+            "Ip"
+
+        Json ->
+            "Json"
 
         Binary ->
             "Binary"

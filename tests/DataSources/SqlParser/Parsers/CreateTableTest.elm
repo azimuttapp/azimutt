@@ -88,6 +88,9 @@ suite =
             , testParseSql ( parseCreateTableColumn "", "with collate" )
                 "id nvarchar(32) COLLATE Modern_Spanish_CI_AS NOT NULL"
                 { parsedColumn | name = "id", kind = "nvarchar(32)", nullable = False }
+            , testParseSql ( parseCreateTableColumn "", "with generated" )
+                "event_name text not null generated always as ((((service__name || '.'::text) || resource_type__name) || '.'::text) || verb__name) stored"
+                { parsedColumn | name = "event_name", kind = "text", nullable = False, default = Just "generated always as ((((service__name || '.'::text) || resource_type__name) || '.'::text) || verb__name) stored" }
             ]
         , describe "parseCreateTableForeignKey"
             [ testParseSql ( parseCreateTableForeignKey, "sqlite" )

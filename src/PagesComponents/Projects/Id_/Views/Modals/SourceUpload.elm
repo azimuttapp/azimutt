@@ -95,7 +95,7 @@ localFileModal zone now titleId source fileName updatedAt model =
 
             _ ->
                 div [] []
-        , SqlSourceUpload.viewParsing model
+        , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -125,7 +125,7 @@ remoteFileModal zone now titleId source fileUrl model =
         , div [ class "mt-3 flex justify-center" ]
             [ Button.primary5 Tw.primary [ onClick (fileUrl |> SelectRemoteFile |> PSSqlSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
             ]
-        , SqlSourceUpload.viewParsing model
+        , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -171,7 +171,7 @@ newSourceModal titleId model =
                 ]
             ]
         , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
-        , SqlSourceUpload.viewParsing model
+        , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceAdd >> ProjectSettingsMsg)) "Add source"

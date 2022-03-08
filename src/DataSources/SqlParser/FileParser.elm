@@ -366,10 +366,10 @@ buildStatements lines =
         |> List.foldr
             (\line ( currentStatementLines, statements, nestedBlock ) ->
                 case
-                    ( ( (line |> hasKeyword "BEGIN") || (line |> hasKeyword "CASE")
-                      , line |> hasKeyword "END"
+                    ( ( (line |> hasKeyword "BEGIN") || (line |> hasKeyword "CASE") || (line |> hasKeyword "LOOP") || (line |> hasKeyword "\\$\\$")
+                      , (line |> hasKeyword "END") || (line |> hasKeyword "\\$\\$;")
                       )
-                    , ( line.text |> String.endsWith ";"
+                    , ( line.text |> removeTrailingComment |> String.endsWith ";"
                       , nestedBlock
                       )
                     )
@@ -380,10 +380,13 @@ buildStatements lines =
                     ( ( _, True ), ( False, _ ) ) ->
                         ( line :: currentStatementLines, statements, nestedBlock + 1 )
 
-                    ( ( _, True ), ( True, _ ) ) ->
+                    ( ( _, True ), ( True, 0 ) ) ->
                         ( line :: [], addStatement currentStatementLines statements, nestedBlock + 1 )
 
-                    ( _, ( True, 0 ) ) ->
+                    ( ( _, True ), ( True, _ ) ) ->
+                        ( line :: currentStatementLines, statements, nestedBlock + 1 )
+
+                    ( ( _, False ), ( True, 0 ) ) ->
                         ( line :: [], addStatement currentStatementLines statements, nestedBlock )
 
                     _ ->
@@ -396,7 +399,7 @@ buildStatements lines =
 
 hasKeyword : String -> SqlLine -> Bool
 hasKeyword keyword line =
-    (line.text |> Regex.match ("[^A-Z_\"'`]" ++ keyword ++ "([^A-Z_\"'`]|$)")) && not (line.text |> Regex.match ("'.*" ++ keyword ++ ".*'"))
+    (line.text |> Regex.match ("(^|[^A-Z_\"'`])" ++ keyword ++ "([^A-Z_\"'`]|$)")) && not (line.text |> Regex.match ("'.*" ++ keyword ++ ".*'"))
 
 
 hasOnlyComment : SqlLine -> Bool
@@ -422,6 +425,14 @@ addStatement lines statements =
 statementIsEmpty : SqlStatement -> Bool
 statementIsEmpty statement =
     statement.head.text == ";"
+
+
+removeTrailingComment : String -> String
+removeTrailingComment line =
+    (line |> String.split "--" |> List.head)
+        |> Maybe.orElse (line |> String.split "#" |> List.head)
+        |> Maybe.withDefault line
+        |> String.trimRight
 
 
 buildSqlLines : List FileLineContent -> List SqlLine

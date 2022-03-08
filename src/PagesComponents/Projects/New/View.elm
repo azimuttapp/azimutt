@@ -186,7 +186,7 @@ viewHeading title description =
 viewSqlSourceUpload : SqlSourceUpload Msg -> Html Msg
 viewSqlSourceUpload sqlSourceUpload =
     div []
-        [ SqlSourceUpload.viewParsing sqlSourceUpload
+        [ SqlSourceUpload.viewParsing SqlSourceUploadMsg sqlSourceUpload
         , Maybe.map2
             (\( projectId, _, _ ) source ->
                 div [ css [ "mt-6" ] ]
