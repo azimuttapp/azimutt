@@ -126,23 +126,30 @@ parseAlterTableAddConstraintForeignKey constraint =
         deferrable =
             "(?:(?:\\s+NOT)?\\s+DEFERRABLE)?"
     in
-    case constraint |> Regex.matches ("^FOREIGN KEY\\s+\\((?<column>[^, )]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ sqlTriggers ++ deferrable ++ "$") of
-        (Just column) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
+    case constraint |> Regex.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ sqlTriggers ++ deferrable ++ "$") of
+        (Just columns) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
+            buildForeignKeyInner constraint columns schemaDest tableDest columnDest
+
+        _ ->
+            case constraint |> Regex.matches "^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\((?<column_b>[^ .]+)\\))?$" of
+                (Just columns) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
+                    buildForeignKeyInner constraint columns schemaDest tableDest columnDest
+
+                _ ->
+                    Err [ "Can't parse foreign key: '" ++ constraint ++ "'" ]
+
+
+buildForeignKeyInner : RawSql -> String -> Maybe String -> String -> Maybe String -> Result (List ParseError) ForeignKeyInner
+buildForeignKeyInner constraint columns schemaDest tableDest columnDest =
+    case columns |> String.split "," of
+        column :: [] ->
             Ok
                 { column = column |> buildColumnName
                 , ref = { schema = schemaDest |> Maybe.map buildSchemaName, table = tableDest |> buildTableName, column = columnDest |> Maybe.map buildColumnName }
                 }
 
         _ ->
-            case constraint |> Regex.matches "^FOREIGN KEY\\s+\\((?<column>[^, )]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\((?<column_b>[^ .]+)\\))?$" of
-                (Just column) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
-                    Ok
-                        { column = column |> buildColumnName
-                        , ref = { schema = schemaDest |> Maybe.map buildSchemaName, table = tableDest |> buildTableName, column = columnDest |> Maybe.map buildColumnName }
-                        }
-
-                _ ->
-                    Err [ "Can't parse foreign key: '" ++ constraint ++ "'" ]
+            Err [ "Multi-column foreign key is not supported: '" ++ constraint ++ "'" ]
 
 
 parseAlterTableAddConstraintUnique : RawSql -> Result (List ParseError) UniqueInner
