@@ -1,4 +1,4 @@
-port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, getSourceId, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -62,6 +62,11 @@ setClasses payload =
 loadProjects : Cmd msg
 loadProjects =
     messageToJs LoadProjects
+
+
+loadRemoteProject : String -> Cmd msg
+loadRemoteProject projectUrl =
+    messageToJs (LoadRemoteProject projectUrl)
 
 
 saveProject : Project -> Cmd msg
@@ -160,6 +165,7 @@ type ElmMsg
     | SetClasses HtmlContainers
     | AutofocusWithin HtmlId
     | LoadProjects
+    | LoadRemoteProject FileUrl
     | SaveProject Project
     | DownloadFile FileName FileContent
     | DropProject Project
@@ -228,6 +234,9 @@ elmEncoder elm =
 
         LoadProjects ->
             Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
+
+        LoadRemoteProject projectUrl ->
+            Encode.object [ ( "kind", "LoadRemoteProject" |> Encode.string ), ( "projectUrl", projectUrl |> Encode.string ) ]
 
         SaveProject project ->
             Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]

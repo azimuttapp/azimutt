@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.View exposing (viewProject)
+module PagesComponents.Projects.Id_.Views exposing (view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -30,6 +30,14 @@ import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSour
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import Shared exposing (StoredProjects(..))
 import Time
+import View exposing (View)
+
+
+view : Shared.Model -> Model -> View Msg
+view shared model =
+    { title = model.erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") "Azimutt - Explore your database schema"
+    , body = model |> viewProject shared
+    }
 
 
 viewProject : Shared.Model -> Model -> List (Html Msg)
