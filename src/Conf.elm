@@ -11,7 +11,8 @@ import Models.Project.SchemaName exposing (SchemaName)
 
 
 constants :
-    { azimuttTwitter : String
+    { azimuttWebsite : String
+    , azimuttTwitter : String
     , azimuttGithub : String
     , azimuttDiscussions : String
     , azimuttRoadmap : String
@@ -24,7 +25,8 @@ constants :
     , cheeringTweet : String
     }
 constants =
-    { azimuttTwitter = "https://twitter.com/" ++ twitter
+    { azimuttWebsite = "https://azimutt.app"
+    , azimuttTwitter = "https://twitter.com/" ++ twitter
     , azimuttGithub = github
     , azimuttDiscussions = github ++ "/discussions"
     , azimuttRoadmap = github ++ "/projects/1"

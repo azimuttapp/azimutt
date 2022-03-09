@@ -9,15 +9,16 @@ import Html exposing (Html, button, div, span, text)
 import Html.Attributes exposing (class, id, type_)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
+import Libs.Html as Html
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), ErdConf, Msg(..))
 
 
-viewCommands : CursorMode -> ZoomLevel -> Bool -> HtmlId -> HtmlId -> Html Msg
-viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
+viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> HtmlId -> Html Msg
+viewCommands conf cursorMode canvasZoom htmlId openedDropdown =
     let
         buttonStyles : TwClass
         buttonStyles =
@@ -31,7 +32,7 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
         inverted =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
     in
-    div [ class ("az-commands absolute bottom-0 right-0 m-3" ++ B.cond hide " hidden" "") ]
+    div [ class "az-commands absolute bottom-0 right-0 m-3" ]
         [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
             [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
                 [ Icon.solid ArrowsExpand "" ]
@@ -61,4 +62,13 @@ viewCommands cursorMode canvasZoom hide htmlId openedDropdown =
                 )
             , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus "" ]
             ]
+        , if conf.allowFullscreen then
+            span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
+                [ button [ type_ "button", onClick (Fullscreen Nothing), css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
+                    [ Icon.solid PresentationChartBar "" ]
+                    |> Tooltip.tl "View in full screen"
+                ]
+
+          else
+            Html.none
         ]

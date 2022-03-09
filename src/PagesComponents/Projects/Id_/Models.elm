@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), ErdConf, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -34,7 +34,8 @@ import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
-    { navbar : NavbarModel
+    { conf : ErdConf
+    , navbar : NavbarModel
     , screen : ScreenProps
     , loaded : Bool
     , erd : Maybe Erd
@@ -60,6 +61,19 @@ type alias Model =
     , confirm : Maybe ConfirmDialog
     , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
+    }
+
+
+type alias ErdConf =
+    { fitOnLoad : Bool
+    , allowSave : Bool
+    , showNavbar : Bool
+    , showCommands : Bool
+    , allowFullscreen : Bool
+    , drag : Bool
+    , selectionBox : Bool
+    , tableActions : Bool
+    , columnActions : Bool
     }
 
 
@@ -146,6 +160,7 @@ type Msg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
+    | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent
     | Zoom ZoomDelta
       -- global messages

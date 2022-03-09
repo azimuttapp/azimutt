@@ -1,4 +1,4 @@
-port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -47,6 +47,11 @@ blur id =
 scrollTo : HtmlId -> String -> Cmd msg
 scrollTo id position =
     messageToJs (ScrollTo id position)
+
+
+fullscreen : Maybe HtmlId -> Cmd msg
+fullscreen maybeId =
+    messageToJs (Fullscreen maybeId)
 
 
 autofocusWithin : HtmlId -> Cmd msg
@@ -162,6 +167,7 @@ type ElmMsg
     | Focus HtmlId
     | Blur HtmlId
     | ScrollTo HtmlId String
+    | Fullscreen (Maybe HtmlId)
     | SetClasses HtmlContainers
     | AutofocusWithin HtmlId
     | LoadProjects
@@ -225,6 +231,9 @@ elmEncoder elm =
 
         ScrollTo id position ->
             Encode.object [ ( "kind", "ScrollTo" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
+
+        Fullscreen maybeId ->
+            Encode.object [ ( "kind", "Fullscreen" |> Encode.string ), ( "maybeId", maybeId |> Encode.maybe Encode.string ) ]
 
         SetClasses { html, body } ->
             Encode.object [ ( "kind", "SetClasses" |> Encode.string ), ( "html", html |> Encode.string ), ( "body", body |> Encode.string ) ]

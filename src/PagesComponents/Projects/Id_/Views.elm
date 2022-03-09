@@ -28,6 +28,7 @@ import PagesComponents.Projects.Id_.Views.Modals.Prompt exposing (viewPrompt)
 import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
 import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
+import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
 import Shared exposing (StoredProjects(..))
 import Time
 import View exposing (View)
@@ -56,9 +57,22 @@ viewProject shared model =
 viewApp : Model -> HtmlId -> Erd -> Html Msg
 viewApp model htmlId erd =
     div [ class "az-app h-full" ]
-        [ Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
-        , Lazy.lazy7 viewErd model.screen erd model.cursorMode model.selectionBox model.virtualRelation (Erd.argsToString model.openedDropdown model.openedPopover) model.dragging
-        , Lazy.lazy5 viewCommands model.cursorMode erd.canvas.zoom (erd.tableProps |> Dict.isEmpty) (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+        [ if model.conf.showNavbar then
+            Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+
+          else
+            div [] []
+        , Lazy.lazy8 viewErd model.conf model.screen erd model.cursorMode model.selectionBox model.virtualRelation (Erd.argsToString model.openedDropdown model.openedPopover) model.dragging
+        , if not (erd.tableProps |> Dict.isEmpty) && model.conf.showCommands then
+            Lazy.lazy5 viewCommands model.conf model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+
+          else
+            div [] []
+        , if not model.conf.showNavbar then
+            viewWatermark
+
+          else
+            div [] []
         ]
 
 

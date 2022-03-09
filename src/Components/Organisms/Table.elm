@@ -1,4 +1,4 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableConf, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), MenuItem)
@@ -16,8 +16,8 @@ import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as Bool
-import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
+import Libs.Html as Html exposing (bText)
+import Libs.Html.Attributes as Attributes exposing (ariaExpanded, ariaHaspopup, css, role, track)
 import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -42,6 +42,7 @@ type alias Model msg =
     , state : State
     , actions : Actions msg
     , zoom : ZoomLevel
+    , conf : TableConf
     }
 
 
@@ -111,6 +112,10 @@ type alias Actions msg =
     }
 
 
+type alias TableConf =
+    { tableActions : Bool, columnActions : Bool }
+
+
 table : Model msg -> Html msg
 table model =
     div
@@ -159,23 +164,27 @@ viewHeader model =
               else
                 span ([ class "text-xl" ] ++ headerTextSize) [ text model.label ]
             ]
-        , Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
-            (\m ->
-                button
-                    ([ type_ "button"
-                     , id m.id
-                     , onClick (model.actions.clickDropdown m.id)
-                     , ariaExpanded m.isOpen
-                     , ariaHaspopup True
-                     , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
-                     ]
-                        ++ track Track.openTableSettings
-                    )
-                    [ span [ class "sr-only" ] [ text "Open table settings" ]
-                    , Icon.solid DotsVertical ""
-                    ]
-            )
-            (\_ -> div [ class "z-max" ] (model.settings |> List.map ContextMenu.btnSubmenu))
+        , if model.conf.tableActions then
+            Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
+                (\m ->
+                    button
+                        ([ type_ "button"
+                         , id m.id
+                         , onClick (model.actions.clickDropdown m.id)
+                         , ariaExpanded m.isOpen
+                         , ariaHaspopup True
+                         , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                         ]
+                            ++ track Track.openTableSettings
+                        )
+                        [ span [ class "sr-only" ] [ text "Open table settings" ]
+                        , Icon.solid DotsVertical ""
+                        ]
+                )
+                (\_ -> div [ class "z-max" ] (model.settings |> List.map ContextMenu.btnSubmenu))
+
+          else
+            Html.none
         ]
 
 
@@ -225,7 +234,7 @@ viewHiddenColumns model =
                 [ onClick model.actions.clickHiddenColumns
                 , onMouseEnter (model.actions.hoverHiddenColumns popoverId)
                 , onMouseLeave (model.actions.hoverHiddenColumns "")
-                , class "text-gray-400 uppercase font-bold text-sm cursor-pointer"
+                , class "text-gray-400 uppercase font-bold text-sm whitespace-nowrap cursor-pointer"
                 ]
                 [ text (model.hiddenColumns |> String.pluralizeL "hidden column") ]
                 |> Popover.r popover showPopover
@@ -238,8 +247,16 @@ viewColumn model isLast index column =
     div
         ([ onMouseEnter (model.actions.hoverColumn column.name True)
          , onMouseLeave (model.actions.hoverColumn column.name False)
-         , onContextMenu (model.actions.contextMenuColumn index column.name)
-         , onDoubleClick (model.actions.dblClickColumn column.name)
+         , if model.conf.columnActions then
+            onContextMenu (model.actions.contextMenuColumn index column.name)
+
+           else
+            Attributes.none
+         , if model.conf.columnActions then
+            onDoubleClick (model.actions.dblClickColumn column.name)
+
+           else
+            Attributes.none
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap"
             , Bool.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
@@ -269,8 +286,8 @@ viewColumnIcon model column =
                 |> String.join ", "
     in
     if column.outRelations |> List.nonEmpty then
-        if column.outRelations |> List.filter .tableShown |> List.nonEmpty then
-            div [ css [ "cursor-pointer" ] ]
+        if (column.outRelations |> List.filter .tableShown |> List.nonEmpty) || not model.conf.columnActions then
+            div []
                 [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
@@ -304,7 +321,7 @@ viewColumnIconDropdown model column icon =
         tablesToShow =
             column.inRelations |> List.filterNot .tableShown
     in
-    if column.inRelations |> List.isEmpty then
+    if List.isEmpty column.inRelations || not model.conf.columnActions then
         div [] [ button [ type_ "button", id dropdownId, css [ "cursor-default", focus [ "outline-none" ] ] ] [ icon ] ]
 
     else
@@ -498,6 +515,7 @@ sample =
         , clickDropdown = \id -> logAction ("open " ++ id)
         }
     , zoom = 1
+    , conf = { tableActions = True, columnActions = True }
     }
 
 

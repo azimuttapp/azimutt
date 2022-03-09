@@ -1,9 +1,8 @@
-module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, role, track)
+module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, none, role, track)
 
 import Html exposing (Attribute)
-import Html.Attributes exposing (attribute, class)
+import Html.Attributes exposing (attribute, class, classList)
 import Libs.Bool as B
-import Libs.List as List
 import Libs.Models exposing (Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (TwClass)
@@ -80,6 +79,11 @@ computeStyles values =
         |> List.map String.trim
         |> List.filter (\v -> v /= "")
         |> String.join " "
+
+
+none : Attribute msg
+none =
+    classList []
 
 
 role : String -> Attribute msg

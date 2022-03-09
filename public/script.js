@@ -33,6 +33,7 @@ window.addEventListener('load', function() {
                 case 'Focus':             focus(port.id); break;
                 case 'Blur':              blur(port.id); break;
                 case 'ScrollTo':          scrollTo(port.id, port.position); break;
+                case 'Fullscreen':        fullscreen(port.maybeId); break;
                 case 'SetClasses':        setClasses(port.html, port.body); break;
                 case 'AutofocusWithin':   autofocusWithin(port.id); break;
                 case 'LoadProjects':      loadProjects(); break;
@@ -67,6 +68,9 @@ window.addEventListener('load', function() {
     }
     function scrollTo(id, position) {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
+    }
+    function fullscreen(maybeId) {
+        maybeId ? getElementById(maybeId).requestFullscreen() : document.body.requestFullscreen()
     }
     function setClasses(html, body) {
         document.getElementsByTagName('html')[0].setAttribute('class', html)

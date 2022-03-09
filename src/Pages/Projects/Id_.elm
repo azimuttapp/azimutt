@@ -37,7 +37,18 @@ type alias Msg =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
+    ( { conf =
+            { fitOnLoad = False
+            , allowSave = True
+            , showNavbar = True
+            , showCommands = True
+            , allowFullscreen = False
+            , drag = True
+            , selectionBox = True
+            , tableActions = True
+            , columnActions = True
+            }
+      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = False
       , erd = Nothing
@@ -63,7 +74,7 @@ init =
       , openedDialogs = []
       }
     , Cmd.batch
-        [ Ports.setClasses { html = "h-full bg-gray-100 overflow-hidden", body = "h-full" }
+        [ Ports.setClasses { html = "h-full", body = "h-full" }
         , Ports.trackPage "app"
         , Ports.loadProjects
         , Ports.listenHotkeys Conf.hotkeys

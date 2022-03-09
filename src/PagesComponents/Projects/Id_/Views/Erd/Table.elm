@@ -20,7 +20,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), ErdConf, FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
@@ -48,8 +48,8 @@ stringToArgs args =
             ( ( "", "" ), ( False, False, False ) )
 
 
-viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
-viewTable zoom cursorMode args index props table =
+viewTable : ErdConf -> ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
+viewTable conf zoom cursorMode args index props table =
     let
         ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation, useBasicTypes ) ) =
             stringToArgs args
@@ -59,7 +59,7 @@ viewTable zoom cursorMode args index props table =
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (cursorMode == CursorDrag) [] [ stopPointerDown (handleTablePointerDown table.htmlId) ]
+            B.cond (cursorMode == CursorDrag || not conf.drag) [] [ stopPointerDown (handleTablePointerDown table.htmlId) ]
 
         zIndex : Int
         zIndex =
@@ -146,6 +146,7 @@ viewTable zoom cursorMode args index props table =
                 , clickDropdown = DropdownToggle
                 }
             , zoom = zoom
+            , conf = { tableActions = conf.tableActions, columnActions = conf.columnActions }
             }
         ]
 
@@ -159,7 +160,7 @@ handleTablePointerDown htmlId e =
         e |> .position |> DragStart Conf.ids.erd
 
     else
-        Noop ""
+        Noop "No match on table pointer down"
 
 
 buildColumn : Bool -> ErdTableProps -> ErdColumn -> Table.Column

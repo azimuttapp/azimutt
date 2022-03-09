@@ -34,7 +34,7 @@ import PagesComponents.Projects.Id_.Updates.Source as Source
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import Ports exposing (JsMsg(..))
-import Services.Lenses exposing (mapCanvas, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Time
 import Track
@@ -50,7 +50,11 @@ update currentProject now msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SaveProject ->
-            ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+            if model.conf.allowSave then
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+
+            else
+                ( model, Cmd.none )
 
         RenameProject name ->
             ( model |> mapErdM (mapProject (setName name)), Cmd.none )
@@ -145,6 +149,9 @@ update currentProject now msg model =
 
         FitContent ->
             ( model |> mapErdM (fitCanvas model.screen), Cmd.none )
+
+        Fullscreen maybeId ->
+            ( model, Ports.fullscreen maybeId )
 
         OnWheel event ->
             ( model |> mapErdM (mapCanvas (handleWheel event)), Cmd.none )
@@ -281,7 +288,7 @@ handleJsMessage currentProject message model =
             handleHotkey model hotkey
 
         GotKeyHold key start ->
-            if key == "Space" then
+            if key == "Space" && model.conf.drag then
                 if start then
                     ( model |> setCursorMode CursorDrag, Cmd.none )
 
@@ -297,7 +304,16 @@ handleJsMessage currentProject message model =
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
 updateSizes changes model =
-    ( changes |> List.sortBy (\c -> B.cond (c.id == Conf.ids.erd) 0 1) |> List.foldl updateSize model, Cmd.none )
+    let
+        modelWithSizes : Model
+        modelWithSizes =
+            changes |> List.sortBy (\c -> B.cond (c.id == Conf.ids.erd) 0 1) |> List.foldl updateSize model
+    in
+    if model.conf.fitOnLoad then
+        ( modelWithSizes |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitContent )
+
+    else
+        ( modelWithSizes, Cmd.none )
 
 
 updateSize : SizeChange -> Model -> Model

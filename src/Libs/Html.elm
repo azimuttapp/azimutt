@@ -1,4 +1,4 @@
-module Libs.Html exposing (bText, codeText, divIf, extLink, sendTweet)
+module Libs.Html exposing (bText, codeText, divIf, extLink, none, sendTweet)
 
 import Html exposing (Attribute, Html, a, b, code, div, text)
 import Html.Attributes exposing (href, rel, target)
@@ -29,6 +29,11 @@ divIf predicate attrs children =
 extLink : String -> List (Attribute msg) -> List (Html msg) -> Html msg
 extLink url attrs children =
     a ([ href url, target "_blank", rel "noopener" ] ++ track (Track.externalLink url) ++ attrs) children
+
+
+none : Html msg
+none =
+    text ""
 
 
 sendTweet : String -> List (Attribute msg) -> List (Html msg) -> Html msg
