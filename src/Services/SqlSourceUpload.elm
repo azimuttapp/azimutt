@@ -276,31 +276,52 @@ viewParsing wrap model =
 viewLogs : (SqlSourceUploadMsg -> msg) -> String -> SqlParsing msg -> Html msg
 viewLogs wrap filename model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
-        [ viewLogsFile filename
+        [ viewLogsFile wrap model.show filename model.fileContent
         , model.lines |> Maybe.mapOrElse (viewLogsLines wrap model.show) (div [] [])
         , model.statements |> Maybe.mapOrElse (viewLogsStatements wrap model.show) (div [] [])
         , model.commands |> Maybe.mapOrElse (viewLogsCommands model.statements) (div [] [])
         , viewLogsErrors model.schemaErrors
-        , model.schema |> Maybe.mapOrElse viewLogsSchema (div [] [])
+        , model.schema |> Maybe.mapOrElse (viewLogsSchema wrap model.show) (div [] [])
         ]
 
 
-viewLogsFile : String -> Html msg
-viewLogsFile filename =
-    div [] [ text ("Loaded " ++ filename ++ ".") ]
+viewLogsFile : (SqlSourceUploadMsg -> msg) -> HtmlId -> String -> FileContent -> Html msg
+viewLogsFile wrap show filename content =
+    div []
+        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "file"))) ] [ text ("Loaded " ++ filename ++ ".") ]
+        , if show == "file" then
+            div [] [ pre [ class "whitespace-pre font-mono" ] [ text content ] ]
+
+          else
+            div [] []
+        ]
 
 
 viewLogsLines : (SqlSourceUploadMsg -> msg) -> HtmlId -> List FileLineContent -> Html msg
 viewLogsLines wrap show lines =
+    let
+        count : Int
+        count =
+            lines |> List.length
+
+        pad : Int -> String
+        pad =
+            let
+                size : Int
+                size =
+                    count |> String.fromInt |> String.length
+            in
+            \i -> i |> String.fromInt |> String.padLeft size ' '
+    in
     div []
-        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "lines"))) ] [ text ("Found " ++ (lines |> List.length |> String.fromInt) ++ " lines in the file.") ]
+        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "lines"))) ] [ text ("Found " ++ (count |> String.pluralize "line") ++ " in the file.") ]
         , if show == "lines" then
             div []
                 (lines
                     |> List.indexedMap
                         (\i l ->
                             div [ class "flex items-start" ]
-                                [ pre [ class "select-none mr-1" ] [ text (String.fromInt (i + 1) ++ ". ") ]
+                                [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
                                 , pre [ class "whitespace-pre font-mono" ] [ text l ]
                                 ]
                         )
@@ -313,8 +334,22 @@ viewLogsLines wrap show lines =
 
 viewLogsStatements : (SqlSourceUploadMsg -> msg) -> HtmlId -> Dict Int SqlStatement -> Html msg
 viewLogsStatements wrap show statements =
+    let
+        count : Int
+        count =
+            statements |> Dict.size
+
+        pad : Int -> String
+        pad =
+            let
+                size : Int
+                size =
+                    count |> String.fromInt |> String.length
+            in
+            \i -> i |> String.fromInt |> String.padLeft size ' '
+    in
     div []
-        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "statements"))) ] [ text ("Found " ++ (statements |> Dict.size |> String.fromInt) ++ " SQL statements.") ]
+        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "statements"))) ] [ text ("Found " ++ (count |> String.pluralize "SQL statement") ++ ".") ]
         , if show == "statements" then
             div []
                 (statements
@@ -322,8 +357,8 @@ viewLogsStatements wrap show statements =
                     |> List.sortBy Tuple.first
                     |> List.map
                         (\( i, s ) ->
-                            div [ class "flex items-start mt-3" ]
-                                [ pre [ class "select-none mr-1" ] [ text (String.fromInt (i + 1) ++ ". ") ]
+                            div [ class "flex items-start" ]
+                                [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
                                 , pre [ class "whitespace-pre font-mono" ] [ text (buildRawSql s) ]
                                 ]
                         )
@@ -368,9 +403,41 @@ viewLogsErrors schemaErrors =
             )
 
 
-viewLogsSchema : SqlSchema -> Html msg
-viewLogsSchema schema =
-    div [] [ text ("Schema built with " ++ (schema |> Dict.size |> String.fromInt) ++ " tables.") ]
+viewLogsSchema : (SqlSourceUploadMsg -> msg) -> HtmlId -> SqlSchema -> Html msg
+viewLogsSchema wrap show schema =
+    let
+        count : Int
+        count =
+            schema |> Dict.size
+
+        pad : Int -> String
+        pad =
+            let
+                size : Int
+                size =
+                    count |> String.fromInt |> String.length
+            in
+            \i -> i |> String.fromInt |> String.padLeft size ' '
+    in
+    div []
+        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "tables"))) ] [ text ("Schema built with " ++ (count |> String.pluralize "table") ++ ".") ]
+        , if show == "tables" then
+            div []
+                (schema
+                    |> Dict.values
+                    |> List.sortBy (\t -> t.schema ++ "." ++ t.table)
+                    |> List.indexedMap
+                        (\i t ->
+                            div [ class "flex items-start" ]
+                                [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
+                                , pre [ class "whitespace-pre font-mono" ] [ text (t.schema ++ "." ++ t.table) ]
+                                ]
+                        )
+                )
+
+          else
+            div [] []
+        ]
 
 
 viewParseError : SqlStatement -> List ParseError -> Html msg
