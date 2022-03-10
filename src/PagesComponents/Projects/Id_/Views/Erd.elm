@@ -109,16 +109,8 @@ viewErd conf screen erd cursorMode selectionBox virtualRelation args dragging =
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
-        , if conf.drag then
-            onWheel OnWheel
-
-          else
-            Attributes.none
-        , if conf.drag || conf.selectionBox then
-            stopPointerDown (handleErdPointerDown conf cursorMode)
-
-          else
-            Attributes.none
+        , Attributes.when conf.move (onWheel OnWheel)
+        , Attributes.when (conf.move || conf.select) (stopPointerDown (handleErdPointerDown conf cursorMode))
         ]
         [ div
             [ class "az-canvas origin-top-left"
@@ -142,21 +134,21 @@ handleErdPointerDown conf cursorMode e =
     if e.button == MainButton then
         case cursorMode of
             CursorDrag ->
-                if conf.drag then
+                if conf.move then
                     e |> .position |> DragStart Conf.ids.erd
 
                 else
                     Noop "No erd drag"
 
             CursorSelect ->
-                if conf.selectionBox then
+                if conf.select then
                     e |> .position |> DragStart Conf.ids.selectionBox
 
                 else
                     Noop "No selection box"
 
     else if e.button == MiddleButton then
-        if conf.drag then
+        if conf.move then
             e |> .position |> DragStart Conf.ids.erd
 
         else

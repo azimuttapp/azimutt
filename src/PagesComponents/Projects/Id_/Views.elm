@@ -58,12 +58,12 @@ viewApp : Model -> HtmlId -> Erd -> Html Msg
 viewApp model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+            Lazy.lazy6 viewNavbar model.conf model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
 
           else
             div [] []
         , Lazy.lazy8 viewErd model.conf model.screen erd model.cursorMode model.selectionBox model.virtualRelation (Erd.argsToString model.openedDropdown model.openedPopover) model.dragging
-        , if not (erd.tableProps |> Dict.isEmpty) && model.conf.showCommands then
+        , if not (erd.tableProps |> Dict.isEmpty) && (model.conf.fullscreen || model.conf.move) then
             Lazy.lazy5 viewCommands model.conf model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
 
           else

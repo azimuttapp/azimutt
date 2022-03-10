@@ -66,14 +66,15 @@ type alias Model =
 
 type alias ErdConf =
     { fitOnLoad : Bool
-    , allowSave : Bool
+    , fullscreen : Bool
+    , save : Bool
+    , dashboardLink : Bool
     , showNavbar : Bool
-    , showCommands : Bool
-    , allowFullscreen : Bool
-    , drag : Bool
-    , selectionBox : Bool
-    , tableActions : Bool
-    , columnActions : Bool
+    , findPath : Bool
+    , layout : Bool
+    , move : Bool
+    , select : Bool
+    , hover : Bool
     }
 
 

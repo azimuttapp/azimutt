@@ -15,6 +15,7 @@ import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T
 import Models.Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source as Source
 import Models.Project.TableId as TableId exposing (TableId)
@@ -40,8 +41,8 @@ import Time
 import Track
 
 
-update : Maybe ProjectId -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update currentProject now msg model =
+update : Maybe ProjectId -> Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update currentProject currentLayout now msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -50,7 +51,7 @@ update currentProject now msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         SaveProject ->
-            if model.conf.allowSave then
+            if model.conf.save then
                 ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
             else
@@ -233,7 +234,7 @@ update currentProject now msg model =
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
-            model |> handleJsMessage currentProject message
+            model |> handleJsMessage currentProject currentLayout message
 
         Send cmd ->
             ( model, cmd )
@@ -242,8 +243,8 @@ update currentProject now msg model =
             ( model, Cmd.none )
 
 
-handleJsMessage : Maybe ProjectId -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage currentProject message model =
+handleJsMessage : Maybe ProjectId -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage currentProject currentLayout message model =
     case message of
         GotSizes sizes ->
             model |> updateSizes sizes
@@ -252,7 +253,9 @@ handleJsMessage currentProject message model =
             let
                 project : Maybe Project
                 project =
-                    currentProject |> Maybe.mapOrElse (\id -> projects |> List.find (\p -> p.id == id)) (projects |> List.head)
+                    currentProject
+                        |> Maybe.mapOrElse (\id -> projects |> List.find (\p -> p.id == id)) (projects |> List.head)
+                        |> Maybe.map (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
             in
             ( { model | loaded = True, erd = model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create projects)) }
             , Cmd.batch
@@ -288,7 +291,7 @@ handleJsMessage currentProject message model =
             handleHotkey model hotkey
 
         GotKeyHold key start ->
-            if key == "Space" && model.conf.drag then
+            if key == "Space" && model.conf.move then
                 if start then
                     ( model |> setCursorMode CursorDrag, Cmd.none )
 

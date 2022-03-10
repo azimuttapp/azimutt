@@ -32,37 +32,49 @@ viewCommands conf cursorMode canvasZoom htmlId openedDropdown =
         inverted =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
     in
-    div [ class "az-commands absolute bottom-0 right-0 m-3" ]
-        [ span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
-            [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
-                [ Icon.solid ArrowsExpand "" ]
-                |> Tooltip.t "Fit content in view"
-            ]
-        , span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-            [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
-            , button [ type_ "button", onClick (CursorMode CursorDrag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
-            ]
-        , span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-            [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus "" ]
-            , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
-                (\m ->
-                    button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "-ml-px", buttonStyles, classic ] ]
-                        [ text (String.fromInt (round (canvasZoom * 100)) ++ " %") ]
-                )
-                (\_ ->
-                    div []
-                        [ ContextMenu.btn "" (Zoom (Conf.canvas.zoom.min - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
-                        , ContextMenu.btn "" (Zoom (0.25 - canvasZoom)) [ text "25%" ]
-                        , ContextMenu.btn "" (Zoom (0.5 - canvasZoom)) [ text "50%" ]
-                        , ContextMenu.btn "" (Zoom (1 - canvasZoom)) [ text "100%" ]
-                        , ContextMenu.btn "" (Zoom (1.5 - canvasZoom)) [ text "150%" ]
-                        , ContextMenu.btn "" (Zoom (2 - canvasZoom)) [ text "200%" ]
-                        , ContextMenu.btn "" (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
-                        ]
-                )
-            , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus "" ]
-            ]
-        , if conf.allowFullscreen then
+    div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
+        [ if conf.move then
+            span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
+                [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
+                    [ Icon.solid ArrowsExpand "" ]
+                    |> Tooltip.t "Fit content in view"
+                ]
+
+          else
+            Html.none
+        , if conf.move then
+            span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
+                [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
+                , button [ type_ "button", onClick (CursorMode CursorDrag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
+                ]
+
+          else
+            Html.none
+        , if conf.move then
+            span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
+                [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus "" ]
+                , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
+                    (\m ->
+                        button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "-ml-px", buttonStyles, classic ] ]
+                            [ text (String.fromInt (round (canvasZoom * 100)) ++ " %") ]
+                    )
+                    (\_ ->
+                        div []
+                            [ ContextMenu.btn "" (Zoom (Conf.canvas.zoom.min - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
+                            , ContextMenu.btn "" (Zoom (0.25 - canvasZoom)) [ text "25%" ]
+                            , ContextMenu.btn "" (Zoom (0.5 - canvasZoom)) [ text "50%" ]
+                            , ContextMenu.btn "" (Zoom (1 - canvasZoom)) [ text "100%" ]
+                            , ContextMenu.btn "" (Zoom (1.5 - canvasZoom)) [ text "150%" ]
+                            , ContextMenu.btn "" (Zoom (2 - canvasZoom)) [ text "200%" ]
+                            , ContextMenu.btn "" (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]
+                            ]
+                    )
+                , button [ type_ "button", onClick (Zoom (canvasZoom / 10)), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Plus "" ]
+                ]
+
+          else
+            Html.none
+        , if conf.fullscreen then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (Fullscreen Nothing), css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
                     [ Icon.solid PresentationChartBar "" ]

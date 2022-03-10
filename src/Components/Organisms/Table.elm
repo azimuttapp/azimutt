@@ -11,7 +11,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, br, button, div, span, text)
-import Html.Attributes exposing (class, id, style, tabindex, type_)
+import Html.Attributes exposing (class, classList, id, style, tabindex, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
@@ -113,15 +113,15 @@ type alias Actions msg =
 
 
 type alias TableConf =
-    { tableActions : Bool, columnActions : Bool }
+    { layout : Bool, move : Bool, select : Bool, hover : Bool }
 
 
 table : Model msg -> Html msg
 table model =
     div
         [ id model.id
-        , onMouseEnter (model.actions.hoverTable True)
-        , onMouseLeave (model.actions.hoverTable False)
+        , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverTable True))
+        , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverTable False))
         , css
             [ "inline-block bg-white rounded-lg"
             , Bool.cond model.state.isHover "shadow-lg" "shadow-md"
@@ -157,14 +157,17 @@ viewHeader model =
             , bg_50 (Bool.cond model.state.isHover model.state.color Tw.default)
             ]
         ]
-        [ div [ onPointerUp (\e -> model.actions.clickHeader e.ctrl), class "flex-grow text-center" ]
+        [ div
+            [ Attributes.when model.conf.select (onPointerUp (\e -> model.actions.clickHeader e.ctrl))
+            , class "flex-grow text-center"
+            ]
             [ if model.isView then
                 span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
 
               else
                 span ([ class "text-xl" ] ++ headerTextSize) [ text model.label ]
             ]
-        , if model.conf.tableActions then
+        , if model.settings |> List.nonEmpty then
             Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
                 (\m ->
                     button
@@ -231,10 +234,11 @@ viewHiddenColumns model =
         in
         div [ class "m-2 p-2 bg-gray-100 rounded-lg" ]
             [ div
-                [ onClick model.actions.clickHiddenColumns
-                , onMouseEnter (model.actions.hoverHiddenColumns popoverId)
-                , onMouseLeave (model.actions.hoverHiddenColumns "")
-                , class "text-gray-400 uppercase font-bold text-sm whitespace-nowrap cursor-pointer"
+                [ Attributes.when model.conf.layout (onClick model.actions.clickHiddenColumns)
+                , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverHiddenColumns popoverId))
+                , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverHiddenColumns ""))
+                , class "text-gray-400 uppercase font-bold text-sm whitespace-nowrap"
+                , classList [ ( "cursor-pointer", model.conf.layout ) ]
                 ]
                 [ text (model.hiddenColumns |> String.pluralizeL "hidden column") ]
                 |> Popover.r popover showPopover
@@ -245,18 +249,10 @@ viewHiddenColumns model =
 viewColumn : Model msg -> Bool -> Int -> Column -> Html msg
 viewColumn model isLast index column =
     div
-        ([ onMouseEnter (model.actions.hoverColumn column.name True)
-         , onMouseLeave (model.actions.hoverColumn column.name False)
-         , if model.conf.columnActions then
-            onContextMenu (model.actions.contextMenuColumn index column.name)
-
-           else
-            Attributes.none
-         , if model.conf.columnActions then
-            onDoubleClick (model.actions.dblClickColumn column.name)
-
-           else
-            Attributes.none
+        ([ Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverColumn column.name True))
+         , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverColumn column.name False))
+         , Attributes.when model.conf.layout (onContextMenu (model.actions.contextMenuColumn index column.name))
+         , Attributes.when model.conf.layout (onDoubleClick (model.actions.dblClickColumn column.name))
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap"
             , Bool.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
@@ -286,7 +282,7 @@ viewColumnIcon model column =
                 |> String.join ", "
     in
     if column.outRelations |> List.nonEmpty then
-        if (column.outRelations |> List.filter .tableShown |> List.nonEmpty) || not model.conf.columnActions then
+        if (column.outRelations |> List.filter .tableShown |> List.nonEmpty) || not model.conf.layout then
             div []
                 [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
 
@@ -321,7 +317,7 @@ viewColumnIconDropdown model column icon =
         tablesToShow =
             column.inRelations |> List.filterNot .tableShown
     in
-    if List.isEmpty column.inRelations || not model.conf.columnActions then
+    if List.isEmpty column.inRelations || not model.conf.layout then
         div [] [ button [ type_ "button", id dropdownId, css [ "cursor-default", focus [ "outline-none" ] ] ] [ icon ] ]
 
     else
@@ -515,7 +511,7 @@ sample =
         , clickDropdown = \id -> logAction ("open " ++ id)
         }
     , zoom = 1
-    , conf = { tableActions = True, columnActions = True }
+    , conf = { layout = True, move = True, select = True, hover = True }
     }
 
 

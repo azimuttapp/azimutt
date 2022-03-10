@@ -2,7 +2,7 @@ module Libs.Html exposing (bText, codeText, divIf, extLink, none, sendTweet)
 
 import Html exposing (Attribute, Html, a, b, code, div, text)
 import Html.Attributes exposing (href, rel, target)
-import Libs.Html.Attributes exposing (track)
+import Libs.Html.Attributes exposing (hrefBlank, track)
 import Track
 import Url exposing (percentEncode)
 
@@ -28,7 +28,7 @@ divIf predicate attrs children =
 
 extLink : String -> List (Attribute msg) -> List (Html msg) -> Html msg
 extLink url attrs children =
-    a ([ href url, target "_blank", rel "noopener" ] ++ track (Track.externalLink url) ++ attrs) children
+    a (hrefBlank url ++ track (Track.externalLink url) ++ attrs) children
 
 
 none : Html msg

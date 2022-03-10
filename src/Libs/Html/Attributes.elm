@@ -1,7 +1,7 @@
-module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, none, role, track)
+module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, hrefBlank, none, role, track, when)
 
 import Html exposing (Attribute)
-import Html.Attributes exposing (attribute, class, classList)
+import Html.Attributes exposing (attribute, class, classList, href, rel, target)
 import Libs.Bool as B
 import Libs.Models exposing (Text, TrackEvent)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -79,6 +79,20 @@ computeStyles values =
         |> List.map String.trim
         |> List.filter (\v -> v /= "")
         |> String.join " "
+
+
+hrefBlank : String -> List (Attribute msg)
+hrefBlank url =
+    [ href url, target "_blank", rel "noopener" ]
+
+
+when : Bool -> Attribute msg -> Attribute msg
+when p attr =
+    if p then
+        attr
+
+    else
+        classList []
 
 
 none : Attribute msg

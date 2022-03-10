@@ -21,15 +21,20 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
+import PagesComponents.Projects.Id_.Models exposing (ErdConf, LayoutMsg(..), Msg(..), prompt)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
 
-viewNavbarTitle : List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarTitle otherProjects project usedLayout layouts htmlId openedDropdown =
+viewNavbarTitle : ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarTitle conf otherProjects project usedLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
-        ([ Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects")) ]
-            ++ viewLayoutsMaybe usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
+        ([ if conf.save then
+            Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+
+           else
+            div [] [ text project.name ]
+         ]
+            ++ viewLayoutsMaybe conf usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
 
 
@@ -57,15 +62,18 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
         )
 
 
-viewLayoutsMaybe : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
-viewLayoutsMaybe usedLayout layouts htmlId openedDropdown =
+viewLayoutsMaybe : ErdConf -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
+viewLayoutsMaybe conf usedLayout layouts htmlId openedDropdown =
     if layouts |> Dict.isEmpty then
         []
 
-    else
+    else if conf.save then
         [ Icon.slash "text-primary-300"
         , Lazy.lazy4 viewLayouts usedLayout layouts htmlId openedDropdown
         ]
+
+    else
+        usedLayout |> Maybe.mapOrElse (\l -> [ Icon.slash "text-primary-300", text l ]) []
 
 
 viewLayouts : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg

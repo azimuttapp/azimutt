@@ -20,7 +20,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init req.query
-        , update = Updates.update Nothing shared.now
+        , update = Updates.update Nothing (req.query |> Dict.get "layout") shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -82,17 +82,27 @@ initConf mode =
         "full" ->
             { defaultConf
                 | showNavbar = True
-                , showCommands = True
-                , drag = True
-                , selectionBox = True
-                , tableActions = True
-                , columnActions = True
+                , findPath = True
+                , layout = True
+                , move = True
+                , select = True
+                , hover = True
             }
 
-        "readonly" ->
-            defaultConf
+        "layout" ->
+            -- can update the layout
+            { defaultConf | layout = True, move = True, select = True, hover = True }
+
+        "move" ->
+            -- can only move things
+            { defaultConf | move = True, select = True, hover = True }
 
         "static" ->
+            -- can't move things
+            { defaultConf | select = True, hover = True }
+
+        "frozen" ->
+            -- is like a image
             defaultConf
 
         _ ->
@@ -102,12 +112,13 @@ initConf mode =
 defaultConf : ErdConf
 defaultConf =
     { fitOnLoad = True
-    , allowSave = False
+    , fullscreen = True
+    , save = False
+    , dashboardLink = False
     , showNavbar = False
-    , showCommands = False
-    , allowFullscreen = True
-    , drag = False
-    , selectionBox = False
-    , tableActions = False
-    , columnActions = False
+    , findPath = False
+    , layout = False
+    , move = False
+    , select = False
+    , hover = False
     }

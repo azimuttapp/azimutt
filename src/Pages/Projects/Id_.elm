@@ -17,7 +17,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = Updates.update (Just req.params.id) shared.now
+        , update = Updates.update (Just req.params.id) Nothing shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -39,14 +39,15 @@ init : ( Model, Cmd Msg )
 init =
     ( { conf =
             { fitOnLoad = False
-            , allowSave = True
+            , fullscreen = False
+            , save = True
+            , dashboardLink = True
             , showNavbar = True
-            , showCommands = True
-            , allowFullscreen = False
-            , drag = True
-            , selectionBox = True
-            , tableActions = True
-            , columnActions = True
+            , findPath = True
+            , layout = True
+            , move = True
+            , select = True
+            , hover = True
             }
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero

@@ -192,7 +192,7 @@ viewDownloadSection _ erd =
         , p [ class "text-sm text-gray-500" ] [ text "To save it on you computer or share with others." ]
         , div [ class "mt-1" ]
             [ Button.primary3 Tw.primary
-                [ onClick (Send (Ports.downloadFile (projectFilename erd) (erd |> Erd.unpack |> Project.encode |> Encode.encode 0))) ]
+                [ onClick (Send (Ports.downloadFile (projectFilename erd) (erd |> Erd.unpack |> Project.encode |> Encode.encode 2))) ]
                 [ text "Download project" ]
             ]
         ]
