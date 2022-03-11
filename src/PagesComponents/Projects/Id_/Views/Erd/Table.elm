@@ -2,7 +2,7 @@ module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToS
 
 import Components.Organisms.Table as Table
 import Conf
-import DataSources.SqlParser.Parsers.ColomnType as ColumnType
+import DataSources.SqlParser.Parsers.ColumnType as ColumnType
 import Dict
 import Either exposing (Either(..))
 import Html exposing (Attribute, Html, div)
@@ -20,9 +20,10 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), ErdConf, FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))

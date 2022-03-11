@@ -14,7 +14,8 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), ErdConf, Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 
 
 viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> HtmlId -> Html Msg

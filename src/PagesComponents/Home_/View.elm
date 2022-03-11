@@ -179,7 +179,7 @@ viewHome model =
               , description =
                     [ text "Want to have a look? Everything is on "
                     , b [] [ extLink Conf.constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
-                    , text ", awesomely built with Elm. Come a let's discuss!"
+                    , text ", awesomely built with Elm. Come and let's discuss!"
                     ]
               }
             ]

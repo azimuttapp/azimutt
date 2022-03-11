@@ -5,6 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
+import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
 import Either exposing (Either(..))
@@ -17,7 +18,7 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Either as Either
 import Libs.Hotkey as Hotkey exposing (Hotkey)
-import Libs.Html exposing (extLink)
+import Libs.Html as Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, hrefBlank, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -25,8 +26,9 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.Project.CanvasProps as CanvasProps
-import PagesComponents.Projects.Id_.Models exposing (ErdConf, FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 
@@ -42,7 +44,7 @@ viewNavbar conf virtualRelation erd model htmlId openedDropdown =
         features =
             [ Just { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
             , Just { action = Right ShowAllTables, content = text "Show all tables", hotkey = Nothing }
-            , Maybe.when conf.save { action = Right (LayoutMsg LOpen), content = text "Save your layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
+            , Maybe.when conf.save { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
             , Just
                 (virtualRelation
                     |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
@@ -74,6 +76,7 @@ viewNavbar conf virtualRelation erd model htmlId openedDropdown =
                     [ div [ class "flex items-center print:hidden" ]
                         [ viewNavbarResetLayout canResetCanvas
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
+                        , B.cond conf.save viewNavbarShare Html.none
                         , viewNavbarSettings
                         ]
                     ]
@@ -115,11 +118,11 @@ viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
 viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Tw.primary ] ]
-                [ span [ class "sr-only" ] [ text "View features" ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "mx-1 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-bounce" ], focus_ring_offset_600 Tw.primary ] ]
+                [ span [ class "sr-only" ] [ text "Advanced features" ]
                 , Icon.outline LightningBolt ""
-                , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
+                |> Tooltip.b "Advanced features"
         )
         (\_ ->
             div []
@@ -135,12 +138,22 @@ viewNavbarFeatures features htmlId openedDropdown =
         )
 
 
+viewNavbarShare : Html Msg
+viewNavbarShare =
+    button [ type_ "button", onClick (SharingMsg SOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-pulse" ], focus_ring_offset_600 Tw.primary ] ]
+        [ span [ class "sr-only" ] [ text "Share" ]
+        , Icon.outline Share ""
+        ]
+        |> Tooltip.b "Share diagram"
+
+
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Tw.primary ] ]
-        [ span [ class "sr-only" ] [ text "View settings" ]
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-spin" ], focus_ring_offset_600 Tw.primary ] ]
+        [ span [ class "sr-only" ] [ text "Settings" ]
         , Icon.outline Cog ""
         ]
+        |> Tooltip.b "Settings"
 
 
 navbarMobileButton : Bool -> Html Msg

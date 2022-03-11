@@ -84,7 +84,10 @@ window.addEventListener('load', function() {
         fetch(projectUrl)
             .then(res => res.json())
             .then(project => sendToElm({kind: 'GotProjects', projects: [[project.id, project]]}))
-            .catch(err => showMessage({kind: 'error', message: `Can't load remote project: ${err}`}))
+            .catch(err => {
+                sendToElm({kind: 'GotProjects', projects: []})
+                sendToElm({kind: 'GotToast', level: 'error', message: `Can't load remote project: ${err}`})
+            })
     }
 
     const projectPrefix = 'project-'

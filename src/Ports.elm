@@ -193,6 +193,7 @@ type JsMsg
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
     | GotKeyHold String Bool
+    | GotToast String String
     | Error Decode.Error
 
 
@@ -331,6 +332,11 @@ jsDecoder =
                     Decode.map2 GotKeyHold
                         (Decode.field "key" Decode.string)
                         (Decode.field "start" Decode.bool)
+
+                "GotToast" ->
+                    Decode.map2 GotToast
+                        (Decode.field "level" Decode.string)
+                        (Decode.field "message" Decode.string)
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")

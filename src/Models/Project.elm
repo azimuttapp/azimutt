@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, compute, computeRelations, computeTables, create, decode, encode, new)
+module Models.Project exposing (Project, compute, computeRelations, computeTables, create, decode, downloadContent, downloadFilename, encode, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -106,6 +106,16 @@ currentVersion : Int
 currentVersion =
     -- compatibility version for Project JSON, when you have breaking change, increment it and handle needed migrations
     2
+
+
+downloadFilename : Project -> String
+downloadFilename project =
+    (project.name |> String.replace ".sql" "") ++ ".azimutt.json"
+
+
+downloadContent : Project -> String
+downloadContent project =
+    project |> encode |> Encode.encode 2
 
 
 encode : Project -> Value

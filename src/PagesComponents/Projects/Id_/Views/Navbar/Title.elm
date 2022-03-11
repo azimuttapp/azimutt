@@ -21,7 +21,8 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (ErdConf, LayoutMsg(..), Msg(..), prompt)
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
 

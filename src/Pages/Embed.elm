@@ -4,10 +4,14 @@ import Conf
 import Dict exposing (Dict)
 import Gen.Params.Embed exposing (Params)
 import Libs.Dict as Dict
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), ErdConf, Msg(..))
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
+import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
@@ -53,6 +57,7 @@ init query =
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing
+      , sharing = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , help = Nothing
@@ -78,47 +83,4 @@ init query =
 
 initConf : String -> ErdConf
 initConf mode =
-    case mode of
-        "full" ->
-            { defaultConf
-                | showNavbar = True
-                , findPath = True
-                , layout = True
-                , move = True
-                , select = True
-                , hover = True
-            }
-
-        "layout" ->
-            -- can update the layout
-            { defaultConf | layout = True, move = True, select = True, hover = True }
-
-        "move" ->
-            -- can only move things
-            { defaultConf | move = True, select = True, hover = True }
-
-        "static" ->
-            -- can't move things
-            { defaultConf | select = True, hover = True }
-
-        "frozen" ->
-            -- is like a image
-            defaultConf
-
-        _ ->
-            defaultConf
-
-
-defaultConf : ErdConf
-defaultConf =
-    { fitOnLoad = True
-    , fullscreen = True
-    , save = False
-    , dashboardLink = False
-    , showNavbar = False
-    , findPath = False
-    , layout = False
-    , move = False
-    , select = False
-    , hover = False
-    }
+    EmbedMode.all |> List.findBy .id mode |> Maybe.mapOrElse .conf ErdConf.embedDefault

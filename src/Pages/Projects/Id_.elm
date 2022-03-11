@@ -5,6 +5,7 @@ import Gen.Params.Projects.Id_ exposing (Params)
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg)
+import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf
 import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
@@ -37,18 +38,7 @@ type alias Msg =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { conf =
-            { fitOnLoad = False
-            , fullscreen = False
-            , save = True
-            , dashboardLink = True
-            , showNavbar = True
-            , findPath = True
-            , layout = True
-            , move = True
-            , select = True
-            , hover = True
-            }
+    ( { conf = ErdConf.default
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = False
@@ -61,6 +51,7 @@ init =
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing
+      , sharing = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , help = Nothing

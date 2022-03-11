@@ -31,6 +31,7 @@ import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
+import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
@@ -139,6 +140,9 @@ update currentProject currentLayout now msg model =
         SchemaAnalysisMsg SAClose ->
             ( model |> setSchemaAnalysis Nothing, Cmd.none )
 
+        SharingMsg message ->
+            model |> handleSharing message
+
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message
 
@@ -244,8 +248,8 @@ update currentProject currentLayout now msg model =
 
 
 handleJsMessage : Maybe ProjectId -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage currentProject currentLayout message model =
-    case message of
+handleJsMessage currentProject currentLayout msg model =
+    case msg of
         GotSizes sizes ->
             model |> updateSizes sizes
 
@@ -300,6 +304,20 @@ handleJsMessage currentProject currentLayout message model =
 
             else
                 ( model, Cmd.none )
+
+        GotToast level message ->
+            case level of
+                "success" ->
+                    ( model, T.send (toastSuccess message) )
+
+                "info" ->
+                    ( model, T.send (toastInfo message) )
+
+                "warning" ->
+                    ( model, T.send (toastWarning message) )
+
+                _ ->
+                    ( model, T.send (toastError message) )
 
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
