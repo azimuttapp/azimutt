@@ -6,6 +6,7 @@ import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Maybe as Maybe
+import Libs.Models.FileUrl as FileUrl
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
@@ -214,14 +215,14 @@ handleJsMessage msg model =
                 ( model, T.send (toastError ("File should end with .json or .sql, " ++ file.name ++ " is not handled :(")) )
 
         GotRemoteFile now projectId sourceId url content sample ->
-            if url |> String.endsWith ".json" then
+            if url |> FileUrl.filename |> String.endsWith ".json" then
                 if sample == Nothing then
                     ( model, T.send (ProjectImport.gotRemoteFile projectId content |> ProjectImportMsg) )
 
                 else
                     ( model, T.send (ProjectImport.gotRemoteFile projectId content |> SampleSelectMsg) )
 
-            else if url |> String.endsWith ".sql" then
+            else if url |> FileUrl.filename |> String.endsWith ".sql" then
                 ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> SqlSourceUploadMsg) )
 
             else

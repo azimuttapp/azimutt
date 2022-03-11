@@ -5,6 +5,7 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
+import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
@@ -12,9 +13,9 @@ import Components.Molecules.Toast as Toast
 import Conf
 import Dict
 import Gen.Route as Route
-import Html exposing (Html, a, aside, div, form, h2, li, nav, p, span, text, ul)
-import Html.Attributes exposing (class, href)
-import Html.Events exposing (onClick)
+import Html exposing (Html, a, aside, div, form, h2, input, li, nav, p, span, text, ul)
+import Html.Attributes exposing (class, href, id, name, placeholder, type_, value)
+import Html.Events exposing (onBlur, onClick, onInput)
 import Html.Keyed as Keyed
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
@@ -109,6 +110,21 @@ viewSchemaUploadTab htmlId openedCollapse sqlSourceUpload =
                     [ FileInput.schemaFile (htmlId ++ "-file-upload") (SqlSourceUpload.SelectLocalFile >> SqlSourceUploadMsg) Noop
                     ]
                 ]
+            ]
+        , div [ class "my-3" ] [ Divider.withLabel "OR" ]
+        , div [ class "flex rounded-md shadow-sm" ]
+            [ span [ class "inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm" ] [ text "Remote schema" ]
+            , input
+                [ type_ "text"
+                , id (htmlId ++ "-file-remote")
+                , name (htmlId ++ "-file-remote")
+                , placeholder "https://azimutt.app/samples/gospeak.sql"
+                , value (sqlSourceUpload.selectedRemoteFile |> Maybe.withDefault "")
+                , onInput (SqlSourceUpload.UpdateRemoteFile >> SqlSourceUploadMsg)
+                , onBlur (sqlSourceUpload.selectedRemoteFile |> Maybe.mapOrElse (SqlSourceUpload.SelectRemoteFile >> SqlSourceUploadMsg) Noop)
+                , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                ]
+                []
             ]
         , div [ css [ "mt-3" ] ]
             [ div [ onClick (ToggleCollapse (htmlId ++ "-get-schema")), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]

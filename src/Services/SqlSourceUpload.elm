@@ -21,7 +21,7 @@ import Libs.Html exposing (bText)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent, FileLineContent)
-import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.String as String
@@ -71,7 +71,8 @@ type alias SqlParsing msg =
 
 
 type SqlSourceUploadMsg
-    = SelectLocalFile File
+    = UpdateRemoteFile FileUrl
+    | SelectLocalFile File
     | SelectRemoteFile FileUrl
     | FileLoaded ProjectId SourceInfo FileContent
     | ParseMsg ParsingMsg
@@ -129,6 +130,9 @@ parsingInit fileContent buildMsg buildProject =
 update : SqlSourceUploadMsg -> (SqlSourceUploadMsg -> msg) -> SqlSourceUpload msg -> ( SqlSourceUpload msg, Cmd msg )
 update msg wrap model =
     case msg of
+        UpdateRemoteFile url ->
+            ( { model | selectedRemoteFile = B.cond (url == "") Nothing (Just url) }, Cmd.none )
+
         SelectLocalFile file ->
             ( init model.project model.source |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file
@@ -228,12 +232,12 @@ parsingCptInc model =
 
 gotLocalFile : Time.Posix -> ProjectId -> SourceId -> File -> FileContent -> SqlSourceUploadMsg
 gotLocalFile now projectId sourceId file content =
-    FileLoaded projectId (SourceInfo sourceId (lastSegment file.name) (localSource file) True Nothing now now) content
+    FileLoaded projectId (SourceInfo sourceId file.name (localSource file) True Nothing now now) content
 
 
 gotRemoteFile : Time.Posix -> ProjectId -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SqlSourceUploadMsg
 gotRemoteFile now projectId sourceId url content sample =
-    FileLoaded projectId (SourceInfo sourceId (lastSegment url) (remoteSource url content) True sample now now) content
+    FileLoaded projectId (SourceInfo sourceId (url |> FileUrl.filename) (remoteSource url content) True sample now now) content
 
 
 localSource : File -> SourceKind
@@ -244,11 +248,6 @@ localSource file =
 remoteSource : FileUrl -> FileContent -> SourceKind
 remoteSource url content =
     RemoteFile url (String.length content)
-
-
-lastSegment : String -> String
-lastSegment path =
-    path |> String.split "/" |> List.filter (\p -> not (p == "")) |> List.last |> Maybe.withDefault path
 
 
 
