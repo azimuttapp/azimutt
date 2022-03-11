@@ -47,7 +47,7 @@ viewSchemaAnalysis opened tables model =
         ]
 
 
-viewHeader : String -> Html msg
+viewHeader : HtmlId -> Html msg
 viewHeader titleId =
     div [ css [ "pt-6 px-6", sm [ "flex items-start" ] ] ]
         [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100", sm [ "mx-0 h-10 w-10" ] ] ]

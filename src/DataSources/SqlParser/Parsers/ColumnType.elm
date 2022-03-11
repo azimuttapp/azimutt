@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Parsers.ColomnType exposing (ParsedColumnType(..), parse, toString)
+module DataSources.SqlParser.Parsers.ColumnType exposing (ParsedColumnType(..), parse, toString)
 
 import DataSources.SqlParser.Utils.Types exposing (SqlColumnType)
 import Libs.Regex as Regex
@@ -29,7 +29,7 @@ parse kind =
     else if (kind |> Regex.match "^(tiny|medium|long)?text$") || (kind |> Regex.match "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.match "^varchar ?(\\(\\d+\\))?$") then
         String
 
-    else if kind == "integer" || kind == "serial" || (kind |> Regex.match "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
+    else if kind == "integer" || (kind |> Regex.match "^(small)?serial$") || (kind |> Regex.match "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
         Int
 
     else if kind == "double precision" || (kind |> Regex.match "^numeric ?(\\(\\d+,\\d+\\))?$") then

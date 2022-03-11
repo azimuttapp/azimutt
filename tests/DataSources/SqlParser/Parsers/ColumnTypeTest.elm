@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.ColumnTypeTest exposing (..)
 
-import DataSources.SqlParser.Parsers.ColomnType exposing (parse, toString)
+import DataSources.SqlParser.Parsers.ColumnType exposing (parse, toString)
 import Expect
 import Test exposing (Test, describe, test)
 

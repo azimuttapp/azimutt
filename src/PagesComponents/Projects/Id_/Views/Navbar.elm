@@ -5,11 +5,12 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
+import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
 import Either exposing (Either(..))
 import Gen.Route as Route
-import Html exposing (Html, a, button, div, img, nav, span, text)
+import Html exposing (Attribute, Html, a, button, div, img, nav, span, text)
 import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_, width)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
@@ -17,16 +18,17 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Either as Either
 import Libs.Hotkey as Hotkey exposing (Hotkey)
-import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, role)
+import Libs.Html as Html exposing (extLink)
+import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, hrefBlank, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.Project.CanvasProps as CanvasProps
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 
@@ -35,21 +37,24 @@ type alias Btn msg =
     { action : Either String msg, content : Html msg, hotkey : Maybe Hotkey }
 
 
-viewNavbar : Maybe VirtualRelation -> Erd -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
-viewNavbar virtualRelation erd model htmlId openedDropdown =
+viewNavbar : ErdConf -> Maybe VirtualRelation -> Erd -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
+viewNavbar conf virtualRelation erd model htmlId openedDropdown =
     let
         features : List (Btn Msg)
         features =
-            [ { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
-            , { action = Right ShowAllTables, content = text "Show all tables", hotkey = Nothing }
-            , { action = Right (LayoutMsg LOpen), content = text "Save your layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
-            , virtualRelation
-                |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
-                |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
-            , { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
-            , { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema", hotkey = Nothing }
-            , { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkey = Nothing }
+            [ Just { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
+            , Just { action = Right ShowAllTables, content = text "Show all tables", hotkey = Nothing }
+            , Maybe.when conf.save { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
+            , Just
+                (virtualRelation
+                    |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
+                    |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
+                )
+            , Maybe.when conf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
+            , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema", hotkey = Nothing }
+            , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkey = Nothing }
             ]
+                |> List.filterMap identity
 
         canResetCanvas : Bool
         canResetCanvas =
@@ -59,18 +64,19 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
-                    [ viewNavbarBrand
+                    [ viewNavbarBrand conf
                     , Lazy.lazy6 viewNavbarSearch model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
                 , div [ class "flex-1 flex justify-center px-2" ]
-                    [ Lazy.lazy6 viewNavbarTitle erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
+                    [ Lazy.lazy7 viewNavbarTitle conf erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
-                    [ div [ class "flex items-center" ]
+                    [ div [ class "flex items-center print:hidden" ]
                         [ viewNavbarResetLayout canResetCanvas
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
+                        , B.cond conf.save viewNavbarShare Html.none
                         , viewNavbarSettings
                         ]
                     ]
@@ -80,9 +86,18 @@ viewNavbar virtualRelation erd model htmlId openedDropdown =
         ]
 
 
-viewNavbarBrand : Html msg
-viewNavbarBrand =
-    a [ href (Route.toHref Route.Projects), class "flex justify-start items-center flex-shrink-0 font-medium" ]
+viewNavbarBrand : ErdConf -> Html msg
+viewNavbarBrand conf =
+    let
+        attrs : List (Attribute msg)
+        attrs =
+            if conf.dashboardLink then
+                [ href (Route.toHref Route.Projects) ]
+
+            else
+                hrefBlank Conf.constants.azimuttWebsite
+    in
+    a (attrs ++ [ class "flex justify-start items-center flex-shrink-0 font-medium" ])
         [ img [ class "block h-8 h-8", src "/logo.png", alt "Azimutt", width 32, height 32 ] []
         , span [ css [ "ml-3 text-2xl text-white hidden", lg [ "block" ] ] ] [ text "Azimutt" ]
         ]
@@ -90,7 +105,7 @@ viewNavbarBrand =
 
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
-    button [ onClick (HelpMsg (HOpen "")), css [ "ml-3 rounded-full", focus_ring_offset_600 Tw.primary ] ]
+    button [ onClick (HelpMsg (HOpen "")), css [ "ml-3 rounded-full print:hidden", focus_ring_offset_600 Tw.primary ] ]
         [ Icon.solid QuestionMarkCircle "text-primary-300" ]
 
 
@@ -103,11 +118,11 @@ viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
 viewNavbarFeatures features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
-            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "ml-3 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Tw.primary ] ]
-                [ span [ class "sr-only" ] [ text "View features" ]
+            button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "mx-1 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-bounce" ], focus_ring_offset_600 Tw.primary ] ]
+                [ span [ class "sr-only" ] [ text "Advanced features" ]
                 , Icon.outline LightningBolt ""
-                , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
+                |> Tooltip.b "Advanced features"
         )
         (\_ ->
             div []
@@ -123,12 +138,22 @@ viewNavbarFeatures features htmlId openedDropdown =
         )
 
 
+viewNavbarShare : Html Msg
+viewNavbarShare =
+    button [ type_ "button", onClick (SharingMsg SOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-pulse" ], focus_ring_offset_600 Tw.primary ] ]
+        [ span [ class "sr-only" ] [ text "Share" ]
+        , Icon.outline Share ""
+        ]
+        |> Tooltip.b "Share diagram"
+
+
 viewNavbarSettings : Html Msg
 viewNavbarSettings =
-    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "ml-3 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white" ], focus_ring_offset_600 Tw.primary ] ]
-        [ span [ class "sr-only" ] [ text "View settings" ]
+    button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-spin" ], focus_ring_offset_600 Tw.primary ] ]
+        [ span [ class "sr-only" ] [ text "Settings" ]
         , Icon.outline Cog ""
         ]
+        |> Tooltip.b "Settings"
 
 
 navbarMobileButton : Bool -> Html Msg

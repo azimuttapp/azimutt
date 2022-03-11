@@ -1,1 +1,708 @@
-{"id":"bca29c17-5e66-4706-b902-5454dc858d46","name":"basic","sources":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","name":"basic.sql","kind":{"kind":"RemoteFile","url":"/samples/basic.sql","size":1764},"content":["CREATE TABLE users","(","    id          int          NOT NULL,","    first_name  varchar(255) NOT NULL,","    last_name   varchar(255) NOT NULL,","    email       varchar(255),","    external_id uuid,","    CONSTRAINT users_pk PRIMARY KEY (id)",");","","CREATE UNIQUE INDEX user_email_uniq ON users (email);","","CREATE INDEX user_name_index ON users USING btree (first_name, last_name);","","CREATE INDEX user_external_id_index ON users (external_id);","","COMMENT ON TABLE users IS 'A table to store all users and in a single diagram control them, for the better or worse!';","","COMMENT ON COLUMN users.id IS 'The user id which is automatically defined based on subscription order. Should never change!';","","CREATE TABLE roles","(","    id          int          NOT NULL,","    slug        varchar(255) NOT NULL,","    name        varchar(255) NOT NULL,","    description text,","    created_at  timestamp    NOT NULL,","    updated_at  timestamp    NOT NULL,","    CONSTRAINT roles_pk PRIMARY KEY (id)",");","","CREATE UNIQUE INDEX roles_slug_uniq ON roles (slug);","","CREATE UNIQUE INDEX roles_name_uniq ON roles (name);","","CREATE TABLE credentials","(","    user_id  int          NOT NULL,","    login    varchar(255) NOT NULL,","    password varchar(255) NOT NULL,","    CONSTRAINT credentials_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)",");","","CREATE UNIQUE INDEX credentials_login_uniq ON credentials (login);","","CREATE TABLE role_user","(","    id         int       NOT NULL,","    role_id    int       NOT NULL,","    user_id    int       NOT NULL,","    created_at timestamp NOT NULL,","    updated_at timestamp NOT NULL,","    CONSTRAINT role_user_pk PRIMARY KEY (id),","    CONSTRAINT role_user_role_id_fk FOREIGN KEY (role_id) REFERENCES roles (id),","    CONSTRAINT role_user_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)",");",""],"tables":[{"schema":"public","table":"credentials","columns":[{"name":"user_id","type":"int","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"login","type":"varchar(255)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"password","type":"varchar(255)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]}],"uniques":[{"name":"credentials_login_uniq","columns":["login"],"definition":"(login)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[43]}]}],"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[35,36,37,38,39,40,41]}]},{"schema":"public","table":"role_user","columns":[{"name":"id","type":"int","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"role_id","type":"int","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"user_id","type":"int","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"created_at","type":"timestamp","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"updated_at","type":"timestamp","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]}],"primaryKey":{"name":"role_user_pk","columns":["id"],"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[45,46,47,48,49,50,51,52,53,54,55]}]},"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[45,46,47,48,49,50,51,52,53,54,55]}]},{"schema":"public","table":"roles","columns":[{"name":"id","type":"int","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"slug","type":"varchar(255)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"name","type":"varchar(255)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"description","type":"text","nullable":true,"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"created_at","type":"timestamp","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"updated_at","type":"timestamp","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]}],"primaryKey":{"name":"roles_pk","columns":["id"],"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[20,21,22,23,24,25,26,27,28,29]}]},"uniques":[{"name":"roles_slug_uniq","columns":["slug"],"definition":"(slug)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[31]}]},{"name":"roles_name_uniq","columns":["name"],"definition":"(name)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[33]}]}],"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[20,21,22,23,24,25,26,27,28,29]}]},{"schema":"public","table":"users","columns":[{"name":"id","type":"int","comment":{"text":"The user id which is automatically defined based on subscription order. Should never change!","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[18]}]},"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"first_name","type":"varchar(255)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"last_name","type":"varchar(255)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"email","type":"varchar(255)","nullable":true,"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]},{"name":"external_id","type":"uuid","nullable":true,"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[]}]}],"primaryKey":{"name":"users_pk","columns":["id"],"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[0,1,2,3,4,5,6,7,8]}]},"uniques":[{"name":"user_email_uniq","columns":["email"],"definition":"(email)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[10]}]}],"indexes":[{"name":"user_name_index","columns":["first_name","last_name"],"definition":"USING btree (first_name, last_name)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[12]}]},{"name":"user_external_id_index","columns":["external_id"],"definition":"(external_id)","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[14]}]}],"comment":{"text":"A table to store all users and in a single diagram control them, for the better or worse!","origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[16]}]},"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[0,1,2,3,4,5,6,7,8]}]}],"relations":[{"name":"credentials_user_id_fk","src":{"table":"public.credentials","column":"user_id"},"ref":{"table":"public.users","column":"id"},"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[35,36,37,38,39,40,41]}]},{"name":"role_user_role_id_fk","src":{"table":"public.role_user","column":"role_id"},"ref":{"table":"public.roles","column":"id"},"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[45,46,47,48,49,50,51,52,53,54,55]}]},{"name":"role_user_user_id_fk","src":{"table":"public.role_user","column":"user_id"},"ref":{"table":"public.users","column":"id"},"origins":[{"id":"25c50288-54c1-47e9-b92d-b1c2c8d9772b","lines":[45,46,47,48,49,50,51,52,53,54,55]}]}],"fromSample":"basic","createdAt":1645385039223,"updatedAt":1645385039223}],"layout":{"canvas":{"position":{"left":0,"top":0},"zoom":1},"tables":[{"id":"public.credentials","position":{"left":932.8057265511918,"top":619.7812579682864},"color":"orange","columns":["user_id","login","password"]},{"id":"public.role_user","position":{"left":893.4521966294432,"top":285.2187420317137},"color":"rose","columns":["id","role_id","user_id"]},{"id":"public.roles","position":{"left":1140.6810494447764,"top":309.49321063225136},"color":"blue","columns":["id","name","slug","description"]},{"id":"public.users","position":{"left":607.5522879575674,"top":477.72522452270374},"color":"yellow","columns":["id","email","first_name","last_name","external_id"]}],"createdAt":0,"updatedAt":0},"layouts":{},"createdAt":1645394950419,"updatedAt":1645394950419,"version":2}
+{
+  "id": "00000001-5e66-4706-b902-5454dc858d46",
+  "name": "basic",
+  "sources": [
+    {
+      "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+      "name": "basic.sql",
+      "kind": {
+        "kind": "RemoteFile",
+        "url": "/samples/basic.sql",
+        "size": 1764
+      },
+      "content": [
+        "CREATE TABLE users",
+        "(",
+        "    id          int          NOT NULL,",
+        "    first_name  varchar(255) NOT NULL,",
+        "    last_name   varchar(255) NOT NULL,",
+        "    email       varchar(255),",
+        "    external_id uuid,",
+        "    CONSTRAINT users_pk PRIMARY KEY (id)",
+        ");",
+        "",
+        "CREATE UNIQUE INDEX user_email_uniq ON users (email);",
+        "",
+        "CREATE INDEX user_name_index ON users USING btree (first_name, last_name);",
+        "",
+        "CREATE INDEX user_external_id_index ON users (external_id);",
+        "",
+        "COMMENT ON TABLE users IS 'A table to store all users and in a single diagram control them, for the better or worse!';",
+        "",
+        "COMMENT ON COLUMN users.id IS 'The user id which is automatically defined based on subscription order. Should never change!';",
+        "",
+        "CREATE TABLE roles",
+        "(",
+        "    id          int          NOT NULL,",
+        "    slug        varchar(255) NOT NULL,",
+        "    name        varchar(255) NOT NULL,",
+        "    description text,",
+        "    created_at  timestamp    NOT NULL,",
+        "    updated_at  timestamp    NOT NULL,",
+        "    CONSTRAINT roles_pk PRIMARY KEY (id)",
+        ");",
+        "",
+        "CREATE UNIQUE INDEX roles_slug_uniq ON roles (slug);",
+        "",
+        "CREATE UNIQUE INDEX roles_name_uniq ON roles (name);",
+        "",
+        "CREATE TABLE credentials",
+        "(",
+        "    user_id  int          NOT NULL,",
+        "    login    varchar(255) NOT NULL,",
+        "    password varchar(255) NOT NULL,",
+        "    CONSTRAINT credentials_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)",
+        ");",
+        "",
+        "CREATE UNIQUE INDEX credentials_login_uniq ON credentials (login);",
+        "",
+        "CREATE TABLE role_user",
+        "(",
+        "    id         int       NOT NULL,",
+        "    role_id    int       NOT NULL,",
+        "    user_id    int       NOT NULL,",
+        "    created_at timestamp NOT NULL,",
+        "    updated_at timestamp NOT NULL,",
+        "    CONSTRAINT role_user_pk PRIMARY KEY (id),",
+        "    CONSTRAINT role_user_role_id_fk FOREIGN KEY (role_id) REFERENCES roles (id),",
+        "    CONSTRAINT role_user_user_id_fk FOREIGN KEY (user_id) REFERENCES users (id)",
+        ");",
+        ""
+      ],
+      "tables": [
+        {
+          "schema": "public",
+          "table": "credentials",
+          "columns": [
+            {
+              "name": "user_id",
+              "type": "int",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "login",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "password",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "uniques": [
+            {
+              "name": "credentials_login_uniq",
+              "columns": [
+                "login"
+              ],
+              "definition": "(login)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": [
+                    43
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+              "lines": [
+                35,
+                36,
+                37,
+                38,
+                39,
+                40,
+                41
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "role_user",
+          "columns": [
+            {
+              "name": "id",
+              "type": "int",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "role_id",
+              "type": "int",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "user_id",
+              "type": "int",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "timestamp",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "timestamp",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "role_user_pk",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                "lines": [
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50,
+                  51,
+                  52,
+                  53,
+                  54,
+                  55
+                ]
+              }
+            ]
+          },
+          "origins": [
+            {
+              "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+              "lines": [
+                45,
+                46,
+                47,
+                48,
+                49,
+                50,
+                51,
+                52,
+                53,
+                54,
+                55
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "roles",
+          "columns": [
+            {
+              "name": "id",
+              "type": "int",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "slug",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "description",
+              "type": "text",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "timestamp",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "timestamp",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "roles_pk",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                "lines": [
+                  20,
+                  21,
+                  22,
+                  23,
+                  24,
+                  25,
+                  26,
+                  27,
+                  28,
+                  29
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "roles_slug_uniq",
+              "columns": [
+                "slug"
+              ],
+              "definition": "(slug)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": [
+                    31
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "roles_name_uniq",
+              "columns": [
+                "name"
+              ],
+              "definition": "(name)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": [
+                    33
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+              "lines": [
+                20,
+                21,
+                22,
+                23,
+                24,
+                25,
+                26,
+                27,
+                28,
+                29
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "users",
+          "columns": [
+            {
+              "name": "id",
+              "type": "int",
+              "comment": {
+                "text": "The user id which is automatically defined based on subscription order. Should never change!",
+                "origins": [
+                  {
+                    "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                    "lines": [
+                      18
+                    ]
+                  }
+                ]
+              },
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "first_name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "email",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "external_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "users_pk",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                "lines": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "user_email_uniq",
+              "columns": [
+                "email"
+              ],
+              "definition": "(email)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": [
+                    10
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "user_name_index",
+              "columns": [
+                "first_name",
+                "last_name"
+              ],
+              "definition": "USING btree (first_name, last_name)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": [
+                    12
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "user_external_id_index",
+              "columns": [
+                "external_id"
+              ],
+              "definition": "(external_id)",
+              "origins": [
+                {
+                  "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                  "lines": [
+                    14
+                  ]
+                }
+              ]
+            }
+          ],
+          "comment": {
+            "text": "A table to store all users and in a single diagram control them, for the better or worse!",
+            "origins": [
+              {
+                "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+                "lines": [
+                  16
+                ]
+              }
+            ]
+          },
+          "origins": [
+            {
+              "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+              "lines": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8
+              ]
+            }
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "name": "credentials_user_id_fk",
+          "src": {
+            "table": "public.credentials",
+            "column": "user_id"
+          },
+          "ref": {
+            "table": "public.users",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+              "lines": [
+                35,
+                36,
+                37,
+                38,
+                39,
+                40,
+                41
+              ]
+            }
+          ]
+        },
+        {
+          "name": "role_user_role_id_fk",
+          "src": {
+            "table": "public.role_user",
+            "column": "role_id"
+          },
+          "ref": {
+            "table": "public.roles",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+              "lines": [
+                45,
+                46,
+                47,
+                48,
+                49,
+                50,
+                51,
+                52,
+                53,
+                54,
+                55
+              ]
+            }
+          ]
+        },
+        {
+          "name": "role_user_user_id_fk",
+          "src": {
+            "table": "public.role_user",
+            "column": "user_id"
+          },
+          "ref": {
+            "table": "public.users",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
+              "lines": [
+                45,
+                46,
+                47,
+                48,
+                49,
+                50,
+                51,
+                52,
+                53,
+                54,
+                55
+              ]
+            }
+          ]
+        }
+      ],
+      "fromSample": "basic",
+      "createdAt": 1645385039223,
+      "updatedAt": 1645385039223
+    }
+  ],
+  "layout": {
+    "canvas": {
+      "position": {
+        "left": 0,
+        "top": 0
+      },
+      "zoom": 1
+    },
+    "tables": [
+      {
+        "id": "public.credentials",
+        "position": {
+          "left": 932.8057265511918,
+          "top": 619.7812579682864
+        },
+        "color": "orange",
+        "columns": [
+          "user_id",
+          "login",
+          "password"
+        ]
+      },
+      {
+        "id": "public.role_user",
+        "position": {
+          "left": 893.4521966294432,
+          "top": 285.2187420317137
+        },
+        "color": "rose",
+        "columns": [
+          "id",
+          "role_id",
+          "user_id"
+        ]
+      },
+      {
+        "id": "public.roles",
+        "position": {
+          "left": 1140.6810494447764,
+          "top": 309.49321063225136
+        },
+        "color": "blue",
+        "columns": [
+          "id",
+          "name",
+          "slug",
+          "description"
+        ]
+      },
+      {
+        "id": "public.users",
+        "position": {
+          "left": 607.5522879575674,
+          "top": 477.72522452270374
+        },
+        "color": "yellow",
+        "columns": [
+          "id",
+          "email",
+          "first_name",
+          "last_name",
+          "external_id"
+        ]
+      }
+    ],
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "layouts": {},
+  "createdAt": 1646917538803,
+  "updatedAt": 1646917538803,
+  "version": 2
+}

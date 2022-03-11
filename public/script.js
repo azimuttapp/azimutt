@@ -28,25 +28,27 @@ window.addEventListener('load', function() {
         setTimeout(() => {
             // console.log('elm message', msg)
             switch (port.kind) {
-                case 'Click':           click(port.id); break;
-                case 'MouseDown':       mousedown(port.id); break;
-                case 'Focus':           focus(port.id); break;
-                case 'Blur':            blur(port.id); break;
-                case 'ScrollTo':        scrollTo(port.id, port.position); break;
-                case 'SetClasses':      setClasses(port.html, port.body); break;
-                case 'AutofocusWithin': autofocusWithin(port.id); break;
-                case 'LoadProjects':    loadProjects(); break;
-                case 'SaveProject':     saveProject(port.project); break;
-                case 'DownloadFile':    downloadFile(port.filename, port.content); break;
-                case 'DropProject':     dropProject(port.project); break;
-                case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file); break;
-                case 'GetRemoteFile':   getRemoteFile(port.project, port.source, port.url, port.sample); break;
-                case 'GetSourceId':     getSourceId(port.src, port.ref); break;
-                case 'ObserveSizes':    observeSizes(port.ids); break;
-                case 'ListenKeys':      listenHotkeys(port.keys); break;
-                case 'TrackPage':       analytics.then(a => a.trackPage(port.name)); break;
-                case 'TrackEvent':      analytics.then(a => a.trackEvent(port.name, port.details)); break;
-                case 'TrackError':      analytics.then(a => a.trackError(port.name, port.details)); errorTracking.then(e => e.trackError(port.name, port.details)); break;
+                case 'Click':             click(port.id); break;
+                case 'MouseDown':         mousedown(port.id); break;
+                case 'Focus':             focus(port.id); break;
+                case 'Blur':              blur(port.id); break;
+                case 'ScrollTo':          scrollTo(port.id, port.position); break;
+                case 'Fullscreen':        fullscreen(port.maybeId); break;
+                case 'SetClasses':        setClasses(port.html, port.body); break;
+                case 'AutofocusWithin':   autofocusWithin(port.id); break;
+                case 'LoadProjects':      loadProjects(); break;
+                case 'LoadRemoteProject': loadRemoteProject(port.projectUrl); break;
+                case 'SaveProject':       saveProject(port.project); break;
+                case 'DownloadFile':      downloadFile(port.filename, port.content); break;
+                case 'DropProject':       dropProject(port.project); break;
+                case 'GetLocalFile':      getLocalFile(port.project, port.source, port.file); break;
+                case 'GetRemoteFile':     getRemoteFile(port.project, port.source, port.url, port.sample); break;
+                case 'GetSourceId':       getSourceId(port.src, port.ref); break;
+                case 'ObserveSizes':      observeSizes(port.ids); break;
+                case 'ListenKeys':        listenHotkeys(port.keys); break;
+                case 'TrackPage':         analytics.then(a => a.trackPage(port.name)); break;
+                case 'TrackEvent':        analytics.then(a => a.trackEvent(port.name, port.details)); break;
+                case 'TrackError':        analytics.then(a => a.trackError(port.name, port.details)); errorTracking.then(e => e.trackError(port.name, port.details)); break;
                 default: console.error('Unsupported Elm message', port); break;
             }
         }, 100)
@@ -67,12 +69,25 @@ window.addEventListener('load', function() {
     function scrollTo(id, position) {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
+    function fullscreen(maybeId) {
+        maybeId ? getElementById(maybeId).requestFullscreen() : document.body.requestFullscreen()
+    }
     function setClasses(html, body) {
         document.getElementsByTagName('html')[0].setAttribute('class', html)
         document.getElementsByTagName('body')[0].setAttribute('class', body)
     }
     function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()
+    }
+
+    function loadRemoteProject(projectUrl) {
+        fetch(projectUrl)
+            .then(res => res.json())
+            .then(project => sendToElm({kind: 'GotProjects', projects: [[project.id, project]]}))
+            .catch(err => {
+                sendToElm({kind: 'GotProjects', projects: []})
+                sendToElm({kind: 'GotToast', level: 'error', message: `Can't load remote project: ${err}`})
+            })
     }
 
     const projectPrefix = 'project-'
@@ -135,7 +150,7 @@ window.addEventListener('load', function() {
                 content,
                 sample
             }))
-            .catch(err => showMessage({kind: 'error', message: err}))
+            .catch(err => showMessage({kind: 'error', message: `Can't get remote file: ${err}`}))
     }
 
     function getSourceId(src, ref) {
@@ -291,7 +306,7 @@ window.addEventListener('load', function() {
     function showMessage({kind, message}) {
         // TODO track message in sentry and show it in toast using ports
         switch (kind) {
-            case 'error': console.error(message); break;
+            case 'error': console.error(message); alert(message); break;
             case 'warn': console.warn(message); break;
             case 'log': console.log(message); break;
             default: console.error(message)

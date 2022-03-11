@@ -1,4 +1,4 @@
-port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, getSourceId, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -49,6 +49,11 @@ scrollTo id position =
     messageToJs (ScrollTo id position)
 
 
+fullscreen : Maybe HtmlId -> Cmd msg
+fullscreen maybeId =
+    messageToJs (Fullscreen maybeId)
+
+
 autofocusWithin : HtmlId -> Cmd msg
 autofocusWithin id =
     messageToJs (AutofocusWithin id)
@@ -62,6 +67,11 @@ setClasses payload =
 loadProjects : Cmd msg
 loadProjects =
     messageToJs LoadProjects
+
+
+loadRemoteProject : String -> Cmd msg
+loadRemoteProject projectUrl =
+    messageToJs (LoadRemoteProject projectUrl)
 
 
 saveProject : Project -> Cmd msg
@@ -157,9 +167,11 @@ type ElmMsg
     | Focus HtmlId
     | Blur HtmlId
     | ScrollTo HtmlId String
+    | Fullscreen (Maybe HtmlId)
     | SetClasses HtmlContainers
     | AutofocusWithin HtmlId
     | LoadProjects
+    | LoadRemoteProject FileUrl
     | SaveProject Project
     | DownloadFile FileName FileContent
     | DropProject Project
@@ -181,6 +193,7 @@ type JsMsg
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
     | GotKeyHold String Bool
+    | GotToast String String
     | Error Decode.Error
 
 
@@ -220,6 +233,9 @@ elmEncoder elm =
         ScrollTo id position ->
             Encode.object [ ( "kind", "ScrollTo" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
 
+        Fullscreen maybeId ->
+            Encode.object [ ( "kind", "Fullscreen" |> Encode.string ), ( "maybeId", maybeId |> Encode.maybe Encode.string ) ]
+
         SetClasses { html, body } ->
             Encode.object [ ( "kind", "SetClasses" |> Encode.string ), ( "html", html |> Encode.string ), ( "body", body |> Encode.string ) ]
 
@@ -228,6 +244,9 @@ elmEncoder elm =
 
         LoadProjects ->
             Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
+
+        LoadRemoteProject projectUrl ->
+            Encode.object [ ( "kind", "LoadRemoteProject" |> Encode.string ), ( "projectUrl", projectUrl |> Encode.string ) ]
 
         SaveProject project ->
             Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
@@ -313,6 +332,11 @@ jsDecoder =
                     Decode.map2 GotKeyHold
                         (Decode.field "key" Decode.string)
                         (Decode.field "start" Decode.bool)
+
+                "GotToast" ->
+                    Decode.map2 GotToast
+                        (Decode.field "level" Decode.string)
+                        (Decode.field "message" Decode.string)
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")

@@ -9,7 +9,6 @@ import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
 import Html.Attributes exposing (checked, class, for, id, name, type_, value)
 import Html.Events exposing (onClick)
-import Json.Encode as Encode
 import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
@@ -19,7 +18,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus)
 import Models.ColumnOrder as ColumnOrder
-import Models.Project as Project
+import Models.Project as Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -187,20 +186,20 @@ viewDisplaySettingsSection htmlId erd =
 
 viewDownloadSection : HtmlId -> Erd -> Html Msg
 viewDownloadSection _ erd =
+    let
+        project : Project
+        project =
+            erd |> Erd.unpack
+    in
     fieldset [ class "mt-6" ]
         [ legend [ class "font-medium text-gray-900" ] [ text "Download project" ]
         , p [ class "text-sm text-gray-500" ] [ text "To save it on you computer or share with others." ]
         , div [ class "mt-1" ]
             [ Button.primary3 Tw.primary
-                [ onClick (Send (Ports.downloadFile (projectFilename erd) (erd |> Erd.unpack |> Project.encode |> Encode.encode 0))) ]
+                [ onClick (Send (Ports.downloadFile (project |> Project.downloadFilename) (project |> Project.downloadContent))) ]
                 [ text "Download project" ]
             ]
         ]
-
-
-projectFilename : Erd -> String
-projectFilename erd =
-    (erd.project.name |> String.replace ".sql" "") ++ ".azimutt.json"
 
 
 

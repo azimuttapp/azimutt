@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -9,6 +9,7 @@ import Libs.Delta exposing (Delta)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
 import Libs.Models exposing (Millis, ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
+import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Tailwind as Tw
@@ -24,6 +25,7 @@ import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
@@ -34,7 +36,8 @@ import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
-    { navbar : NavbarModel
+    { conf : ErdConf
+    , navbar : NavbarModel
     , screen : ScreenProps
     , loaded : Bool
     , erd : Maybe Erd
@@ -46,6 +49,7 @@ type alias Model =
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
+    , sharing : Maybe SharingDialog
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
     , help : Maybe HelpDialog
@@ -88,6 +92,10 @@ type alias VirtualRelation =
 
 type alias SchemaAnalysisDialog =
     { id : HtmlId, opened : HtmlId }
+
+
+type alias SharingDialog =
+    { id : HtmlId, url : FileUrl, layout : LayoutName, mode : String }
 
 
 type alias ProjectSettingsDialog =
@@ -142,10 +150,12 @@ type Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
+    | SharingMsg SharingMsg
     | ProjectSettingsMsg ProjectSettingsMsg
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
+    | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent
     | Zoom ZoomDelta
       -- global messages
@@ -209,6 +219,14 @@ type SchemaAnalysisMsg
     = SAOpen
     | SASectionToggle HtmlId
     | SAClose
+
+
+type SharingMsg
+    = SOpen
+    | SClose
+    | SProjectUrlUpdate FileUrl
+    | SLayoutUpdate LayoutName
+    | SModeUpdate String
 
 
 type ProjectSettingsMsg

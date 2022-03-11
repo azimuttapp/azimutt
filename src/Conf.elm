@@ -11,7 +11,8 @@ import Models.Project.SchemaName exposing (SchemaName)
 
 
 constants :
-    { azimuttTwitter : String
+    { azimuttWebsite : String
+    , azimuttTwitter : String
     , azimuttGithub : String
     , azimuttDiscussions : String
     , azimuttRoadmap : String
@@ -22,9 +23,11 @@ constants :
     , azimuttDiscussionCanvas : String
     , azimuttEmail : String
     , cheeringTweet : String
+    , sharingTweet : String
     }
 constants =
-    { azimuttTwitter = "https://twitter.com/" ++ twitter
+    { azimuttWebsite = "https://azimutt.app"
+    , azimuttTwitter = "https://twitter.com/" ++ twitter
     , azimuttGithub = github
     , azimuttDiscussions = github ++ "/discussions"
     , azimuttRoadmap = github ++ "/projects/1"
@@ -35,6 +38,7 @@ constants =
     , azimuttDiscussionCanvas = github ++ "/discussions/9"
     , azimuttEmail = "hey@azimutt.app"
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
+    , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     }
 
 
@@ -91,6 +95,7 @@ ui =
 
 ids :
     { searchInput : HtmlId
+    , sharingDialog : HtmlId
     , settingsDialog : HtmlId
     , sourceUploadDialog : HtmlId
     , erd : HtmlId
@@ -105,6 +110,7 @@ ids :
     }
 ids =
     { searchInput = "app-nav-search"
+    , sharingDialog = "sharing-dialog"
     , settingsDialog = "settings-dialog"
     , sourceUploadDialog = "source-upload-dialog"
     , erd = "erd"

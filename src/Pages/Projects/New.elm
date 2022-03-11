@@ -204,17 +204,17 @@ handleJsMessage msg model =
             ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }, Cmd.none )
 
         GotLocalFile now projectId sourceId file content ->
-            if file.name |> String.endsWith ".azimutt.json" then
+            if file.name |> String.endsWith ".json" then
                 ( model, T.send (ProjectImport.gotLocalFile projectId content |> ProjectImportMsg) )
 
             else if file.name |> String.endsWith ".sql" then
                 ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> SqlSourceUploadMsg) )
 
             else
-                ( model, T.send (toastError ("File should end with .azimutt.json or .sql, " ++ file.name ++ " is not handled :(")) )
+                ( model, T.send (toastError ("File should end with .json or .sql, " ++ file.name ++ " is not handled :(")) )
 
         GotRemoteFile now projectId sourceId url content sample ->
-            if url |> String.endsWith ".azimutt.json" then
+            if url |> String.endsWith ".json" then
                 if sample == Nothing then
                     ( model, T.send (ProjectImport.gotRemoteFile projectId content |> ProjectImportMsg) )
 
@@ -225,7 +225,7 @@ handleJsMessage msg model =
                 ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> SqlSourceUploadMsg) )
 
             else
-                ( model, T.send (toastError ("File should end with .azimutt.json or .sql, " ++ url ++ " is not handled :(")) )
+                ( model, T.send (toastError ("File should end with .json or .sql, " ++ url ++ " is not handled :(")) )
 
         _ ->
             ( model, Cmd.none )

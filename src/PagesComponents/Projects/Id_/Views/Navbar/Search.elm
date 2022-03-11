@@ -25,7 +25,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 
 viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
 viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
-    div [ class "ml-6" ]
+    div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
             [ label [ for htmlId, class "sr-only" ] [ text "Search" ]
             , Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }

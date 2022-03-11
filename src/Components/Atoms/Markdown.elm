@@ -1,4 +1,4 @@
-module Components.Atoms.Markdown exposing (doc, markdown, markdownUnsafe)
+module Components.Atoms.Markdown exposing (doc, markdown, markdownUnsafe, rawHtml)
 
 import ElmBook.Chapter exposing (Chapter, chapter, renderComponentList)
 import Html exposing (Html)
@@ -14,6 +14,11 @@ markdown classes md =
 markdownUnsafe : List String -> String -> Html msg
 markdownUnsafe classes md =
     render { defaultOptions | sanitize = False } classes md
+
+
+rawHtml : String -> Html msg
+rawHtml content =
+    Markdown.toHtmlWith { githubFlavored = Nothing, defaultHighlighting = Nothing, sanitize = False, smartypants = False } [] content
 
 
 render : Options -> List String -> String -> Html msg

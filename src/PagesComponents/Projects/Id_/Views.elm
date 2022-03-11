@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.View exposing (viewProject)
+module PagesComponents.Projects.Id_.Views exposing (view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -17,6 +17,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 import PagesComponents.Projects.Id_.Views.Erd as Erd exposing (viewErd)
 import PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
@@ -26,16 +27,26 @@ import PagesComponents.Projects.Id_.Views.Modals.Help exposing (viewHelp)
 import PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 import PagesComponents.Projects.Id_.Views.Modals.Prompt exposing (viewPrompt)
 import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
+import PagesComponents.Projects.Id_.Views.Modals.Sharing exposing (viewSharing)
 import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
+import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
 import Shared exposing (StoredProjects(..))
 import Time
+import View exposing (View)
+
+
+view : Shared.Model -> Model -> View Msg
+view shared model =
+    { title = model.erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") "Azimutt - Explore your database schema"
+    , body = model |> viewProject shared
+    }
 
 
 viewProject : Shared.Model -> Model -> List (Html Msg)
 viewProject shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp model "app") viewNotFound
+        model.erd |> Maybe.mapOrElse (viewApp model "app") (viewNotFound model.conf)
 
       else
         Loader.fullScreen
@@ -48,14 +59,27 @@ viewProject shared model =
 viewApp : Model -> HtmlId -> Erd -> Html Msg
 viewApp model htmlId erd =
     div [ class "az-app h-full" ]
-        [ Lazy.lazy5 viewNavbar model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
-        , Lazy.lazy7 viewErd model.screen erd model.cursorMode model.selectionBox model.virtualRelation (Erd.argsToString model.openedDropdown model.openedPopover) model.dragging
-        , Lazy.lazy5 viewCommands model.cursorMode erd.canvas.zoom (erd.tableProps |> Dict.isEmpty) (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+        [ if model.conf.showNavbar then
+            Lazy.lazy6 viewNavbar model.conf model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+
+          else
+            div [] []
+        , Lazy.lazy8 viewErd model.conf model.screen erd model.cursorMode model.selectionBox model.virtualRelation (Erd.argsToString model.openedDropdown model.openedPopover) model.dragging
+        , if not (erd.tableProps |> Dict.isEmpty) && (model.conf.fullscreen || model.conf.move) then
+            Lazy.lazy5 viewCommands model.conf model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+
+          else
+            div [] []
+        , if not model.conf.showNavbar then
+            viewWatermark
+
+          else
+            div [] []
         ]
 
 
-viewNotFound : Html msg
-viewNotFound =
+viewNotFound : ErdConf -> Html msg
+viewNotFound conf =
     NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
@@ -64,7 +88,12 @@ viewNotFound =
         , header = "404 error"
         , title = "Project not found."
         , message = "Sorry, we couldn't find the project you’re looking for."
-        , link = { url = Route.toHref Route.Projects, text = "Go back to dashboard" }
+        , link =
+            if conf.save then
+                { url = Route.toHref Route.Projects, text = "Go back to dashboard" }
+
+            else
+                { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" }
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
@@ -82,6 +111,7 @@ viewModal zone now model =
          , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout (model.openedDialogs |> List.has m.id) m ))
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload zone now (model.openedDialogs |> List.has m.id) m ))
          , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> List.has m.id) m ))

@@ -2,7 +2,7 @@ module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToS
 
 import Components.Organisms.Table as Table
 import Conf
-import DataSources.SqlParser.Parsers.ColomnType as ColumnType
+import DataSources.SqlParser.Parsers.ColumnType as ColumnType
 import Dict
 import Either exposing (Either(..))
 import Html exposing (Attribute, Html, div)
@@ -23,6 +23,7 @@ import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
@@ -48,8 +49,8 @@ stringToArgs args =
             ( ( "", "" ), ( False, False, False ) )
 
 
-viewTable : ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
-viewTable zoom cursorMode args index props table =
+viewTable : ErdConf -> ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
+viewTable conf zoom cursorMode args index props table =
     let
         ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation, useBasicTypes ) ) =
             stringToArgs args
@@ -59,7 +60,7 @@ viewTable zoom cursorMode args index props table =
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (cursorMode == CursorDrag) [] [ stopPointerDown (handleTablePointerDown table.htmlId) ]
+            B.cond (cursorMode == CursorDrag || not conf.move) [] [ stopPointerDown (handleTablePointerDown table.htmlId) ]
 
         zIndex : Int
         zIndex =
@@ -81,35 +82,39 @@ viewTable zoom cursorMode args index props table =
             , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
-                [ { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
-                , { label = "Sort columns", action = Left (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
-                , { label = "Hide columns"
-                  , action =
+                [ Maybe.when conf.layout { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                , Maybe.when conf.layout { label = "Sort columns", action = Left (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
+                , Maybe.when conf.layout
+                    { label = "Hide columns"
+                    , action =
                         Left
                             [ { label = "Without relation", action = HideColumns table.id "relations", hotkey = Nothing }
                             , { label = "Regular ones", action = HideColumns table.id "regular", hotkey = Nothing }
                             , { label = "Nullable ones", action = HideColumns table.id "nullable", hotkey = Nothing }
                             , { label = "All", action = HideColumns table.id "all", hotkey = Nothing }
                             ]
-                  }
-                , { label = "Show columns"
-                  , action =
+                    }
+                , Maybe.when conf.layout
+                    { label = "Show columns"
+                    , action =
                         Left
                             [ { label = "With relations", action = ShowColumns table.id "relations", hotkey = Nothing }
                             , { label = "All", action = ShowColumns table.id "all", hotkey = Nothing }
                             ]
-                  }
-                , { label = "Order"
-                  , action =
+                    }
+                , Maybe.when conf.layout
+                    { label = "Order"
+                    , action =
                         Left
                             [ { label = "Bring forward", action = TableOrder table.id (index + 1), hotkey = Conf.hotkeys |> Dict.get "move-forward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             , { label = "Send backward", action = TableOrder table.id (index - 1), hotkey = Conf.hotkeys |> Dict.get "move-backward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             , { label = "Bring to front", action = TableOrder table.id 1000, hotkey = Conf.hotkeys |> Dict.get "move-to-top" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             , { label = "Send to back", action = TableOrder table.id 0, hotkey = Conf.hotkeys |> Dict.get "move-to-back" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
                             ]
-                  }
-                , { label = "Find path for this table", action = Right { action = FindPathMsg (FPOpen (Just table.id) Nothing), hotkey = Nothing } }
+                    }
+                , Maybe.when conf.findPath { label = "Find path for this table", action = Right { action = FindPathMsg (FPOpen (Just table.id) Nothing), hotkey = Nothing } }
                 ]
+                    |> List.filterMap identity
             , state =
                 { color = props.color
                 , isHover = props.isHover
@@ -146,6 +151,7 @@ viewTable zoom cursorMode args index props table =
                 , clickDropdown = DropdownToggle
                 }
             , zoom = zoom
+            , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
             }
         ]
 
@@ -159,7 +165,7 @@ handleTablePointerDown htmlId e =
         e |> .position |> DragStart Conf.ids.erd
 
     else
-        Noop ""
+        Noop "No match on table pointer down"
 
 
 buildColumn : Bool -> ErdTableProps -> ErdColumn -> Table.Column

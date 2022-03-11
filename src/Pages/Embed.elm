@@ -1,24 +1,30 @@
-module Pages.Projects.Id_ exposing (Model, Msg, page)
+module Pages.Embed exposing (Model, Msg, page)
 
 import Conf
-import Gen.Params.Projects.Id_ exposing (Params)
+import Dict exposing (Dict)
+import Gen.Params.Embed exposing (Params)
+import Libs.Dict as Dict
+import Libs.List as List
+import Libs.Maybe as Maybe
+import Libs.Task as T
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg)
-import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf
+import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..))
+import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
+import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
 import Ports
 import Request
-import Shared exposing (StoredProjects(..))
+import Shared
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init
-        , update = Updates.update (Just req.params.id) Nothing shared.now
+        { init = init req.query
+        , update = Updates.update Nothing (req.query |> Dict.get "layout") shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -36,9 +42,9 @@ type alias Msg =
 -- INIT
 
 
-init : ( Model, Cmd Msg )
-init =
-    ( { conf = ErdConf.default
+init : Dict String String -> ( Model, Cmd Msg )
+init query =
+    ( { conf = query |> Dict.getOrElse "mode" "static" |> initConf
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = False
@@ -67,8 +73,14 @@ init =
       }
     , Cmd.batch
         [ Ports.setClasses { html = "h-full", body = "h-full" }
-        , Ports.trackPage "app"
-        , Ports.loadProjects
+        , Ports.trackPage "embed"
+        , (query |> Dict.get "project_url" |> Maybe.map Ports.loadRemoteProject)
+            |> Maybe.withDefault (T.send (Noop "load embed"))
         , Ports.listenHotkeys Conf.hotkeys
         ]
     )
+
+
+initConf : String -> ErdConf
+initConf mode =
+    EmbedMode.all |> List.findBy .id mode |> Maybe.mapOrElse .conf ErdConf.embedDefault
