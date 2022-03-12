@@ -2,6 +2,8 @@ module Pages.Projects.Id_ exposing (Model, Msg, page)
 
 import Conf
 import Gen.Params.Projects.Id_ exposing (Params)
+import Gen.Route as Route
+import Models.Project.ProjectId exposing (ProjectId)
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg)
@@ -17,7 +19,7 @@ import Shared exposing (StoredProjects(..))
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init
+        { init = init req.params.id
         , update = Updates.update (Just req.params.id) Nothing shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
@@ -36,8 +38,8 @@ type alias Msg =
 -- INIT
 
 
-init : ( Model, Cmd Msg )
-init =
+init : ProjectId -> ( Model, Cmd Msg )
+init id =
     ( { conf = ErdConf.default
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
@@ -66,7 +68,13 @@ init =
       , openedDialogs = []
       }
     , Cmd.batch
-        [ Ports.setClasses { html = "h-full", body = "h-full" }
+        [ Ports.setMeta
+            { title = Just (Views.title Nothing)
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just (Route.Projects__Id_ { id = id })
+            , html = Just "h-full"
+            , body = Just "h-full"
+            }
         , Ports.trackPage "app"
         , Ports.loadProjects
         , Ports.listenHotkeys Conf.hotkeys

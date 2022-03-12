@@ -21,7 +21,7 @@ import Models.Project.Source as Source
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Models.DragState as DragState
-import PagesComponents.Projects.Id_.Models.Erd as Erd
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
@@ -35,6 +35,7 @@ import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
+import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
@@ -260,13 +261,18 @@ handleJsMessage currentProject currentLayout msg model =
                     currentProject
                         |> Maybe.mapOrElse (\id -> projects |> List.find (\p -> p.id == id)) (projects |> List.head)
                         |> Maybe.map (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
+
+                erd : Maybe Erd
+                erd =
+                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create projects))
             in
-            ( { model | loaded = True, erd = model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create projects)) }
+            ( { model | loaded = True, erd = erd }
             , Cmd.batch
                 ((model.erd
                     |> Maybe.mapOrElse (\_ -> [])
                         [ Ports.observeSize Conf.ids.erd
                         , Ports.observeTablesSize (project |> Maybe.mapOrElse (.layout >> .tables) [] |> List.map .id)
+                        , Ports.setMeta { title = Just (Views.title erd), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
                         ]
                  )
                     ++ (errors

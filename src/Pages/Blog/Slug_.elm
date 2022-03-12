@@ -1,9 +1,10 @@
 module Pages.Blog.Slug_ exposing (Model, Msg, page)
 
+import Conf
 import Gen.Params.Blog.Slug_ exposing (Params)
+import Gen.Route as Route
 import Http
 import Libs.Regex as Rgx
-import Libs.Result as Result
 import Page
 import PagesComponents.Blog.Slug.Models as Models exposing (Model(..))
 import PagesComponents.Blog.Slug.Updates exposing (getArticle, parseContent)
@@ -32,11 +33,27 @@ type alias Model =
     Models.Model
 
 
+title : Model -> String
+title model =
+    case model of
+        Loaded article ->
+            article.title ++ " - Azimutt blog"
+
+        _ ->
+            "Azimutt blog - Explore your database schema"
+
+
 init : String -> ( Model, Cmd Msg )
 init slug =
     ( Loading
     , Cmd.batch
-        [ Ports.setClasses { html = "", body = "" }
+        [ Ports.setMeta
+            { title = Just (title Loading)
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just (Route.Blog__Slug_ { slug = slug })
+            , html = Just ""
+            , body = Just ""
+            }
         , Ports.trackPage "blog-article"
         , slug |> getArticle GotArticle
         ]
@@ -55,7 +72,12 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg _ =
     case msg of
         GotArticle slug (Ok content) ->
-            ( content |> parseContent slug |> Result.fold BadContent Loaded, Cmd.none )
+            case content |> parseContent slug of
+                Ok article ->
+                    ( Loaded article, Ports.setMeta { title = Just (title (Loaded article)), description = Just article.excerpt, canonical = Nothing, html = Nothing, body = Nothing } )
+
+                Err err ->
+                    ( BadContent err, Cmd.none )
 
         GotArticle _ (Err err) ->
             ( BadSlug err, Cmd.none )
@@ -76,12 +98,4 @@ subscriptions _ =
 
 view : Model -> View Msg
 view model =
-    { title =
-        case model of
-            Loaded article ->
-                article.title ++ " - Azimutt blog"
-
-            _ ->
-                "Azimutt blog - Explore your database schema"
-    , body = viewArticle model
-    }
+    { title = title model, body = viewArticle model }

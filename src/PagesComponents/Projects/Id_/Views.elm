@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views exposing (view)
+module PagesComponents.Projects.Id_.Views exposing (title, view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -36,9 +36,14 @@ import Time
 import View exposing (View)
 
 
+title : Maybe Erd -> String
+title erd =
+    erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") Conf.constants.defaultTitle
+
+
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    { title = model.erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") "Azimutt - Explore your database schema"
+    { title = model.erd |> title
     , body = model |> viewProject shared
     }
 

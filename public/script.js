@@ -25,6 +25,7 @@ window.addEventListener('load', function() {
     }
     app.ports && app.ports.elmToJs.subscribe(port => {
         // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
+        // TODO: use requestAnimationFrame instead!
         setTimeout(() => {
             // console.log('elm message', msg)
             switch (port.kind) {
@@ -34,7 +35,7 @@ window.addEventListener('load', function() {
                 case 'Blur':              blur(port.id); break;
                 case 'ScrollTo':          scrollTo(port.id, port.position); break;
                 case 'Fullscreen':        fullscreen(port.maybeId); break;
-                case 'SetClasses':        setClasses(port.html, port.body); break;
+                case 'SetMeta':           setMeta(port); break;
                 case 'AutofocusWithin':   autofocusWithin(port.id); break;
                 case 'LoadProjects':      loadProjects(); break;
                 case 'LoadRemoteProject': loadRemoteProject(port.projectUrl); break;
@@ -72,9 +73,24 @@ window.addEventListener('load', function() {
     function fullscreen(maybeId) {
         maybeId ? getElementById(maybeId).requestFullscreen() : document.body.requestFullscreen()
     }
-    function setClasses(html, body) {
-        document.getElementsByTagName('html')[0].setAttribute('class', html)
-        document.getElementsByTagName('body')[0].setAttribute('class', body)
+    function setMeta(meta) {
+        if (meta.title) {
+            document.title = meta.title
+            document.querySelector('meta[property="og:title"]')?.setAttribute('content', meta.title)
+            document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', meta.title)
+        }
+        if (meta.description) {
+            document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description)
+            document.querySelector('meta[property="og:description"]')?.setAttribute('content', meta.description)
+            document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', meta.description)
+        }
+        if (meta.canonical) {
+            document.querySelector('link[rel="canonical"]')?.setAttribute('href', meta.canonical)
+            document.querySelector('meta[property="og:url"]')?.setAttribute('content', meta.canonical)
+            document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', meta.canonical)
+        }
+        if (meta.html) { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
+        if (meta.body) { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
     }
     function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()

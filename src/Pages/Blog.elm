@@ -40,13 +40,24 @@ type alias Model =
     Models.Model
 
 
+title : String
+title =
+    "Azimutt blog - Explore your database schema"
+
+
 init : ( Model, Cmd Msg )
 init =
     Conf.blogPosts
         |> (\slugs ->
                 ( { articles = slugs |> List.map (\slug -> ( slug, buildInitArticle slug )) }
                 , Cmd.batch
-                    ([ Ports.setClasses { html = "", body = "" }
+                    ([ Ports.setMeta
+                        { title = Just title
+                        , description = Just Conf.constants.defaultDescription
+                        , canonical = Just Route.Blog
+                        , html = Just ""
+                        , body = Just ""
+                        }
                      , Ports.trackPage "blog"
                      ]
                         ++ (slugs |> List.map (getArticle GotArticle))
@@ -143,6 +154,4 @@ subscriptions _ =
 
 view : Model -> View Msg
 view model =
-    { title = "Azimutt blog - Explore your database schema"
-    , body = viewBlog model
-    }
+    { title = title, body = viewBlog model }

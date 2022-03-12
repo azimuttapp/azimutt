@@ -1,24 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://azimutt.app</loc>
-    <lastmod>2021-10-01</lastmod>
-  </url>
-  <url>
-    <loc>https://azimutt.app/blog</loc>
-    <lastmod>2021-10-01</lastmod>
-    <changefreq>weekly</changefreq>
-  </url>
-  <url>
-    <loc>https://azimutt.app/blog/the-story-behind-azimutt</loc>
-    <lastmod>2021-10-01</lastmod>
-  </url>
-  <url>
-    <loc>https://azimutt.app/blog/how-to-explore-your-database-schema-with-azimutt</loc>
-    <lastmod>2022-03-01</lastmod>
-  </url>
-  <url>
-    <loc>https://azimutt.app/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them</loc>
-    <lastmod>2022-03-07</lastmod>
-  </url>
+  <url><lastmod>2022-03-07</lastmod><loc>https://azimutt.app</loc></url>
+  <url><lastmod>2022-03-07</lastmod><changefreq>weekly</changefreq><loc>https://azimutt.app/blog</loc></url>
+
+  <url><lastmod>2022-03-07</lastmod><loc>https://azimutt.app/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them</loc></url>
+  <url><lastmod>2022-03-01</lastmod><loc>https://azimutt.app/blog/how-to-explore-your-database-schema-with-azimutt</loc></url>
+  <url><lastmod>2021-10-01</lastmod><loc>https://azimutt.app/blog/the-story-behind-azimutt</loc></url>
 </urlset>

@@ -1,6 +1,8 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
+import Conf
 import Gen.Params.Home_ exposing (Params)
+import Gen.Route as Route
 import Page
 import PagesComponents.Home_.Models as Models exposing (Msg(..))
 import PagesComponents.Home_.View exposing (viewHome)
@@ -33,11 +35,22 @@ type alias Msg =
 -- INIT
 
 
+title : String
+title =
+    Conf.constants.defaultTitle
+
+
 init : ( Model, Cmd msg )
 init =
     ( { projects = [] }
     , Cmd.batch
-        [ Ports.setClasses { html = "", body = "" }
+        [ Ports.setMeta
+            { title = Just title
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just Route.Home_
+            , html = Just ""
+            , body = Just ""
+            }
         , Ports.trackPage "home"
         , Ports.loadProjects
         ]
@@ -80,6 +93,4 @@ subscriptions _ =
 
 view : Model -> View msg
 view model =
-    { title = "Azimutt - Explore your database schema"
-    , body = viewHome model
-    }
+    { title = title, body = viewHome model }

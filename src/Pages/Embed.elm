@@ -3,6 +3,7 @@ module Pages.Embed exposing (Model, Msg, page)
 import Conf
 import Dict exposing (Dict)
 import Gen.Params.Embed exposing (Params)
+import Gen.Route as Route
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -72,7 +73,13 @@ init query =
       , openedDialogs = []
       }
     , Cmd.batch
-        [ Ports.setClasses { html = "h-full", body = "h-full" }
+        [ Ports.setMeta
+            { title = Just (Views.title Nothing)
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just Route.Embed
+            , html = Just "h-full"
+            , body = Just "h-full"
+            }
         , Ports.trackPage "embed"
         , (query |> Dict.get "project_url" |> Maybe.map Ports.loadRemoteProject)
             |> Maybe.withDefault (T.send (Noop "load embed"))

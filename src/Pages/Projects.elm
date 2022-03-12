@@ -3,6 +3,7 @@ module Pages.Projects exposing (Model, Msg, page)
 import Browser.Navigation as Navigation
 import Conf
 import Gen.Params.Projects exposing (Params)
+import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Task as T
 import Page
@@ -38,6 +39,11 @@ type alias Msg =
 -- INIT
 
 
+title : String
+title =
+    Conf.constants.defaultTitle
+
+
 init : ( Model, Cmd Msg )
 init =
     ( { selectedMenu = "Dashboard"
@@ -49,7 +55,13 @@ init =
       , toasts = []
       }
     , Cmd.batch
-        [ Ports.setClasses { html = "h-full bg-gray-100", body = "h-full" }
+        [ Ports.setMeta
+            { title = Just title
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just Route.Projects
+            , html = Just "h-full bg-gray-100"
+            , body = Just "h-full"
+            }
         , Ports.trackPage "dashboard"
         , Ports.loadProjects
         ]
@@ -116,6 +128,4 @@ subscriptions _ =
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    { title = "Azimutt - Explore your database schema"
-    , body = model |> viewProjects shared
-    }
+    { title = title, body = model |> viewProjects shared }

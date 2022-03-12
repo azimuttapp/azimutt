@@ -46,6 +46,11 @@ type alias Msg =
 -- INIT
 
 
+title : String
+title =
+    Conf.constants.defaultTitle
+
+
 init : Request.With Params -> ( Model, Cmd Msg )
 init req =
     let
@@ -90,7 +95,13 @@ init req =
       }
         |> setSelectedTab selectedTab
     , Cmd.batch
-        ([ Ports.setClasses { html = "h-full bg-gray-100", body = "h-full" }
+        ([ Ports.setMeta
+            { title = Just title
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just Route.Projects__New
+            , html = Just "h-full bg-gray-100"
+            , body = Just "h-full"
+            }
          , Ports.trackPage "new-project"
          , Ports.loadProjects
          ]
@@ -247,6 +258,4 @@ subscriptions _ =
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
-    { title = "Azimutt - Explore your database schema"
-    , body = model |> viewNewProject shared.zone
-    }
+    { title = title, body = model |> viewNewProject shared.zone }

@@ -1,4 +1,4 @@
-module Libs.String exposing (filterStartsWith, hashCode, inflect, nonEmpty, orElse, plural, pluralize, pluralizeD, pluralizeL, unique, wordSplit)
+module Libs.String exposing (filterStartsWith, hashCode, inflect, nonEmpty, orElse, plural, pluralize, pluralizeD, pluralizeL, stripRight, unique, wordSplit)
 
 import Bitwise
 import Dict exposing (Dict)
@@ -9,6 +9,15 @@ import Libs.Regex as Regex
 nonEmpty : String -> Bool
 nonEmpty string =
     string /= ""
+
+
+stripRight : String -> String -> String
+stripRight suffix str =
+    if str |> String.endsWith suffix then
+        str |> String.dropRight (String.length suffix)
+
+    else
+        str
 
 
 orElse : String -> String -> String

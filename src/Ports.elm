@@ -1,7 +1,9 @@
-port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
 
+import Conf
 import Dict exposing (Dict)
 import FileValue exposing (File)
+import Gen.Route as Route exposing (Route)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
 import Json.Encode as Encode
 import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
@@ -14,6 +16,7 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Models.Size as Size
+import Libs.String as String
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
@@ -59,9 +62,9 @@ autofocusWithin id =
     messageToJs (AutofocusWithin id)
 
 
-setClasses : HtmlContainers -> Cmd msg
-setClasses payload =
-    messageToJs (SetClasses payload)
+setMeta : MetaInfos -> Cmd msg
+setMeta payload =
+    messageToJs (SetMeta payload)
 
 
 loadProjects : Cmd msg
@@ -157,8 +160,13 @@ trackError name error =
     messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))
 
 
-type alias HtmlContainers =
-    { html : String, body : String }
+type alias MetaInfos =
+    { title : Maybe String
+    , description : Maybe String
+    , canonical : Maybe Route
+    , html : Maybe String
+    , body : Maybe String
+    }
 
 
 type ElmMsg
@@ -168,7 +176,7 @@ type ElmMsg
     | Blur HtmlId
     | ScrollTo HtmlId String
     | Fullscreen (Maybe HtmlId)
-    | SetClasses HtmlContainers
+    | SetMeta MetaInfos
     | AutofocusWithin HtmlId
     | LoadProjects
     | LoadRemoteProject FileUrl
@@ -236,8 +244,15 @@ elmEncoder elm =
         Fullscreen maybeId ->
             Encode.object [ ( "kind", "Fullscreen" |> Encode.string ), ( "maybeId", maybeId |> Encode.maybe Encode.string ) ]
 
-        SetClasses { html, body } ->
-            Encode.object [ ( "kind", "SetClasses" |> Encode.string ), ( "html", html |> Encode.string ), ( "body", body |> Encode.string ) ]
+        SetMeta meta ->
+            Encode.object
+                [ ( "kind", "SetMeta" |> Encode.string )
+                , ( "title", meta.title |> Encode.maybe Encode.string )
+                , ( "description", meta.description |> Encode.maybe Encode.string )
+                , ( "canonical", meta.canonical |> Maybe.map (\c -> Conf.constants.azimuttWebsite ++ Route.toHref c |> String.stripRight "/") |> Encode.maybe Encode.string )
+                , ( "html", meta.html |> Encode.maybe Encode.string )
+                , ( "body", meta.body |> Encode.maybe Encode.string )
+                ]
 
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]

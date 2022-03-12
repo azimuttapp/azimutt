@@ -34,11 +34,22 @@ type alias Msg =
 -- INIT
 
 
+title : String
+title =
+    "Page not found - Azimutt"
+
+
 init : Request -> ( Model, Cmd Msg )
 init req =
     ( req.url.path |> addPrefixed "?" req.url.query |> addPrefixed "#" req.url.fragment
     , Cmd.batch
-        [ Ports.setClasses { html = "h-full", body = "h-full" }
+        [ Ports.setMeta
+            { title = Just title
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just Route.NotFound
+            , html = Just "h-full"
+            , body = Just "h-full"
+            }
         , Ports.trackPage "not-found"
         ]
     )
@@ -78,9 +89,7 @@ subscriptions _ =
 
 view : Model -> View Msg
 view model =
-    { title = "Page not found - Azimutt"
-    , body = model |> viewNotFound
-    }
+    { title = title, body = model |> viewNotFound }
 
 
 viewNotFound : Model -> List (Html msg)

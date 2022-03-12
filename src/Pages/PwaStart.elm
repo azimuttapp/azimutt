@@ -1,6 +1,7 @@
 module Pages.PwaStart exposing (Model, Msg, page)
 
 import Components.Atoms.Loader as Loader
+import Conf
 import Gen.Params.PwaStart exposing (Params)
 import Gen.Route as Route
 import Libs.Maybe as Maybe
@@ -34,11 +35,22 @@ type Msg
 -- INIT
 
 
+title : String
+title =
+    "Azimutt is loading..."
+
+
 init : ( Model, Cmd Msg )
 init =
     ( {}
     , Cmd.batch
-        [ Ports.setClasses { html = "h-full", body = "h-full" }
+        [ Ports.setMeta
+            { title = Just title
+            , description = Just Conf.constants.defaultDescription
+            , canonical = Just Route.PwaStart
+            , html = Just "h-full"
+            , body = Just "h-full"
+            }
         , Ports.trackPage "pwa-start"
         , Ports.loadProjects
         ]
@@ -82,6 +94,4 @@ subscriptions _ =
 
 view : Model -> View Msg
 view _ =
-    { title = "Azimutt is loading..."
-    , body = [ Loader.fullScreen ]
-    }
+    { title = title, body = [ Loader.fullScreen ] }
