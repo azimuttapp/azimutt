@@ -1,9 +1,7 @@
 port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
 
-import Conf
 import Dict exposing (Dict)
 import FileValue exposing (File)
-import Gen.Route as Route exposing (Route)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
 import Json.Encode as Encode
 import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
@@ -16,13 +14,13 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Models.Size as Size
-import Libs.String as String
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Route as Route exposing (Route)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
 
@@ -249,7 +247,7 @@ elmEncoder elm =
                 [ ( "kind", "SetMeta" |> Encode.string )
                 , ( "title", meta.title |> Encode.maybe Encode.string )
                 , ( "description", meta.description |> Encode.maybe Encode.string )
-                , ( "canonical", meta.canonical |> Maybe.map (\c -> Conf.constants.azimuttWebsite ++ Route.toHref c |> String.stripRight "/") |> Encode.maybe Encode.string )
+                , ( "canonical", meta.canonical |> Maybe.map Route.toUrl |> Encode.maybe Encode.string )
                 , ( "html", meta.html |> Encode.maybe Encode.string )
                 , ( "body", meta.body |> Encode.maybe Encode.string )
                 ]

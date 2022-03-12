@@ -1,6 +1,7 @@
 module Pages.Blog.Slug_ exposing (Model, Msg, page)
 
 import Conf
+import Dict
 import Gen.Params.Blog.Slug_ exposing (Params)
 import Gen.Route as Route
 import Http
@@ -50,7 +51,7 @@ init slug =
         [ Ports.setMeta
             { title = Just (title Loading)
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just (Route.Blog__Slug_ { slug = slug })
+            , canonical = Just { route = Route.Blog__Slug_ { slug = slug }, query = Dict.empty }
             , html = Just ""
             , body = Just ""
             }

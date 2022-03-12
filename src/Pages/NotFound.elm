@@ -2,6 +2,7 @@ module Pages.NotFound exposing (Model, Msg, page)
 
 import Components.Slices.NotFound as NotFound
 import Conf
+import Dict
 import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
 import Html exposing (Html)
@@ -46,7 +47,7 @@ init req =
         [ Ports.setMeta
             { title = Just title
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just Route.NotFound
+            , canonical = Just { route = Route.NotFound, query = Dict.empty }
             , html = Just "h-full"
             , body = Just "h-full"
             }

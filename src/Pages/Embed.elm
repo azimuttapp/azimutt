@@ -23,12 +23,24 @@ import Shared
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
+    let
+        query : QueryString
+        query =
+            parseQueryString req.query
+    in
     Page.element
-        { init = init req.query
-        , update = Updates.update Nothing (req.query |> Dict.get "layout") shared.now
+        { init = init query
+        , update = Updates.update Nothing query.layout shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }
+
+
+type alias QueryString =
+    { projectUrl : Maybe String
+    , layout : Maybe String
+    , mode : String
+    }
 
 
 type alias Model =
@@ -43,9 +55,9 @@ type alias Msg =
 -- INIT
 
 
-init : Dict String String -> ( Model, Cmd Msg )
+init : QueryString -> ( Model, Cmd Msg )
 init query =
-    ( { conf = query |> Dict.getOrElse "mode" "static" |> initConf
+    ( { conf = initConf query.mode
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = False
@@ -76,12 +88,12 @@ init query =
         [ Ports.setMeta
             { title = Just (Views.title Nothing)
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just Route.Embed
+            , canonical = Just { route = Route.Embed, query = query |> serializeQueryString }
             , html = Just "h-full"
             , body = Just "h-full"
             }
         , Ports.trackPage "embed"
-        , (query |> Dict.get "project_url" |> Maybe.map Ports.loadRemoteProject)
+        , (query.projectUrl |> Maybe.map Ports.loadRemoteProject)
             |> Maybe.withDefault (T.send (Noop "load embed"))
         , Ports.listenHotkeys Conf.hotkeys
         ]
@@ -91,3 +103,22 @@ init query =
 initConf : String -> ErdConf
 initConf mode =
     EmbedMode.all |> List.findBy .id mode |> Maybe.mapOrElse .conf ErdConf.embedDefault
+
+
+parseQueryString : Dict String String -> QueryString
+parseQueryString query =
+    { projectUrl = query |> Dict.get "project_url"
+    , layout = query |> Dict.get "layout"
+    , mode = query |> Dict.getOrElse "mode" EmbedMode.default
+    }
+
+
+serializeQueryString : QueryString -> Dict String String
+serializeQueryString query =
+    Dict.fromList
+        ([ ( "project_url", query.projectUrl )
+         , ( "layout", query.layout )
+         , ( "mode", Just query.mode )
+         ]
+            |> List.filterMap (\( key, maybeValue ) -> maybeValue |> Maybe.map (\value -> ( key, value )))
+        )

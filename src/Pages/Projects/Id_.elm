@@ -1,6 +1,7 @@
 module Pages.Projects.Id_ exposing (Model, Msg, page)
 
 import Conf
+import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Gen.Route as Route
 import Models.Project.ProjectId exposing (ProjectId)
@@ -71,7 +72,7 @@ init id =
         [ Ports.setMeta
             { title = Just (Views.title Nothing)
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just (Route.Projects__Id_ { id = id })
+            , canonical = Just { route = Route.Projects__Id_ { id = id }, query = Dict.empty }
             , html = Just "h-full"
             , body = Just "h-full"
             }

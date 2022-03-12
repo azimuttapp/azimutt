@@ -2,6 +2,7 @@ module Pages.Blog exposing (Model, Msg, page)
 
 import Components.Slices.Blog exposing (Article)
 import Conf
+import Dict
 import Gen.Params.Blog exposing (Params)
 import Gen.Route as Route
 import Http
@@ -54,7 +55,7 @@ init =
                     ([ Ports.setMeta
                         { title = Just title
                         , description = Just Conf.constants.defaultDescription
-                        , canonical = Just Route.Blog
+                        , canonical = Just { route = Route.Blog, query = Dict.empty }
                         , html = Just ""
                         , body = Just ""
                         }

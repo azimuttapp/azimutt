@@ -2,6 +2,7 @@ module Pages.Projects exposing (Model, Msg, page)
 
 import Browser.Navigation as Navigation
 import Conf
+import Dict
 import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
@@ -58,7 +59,7 @@ init =
         [ Ports.setMeta
             { title = Just title
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just Route.Projects
+            , canonical = Just { route = Route.Projects, query = Dict.empty }
             , html = Just "h-full bg-gray-100"
             , body = Just "h-full"
             }

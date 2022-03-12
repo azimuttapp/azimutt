@@ -2,6 +2,7 @@ module Pages.PwaStart exposing (Model, Msg, page)
 
 import Components.Atoms.Loader as Loader
 import Conf
+import Dict
 import Gen.Params.PwaStart exposing (Params)
 import Gen.Route as Route
 import Libs.Maybe as Maybe
@@ -47,7 +48,7 @@ init =
         [ Ports.setMeta
             { title = Just title
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just Route.PwaStart
+            , canonical = Just { route = Route.PwaStart, query = Dict.empty }
             , html = Just "h-full"
             , body = Just "h-full"
             }

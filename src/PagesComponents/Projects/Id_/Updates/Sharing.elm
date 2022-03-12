@@ -13,7 +13,7 @@ handleSharing : SharingMsg -> Model -> ( Model, Cmd Msg )
 handleSharing msg model =
     case msg of
         SOpen ->
-            ( model |> setSharing (Just { id = Conf.ids.sharingDialog, url = "", layout = model.erd |> Maybe.andThen .usedLayout |> Maybe.withDefault "", mode = EmbedMode.layout })
+            ( model |> setSharing (Just { id = Conf.ids.sharingDialog, url = "", layout = model.erd |> Maybe.andThen .usedLayout |> Maybe.withDefault "", mode = EmbedMode.default })
             , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.sharingDialog), Ports.track Track.openSharing ]
             )
 

@@ -98,7 +98,7 @@ init req =
         ([ Ports.setMeta
             { title = Just title
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just Route.Projects__New
+            , canonical = Just { route = Route.Projects__New, query = Dict.empty }
             , html = Just "h-full bg-gray-100"
             , body = Just "h-full"
             }

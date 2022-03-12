@@ -1,6 +1,7 @@
 module Pages.Home_ exposing (Model, Msg, page)
 
 import Conf
+import Dict
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route
 import Page
@@ -47,7 +48,7 @@ init =
         [ Ports.setMeta
             { title = Just title
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just Route.Home_
+            , canonical = Just { route = Route.Home_, query = Dict.empty }
             , html = Just ""
             , body = Just ""
             }
