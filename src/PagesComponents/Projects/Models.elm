@@ -1,6 +1,5 @@
 module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
-import Components.Molecules.Toast as Toast
 import Models.Project exposing (Project)
 import Ports exposing (JsMsg)
 import Shared exposing (Confirm, StoredProjects)
@@ -16,8 +15,6 @@ type alias Model =
     , projects : StoredProjects
     , confirm : Maybe (Confirm Msg)
     , modalOpened : Bool
-    , toastCpt : Int
-    , toasts : List Toast.Model
     }
 
 

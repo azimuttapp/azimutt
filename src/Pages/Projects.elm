@@ -52,8 +52,6 @@ init =
       , projects = Loading
       , confirm = Nothing
       , modalOpened = False
-      , toastCpt = 0
-      , toasts = []
       }
     , Cmd.batch
         [ Ports.setMeta
