@@ -1,7 +1,8 @@
-module Libs.Html.Events exposing (PointerEvent, WheelEvent, onPointerDown, onPointerUp, onWheel, pointerDecoder, preventPointerDown, stopClick, stopPointerDown, wheelDecoder)
+module Libs.Html.Events exposing (PointerEvent, WheelEvent, onContextMenu, onPointerDown, onPointerUp, onWheel, pointerDecoder, preventPointerDown, stopClick, stopPointerDown, wheelDecoder)
 
 import Html exposing (Attribute)
 import Html.Events exposing (preventDefaultOn, stopPropagationOn)
+import Html.Events.Extra.Mouse as Mouse exposing (Button)
 import Html.Events.Extra.Pointer as Pointer
 import Json.Decode as Decode
 import Libs.Delta exposing (Delta)
@@ -13,7 +14,12 @@ import Libs.Models.Position as Position exposing (Position)
 
 
 type alias PointerEvent =
-    { position : Position, ctrl : Bool, alt : Bool, shift : Bool }
+    { position : Position, ctrl : Bool, alt : Bool, shift : Bool, button : Button }
+
+
+onContextMenu : (PointerEvent -> msg) -> Attribute msg
+onContextMenu msg =
+    Html.Events.custom "contextmenu" (mouseDecoder |> Decode.map (\e -> { message = msg e, stopPropagation = True, preventDefault = True }))
 
 
 onPointerDown : (PointerEvent -> msg) -> Attribute msg
@@ -101,6 +107,20 @@ stopPointerDown msg =
 -- HELPERS
 
 
+mouseDecoder : Decode.Decoder PointerEvent
+mouseDecoder =
+    Mouse.eventDecoder
+        |> Decode.map
+            (\e ->
+                { position = e.pagePos |> Position.fromTuple
+                , ctrl = e.keys.ctrl
+                , alt = e.keys.alt
+                , shift = e.keys.shift
+                , button = e.button
+                }
+            )
+
+
 pointerDecoder : Decode.Decoder PointerEvent
 pointerDecoder =
     Pointer.eventDecoder
@@ -110,6 +130,7 @@ pointerDecoder =
                 , ctrl = e.pointer.keys.ctrl
                 , alt = e.pointer.keys.alt
                 , shift = e.pointer.keys.shift
+                , button = e.pointer.button
                 }
             )
 

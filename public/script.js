@@ -28,28 +28,31 @@ window.addEventListener('load', function() {
     }
     app.ports && app.ports.elmToJs.subscribe(port => {
         // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
+        // TODO: use requestAnimationFrame instead!
         setTimeout(() => {
             // console.log('elm message', msg)
             switch (port.kind) {
-                case 'Click':           click(port.id); break;
-                case 'MouseDown':       mousedown(port.id); break;
-                case 'Focus':           focus(port.id); break;
-                case 'Blur':            blur(port.id); break;
-                case 'ScrollTo':        scrollTo(port.id, port.position); break;
-                case 'SetClasses':      setClasses(port.html, port.body); break;
-                case 'AutofocusWithin': autofocusWithin(port.id); break;
-                case 'LoadProjects':    loadProjects(); break;
-                case 'SaveProject':     saveProject(port.project, loadProjects); break;
-                case 'DownloadFile':    downloadFile(port.filename, port.content); break;
-                case 'DropProject':     dropProject(port.project); break;
-                case 'GetLocalFile':    getLocalFile(port.project, port.source, port.file, port.fileKind); break;
-                case 'GetRemoteFile':   getRemoteFile(port.project, port.source, port.url, port.sample); break;
-                case 'GetSourceId':     getSourceId(port.src, port.ref); break;
-                case 'ObserveSizes':    observeSizes(port.ids); break;
-                case 'ListenKeys':      listenHotkeys(port.keys); break;
-                case 'TrackPage':       analytics.then(a => a.trackPage(port.name)); break;
-                case 'TrackEvent':      analytics.then(a => a.trackEvent(port.name, port.details)); break;
-                case 'TrackError':      analytics.then(a => a.trackError(port.name, port.details)); errorTracking.then(e => e.trackError(port.name, port.details)); break;
+                case 'Click':             click(port.id); break;
+                case 'MouseDown':         mousedown(port.id); break;
+                case 'Focus':             focus(port.id); break;
+                case 'Blur':              blur(port.id); break;
+                case 'ScrollTo':          scrollTo(port.id, port.position); break;
+                case 'Fullscreen':        fullscreen(port.maybeId); break;
+                case 'SetMeta':           setMeta(port); break;
+                case 'AutofocusWithin':   autofocusWithin(port.id); break;
+                case 'LoadProjects':      loadProjects(); break;
+                case 'LoadRemoteProject': loadRemoteProject(port.projectUrl); break;
+                case 'SaveProject':       saveProject(port.project, loadProjects); break;
+                case 'DownloadFile':      downloadFile(port.filename, port.content); break;
+                case 'DropProject':       dropProject(port.project); break;
+                case 'GetLocalFile':      getLocalFile(port.project, port.source, port.file); break;
+                case 'GetRemoteFile':     getRemoteFile(port.project, port.source, port.url, port.sample); break;
+                case 'GetSourceId':       getSourceId(port.src, port.ref); break;
+                case 'ObserveSizes':      observeSizes(port.ids); break;
+                case 'ListenKeys':        listenHotkeys(port.keys); break;
+                case 'TrackPage':         analytics.then(a => a.trackPage(port.name)); break;
+                case 'TrackEvent':        analytics.then(a => a.trackEvent(port.name, port.details)); break;
+                case 'TrackError':        analytics.then(a => a.trackError(port.name, port.details)); errorTracking.then(e => e.trackError(port.name, port.details)); break;
                 default: console.error('Unsupported Elm message', port); break;
             }
         }, 100)
@@ -70,12 +73,40 @@ window.addEventListener('load', function() {
     function scrollTo(id, position) {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
-    function setClasses(html, body) {
-        document.getElementsByTagName('html')[0].setAttribute('class', html)
-        document.getElementsByTagName('body')[0].setAttribute('class', body)
+    function fullscreen(maybeId) {
+        maybeId ? getElementById(maybeId).requestFullscreen() : document.body.requestFullscreen()
+    }
+    function setMeta(meta) {
+        if (meta.title) {
+            document.title = meta.title
+            document.querySelector('meta[property="og:title"]')?.setAttribute('content', meta.title)
+            document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', meta.title)
+        }
+        if (meta.description) {
+            document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description)
+            document.querySelector('meta[property="og:description"]')?.setAttribute('content', meta.description)
+            document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', meta.description)
+        }
+        if (meta.canonical) {
+            document.querySelector('link[rel="canonical"]')?.setAttribute('href', meta.canonical)
+            document.querySelector('meta[property="og:url"]')?.setAttribute('content', meta.canonical)
+            document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', meta.canonical)
+        }
+        if (meta.html) { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
+        if (meta.body) { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
     }
     function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()
+    }
+  
+    function loadRemoteProject(projectUrl) {
+        fetch(projectUrl)
+            .then(res => res.json())
+            .then(project => sendToElm({kind: 'GotProjects', projects: [[project.id, project]]}))
+            .catch(err => {
+                sendToElm({kind: 'GotProjects', projects: []})
+                sendToElm({kind: 'GotToast', level: 'error', message: `Can't load remote project: ${err}`})
+            })
     }
 
     function getConfiguredDb() {
@@ -118,7 +149,6 @@ window.addEventListener('load', function() {
     function loadAndMigrateLocaleStorageProjects() {
         const projects = getLocalStorageProjects()
         projects.forEach(p => saveProject(p, () => dropLocalStorageProject(p)))
-
         return projects
     }
 
@@ -134,8 +164,10 @@ window.addEventListener('load', function() {
                 else {
                     projects = projects.concat(loadAndMigrateLocaleStorageProjects())
 
-                    window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
                     sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
+                    window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
+                    const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
+                    id ? window.project = window.projects[id] : undefined
                 }
             }
         })
@@ -161,7 +193,7 @@ window.addEventListener('load', function() {
         })
     }
 
-    function getLocalFile(maybeProjectId, maybeSourceId, file, fileKind) {
+    function getLocalFile(maybeProjectId, maybeSourceId, file) {
         const reader = new FileReader()
         reader.onload = e => sendToElm({
             kind: 'GotLocalFile',
@@ -169,7 +201,6 @@ window.addEventListener('load', function() {
             projectId: maybeProjectId || randomUID(),
             sourceId: maybeSourceId || randomUID(),
             file,
-            fileKind,
             content: e.target.result
         })
         reader.readAsText(file)
@@ -187,7 +218,7 @@ window.addEventListener('load', function() {
                 content,
                 sample
             }))
-            .catch(err => showMessage({kind: 'error', message: err}))
+            .catch(err => showMessage({kind: 'error', message: `Can't get remote file: ${err}`}))
     }
 
     function getSourceId(src, ref) {
@@ -218,7 +249,7 @@ window.addEventListener('load', function() {
 
     const hotkeys = {}
     // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
-    document.addEventListener('keydown', e => {
+    function keydownHotkey(e) {
         const matches = (hotkeys[e.key] || []).filter(hotkey =>
             (hotkey.ctrl === e.ctrlKey) &&
             (!hotkey.shift || e.shiftKey) &&
@@ -235,7 +266,7 @@ window.addEventListener('load', function() {
             sendToElm({kind: 'GotHotkey', id: hotkey.id})
         })
         if(matches.length === 0 && e.key === "Escape" && e.target.localName === 'input') { e.target.blur() }
-    })
+    }
     function listenHotkeys(keys) {
         Object.keys(hotkeys).forEach(key => hotkeys[key] = [])
         Object.entries(keys).forEach(([id, alternatives]) => {
@@ -248,19 +279,52 @@ window.addEventListener('load', function() {
         })
     }
 
-    // listen at every click to handle tracked events
-    document.addEventListener('click', event => {
-        const tracked = findParent(event.target, e => e.getAttribute('data-track-event'))
+
+    // handle key hold
+    const holdKeyState = {}
+    function keydownHoldKey(e) {
+        if (e.code === 'Space') {
+            if (!holdKeyState['drag'] && e.target.localName !== 'input') {
+                sendToElm({kind: 'GotKeyHold', key: e.code, start: true})
+            }
+            holdKeyState['drag'] = true
+        }
+    }
+    function keyupHoldKey(e) {
+        if (e.code === 'Space') {
+            if (holdKeyState['drag']) {
+                sendToElm({kind: 'GotKeyHold', key: e.code, start: false})
+            }
+            holdKeyState['drag'] = false
+        }
+    }
+
+
+    // listen at every click to handle tracking events
+    function trackClick(e) {
+        const tracked = findParent(e.target, e => e.getAttribute('data-track-event'))
         if (tracked) {
             const eventName = tracked.getAttribute('data-track-event')
             const details = {label: tracked.textContent.trim()}
-            for (const attr of event.target.attributes) {
+            for (const attr of e.target.attributes) {
                 if (attr.name.startsWith('data-track-event-')) {
                     details[attr.name.replace('data-track-event-', '')] = attr.value
                 }
             }
             analytics.then(a => a.trackEvent(eventName, details))
         }
+    }
+
+    // listeners
+    document.addEventListener('click', e => {
+        trackClick(e)
+    })
+    document.addEventListener('keydown', e => {
+        keydownHotkey(e)
+        keydownHoldKey(e)
+    })
+    document.addEventListener('keyup', e => {
+        keyupHoldKey(e)
     })
 
 
@@ -310,7 +374,7 @@ window.addEventListener('load', function() {
     function showMessage({kind, message}) {
         // TODO track message in sentry and show it in toast using ports
         switch (kind) {
-            case 'error': console.error(message); break;
+            case 'error': console.error(message); alert(message); break;
             case 'warn': console.warn(message); break;
             case 'log': console.log(message); break;
             default: console.error(message)

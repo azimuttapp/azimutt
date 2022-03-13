@@ -41,7 +41,7 @@ viewHome model =
     [ Helpers.publicHeader
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
-        , title = "Explore your database SQL schema"
+        , title = "Explore your SQL database schema"
         , content = [ bText "Did you ever find yourself lost in your database?", br [] [], bText "Discover how Azimutt will help you understand it." ]
         , cta = heroCta
         }
@@ -53,8 +53,8 @@ viewHome model =
             { title = "Explore your database schema"
             , content =
                 [ text """Not everyone has the opportunity to work on brand new application where you create everything, including the data model.
-                              Many developers evolve and maintain existing applications with an already big schema, sometimes more than 50, 100 or even 500 tables.
-                              Finding the right tables and relations to work with can be hard, and sincerely, no tool really helps. Until now."""
+                          Many developers evolve and maintain existing applications with an already big schema, sometimes more than 50, 100 or even 500 tables.
+                          Finding the right tables and relations to work with can be hard, and sincerely, no tool really helps. Until now."""
                 , br [] []
                 , bText "Azimutt"
                 , text " allows you to explore your schema: search for relevant tables, follow the relations, hide less interesting columns and even find the paths between tables."
@@ -86,7 +86,7 @@ viewHome model =
         , quote =
             Just
                 { text = """The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views.
-                                This feels like the workflow I never knew I wanted until trying it just now."""
+                            This feels like the workflow I never knew I wanted until trying it just now."""
                 , author = "Oliver Searle-Barnes, Freelance, former VP Eng at Zapnito"
                 , avatar = { src = "/assets/images/avatar-oliver-searle-barnes.png", alt = "Oliver Searle-Barnes" }
                 }
@@ -130,25 +130,41 @@ viewHome model =
     , FeatureSideBySide.imageSlice
         { image = { src = "/assets/images/gospeak-find-path.png", alt = "Gospeak.io find path with Azimutt" }
         , imagePosition = Right
-        , icon = Just Beaker
+        , icon = Just Map
         , description =
-            { title = "Relax"
+            { title = "Let Azimutt drive you"
             , content =
                 [ text """Sometimes, easily following relations is not enough, especially when you don't know in which direction to go.
-                              And looking at every possible relation can be tedious. So let's grab a """
+                          And looking at every possible relation can be tedious. So let's grab a """
                 , span [] [ text "🍹" ] |> Tooltip.t "drink"
                 , text """ and watch Azimutt do the work for you."""
                 , br [] []
                 , text """It will look for every relation and build possible paths between two tables you want to join.
-                              And as it is helpful, it will even build the SQL request for you with all the needed joins."""
+                          And as it is helpful, it will even build the SQL request for you with all the needed joins."""
+                ]
+            }
+        , cta = Just { url = Route.toHref Route.Projects, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
+        , quote = Nothing
+        }
+    , FeatureSideBySide.imageSlice
+        { image = { src = "/assets/images/wordpress-schema-analysis.png", alt = "Analyze WordPress database schema" }
+        , imagePosition = Left
+        , icon = Just CursorClick
+        , description =
+            { title = "Find and fix mistakes"
+            , content =
+                [ text """Azimutt not only let your explore your database schema but also analyze it to provide you insights.
+                          Import your schema and find inconsistencies or forgotten relations in a minute, and trust me, for any on-trivial schema, you will find some."""
+                , br [] []
+                , text "Schema analysis always evolve, thanks to your feedback, to be as helpful as possible."
                 , br [] []
                 , Badge.basic Tw.red [] [ text "soon" ]
-                , text " It will make you a "
+                , text " It will also make you a "
                 , span [] [ text "☕️" ] |> Tooltip.t "coffee"
                 , text ", just as you like!"
                 ]
             }
-        , cta = Just { url = Route.toHref Route.Projects, text = "I'm hooked!", track = Just (Track.openAppCta "home-find-path-section") }
+        , cta = Just { url = Route.toHref Route.Projects, text = "I must try!", track = Just (Track.openAppCta "home-schema-analysis-section") }
         , quote = Nothing
         }
     , FeatureGrid.cardSlice
@@ -163,7 +179,7 @@ viewHome model =
               , description =
                     [ text "Want to have a look? Everything is on "
                     , b [] [ extLink Conf.constants.azimuttGithub [] [ text "azimuttap/azimutt" ] ]
-                    , text ", awesomely built with Elm. Come a let's discuss!"
+                    , text ", awesomely built with Elm. Come and let's discuss!"
                     ]
               }
             ]

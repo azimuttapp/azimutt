@@ -1,4 +1,4 @@
-port module Ports exposing (HtmlContainers, JsMsg(..), autofocusWithin, blur, click, downloadFile, dropProject, focus, getSourceId, listenHotkeys, loadProjects, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setClasses, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -14,13 +14,13 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Models.Size as Size
-import Models.FileKind as FileKind exposing (FileKind)
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Route as Route exposing (Route)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
 
@@ -50,19 +50,29 @@ scrollTo id position =
     messageToJs (ScrollTo id position)
 
 
+fullscreen : Maybe HtmlId -> Cmd msg
+fullscreen maybeId =
+    messageToJs (Fullscreen maybeId)
+
+
 autofocusWithin : HtmlId -> Cmd msg
 autofocusWithin id =
     messageToJs (AutofocusWithin id)
 
 
-setClasses : HtmlContainers -> Cmd msg
-setClasses payload =
-    messageToJs (SetClasses payload)
+setMeta : MetaInfos -> Cmd msg
+setMeta payload =
+    messageToJs (SetMeta payload)
 
 
 loadProjects : Cmd msg
 loadProjects =
     messageToJs LoadProjects
+
+
+loadRemoteProject : String -> Cmd msg
+loadRemoteProject projectUrl =
+    messageToJs (LoadRemoteProject projectUrl)
 
 
 saveProject : Project -> Cmd msg
@@ -80,9 +90,9 @@ dropProject project =
     messageToJs (DropProject project)
 
 
-readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> FileKind -> Cmd msg
-readLocalFile project source file fileKind =
-    messageToJs (GetLocalFile project source file fileKind)
+readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> Cmd msg
+readLocalFile project source file =
+    messageToJs (GetLocalFile project source file)
 
 
 readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleKey -> Cmd msg
@@ -148,8 +158,13 @@ trackError name error =
     messageToJs (TrackError name (Encode.object [ ( "error", error |> Encode.string ) ]))
 
 
-type alias HtmlContainers =
-    { html : String, body : String }
+type alias MetaInfos =
+    { title : Maybe String
+    , description : Maybe String
+    , canonical : Maybe Route
+    , html : Maybe String
+    , body : Maybe String
+    }
 
 
 type ElmMsg
@@ -158,13 +173,15 @@ type ElmMsg
     | Focus HtmlId
     | Blur HtmlId
     | ScrollTo HtmlId String
-    | SetClasses HtmlContainers
+    | Fullscreen (Maybe HtmlId)
+    | SetMeta MetaInfos
     | AutofocusWithin HtmlId
     | LoadProjects
+    | LoadRemoteProject FileUrl
     | SaveProject Project
     | DownloadFile FileName FileContent
     | DropProject Project
-    | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File FileKind
+    | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
     | GetSourceId ColumnRef ColumnRef
     | ObserveSizes (List HtmlId)
@@ -177,10 +194,12 @@ type ElmMsg
 type JsMsg
     = GotSizes (List SizeChange)
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
-    | GotLocalFile Time.Posix ProjectId SourceId File FileKind FileContent
+    | GotLocalFile Time.Posix ProjectId SourceId File FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
     | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
+    | GotKeyHold String Bool
+    | GotToast String String
     | Error Decode.Error
 
 
@@ -220,14 +239,27 @@ elmEncoder elm =
         ScrollTo id position ->
             Encode.object [ ( "kind", "ScrollTo" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
 
-        SetClasses { html, body } ->
-            Encode.object [ ( "kind", "SetClasses" |> Encode.string ), ( "html", html |> Encode.string ), ( "body", body |> Encode.string ) ]
+        Fullscreen maybeId ->
+            Encode.object [ ( "kind", "Fullscreen" |> Encode.string ), ( "maybeId", maybeId |> Encode.maybe Encode.string ) ]
+
+        SetMeta meta ->
+            Encode.object
+                [ ( "kind", "SetMeta" |> Encode.string )
+                , ( "title", meta.title |> Encode.maybe Encode.string )
+                , ( "description", meta.description |> Encode.maybe Encode.string )
+                , ( "canonical", meta.canonical |> Maybe.map Route.toUrl |> Encode.maybe Encode.string )
+                , ( "html", meta.html |> Encode.maybe Encode.string )
+                , ( "body", meta.body |> Encode.maybe Encode.string )
+                ]
 
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
         LoadProjects ->
             Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
+
+        LoadRemoteProject projectUrl ->
+            Encode.object [ ( "kind", "LoadRemoteProject" |> Encode.string ), ( "projectUrl", projectUrl |> Encode.string ) ]
 
         SaveProject project ->
             Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
@@ -238,8 +270,8 @@ elmEncoder elm =
         DropProject project ->
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
-        GetLocalFile project source file fileKind ->
-            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ), ( "fileKind", fileKind |> FileKind.encode ) ]
+        GetLocalFile project source file ->
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
 
         GetRemoteFile project source url sample ->
             Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> Encode.maybe Encode.string ) ]
@@ -283,12 +315,11 @@ jsDecoder =
                     Decode.field "projects" projectsDecoder |> Decode.map GotProjects
 
                 "GotLocalFile" ->
-                    Decode.map6 GotLocalFile
+                    Decode.map5 GotLocalFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
                         (Decode.field "projectId" Decode.string)
                         (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "file" FileValue.decoder)
-                        (Decode.field "fileKind" FileKind.decode)
                         (Decode.field "content" Decode.string)
 
                 "GotRemoteFile" ->
@@ -309,6 +340,16 @@ jsDecoder =
 
                 "GotHotkey" ->
                     Decode.field "id" Decode.string |> Decode.map GotHotkey
+
+                "GotKeyHold" ->
+                    Decode.map2 GotKeyHold
+                        (Decode.field "key" Decode.string)
+                        (Decode.field "start" Decode.bool)
+
+                "GotToast" ->
+                    Decode.map2 GotToast
+                        (Decode.field "level" Decode.string)
+                        (Decode.field "message" Decode.string)
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")

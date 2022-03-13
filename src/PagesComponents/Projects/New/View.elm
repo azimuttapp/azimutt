@@ -4,15 +4,18 @@ import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Kbd as Kbd
+import Components.Atoms.Link as Link
+import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
+import Components.Molecules.Toast as Toast
 import Conf
 import Dict
 import Gen.Route as Route
-import Html exposing (Html, a, aside, div, form, h2, li, nav, p, span, text, ul)
-import Html.Attributes exposing (class, href)
-import Html.Events exposing (onClick)
+import Html exposing (Html, a, aside, div, form, h2, input, li, nav, p, span, text, ul)
+import Html.Attributes exposing (class, href, id, name, placeholder, type_, value)
+import Html.Events exposing (onBlur, onClick, onInput)
 import Html.Keyed as Keyed
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
@@ -45,7 +48,9 @@ viewNewProject zone model =
                 ]
             }
         ]
-        [ viewModal model ]
+        [ viewModal model
+        , viewToasts model.toasts
+        ]
 
 
 type alias PageModel msg =
@@ -86,17 +91,17 @@ viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
 viewTabContent htmlId zone model =
     case model.selectedTab of
         Schema ->
-            viewSchemaUploadTab (htmlId ++ "-schema") model.sqlSourceUpload model.openedCollapse
+            model.sqlSourceUpload |> Maybe.mapOrElse (viewSchemaUploadTab (htmlId ++ "-schema") model.openedCollapse) (div [] [])
 
         Import ->
-            viewProjectImportTab (htmlId ++ "-import") zone model.projects model.projectImport
+            model.projectImport |> Maybe.mapOrElse (viewProjectImportTab (htmlId ++ "-import") zone model.projects) (div [] [])
 
         Sample ->
-            viewSampleSelectionTab model.sqlSourceUpload
+            model.sampleSelection |> Maybe.mapOrElse (viewSampleSelectionTab zone model.projects) (div [] [])
 
 
-viewSchemaUploadTab : HtmlId -> SqlSourceUpload Msg -> HtmlId -> Html Msg
-viewSchemaUploadTab htmlId sqlSourceUpload openedCollapse =
+viewSchemaUploadTab : HtmlId -> HtmlId -> SqlSourceUpload Msg -> Html Msg
+viewSchemaUploadTab htmlId openedCollapse sqlSourceUpload =
     div []
         [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
         , form []
@@ -105,6 +110,21 @@ viewSchemaUploadTab htmlId sqlSourceUpload openedCollapse =
                     [ FileInput.schemaFile (htmlId ++ "-file-upload") (SqlSourceUpload.SelectLocalFile >> SqlSourceUploadMsg) Noop
                     ]
                 ]
+            ]
+        , div [ class "my-3" ] [ Divider.withLabel "OR" ]
+        , div [ class "flex rounded-md shadow-sm" ]
+            [ span [ class "inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm" ] [ text "Remote schema" ]
+            , input
+                [ type_ "text"
+                , id (htmlId ++ "-file-remote")
+                , name (htmlId ++ "-file-remote")
+                , placeholder "https://azimutt.app/samples/gospeak.sql"
+                , value (sqlSourceUpload.selectedRemoteFile |> Maybe.withDefault "")
+                , onInput (SqlSourceUpload.UpdateRemoteFile >> SqlSourceUploadMsg)
+                , onBlur (sqlSourceUpload.selectedRemoteFile |> Maybe.mapOrElse (SqlSourceUpload.SelectRemoteFile >> SqlSourceUploadMsg) Noop)
+                , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                ]
+                []
             ]
         , div [ css [ "mt-3" ] ]
             [ div [ onClick (ToggleCollapse (htmlId ++ "-get-schema")), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
@@ -148,8 +168,8 @@ viewProjectImportTab htmlId zone projects projectImport =
         ]
 
 
-viewSampleSelectionTab : SqlSourceUpload Msg -> Html Msg
-viewSampleSelectionTab sqlSourceUpload =
+viewSampleSelectionTab : Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewSampleSelectionTab zone projects projectImport =
     div []
         [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
         , ItemList.withIcons
@@ -157,17 +177,17 @@ viewSampleSelectionTab sqlSourceUpload =
                 |> Dict.values
                 |> List.sortBy .tables
                 |> List.map
-                    (\s ->
-                        { color = s.color
-                        , icon = s.icon
-                        , title = s.name ++ " (" ++ (s.tables |> String.fromInt) ++ " tables)"
-                        , description = s.description
-                        , active = sqlSourceUpload.selectedSample == Nothing || sqlSourceUpload.selectedSample == Just s.key
-                        , onClick = SqlSourceUploadMsg (SqlSourceUpload.SelectSample s.key)
+                    (\sample ->
+                        { color = sample.color
+                        , icon = sample.icon
+                        , title = sample.name ++ " (" ++ (sample.tables |> String.fromInt) ++ " tables)"
+                        , description = sample.description
+                        , active = projectImport.selectedRemoteFile |> Maybe.andThen .sample |> Maybe.all (\s -> s == sample.key)
+                        , onClick = SampleSelectMsg (ProjectImport.SelectRemoteFile sample.url (Just sample.key))
                         }
                     )
             )
-        , viewSqlSourceUpload sqlSourceUpload
+        , viewSampleSelection zone projects projectImport
         ]
 
 
@@ -182,13 +202,13 @@ viewHeading title description =
 viewSqlSourceUpload : SqlSourceUpload Msg -> Html Msg
 viewSqlSourceUpload sqlSourceUpload =
     div []
-        [ SqlSourceUpload.viewParsing sqlSourceUpload
+        [ SqlSourceUpload.viewParsing SqlSourceUploadMsg sqlSourceUpload
         , Maybe.map2
             (\( projectId, _, _ ) source ->
                 div [ css [ "mt-6" ] ]
                     [ div [ css [ "flex justify-end" ] ]
-                        [ Button.white3 Tw.primary [ onClick DropSchema ] [ text "Trash this" ]
-                        , Button.primary3 Tw.primary [ onClick (CreateProject projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
+                        [ Button.white3 Tw.primary [ onClick SqlSourceUploadDrop ] [ text "Trash this" ]
+                        , Button.primary3 Tw.primary [ onClick (SqlSourceUploadCreate projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
                         ]
                     ]
             )
@@ -208,16 +228,40 @@ viewProjectImport zone projects projectImport =
                 (\( id, project ) ->
                     div [ css [ "mt-6" ] ]
                         [ div [ css [ "flex justify-end" ] ]
-                            (Button.white3 Tw.primary [ onClick DropProject ] [ text "Don't import" ]
+                            (Button.white3 Tw.primary [ onClick ProjectImportDrop ] [ text "Don't import" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.mapOrElse
                                             (\p ->
-                                                [ Button.secondary3 Tw.red [ onClick (ImportProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                , Button.primary3 Tw.primary [ onClick (ImportNewProject id project), css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                [ Button.secondary3 Tw.red [ onClick (ProjectImportCreate project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
+                                                , Button.primary3 Tw.primary [ onClick (ProjectImportCreateNew id project), css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                 ]
                                             )
-                                            [ Button.primary3 Tw.primary [ onClick (ImportProject project), css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                            [ Button.primary3 Tw.primary [ onClick (ProjectImportCreate project), css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                   )
+                            )
+                        ]
+                )
+            |> Maybe.withDefault (div [] [])
+        ]
+
+
+viewSampleSelection : Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewSampleSelection zone projects projectImport =
+    div []
+        [ ProjectImport.viewParsing zone projects projectImport
+        , projectImport.parsedProject
+            |> Maybe.andThen (\( _, res ) -> res |> Result.toMaybe)
+            |> Maybe.map
+                (\project ->
+                    div [ css [ "mt-6" ] ]
+                        [ div [ css [ "flex justify-end" ] ]
+                            (Button.white3 Tw.primary [ onClick SampleSelectDrop ] [ text "Cancel" ]
+                                :: (projects
+                                        |> List.find (\p -> p.id == project.id)
+                                        |> Maybe.mapOrElse
+                                            (\_ -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "ml-3" ] ] [ text "View this project" ] ])
+                                            [ Button.primary3 Tw.primary [ onClick (SampleSelectCreate project), css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )
                         ]
@@ -251,3 +295,8 @@ viewConfirm opened model =
         , onCancel = ModalClose (ConfirmAnswer False Cmd.none)
         }
         opened
+
+
+viewToasts : List Toast.Model -> Html Msg
+viewToasts toasts =
+    div [ class "az-toasts" ] [ Toast.container toasts ToastHide ]

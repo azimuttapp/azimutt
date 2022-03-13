@@ -1,7 +1,7 @@
 ---
 title: The story behind Azimutt
 excerpt: I believe organizing information is at the heart of the software mission. I have been thinking about this for years and focused on understanding databases for 5 years now. Here is how it happened...
-category: azimutt
+category: azimutt story
 tags: build in public, data catalog, sql explorer
 author: loic
 published: 2021-10-01

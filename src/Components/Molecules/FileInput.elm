@@ -42,9 +42,9 @@ projectFile htmlId onSelect noop =
             div [ css [ "space-y-1 text-center" ] ]
                 [ Icon.outline2x FolderAdd "mx-auto"
                 , p [] [ span [ css [ "text-primary-600" ] ] [ text "Upload a project file" ], text " or drag and drop" ]
-                , p [ css [ "text-xs" ] ] [ text ".azimutt.json file only" ]
+                , p [ css [ "text-xs" ] ] [ text ".json file only" ]
                 ]
-        , mimes = [ ".azimutt.json" ]
+        , mimes = [ ".json" ]
         }
 
 

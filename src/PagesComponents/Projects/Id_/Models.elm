@@ -1,13 +1,15 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), SearchModel, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
-import Libs.Html.Events exposing (WheelEvent)
+import Libs.Delta exposing (Delta)
+import Libs.Html.Events exposing (PointerEvent, WheelEvent)
 import Libs.Models exposing (Millis, ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
+import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Tailwind as Tw
@@ -16,23 +18,27 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Ports exposing (JsMsg)
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
-import Shared exposing (Confirm)
+import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
-    { navbar : NavbarModel
+    { conf : ErdConf
+    , navbar : NavbarModel
     , screen : ScreenProps
     , loaded : Bool
     , erd : Maybe Erd
@@ -43,17 +49,22 @@ type alias Model =
     , newLayout : Maybe LayoutDialog
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
+    , schemaAnalysis : Maybe SchemaAnalysisDialog
+    , sharing : Maybe SharingDialog
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
+    , sourceParsing : Maybe SourceParsingDialog
     , help : Maybe HelpDialog
 
     -- global attrs
     , openedDropdown : HtmlId
     , openedPopover : HtmlId
+    , contextMenu : Maybe ContextMenu
     , dragging : Maybe DragState
     , toastIdx : Int
     , toasts : List Toast.Model
     , confirm : Maybe ConfirmDialog
+    , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
     }
 
@@ -81,6 +92,14 @@ type alias VirtualRelation =
     { src : Maybe ColumnRef, mouse : Position }
 
 
+type alias SchemaAnalysisDialog =
+    { id : HtmlId, opened : HtmlId }
+
+
+type alias SharingDialog =
+    { id : HtmlId, url : FileUrl, layout : LayoutName, mode : String }
+
+
 type alias ProjectSettingsDialog =
     { id : HtmlId }
 
@@ -89,18 +108,31 @@ type alias SourceUploadDialog =
     { id : HtmlId, parsing : SqlSourceUpload Msg }
 
 
+type alias SourceParsingDialog =
+    { id : HtmlId, parsing : SqlSourceUpload Msg }
+
+
 type alias HelpDialog =
     { id : HtmlId, openedSection : String }
+
+
+type alias ContextMenu =
+    { content : Html Msg, position : Position, show : Bool }
 
 
 type alias ConfirmDialog =
     { id : HtmlId, content : Confirm Msg }
 
 
+type alias PromptDialog =
+    { id : HtmlId, content : Prompt Msg, input : String }
+
+
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | SaveProject
+    | RenameProject ProjectName
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables
@@ -112,24 +144,35 @@ type Msg
     | HideColumns TableId String
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
+    | TableMove TableId Delta
     | TableOrder TableId Int
     | SortColumns TableId ColumnOrder
+    | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
+    | CreateRelation ColumnRef ColumnRef
     | ResetCanvas
     | LayoutMsg LayoutMsg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
+    | SchemaAnalysisMsg SchemaAnalysisMsg
+    | SharingMsg SharingMsg
     | ProjectSettingsMsg ProjectSettingsMsg
+    | SourceParsing SqlSourceUploadMsg
+    | SourceParsed ProjectId Source
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
+    | Fullscreen (Maybe HtmlId)
     | OnWheel WheelEvent
     | Zoom ZoomDelta
       -- global messages
     | Focus HtmlId
     | DropdownToggle HtmlId
     | PopoverSet HtmlId
+    | ContextMenuCreate (Html Msg) PointerEvent
+    | ContextMenuShow
+    | ContextMenuClose
     | DragStart DragId Position
     | DragMove Position
     | DragEnd Position
@@ -140,6 +183,9 @@ type Msg
     | ToastRemove String
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
+    | PromptOpen (Prompt Msg) String
+    | PromptUpdate String
+    | PromptAnswer (Cmd Msg)
     | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
@@ -177,6 +223,20 @@ type FindPathMsg
     | FPClose
 
 
+type SchemaAnalysisMsg
+    = SAOpen
+    | SASectionToggle HtmlId
+    | SAClose
+
+
+type SharingMsg
+    = SOpen
+    | SClose
+    | SProjectUrlUpdate FileUrl
+    | SLayoutUpdate LayoutName
+    | SModeUpdate String
+
+
 type ProjectSettingsMsg
     = PSOpen
     | PSClose
@@ -194,6 +254,7 @@ type ProjectSettingsMsg
     | PSHiddenColumnsPropsToggle
     | PSHiddenColumnsRelationsToggle
     | PSColumnOrderUpdate ColumnOrder
+    | PSColumnBasicTypesToggle
 
 
 type HelpMsg
@@ -233,6 +294,20 @@ confirm title content message =
         , cancel = "Nope"
         , onConfirm = T.send message
         }
+
+
+prompt : String -> Html Msg -> String -> (String -> Msg) -> Msg
+prompt title content input message =
+    PromptOpen
+        { color = Tw.blue
+        , icon = QuestionMarkCircle
+        , title = title
+        , message = content
+        , confirm = "Ok"
+        , cancel = "Cancel"
+        , onConfirm = message >> T.send
+        }
+        input
 
 
 resetCanvas : Msg

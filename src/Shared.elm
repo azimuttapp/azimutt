@@ -1,4 +1,4 @@
-module Shared exposing (Confirm, Flags, Model, Msg, StoredProjects(..), init, subscriptions, update)
+module Shared exposing (Confirm, Flags, Model, Msg, Prompt, StoredProjects(..), init, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
@@ -37,6 +37,17 @@ type alias Confirm msg =
     , confirm : String
     , cancel : String
     , onConfirm : Cmd msg
+    }
+
+
+type alias Prompt msg =
+    { color : Color
+    , icon : Icon
+    , title : String
+    , message : Html msg
+    , confirm : String
+    , cancel : String
+    , onConfirm : String -> Cmd msg
     }
 
 

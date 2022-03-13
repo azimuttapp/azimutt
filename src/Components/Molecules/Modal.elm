@@ -1,17 +1,17 @@
-module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, SharedDocState, confirm, doc, initDocState, modal)
+module Components.Molecules.Modal exposing (ConfirmModel, DocState, Model, PromptModel, SharedDocState, confirm, doc, initDocState, modal, prompt)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, div, h3, p, span, text)
-import Html.Attributes exposing (autofocus, class, id)
-import Html.Events exposing (onClick)
+import Html exposing (Html, div, h3, input, p, span, text)
+import Html.Attributes exposing (autofocus, class, id, name, placeholder, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabelledby, ariaModal, css, role)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_100, sm, text_600)
+import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_100, focus, sm, text_600)
 
 
 type alias ConfirmModel msg =
@@ -49,6 +49,61 @@ confirm model isOpen =
                     [ text model.title ]
                 , div [ class "mt-2" ]
                     [ p [ class "text-sm text-gray-500" ] [ model.message ]
+                    ]
+                ]
+            ]
+        , div [ css [ "px-6 py-3 mt-6 bg-gray-50", sm [ "flex items-center flex-row-reverse" ] ] ]
+            [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text model.confirm ]
+            , Button.white3 Tw.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text model.cancel ]
+            ]
+        ]
+
+
+type alias PromptModel msg =
+    { id : HtmlId
+    , color : Color
+    , icon : Icon
+    , title : String
+    , message : Html msg
+    , placeholder : String
+    , value : String
+    , onUpdate : String -> msg
+    , confirm : String
+    , cancel : String
+    , onConfirm : msg
+    , onCancel : msg
+    }
+
+
+prompt : PromptModel msg -> Bool -> Html msg
+prompt model isOpen =
+    let
+        titleId : HtmlId
+        titleId =
+            model.id ++ "-title"
+
+        fieldId : HtmlId
+        fieldId =
+            model.id ++ "-input"
+    in
+    modal
+        { id = model.id
+        , titleId = titleId
+        , isOpen = isOpen
+        , onBackgroundClick = model.onCancel
+        }
+        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
+            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full", bg_100 model.color, sm [ "mx-0 h-10 w-10" ] ] ]
+                [ Icon.outline model.icon (text_600 model.color)
+                ]
+            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
+                [ h3 [ class "text-lg leading-6 font-medium text-gray-900", id titleId ]
+                    [ text model.title ]
+                , div [ class "mt-2" ]
+                    [ p [ class "text-sm text-gray-500" ] [ model.message ]
+                    ]
+                , div [ class "mt-1" ]
+                    [ input [ type_ "text", name fieldId, id fieldId, value model.value, onInput model.onUpdate, placeholder model.placeholder, autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
                     ]
                 ]
             ]
@@ -104,12 +159,12 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { opened : String }
+    { opened : String, input : String }
 
 
 initDocState : DocState
 initDocState =
-    { opened = "" }
+    { opened = "", input = "" }
 
 
 updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
@@ -117,14 +172,19 @@ updateDocState transform =
     Actions.updateState (\s -> { s | modalDocState = s.modalDocState |> transform })
 
 
-component : String -> (Bool -> (Bool -> Msg (SharedDocState x)) -> Html msg) -> ( String, SharedDocState x -> Html msg )
+setOpened : String -> Msg (SharedDocState x)
+setOpened value =
+    updateDocState (\s -> { s | opened = value })
+
+
+setInput : String -> Msg (SharedDocState x)
+setInput value =
+    updateDocState (\s -> { s | input = value })
+
+
+component : String -> (String -> DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
 component name buildComponent =
-    ( name
-    , \{ modalDocState } ->
-        buildComponent
-            (modalDocState.opened == name)
-            (\isOpen -> updateDocState (\s -> { s | opened = B.cond isOpen name "" }))
-    )
+    ( name, \{ modalDocState } -> buildComponent name modalDocState )
 
 
 doc : Chapter (SharedDocState x)
@@ -132,9 +192,9 @@ doc =
     Chapter.chapter "Modal"
         |> Chapter.renderStatefulComponentList
             [ component "confirm"
-                (\isOpen setOpen ->
+                (\name state ->
                     div []
-                        [ Button.primary3 Tw.primary [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Tw.primary [ onClick (setOpened name) ] [ text "Click me!" ]
                         , confirm
                             { id = "modal-title"
                             , color = Tw.red
@@ -143,21 +203,42 @@ doc =
                             , message = text "Are you sure you want to deactivate your account? All of your data will be permanently removed from our servers forever. This action cannot be undone."
                             , confirm = "Deactivate"
                             , cancel = "Cancel"
-                            , onConfirm = setOpen False
-                            , onCancel = setOpen False
+                            , onConfirm = setOpened ""
+                            , onCancel = setOpened ""
                             }
-                            isOpen
+                            (state.opened == name)
+                        ]
+                )
+            , component "prompt"
+                (\name state ->
+                    div []
+                        [ Button.primary3 Tw.primary [ onClick (setOpened name) ] [ text "Click me!" ]
+                        , prompt
+                            { id = "modal-title"
+                            , color = Tw.blue
+                            , icon = QuestionMarkCircle
+                            , title = "Please enter your name"
+                            , message = text "This will be useful later ;)"
+                            , placeholder = ""
+                            , value = state.input
+                            , onUpdate = setInput
+                            , confirm = "Ok"
+                            , cancel = "Cancel"
+                            , onConfirm = setOpened ""
+                            , onCancel = setOpened ""
+                            }
+                            (state.opened == name)
                         ]
                 )
             , component "modal"
-                (\isOpen setOpen ->
+                (\name state ->
                     div []
-                        [ Button.primary3 Tw.primary [ onClick (setOpen True) ] [ text "Click me!" ]
+                        [ Button.primary3 Tw.primary [ onClick (setOpened name) ] [ text "Click me!" ]
                         , modal
                             { id = "modal"
                             , titleId = "modal-title"
-                            , isOpen = isOpen
-                            , onBackgroundClick = setOpen False
+                            , isOpen = state.opened == name
+                            , onBackgroundClick = setOpened ""
                             }
                             [ text "Hello!" ]
                         ]

@@ -108,7 +108,7 @@ project1 =
     , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) Size.zero Tw.red [ "id" ] True False ] [] (time 1200) (time 1201)
     , usedLayout = Nothing
     , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
-    , settings = ProjectSettings (FindPathSettings 4 [] []) [] False "" (HiddenColumns "" False False) SqlOrder
+    , settings = ProjectSettings (FindPathSettings 4 "" "") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -213,7 +213,7 @@ project2 =
             [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
             , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) Size.zero Tw.red [ "id", "name" ] True False ] [] (time 1202) (time 1203) )
             ]
-    , settings = ProjectSettings (FindPathSettings 4 [ ( "public", "users" ) ] [ "created_by" ]) [] False "" (HiddenColumns "" False False) SqlOrder
+    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -230,7 +230,7 @@ project2Json =
         ++ """"usedLayout":"users","layouts":{"""
         ++ """"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203},"""
         ++ """"users":{"canvas":{"position":{"left":12,"top":32},"zoom":1.5},"tables":[{"id":"public.users","position":{"left":90,"top":102},"color":"red","columns":["id","name"],"selected":true}],"createdAt":1202,"updatedAt":1203}},"""
-        ++ """"settings":{"findPath":{"maxPathLength":4,"ignoredTables":["public.users"],"ignoredColumns":["created_by"]}},"createdAt":1000,"updatedAt":1001,"version":2}"""
+        ++ """"settings":{"findPath":{"maxPathLength":4,"ignoredTables":"users","ignoredColumns":"created_by"}},"createdAt":1000,"updatedAt":1001,"version":2}"""
 
 
 time : Int -> Time.Posix

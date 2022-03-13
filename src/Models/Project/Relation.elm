@@ -1,4 +1,4 @@
-module Models.Project.Relation exposing (Relation, RelationLike, decode, encode, inOutRelation, merge, new, virtual, withLink, withRef, withSrc, withTableLink, withTableRef, withTableSrc)
+module Models.Project.Relation exposing (Relation, RelationLike, clearOrigins, decode, encode, inOutRelation, merge, new, virtual, withLink, withRef, withSrc, withTableLink, withTableRef, withTableSrc)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -11,6 +11,7 @@ import Models.Project.RelationId as RelationId exposing (RelationId)
 import Models.Project.RelationName as RelationName exposing (RelationName)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.TableId exposing (TableId)
+import Services.Lenses exposing (setOrigins)
 
 
 type alias Relation =
@@ -85,6 +86,11 @@ merge r1 r2 =
     , ref = r1.ref
     , origins = r1.origins ++ r2.origins
     }
+
+
+clearOrigins : Relation -> Relation
+clearOrigins relations =
+    relations |> setOrigins []
 
 
 encode : Relation -> Value

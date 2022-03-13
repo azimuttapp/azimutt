@@ -3,12 +3,13 @@ module PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSour
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
+import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.Modal as Modal
 import Conf
-import Html exposing (Html, br, div, h3, li, p, text, ul)
-import Html.Attributes exposing (class, disabled, id)
-import Html.Events exposing (onClick)
+import Html exposing (Html, br, div, h3, input, li, p, span, text, ul)
+import Html.Attributes exposing (class, disabled, id, name, placeholder, type_, value)
+import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, role)
@@ -73,7 +74,7 @@ localFileModal zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
+        , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "update-source-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
             ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
@@ -95,7 +96,7 @@ localFileModal zone now titleId source fileName updatedAt model =
 
             _ ->
                 div [] []
-        , SqlSourceUpload.viewParsing model
+        , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -125,7 +126,7 @@ remoteFileModal zone now titleId source fileUrl model =
         , div [ class "mt-3 flex justify-center" ]
             [ Button.primary5 Tw.primary [ onClick (fileUrl |> SelectRemoteFile |> PSSqlSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
             ]
-        , SqlSourceUpload.viewParsing model
+        , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
@@ -170,8 +171,23 @@ newSourceModal titleId model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "file-over") ]
-        , SqlSourceUpload.viewParsing model
+        , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "new-source-local-file") ]
+        , div [ class "my-3" ] [ Divider.withLabel "OR" ]
+        , div [ class "flex rounded-md shadow-sm" ]
+            [ span [ class "inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm" ] [ text "Remote schema" ]
+            , input
+                [ type_ "text"
+                , id "file-remote"
+                , name "file-remote"
+                , placeholder "https://azimutt.app/samples/gospeak.sql"
+                , value (model.selectedRemoteFile |> Maybe.withDefault "")
+                , onInput (UpdateRemoteFile >> PSSqlSourceMsg >> ProjectSettingsMsg)
+                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SelectRemoteFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "new-source-remote-file"))
+                , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                ]
+                []
+            ]
+        , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceAdd >> ProjectSettingsMsg)) "Add source"

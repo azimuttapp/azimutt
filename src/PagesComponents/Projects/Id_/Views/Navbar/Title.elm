@@ -1,7 +1,8 @@
 module PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Dropdown as Dropdown exposing (Direction(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
 import Dict exposing (Dict)
 import Gen.Route as Route
@@ -20,15 +21,21 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
 
-viewNavbarTitle : List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarTitle otherProjects project usedLayout layouts htmlId openedDropdown =
+viewNavbarTitle : ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarTitle conf otherProjects project usedLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
-        ([ Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects")) ]
-            ++ viewLayoutsMaybe usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
+        ([ if conf.projectManagement then
+            Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+
+           else
+            div [] [ text project.name ]
+         ]
+            ++ viewLayoutsMaybe conf usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
 
 
@@ -43,9 +50,12 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ [ Dropdown.btn "" SaveProject [ text "Save project" ] ] ]
-                    ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> Dropdown.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
-                    ++ [ [ Dropdown.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
+                (([ [ ContextMenu.btn "" SaveProject [ text "Save project" ]
+                    , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
+                    ]
+                  ]
+                    ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> ContextMenu.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
+                    ++ [ [ ContextMenu.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)
@@ -53,15 +63,18 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
         )
 
 
-viewLayoutsMaybe : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
-viewLayoutsMaybe usedLayout layouts htmlId openedDropdown =
+viewLayoutsMaybe : ErdConf -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
+viewLayoutsMaybe conf usedLayout layouts htmlId openedDropdown =
     if layouts |> Dict.isEmpty then
         []
 
-    else
+    else if conf.layoutManagement then
         [ Icon.slash "text-primary-300"
         , Lazy.lazy4 viewLayouts usedLayout layouts htmlId openedDropdown
         ]
+
+    else
+        usedLayout |> Maybe.mapOrElse (\l -> [ Icon.slash "text-primary-300", text l ]) []
 
 
 viewLayouts : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
@@ -78,12 +91,12 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
                 (List.prependOn usedLayout
                     (\l ->
                         div [ role "none", class "py-1" ]
-                            [ Dropdown.btn "" (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
-                            , Dropdown.btn "" (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
+                            [ ContextMenu.btn "" (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
+                            , ContextMenu.btn "" (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
                             ]
                     )
                     [ div [ role "none", class "py-1" ]
-                        [ Dropdown.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
+                        [ ContextMenu.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
                     , div [ role "none", class "py-1" ]
                         (layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
                     ]
@@ -93,7 +106,7 @@ viewLayouts usedLayout layouts htmlId openedDropdown =
 
 viewLayoutItem : LayoutName -> Layout -> Html Msg
 viewLayoutItem name layout =
-    span [ role "menuitem", tabindex -1, css [ "flex", Dropdown.itemStyles ] ]
+    span [ role "menuitem", tabindex -1, css [ "flex", ContextMenu.itemStyles ] ]
         [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ focus [ "outline-none" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
         , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ "mx-2", focus [ "outline-none" ] ] ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left", focus [ "outline-none" ] ] ]

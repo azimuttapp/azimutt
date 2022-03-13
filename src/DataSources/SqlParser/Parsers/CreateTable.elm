@@ -28,7 +28,7 @@ type alias ParsedColumn =
     , nullable : Bool
     , default : Maybe SqlColumnValue
     , primaryKey : Maybe SqlConstraintName
-    , foreignKey : Maybe ( SqlConstraintName, SqlForeignKeyRef )
+    , foreignKey : Maybe ( Maybe SqlConstraintName, SqlForeignKeyRef )
     , check : Maybe SqlPredicate
     }
 
@@ -96,8 +96,8 @@ parseCreateTable statement =
 
 parseCreateTableColumn : SqlTableName -> RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn table sql =
-    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?(?: CHECK\\((?<check>.*?)\\))?$" of
-        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybePrimary :: maybeCheck :: [] ->
+    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?$" of
+        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybeReference :: maybePrimary :: maybeCheck :: maybeGenerated :: [] ->
             maybeConstraint
                 |> Maybe.map
                     (\constraint ->
@@ -113,6 +113,7 @@ parseCreateTableColumn table sql =
                         else
                             Err ("Constraint not handled: '" ++ constraint ++ "' in create table")
                     )
+                |> Maybe.orElse (maybeReference |> Maybe.map (parseCreateTableColumnForeignKey >> Result.map (\fk -> ( Nothing, Just fk, True ))))
                 |> Maybe.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just (defaultPkName table), Nothing, True )))
                 |> Maybe.withDefault (Ok ( Nothing, Nothing, True ))
                 |> Result.map
@@ -120,7 +121,7 @@ parseCreateTableColumn table sql =
                         { name = name |> buildColumnName
                         , kind = kind
                         , nullable = nullable == Nothing && nullable2
-                        , default = default1 |> Maybe.orElse default2
+                        , default = default1 |> Maybe.orElse default2 |> Maybe.orElse (maybeGenerated |> Maybe.map String.trim)
                         , primaryKey = pk
                         , foreignKey = fk
                         , check = maybeCheck
@@ -141,17 +142,22 @@ parseCreateTableColumnPrimaryKey constraint =
             Err ("Can't parse primary key: '" ++ constraint ++ "' in create table")
 
 
-parseCreateTableColumnForeignKey : RawSql -> Result ParseError ( SqlConstraintName, SqlForeignKeyRef )
+parseCreateTableColumnForeignKey : RawSql -> Result ParseError ( Maybe SqlConstraintName, SqlForeignKeyRef )
 parseCreateTableColumnForeignKey constraint =
     case constraint |> Regex.matches "^(?<constraint>[^ ]+)\\s+REFERENCES\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)(?:\\.(?<column>[^ .]+))?$" of
-        (Just constraintName) :: (Just table) :: (Just column) :: Nothing :: [] ->
+        constraintName :: (Just table) :: (Just column) :: Nothing :: [] ->
             Ok ( constraintName, { schema = Nothing, table = table |> buildTableName, column = Just (column |> buildColumnName) } )
 
-        (Just constraintName) :: schema :: (Just table) :: column :: [] ->
+        constraintName :: schema :: (Just table) :: column :: [] ->
             Ok ( constraintName, { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, column = column |> Maybe.map buildColumnName } )
 
         _ ->
-            Err ("Can't parse foreign key: '" ++ constraint ++ "' in create table")
+            case constraint |> Regex.matches "^(?:(?<constraint>[^ ]+)\\s+)?REFERENCES\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .(]+)(?:\\((?<column>[^ .]+)\\))?$" of
+                constraintName :: schema :: (Just table) :: column :: [] ->
+                    Ok ( constraintName, { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, column = column |> Maybe.map buildColumnName } )
+
+                _ ->
+                    Err ("Can't parse foreign key: '" ++ constraint ++ "' in create table")
 
 
 parseCreateTablePrimaryKey : RawSql -> Result ParseError ParsedPrimaryKey

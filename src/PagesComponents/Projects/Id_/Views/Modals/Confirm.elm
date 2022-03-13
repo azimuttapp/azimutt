@@ -9,8 +9,8 @@ viewConfirm : Bool -> ConfirmDialog -> Html Msg
 viewConfirm opened model =
     Modal.confirm
         { id = model.id
-        , icon = model.content.icon
         , color = model.content.color
+        , icon = model.content.icon
         , title = model.content.title
         , message = model.content.message
         , confirm = model.content.confirm

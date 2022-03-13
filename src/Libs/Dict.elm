@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, count, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember)
+module Libs.Dict exposing (alter, count, find, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember)
 
 import Dict exposing (Dict)
 
@@ -36,6 +36,25 @@ notMember key dict =
 
         Nothing ->
             True
+
+
+find : (comparable -> v -> Bool) -> Dict comparable v -> Maybe ( comparable, v )
+find predicate dict =
+    Dict.foldl
+        (\k v acc ->
+            case acc of
+                Just _ ->
+                    acc
+
+                Nothing ->
+                    if predicate k v then
+                        Just ( k, v )
+
+                    else
+                        Nothing
+        )
+        Nothing
+        dict
 
 
 filterMap : (comparable -> a -> Maybe b) -> Dict comparable a -> Dict comparable b

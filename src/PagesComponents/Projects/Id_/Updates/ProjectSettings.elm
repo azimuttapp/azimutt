@@ -17,7 +17,7 @@ import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
+import Services.Lenses exposing (mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Track
 
@@ -51,7 +51,7 @@ handleProjectSettings msg model =
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
 
         PSSourceUploadOpen source ->
-            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SqlSourceUpload.init (model.erd |> Maybe.map (\p -> p.project.id)) source }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SqlSourceUpload.init (model.erd |> Maybe.map (\p -> p.project.id)) source (\_ -> Noop "project-settings-source-parsed") }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
 
         PSSourceUploadClose ->
             ( model |> setSourceUpload Nothing, Cmd.none )
@@ -72,10 +72,10 @@ handleProjectSettings msg model =
             model |> mapErdM (Erd.mapSettings (mapRemoveViews not)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSRemovedTablesUpdate values ->
-            model |> mapErdM (Erd.mapSettings (setRemovedTables values)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
+            model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSHiddenColumnsListUpdate values ->
-            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
 
         PSHiddenColumnsPropsToggle ->
             ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
@@ -85,6 +85,9 @@ handleProjectSettings msg model =
 
         PSColumnOrderUpdate order ->
             ( model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order) |> mapTableProps (sortColumns order e)), Cmd.none )
+
+        PSColumnBasicTypesToggle ->
+            ( model |> mapErdM (\e -> e |> Erd.mapSettings (mapColumnBasicTypes not)), Cmd.none )
 
 
 hideColumns : Dict TableId ErdTable -> HiddenColumns -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps

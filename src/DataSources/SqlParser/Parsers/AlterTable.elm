@@ -88,7 +88,7 @@ parseAlterTable statement =
 
 parseAlterTableAddConstraint : RawSql -> Result (List ParseError) TableConstraint
 parseAlterTableAddConstraint command =
-    case command |> Regex.matches "^ADD CONSTRAINT\\s+(?<name>[^ ]+)\\s+(?<constraint>.*)$" of
+    case command |> Regex.matches ("^ADD CONSTRAINT\\s+(?<name>[^ ]+)\\s+(?<constraint>.*?)(?:\\s+match simple)?" ++ sqlTriggers ++ "$") of
         (Just name) :: (Just constraint) :: [] ->
             if constraint |> String.toUpper |> String.startsWith "PRIMARY KEY" then
                 parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey (Just (name |> buildConstraintName)))
@@ -122,27 +122,34 @@ parseAlterTableAddConstraintPrimaryKey constraint =
 parseAlterTableAddConstraintForeignKey : RawSql -> Result (List ParseError) ForeignKeyInner
 parseAlterTableAddConstraintForeignKey constraint =
     let
-        action : String
-        action =
-            "(?:NO ACTION|CASCADE|SET NULL|SET DEFAULT|RESTRICT)"
-
-        triggers : String
-        triggers =
-            "(?:\\s+ON UPDATE " ++ action ++ ")?(?:\\s+ON DELETE " ++ action ++ ")?"
-
         deferrable : String
         deferrable =
             "(?:(?:\\s+NOT)?\\s+DEFERRABLE)?"
     in
-    case constraint |> Regex.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ triggers ++ deferrable ++ "$") of
-        (Just column) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
+    case constraint |> Regex.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ sqlTriggers ++ deferrable ++ "$") of
+        (Just columns) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
+            buildForeignKeyInner constraint columns schemaDest tableDest columnDest
+
+        _ ->
+            case constraint |> Regex.matches "^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\((?<column_b>[^ .]+)\\))?$" of
+                (Just columns) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
+                    buildForeignKeyInner constraint columns schemaDest tableDest columnDest
+
+                _ ->
+                    Err [ "Can't parse foreign key: '" ++ constraint ++ "'" ]
+
+
+buildForeignKeyInner : RawSql -> String -> Maybe String -> String -> Maybe String -> Result (List ParseError) ForeignKeyInner
+buildForeignKeyInner constraint columns schemaDest tableDest columnDest =
+    case columns |> String.split "," of
+        column :: [] ->
             Ok
                 { column = column |> buildColumnName
                 , ref = { schema = schemaDest |> Maybe.map buildSchemaName, table = tableDest |> buildTableName, column = columnDest |> Maybe.map buildColumnName }
                 }
 
         _ ->
-            Err [ "Can't parse foreign key: '" ++ constraint ++ "'" ]
+            Err [ "Multi-column foreign key is not supported: '" ++ constraint ++ "'" ]
 
 
 parseAlterTableAddConstraintUnique : RawSql -> Result (List ParseError) UniqueInner
@@ -222,3 +229,8 @@ parseAlterTableDropConstraint command =
 
         _ ->
             Err [ "Can't parse drop constraint: '" ++ command ++ "'" ]
+
+
+sqlTriggers : String
+sqlTriggers =
+    "(?:\\s+(?:ON UPDATE|ON DELETE)\\s+(?:NO ACTION|CASCADE|SET NULL|SET DEFAULT|RESTRICT))*"
