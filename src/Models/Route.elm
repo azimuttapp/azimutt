@@ -4,7 +4,7 @@ import Conf
 import Dict exposing (Dict)
 import Gen.Route as Gen
 import Libs.String as String
-import Url exposing (percentEncode)
+import Url
 
 
 type alias Route =
@@ -13,25 +13,24 @@ type alias Route =
 
 toHref : Route -> String
 toHref route =
-    let
-        base : String
-        base =
-            Gen.toHref route.route |> String.stripRight "/"
-    in
-    if route.query |> Dict.isEmpty then
-        base
-
-    else
-        base
-            ++ "?"
-            ++ (route.query
-                    |> Dict.toList
-                    |> List.sortBy Tuple.first
-                    |> List.map (\( key, value ) -> key ++ "=" ++ percentEncode value)
-                    |> String.join "&"
-               )
+    Gen.toHref route.route ++ buildQueryString route.query
 
 
 toUrl : Route -> String
 toUrl route =
-    Conf.constants.azimuttWebsite ++ toHref route
+    ((Conf.constants.azimuttWebsite ++ Gen.toHref route.route) |> String.stripRight "/") ++ buildQueryString route.query
+
+
+buildQueryString : Dict String String -> String
+buildQueryString query =
+    if query |> Dict.isEmpty then
+        ""
+
+    else
+        "?"
+            ++ (query
+                    |> Dict.toList
+                    |> List.sortBy Tuple.first
+                    |> List.map (\( key, value ) -> key ++ "=" ++ Url.percentEncode value)
+                    |> String.join "&"
+               )

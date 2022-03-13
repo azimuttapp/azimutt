@@ -60,7 +60,7 @@ init query =
     ( { conf = initConf query.mode
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
-      , loaded = False
+      , loaded = query.projectUrl == Nothing
       , erd = Nothing
       , hoverTable = Nothing
       , hoverColumn = Nothing
@@ -107,7 +107,7 @@ initConf mode =
 
 parseQueryString : Dict String String -> QueryString
 parseQueryString query =
-    { projectUrl = query |> Dict.get "project_url"
+    { projectUrl = query |> Dict.get "project-url" |> Maybe.orElse (query |> Dict.get "project_url")
     , layout = query |> Dict.get "layout"
     , mode = query |> Dict.getOrElse "mode" EmbedMode.default
     }
@@ -116,7 +116,7 @@ parseQueryString query =
 serializeQueryString : QueryString -> Dict String String
 serializeQueryString query =
     Dict.fromList
-        ([ ( "project_url", query.projectUrl )
+        ([ ( "project-url", query.projectUrl )
          , ( "layout", query.layout )
          , ( "mode", Just query.mode )
          ]

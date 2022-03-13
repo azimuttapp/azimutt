@@ -220,7 +220,7 @@ viewBodyIframe model =
 buildIframeUrl : FileUrl -> LayoutName -> String -> String
 buildIframeUrl projectUrl layout mode =
     if projectUrl /= "" then
-        Conf.constants.azimuttWebsite ++ "/embed?project_url=" ++ projectUrl ++ Bool.cond (layout /= "") ("&layout=" ++ layout) "" ++ Bool.cond (mode /= "") ("&mode=" ++ mode) ""
+        Conf.constants.azimuttWebsite ++ "/embed?project-url=" ++ projectUrl ++ Bool.cond (layout /= "") ("&layout=" ++ layout) "" ++ Bool.cond (mode /= "") ("&mode=" ++ mode) ""
 
     else
         ""
