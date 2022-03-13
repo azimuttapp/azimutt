@@ -1,4 +1,4 @@
-module Services.SqlSourceUpload exposing (ParsingMsg(..), SqlParsing, SqlSourceUpload, SqlSourceUploadMsg(..), UiMsg, gotLocalFile, gotRemoteFile, init, update, viewParsing)
+module Services.SqlSourceUpload exposing (ParsingMsg(..), SqlParsing, SqlSourceUpload, SqlSourceUploadMsg(..), UiMsg, gotLocalFile, gotRemoteFile, hasErrors, init, update, viewParsing)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
@@ -52,6 +52,7 @@ type alias SqlSourceUpload msg =
     , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
     , parsedSchema : Maybe (SqlParsing msg)
     , parsedSource : Maybe Source
+    , callback : ( ProjectId, SqlParsing msg, Source ) -> msg
     }
 
 
@@ -95,8 +96,8 @@ type UiMsg
 -- INIT
 
 
-init : Maybe ProjectId -> Maybe Source -> SqlSourceUpload msg
-init project source =
+init : Maybe ProjectId -> Maybe Source -> (( ProjectId, SqlParsing msg, Source ) -> msg) -> SqlSourceUpload msg
+init project source callback =
     { project = project
     , source = source
     , selectedLocalFile = Nothing
@@ -104,6 +105,7 @@ init project source =
     , loadedFile = Nothing
     , parsedSchema = Nothing
     , parsedSource = Nothing
+    , callback = callback
     }
 
 
@@ -134,12 +136,12 @@ update msg wrap model =
             ( { model | selectedRemoteFile = B.cond (url == "") Nothing (Just url) }, Cmd.none )
 
         SelectLocalFile file ->
-            ( init model.project model.source |> (\m -> { m | selectedLocalFile = Just file })
+            ( init model.project model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file
             )
 
         SelectRemoteFile url ->
-            ( init model.project model.source |> (\m -> { m | selectedRemoteFile = Just url })
+            ( init model.project model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
             , Ports.readRemoteFile model.project (model.source |> Maybe.map .id) url Nothing
             )
 
@@ -172,8 +174,19 @@ update msg wrap model =
 
         BuildSource ->
             model.parsedSchema
-                |> Maybe.andThen (\parsedSchema -> parsedSchema.schema |> Maybe.map3 (\( _, sourceInfo, _ ) lines schema -> ( parsedSchema, ProjectAdapter.buildSourceFromSql sourceInfo lines schema )) model.loadedFile parsedSchema.lines)
-                |> Maybe.map (\( parsedSchema, source ) -> ( { model | parsedSource = Just source }, Ports.track (Track.parsedSource parsedSchema source) ))
+                |> Maybe.andThen
+                    (\parsedSchema ->
+                        parsedSchema.schema
+                            |> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, parsedSchema, ProjectAdapter.buildSourceFromSql sourceInfo lines schema ))
+                                model.loadedFile
+                                parsedSchema.lines
+                    )
+                |> Maybe.map
+                    (\( projectId, parsedSchema, source ) ->
+                        ( { model | parsedSource = Just source }
+                        , Cmd.batch [ T.send (model.callback ( projectId, parsedSchema, source )), Ports.track (Track.parsedSource parsedSchema source) ]
+                        )
+                    )
                 |> Maybe.withDefault ( model, Cmd.none )
 
 
@@ -568,3 +581,12 @@ viewSourceDiffItem label items =
                     , text ")"
                     ]
             )
+
+
+
+-- HELPERS
+
+
+hasErrors : SqlParsing msg -> Bool
+hasErrors parser =
+    (parser.commands |> Maybe.any (Dict.values >> List.any (\( _, r ) -> r |> Result.isErr))) || (parser.schemaErrors |> List.nonEmpty)

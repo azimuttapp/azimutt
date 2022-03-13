@@ -51,7 +51,7 @@ handleProjectSettings msg model =
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
 
         PSSourceUploadOpen source ->
-            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SqlSourceUpload.init (model.erd |> Maybe.map (\p -> p.project.id)) source }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SqlSourceUpload.init (model.erd |> Maybe.map (\p -> p.project.id)) source (\_ -> Noop "project-settings-source-parsed") }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
 
         PSSourceUploadClose ->
             ( model |> setSourceUpload Nothing, Cmd.none )

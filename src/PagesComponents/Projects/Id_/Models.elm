@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -18,6 +18,7 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
@@ -52,6 +53,7 @@ type alias Model =
     , sharing : Maybe SharingDialog
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
+    , sourceParsing : Maybe SourceParsingDialog
     , help : Maybe HelpDialog
 
     -- global attrs
@@ -106,6 +108,10 @@ type alias SourceUploadDialog =
     { id : HtmlId, parsing : SqlSourceUpload Msg }
 
 
+type alias SourceParsingDialog =
+    { id : HtmlId, parsing : SqlSourceUpload Msg }
+
+
 type alias HelpDialog =
     { id : HtmlId, openedSection : String }
 
@@ -152,6 +158,8 @@ type Msg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
     | ProjectSettingsMsg ProjectSettingsMsg
+    | SourceParsing SqlSourceUploadMsg
+    | SourceParsed ProjectId Source
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent

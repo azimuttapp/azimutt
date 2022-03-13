@@ -57,6 +57,7 @@ init id =
       , sharing = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
+      , sourceParsing = Nothing
       , help = Nothing
       , openedDropdown = ""
       , openedPopover = ""
@@ -77,7 +78,7 @@ init id =
             , body = Just "h-full"
             }
         , Ports.trackPage "app"
-        , Ports.loadProjects
         , Ports.listenHotkeys Conf.hotkeys
+        , Ports.loadProjects
         ]
     )

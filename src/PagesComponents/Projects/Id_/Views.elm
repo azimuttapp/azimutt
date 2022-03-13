@@ -28,6 +28,7 @@ import PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewP
 import PagesComponents.Projects.Id_.Views.Modals.Prompt exposing (viewPrompt)
 import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
 import PagesComponents.Projects.Id_.Views.Modals.Sharing exposing (viewSharing)
+import PagesComponents.Projects.Id_.Views.Modals.SourceParsing exposing (viewSourceParsing)
 import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
@@ -119,6 +120,7 @@ viewModal zone now model =
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload zone now (model.openedDialogs |> List.has m.id) m ))
+         , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.has m.id) m ))
          , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> List.has m.id) m ))
          ]
             |> List.filterMap identity

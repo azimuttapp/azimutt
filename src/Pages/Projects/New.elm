@@ -114,7 +114,7 @@ setSelectedTab : Tab -> Model -> Model
 setSelectedTab tab model =
     case tab of
         Schema ->
-            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Nothing Nothing), projectImport = Nothing, sampleSelection = Nothing }
+            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Nothing Nothing (\_ -> Noop)), projectImport = Nothing, sampleSelection = Nothing }
 
         Import ->
             { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Just ProjectImport.init, sampleSelection = Nothing }
@@ -146,7 +146,7 @@ update req msg model =
             model |> mapSqlSourceUploadMCmd (SqlSourceUpload.update message SqlSourceUploadMsg)
 
         SqlSourceUploadDrop ->
-            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing), Cmd.none )
+            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing (\_ -> Noop)), Cmd.none )
 
         SqlSourceUploadCreate projectId source ->
             Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source

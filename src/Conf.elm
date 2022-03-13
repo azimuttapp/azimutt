@@ -100,6 +100,7 @@ ids :
     , sharingDialog : HtmlId
     , settingsDialog : HtmlId
     , sourceUploadDialog : HtmlId
+    , sourceParsingDialog : HtmlId
     , erd : HtmlId
     , selectionBox : HtmlId
     , newLayoutDialog : HtmlId
@@ -115,6 +116,7 @@ ids =
     , sharingDialog = "sharing-dialog"
     , settingsDialog = "settings-dialog"
     , sourceUploadDialog = "source-upload-dialog"
+    , sourceParsingDialog = "source-parsing-dialog"
     , erd = "erd"
     , selectionBox = "selection-box"
     , newLayoutDialog = "new-layout-dialog"

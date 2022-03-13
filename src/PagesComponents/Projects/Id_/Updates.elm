@@ -13,7 +13,7 @@ import Libs.Models exposing (SizeChange)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T
-import Models.Project exposing (Project)
+import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -37,7 +37,7 @@ import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideC
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Time
 import Track
@@ -146,6 +146,12 @@ update currentProject currentLayout now msg model =
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message
+
+        SourceParsing message ->
+            model |> mapSourceParsingMCmd (mapParsingCmd (SqlSourceUpload.update message SourceParsing))
+
+        SourceParsed projectId source ->
+            ( model, T.send (JsMessage (GotProjects ( [], [ Project.create projectId source.name source ] ))) )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -290,7 +296,11 @@ handleJsMessage currentProject currentLayout msg model =
             ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotRemoteFile now projectId sourceId url content sample ->
-            ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+            if model.erd == Nothing then
+                ( model, Cmd.batch [ T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> SourceParsing) ] )
+
+            else
+                ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotSourceId now sourceId src ref ->
             ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [] now ]))
