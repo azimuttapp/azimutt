@@ -1,10 +1,25 @@
 {
+  "name": "azimutt",
+  "version": "1.0.0",
+  "description": "Explore your database schema more easily",
+  "main": "script.js",
+  "author": "Loïc Knuchel",
+  "license": "MIT",
+  "scripts": {
+    "start": "npm install && npm run dev",
+    "dev": "concurrently \"vite\" \"elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js\" \"npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch\" \"elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js\"",
+    "build": "elm-spa gen && vite build"
+  },
   "devDependencies": {
     "@tailwindcss/forms": "^0.4.0",
     "@tailwindcss/typography": "^0.5.1",
+    "concurrently": "^7.0.0",
     "elm-coverage": "^0.4.0",
     "elm-review": "^2.5.5",
+    "elm-spa": "^6.0.4",
     "elm-test": "^0.19.1-revision7",
-    "tailwindcss": "^3.0.18"
+    "tailwindcss": "^3.0.18",
+    "vite": "^2.8.6",
+    "vite-plugin-elm": "^2.5.1"
   }
 }
