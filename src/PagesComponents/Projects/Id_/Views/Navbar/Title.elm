@@ -29,7 +29,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 viewNavbarTitle : ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarTitle conf otherProjects project usedLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
-        ([ if conf.save then
+        ([ if conf.projectManagement then
             Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
@@ -68,7 +68,7 @@ viewLayoutsMaybe conf usedLayout layouts htmlId openedDropdown =
     if layouts |> Dict.isEmpty then
         []
 
-    else if conf.save then
+    else if conf.layoutManagement then
         [ Icon.slash "text-primary-300"
         , Lazy.lazy4 viewLayouts usedLayout layouts htmlId openedDropdown
         ]

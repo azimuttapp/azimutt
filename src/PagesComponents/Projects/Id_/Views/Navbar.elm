@@ -44,7 +44,7 @@ viewNavbar conf virtualRelation erd model htmlId openedDropdown =
         features =
             [ Just { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
             , Just { action = Right ShowAllTables, content = text "Show all tables", hotkey = Nothing }
-            , Maybe.when conf.save { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
+            , Maybe.when conf.layoutManagement { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
             , Just
                 (virtualRelation
                     |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
@@ -76,7 +76,7 @@ viewNavbar conf virtualRelation erd model htmlId openedDropdown =
                     [ div [ class "flex items-center print:hidden" ]
                         [ viewNavbarResetLayout canResetCanvas
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
-                        , B.cond conf.save viewNavbarShare Html.none
+                        , B.cond conf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
                         ]
                     ]

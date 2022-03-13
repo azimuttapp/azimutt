@@ -94,7 +94,7 @@ viewNotFound conf =
         , title = "Project not found."
         , message = "Sorry, we couldn't find the project you’re looking for."
         , link =
-            if conf.save then
+            if conf.projectManagement then
                 { url = Route.toHref Route.Projects, text = "Go back to dashboard" }
 
             else

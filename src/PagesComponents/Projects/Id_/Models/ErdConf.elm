@@ -12,6 +12,9 @@ type alias ErdConf =
     , showNavbar : Bool
     , dashboardLink : Bool
     , findPath : Bool
+    , layoutManagement : Bool
+    , projectManagement : Bool
+    , sharing : Bool
     }
 
 
@@ -28,6 +31,9 @@ default =
     , showNavbar = True
     , dashboardLink = True
     , findPath = True
+    , layoutManagement = True
+    , projectManagement = True
+    , sharing = True
     }
 
 
@@ -44,4 +50,7 @@ embedDefault =
     , showNavbar = False
     , dashboardLink = False
     , findPath = False
+    , layoutManagement = False
+    , projectManagement = False
+    , sharing = False
     }
