@@ -119,7 +119,7 @@ window.addEventListener('load', function() {
               }
             }
             openRequest.onsuccess = function() {
-                const db = openRequest.result;
+                const db = event.target.result
                 resolve(db)
             }
         })
