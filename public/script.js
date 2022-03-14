@@ -71,7 +71,8 @@ window.addEventListener('load', function() {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
     function fullscreen(maybeId) {
-        maybeId ? getElementById(maybeId).requestFullscreen() : document.body.requestFullscreen()
+        (maybeId ? getElementById(maybeId).requestFullscreen() : document.body.requestFullscreen())
+            .catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
     }
     function setMeta(meta) {
         if (meta.title) {

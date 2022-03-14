@@ -110,7 +110,7 @@ viewErd conf screen erd cursorMode selectionBox virtualRelation args dragging =
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
-        , Attributes.when conf.move (onWheel OnWheel)
+        , Attributes.when (conf.move && not (Dict.isEmpty tableProps)) (onWheel OnWheel)
         , Attributes.when (conf.move || conf.select) (stopPointerDown (handleErdPointerDown conf cursorMode))
         ]
         [ div

@@ -99,7 +99,7 @@ localFileModal zone now titleId source fileName updatedAt model =
         , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
-        [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
+        [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
         , closeBtn
         ]
     ]
@@ -129,7 +129,7 @@ remoteFileModal zone now titleId source fileUrl model =
         , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
-        [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Refresh"
+        [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
         , closeBtn
         ]
     ]
