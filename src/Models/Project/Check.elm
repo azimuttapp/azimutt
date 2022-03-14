@@ -1,4 +1,4 @@
-module Models.Project.Check exposing (Check, decode, encode, merge)
+module Models.Project.Check exposing (Check, clearOrigins, decode, encode, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -8,6 +8,7 @@ import Libs.List as List
 import Models.Project.CheckName as CheckName exposing (CheckName)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.Origin as Origin exposing (Origin)
+import Services.Lenses exposing (setOrigins)
 
 
 type alias Check =
@@ -25,6 +26,11 @@ merge c1 c2 =
     , predicate = c1.predicate
     , origins = c1.origins ++ c2.origins
     }
+
+
+clearOrigins : Check -> Check
+clearOrigins check =
+    check |> setOrigins []
 
 
 encode : Check -> Value

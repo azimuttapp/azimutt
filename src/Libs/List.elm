@@ -1,8 +1,9 @@
-module Libs.List exposing (addAt, appendIf, appendOn, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, diff, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
 import Libs.Maybe as Maybe
+import Libs.Tuple3 as Tuple3
 import Random
 import Set
 
@@ -244,6 +245,11 @@ zipWith transform list =
     list |> List.map (\a -> ( a, transform a ))
 
 
+zipWithIndex : List a -> List ( a, Int )
+zipWithIndex list =
+    list |> List.indexedMap (\i a -> ( a, i ))
+
+
 zipBy : (a -> comparable) -> List a -> List a -> ( List a, List ( a, a ), List a )
 zipBy getKey list1 list2 =
     let
@@ -265,9 +271,9 @@ zipBy getKey list1 list2 =
     ( only1, both, only2 )
 
 
-zipWithIndex : List a -> List ( a, Int )
-zipWithIndex list =
-    list |> List.indexedMap (\i a -> ( a, i ))
+diff : (a -> comparable) -> List a -> List a -> ( List a, List ( a, a ), List a )
+diff getKey list1 list2 =
+    zipBy getKey list1 list2 |> Tuple3.mapSecond (List.filter (\( a1, a2 ) -> a1 /= a2))
 
 
 dropWhile : (a -> Bool) -> List a -> List a

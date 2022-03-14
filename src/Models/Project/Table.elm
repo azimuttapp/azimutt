@@ -98,12 +98,12 @@ clearOrigins : Table -> Table
 clearOrigins table =
     table
         |> setOrigins []
-        |> mapColumns (Ned.map (\_ c -> c |> setOrigins [] |> mapCommentM (setOrigins [])))
-        |> mapPrimaryKeyM (setOrigins [])
-        |> mapUniques (List.map (setOrigins []))
-        |> mapIndexes (List.map (setOrigins []))
-        |> mapChecks (List.map (setOrigins []))
-        |> mapCommentM (setOrigins [])
+        |> mapColumns (Ned.map (\_ -> Column.clearOrigins))
+        |> mapPrimaryKeyM PrimaryKey.clearOrigins
+        |> mapUniques (List.map Unique.clearOrigins)
+        |> mapIndexes (List.map Index.clearOrigins)
+        |> mapChecks (List.map Check.clearOrigins)
+        |> mapCommentM Comment.clearOrigins
 
 
 encode : Table -> Value

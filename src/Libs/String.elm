@@ -1,4 +1,4 @@
-module Libs.String exposing (filterStartsWith, hashCode, inflect, nonEmpty, orElse, plural, pluralize, pluralizeD, pluralizeL, stripRight, unique, wordSplit)
+module Libs.String exposing (filterStartsWith, hashCode, inflect, nonEmpty, nonEmptyMaybe, orElse, plural, pluralize, pluralizeD, pluralizeL, stripRight, unique, wordSplit)
 
 import Bitwise
 import Dict exposing (Dict)
@@ -9,6 +9,15 @@ import Libs.Regex as Regex
 nonEmpty : String -> Bool
 nonEmpty string =
     string /= ""
+
+
+nonEmptyMaybe : String -> Maybe String
+nonEmptyMaybe str =
+    if str == "" then
+        Nothing
+
+    else
+        Just str
 
 
 stripRight : String -> String -> String
@@ -87,8 +96,11 @@ inflect none one many count =
 plural : String -> String
 plural word =
     -- trivial pluralize that works only for usual words, use `inflect` for more flexibility
-    if word |> String.endsWith "y" then
+    if String.endsWith "y" word && not (String.endsWith "ay" word || String.endsWith "ey" word || String.endsWith "oy" word || String.endsWith "uy" word) then
         (word |> String.dropRight 1) ++ "ies"
+
+    else if String.endsWith "s" word || String.endsWith "x" word || String.endsWith "z" word || String.endsWith "sh" word || String.endsWith "ch" word then
+        word ++ "es"
 
     else
         word ++ "s"

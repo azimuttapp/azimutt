@@ -1,4 +1,4 @@
-module Models.Project.Unique exposing (Unique, decode, encode, merge)
+module Models.Project.Unique exposing (Unique, clearOrigins, decode, encode, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -8,6 +8,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.UniqueName as UniqueName exposing (UniqueName)
+import Services.Lenses exposing (setOrigins)
 
 
 type alias Unique =
@@ -25,6 +26,11 @@ merge u1 u2 =
     , definition = u1.definition
     , origins = u1.origins ++ u2.origins
     }
+
+
+clearOrigins : Unique -> Unique
+clearOrigins unique =
+    unique |> setOrigins []
 
 
 encode : Unique -> Value

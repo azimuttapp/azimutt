@@ -18,8 +18,8 @@ import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 
 
-viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> HtmlId -> Html Msg
-viewCommands conf cursorMode canvasZoom htmlId openedDropdown =
+viewCommands : ErdConf -> CursorMode -> ZoomLevel -> HtmlId -> Bool -> HtmlId -> Html Msg
+viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
     let
         buttonStyles : TwClass
         buttonStyles =
@@ -34,7 +34,7 @@ viewCommands conf cursorMode canvasZoom htmlId openedDropdown =
             batch [ "bg-gray-700 text-white", hover [ "bg-gray-600" ] ]
     in
     div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
-        [ if conf.move then
+        [ if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
                 [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
                     [ Icon.solid ArrowsExpand "" ]
@@ -43,7 +43,7 @@ viewCommands conf cursorMode canvasZoom htmlId openedDropdown =
 
           else
             Html.none
-        , if conf.move then
+        , if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
                 , button [ type_ "button", onClick (CursorMode CursorDrag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
@@ -51,7 +51,7 @@ viewCommands conf cursorMode canvasZoom htmlId openedDropdown =
 
           else
             Html.none
-        , if conf.move then
+        , if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus "" ]
                 , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }

@@ -1,7 +1,7 @@
 module Libs.StringTest exposing (..)
 
 import Expect
-import Libs.String exposing (hashCode, unique, wordSplit)
+import Libs.String exposing (hashCode, plural, unique, wordSplit)
 import Test exposing (Test, describe, test)
 
 
@@ -25,5 +25,16 @@ suite =
         , describe "stringHashCode"
             [ test "compute hello hashcode" (\_ -> hashCode "hello" |> Expect.equal -641073152)
             , test "compute demo hashcode" (\_ -> hashCode "demo" |> Expect.equal 179990644)
+            ]
+        , describe "plural"
+            [ test "simple" (\_ -> plural "cat" |> Expect.equal "cats")
+            , test "end with s" (\_ -> plural "bus" |> Expect.equal "buses")
+            , test "end with x" (\_ -> plural "index" |> Expect.equal "indexes")
+            , test "end with z" (\_ -> plural "blitz" |> Expect.equal "blitzes")
+            , test "end with sh" (\_ -> plural "marsh" |> Expect.equal "marshes")
+            , test "end with ch" (\_ -> plural "lunch" |> Expect.equal "lunches")
+            , test "end with y" (\_ -> plural "blitz" |> Expect.equal "blitzes")
+            , test "end with ay" (\_ -> plural "ray" |> Expect.equal "rays")
+            , test "end with oy" (\_ -> plural "boy" |> Expect.equal "boys")
             ]
         ]

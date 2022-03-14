@@ -1,10 +1,11 @@
-module Models.Project.Comment exposing (Comment, decode, encode, merge)
+module Models.Project.Comment exposing (Comment, clearOrigins, decode, encode, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Models.Project.Origin as Origin exposing (Origin)
+import Services.Lenses exposing (setOrigins)
 
 
 type alias Comment =
@@ -18,6 +19,11 @@ merge c1 c2 =
     { text = c1.text
     , origins = c1.origins ++ c2.origins
     }
+
+
+clearOrigins : Comment -> Comment
+clearOrigins comment =
+    comment |> setOrigins []
 
 
 encode : Comment -> Value

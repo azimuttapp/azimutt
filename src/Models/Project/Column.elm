@@ -1,4 +1,4 @@
-module Models.Project.Column exposing (Column, ColumnLike, decode, encode, merge, withName, withNullable)
+module Models.Project.Column exposing (Column, ColumnLike, clearOrigins, decode, encode, merge, withName, withNullable)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -11,6 +11,7 @@ import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment as Comment exposing (Comment)
 import Models.Project.Origin as Origin exposing (Origin)
+import Services.Lenses exposing (mapCommentM, setOrigins)
 
 
 type alias Column =
@@ -60,6 +61,11 @@ merge c1 c2 =
     , comment = Maybe.merge Comment.merge c1.comment c2.comment
     , origins = c1.origins ++ c2.origins
     }
+
+
+clearOrigins : Column -> Column
+clearOrigins column =
+    column |> setOrigins [] |> mapCommentM Comment.clearOrigins
 
 
 encode : Column -> Value

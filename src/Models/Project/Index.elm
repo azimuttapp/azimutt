@@ -1,4 +1,4 @@
-module Models.Project.Index exposing (Index, decode, encode, merge)
+module Models.Project.Index exposing (Index, clearOrigins, decode, encode, merge)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -8,6 +8,7 @@ import Libs.Nel as Nel exposing (Nel)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.IndexName as IndexName exposing (IndexName)
 import Models.Project.Origin as Origin exposing (Origin)
+import Services.Lenses exposing (setOrigins)
 
 
 type alias Index =
@@ -25,6 +26,11 @@ merge i1 i2 =
     , definition = i1.definition
     , origins = i1.origins ++ i2.origins
     }
+
+
+clearOrigins : Index -> Index
+clearOrigins index =
+    index |> setOrigins []
 
 
 encode : Index -> Value

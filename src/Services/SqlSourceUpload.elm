@@ -4,6 +4,7 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
+import Components.Molecules.Tooltip as Tooltip
 import Conf
 import DataSources.SqlParser.FileParser as FileParser exposing (SchemaError, SqlSchema)
 import DataSources.SqlParser.ProjectAdapter as ProjectAdapter
@@ -23,6 +24,8 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent, FileLineContent)
 import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Ned as Ned
+import Libs.Nel as Nel
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
@@ -531,30 +534,22 @@ sendErrorReport parseErrors schemaErrors =
 viewSourceDiff : Source -> Source -> Html msg
 viewSourceDiff newSource oldSource =
     let
-        ( removedTables, existingTables, newTables ) =
-            List.zipBy .id (oldSource.tables |> Dict.values) (newSource.tables |> Dict.values)
+        ( removedTables, updatedTables, newTables ) =
+            List.diff .id (oldSource.tables |> Dict.values |> List.map Table.clearOrigins) (newSource.tables |> Dict.values |> List.map Table.clearOrigins)
 
-        updatedTables : List ( Table, Table )
-        updatedTables =
-            existingTables |> List.filter (\( oldTable, newTable ) -> Table.clearOrigins oldTable /= Table.clearOrigins newTable)
-
-        ( removedRelations, existingRelations, newRelations ) =
-            List.zipBy .id oldSource.relations newSource.relations
-
-        updatedRelations : List ( Relation, Relation )
-        updatedRelations =
-            existingRelations |> List.filter (\( oldRelation, newRelation ) -> Relation.clearOrigins oldRelation /= Relation.clearOrigins newRelation)
+        ( removedRelations, updatedRelations, newRelations ) =
+            List.diff .id (oldSource.relations |> List.map Relation.clearOrigins) (newSource.relations |> List.map Relation.clearOrigins)
     in
     if List.nonEmpty updatedTables || List.nonEmpty newTables || List.nonEmpty removedTables || List.nonEmpty updatedRelations || List.nonEmpty newRelations || List.nonEmpty removedRelations then
         div [ class "mt-3" ]
             [ Alert.withDescription { color = Tw.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
                 [ ul [ class "list-disc list-inside" ]
-                    ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( _, t ) -> TableId.show t.id))
-                     , viewSourceDiffItem "new table" (newTables |> List.map (\t -> TableId.show t.id))
-                     , viewSourceDiffItem "removed table" (removedTables |> List.map (\t -> TableId.show t.id))
-                     , viewSourceDiffItem "modified relation" (updatedRelations |> List.map (\( _, r ) -> RelationId.show r.id))
-                     , viewSourceDiffItem "new relation" (newRelations |> List.map (\r -> RelationId.show r.id))
-                     , viewSourceDiffItem "removed relation" (removedRelations |> List.map (\r -> RelationId.show r.id))
+                    ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( old, new ) -> ( TableId.show new.id, tableDiff old new )))
+                     , viewSourceDiffItem "new table" (newTables |> List.map (\t -> ( TableId.show t.id, Nothing )))
+                     , viewSourceDiffItem "removed table" (removedTables |> List.map (\t -> ( TableId.show t.id, Nothing )))
+                     , viewSourceDiffItem "modified relation" (updatedRelations |> List.map (\( old, new ) -> ( RelationId.show new.id, relationDiff old new )))
+                     , viewSourceDiffItem "new relation" (newRelations |> List.map (\r -> ( RelationId.show r.id, Nothing )))
+                     , viewSourceDiffItem "removed relation" (removedRelations |> List.map (\r -> ( RelationId.show r.id, Nothing )))
                      ]
                         |> List.filterMap identity
                     )
@@ -568,7 +563,7 @@ viewSourceDiff newSource oldSource =
             ]
 
 
-viewSourceDiffItem : String -> List String -> Maybe (Html msg)
+viewSourceDiffItem : String -> List ( String, Maybe String ) -> Maybe (Html msg)
 viewSourceDiffItem label items =
     items
         |> List.head
@@ -577,7 +572,7 @@ viewSourceDiffItem label items =
                 li []
                     [ bText (items |> String.pluralizeL label)
                     , text " ("
-                    , span [] (items |> List.map (\item -> span [] [ text item ]) |> List.intersperse (text ", "))
+                    , span [] (items |> List.map (\( item, details ) -> text item |> Tooltip.t (details |> Maybe.withDefault "")) |> List.intersperse (text ", "))
                     , text ")"
                     ]
             )
@@ -590,3 +585,60 @@ viewSourceDiffItem label items =
 hasErrors : SqlParsing msg -> Bool
 hasErrors parser =
     (parser.commands |> Maybe.any (Dict.values >> List.any (\( _, r ) -> r |> Result.isErr))) || (parser.schemaErrors |> List.nonEmpty)
+
+
+tableDiff : Table -> Table -> Maybe String
+tableDiff old new =
+    let
+        ( removedColumns, updatedColumns, newColumns ) =
+            List.diff .name (old.columns |> Ned.values |> Nel.toList) (new.columns |> Ned.values |> Nel.toList)
+
+        primaryKey : Bool
+        primaryKey =
+            old.primaryKey /= new.primaryKey
+
+        ( removedUniques, updatedUniques, newUniques ) =
+            List.diff .name old.uniques new.uniques
+
+        ( removedIndexes, updatedIndexes, newIndexes ) =
+            List.diff .name old.indexes new.indexes
+
+        ( removedChecks, updatedChecks, newChecks ) =
+            List.diff .name old.checks new.checks
+
+        comment : Bool
+        comment =
+            old.comment /= new.comment
+    in
+    [ newColumns |> List.head |> Maybe.map (\_ -> (newColumns |> String.pluralizeL "new column") ++ ": " ++ (newColumns |> List.map .name |> String.join ", "))
+    , removedColumns |> List.head |> Maybe.map (\_ -> (removedColumns |> String.pluralizeL "removed column") ++ ": " ++ (removedColumns |> List.map .name |> String.join ", "))
+    , updatedColumns |> List.head |> Maybe.map (\_ -> (updatedColumns |> String.pluralizeL "updated column") ++ ": " ++ (updatedColumns |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
+    , B.maybe primaryKey "primary key updated"
+    , newUniques |> List.head |> Maybe.map (\_ -> (newUniques |> String.pluralizeL "new unique") ++ ": " ++ (newUniques |> List.map .name |> String.join ", "))
+    , removedUniques |> List.head |> Maybe.map (\_ -> (removedUniques |> String.pluralizeL "removed unique") ++ ": " ++ (removedUniques |> List.map .name |> String.join ", "))
+    , updatedUniques |> List.head |> Maybe.map (\_ -> (updatedUniques |> String.pluralizeL "updated unique") ++ ": " ++ (updatedUniques |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
+    , newIndexes |> List.head |> Maybe.map (\_ -> (newIndexes |> String.pluralizeL "new index") ++ ": " ++ (newIndexes |> List.map .name |> String.join ", "))
+    , removedIndexes |> List.head |> Maybe.map (\_ -> (removedIndexes |> String.pluralizeL "removed index") ++ ": " ++ (removedIndexes |> List.map .name |> String.join ", "))
+    , updatedIndexes |> List.head |> Maybe.map (\_ -> (updatedIndexes |> String.pluralizeL "updated index") ++ ": " ++ (updatedIndexes |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
+    , newChecks |> List.head |> Maybe.map (\_ -> (newChecks |> String.pluralizeL "new check") ++ ": " ++ (newChecks |> List.map .name |> String.join ", "))
+    , removedChecks |> List.head |> Maybe.map (\_ -> (removedChecks |> String.pluralizeL "removed check") ++ ": " ++ (removedChecks |> List.map .name |> String.join ", "))
+    , updatedChecks |> List.head |> Maybe.map (\_ -> (updatedChecks |> String.pluralizeL "updated check") ++ ": " ++ (updatedChecks |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
+    , B.maybe comment "comment updated"
+    ]
+        |> List.filterMap identity
+        |> String.join ", "
+        |> String.nonEmptyMaybe
+
+
+relationDiff : Relation -> Relation -> Maybe String
+relationDiff old new =
+    let
+        name : Bool
+        name =
+            old.name /= new.name
+    in
+    [ B.maybe name "name updated"
+    ]
+        |> List.filterMap identity
+        |> String.join ", "
+        |> String.nonEmptyMaybe
