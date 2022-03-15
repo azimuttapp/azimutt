@@ -12,7 +12,6 @@ window.addEventListener('load', function() {
         'For example, here is how to count the total number of columns:\n' +
         '  `project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`')
 
-
     /* PWA service worker */
 
     if ('serviceWorker' in navigator && isProd) {
@@ -44,7 +43,7 @@ window.addEventListener('load', function() {
                 case 'AutofocusWithin':   autofocusWithin(port.id); break;
                 case 'LoadProjects':      loadProjects(); break;
                 case 'LoadRemoteProject': loadRemoteProject(port.projectUrl); break;
-                case 'SaveProject':       saveProject(port.project); break;
+                case 'SaveProject':       saveProject(port.project, loadProjects); break;
                 case 'DownloadFile':      downloadFile(port.filename, port.content); break;
                 case 'DropProject':       dropProject(port.project); break;
                 case 'GetLocalFile':      getLocalFile(port.project, port.source, port.file); break;
@@ -113,39 +112,103 @@ window.addEventListener('load', function() {
             })
     }
 
-    const projectPrefix = 'project-'
-    function loadProjects() {
-        const values = Object.keys(localStorage)
-            .filter(key => key.startsWith(projectPrefix))
-            .map(key => [key.replace(projectPrefix, ''), safeParse(localStorage.getItem(key))])
-        sendToElm({kind: 'GotProjects', projects: values})
-        window.projects = values.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
-        const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-        id ? window.project = window.projects[id] : undefined
+    const databaseName = 'azimutt'
+    const databaseObjectStoreName = 'projects'
+    const databaseVersion = 1
+
+    function handleIndexDBError(event) {
+        console.warn("Can't use IndexDB", event)
+        alert("Can't use IndexDB, but Azimutt needs it. Please make it available.")
     }
-    function saveProject(project) {
-        const key = projectPrefix + project.id
-        // setting dates should be done in Elm but can't find how to run a Task before calling a Port
-        const now = Date.now()
-        project.updatedAt = now
-        if (localStorage.getItem(key) === null) { project.createdAt = now }
-        try {
-            localStorage.setItem(key, JSON.stringify(project))
-            loadProjects()
-        } catch (e) {
-            if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-                showMessage({kind: 'error', message: "Can't save project, storage quota exceeded. Use a smaller schema or clean unused projects."})
-            } else {
-                showMessage({kind: 'error', message: "Can't save project: " + e.message})
+
+    function getConfiguredDb() {
+        return new Promise((resolve, reject) => {
+            const openRequest = indexedDB.open(databaseName, databaseVersion)
+            openRequest.onupgradeneeded = function() {
+              const db = openRequest.result
+              if (!db.objectStoreNames.contains(databaseObjectStoreName)) {
+                db.createObjectStore(databaseObjectStoreName, {keyPath: 'id'})
+              }
             }
-            const name = 'local-storage'
-            const details = {error: e.name, message: e.message}
-            analytics.then(a => a.trackError(name, details)); errorTracking.then(e => e.track(name, details));
-        }
+            openRequest.onerror = function(event) {
+                handleIndexDBError(event)
+                reject('IndexedDB not available!')
+            }
+            openRequest.onsuccess = function(event) {
+                const db = event.target.result
+                db.onerror = handleIndexDBError
+
+                resolve(db)
+            }
+        })
+    }
+
+    function getDbObjectStore(transactionType) {
+        return new Promise((resolve, reject) => {
+            getConfiguredDb().then((db => {
+                const transaction = db.transaction(
+                    databaseObjectStoreName,
+                    typeof(transactionType) === 'undefined' ? 'readonly' : transactionType
+                )
+                resolve(transaction.objectStore(databaseObjectStoreName))
+            }))
+        })
+    }
+
+    const localStorageProjectPrefix = 'project-'
+    function getLocalStorageProjects() {
+        return Object.keys(localStorage)
+            .filter(key => key.startsWith(localStorageProjectPrefix))
+            .map(key => safeParse(localStorage.getItem(key)))
+    }
+    function dropLocalStorageProject(project) {
+        localStorage.removeItem(localStorageProjectPrefix + project.id)
+    }
+    function loadAndMigrateLocaleStorageProjects() {
+        const projects = getLocalStorageProjects()
+        projects.forEach(p => saveProject(p, () => dropLocalStorageProject(p)))
+        return projects
+    }
+
+    function loadProjects() {
+        getDbObjectStore().then((store) => {
+            let projects = []
+            store.openCursor().onsuccess = function(event) {
+                const cursor = event.target.result
+                if (cursor) {
+                    projects.push(cursor.value)
+                    cursor.continue()
+                }
+                else {
+                    projects = projects.concat(loadAndMigrateLocaleStorageProjects())
+
+                    sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
+                    window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
+                    const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
+                    id ? window.project = window.projects[id] : undefined
+                }
+            }
+        })
+    }
+    function saveProject(project, callback) {
+        getDbObjectStore('readwrite').then((store) => {
+            const now = Date.now()
+            project.updatedAt = now
+
+            if (!store.get(project.id)) {
+                project.createdAt = now
+                store.add(project).onsuccess = callback
+            } else {
+                store.put(project).onsuccess = callback
+            }
+        })
     }
     function dropProject(project) {
-        localStorage.removeItem(projectPrefix + project.id)
-        loadProjects()
+        getDbObjectStore('readwrite').then((store) => {
+            store.delete(project.id).onsuccess = function() {
+                loadProjects()
+            }
+        })
     }
 
     function getLocalFile(maybeProjectId, maybeSourceId, file) {
