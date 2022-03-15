@@ -7,8 +7,8 @@ window.addEventListener('load', function() {
     const flags = {now: Date.now()}
     const app = Elm.Main.init({flags})
 
-    const databaseName = 'azimut'
-    const databaseObjectStoreName = 'saves'
+    const databaseName = 'azimutt'
+    const databaseObjectStoreName = 'projects'
     const databaseVersion = 1
 
     /* PWA service worker */
