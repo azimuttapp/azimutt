@@ -1,4 +1,10 @@
 window.addEventListener('load', function() {
+    console.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
+        'Did you know you can access your current project in the console?\n\n' +
+        'Call it using `project` variable and compute what you want.\n' +
+        'For example, here is how to count the total number of columns:\n' +
+        '  `project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`')
+
     const isDev = window.location.hostname === 'localhost'
     const isProd = window.location.hostname === 'azimutt.app'
     const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics'))
@@ -6,11 +12,7 @@ window.addEventListener('load', function() {
     const errorTracking = initErrorTracking(isProd)
     const flags = {now: Date.now()}
     const app = Elm.Main.init({flags})
-    console.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
-        'Did you know you can access your current project in the console?\n\n' +
-        'Call it using `project` variable and compute what you want.\n' +
-        'For example, here is how to count the total number of columns:\n' +
-        '  `project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`')
+
 
     /* PWA service worker */
 
@@ -113,45 +115,43 @@ window.addEventListener('load', function() {
     }
 
     const databaseName = 'azimutt'
-    const databaseObjectStoreName = 'projects'
     const databaseVersion = 1
-
-    function handleIndexDBError(event) {
-        console.warn("Can't use IndexDB", event)
-        alert("Can't use IndexDB, but Azimutt needs it. Please make it available.")
-    }
-
+    const dbProjects = 'projects'
     function getConfiguredDb() {
         return new Promise((resolve, reject) => {
-            const openRequest = indexedDB.open(databaseName, databaseVersion)
-            openRequest.onupgradeneeded = function() {
-              const db = openRequest.result
-              if (!db.objectStoreNames.contains(databaseObjectStoreName)) {
-                db.createObjectStore(databaseObjectStoreName, {keyPath: 'id'})
-              }
+            function handleIndexedDBError(event) {
+                console.warn('IndexedDB not available', event)
+                reject('IndexedDB not available')
+                alert("Azimutt needs IndexedDB but it's not available, please make it available or use a browser that support it!")
             }
-            openRequest.onerror = function(event) {
-                handleIndexDBError(event)
-                reject('IndexedDB not available!')
-            }
-            openRequest.onsuccess = function(event) {
-                const db = event.target.result
-                db.onerror = handleIndexDBError
-
-                resolve(db)
+            if (!window.indexedDB) {
+                handleIndexedDBError(undefined)
+            } else {
+                const openRequest = window.indexedDB.open(databaseName, databaseVersion)
+                openRequest.onerror = event => handleIndexedDBError(event)
+                openRequest.onsuccess = function(event) {
+                    const db = event.target.result
+                    db.onerror = e => handleIndexedDBError(e)
+                    resolve(db)
+                }
+                openRequest.onupgradeneeded = function() {
+                    const db = openRequest.result
+                    if (!db.objectStoreNames.contains(dbProjects)) {
+                        db.createObjectStore(dbProjects, {keyPath: 'id'})
+                    }
+                }
             }
         })
     }
-
-    function getDbObjectStore(transactionType) {
+    function getDbObjectStore(objectStore, transactionType) {
         return new Promise((resolve, reject) => {
-            getConfiguredDb().then((db => {
+            getConfiguredDb().then(db => {
                 const transaction = db.transaction(
-                    databaseObjectStoreName,
-                    typeof(transactionType) === 'undefined' ? 'readonly' : transactionType
+                    objectStore,
+                    typeof transactionType === 'undefined' ? 'readonly' : transactionType
                 )
-                resolve(transaction.objectStore(databaseObjectStoreName))
-            }))
+                resolve(transaction.objectStore(objectStore))
+            }, reject)
         })
     }
 
@@ -171,15 +171,14 @@ window.addEventListener('load', function() {
     }
 
     function loadProjects() {
-        getDbObjectStore().then((store) => {
+        getDbObjectStore(dbProjects).then(store => {
             let projects = []
-            store.openCursor().onsuccess = function(event) {
+            store.openCursor().onsuccess = event => {
                 const cursor = event.target.result
                 if (cursor) {
                     projects.push(cursor.value)
                     cursor.continue()
-                }
-                else {
+                } else {
                     projects = projects.concat(loadAndMigrateLocaleStorageProjects())
 
                     sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
@@ -191,7 +190,7 @@ window.addEventListener('load', function() {
         })
     }
     function saveProject(project, callback) {
-        getDbObjectStore('readwrite').then((store) => {
+        getDbObjectStore(dbProjects, 'readwrite').then(store => {
             const now = Date.now()
             project.updatedAt = now
 
@@ -204,10 +203,8 @@ window.addEventListener('load', function() {
         })
     }
     function dropProject(project) {
-        getDbObjectStore('readwrite').then((store) => {
-            store.delete(project.id).onsuccess = function() {
-                loadProjects()
-            }
+        getDbObjectStore(dbProjects, 'readwrite').then(store => {
+            store.delete(project.id).onsuccess = loadProjects
         })
     }
 
