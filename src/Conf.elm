@@ -171,4 +171,5 @@ blogPosts =
 
     --, "azimutt-analyze-your-database-schema-so-you-can-improve-it"
     --, "entity-relationship-diagram-landscape-how-to-choose"
+    --, "embed-your-database-diagram-everywhere"
     ]

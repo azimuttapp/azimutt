@@ -6,6 +6,11 @@ window.addEventListener('load', function() {
     const errorTracking = initErrorTracking(isProd)
     const flags = {now: Date.now()}
     const app = Elm.Main.init({flags})
+    console.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
+        'Did you know you can access your current project in the console?\n\n' +
+        'Call it using `project` variable and compute what you want.\n' +
+        'For example, here is how to count the total number of columns:\n' +
+        '  `project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`')
 
 
     /* PWA service worker */
@@ -71,7 +76,8 @@ window.addEventListener('load', function() {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
     function fullscreen(maybeId) {
-        (maybeId ? getElementById(maybeId).requestFullscreen() : document.body.requestFullscreen())
+        const elt = maybeId ? getElementById(maybeId) : document.body
+        (elt.requestFullscreen ? elt.requestFullscreen() : Promise.reject())
             .catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
     }
     function setMeta(meta) {

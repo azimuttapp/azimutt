@@ -213,7 +213,7 @@ computeHeterogeneousTypes : Dict TableId ErdTable -> List ( ColumnName, List ( C
 computeHeterogeneousTypes tables =
     tables
         |> Dict.values
-        |> List.concatMap (\t -> t.columns |> Ned.values |> Nel.toList |> List.map (\c -> { table = t.id, column = c.name, kind = c.kind }))
+        |> List.concatMap (\t -> t.columns |> Ned.values |> Nel.filter (\c -> c.kind /= "unknown") |> List.map (\c -> { table = t.id, column = c.name, kind = c.kind }))
         |> List.groupBy .column
         |> Dict.toList
         |> List.map (\( col, cols ) -> ( col, cols |> List.groupBy .kind |> Dict.map (\_ -> List.map .table) |> Dict.toList ))
@@ -227,19 +227,27 @@ viewHeterogeneousTypes htmlId opened heterogeneousTypes =
         "No heterogeneous types found"
         (heterogeneousTypes |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "column") ++ " with heterogeneous types")
-        (heterogeneousTypes
-            |> List.map
-                (\( col, types ) ->
-                    div []
-                        [ bText col
-                        , text " has types: "
-                        , span [ class "text-gray-500" ]
-                            (types
-                                |> List.map (\( t, ids ) -> text t |> Tooltip.t (ids |> List.map TableId.show |> String.join ", "))
-                                |> List.intersperse (text ", ")
-                            )
-                        ]
+        (p [ class "prose mb-3 text-sm text-gray-500" ]
+            [ text
+                ("There is nothing wrong intrinsically with heterogeneous types "
+                    ++ "but sometimes, the same concept stored in different format may not be ideal and having everything aligned is clearer. "
+                    ++ "But of course, not every column with the same name is the same thing, so just look at the to know, not to fix everything."
                 )
+            ]
+            :: (heterogeneousTypes
+                    |> List.map
+                        (\( col, types ) ->
+                            div []
+                                [ bText col
+                                , text " has types: "
+                                , span [ class "text-gray-500" ]
+                                    (types
+                                        |> List.map (\( t, ids ) -> text t |> Tooltip.t (ids |> List.map TableId.show |> String.join ", "))
+                                        |> List.intersperse (text ", ")
+                                    )
+                                ]
+                        )
+               )
         )
 
 
