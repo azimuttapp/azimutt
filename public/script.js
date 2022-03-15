@@ -109,6 +109,11 @@ window.addEventListener('load', function() {
     const databaseObjectStoreName = 'projects'
     const databaseVersion = 1
 
+    function handleIndexDBError(event) {
+        console.warn("Can't use IndexDB", event)
+        alert("Can't use IndexDB, but Azimutt needs it. Please make it available.")
+    }
+
     function getConfiguredDb() {
         return new Promise((resolve, reject) => {
             const openRequest = indexedDB.open(databaseName, databaseVersion)
@@ -118,8 +123,14 @@ window.addEventListener('load', function() {
                 db.createObjectStore(databaseObjectStoreName, {keyPath: 'id'})
               }
             }
+            openRequest.onerror = function(event) {
+                handleIndexDBError(event)
+                reject('IndexedDB not available!')
+            }
             openRequest.onsuccess = function(event) {
                 const db = event.target.result
+                db.onerror = handleIndexDBError
+
                 resolve(db)
             }
         })
