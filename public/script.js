@@ -118,7 +118,7 @@ window.addEventListener('load', function() {
                 db.createObjectStore(databaseObjectStoreName, {keyPath: 'id'})
               }
             }
-            openRequest.onsuccess = function() {
+            openRequest.onsuccess = function(event) {
                 const db = event.target.result
                 resolve(db)
             }
