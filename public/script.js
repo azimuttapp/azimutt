@@ -7,10 +7,6 @@ window.addEventListener('load', function() {
     const flags = {now: Date.now()}
     const app = Elm.Main.init({flags})
 
-    const databaseName = 'azimutt'
-    const databaseObjectStoreName = 'projects'
-    const databaseVersion = 1
-
     /* PWA service worker */
 
     if ('serviceWorker' in navigator && isProd) {
@@ -98,7 +94,7 @@ window.addEventListener('load', function() {
     function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()
     }
-  
+
     function loadRemoteProject(projectUrl) {
         fetch(projectUrl)
             .then(res => res.json())
@@ -108,6 +104,10 @@ window.addEventListener('load', function() {
                 sendToElm({kind: 'GotToast', level: 'error', message: `Can't load remote project: ${err}`})
             })
     }
+
+    const databaseName = 'azimutt'
+    const databaseObjectStoreName = 'projects'
+    const databaseVersion = 1
 
     function getConfiguredDb() {
         return new Promise((resolve, reject) => {
