@@ -78,7 +78,7 @@ window.addEventListener('load', function() {
     }
     function fullscreen(maybeId) {
         const elt = maybeId ? getElementById(maybeId) : document.body
-        (elt.requestFullscreen ? elt.requestFullscreen() : Promise.reject())
+        (elt.requestFullscreen ? elt.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available')))
             .catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
     }
     function setMeta(meta) {
@@ -121,7 +121,7 @@ window.addEventListener('load', function() {
         return new Promise((resolve, reject) => {
             function handleIndexedDBError(event) {
                 console.warn('IndexedDB not available', event)
-                reject('IndexedDB not available')
+                reject(new Error('IndexedDB not available'))
                 alert("Azimutt needs IndexedDB but it's not available, please make it available or use a browser that support it!")
             }
             if (!window.indexedDB) {
@@ -171,41 +171,82 @@ window.addEventListener('load', function() {
     }
 
     function loadProjects() {
-        getDbObjectStore(dbProjects).then(store => {
-            let projects = []
-            store.openCursor().onsuccess = event => {
-                const cursor = event.target.result
-                if (cursor) {
-                    projects.push(cursor.value)
-                    cursor.continue()
-                } else {
-                    projects = projects.concat(loadAndMigrateLocaleStorageProjects())
-
-                    sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
-                    window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
-                    const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-                    id ? window.project = window.projects[id] : undefined
+        if (window.indexedDB) {
+            getDbObjectStore(dbProjects).then(store => {
+                let projects = []
+                store.openCursor().onsuccess = event => {
+                    const cursor = event.target.result
+                    if (cursor) {
+                        projects.push(cursor.value)
+                        cursor.continue()
+                    } else {
+                        projects = projects.concat(loadAndMigrateLocaleStorageProjects())
+                        sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
+                        window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
+                        const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
+                        id ? window.project = window.projects[id] : undefined
+                    }
                 }
-            }
-        })
+            })
+        } else if (window.localStorage) {
+            const projects = getLocalStorageProjects()
+            sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
+            window.projects = projects.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
+            const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
+            id ? window.project = window.projects[id] : undefined
+        } else {
+            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
+                'Please make them available or use a browser that support them!')
+        }
     }
     function saveProject(project, callback) {
-        getDbObjectStore(dbProjects, 'readwrite').then(store => {
-            const now = Date.now()
-            project.updatedAt = now
+        const now = Date.now()
+        project.updatedAt = now
 
-            if (!store.get(project.id)) {
-                project.createdAt = now
-                store.add(project).onsuccess = callback
-            } else {
-                store.put(project).onsuccess = callback
+        if (window.indexedDB) {
+            getDbObjectStore(dbProjects, 'readwrite').then(store => {
+                if (!store.get(project.id)) {
+                    project.createdAt = now
+                    store.add(project).onsuccess = callback
+                } else {
+                    store.put(project).onsuccess = callback
+                }
+            })
+        } else if (window.localStorage) {
+            const key = localStorageProjectPrefix + project.id
+            if (localStorage.getItem(key) === null) { project.createdAt = now }
+            try {
+                localStorage.setItem(key, JSON.stringify(project))
+            } catch (e) {
+                let message
+                if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
+                    message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
+                } else {
+                    message = 'Unknown localStorage error: ' + e.message
+                }
+                showMessage({kind: 'error', message})
+                const name = 'local-storage'
+                const details = {error: e.name, message: e.message}
+                analytics.then(a => a.trackError(name, details)); errorTracking.then(e => e.track(name, details));
             }
-        })
+            callback()
+        } else {
+            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
+                'Please make them available or use a browser that support them!')
+        }
     }
     function dropProject(project) {
-        getDbObjectStore(dbProjects, 'readwrite').then(store => {
-            store.delete(project.id).onsuccess = loadProjects
-        })
+        if (window.indexedDB) {
+            getDbObjectStore(dbProjects, 'readwrite').then(store => {
+                store.delete(project.id).onsuccess = loadProjects
+            })
+        } else if (window.localStorage) {
+            localStorage.removeItem(localStorageProjectPrefix + project.id)
+            loadProjects()
+        } else {
+            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
+                'Please make them available or use a browser that support them!')
+        }
     }
 
     function getLocalFile(maybeProjectId, maybeSourceId, file) {
@@ -349,7 +390,7 @@ window.addEventListener('load', function() {
         if (shouldTrack) {
             const waitSplitbee = (resolve, reject, timeout) => {
                 if (timeout <= 0) {
-                    reject()
+                    reject(new Error('Splitbee not available'))
                 } else if (splitbee) {
                     resolve({
                         trackPage: name => { /* automatically tracked, do nothing */ },
