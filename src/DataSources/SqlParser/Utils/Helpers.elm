@@ -27,7 +27,7 @@ buildRawSql statement =
 
 buildSqlLine : SqlStatement -> RawSql
 buildSqlLine statement =
-    statement |> Nel.toList |> List.map .text |> String.join " "
+    statement |> Nel.toList |> List.map .text |> List.map String.trim |> String.join " "
 
 
 defaultPkName : SqlTableName -> SqlConstraintName
