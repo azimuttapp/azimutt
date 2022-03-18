@@ -91,4 +91,4 @@ extendMarkdown slug md =
         |> String.replace "{{roadmap_link}}" Conf.constants.azimuttRoadmap
         |> String.replace "{{issues_link}}" Conf.constants.azimuttFeatureRequests
         |> String.replace "{{feedback_link}}" Conf.constants.azimuttDiscussions
-        |> String.replace "{{azimutt_tweeter}}" Conf.constants.azimuttTwitter
+        |> String.replace "{{azimutt_twitter}}" Conf.constants.azimuttTwitter
