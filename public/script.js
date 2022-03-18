@@ -77,9 +77,9 @@ window.addEventListener('load', function() {
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
     function fullscreen(maybeId) {
-        const elt = maybeId ? getElementById(maybeId) : document.body
-        (elt.requestFullscreen ? elt.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available')))
-            .catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
+        const element = maybeId ? getElementById(maybeId) : document.body
+        const result = element.requestFullscreen ? element.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available'))
+        result.catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
     }
     function setMeta(meta) {
         if (meta.title) {
@@ -274,7 +274,7 @@ window.addEventListener('load', function() {
                 content,
                 sample
             }))
-            .catch(err => showMessage({kind: 'error', message: `Can't get remote file: ${err}`}))
+            .catch(err => showMessage({kind: 'error', message: `Can't get remote file ${url}: ${err}`}))
     }
 
     function getSourceId(src, ref) {
