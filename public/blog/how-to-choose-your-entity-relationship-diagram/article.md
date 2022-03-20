@@ -1,5 +1,5 @@
 ---
-title: Entity-Relationship Diagram (ERD) landscape, how to choose one
+title: How to choose your Entity-Relationship Diagram (ERD)
 excerpt: If you ever looked for database diagrams you already have found plenty of ERDs. But knowing how to choose one is another matter, and it's the goal of this article to guide you in this crowded space.
 category: database tools
 tags: entity relationship diagram
@@ -7,15 +7,17 @@ author: loic
 published: 2022-03-28
 ---
 
-Finding the right tool for the job is clearly a game changer. And when looking for a visual tool for your database, you will always find [Entity-Relationship Diagrams](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) (ERDs) on your way. Either strict ER diagrams with all the correct notations or kind of ER diagrams, just having tables and relations but without all the semantics of an ER diagram.
+Finding the right tool for the job can clearly be a game changer. And when looking for a visual tool for your database, you will always find [Entity-Relationship Diagrams](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) (ERDs) on your way. Either strict ER diagrams with all the correct notations or kind of ER diagrams, just having tables and relations but without all the semantics of an ER diagram.
 
 ![Too many Entity-Relationship Diagrams]({{base_link}}/too-many-tools.png)
 
-Let's dive into the 4 big categories, and some best examples from them:
+
+As the offer is huge (here is a list of [79 Data Modeling Tools Compared](https://www.databasestar.com/data-modeling-tools), and it's far from complete), focus on the task you want to achieve to choose a category, then try out a few ones. No need for exhaustivity here, just know where to look and find one that does the job.
+
+After looking at a lot of them, I could identify 4 categories or relevant tools (leaving many on the side as they are quite outdated). Here are the categories and the best ones I found in each of them:
 
 - [Drawing tools](#drawing-tools)
   - [Lucidchart](#lucidchart)
-  - [Miro](#miro)
   - [Excalidraw](#excalidraw)
 - [Database clients](#database-clients)
   - [Datagrip](#datagrip)
@@ -37,14 +39,42 @@ Let's dive into the 4 big categories, and some best examples from them:
 
 https://www.lucidchart.com/pages/examples/er-diagram-tool
 
-### Miro
+![Lucidchart erd]({{base_link}}/lucidchart-gospeak.png)
 
-https://miro.com/templates/entity-relationship-diagram
+[price](https://lucid.app/pricing/lucidchart#/pricing): free for 3 documents
+
+As a drawing tool I didn't expect much but had a good surprise. The SQL import was quite easy, and the fact it generated tables as saved shapes helped a lot to manually add them in the canvas (instead of having everything loaded from scratch and figure it out). As a drawing tool you can customize everything, and you can surely create beautiful diagram, but it will take a lot of time.
+
+Good points:
+- has SQL import, but as paid feature
+- you can add/change anything you want in the diagram
+
+Missing ones:
+- has a lot of things, a bit overwhelming the first time
+- you can create good things but everything is very manual, doesn't scale well
+- the editor is very slow, edit experience is not very good
+
+**My recommendation**: If you are already a Lucidchart user or if you want to create a printable chart with other visuals than just your tables and relations such as a title, some comments, images or arrows, it can be a great option with the page settings and structure import. Still use it mostly to build a static diagram, not to work daily with your database.
 
 ### Excalidraw
 
 https://excalidraw.com
 
+![Excalidraw erd]({{base_link}}/excalidraw-gospeak.png)
+
+**price**: free
+
+This one is the simplest drawing tool, you just have some text, boxes, arrows and a few more things. With it, you focus on your content instead of the tool. Very basic, very effective. But also quite fuzzy for an ERD... 🙃
+
+Good points:
+- blazing fast
+- no learning curve
+
+Missing ones:
+- almost everything ^^
+- forget about precision or exhaustivity, welcome sketches
+
+**My recommendation**: If you are looking for a blank canvas where you can draw what you have in mind, without constraints, this is probably your go-to tool. No time spent looking for the perfect shape, loosing your thoughts.
 
 ## Database clients
 
@@ -85,8 +115,24 @@ Sadly I couldn't test it as I'm on Ubuntu and can't find a Toad version to run, 
 
 ### MySQL Workbench
 
-https://www.mysql.com/fr/products/workbench
+https://www.mysql.com/products/workbench
 
+![MySQL Workbench erd]({{base_link}}/mysql-workbench-gospeak.png)
+
+**price**: free
+
+Like all database clients, MySQL Workbench has to be installed on your machine. Its diagram feature seems quite nice when you look at screenshots, and it has very interesting features such as table groups and free floating text. Sadly it's hardly usable: diagram size is limited, table groups does not interact with tables (just visual areas) and actions are hard to use.
+
+Good points:
+- clear UI
+- table groups and text
+
+Missing ones:
+- diagram canvas is limited
+- specific to MySQL
+- hard to use
+
+**My recommendation**: If you want a diagram, and already use it, let's give it a try, but otherwise, you will have better success with other tools as it's quite old school and deceptive (promising feature but not really usable in practice). Maybe the querying tool works well but this is not the topic of this article.
 
 ## Database creation tools
 
@@ -241,6 +287,8 @@ You can [embed Azimutt diagrams](./embed-your-database-diagram-anywhere) to easi
 
 ## Final words
 
-I only know Azimutt is the last category, and it's basically [the reason I built it](./the-story-behind-azimutt) as I could not find any tool like this. If you know some, please [let me know]({{azimutt_twitter}}), so I could include them here. The same if you know good tools to design and understand a database schema, I will review them and include them here if I think they deserve it.
+If you want to evaluate readability of each tool, look at each screenshot, it's the same schema, from Gospeak, I used, sometimes with some limitations due to free/trial plan, but you should see similar things.
 
-Creating and managing a database is always a hard task, no matter how you approach it. Having tools can help but in the end, everything comes back to your understanding of your system and how it works, either from your business process anù internally. Be strong!
+I only know Azimutt in the last category, and it's basically [the reason I built it](./the-story-behind-azimutt) as I could not find any tool like it. If you know some, please [let me know]({{azimutt_twitter}}), so I could include them here. The same if you know good tools to design and understand a database schema, I will review them and include them if I think they deserve it.
+
+Creating and managing a database is always a hard task, no matter how you approach it. Having tools can help but in the end, everything comes back to your understanding of your system and how it works, either from your business process and internally. Be strong!

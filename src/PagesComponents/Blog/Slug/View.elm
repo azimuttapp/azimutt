@@ -20,7 +20,7 @@ viewArticle model =
                 { section = "Loading"
                 , title = "Loading"
                 , introduction = Nothing
-                , content = [ div [ class "my-64 text-center", style "height" "6000px" ] [ text "Loading" ] ]
+                , content = [ div [ class "my-64 text-center", style "height" "20000px" ] [ text "Loading" ] ]
                 , dots = False
                 }
 

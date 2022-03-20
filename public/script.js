@@ -33,7 +33,7 @@ window.addEventListener('load', function() {
         // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
         // TODO: use requestAnimationFrame instead!
         setTimeout(() => {
-            // console.log('elm message', msg)
+            // console.log('elm message', port)
             switch (port.kind) {
                 case 'Click':             click(port.id); break;
                 case 'MouseDown':         mousedown(port.id); break;
