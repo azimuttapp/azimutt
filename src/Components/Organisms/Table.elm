@@ -11,7 +11,7 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Attribute, Html, br, button, div, span, text)
-import Html.Attributes exposing (class, classList, id, style, tabindex, type_)
+import Html.Attributes exposing (class, classList, id, style, tabindex, title, type_)
 import Html.Events exposing (onClick, onDoubleClick, onMouseEnter, onMouseLeave)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
@@ -151,7 +151,8 @@ viewHeader model =
                 []
     in
     div
-        [ css
+        [ title model.label
+        , css
             [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b border-b-default-200"
             , border_500 model.state.color
             , bg_50 (Bool.cond model.state.isHover model.state.color Tw.default)
@@ -249,7 +250,8 @@ viewHiddenColumns model =
 viewColumn : Model msg -> Bool -> Int -> Column -> Html msg
 viewColumn model isLast index column =
     div
-        ([ Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverColumn column.name True))
+        ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
+         , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverColumn column.name True))
          , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverColumn column.name False))
          , Attributes.when model.conf.layout (onContextMenu (model.actions.contextMenuColumn index column.name))
          , Attributes.when model.conf.layout (onDoubleClick (model.actions.dblClickColumn column.name))

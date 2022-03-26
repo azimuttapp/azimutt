@@ -2,7 +2,7 @@ module Libs.BasicsTest exposing (..)
 
 import Expect
 import Fuzz
-import Libs.Basics exposing (convertBase, fromDec, toDec)
+import Libs.Basics exposing (convertBase, fromDec, inside, toDec)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe, fuzz, test)
 
@@ -34,5 +34,11 @@ suite =
             ]
         , describe "fromDec & toDec"
             [ fuzz (Fuzz.tuple ( Fuzz.int, Fuzz.intRange 2 62 )) "round-trip" (\( i, base ) -> i |> fromDec base |> Result.andThen (toDec base) |> Expect.equal (Ok i))
+            ]
+        , describe "inside"
+            [ test "no change" (\_ -> 10 |> inside 5 15 |> Expect.equal 10)
+            , test "smaller" (\_ -> 2 |> inside 5 15 |> Expect.equal 5)
+            , test "bigger" (\_ -> 20 |> inside 5 15 |> Expect.equal 15)
+            , test "bag range" (\_ -> 20 |> inside 15 5 |> Expect.equal 15) -- min limit is more important
             ]
         ]

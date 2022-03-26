@@ -227,7 +227,12 @@ hoverColumn column enter erd props =
                     (erd.tables |> Dict.get id)
                         |> (\table ->
                                 p.shownColumns
-                                    |> List.filter (\c -> (column.table == id && column.column == c) || (getRelations table c |> List.any (isSame column)))
+                                    |> List.filter
+                                        (\c ->
+                                            (column.table == id && column.column == c)
+                                                -- || (column.table == id && (table |> Maybe.andThen (.columns >> Ned.get c) |> Maybe.any (\col -> List.nonEmpty col.inRelations || List.nonEmpty col.outRelations)))
+                                                || (getRelations table c |> List.any (\r -> r.table == column.table && r.column == column.column))
+                                        )
                                     |> Set.fromList
                            )
 
@@ -241,11 +246,6 @@ hoverColumn column enter erd props =
 getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRef
 getRelations table name =
     table |> Maybe.andThen (\t -> t.columns |> Ned.get name) |> Maybe.mapOrElse (\c -> c.outRelations ++ c.inRelations) []
-
-
-isSame : ColumnRef -> ErdColumnRef -> Bool
-isSame ref erdRef =
-    ref.table == erdRef.table && ref.column == erdRef.column
 
 
 performShowTable : ErdTable -> Maybe PositionHint -> Erd -> Erd

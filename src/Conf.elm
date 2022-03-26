@@ -78,10 +78,12 @@ schemaSamples =
 canvas :
     { zoom : { min : ZoomLevel, max : ZoomLevel, speed : Float }
     , zIndex : { tables : Int }
+    , grid : Int
     }
 canvas =
     { zoom = { min = 0.05, max = 5, speed = 0.001 }
     , zIndex = { tables = 10 }
+    , grid = 10
     }
 
 
@@ -168,8 +170,9 @@ blogPosts =
     [ "the-story-behind-azimutt"
     , "how-to-explore-your-database-schema-with-azimutt"
     , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
+    , "embed-your-database-diagram-anywhere"
+    , "how-to-choose-your-entity-relationship-diagram"
 
-    --, "azimutt-analyze-your-database-schema-so-you-can-improve-it"
-    --, "entity-relationship-diagram-landscape-how-to-choose"
-    --, "embed-your-database-diagram-everywhere"
+    --, "improve-your-database-design-with-azimutt-analyzer"
+    --, "make-your-app-hackable"
     ]

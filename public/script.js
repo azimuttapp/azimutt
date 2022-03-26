@@ -1,10 +1,12 @@
 import { Elm } from '../.elm-spa/defaults/Main.elm'
 
     console.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
-        'Did you know you can access your current project in the console?\n\n' +
-        'Call it using `project` variable and compute what you want.\n' +
-        'For example, here is how to count the total number of columns:\n' +
-        '  `project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`')
+        'Did you know you can access your current project in the console?\n' +
+        'And even trigger some actions in Azimutt?\n\n' +
+        'Just look at `azimutt` variable and perform what you want.\n' +
+        'For example, here is how to count the total number of columns in all sources:\n' +
+        '  `azimutt.project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`\n\n' +
+        'Use `azimutt.help()` for more details!')
 
     const isDev = window.location.hostname === 'localhost'
     const isProd = window.location.hostname === 'azimutt.app'
@@ -13,6 +15,24 @@ import { Elm } from '../.elm-spa/defaults/Main.elm'
     const errorTracking = initErrorTracking(isProd)
     const flags = {now: Date.now()}
     const app = Elm.Main.init({flags})
+
+    /* JavaScript API */
+
+    window.azimutt = {
+        showTable: tableId => sendToElm({kind: 'GotShowTable', id: tableId}),
+        hideTable: tableId => sendToElm({kind: 'GotHideTable', id: tableId}),
+        showColumn: columnRef => sendToElm({kind: 'GotShowColumn', ref: columnRef}),
+        hideColumn: columnRef => sendToElm({kind: 'GotHideColumn', ref: columnRef}),
+        selectTable: tableId => sendToElm({kind: 'GotSelectTable', id: tableId}),
+        moveTable: (tableId, dx, dy) => sendToElm({kind: 'GotMoveTable', id: tableId, dx, dy}),
+        moveColumn: (columnRef, index) => sendToElm({kind: 'GotMoveColumn', ref: columnRef, index}),
+        fitToScreen: () => sendToElm({kind: 'GotFitToScreen'}),
+        help: () => console.info('Hi! Welcome in the hackable world! 💻️🤓\n' +
+            'We are just trying out this, so if you use it and it\'s helpful, please let us know. Also, if you need more feature like this, don\'t hesitate to ask.\n\n' +
+            'Here are a few tips:\n' +
+            ' - `tableId` is the "schema.table" of a table, but if schema is "public", you can omit it. Basically, what you see in table header.\n' +
+            ' - `columnRef` is similar to `tableId` but with the column name appended. For example "users.id" or "audit.logs.time".')
+    }
 
 
     /* PWA service worker */
@@ -34,7 +54,7 @@ import { Elm } from '../.elm-spa/defaults/Main.elm'
         // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
         // TODO: use requestAnimationFrame instead!
         setTimeout(() => {
-            // console.log('elm message', msg)
+            // console.log('elm message', port)
             switch (port.kind) {
                 case 'Click':             click(port.id); break;
                 case 'MouseDown':         mousedown(port.id); break;
@@ -78,9 +98,9 @@ import { Elm } from '../.elm-spa/defaults/Main.elm'
         maybeElementById(id).forEach(e => e.scrollIntoView(position !== 'end'))
     }
     function fullscreen(maybeId) {
-        const elt = maybeId ? getElementById(maybeId) : document.body
-        (elt.requestFullscreen ? elt.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available')))
-            .catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
+        const element = maybeId ? getElementById(maybeId) : document.body
+        const result = element.requestFullscreen ? element.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available'))
+        result.catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
     }
     function setMeta(meta) {
         if (meta.title) {
@@ -183,18 +203,18 @@ import { Elm } from '../.elm-spa/defaults/Main.elm'
                     } else {
                         projects = projects.concat(loadAndMigrateLocaleStorageProjects())
                         sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
-                        window.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
+                        window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
                         const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-                        id ? window.project = window.projects[id] : undefined
+                        id ? window.azimutt.project = window.azimutt.projects[id] : undefined
                     }
                 }
             })
         } else if (window.localStorage) {
             const projects = getLocalStorageProjects()
             sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
-            window.projects = projects.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
+            window.azimutt.projects = projects.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
             const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-            id ? window.project = window.projects[id] : undefined
+            id ? window.azimutt.project = window.azimutt.projects[id] : undefined
         } else {
             alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
                 'Please make them available or use a browser that support them!')
@@ -275,7 +295,7 @@ import { Elm } from '../.elm-spa/defaults/Main.elm'
                 content,
                 sample
             }))
-            .catch(err => showMessage({kind: 'error', message: `Can't get remote file: ${err}`}))
+            .catch(err => showMessage({kind: 'error', message: `Can't get remote file ${url}: ${err}`}))
     }
 
     function getSourceId(src, ref) {

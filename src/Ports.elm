@@ -200,6 +200,14 @@ type JsMsg
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
+    | GotShowTable TableId
+    | GotHideTable TableId
+    | GotShowColumn ColumnRef
+    | GotHideColumn ColumnRef
+    | GotSelectTable TableId
+    | GotMoveTable TableId Float Float
+    | GotMoveColumn ColumnRef Int
+    | GotFitToScreen
     | Error Decode.Error
 
 
@@ -350,6 +358,35 @@ jsDecoder =
                     Decode.map2 GotToast
                         (Decode.field "level" Decode.string)
                         (Decode.field "message" Decode.string)
+
+                "GotShowTable" ->
+                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotShowTable
+
+                "GotHideTable" ->
+                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotHideTable
+
+                "GotShowColumn" ->
+                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotShowColumn
+
+                "GotHideColumn" ->
+                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotHideColumn
+
+                "GotSelectTable" ->
+                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotSelectTable
+
+                "GotMoveTable" ->
+                    Decode.map3 GotMoveTable
+                        (Decode.field "id" Decode.string |> Decode.map TableId.fromString)
+                        (Decode.field "dx" Decode.float)
+                        (Decode.field "dy" Decode.float)
+
+                "GotMoveColumn" ->
+                    Decode.map2 GotMoveColumn
+                        (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
+                        (Decode.field "index" Decode.int)
+
+                "GotFitToScreen" ->
+                    Decode.succeed GotFitToScreen
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")

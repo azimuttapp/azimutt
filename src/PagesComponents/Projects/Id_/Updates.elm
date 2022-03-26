@@ -335,6 +335,30 @@ handleJsMessage currentProject currentLayout msg model =
                 _ ->
                     ( model, T.send (toastError message) )
 
+        GotShowTable id ->
+            ( model, T.send (ShowTable id Nothing) )
+
+        GotHideTable id ->
+            ( model, T.send (HideTable id) )
+
+        GotShowColumn ref ->
+            ( model, T.send (ShowColumn ref) )
+
+        GotHideColumn ref ->
+            ( model, T.send (HideColumn ref) )
+
+        GotSelectTable id ->
+            ( model, T.send (SelectTable id False) )
+
+        GotMoveTable id dx dy ->
+            ( model, T.send (TableMove id { dx = dx, dy = dy }) )
+
+        GotMoveColumn ref index ->
+            ( model, T.send (MoveColumn ref index) )
+
+        GotFitToScreen ->
+            ( model, T.send FitContent )
+
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
 
@@ -394,6 +418,15 @@ computeInitialPosition allProps viewport change hint =
                 , top = viewport.position.top + change.seeds.top * max 0 (viewport.size.height - change.size.height)
                 }
             )
+        |> Position.stepBy Conf.canvas.grid
+
+
+
+--insideViewport : Area -> SizeChange -> Position -> Position
+--insideViewport viewport change pos =
+--    { left = pos.left |> Basics.inside viewport.position.left (viewport.position.left + viewport.size.width - change.size.width)
+--    , top = pos.top |> Basics.inside viewport.position.top (viewport.position.top + viewport.size.height - change.size.height)
+--    }
 
 
 moveDownIfExists : List ErdTableProps -> Size -> Position -> Position

@@ -1,9 +1,10 @@
 module PagesComponents.Blog.Slug.View exposing (viewArticle)
 
-import Components.Atoms.Markdown exposing (markdown)
+import Components.Atoms.Markdown exposing (markdownUnsafe)
 import Components.Slices.Content as Content
 import Html exposing (Html, div, li, text, ul)
 import Html.Attributes exposing (class, style)
+import Html.Lazy as Lazy
 import Libs.Http as Http
 import Libs.Nel as Nel
 import PagesComponents.Blog.Slug.Models exposing (Model(..))
@@ -19,7 +20,7 @@ viewArticle model =
                 { section = "Loading"
                 , title = "Loading"
                 , introduction = Nothing
-                , content = [ div [ class "my-64 text-center", style "height" "5000px" ] [ text "Loading" ] ]
+                , content = [ div [ class "my-64 text-center", style "height" "20000px" ] [ text "Loading" ] ]
                 , dots = False
                 }
 
@@ -46,7 +47,7 @@ viewArticle model =
                 { section = content.category |> Maybe.withDefault "Azimutt"
                 , title = content.title
                 , introduction = Nothing
-                , content = [ markdown [ "blog-article" ] content.body ]
+                , content = [ Lazy.lazy2 markdownUnsafe "blog-article" content.body ]
                 , dots = True
                 }
     , Helpers.newsletterSection
