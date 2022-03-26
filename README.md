@@ -64,7 +64,7 @@ When developing, please enable git hooks on your machine using: `git config --lo
 As any Elm app, the code is in `src` folder, the tests in `tests` folder and the static assets in `public` folder.
 
 As we use [elm-spa](https://www.elm-spa.dev), the pages are in `Pages` folder following the routing pattern.
-Each page has several specific files to manage the model, view and updates, they are in the `PageComonents` folder at the same location.
+Each page has several specific files to manage the model, view and updates, they are in the `PageComponents` folder at the same location.
 
 Some other folders have specific purpose:
 
