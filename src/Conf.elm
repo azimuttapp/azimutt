@@ -78,10 +78,12 @@ schemaSamples =
 canvas :
     { zoom : { min : ZoomLevel, max : ZoomLevel, speed : Float }
     , zIndex : { tables : Int }
+    , grid : Int
     }
 canvas =
     { zoom = { min = 0.05, max = 5, speed = 0.001 }
     , zIndex = { tables = 10 }
+    , grid = 10
     }
 
 

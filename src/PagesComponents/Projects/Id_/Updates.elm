@@ -394,6 +394,15 @@ computeInitialPosition allProps viewport change hint =
                 , top = viewport.position.top + change.seeds.top * max 0 (viewport.size.height - change.size.height)
                 }
             )
+        |> Position.stepBy Conf.canvas.grid
+
+
+
+--insideViewport : Area -> SizeChange -> Position -> Position
+--insideViewport viewport change pos =
+--    { left = pos.left |> Basics.inside viewport.position.left (viewport.position.left + viewport.size.width - change.size.width)
+--    , top = pos.top |> Basics.inside viewport.position.top (viewport.position.top + viewport.size.height - change.size.height)
+--    }
 
 
 moveDownIfExists : List ErdTableProps -> Size -> Position -> Position

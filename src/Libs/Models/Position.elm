@@ -1,4 +1,4 @@
-module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, sub, toTuple, zero)
+module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, stepBy, sub, toTuple, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -47,6 +47,16 @@ div factor pos =
 negate : Position -> Position
 negate pos =
     Position -pos.left -pos.top
+
+
+stepBy : Int -> Position -> Position
+stepBy by pos =
+    let
+        mod : Float -> Float
+        mod =
+            \value -> value |> round |> (\v -> (v - modBy by v) |> toFloat)
+    in
+    Position (mod pos.left) (mod pos.top)
 
 
 diff : Position -> Position -> ( Float, Float )
