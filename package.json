@@ -8,7 +8,7 @@
   "scripts": {
     "start": "npm install && npm run dev",
     "dev": "concurrently \"vite\" \"elm-spa watch\" \"npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch\"",
-    "build": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --minify && elm-spa gen && vite build",
+    "build": "npx tailwindcss -i ./public/styles.css -o ./dist/styles.css --minify && elm-spa gen && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {

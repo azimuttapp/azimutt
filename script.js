@@ -1,4 +1,4 @@
-import { Elm } from '../.elm-spa/defaults/Main.elm'
+import { Elm } from './.elm-spa/defaults/Main.elm'
 
     console.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
         'Did you know you can access your current project in the console?\n' +
