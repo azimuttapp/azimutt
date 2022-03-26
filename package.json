@@ -7,8 +7,9 @@
   "license": "MIT",
   "scripts": {
     "start": "npm install && npm run dev",
-    "dev": "concurrently \"vite\" \"elm-spa watch\" \"npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch\"",
-    "build": "npx tailwindcss -i ./public/styles.css -o ./dist/styles.css --minify && elm-spa gen && vite build",
+    "dev": "concurrently \"vite\" \"elm-spa watch\" \"npx tailwindcss -i ./public/styles.tailwind.css -o ./public/styles.css --watch\"",
+    "buildbook": "npx elm make ./src/Components/Book.elm --output=./dist/book.js",
+    "build": "npx tailwindcss -i ./public/styles.tailwind.css -o ./public/styles.css --minify && elm-spa gen && vite build && npm run buildbook",
     "preview": "vite preview"
   },
   "devDependencies": {
