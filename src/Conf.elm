@@ -171,8 +171,8 @@ blogPosts =
     , "how-to-explore-your-database-schema-with-azimutt"
     , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
     , "embed-your-database-diagram-anywhere"
+    , "how-to-choose-your-entity-relationship-diagram"
 
-    --, "how-to-choose-your-entity-relationship-diagram"
-    --, "azimutt-analyze-your-database-schema-so-you-can-improve-it"
+    --, "improve-your-database-design-with-azimutt-analyzer"
     --, "make-your-app-hackable"
     ]
