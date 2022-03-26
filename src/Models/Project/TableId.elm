@@ -55,9 +55,6 @@ show ( schema, table ) =
 parse : String -> TableId
 parse tableId =
     case tableId |> String.split "." of
-        table :: [] ->
-            ( Conf.schema.default, table )
-
         schema :: table :: [] ->
             ( schema, table )
 

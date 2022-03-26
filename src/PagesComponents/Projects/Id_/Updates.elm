@@ -335,6 +335,30 @@ handleJsMessage currentProject currentLayout msg model =
                 _ ->
                     ( model, T.send (toastError message) )
 
+        GotShowTable id ->
+            ( model, T.send (ShowTable id Nothing) )
+
+        GotHideTable id ->
+            ( model, T.send (HideTable id) )
+
+        GotShowColumn ref ->
+            ( model, T.send (ShowColumn ref) )
+
+        GotHideColumn ref ->
+            ( model, T.send (HideColumn ref) )
+
+        GotSelectTable id ->
+            ( model, T.send (SelectTable id False) )
+
+        GotMoveTable id dx dy ->
+            ( model, T.send (TableMove id { dx = dx, dy = dy }) )
+
+        GotMoveColumn ref index ->
+            ( model, T.send (MoveColumn ref index) )
+
+        GotFitToScreen ->
+            ( model, T.send FitContent )
+
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
 
