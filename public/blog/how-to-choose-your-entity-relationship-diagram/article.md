@@ -229,8 +229,8 @@ Another trouble I had: the import was not working for PostgreSQL scripts. Luckil
 const allowedTables = ['groups', 'events', 'cfps', 'proposals', 'talks', 'users', 'partners', 'venues', 'sponsors', 'contacts']
 const tableAllowed = obj => allowedTables.indexOf(obj.table) !== -1
 const cleanRef = ref => ({...ref, table: ref.table.split('.')[1]})
-const tables = project.sources.flatMap(s => s.tables).filter(tableAllowed)
-const relations = project.sources.flatMap(s => s.relations).map(r => ({...r, src: cleanRef(r.src), ref: cleanRef(r.ref)})).filter(r => tableAllowed(r.src) && tableAllowed(r.ref))
+const tables = azimutt.project.sources.flatMap(s => s.tables).filter(tableAllowed)
+const relations = azimutt.project.sources.flatMap(s => s.relations).map(r => ({...r, src: cleanRef(r.src), ref: cleanRef(r.ref)})).filter(r => tableAllowed(r.src) && tableAllowed(r.ref))
 const quickDbdCode = tables.map(t => {
     const columns = t.columns.map(c => {
       const nullable = c.nullable ? ' NULL' : ''
