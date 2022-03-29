@@ -259,7 +259,7 @@ computeBigTables : Dict TableId ErdTable -> List ErdTable
 computeBigTables tables =
     tables
         |> Dict.values
-        |> List.filter (\t -> (t.columns |> Ned.size) >= 30)
+        |> List.filter (\t -> (t.columns |> Ned.size) > 30)
         |> List.sortBy (\t -> t.columns |> Ned.size)
 
 

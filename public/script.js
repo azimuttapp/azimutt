@@ -18,6 +18,12 @@ window.addEventListener('load', function() {
     /* JavaScript API */
 
     window.azimutt = {
+        getAllTables: () => window.azimutt.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.tables) || [],
+        getAllRelations: () => window.azimutt.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.relations) || [],
+        getVisibleTables: () => {
+            const tables = window.azimutt.getAllTables().reduce((acc, t) => ({...acc, [`${t.schema}.${t.table}`]: t}), {})
+            return window.azimutt.project?.layout.tables.map(t => tables[t.id])
+        },
         showTable: tableId => sendToElm({kind: 'GotShowTable', id: tableId}),
         hideTable: tableId => sendToElm({kind: 'GotHideTable', id: tableId}),
         showColumn: columnRef => sendToElm({kind: 'GotShowColumn', ref: columnRef}),
