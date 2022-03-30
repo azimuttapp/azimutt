@@ -138,6 +138,8 @@ type Msg
     | ShowAllTables
     | HideTable TableId
     | HideAllTables
+    | ToggleColumns TableId
+    | ToggleColumnsForAllTables
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId String

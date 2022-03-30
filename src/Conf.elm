@@ -138,6 +138,7 @@ hotkeys =
         , ( "search-up", [ { hotkey | key = "ArrowUp", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-down", [ { hotkey | key = "ArrowDown", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-confirm", [ { hotkey | key = "Enter", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
+        , ( "collapse", [ { hotkey | key = "c" } ] )
         , ( "remove", [ { hotkey | key = "d" }, { hotkey | key = "Backspace" }, { hotkey | key = "Delete" } ] )
         , ( "save", [ { hotkey | key = "s", ctrl = True, onInput = True, preventDefault = True } ] )
         , ( "move-up", [ { hotkey | key = "ArrowUp" } ] )

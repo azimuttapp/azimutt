@@ -26,6 +26,7 @@ window.addEventListener('load', function() {
         },
         showTable: tableId => sendToElm({kind: 'GotShowTable', id: tableId}),
         hideTable: tableId => sendToElm({kind: 'GotHideTable', id: tableId}),
+        toggleTableColumns: tableId => sendToElm({kind: 'GotToggleColumns', id: tableId}),
         showColumn: columnRef => sendToElm({kind: 'GotShowColumn', ref: columnRef}),
         hideColumn: columnRef => sendToElm({kind: 'GotHideColumn', ref: columnRef}),
         selectTable: tableId => sendToElm({kind: 'GotSelectTable', id: tableId}),

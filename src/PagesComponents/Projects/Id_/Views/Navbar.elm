@@ -42,7 +42,8 @@ viewNavbar conf virtualRelation erd model htmlId openedDropdown =
     let
         features : List (Btn Msg)
         features =
-            [ Just { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
+            [ Just { action = Right ToggleColumnsForAllTables, content = text "Toggle columns for all tables", hotkey = Nothing }
+            , Just { action = Right HideAllTables, content = text "Hide all tables", hotkey = Nothing }
             , Just { action = Right ShowAllTables, content = text "Show all tables", hotkey = Nothing }
             , Maybe.when conf.layoutManagement { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
             , Just

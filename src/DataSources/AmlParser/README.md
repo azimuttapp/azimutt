@@ -1,32 +1,32 @@
 # Azimutt Markup Language
 
 Azimutt Markup Language is a language able to represent a database schema in a much simpler way than SQL.
-Its goal is to be simple and concise to you can learn it on the fly and write it fluently to speed your diagram definition.
+Its goal is to be simple and concise, so you can learn it on the fly and write it fluently to speed up your diagram definition.
 
 ## Spec
 
 ### Tables
 
-In its simplest form a table is just represented by its name without indentation:
-
-```
-users
-```
-
-It should not contain any space or dot character like all identifiers, but if it does, just surround it with `"`.
-You could also add a schema in front of any table declaration like:
+In its simplest form a table is just represented by its schema and name without indentation:
 
 ```
 public.users
 ```
 
-Views are just like regular tables, but they should have a `*` just after their name:
+if it contains space or dot characters, just surround it with `"`.
+The schema part could be omitted and will be affected to `public` one:
+
+```
+users
+```
+
+Views are just like regular tables, just with a `*` after their name:
 
 ```
 users_view*
 ```
 
-Columns follow the table definition with an indentation of two spaces:
+Columns follow the table definition with an indentation of 2 spaces:
 
 ```
 users
@@ -34,7 +34,7 @@ users
   name
 ```
 
-Defined like this the type will be `unknown` but you can add it just after. If it has spaces in it, surround it with `"`:
+Defined like this the type will be `unknown` but you can add it just after. Again, if it has spaces, surround it with `"`:
 
 ```
 users
@@ -80,7 +80,7 @@ users
 
 ### Relations
 
-Relations can be either defined as table foreign keys using the `fk` keyword:
+Relations can be defined in table definition using the `fk` keyword:
 
 ```
 talks
@@ -90,7 +90,7 @@ talks
 
 If type is not defined, it will get the type of the referenced column.
 
-They can also be declared as standalone instruction:
+They can also be declared as a standalone instruction:
 
 ```
 fk talks.created_by -> users.id
@@ -163,16 +163,21 @@ fk talks.created_by -> users.id # How to define a relation
 Here is some example with all the possibilities
 
 ```
+emails
+  email varchar
+  score "double precision"
+
 # How to define a table and it's columns
-users {left=100, top=10, color=red} # description example for table
-  id integer pk # description example for column
+public.users {left=100, top=10, color=red} | "Table description" # a table with everything!
+  id integer pk
   role varchar=guest {hidden=true}
+  score "double precision"="0.0" index {hidden=true} | "User progression" # a column with almost all possible attributes
   first_name varchar(10) unique=name
   laft_name varchar(10) unique=name
-  email varchar nullable
+  email varchar nullable fk emails.email
   
-public.admins* | "View of `users` table with only admins"
-  id fk users.id
+admins* | "View of `users` table with only admins"
+  id
   name | "Computed from user first_name and laft_name"
   
 fk admins.id -> users.id

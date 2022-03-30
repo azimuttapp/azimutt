@@ -82,7 +82,8 @@ viewTable conf zoom cursorMode args index props table =
             , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
-                [ Maybe.when conf.layout { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                [ Maybe.when conf.layout { label = "Toggle columns", action = Right { action = ToggleColumns table.id, hotkey = Conf.hotkeys |> Dict.get "collapse" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                , Maybe.when conf.layout { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
                 , Maybe.when conf.layout { label = "Sort columns", action = Left (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
                 , Maybe.when conf.layout
                     { label = "Hide columns"
@@ -121,6 +122,7 @@ viewTable conf zoom cursorMode args index props table =
                 , highlightedColumns = props.highlightedColumns
                 , selected = props.selected
                 , dragging = dragging
+                , collapsed = props.collapsed
                 , openedDropdown = openedDropdown
                 , openedPopover = openedPopover
                 , showHiddenColumns = props.showHiddenColumns

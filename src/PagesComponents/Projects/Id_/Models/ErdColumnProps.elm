@@ -16,18 +16,19 @@ type alias ErdColumnProps =
     , color : Color
     , highlighted : Bool
     , selected : Bool
+    , collapsed : Bool
     }
 
 
-createAll : Position -> Size -> Color -> Set ColumnName -> Bool -> List ColumnName -> Dict ColumnName ErdColumnProps
-createAll position size color highlightedColumns selected columns =
+createAll : Position -> Size -> Color -> Set ColumnName -> Bool -> Bool -> List ColumnName -> Dict ColumnName ErdColumnProps
+createAll position size color highlightedColumns selected collapsed columns =
     columns
-        |> List.indexedMap (\i c -> ( c, create c i position size color highlightedColumns selected ))
+        |> List.indexedMap (\i c -> ( c, create c i position size color highlightedColumns selected collapsed ))
         |> Dict.fromList
 
 
-create : ColumnName -> Int -> Position -> Size -> Color -> Set ColumnName -> Bool -> ErdColumnProps
-create column index position size color highlightedColumns selected =
+create : ColumnName -> Int -> Position -> Size -> Color -> Set ColumnName -> Bool -> Bool -> ErdColumnProps
+create column index position size color highlightedColumns selected collapsed =
     { column = column
     , index = index
     , position = position
@@ -35,4 +36,5 @@ create column index position size color highlightedColumns selected =
     , color = color
     , highlighted = highlightedColumns |> Set.member column
     , selected = selected
+    , collapsed = collapsed
     }

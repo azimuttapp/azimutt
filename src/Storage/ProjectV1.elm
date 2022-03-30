@@ -291,6 +291,7 @@ upgradeTableProps props =
     , color = props.color
     , columns = props.columns
     , selected = props.selected
+    , collapsed = False
     , hiddenColumns = False
     }
 

@@ -91,6 +91,7 @@ type alias State =
     , isHover : Bool
     , highlightedColumns : Set String
     , selected : Bool
+    , collapsed : Bool
     , dragging : Bool
     , openedDropdown : HtmlId
     , openedPopover : HtmlId
@@ -130,8 +131,16 @@ table model =
             ]
         ]
         [ Lazy.lazy viewHeader model
-        , Lazy.lazy viewColumns model
-        , Lazy.lazy viewHiddenColumns model
+        , if model.state.collapsed then
+            div [] []
+
+          else
+            Lazy.lazy viewColumns model
+        , if model.state.collapsed then
+            div [] []
+
+          else
+            Lazy.lazy viewHiddenColumns model
         ]
 
 
@@ -153,7 +162,12 @@ viewHeader model =
     div
         [ title model.label
         , css
-            [ "flex items-center justify-items-center px-3 py-1 rounded-t-lg border-t-8 border-b border-b-default-200"
+            [ "flex items-center justify-items-center px-3 py-1 border-t-8 border-b border-b-default-200"
+            , if model.state.collapsed then
+                "rounded-lg"
+
+              else
+                "rounded-t-lg"
             , border_500 model.state.color
             , bg_50 (Bool.cond model.state.isHover model.state.color Tw.default)
             ]
@@ -496,6 +510,7 @@ sample =
         , highlightedColumns = Set.empty
         , selected = False
         , dragging = False
+        , collapsed = False
         , openedDropdown = ""
         , openedPopover = ""
         , showHiddenColumns = False
@@ -549,6 +564,7 @@ doc =
                          , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, highlightedColumns = Set.fromList [ "name" ] }) }
                          , { sample | id = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
                          , { sample | id = "Dragging", state = sample.state |> (\s -> { s | dragging = True }) }
+                         , { sample | id = "Collapsed", state = sample.state |> (\s -> { s | collapsed = True }) }
                          , { sample | id = "Settings", state = sample.state |> (\s -> { s | openedDropdown = "Settings-settings" }) }
                          , { sample | id = "Hidden columns hidden", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = False }) }
                          , { sample | id = "Hidden columns visible", columns = sample.columns |> List.take 3, hiddenColumns = sample.columns |> List.drop 3, state = sample.state |> (\s -> { s | showHiddenColumns = True }) }

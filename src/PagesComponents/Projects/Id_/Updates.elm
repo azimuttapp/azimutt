@@ -77,6 +77,25 @@ update currentProject currentLayout now msg model =
         HideAllTables ->
             ( model |> mapErdM hideAllTables, Cmd.none )
 
+        ToggleColumns id ->
+            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapCollapsed not))), Cmd.none )
+
+        ToggleColumnsForAllTables ->
+            ( model
+                |> mapErdM
+                    (mapTableProps
+                        (\props ->
+                            let
+                                nextToggle : Bool
+                                nextToggle =
+                                    (props |> Dict.find (\_ p -> not p.collapsed)) /= Nothing
+                            in
+                            props |> Dict.map (\_ -> ErdTableProps.setCollapsed nextToggle)
+                        )
+                    )
+            , Cmd.none
+            )
+
         ShowColumn { table, column } ->
             ( model |> mapErdM (showColumn table column), Cmd.none )
 
@@ -340,6 +359,9 @@ handleJsMessage currentProject currentLayout msg model =
 
         GotHideTable id ->
             ( model, T.send (HideTable id) )
+
+        GotToggleColumns id ->
+            ( model, T.send (ToggleColumns id) )
 
         GotShowColumn ref ->
             ( model, T.send (ShowColumn ref) )

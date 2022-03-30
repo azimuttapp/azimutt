@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, area, buildRelatedTables, create, init, mapPosition, mapSelected, mapShowHiddenColumns, mapShownColumns, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
+module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, area, buildRelatedTables, create, init, mapCollapsed, mapPosition, mapSelected, mapShowHiddenColumns, mapShownColumns, setCollapsed, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
 
 import Dict exposing (Dict)
 import Libs.Area exposing (Area)
@@ -44,6 +44,7 @@ type alias ErdTableProps =
     , highlightedColumns : Set ColumnName
     , columnProps : Dict ColumnName ErdColumnProps
     , selected : Bool
+    , collapsed : Bool
     , showHiddenColumns : Bool
     , relatedTables : Dict TableId ErdRelationProps
     }
@@ -59,8 +60,9 @@ create tableRelations shownTables hint props =
     , color = props.color
     , shownColumns = props.columns
     , highlightedColumns = Set.empty
-    , columnProps = props.columns |> ErdColumnProps.createAll props.position props.size props.color Set.empty props.selected
+    , columnProps = props.columns |> ErdColumnProps.createAll props.position props.size props.color Set.empty props.selected props.collapsed
     , selected = props.selected
+    , collapsed = props.collapsed
     , showHiddenColumns = props.hiddenColumns
     , relatedTables = buildRelatedTables tableRelations shownTables props.id
     }
@@ -91,6 +93,7 @@ unpack props =
     , color = props.color
     , columns = props.shownColumns
     , selected = props.selected
+    , collapsed = props.collapsed
     , hiddenColumns = props.showHiddenColumns
     }
 
@@ -108,6 +111,7 @@ init settings erdRelations shownTables hint table =
     , color = computeColor table.id
     , columns = table.columns |> Ned.values |> Nel.toList |> List.map .name |> computeColumns settings relations table
     , selected = False
+    , collapsed = False
     , hiddenColumns = False
     }
         |> create relations shownTables hint
@@ -193,7 +197,7 @@ setShownColumns shownColumns props =
             | shownColumns = shownColumns
             , columnProps =
                 shownColumns
-                    |> ErdColumnProps.createAll props.position props.size props.color props.highlightedColumns props.selected
+                    |> ErdColumnProps.createAll props.position props.size props.color props.highlightedColumns props.selected props.collapsed
                     -- if the recomputed version is the same as the existing one, keep the older to preserve referential equality
                     |> Dict.map (\c p -> props.columnProps |> Dict.get c |> Maybe.mapOrElse (\prev -> B.cond (p == prev) prev p) p)
         }
@@ -228,6 +232,20 @@ setSelected selected props =
 mapSelected : (Bool -> Bool) -> ErdTableProps -> ErdTableProps
 mapSelected transform props =
     setSelected (transform props.selected) props
+
+
+setCollapsed : Bool -> ErdTableProps -> ErdTableProps
+setCollapsed collapsed props =
+    if props.collapsed == collapsed then
+        props
+
+    else
+        { props | collapsed = collapsed, columnProps = props.columnProps |> Dict.map (\_ p -> { p | collapsed = collapsed }) }
+
+
+mapCollapsed : (Bool -> Bool) -> ErdTableProps -> ErdTableProps
+mapCollapsed transform props =
+    setCollapsed (transform props.collapsed) props
 
 
 setShowHiddenColumns : Bool -> ErdTableProps -> ErdTableProps

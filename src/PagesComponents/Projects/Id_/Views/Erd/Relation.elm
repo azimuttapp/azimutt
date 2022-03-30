@@ -29,16 +29,16 @@ viewRelation dragging srcProps refProps relation =
         ( Nothing, Nothing ) ->
             viewEmptyRelation
 
-        ( Just { index, position, size }, Nothing ) ->
-            { left = position.left + size.width, top = positionTop position index }
+        ( Just { index, position, size, collapsed }, Nothing ) ->
+            { left = position.left + size.width, top = positionTop position index collapsed }
                 |> (\srcPos -> Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
 
-        ( Nothing, Just { index, position } ) ->
-            { left = position.left, top = positionTop position index }
+        ( Nothing, Just { index, position, collapsed } ) ->
+            { left = position.left, top = positionTop position index collapsed }
                 |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
 
         ( Just src, Just ref ) ->
-            ( positionLeft src.position src.size ref.position ref.size, ( positionTop src.position src.index, positionTop ref.position ref.index ) )
+            ( positionLeft src.position src.size ref.position ref.size, ( positionTop src.position src.index src.collapsed, positionTop ref.position ref.index ref.collapsed ) )
                 |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables + min src.index ref.index + B.cond dragging 1000 0))
 
 
@@ -48,7 +48,7 @@ viewVirtualRelation ( ( maybeProps, column ), position ) =
         Just props ->
             Relation.line
                 { left = props.position.left + B.cond (position.left < props.position.left + props.size.width / 2) 0 props.size.width
-                , top = positionTop props.position props.index
+                , top = positionTop props.position props.index props.collapsed
                 }
                 { left = position.left, top = position.top }
                 column.nullable
@@ -81,9 +81,13 @@ getColor src ref =
             Nothing
 
 
-positionTop : Position -> Int -> Float
-positionTop position index =
-    position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
+positionTop : Position -> Int -> Bool -> Float
+positionTop position index collapsed =
+    if collapsed then
+        position.top + Conf.ui.tableHeaderHeight * 0.5
+
+    else
+        position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
 
 
 positionLeft : Position -> Size -> Position -> Size -> ( Float, Float )

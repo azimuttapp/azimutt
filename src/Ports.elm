@@ -202,6 +202,7 @@ type JsMsg
     | GotToast String String
     | GotShowTable TableId
     | GotHideTable TableId
+    | GotToggleColumns TableId
     | GotShowColumn ColumnRef
     | GotHideColumn ColumnRef
     | GotSelectTable TableId
@@ -364,6 +365,9 @@ jsDecoder =
 
                 "GotHideTable" ->
                     Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotHideTable
+
+                "GotToggleColumns" ->
+                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotToggleColumns
 
                 "GotShowColumn" ->
                     Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotShowColumn

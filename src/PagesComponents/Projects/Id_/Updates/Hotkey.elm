@@ -27,6 +27,9 @@ handleHotkey model hotkey =
         "search-confirm" ->
             ( model, Cmd.batch [ Ports.mouseDown (Conf.ids.searchInput ++ "-active-item"), Ports.blur Conf.ids.searchInput ] )
 
+        "collapse" ->
+            ( model, collapseElement model )
+
         "remove" ->
             ( model, removeElement model )
 
@@ -103,6 +106,12 @@ handleHotkey model hotkey =
 
         _ ->
             ( model, T.send (toastWarning ("Unhandled hotkey '" ++ hotkey ++ "'")) )
+
+
+collapseElement : Model -> Cmd Msg
+collapseElement model =
+    (model.hoverTable |> Maybe.map (ToggleColumns >> T.send))
+        |> Maybe.withDefault (T.send (toastInfo "Can't find an element to collapse :("))
 
 
 removeElement : Model -> Cmd Msg
