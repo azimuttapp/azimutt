@@ -30,12 +30,20 @@ viewRelation dragging srcProps refProps relation =
             viewEmptyRelation
 
         ( Just { index, position, size, collapsed }, Nothing ) ->
-            { left = position.left + size.width, top = positionTop position index collapsed }
-                |> (\srcPos -> Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
+            if collapsed then
+                viewEmptyRelation
+
+            else
+                { left = position.left + size.width, top = positionTop position index collapsed }
+                    |> (\srcPos -> Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
 
         ( Nothing, Just { index, position, collapsed } ) ->
-            { left = position.left, top = positionTop position index collapsed }
-                |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
+            if collapsed then
+                viewEmptyRelation
+
+            else
+                { left = position.left, top = positionTop position index collapsed }
+                    |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
 
         ( Just src, Just ref ) ->
             let
