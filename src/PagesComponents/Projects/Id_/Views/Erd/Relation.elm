@@ -38,8 +38,18 @@ viewRelation dragging srcProps refProps relation =
                 |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
 
         ( Just src, Just ref ) ->
-            ( positionLeft src.position src.size ref.position ref.size, ( positionTop src.position src.index src.collapsed, positionTop ref.position ref.index ref.collapsed ) )
-                |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables + min src.index ref.index + B.cond dragging 1000 0))
+            let
+                ( srcX, refX ) =
+                    positionLeft src ref
+
+                ( srcY, refY ) =
+                    ( positionTop src.position src.index src.collapsed, positionTop ref.position ref.index ref.collapsed )
+
+                zIndex : Int
+                zIndex =
+                    Conf.canvas.zIndex.tables - 1 + min src.index ref.index
+            in
+            Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label zIndex
 
 
 viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg msg
@@ -90,21 +100,35 @@ positionTop position index collapsed =
         position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
 
 
-positionLeft : Position -> Size -> Position -> Size -> ( Float, Float )
-positionLeft srcPos srcSize refPos refSize =
-    case ( tablePositions srcPos srcSize, tablePositions refPos refSize ) of
+positionLeft : ErdColumnProps -> ErdColumnProps -> ( Float, Float )
+positionLeft src ref =
+    case ( tablePositions src.position src.size, tablePositions ref.position ref.size ) of
         ( ( srcLeft, srcCenter, srcRight ), ( refLeft, refCenter, refRight ) ) ->
-            if srcRight < refLeft then
+            (if srcRight < refLeft then
                 ( srcRight, refLeft )
 
-            else if srcCenter < refCenter then
+             else if srcCenter < refCenter then
                 ( srcRight, refRight )
 
-            else if srcLeft < refRight then
+             else if srcLeft < refRight then
                 ( srcLeft, refLeft )
 
-            else
+             else
                 ( srcLeft, refRight )
+            )
+                |> (\( srcPos, refPos ) ->
+                        ( if src.collapsed then
+                            srcCenter
+
+                          else
+                            srcPos
+                        , if ref.collapsed then
+                            refCenter
+
+                          else
+                            refPos
+                        )
+                   )
 
 
 tablePositions : Position -> Size -> ( Float, Float, Float )
