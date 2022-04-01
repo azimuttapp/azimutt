@@ -119,7 +119,10 @@ update currentProject currentLayout now msg model =
                 ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
 
         TableMove id delta ->
-            ( model |> mapErdM (mapTableProps (\tables -> tables |> Dict.map (\_ t -> B.cond (t.id == id) (t |> ErdTableProps.mapPosition (\p -> delta |> Delta.move p)) t))), Cmd.none )
+            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapPosition (\p -> delta |> Delta.move p)))), Cmd.none )
+
+        TablePosition id position ->
+            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.setPosition position))), Cmd.none )
 
         TableOrder id index ->
             ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
@@ -354,32 +357,38 @@ handleJsMessage currentProject currentLayout msg model =
                 _ ->
                     ( model, T.send (toastError message) )
 
-        GotShowTable id ->
-            ( model, T.send (ShowTable id Nothing) )
+        GotTableShow id hint ->
+            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt)) )
 
-        GotHideTable id ->
+        GotTableHide id ->
             ( model, T.send (HideTable id) )
 
-        GotToggleColumns id ->
+        GotTableToggleColumns id ->
             ( model, T.send (ToggleColumns id) )
 
-        GotShowColumn ref ->
-            ( model, T.send (ShowColumn ref) )
+        GotTablePosition id pos ->
+            ( model, T.send (TablePosition id pos) )
 
-        GotHideColumn ref ->
-            ( model, T.send (HideColumn ref) )
+        GotTableMove id delta ->
+            ( model, T.send (TableMove id delta) )
 
-        GotSelectTable id ->
+        GotTableSelect id ->
             ( model, T.send (SelectTable id False) )
 
-        GotMoveTable id dx dy ->
-            ( model, T.send (TableMove id { dx = dx, dy = dy }) )
+        GotColumnShow ref ->
+            ( model, T.send (ShowColumn ref) )
 
-        GotMoveColumn ref index ->
+        GotColumnHide ref ->
+            ( model, T.send (HideColumn ref) )
+
+        GotColumnMove ref index ->
             ( model, T.send (MoveColumn ref index) )
 
         GotFitToScreen ->
             ( model, T.send FitContent )
+
+        GotResetCanvas ->
+            ( model, T.send ResetCanvas )
 
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
@@ -431,6 +440,9 @@ computeInitialPosition allProps viewport change hint =
 
                     PlaceRight position size ->
                         position |> Position.add { left = size.width + 50, top = 0 } |> moveDownIfExists (allProps |> Dict.values) change.size
+
+                    PlaceAt position ->
+                        position
             )
             (if allProps |> Dict.filter (\_ p -> p.size /= Size.zero) |> Dict.isEmpty then
                 viewport |> Area.center |> Position.sub (change |> Area.center) |> mapTop (max viewport.position.top)

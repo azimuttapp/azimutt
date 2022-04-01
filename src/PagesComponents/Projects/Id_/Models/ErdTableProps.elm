@@ -111,7 +111,7 @@ init settings erdRelations shownTables hint table =
     , color = computeColor table.id
     , columns = table.columns |> Ned.values |> Nel.toList |> List.map .name |> computeColumns settings relations table
     , selected = False
-    , collapsed = False
+    , collapsed = settings.collapseTableColumns
     , hiddenColumns = False
     }
         |> create relations shownTables hint

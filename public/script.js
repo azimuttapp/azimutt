@@ -18,26 +18,35 @@ window.addEventListener('load', function() {
     /* JavaScript API */
 
     window.azimutt = {
-        getAllTables: () => window.azimutt.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.tables) || [],
+        getAllTables: () => {
+            const removedTables = window.azimutt.project.settings.removedTables.split(',').map(t => t.trim()).filter(t => t.length > 0)
+            return window.azimutt.project?.sources
+                .filter(s => s.enabled !== false)
+                .flatMap(s => s.tables)
+                .filter(t => !removedTables.find(r => t.table === r || new RegExp(r).test(t.table))) || []
+        },
         getAllRelations: () => window.azimutt.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.relations) || [],
         getVisibleTables: () => {
             const tables = window.azimutt.getAllTables().reduce((acc, t) => ({...acc, [`${t.schema}.${t.table}`]: t}), {})
             return window.azimutt.project?.layout.tables.map(t => tables[t.id])
         },
-        showTable: tableId => sendToElm({kind: 'GotShowTable', id: tableId}),
-        hideTable: tableId => sendToElm({kind: 'GotHideTable', id: tableId}),
-        toggleTableColumns: tableId => sendToElm({kind: 'GotToggleColumns', id: tableId}),
-        showColumn: columnRef => sendToElm({kind: 'GotShowColumn', ref: columnRef}),
-        hideColumn: columnRef => sendToElm({kind: 'GotHideColumn', ref: columnRef}),
-        selectTable: tableId => sendToElm({kind: 'GotSelectTable', id: tableId}),
-        moveTable: (tableId, dx, dy) => sendToElm({kind: 'GotMoveTable', id: tableId, dx, dy}),
-        moveColumn: (columnRef, index) => sendToElm({kind: 'GotMoveColumn', ref: columnRef, index}),
+        showTable: (tableId, left, top) => sendToElm({kind: 'GotTableShow', id: tableId, position: top ? {left, top} : undefined}),
+        hideTable: tableId => sendToElm({kind: 'GotTableHide', id: tableId}),
+        toggleTableColumns: tableId => sendToElm({kind: 'GotTableToggleColumns', id: tableId}),
+        moveTableTo: (tableId, left, top) => sendToElm({kind: 'GotTablePosition', id: tableId, position: {left, top}}),
+        moveTable: (tableId, dx, dy) => sendToElm({kind: 'GotTableMove', id: tableId, delta: {dx, dy}}),
+        selectTable: tableId => sendToElm({kind: 'GotTableSelect', id: tableId}),
+        showColumn: columnRef => sendToElm({kind: 'GotColumnShow', ref: columnRef}),
+        hideColumn: columnRef => sendToElm({kind: 'GotColumnHide', ref: columnRef}),
+        moveColumn: (columnRef, index) => sendToElm({kind: 'GotColumnMove', ref: columnRef, index}),
         fitToScreen: () => sendToElm({kind: 'GotFitToScreen'}),
+        resetCanvas: () => sendToElm({kind: 'GotResetCanvas'}),
         help: () => console.info('Hi! Welcome in the hackable world! 💻️🤓\n' +
             'We are just trying out this, so if you use it and it\'s helpful, please let us know. Also, if you need more feature like this, don\'t hesitate to ask.\n\n' +
             'Here are a few tips:\n' +
             ' - `tableId` is the "schema.table" of a table, but if schema is "public", you can omit it. Basically, what you see in table header.\n' +
-            ' - `columnRef` is similar to `tableId` but with the column name appended. For example "users.id" or "audit.logs.time".')
+            ' - `columnRef` is similar to `tableId` but with the column name appended. For example "users.id" or "audit.logs.time".\n\n' +
+            '⚠️ This is not a stable interface, just a toy to experiment. If you start using it heavily, let us know so we can define something more stable.')
     }
 
 

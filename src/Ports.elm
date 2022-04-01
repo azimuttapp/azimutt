@@ -4,6 +4,7 @@ import Dict exposing (Dict)
 import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
 import Json.Encode as Encode
+import Libs.Delta as Delta exposing (Delta)
 import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
@@ -12,7 +13,7 @@ import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position
+import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
@@ -200,15 +201,17 @@ type JsMsg
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
-    | GotShowTable TableId
-    | GotHideTable TableId
-    | GotToggleColumns TableId
-    | GotShowColumn ColumnRef
-    | GotHideColumn ColumnRef
-    | GotSelectTable TableId
-    | GotMoveTable TableId Float Float
-    | GotMoveColumn ColumnRef Int
+    | GotTableShow TableId (Maybe Position)
+    | GotTableHide TableId
+    | GotTableToggleColumns TableId
+    | GotTablePosition TableId Position
+    | GotTableMove TableId Delta
+    | GotTableSelect TableId
+    | GotColumnShow ColumnRef
+    | GotColumnHide ColumnRef
+    | GotColumnMove ColumnRef Int
     | GotFitToScreen
+    | GotResetCanvas
     | Error Decode.Error
 
 
@@ -351,46 +354,43 @@ jsDecoder =
                     Decode.field "id" Decode.string |> Decode.map GotHotkey
 
                 "GotKeyHold" ->
-                    Decode.map2 GotKeyHold
-                        (Decode.field "key" Decode.string)
-                        (Decode.field "start" Decode.bool)
+                    Decode.map2 GotKeyHold (Decode.field "key" Decode.string) (Decode.field "start" Decode.bool)
 
                 "GotToast" ->
-                    Decode.map2 GotToast
-                        (Decode.field "level" Decode.string)
-                        (Decode.field "message" Decode.string)
+                    Decode.map2 GotToast (Decode.field "level" Decode.string) (Decode.field "message" Decode.string)
 
-                "GotShowTable" ->
-                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotShowTable
+                "GotTableShow" ->
+                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decode)
 
-                "GotHideTable" ->
-                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotHideTable
+                "GotTableHide" ->
+                    Decode.field "id" TableId.decode |> Decode.map GotTableHide
 
-                "GotToggleColumns" ->
-                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotToggleColumns
+                "GotTableToggleColumns" ->
+                    Decode.field "id" TableId.decode |> Decode.map GotTableToggleColumns
 
-                "GotShowColumn" ->
-                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotShowColumn
+                "GotTablePosition" ->
+                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decode)
 
-                "GotHideColumn" ->
-                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotHideColumn
+                "GotTableMove" ->
+                    Decode.map2 GotTableMove (Decode.field "id" TableId.decode) (Decode.field "delta" Delta.decode)
 
-                "GotSelectTable" ->
-                    Decode.field "id" Decode.string |> Decode.map TableId.fromString |> Decode.map GotSelectTable
+                "GotTableSelect" ->
+                    Decode.field "id" TableId.decode |> Decode.map GotTableSelect
 
-                "GotMoveTable" ->
-                    Decode.map3 GotMoveTable
-                        (Decode.field "id" Decode.string |> Decode.map TableId.fromString)
-                        (Decode.field "dx" Decode.float)
-                        (Decode.field "dy" Decode.float)
+                "GotColumnShow" ->
+                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotColumnShow
 
-                "GotMoveColumn" ->
-                    Decode.map2 GotMoveColumn
-                        (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
-                        (Decode.field "index" Decode.int)
+                "GotColumnHide" ->
+                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotColumnHide
+
+                "GotColumnMove" ->
+                    Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString) (Decode.field "index" Decode.int)
 
                 "GotFitToScreen" ->
                     Decode.succeed GotFitToScreen
+
+                "GotResetCanvas" ->
+                    Decode.succeed GotResetCanvas
 
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")

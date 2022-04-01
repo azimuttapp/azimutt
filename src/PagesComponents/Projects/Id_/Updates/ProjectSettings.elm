@@ -17,7 +17,7 @@ import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
-import Services.Lenses exposing (mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Track
 
@@ -87,7 +87,10 @@ handleProjectSettings msg model =
             ( model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order) |> mapTableProps (sortColumns order e)), Cmd.none )
 
         PSColumnBasicTypesToggle ->
-            ( model |> mapErdM (\e -> e |> Erd.mapSettings (mapColumnBasicTypes not)), Cmd.none )
+            ( model |> mapErdM (Erd.mapSettings (mapColumnBasicTypes not)), Cmd.none )
+
+        PSCollapseTableOnShowToggle ->
+            ( model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)), Cmd.none )
 
 
 hideColumns : Dict TableId ErdTable -> HiddenColumns -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps

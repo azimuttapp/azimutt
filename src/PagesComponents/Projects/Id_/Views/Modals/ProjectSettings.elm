@@ -181,6 +181,13 @@ viewDisplaySettingsSection htmlId erd =
             "Use basic types for columns to gain some space"
             erd.settings.columnBasicTypes
             (PSColumnBasicTypesToggle |> ProjectSettingsMsg)
+        , Input.checkboxWithLabelAndHelp "mt-3"
+            (htmlId ++ "-collapsed-columns")
+            "Table display"
+            ""
+            "Collapse table columns by default"
+            erd.settings.collapseTableColumns
+            (PSCollapseTableOnShowToggle |> ProjectSettingsMsg)
         ]
 
 

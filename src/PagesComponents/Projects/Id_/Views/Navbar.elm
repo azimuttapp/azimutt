@@ -52,7 +52,7 @@ viewNavbar conf virtualRelation erd model htmlId openedDropdown =
                     |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
                 )
             , Maybe.when conf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
-            , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema", hotkey = Nothing }
+            , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkey = Nothing }
             , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkey = Nothing }
             ]
                 |> List.filterMap identity

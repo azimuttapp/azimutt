@@ -147,6 +147,7 @@ type Msg
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
     | TableMove TableId Delta
+    | TablePosition TableId Position
     | TableOrder TableId Int
     | SortColumns TableId ColumnOrder
     | MoveColumn ColumnRef Int
@@ -257,6 +258,7 @@ type ProjectSettingsMsg
     | PSHiddenColumnsRelationsToggle
     | PSColumnOrderUpdate ColumnOrder
     | PSColumnBasicTypesToggle
+    | PSCollapseTableOnShowToggle
 
 
 type HelpMsg

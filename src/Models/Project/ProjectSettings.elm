@@ -24,6 +24,7 @@ type alias ProjectSettings =
     , hiddenColumns : HiddenColumns
     , columnOrder : ColumnOrder
     , columnBasicTypes : Bool
+    , collapseTableColumns : Bool
     }
 
 
@@ -44,6 +45,7 @@ init =
     , hiddenColumns = { list = "created_.+, updated_.+", props = False, relations = False }
     , columnOrder = OrderByProperty
     , columnBasicTypes = True
+    , collapseTableColumns = False
     }
 
 
@@ -105,12 +107,13 @@ encode default value =
         , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefaultDeep encodeHiddenColumns default.hiddenColumns )
         , ( "columnOrder", value.columnOrder |> Encode.withDefault ColumnOrder.encode default.columnOrder )
         , ( "columnBasicTypes", value.columnBasicTypes |> Encode.withDefault Encode.bool default.columnBasicTypes )
+        , ( "collapseTableColumns", value.collapseTableColumns |> Encode.withDefault Encode.bool default.collapseTableColumns )
         ]
 
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
-    Decode.map7 ProjectSettings
+    Decode.map8 ProjectSettings
         (Decode.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
         (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
         (Decode.defaultField "removeViews" Decode.bool default.removeViews)
@@ -118,6 +121,7 @@ decode default =
         (Decode.defaultFieldDeep "hiddenColumns" decodeHiddenColumns default.hiddenColumns)
         (Decode.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)
         (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
+        (Decode.defaultField "collapseTableColumns" Decode.bool default.collapseTableColumns)
 
 
 encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value
