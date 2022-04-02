@@ -150,139 +150,173 @@ window.addEventListener('load', function() {
             })
     }
 
-    const databaseName = 'azimutt'
-    const databaseVersion = 1
-    const dbProjects = 'projects'
-    function getConfiguredDb() {
-        return new Promise((resolve, reject) => {
-            function handleIndexedDBError(event) {
-                console.warn('IndexedDB not available', event)
-                reject(new Error('IndexedDB not available'))
-                alert("Azimutt needs IndexedDB but it's not available, please make it available or use a browser that support it!")
-            }
-            if (!window.indexedDB) {
-                handleIndexedDBError(undefined)
-            } else {
+    /* STORAGE.TS */
+    /*interface Project {
+        id: string
+        createdAt: number
+        updatedAt: number
+    }
+    type AzStorageKind = 'indexedDb' | 'localStorage' | 'inMemory'
+    interface AzStorage {
+        kind: AzStorageKind
+        loadProjects: () => Promise<Project[]>
+        saveProject: (p: Project) => Promise<void>
+        dropProject: (p: Project) => Promise<void>
+    }*/
+
+    function getIndexedDb()/*: Promise<AzStorage>*/ {
+        if (window.indexedDB) {
+            const databaseName = 'azimutt'
+            const databaseVersion = 1
+            const dbProjects = 'projects'
+            const reqToPromise = /*<T>*/(req/*: IDBRequest<T>*/)/*: Promise<T>*/ => new Promise((resolve, reject) => {
+                req.onerror = _ => reject(req.error)
+                req.onsuccess = _ => resolve(req.result)
+            })
+
+            return new Promise((resolve, reject) => {
                 const openRequest = window.indexedDB.open(databaseName, databaseVersion)
-                openRequest.onerror = event => handleIndexedDBError(event)
-                openRequest.onsuccess = function(event) {
+                openRequest.onerror = _ => reject('Unable to open indexedDB')
+                openRequest.onsuccess = (event/*: any*/) => resolve(event.target.result)
+                openRequest.onupgradeneeded = (event/*: any*/) => {
                     const db = event.target.result
-                    db.onerror = e => handleIndexedDBError(e)
-                    resolve(db)
-                }
-                openRequest.onupgradeneeded = function() {
-                    const db = openRequest.result
                     if (!db.objectStoreNames.contains(dbProjects)) {
                         db.createObjectStore(dbProjects, {keyPath: 'id'})
                     }
                 }
+            }).then((db/*: IDBDatabase*/) => {
+                const storage/*: AzStorage*/ = {
+                    kind: 'indexedDb',
+                    loadProjects: ()/*: Promise<Project[]>*/ =>
+                        new Promise(resolve => resolve(db.transaction(dbProjects, 'readonly').objectStore(dbProjects))).then((store/*: IDBObjectStore*/) =>
+                            new Promise((resolve, reject) => {
+                                let projects/*: Project[]*/ = []
+                                store.openCursor().onsuccess = (event/*: any*/) => {
+                                    const cursor = event.target.result
+                                    if (cursor) {
+                                        projects.push(cursor.value)
+                                        cursor.continue()
+                                    } else {
+                                        getLocalStorage().then(legacyStorage =>
+                                            legacyStorage.loadProjects().then(localStorageProjects =>
+                                                Promise.all(localStorageProjects.map(p => Promise.all([legacyStorage.dropProject(p), storage.saveProject(p)])))
+                                                    .then(_ => resolve(projects.concat(localStorageProjects)))
+                                            )
+                                        ).catch(reject)
+                                    }
+                                }
+                            })
+                        ),
+                    saveProject: (p/*: Project*/)/*: Promise<void>*/ =>
+                        new Promise(resolve => resolve(db.transaction(dbProjects, 'readwrite').objectStore(dbProjects))).then((store/*: IDBObjectStore*/) => {
+                            const now = Date.now()
+                            p.updatedAt = now
+                            if (!store.get(p.id)) {
+                                p.createdAt = now
+                                return reqToPromise(store.add(p)).then(_ => undefined)
+                            } else {
+                                return reqToPromise(store.put(p)).then(_ => undefined)
+                            }
+                        }),
+                    dropProject: (p/*: Project*/)/*: Promise<void>*/ =>
+                        new Promise(resolve => resolve(db.transaction(dbProjects, 'readwrite').objectStore(dbProjects))).then((store/*: IDBObjectStore*/) => {
+                            return reqToPromise(store.delete(p.id))
+                        })
+                }
+                return storage
+            })
+        } else {
+            return Promise.reject('indexedDB not available')
+        }
+    }
+
+    function getLocalStorage()/*: Promise<AzStorage>*/ {
+        const prefix = 'project-'
+        return window.localStorage ? Promise.resolve({
+            kind: 'localStorage',
+            loadProjects: ()/*: Promise<Project[]>*/ => {
+                const projects = Object.keys(window.localStorage)
+                    .filter(key => key.startsWith(prefix))
+                    .map(key => {
+                        const value = window.localStorage.getItem(key)
+                        try {
+                            return JSON.parse(value)
+                        } catch (e) {
+                            return value
+                        }
+                    })
+                return Promise.resolve(projects)
+            },
+            saveProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                const key = prefix + p.id
+                const now = Date.now()
+                p.updatedAt = now
+                if (window.localStorage.getItem(key) === null) {
+                    p.createdAt = now
+                }
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(p))
+                    return Promise.resolve()
+                } catch (e) {
+                    return Promise.reject(e)
+                }
+            },
+            dropProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                window.localStorage.removeItem(prefix + p.id)
+                return Promise.resolve()
+            }
+        }) : Promise.reject('localStorage not available')
+    }
+
+    function getInMemory()/*: Promise<AzStorage>*/ {
+        const projects = {}
+        return Promise.resolve({
+            kind: 'inMemory',
+            loadProjects: ()/*: Promise<Project[]>*/ => Promise.resolve(Object.values(projects)),
+            saveProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                projects[p.id] = p
+                return Promise.resolve()
+            },
+            dropProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                delete projects[p.id]
+                return Promise.resolve()
             }
         })
     }
-    function getDbObjectStore(objectStore, transactionType) {
-        return new Promise((resolve, reject) => {
-            getConfiguredDb().then(db => {
-                const transaction = db.transaction(
-                    objectStore,
-                    typeof transactionType === 'undefined' ? 'readonly' : transactionType
-                )
-                resolve(transaction.objectStore(objectStore))
-            }, reject)
-        })
-    }
 
-    const localStorageProjectPrefix = 'project-'
-    function getLocalStorageProjects() {
-        return Object.keys(localStorage)
-            .filter(key => key.startsWith(localStorageProjectPrefix))
-            .map(key => safeParse(localStorage.getItem(key)))
-    }
-    function dropLocalStorageProject(project) {
-        localStorage.removeItem(localStorageProjectPrefix + project.id)
-    }
-    function loadAndMigrateLocaleStorageProjects() {
-        const projects = getLocalStorageProjects()
-        projects.forEach(p => saveProject(p, () => dropLocalStorageProject(p)))
-        return projects
-    }
+    const store = getIndexedDb().catch(() => getLocalStorage()).catch(() => getInMemory())
+    /* STORAGE.TS */
 
     function loadProjects() {
-        if (window.indexedDB) {
-            getDbObjectStore(dbProjects).then(store => {
-                let projects = []
-                store.openCursor().onsuccess = event => {
-                    const cursor = event.target.result
-                    if (cursor) {
-                        projects.push(cursor.value)
-                        cursor.continue()
-                    } else {
-                        projects = projects.concat(loadAndMigrateLocaleStorageProjects())
-                        sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
-                        window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
-                        const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-                        id ? window.azimutt.project = window.azimutt.projects[id] : undefined
-                    }
-                }
-            })
-        } else if (window.localStorage) {
-            const projects = getLocalStorageProjects()
+        store.then(s => s.loadProjects()).then(projects => {
             sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
-            window.azimutt.projects = projects.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
+            window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
             const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
             id ? window.azimutt.project = window.azimutt.projects[id] : undefined
-        } else {
-            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
-                'Please make them available or use a browser that support them!')
-        }
+        })
     }
     function saveProject(project, callback) {
-        const now = Date.now()
-        project.updatedAt = now
-
-        if (window.indexedDB) {
-            getDbObjectStore(dbProjects, 'readwrite').then(store => {
-                if (!store.get(project.id)) {
-                    project.createdAt = now
-                    store.add(project).onsuccess = callback
-                } else {
-                    store.put(project).onsuccess = callback
-                }
-            })
-        } else if (window.localStorage) {
-            const key = localStorageProjectPrefix + project.id
-            if (localStorage.getItem(key) === null) { project.createdAt = now }
-            try {
-                localStorage.setItem(key, JSON.stringify(project))
-            } catch (e) {
-                let message
-                if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-                    message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
-                } else {
-                    message = 'Unknown localStorage error: ' + e.message
-                }
-                showMessage({kind: 'error', message})
-                const name = 'local-storage'
-                const details = {error: e.name, message: e.message}
-                analytics.then(a => a.trackError(name, details)); errorTracking.then(e => e.track(name, details));
-            }
+        store.then(s => s.saveProject(project)).then(_ => {
             callback()
-        } else {
-            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
-                'Please make them available or use a browser that support them!')
-        }
+        }).catch(e => {
+            let message
+            if(typeof e === 'string') {
+                message = e
+            } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
+                message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
+            } else {
+                message = 'Unknown localStorage error: ' + e.message
+            }
+            showMessage({kind: 'error', message})
+            const name = 'local-storage'
+            const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
+            analytics.then(a => a.trackError(name, details)); errorTracking.then(e => e.track(name, details));
+        })
     }
     function dropProject(project) {
-        if (window.indexedDB) {
-            getDbObjectStore(dbProjects, 'readwrite').then(store => {
-                store.delete(project.id).onsuccess = loadProjects
-            })
-        } else if (window.localStorage) {
-            localStorage.removeItem(localStorageProjectPrefix + project.id)
+        store.then(s => s.dropProject(project)).then(_ => {
             loadProjects()
-        } else {
-            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
-                'Please make them available or use a browser that support them!')
-        }
+        })
     }
 
     function getLocalFile(maybeProjectId, maybeSourceId, file) {
