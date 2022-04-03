@@ -20,9 +20,20 @@ Don't believe me, test it!
 
 Now let's dig in the today rules:
 
+- [Missing primary keys](#missing-primary-keys)
 - [Missing foreign keys](#missing-foreign-keys)
 - [Inconsistent types](#inconsistent-types)
 - [Big tables](#big-tables)
+
+### Missing primary keys
+
+Primary keys are essential for quickly accessing a row. They are a combination  of unique and indexed constraints to ensure only one row will match and find it quickly. Most of the time the primary key is build on a single column holding an incremented integer or random value with low collision probability such as UUID, but it can also be composite from multiple columns in some cases (even if it's probably a bad idea in terms of schema evolution).
+
+Azimutt will list you all the tables without primary key, so you can make sure you did not forget one:
+
+![Azimutt analyzer, missing primary keys]({{base_link}}/azimutt-analyzer-missing-primary-keys.jpg)
+
+Should you add it? Probably. Good reason not to? Insertion performance or not identifiable data such as n-m relation tables, but even here, a composite key on foreign keys is probably meaningful. Now you know, up to you to decide 😉
 
 ### Missing foreign keys
 
