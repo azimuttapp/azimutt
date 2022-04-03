@@ -31,7 +31,6 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 -- other possible analysis:
 --  - polymorphic relations
 --  - '_at' columns not of date type
---  - tables without primary key
 
 
 viewSchemaAnalysis : Bool -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg
@@ -65,7 +64,8 @@ viewHeader titleId =
 viewAnalysis : HtmlId -> Dict TableId ErdTable -> Html Msg
 viewAnalysis opened tables =
     div [ class "px-6" ]
-        [ viewMissingRelations "missing-relations" opened (computeMissingRelations tables)
+        [ viewMissingPrimaryKey "missing-pks" opened (computeMissingPrimaryKey tables)
+        , viewMissingRelations "missing-relations" opened (computeMissingRelations tables)
         , viewHeterogeneousTypes "heterogeneous-types" opened (computeHeterogeneousTypes tables)
         , viewBigTables "big-tables" opened (computeBigTables tables)
         ]
@@ -76,6 +76,37 @@ viewFooter =
     div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
         [ Button.primary3 Tw.primary [ class "ml-3", onClick (ModalClose (SchemaAnalysisMsg SAClose)) ] [ text "Close" ]
         , span [] [ text "If you've got any ideas for improvements, ", extLink "https://github.com/azimuttapp/azimutt/discussions/75" [ class "link" ] [ text "please let us know" ], text "." ]
+        ]
+
+
+
+-- MISSING PRIMARY KEY
+
+
+computeMissingPrimaryKey : Dict TableId ErdTable -> List ErdTable
+computeMissingPrimaryKey tables =
+    tables |> Dict.values |> List.filter (\t -> t.primaryKey == Nothing)
+
+
+viewMissingPrimaryKey : HtmlId -> HtmlId -> List ErdTable -> Html Msg
+viewMissingPrimaryKey htmlId opened missingPks =
+    viewSection htmlId
+        opened
+        "All tables have a primary key"
+        (missingPks |> List.length)
+        (\nb -> "Found " ++ (nb |> String.pluralize "table") ++ " without a primary key")
+        [ div []
+            (missingPks
+                |> List.map
+                    (\t ->
+                        div [ class "flex justify-between items-center my-1" ]
+                            [ div [] [ bText (TableId.show t.id), text " has no primary key" ]
+                            , Button.primary1 Tw.primary [ class "ml-3", onClick (ShowTable t.id Nothing) ] [ text "Show table" ]
+                            ]
+                    )
+            )
+        , p [ class "prose mb-3 text-sm text-gray-500" ]
+            [ text "It's not always required to have a primary key but strongly encouraged in most case. Make sure this is what you want!" ]
         ]
 
 
