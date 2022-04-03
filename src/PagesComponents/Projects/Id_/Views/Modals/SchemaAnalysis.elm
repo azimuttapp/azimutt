@@ -31,6 +31,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 -- other possible analysis:
 --  - polymorphic relations
 --  - '_at' columns not of date type
+--  - tables without primary key
 
 
 viewSchemaAnalysis : Bool -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg

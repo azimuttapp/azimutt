@@ -118,23 +118,23 @@ window.addEventListener('load', function() {
         result.catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
     }
     function setMeta(meta) {
-        if (meta.title) {
+        if (typeof meta.title === 'string') {
             document.title = meta.title
             document.querySelector('meta[property="og:title"]')?.setAttribute('content', meta.title)
             document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', meta.title)
         }
-        if (meta.description) {
+        if (typeof meta.description === 'string') {
             document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description)
             document.querySelector('meta[property="og:description"]')?.setAttribute('content', meta.description)
             document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', meta.description)
         }
-        if (meta.canonical) {
+        if (typeof meta.canonical === 'string') {
             document.querySelector('link[rel="canonical"]')?.setAttribute('href', meta.canonical)
             document.querySelector('meta[property="og:url"]')?.setAttribute('content', meta.canonical)
             document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', meta.canonical)
         }
-        if (meta.html) { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
-        if (meta.body) { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
+        if (typeof meta.html === 'string') { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
+        if (typeof meta.body === 'string') { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
     }
     function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()

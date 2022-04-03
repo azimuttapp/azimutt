@@ -173,7 +173,7 @@ blogPosts =
     , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
     , "embed-your-database-diagram-anywhere"
     , "how-to-choose-your-entity-relationship-diagram"
+    , "improve-your-database-design-with-azimutt-analyzer"
 
-    --, "improve-your-database-design-with-azimutt-analyzer"
     --, "make-your-app-hackable"
     ]

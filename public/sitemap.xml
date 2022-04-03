@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><lastmod>2022-03-07</lastmod><loc>https://azimutt.app</loc></url>
-  <url><lastmod>2022-03-07</lastmod><changefreq>weekly</changefreq><loc>https://azimutt.app/blog</loc></url>
+  <url><lastmod>2022-04-04</lastmod><changefreq>weekly</changefreq><loc>https://azimutt.app/blog</loc></url>
 
+  <url><lastmod>2022-04-04</lastmod><loc>https://azimutt.app/blog/improve-your-database-design-with-azimutt-analyzer</loc></url>
   <url><lastmod>2022-03-28</lastmod><loc>https://azimutt.app/blog/how-to-choose-your-entity-relationship-diagram</loc></url>
   <url><lastmod>2022-03-21</lastmod><loc>https://azimutt.app/blog/embed-your-database-diagram-anywhere</loc></url>
   <url><lastmod>2022-03-07</lastmod><loc>https://azimutt.app/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them</loc></url>
