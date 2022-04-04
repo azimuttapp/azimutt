@@ -47,7 +47,7 @@ viewRelation dragging srcProps refProps relation =
 
         ( Just src, Just ref ) ->
             let
-                ( srcX, refX ) =
+                ( ( srcX, srcDir ), ( refX, refDir ) ) =
                     positionLeft src ref
 
                 ( srcY, refY ) =
@@ -57,18 +57,22 @@ viewRelation dragging srcProps refProps relation =
                 zIndex =
                     Conf.canvas.zIndex.tables - 1 + min src.index ref.index
             in
-            Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label zIndex
+            --Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label zIndex
+            Relation.curve ( { left = srcX, top = srcY }, srcDir ) ( { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex
 
 
 viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg msg
 viewVirtualRelation ( ( maybeProps, column ), position ) =
     case maybeProps of
         Just props ->
-            Relation.line
-                { left = props.position.left + B.cond (position.left < props.position.left + props.size.width / 2) 0 props.size.width
-                , top = positionTop props.position props.index props.collapsed
-                }
-                { left = position.left, top = position.top }
+            let
+                isRight : Bool
+                isRight =
+                    position.left > props.position.left + props.size.width / 2
+            in
+            Relation.curve
+                ( { left = props.position.left + B.cond isRight props.size.width 0, top = positionTop props.position props.index props.collapsed }, B.cond isRight Relation.Right Relation.Left )
+                ( { left = position.left, top = position.top }, B.cond isRight Relation.Left Relation.Right )
                 column.nullable
                 (Just props.color)
                 "virtual relation"
@@ -108,33 +112,33 @@ positionTop position index collapsed =
         position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
 
 
-positionLeft : ErdColumnProps -> ErdColumnProps -> ( Float, Float )
+positionLeft : ErdColumnProps -> ErdColumnProps -> ( ( Float, Relation.Direction ), ( Float, Relation.Direction ) )
 positionLeft src ref =
     case ( tablePositions src.position src.size, tablePositions ref.position ref.size ) of
         ( ( srcLeft, srcCenter, srcRight ), ( refLeft, refCenter, refRight ) ) ->
             (if srcRight < refLeft then
-                ( srcRight, refLeft )
+                ( ( srcRight, Relation.Right ), ( refLeft, Relation.Left ) )
 
              else if srcCenter < refCenter then
-                ( srcRight, refRight )
+                ( ( srcRight, Relation.Right ), ( refRight, Relation.Right ) )
 
              else if srcLeft < refRight then
-                ( srcLeft, refLeft )
+                ( ( srcLeft, Relation.Left ), ( refLeft, Relation.Left ) )
 
              else
-                ( srcLeft, refRight )
+                ( ( srcLeft, Relation.Left ), ( refRight, Relation.Right ) )
             )
-                |> (\( srcPos, refPos ) ->
+                |> (\( ( srcPos, srcDir ), ( refPos, refDir ) ) ->
                         ( if src.collapsed then
-                            srcCenter
+                            ( srcCenter, Relation.None )
 
                           else
-                            srcPos
+                            ( srcPos, srcDir )
                         , if ref.collapsed then
-                            refCenter
+                            ( refCenter, Relation.None )
 
                           else
-                            refPos
+                            ( refPos, refDir )
                         )
                    )
 
