@@ -30,7 +30,7 @@ window.addEventListener('load', function() {
             const tables = window.azimutt.getAllTables().reduce((acc, t) => ({...acc, [`${t.schema}.${t.table}`]: t}), {})
             return window.azimutt.project?.layout.tables.map(t => tables[t.id])
         },
-        showTable: (tableId, left, top) => sendToElm({kind: 'GotTableShow', id: tableId, position: top ? {left, top} : undefined}),
+        showTable: (tableId, left, top) => sendToElm({kind: 'GotTableShow', id: tableId, position: typeof top === 'number' ? {left, top} : undefined}),
         hideTable: tableId => sendToElm({kind: 'GotTableHide', id: tableId}),
         toggleTableColumns: tableId => sendToElm({kind: 'GotTableToggleColumns', id: tableId}),
         moveTableTo: (tableId, left, top) => sendToElm({kind: 'GotTablePosition', id: tableId, position: {left, top}}),
@@ -129,7 +129,8 @@ window.addEventListener('load', function() {
             document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', meta.description)
         }
         if (typeof meta.canonical === 'string') {
-            document.querySelector('link[rel="canonical"]')?.setAttribute('href', meta.canonical)
+            const canonical = document.querySelector('link[rel="canonical"]')
+            canonical ? canonical.setAttribute('href', meta.canonical) : document.head.append(`<link rel="canonical" href="${meta.canonical}">`)
             document.querySelector('meta[property="og:url"]')?.setAttribute('content', meta.canonical)
             document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', meta.canonical)
         }
