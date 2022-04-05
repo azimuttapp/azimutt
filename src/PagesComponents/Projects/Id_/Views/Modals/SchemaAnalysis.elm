@@ -31,6 +31,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 -- other possible analysis:
 --  - polymorphic relations
 --  - '_at' columns not of date type
+--  - % of nullable columns in a table (warn if > 50%)
 
 
 viewSchemaAnalysis : Bool -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg
