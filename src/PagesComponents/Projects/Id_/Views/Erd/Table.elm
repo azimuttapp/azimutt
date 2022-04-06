@@ -148,9 +148,9 @@ viewTable conf zoom cursorMode args index props table =
                                         _ ->
                                             ShowTables (cols |> List.map (\col -> ( col.column.schema, col.column.table ))) hint
                                )
-                , hoverHiddenColumns = PopoverSet
                 , clickHiddenColumns = ToggleHiddenColumns table.id
                 , clickDropdown = DropdownToggle
+                , setPopover = PopoverSet
                 }
             , zoom = zoom
             , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
@@ -183,6 +183,7 @@ buildColumn useBasicTypes props column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment |> Maybe.map .text
+    , notes = props.columnProps |> Dict.get column.name |> Maybe.andThen .notes
     , isPrimaryKey = column.isPrimaryKey
     , inRelations = column.inRelations |> List.map (buildColumnRelation props)
     , outRelations = column.outRelations |> List.map (buildColumnRelation props)
