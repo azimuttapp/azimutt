@@ -1,22 +1,28 @@
 module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 
-import Components.Organisms.Relation as Relation
+import Components.Organisms.Relation as Relation exposing (RelationConf)
 import Conf
 import Libs.Bool as B
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnRef as ColumnRef
+import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (class, height, width)
 
 
-viewRelation : Bool -> Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg msg
-viewRelation dragging srcProps refProps relation =
+viewRelation : ErdConf -> Bool -> Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg Msg
+viewRelation conf dragging srcProps refProps relation =
     let
+        relConf : RelationConf
+        relConf =
+            { hover = conf.hover }
+
         label : String
         label =
             ColumnRef.show relation.src ++ " -> " ++ relation.name ++ " -> " ++ ColumnRef.show relation.ref
@@ -24,6 +30,10 @@ viewRelation dragging srcProps refProps relation =
         color : Maybe Color
         color =
             getColor srcProps refProps
+
+        onHover : Bool -> Msg
+        onHover =
+            ToggleHoverColumn { table = relation.src.table, column = relation.src.column }
     in
     case ( srcProps, refProps ) of
         ( Nothing, Nothing ) ->
@@ -35,7 +45,7 @@ viewRelation dragging srcProps refProps relation =
 
             else
                 { left = position.left + size.width, top = positionTop position index collapsed }
-                    |> (\srcPos -> Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
+                    |> (\srcPos -> Relation.line relConf srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
 
         ( Nothing, Just { index, position, collapsed } ) ->
             if collapsed then
@@ -43,7 +53,7 @@ viewRelation dragging srcProps refProps relation =
 
             else
                 { left = position.left, top = positionTop position index collapsed }
-                    |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
+                    |> (\refPos -> Relation.line relConf { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
 
         ( Just src, Just ref ) ->
             let
@@ -57,11 +67,10 @@ viewRelation dragging srcProps refProps relation =
                 zIndex =
                     Conf.canvas.zIndex.tables - 1 + min src.index ref.index
             in
-            --Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label zIndex
-            Relation.curve ( { left = srcX, top = srcY }, srcDir ) ( { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex
+            Relation.curve relConf ( { left = srcX, top = srcY }, srcDir ) ( { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
 
 
-viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg msg
+viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg Msg
 viewVirtualRelation ( ( maybeProps, column ), position ) =
     case maybeProps of
         Just props ->
@@ -71,12 +80,14 @@ viewVirtualRelation ( ( maybeProps, column ), position ) =
                     position.left > props.position.left + props.size.width / 2
             in
             Relation.curve
+                { hover = False }
                 ( { left = props.position.left + B.cond isRight props.size.width 0, top = positionTop props.position props.index props.collapsed }, B.cond isRight Relation.Right Relation.Left )
                 ( { left = position.left, top = position.top }, B.cond isRight Relation.Left Relation.Right )
                 column.nullable
                 (Just props.color)
                 "virtual relation"
                 (Conf.canvas.zIndex.tables - 1)
+                (\_ -> Noop "hover new virtual relation")
 
         Nothing ->
             viewEmptyRelation

@@ -159,7 +159,7 @@ When a column has an `unknown` type and a foreign key, it inherits from the link
 
 ### Relation definition
 
-Defining a foreign key constraint creates a relation, and it should be enough most of the time. But when extending an existing one, you may need to add a relation to a table you didn't define (as it was defined in another source).
+Defining a foreign key constraint creates a relation, and it should be enough most of the time (see below). But when extending an existing one, you may need to add a relation to a table you didn't define (as it was defined in another source).
 
 In this case, you have the standalone foreign key definition, starting with the `fk` keyword:
 
@@ -238,14 +238,14 @@ emails
   score "double precision"
 
 # How to define a table and it's columns
-public.users {left=100, top=10, color=red} | "Table description" # a table with everything!
+public.users {top=10, left=100, color=red} | "Table description" # a table with everything!
   id integer pk
   role varchar=guest {hidden=true}
   score "double precision"="0.0" index {hidden=true} | "User progression" # a column with almost all possible attributes
   first_name varchar(10) unique=name
   laft_name varchar(10) unique=name
   email varchar nullable fk emails.email
-  
+
 admins* | "View of `users` table with only admins"
   id
   name | "Computed from user first_name and laft_name"
@@ -253,7 +253,7 @@ admins* | "View of `users` table with only admins"
 fk admins.id -> users.id
 ```
 
-Hope you liked it! I'm very excited to see it live in Azimutt soon.
+Hope you liked it! I'm very excited to see it live in [Azimutt](https://azimutt.app/projects) soon.
 
 ![work]({{base_link}}/work.jpg)
 

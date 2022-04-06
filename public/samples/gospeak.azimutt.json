@@ -8602,8 +8602,8 @@
         }
       ],
       "fromSample": "gospeak",
-      "createdAt": 1645385087226,
-      "updatedAt": 1645385087226
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
     },
     {
       "id": "21a1500a-8b3b-452f-b077-32574d6fed63",
@@ -8683,8 +8683,8 @@
           ]
         }
       ],
-      "createdAt": 1646904245214,
-      "updatedAt": 1646904245214
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
     }
   ],
   "layout": {
@@ -8699,8 +8699,8 @@
       {
         "id": "public.cfps",
         "position": {
-          "left": 941.8654030298326,
-          "top": 614.5796951550776
+          "left": 940,
+          "top": 610
         },
         "color": "purple",
         "columns": [
@@ -8717,8 +8717,8 @@
       {
         "id": "public.comments",
         "position": {
-          "left": 978.9037108166619,
-          "top": 925.7456958668184
+          "left": 970,
+          "top": 920
         },
         "color": "purple",
         "columns": [
@@ -8733,8 +8733,8 @@
       {
         "id": "public.contacts",
         "position": {
-          "left": 62.50330142015352,
-          "top": 409.0104458674832
+          "left": 60,
+          "top": 400
         },
         "color": "rose",
         "columns": [
@@ -8749,8 +8749,8 @@
       {
         "id": "public.credentials",
         "position": {
-          "left": 1513.1988401173778,
-          "top": 211.0687845327717
+          "left": 1510,
+          "top": 210
         },
         "color": "orange",
         "columns": [
@@ -8764,8 +8764,8 @@
       {
         "id": "public.event_rsvps",
         "position": {
-          "left": 1069.4208867011691,
-          "top": 415.0134533061414
+          "left": 1060,
+          "top": 410
         },
         "color": "violet",
         "columns": [
@@ -8778,8 +8778,8 @@
       {
         "id": "public.events",
         "position": {
-          "left": 730.0918981500962,
-          "top": 613.8364258659527
+          "left": 720,
+          "top": 610
         },
         "color": "purple",
         "columns": [
@@ -8805,8 +8805,8 @@
       {
         "id": "public.external_cfps",
         "position": {
-          "left": 2046.7657684299584,
-          "top": 563.9054651974897
+          "left": 2040,
+          "top": 560
         },
         "color": "green",
         "columns": [
@@ -8821,8 +8821,8 @@
       {
         "id": "public.external_events",
         "position": {
-          "left": 1818.0844244000073,
-          "top": 565.8983541158635
+          "left": 1810,
+          "top": 560
         },
         "color": "green",
         "columns": [
@@ -8845,8 +8845,8 @@
       {
         "id": "public.external_proposals",
         "position": {
-          "left": 1577.6961219987502,
-          "top": 567.7487376235076
+          "left": 1570,
+          "top": 560
         },
         "color": "green",
         "columns": [
@@ -8868,8 +8868,8 @@
       {
         "id": "public.group_members",
         "position": {
-          "left": 1041.524475934403,
-          "top": 164.22122087760204
+          "left": 1040,
+          "top": 160
         },
         "color": "indigo",
         "columns": [
@@ -8884,8 +8884,8 @@
       {
         "id": "public.group_settings",
         "position": {
-          "left": 736.6808646660849,
-          "top": 163.58506866583133
+          "left": 730,
+          "top": 160
         },
         "color": "indigo",
         "columns": [
@@ -8907,8 +8907,8 @@
       {
         "id": "public.groups",
         "position": {
-          "left": 520.1380078275812,
-          "top": 387.6301513600022
+          "left": 520,
+          "top": 380
         },
         "color": "violet",
         "columns": [
@@ -8929,8 +8929,8 @@
       {
         "id": "public.logins",
         "position": {
-          "left": 1512.5757324912458,
-          "top": 78.17191577630183
+          "left": 1510,
+          "top": 70
         },
         "color": "purple",
         "columns": [
@@ -8942,8 +8942,8 @@
       {
         "id": "public.partners",
         "position": {
-          "left": 297.6656747777289,
-          "top": 391.74818236708535
+          "left": 290,
+          "top": 390
         },
         "color": "indigo",
         "columns": [
@@ -8959,8 +8959,8 @@
       {
         "id": "public.proposal_ratings",
         "position": {
-          "left": 1364.382776461915,
-          "top": 999.0240004298943
+          "left": 1360,
+          "top": 990
         },
         "color": "green",
         "columns": [
@@ -8971,8 +8971,8 @@
       {
         "id": "public.proposals",
         "position": {
-          "left": 1178.9541401589734,
-          "top": 589.8462837411233
+          "left": 1170,
+          "top": 590
         },
         "color": "orange",
         "columns": [
@@ -8995,8 +8995,8 @@
       {
         "id": "public.sponsor_packs",
         "position": {
-          "left": 250.78658012837502,
-          "top": 55.39680248189748
+          "left": 260,
+          "top": 50
         },
         "color": "fuchsia",
         "columns": [
@@ -9014,8 +9014,8 @@
       {
         "id": "public.sponsors",
         "position": {
-          "left": 23.52620724170029,
-          "top": 53.690553481658554
+          "left": 20,
+          "top": 50
         },
         "color": "pink",
         "columns": [
@@ -9034,8 +9034,8 @@
       {
         "id": "public.talks",
         "position": {
-          "left": 1370.5820768837768,
-          "top": 588.8293422441701
+          "left": 1370,
+          "top": 580
         },
         "color": "purple",
         "columns": [
@@ -9055,8 +9055,8 @@
       {
         "id": "public.users",
         "position": {
-          "left": 1317.6504529364702,
-          "top": 76.08056796915668
+          "left": 1310,
+          "top": 70
         },
         "color": "yellow",
         "columns": [
@@ -9079,8 +9079,8 @@
       {
         "id": "public.venues",
         "position": {
-          "left": 59.77242727948257,
-          "top": 668.5082382693639
+          "left": 60,
+          "top": 660
         },
         "color": "amber",
         "columns": [
@@ -9097,8 +9097,8 @@
       {
         "id": "public.video_sources",
         "position": {
-          "left": 1991.5396910132886,
-          "top": 32.69040776431552
+          "left": 1990,
+          "top": 30
         },
         "color": "cyan",
         "columns": [
@@ -9112,8 +9112,8 @@
       {
         "id": "public.videos",
         "position": {
-          "left": 1752.4072228471748,
-          "top": 31.443494184068413
+          "left": 1750,
+          "top": 30
         },
         "color": "sky",
         "columns": [
@@ -9153,8 +9153,8 @@
         {
           "id": "public.cfps",
           "position": {
-            "left": 941.8654030298326,
-            "top": 614.5796951550776
+            "left": 940,
+            "top": 610
           },
           "color": "purple",
           "columns": [
@@ -9171,8 +9171,8 @@
         {
           "id": "public.comments",
           "position": {
-            "left": 978.9037108166619,
-            "top": 925.7456958668184
+            "left": 970,
+            "top": 920
           },
           "color": "purple",
           "columns": [
@@ -9187,8 +9187,8 @@
         {
           "id": "public.contacts",
           "position": {
-            "left": 62.50330142015352,
-            "top": 409.0104458674832
+            "left": 60,
+            "top": 400
           },
           "color": "rose",
           "columns": [
@@ -9203,8 +9203,8 @@
         {
           "id": "public.credentials",
           "position": {
-            "left": 1513.1988401173778,
-            "top": 211.0687845327717
+            "left": 1510,
+            "top": 210
           },
           "color": "orange",
           "columns": [
@@ -9218,8 +9218,8 @@
         {
           "id": "public.event_rsvps",
           "position": {
-            "left": 1069.4208867011691,
-            "top": 415.0134533061414
+            "left": 1060,
+            "top": 410
           },
           "color": "violet",
           "columns": [
@@ -9232,8 +9232,8 @@
         {
           "id": "public.events",
           "position": {
-            "left": 730.0918981500962,
-            "top": 613.8364258659527
+            "left": 720,
+            "top": 610
           },
           "color": "purple",
           "columns": [
@@ -9259,8 +9259,8 @@
         {
           "id": "public.external_cfps",
           "position": {
-            "left": 2046.7657684299584,
-            "top": 563.9054651974897
+            "left": 2040,
+            "top": 560
           },
           "color": "green",
           "columns": [
@@ -9275,8 +9275,8 @@
         {
           "id": "public.external_events",
           "position": {
-            "left": 1818.0844244000073,
-            "top": 565.8983541158635
+            "left": 1810,
+            "top": 560
           },
           "color": "green",
           "columns": [
@@ -9299,8 +9299,8 @@
         {
           "id": "public.external_proposals",
           "position": {
-            "left": 1577.6961219987502,
-            "top": 567.7487376235076
+            "left": 1570,
+            "top": 560
           },
           "color": "green",
           "columns": [
@@ -9322,8 +9322,8 @@
         {
           "id": "public.group_members",
           "position": {
-            "left": 1041.524475934403,
-            "top": 164.22122087760204
+            "left": 1040,
+            "top": 160
           },
           "color": "indigo",
           "columns": [
@@ -9338,8 +9338,8 @@
         {
           "id": "public.group_settings",
           "position": {
-            "left": 736.6808646660849,
-            "top": 163.58506866583133
+            "left": 730,
+            "top": 160
           },
           "color": "indigo",
           "columns": [
@@ -9361,8 +9361,8 @@
         {
           "id": "public.groups",
           "position": {
-            "left": 520.1380078275812,
-            "top": 387.6301513600022
+            "left": 520,
+            "top": 380
           },
           "color": "violet",
           "columns": [
@@ -9383,8 +9383,8 @@
         {
           "id": "public.logins",
           "position": {
-            "left": 1512.5757324912458,
-            "top": 78.17191577630183
+            "left": 1510,
+            "top": 70
           },
           "color": "purple",
           "columns": [
@@ -9396,8 +9396,8 @@
         {
           "id": "public.partners",
           "position": {
-            "left": 297.6656747777289,
-            "top": 391.74818236708535
+            "left": 290,
+            "top": 390
           },
           "color": "indigo",
           "columns": [
@@ -9413,8 +9413,8 @@
         {
           "id": "public.proposal_ratings",
           "position": {
-            "left": 1364.382776461915,
-            "top": 999.0240004298943
+            "left": 1360,
+            "top": 990
           },
           "color": "green",
           "columns": [
@@ -9425,8 +9425,8 @@
         {
           "id": "public.proposals",
           "position": {
-            "left": 1178.9541401589734,
-            "top": 589.8462837411233
+            "left": 1170,
+            "top": 590
           },
           "color": "orange",
           "columns": [
@@ -9449,8 +9449,8 @@
         {
           "id": "public.sponsor_packs",
           "position": {
-            "left": 250.78658012837502,
-            "top": 55.39680248189748
+            "left": 260,
+            "top": 50
           },
           "color": "fuchsia",
           "columns": [
@@ -9468,8 +9468,8 @@
         {
           "id": "public.sponsors",
           "position": {
-            "left": 23.52620724170029,
-            "top": 53.690553481658554
+            "left": 20,
+            "top": 50
           },
           "color": "pink",
           "columns": [
@@ -9488,8 +9488,8 @@
         {
           "id": "public.talks",
           "position": {
-            "left": 1370.5820768837768,
-            "top": 588.8293422441701
+            "left": 1370,
+            "top": 580
           },
           "color": "purple",
           "columns": [
@@ -9509,8 +9509,8 @@
         {
           "id": "public.users",
           "position": {
-            "left": 1317.6504529364702,
-            "top": 76.08056796915668
+            "left": 1310,
+            "top": 70
           },
           "color": "yellow",
           "columns": [
@@ -9533,8 +9533,8 @@
         {
           "id": "public.venues",
           "position": {
-            "left": 59.77242727948257,
-            "top": 668.5082382693639
+            "left": 60,
+            "top": 660
           },
           "color": "amber",
           "columns": [
@@ -9551,8 +9551,8 @@
         {
           "id": "public.video_sources",
           "position": {
-            "left": 1991.5396910132886,
-            "top": 32.69040776431552
+            "left": 1990,
+            "top": 30
           },
           "color": "cyan",
           "columns": [
@@ -9566,8 +9566,8 @@
         {
           "id": "public.videos",
           "position": {
-            "left": 1752.4072228471748,
-            "top": 31.443494184068413
+            "left": 1750,
+            "top": 30
           },
           "color": "sky",
           "columns": [
@@ -9591,8 +9591,8 @@
           ]
         }
       ],
-      "createdAt": 1646904013359,
-      "updatedAt": 1646904013359
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
     },
     "partners": {
       "canvas": {
@@ -9606,8 +9606,8 @@
         {
           "id": "public.contacts",
           "position": {
-            "left": 956.3598051170679,
-            "top": 411.3920746106397
+            "left": 950,
+            "top": 410
           },
           "color": "rose",
           "columns": [
@@ -9622,8 +9622,8 @@
         {
           "id": "public.events",
           "position": {
-            "left": 134.64019488293206,
-            "top": 280.6386226984507
+            "left": 130,
+            "top": 280
           },
           "color": "purple",
           "columns": [
@@ -9649,8 +9649,8 @@
         {
           "id": "public.groups",
           "position": {
-            "left": 450.1362884999812,
-            "top": 427.6079253893603
+            "left": 450,
+            "top": 420
           },
           "color": "violet",
           "columns": [
@@ -9671,8 +9671,8 @@
         {
           "id": "public.partners",
           "position": {
-            "left": 720.3598051170679,
-            "top": 426.3920746106397
+            "left": 720,
+            "top": 420
           },
           "color": "indigo",
           "columns": [
@@ -9688,8 +9688,8 @@
         {
           "id": "public.sponsor_packs",
           "position": {
-            "left": 963.3598051170679,
-            "top": 54.39207461063978
+            "left": 960,
+            "top": 50
           },
           "color": "fuchsia",
           "columns": [
@@ -9707,8 +9707,8 @@
         {
           "id": "public.sponsors",
           "position": {
-            "left": 1160.609805117068,
-            "top": 53.39207461063978
+            "left": 1160,
+            "top": 50
           },
           "color": "pink",
           "columns": [
@@ -9727,8 +9727,8 @@
         {
           "id": "public.venues",
           "position": {
-            "left": 438.9068574805883,
-            "top": 97.63862269845072
+            "left": 430,
+            "top": 90
           },
           "color": "amber",
           "columns": [
@@ -9743,8 +9743,8 @@
           ]
         }
       ],
-      "createdAt": 1646904203371,
-      "updatedAt": 1646904203371
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
     },
     "speaker": {
       "canvas": {
@@ -9758,8 +9758,8 @@
         {
           "id": "public.event_rsvps",
           "position": {
-            "left": 1056.9016027597481,
-            "top": 550.8721481722214
+            "left": 1050,
+            "top": 550
           },
           "color": "violet",
           "columns": [
@@ -9772,8 +9772,8 @@
         {
           "id": "public.events",
           "position": {
-            "left": 1368.1849432138497,
-            "top": 308.87214817222144
+            "left": 1360,
+            "top": 300
           },
           "color": "purple",
           "columns": [
@@ -9799,8 +9799,8 @@
         {
           "id": "public.external_events",
           "position": {
-            "left": 61.54839418849406,
-            "top": 72.51076412798744
+            "left": 60,
+            "top": 70
           },
           "color": "green",
           "columns": [
@@ -9823,8 +9823,8 @@
         {
           "id": "public.external_proposals",
           "position": {
-            "left": 286.5817346425956,
-            "top": 71.51076412798744
+            "left": 300,
+            "top": 70
           },
           "color": "green",
           "columns": [
@@ -9846,8 +9846,8 @@
         {
           "id": "public.proposals",
           "position": {
-            "left": 1058.1936594825024,
-            "top": 85.32138196606354
+            "left": 1050,
+            "top": 80
           },
           "color": "orange",
           "columns": [
@@ -9870,8 +9870,8 @@
         {
           "id": "public.talks",
           "position": {
-            "left": 700.4701963660312,
-            "top": 38.77449855238069
+            "left": 700,
+            "top": 30
           },
           "color": "purple",
           "columns": [
@@ -9891,8 +9891,8 @@
         {
           "id": "public.users",
           "position": {
-            "left": 643.1849432138496,
-            "top": 421.87214817222144
+            "left": 640,
+            "top": 420
           },
           "color": "yellow",
           "columns": [
@@ -9915,55 +9915,8 @@
           ]
         }
       ],
-      "hiddenTables": [
-        {
-          "id": "public.group_settings",
-          "position": {
-            "left": 1511.9978221740116,
-            "top": 134.83132837173332
-          },
-          "color": "indigo",
-          "columns": [
-            "group_id",
-            "actions",
-            "event_description",
-            "event_templates",
-            "proposal_tweet",
-            "meetup_access_token",
-            "meetup_group_slug",
-            "meetup_logged_user_id",
-            "meetup_logged_user_name",
-            "meetup_refresh_token",
-            "slack_bot_avatar",
-            "slack_bot_name",
-            "slack_token"
-          ]
-        },
-        {
-          "id": "public.groups",
-          "position": {
-            "left": 680.690980396958,
-            "top": 54.1278518277785
-          },
-          "color": "violet",
-          "columns": [
-            "id",
-            "slug",
-            "description",
-            "name",
-            "owners",
-            "status",
-            "tags",
-            "banner",
-            "contact",
-            "location",
-            "logo",
-            "website"
-          ]
-        }
-      ],
-      "createdAt": 1646904433431,
-      "updatedAt": 1646904433431
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
     }
   },
   "settings": {
@@ -9972,7 +9925,7 @@
       "list": "created_.+, .*updated_.+, location_.+, social_.+, address_.+"
     }
   },
-  "createdAt": 1646917564686,
-  "updatedAt": 1646917564686,
+  "createdAt": 1649492400000,
+  "updatedAt": 1649492400000,
   "version": 2
 }
