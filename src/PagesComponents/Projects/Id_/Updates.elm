@@ -30,6 +30,7 @@ import PagesComponents.Projects.Id_.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
+import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
@@ -147,6 +148,9 @@ update currentProject currentLayout now msg model =
 
         LayoutMsg message ->
             model |> handleLayout now message
+
+        NotesMsg message ->
+            model |> handleNotes message
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message

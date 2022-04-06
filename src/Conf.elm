@@ -106,6 +106,7 @@ ids :
     , erd : HtmlId
     , selectionBox : HtmlId
     , newLayoutDialog : HtmlId
+    , editNotesDialog : HtmlId
     , findPathDialog : HtmlId
     , schemaAnalysisDialog : HtmlId
     , helpDialog : HtmlId
@@ -122,6 +123,7 @@ ids =
     , erd = "erd"
     , selectionBox = "selection-box"
     , newLayoutDialog = "new-layout-dialog"
+    , editNotesDialog = "edit-notes-dialog"
     , findPathDialog = "find-path-dialog"
     , schemaAnalysisDialog = "schema-analysis-dialog"
     , helpDialog = "help-dialog"

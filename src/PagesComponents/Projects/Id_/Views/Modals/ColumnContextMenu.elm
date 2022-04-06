@@ -6,13 +6,14 @@ import Dict
 import Html exposing (Html, div, text)
 import Libs.Hotkey as Hotkey
 import Models.Project.ColumnRef exposing (ColumnRef)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), NoteRef(..), NotesMsg(..))
 
 
 viewColumnContextMenu : Int -> ColumnRef -> Html Msg
 viewColumnContextMenu index column =
     div []
         [ ContextMenu.btnHotkey (HideColumn column) "Hide column" (Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys)
+        , ContextMenu.btn "" (NotesMsg (NOpen (ColumnNote column))) [ text "Add note" ]
         , ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ]
         , ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ]
         , ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ]
