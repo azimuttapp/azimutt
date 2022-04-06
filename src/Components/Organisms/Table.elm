@@ -239,26 +239,34 @@ viewHiddenColumns model =
                 else
                     div [] []
 
-            hiddenColumns : Html msg
+            hiddenColumns : List ( String, Html msg )
             hiddenColumns =
                 if model.state.showHiddenColumns then
-                    Keyed.node "div" [ css [ "pt-2 rounded-lg" ] ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy4 viewColumn model False -1 c )))
+                    model.hiddenColumns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy4 viewColumn model (i == List.length model.hiddenColumns - 1) -1 c ))
 
                 else
-                    div [] []
+                    []
+
+            label : String
+            label =
+                model.hiddenColumns |> String.pluralizeL "hidden column"
         in
-        div [ class "m-2 p-2 bg-gray-100 rounded-lg" ]
-            [ div
-                [ Attributes.when model.conf.layout (onClick model.actions.clickHiddenColumns)
+        Keyed.node "div"
+            []
+            (( label
+             , div
+                [ title label
+                , Attributes.when model.conf.layout (onClick model.actions.clickHiddenColumns)
                 , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverHiddenColumns popoverId))
                 , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverHiddenColumns ""))
-                , class "text-gray-400 uppercase font-bold text-sm whitespace-nowrap"
+                , class "h-6 px-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
                 , classList [ ( "cursor-pointer", model.conf.layout ) ]
                 ]
-                [ text (model.hiddenColumns |> String.pluralizeL "hidden column") ]
+                [ text ("... " ++ label) ]
                 |> Popover.r popover showPopover
-            , hiddenColumns
-            ]
+             )
+                :: hiddenColumns
+            )
 
 
 viewColumn : Model msg -> Bool -> Int -> Column -> Html msg
