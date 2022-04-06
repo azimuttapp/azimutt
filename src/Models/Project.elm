@@ -115,7 +115,7 @@ downloadFilename project =
 
 downloadContent : Project -> String
 downloadContent project =
-    project |> encode |> Encode.encode 2
+    (project |> encode |> Encode.encode 2) ++ "\n"
 
 
 encode : Project -> Value
