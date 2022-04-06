@@ -54,7 +54,7 @@ br =
 
 popover : TwClass -> Html msg -> Bool -> Html msg -> Html msg
 popover bubble content isOpen item =
-    div [ class "relative inline-flex flex-col items-center" ]
+    div [ class "relative inline-flex flex-col w-full" ]
         [ item
         , div [ css [ "absolute flex-col z-max", bubble, B.cond isOpen "flex" "hidden" ] ]
             [ div [ class "relative leading-none" ] [ content ]

@@ -118,7 +118,7 @@ viewErd conf screen erd cursorMode selectionBox virtualRelation args dragging =
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
             [ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
-            , Lazy.lazy3 viewRelations dragging displayedTables displayedRelations
+            , Lazy.lazy4 viewRelations conf dragging displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
@@ -189,8 +189,8 @@ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging
         )
 
 
-viewRelations : Maybe DragState -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
-viewRelations dragging tableProps relations =
+viewRelations : ErdConf -> Maybe DragState -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
+viewRelations conf dragging tableProps relations =
     let
         getColumnProps : ErdColumnRef -> Maybe ErdColumnProps
         getColumnProps ref =
@@ -202,7 +202,8 @@ viewRelations dragging tableProps relations =
             |> List.map
                 (\r ->
                     ( r.name
-                    , Lazy.lazy4 viewRelation
+                    , Lazy.lazy5 viewRelation
+                        conf
                         (dragging |> Maybe.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
                         (getColumnProps r.src)
                         (getColumnProps r.ref)

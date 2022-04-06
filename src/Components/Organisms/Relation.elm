@@ -1,16 +1,22 @@
-module Components.Organisms.Relation exposing (Direction(..), curve, doc, line)
+module Components.Organisms.Relation exposing (Direction(..), RelationConf, curve, doc, line)
 
+import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (div)
 import Html.Attributes as Html
+import Html.Events exposing (onMouseEnter, onMouseLeave)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Svg.Attributes exposing (css)
+import Libs.Svg.Attributes as Attributes exposing (css)
 import Libs.Svg.Utils exposing (circle, curveTo, lineTo, moveTo)
 import Libs.Tailwind as Tw exposing (Color, fill_500, stroke_500)
 import Svg exposing (Attribute, Svg, svg, text)
 import Svg.Attributes exposing (class, d, height, strokeDasharray, style, width, x1, x2, y1, y2)
+
+
+type alias RelationConf =
+    { hover : Bool }
 
 
 type Direction
@@ -19,16 +25,16 @@ type Direction
     | None
 
 
-line : Position -> Position -> Bool -> Maybe Color -> String -> Int -> Svg msg
-line src ref nullable color label index =
+line : RelationConf -> Position -> Position -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+line conf src ref nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 12 }
-        (\origin -> drawLine (src |> Position.sub origin) (ref |> Position.sub origin))
+        (\origin -> drawLine conf (src |> Position.sub origin) (ref |> Position.sub origin) onHover)
 
 
-curve : ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> Svg msg
-curve ( src, srcDir ) ( ref, refDir ) nullable color label index =
+curve : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+curve conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawCurve ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) ( 10, 5 ))
+        (\origin -> drawCurve conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) ( 10, 5 ) onHover)
 
 
 type alias SvgParams =
@@ -54,13 +60,15 @@ buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
         (text label :: svgContent origin nullable color)
 
 
-drawLine : Position -> Position -> Bool -> Maybe Color -> List (Svg msg)
-drawLine p1 p2 nullable color =
+drawLine : RelationConf -> Position -> Position -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawLine conf p1 p2 onHover nullable color =
     [ Svg.line
         ([ x1 (String.fromFloat p1.left)
          , y1 (String.fromFloat p1.top)
          , x2 (String.fromFloat p2.left)
          , y2 (String.fromFloat p2.top)
+         , Attributes.when conf.hover (onMouseEnter (onHover True))
+         , Attributes.when conf.hover (onMouseLeave (onHover False))
          ]
             ++ lineAttrs nullable color
         )
@@ -68,15 +76,15 @@ drawLine p1 p2 nullable color =
     ]
 
 
-drawCurve : ( Position, Direction ) -> ( Position, Direction ) -> ( Float, Float ) -> Bool -> Maybe Color -> List (Svg msg)
-drawCurve ( p1, dir1 ) ( p2, dir2 ) ( arrowLength, arrowWidth ) nullable color =
+drawCurve : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> ( Float, Float ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawCurve conf ( p1, dir1 ) ( p2, dir2 ) ( arrowLength, arrowWidth ) onHover nullable color =
     let
         strength : Float
         strength =
             abs (p1.left - p2.left) / 2 |> max 15
     in
     [ Svg.path
-        (d
+        ([ d
             ([ moveTo p1
              , lineTo (p1 |> add arrowLength dir1)
              , moveTo (p1 |> Position.add { left = 0, top = negate arrowWidth })
@@ -88,7 +96,10 @@ drawCurve ( p1, dir1 ) ( p2, dir2 ) ( arrowLength, arrowWidth ) nullable color =
              ]
                 |> String.join " "
             )
-            :: lineAttrs nullable color
+         , Attributes.when conf.hover (onMouseEnter (onHover True))
+         , Attributes.when conf.hover (onMouseLeave (onHover False))
+         ]
+            ++ lineAttrs nullable color
         )
         []
     , circle (p2 |> add 2 dir2) 2.5 [ class (color |> Maybe.mapOrElse (\c -> fill_500 c) "fill-default-400") ]
@@ -124,10 +135,10 @@ doc : Chapter x
 doc =
     Chapter.chapter "Relation"
         |> Chapter.renderComponentList
-            ([ ( "line", line Position.zero (Position 50 50) False Nothing "relation" 10 )
-             , ( "curve", curve ( Position.zero, Right ) ( Position 50 50, Left ) False Nothing "relation" 10 )
-             , ( "green", line Position.zero (Position 50 50) False (Just Tw.green) "relation" 10 )
-             , ( "nullable", line Position.zero (Position 50 50) True Nothing "relation" 10 )
+            ([ ( "line", line { hover = True } Position.zero (Position 50 50) False Nothing "relation" 10 (\_ -> logAction "hover relation") )
+             , ( "curve", curve { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) False Nothing "relation" 10 (\_ -> logAction "hover relation") )
+             , ( "green", line { hover = True } Position.zero (Position 50 50) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") )
+             , ( "nullable", line { hover = True } Position.zero (Position 50 50) True Nothing "relation" 10 (\_ -> logAction "hover relation") )
              ]
                 |> List.map (Tuple.mapSecond (\component -> div [ Html.style "height" "100px" ] [ component ]))
             )

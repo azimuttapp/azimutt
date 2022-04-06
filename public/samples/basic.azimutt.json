@@ -629,8 +629,8 @@
         }
       ],
       "fromSample": "basic",
-      "createdAt": 1645385039223,
-      "updatedAt": 1645385039223
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
     }
   ],
   "layout": {
@@ -645,8 +645,8 @@
       {
         "id": "public.credentials",
         "position": {
-          "left": 932.8057265511918,
-          "top": 619.7812579682864
+          "left": 930,
+          "top": 620
         },
         "color": "orange",
         "columns": [
@@ -658,8 +658,8 @@
       {
         "id": "public.role_user",
         "position": {
-          "left": 893.4521966294432,
-          "top": 285.2187420317137
+          "left": 890,
+          "top": 280
         },
         "color": "rose",
         "columns": [
@@ -671,8 +671,8 @@
       {
         "id": "public.roles",
         "position": {
-          "left": 1140.6810494447764,
-          "top": 309.49321063225136
+          "left": 1140,
+          "top": 300
         },
         "color": "blue",
         "columns": [
@@ -685,8 +685,8 @@
       {
         "id": "public.users",
         "position": {
-          "left": 607.5522879575674,
-          "top": 477.72522452270374
+          "left": 600,
+          "top": 470
         },
         "color": "yellow",
         "columns": [
@@ -702,7 +702,7 @@
     "updatedAt": 0
   },
   "layouts": {},
-  "createdAt": 1646917538803,
-  "updatedAt": 1646917538803,
+  "createdAt": 1649492400000,
+  "updatedAt": 1649492400000,
   "version": 2
 }

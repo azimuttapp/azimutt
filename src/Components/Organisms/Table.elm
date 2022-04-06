@@ -213,7 +213,7 @@ viewColumns model =
         count =
             (model.columns |> List.length) + (model.hiddenColumns |> List.length)
     in
-    Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy4 viewColumn model (i + 1 == count) i c )))
+    Keyed.node "div" [] (model.columns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy5 viewColumn model "" (i + 1 == count) i c )))
 
 
 viewHiddenColumns : Model msg -> Html msg
@@ -234,7 +234,7 @@ viewHiddenColumns model =
             popover : Html msg
             popover =
                 if showPopover then
-                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md z-max" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy4 viewColumn model False -1 c )))
+                    Keyed.node "div" [ class "py-2 rounded-lg bg-white shadow-md" ] (model.hiddenColumns |> List.map (\c -> ( c.name, Lazy.lazy5 viewColumn model "" False -1 c )))
 
                 else
                     div [] []
@@ -242,14 +242,14 @@ viewHiddenColumns model =
             hiddenColumns : List ( String, Html msg )
             hiddenColumns =
                 if model.state.showHiddenColumns then
-                    model.hiddenColumns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy4 viewColumn model (i == List.length model.hiddenColumns - 1) -1 c ))
+                    model.hiddenColumns |> List.indexedMap (\i c -> ( c.name, Lazy.lazy5 viewColumn model "opacity-50" (i == List.length model.hiddenColumns - 1) -1 c ))
 
                 else
                     []
 
             label : String
             label =
-                model.hiddenColumns |> String.pluralizeL "hidden column"
+                model.hiddenColumns |> String.pluralizeL "more column"
         in
         Keyed.node "div"
             []
@@ -259,7 +259,7 @@ viewHiddenColumns model =
                 , Attributes.when model.conf.layout (onClick model.actions.clickHiddenColumns)
                 , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverHiddenColumns popoverId))
                 , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverHiddenColumns ""))
-                , class "h-6 px-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
+                , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
                 , classList [ ( "cursor-pointer", model.conf.layout ) ]
                 ]
                 [ text ("... " ++ label) ]
@@ -269,8 +269,8 @@ viewHiddenColumns model =
             )
 
 
-viewColumn : Model msg -> Bool -> Int -> Column -> Html msg
-viewColumn model isLast index column =
+viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
+viewColumn model styles isLast index column =
     div
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
          , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverColumn column.name True))
@@ -279,6 +279,7 @@ viewColumn model isLast index column =
          , Attributes.when model.conf.layout (onDoubleClick (model.actions.dblClickColumn column.name))
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap"
+            , styles
             , Bool.cond (isHighlightedColumn model column) (batch [ text_500 model.state.color, bg_50 model.state.color ]) "text-default-500 bg-white"
             , Bool.cond isLast "rounded-b-lg" ""
             ]
