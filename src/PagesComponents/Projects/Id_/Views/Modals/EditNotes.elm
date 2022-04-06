@@ -4,8 +4,8 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Dict
-import Html exposing (Html, div, h3, input, label, text)
-import Html.Attributes exposing (autofocus, class, for, id, name, type_, value)
+import Html exposing (Html, div, h3, input, text)
+import Html.Attributes exposing (autofocus, class, id, name, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -36,14 +36,13 @@ viewEditNotes opened erd model =
         }
         [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
             [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100", sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline Template "text-primary-600"
+                [ Icon.outline PencilAlt "text-primary-600"
                 ]
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
-                    [ text ("Writes some notes for " ++ refAsName erd model.ref) ]
+                    [ text ("Writes notes for " ++ refAsName erd model.ref) ]
                 , div [ class "mt-2" ]
-                    [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Your notes" ]
-                    , div [ class "mt-1" ]
+                    [ div [ class "mt-1" ]
                         [ input [ type_ "text", name inputId, id inputId, value model.notes, onInput (NEdit >> NotesMsg), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
                         ]
                     ]
@@ -63,5 +62,5 @@ refAsName erd ref =
             erd.tables
                 |> Dict.get column.table
                 |> Maybe.andThen (\t -> t.columns |> Ned.get column.column)
-                |> Maybe.map (\c -> c.name ++ " column of " ++ TableId.show column.table ++ " table")
+                |> Maybe.map (\c -> TableId.show column.table ++ " " ++ c.name)
                 |> Maybe.withDefault ("unknown entity " ++ ColumnRef.show column)

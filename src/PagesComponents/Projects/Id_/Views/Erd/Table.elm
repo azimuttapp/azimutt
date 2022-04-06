@@ -20,7 +20,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), VirtualRelationMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), NoteRef(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -132,7 +132,8 @@ viewTable conf zoom cursorMode args index props table =
                 , hoverColumn = \col -> ToggleHoverColumn { table = table.id, column = col }
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
-                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu i { table = table.id, column = col })
+                , clickColumnNotes = \col -> NotesMsg (NOpen (ColumnNote { table = table.id, column = col }))
+                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu i { table = table.id, column = col } (props.columnProps |> Dict.get col |> Maybe.andThen .notes))
                 , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
                 , clickRelations =
                     \cols isOut ->

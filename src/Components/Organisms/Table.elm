@@ -105,6 +105,7 @@ type alias Actions msg =
     , hoverColumn : String -> Bool -> msg
     , clickHeader : Bool -> msg
     , clickColumn : Maybe (String -> Position -> msg)
+    , clickColumnNotes : String -> msg
     , contextMenuColumn : Int -> String -> PointerEvent -> msg
     , dblClickColumn : String -> msg
     , clickRelations : List Relation -> Bool -> msg
@@ -257,9 +258,9 @@ viewHiddenColumns model =
             (( label
              , div
                 [ title label
-                , Attributes.when model.conf.layout (onClick model.actions.clickHiddenColumns)
                 , Attributes.when model.conf.hover (onMouseEnter (model.actions.setPopover popoverId))
                 , Attributes.when model.conf.hover (onMouseLeave (model.actions.setPopover ""))
+                , Attributes.when model.conf.layout (onClick model.actions.clickHiddenColumns)
                 , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
                 , classList [ ( "cursor-pointer", model.conf.layout ) ]
                 ]
@@ -454,7 +455,9 @@ viewColumnNote model columnName notes =
                     [ span
                         [ Attributes.when model.conf.hover (onMouseEnter (model.actions.setPopover popoverId))
                         , Attributes.when model.conf.hover (onMouseLeave (model.actions.setPopover ""))
+                        , Attributes.when model.conf.layout (onClick (model.actions.clickColumnNotes columnName))
                         , css [ "absolute top-1 right-1 block h-2 w-2 rounded-full", ring_200 model.state.color, bg_600 model.state.color ]
+                        , classList [ ( "cursor-pointer", model.conf.layout ) ]
                         ]
                         []
                     , div [] [] |> Popover.r (div [ class "p-2 rounded-lg bg-white shadow-md text-gray-700" ] [ text n ]) (model.state.openedPopover == popoverId)
@@ -554,6 +557,7 @@ sample =
         , hoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ Bool.cond h "on" " off")
         , clickHeader = \_ -> logAction "selected"
         , clickColumn = Nothing
+        , clickColumnNotes = \col -> logAction ("column notes: " ++ col)
         , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
         , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
         , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
@@ -581,6 +585,7 @@ doc =
                                 , hoverColumn = \c h -> updateDocState (\s -> { s | highlightedColumns = Bool.cond h (Set.fromList [ c ]) Set.empty })
                                 , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , clickColumn = Nothing
+                                , clickColumnNotes = \col -> logAction ("column notes: " ++ col)
                                 , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
                                 , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
