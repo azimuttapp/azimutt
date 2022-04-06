@@ -75,13 +75,13 @@ handleProjectSettings msg model =
             model |> mapErdM (Erd.mapSettings (setRemovedTables values >> ProjectSettings.fillFindPath)) |> (\m -> ( m, Ports.observeTablesSize (m.erd |> Maybe.mapOrElse .shownTables []) ))
 
         PSHiddenColumnsListUpdate values ->
-            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.notes e.settings.hiddenColumns)), Cmd.none )
 
         PSHiddenColumnsPropsToggle ->
-            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.notes e.settings.hiddenColumns)), Cmd.none )
 
         PSHiddenColumnsRelationsToggle ->
-            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapRelations not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.settings.hiddenColumns)), Cmd.none )
+            ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapRelations not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.notes e.settings.hiddenColumns)), Cmd.none )
 
         PSColumnOrderUpdate order ->
             ( model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order) |> mapTableProps (sortColumns order e)), Cmd.none )
@@ -93,9 +93,9 @@ handleProjectSettings msg model =
             ( model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)), Cmd.none )
 
 
-hideColumns : Dict TableId ErdTable -> HiddenColumns -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
-hideColumns tables hiddenColumns tableProps =
-    tableProps |> Dict.map (\tableId props -> tables |> Dict.get tableId |> Maybe.mapOrElse (\table -> props |> ErdTableProps.mapShownColumns (shouldHideColumns hiddenColumns table)) props)
+hideColumns : Dict TableId ErdTable -> Dict String String -> HiddenColumns -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+hideColumns tables notes hiddenColumns tableProps =
+    tableProps |> Dict.map (\tableId props -> tables |> Dict.get tableId |> Maybe.mapOrElse (\table -> props |> ErdTableProps.mapShownColumns (shouldHideColumns hiddenColumns table) notes) props)
 
 
 shouldHideColumns : HiddenColumns -> ErdTable -> List ColumnName -> List ColumnName
@@ -121,4 +121,5 @@ sortColumns order erd tableProps =
                                 )
                                 columnNames
                     )
+                    erd.notes
             )

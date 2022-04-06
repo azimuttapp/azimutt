@@ -74,7 +74,7 @@ showAllTables erd =
     let
         tablesToInit : Dict TableId ErdTableProps
         tablesToInit =
-            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ -> ErdTableProps.init erd.settings erd.relations erd.shownTables Nothing)
+            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ -> ErdTableProps.init erd.settings erd.relations erd.shownTables Nothing erd.notes)
 
         tablesHidden : List TableId
         tablesHidden =
@@ -104,12 +104,12 @@ hideAllTables erd =
 
 showColumn : TableId -> ColumnName -> Erd -> Erd
 showColumn table column erd =
-    erd |> mapTableProps (Dict.alter table (ErdTableProps.mapShownColumns (\columns -> (columns |> List.filter (\c -> c /= column)) ++ [ column ])))
+    erd |> mapTableProps (Dict.alter table (ErdTableProps.mapShownColumns (\columns -> (columns |> List.filter (\c -> c /= column)) ++ [ column ]) erd.notes))
 
 
 hideColumn : TableId -> ColumnName -> Erd -> Erd
 hideColumn table column erd =
-    erd |> mapTableProps (Dict.alter table (ErdTableProps.mapShownColumns (List.filter (\c -> c /= column))))
+    erd |> mapTableProps (Dict.alter table (ErdTableProps.mapShownColumns (List.filter (\c -> c /= column)) erd.notes))
 
 
 hoverNextColumn : TableId -> ColumnName -> Model -> Model
@@ -251,7 +251,7 @@ getRelations table name =
 performShowTable : ErdTable -> Maybe PositionHint -> Erd -> Erd
 performShowTable table hint erd =
     erd
-        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (ErdTableProps.init erd.settings erd.relations erd.shownTables hint table))))
+        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (ErdTableProps.init erd.settings erd.relations erd.shownTables hint erd.notes table))))
         |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.update table.id (Maybe.map (mapShown (\_ -> True))))))
         |> mapShownTables (\t -> B.cond (t |> List.member table.id) t (table.id :: t))
 
@@ -260,4 +260,4 @@ updateColumns : TableId -> (ErdTable -> List ColumnName -> List ColumnName) -> E
 updateColumns id update erd =
     erd.tables
         |> Dict.get id
-        |> Maybe.mapOrElse (\table -> erd |> mapTableProps (Dict.alter id (ErdTableProps.mapShownColumns (update table)))) erd
+        |> Maybe.mapOrElse (\table -> erd |> mapTableProps (Dict.alter id (ErdTableProps.mapShownColumns (update table) erd.notes))) erd

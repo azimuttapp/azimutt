@@ -274,6 +274,7 @@ upgrade project =
     , sources = project.sources |> Nel.toList |> List.map (upgradeProjectSource project.schema.tables project.schema.relations project.fromSample)
     , tables = project.schema.tables |> Dict.map (\_ -> upgradeTable)
     , relations = project.schema.relations |> List.map upgradeRelation
+    , notes = Dict.empty
     , layout = project.schema.layout |> upgradeLayout
     , usedLayout = project.currentLayout
     , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)

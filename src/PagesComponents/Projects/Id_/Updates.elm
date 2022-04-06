@@ -131,7 +131,7 @@ update currentProject currentLayout now msg model =
             ( model |> mapErdM (sortColumns id kind), Cmd.none )
 
         MoveColumn column position ->
-            ( model |> mapErdM (mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position)))), Cmd.none )
+            ( model |> mapErdM (\erd -> erd |> mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position) erd.notes))), Cmd.none )
 
         ToggleHoverTable table on ->
             ( { model | hoverTable = B.cond on (Just table) Nothing } |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )

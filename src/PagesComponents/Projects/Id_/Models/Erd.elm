@@ -31,6 +31,7 @@ type alias Erd =
     , canvas : CanvasProps
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
+    , notes : Dict String String
     , relationsByTable : Dict TableId (List Relation)
     , tableProps : Dict TableId ErdTableProps
     , shownTables : List TableId
@@ -50,12 +51,13 @@ create allProjects project =
             buildRelationsByTable project.relations
 
         ( canvas, tableProps, shownTables ) =
-            createLayout relationsByTable project.layout
+            createLayout relationsByTable project.notes project.layout
     in
     { project = ProjectInfo.create project
     , canvas = canvas
     , tables = project.tables |> Dict.map (\id -> ErdTable.create project.tables (relationsByTable |> Dict.getOrElse id []))
     , relations = project.relations |> List.map (ErdRelation.create project.tables)
+    , notes = project.notes
     , relationsByTable = relationsByTable
     , tableProps = tableProps
     , shownTables = shownTables
@@ -79,6 +81,7 @@ unpack erd =
     , sources = erd.sources
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = erd.relations |> List.map ErdRelation.unpack
+    , notes = Dict.empty
     , layout = unpackLayout erd.canvas erd.tableProps erd.shownTables layoutCreatedAt layoutUpdatedAt
     , usedLayout = erd.usedLayout
     , layouts = erd.layouts
@@ -88,15 +91,15 @@ unpack erd =
     }
 
 
-createLayout : Dict TableId (List Relation) -> Layout -> ( CanvasProps, Dict TableId ErdTableProps, List TableId )
-createLayout relationsByTable layout =
+createLayout : Dict TableId (List Relation) -> Dict String String -> Layout -> ( CanvasProps, Dict TableId ErdTableProps, List TableId )
+createLayout relationsByTable notes layout =
     let
         layoutProps : List TableProps
         layoutProps =
             layout.tables ++ layout.hiddenTables
     in
     ( layout.canvas
-    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) Nothing p )) |> Dict.fromList
+    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) Nothing notes p )) |> Dict.fromList
     , layout.tables |> List.map .id
     )
 
