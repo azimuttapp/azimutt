@@ -26,7 +26,7 @@ import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.String as String
-import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, bg_600, border_500, focus, ring_200, ring_500, text_500)
+import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
 import Set exposing (Set)
 import Track
 
@@ -289,9 +289,8 @@ viewColumn model styles isLast index column =
             ++ (model.actions.clickColumn |> Maybe.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
-        , viewColumnName column
+        , viewColumnName model column
         , viewColumnKind model column
-        , viewColumnNote model column.name column.notes
         ]
 
 
@@ -405,15 +404,27 @@ viewColumnIconDropdownItem message content =
         content
 
 
-viewColumnName : Column -> Html msg
-viewColumnName column =
+viewColumnName : Model msg -> Column -> Html msg
+viewColumnName model column =
     div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "" ] ]
-        ([ text column.name ] |> List.appendOn column.comment viewComment)
+        ([ text column.name ]
+            |> List.appendOn column.comment viewComment
+            |> List.appendOn column.notes (viewNotes model column)
+        )
 
 
 viewComment : String -> Html msg
 viewComment comment =
     Icon.outline Chat "w-4 ml-1 opacity-50" |> Tooltip.t comment
+
+
+viewNotes : Model msg -> Column -> String -> Html msg
+viewNotes model column notes =
+    span
+        [ Attributes.when model.conf.layout (onClick (model.actions.clickColumnNotes column.name))
+        , classList [ ( "cursor-pointer", model.conf.layout ) ]
+        ]
+        [ Icon.outline DocumentText "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
 
 
 viewColumnKind : Model msg -> Column -> Html msg
@@ -439,31 +450,6 @@ viewColumnKind model column =
                 [ span [ class "opacity-0" ] [ text "?" ] ]
     in
     div [ class "ml-1" ] (value :: nullable)
-
-
-viewColumnNote : Model msg -> String -> Maybe String -> Html msg
-viewColumnNote model columnName notes =
-    let
-        popoverId : HtmlId
-        popoverId =
-            model.id ++ "-" ++ columnName ++ "-notes"
-    in
-    notes
-        |> Maybe.mapOrElse
-            (\n ->
-                div []
-                    [ span
-                        [ Attributes.when model.conf.hover (onMouseEnter (model.actions.setPopover popoverId))
-                        , Attributes.when model.conf.hover (onMouseLeave (model.actions.setPopover ""))
-                        , Attributes.when model.conf.layout (onClick (model.actions.clickColumnNotes columnName))
-                        , css [ "absolute top-1 right-1 block h-2 w-2 rounded-full", ring_200 model.state.color, bg_600 model.state.color ]
-                        , classList [ ( "cursor-pointer", model.conf.layout ) ]
-                        ]
-                        []
-                    , div [] [] |> Popover.r (div [ class "p-2 rounded-lg bg-white shadow-md text-gray-700" ] [ text n ]) (model.state.openedPopover == popoverId)
-                    ]
-            )
-            (div [] [])
 
 
 formatTableRef : TableRef -> String
@@ -561,9 +547,9 @@ sample =
         , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
         , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
         , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
-        , setPopover = \id -> logAction ("hover hidden columns: " ++ id)
         , clickHiddenColumns = logAction "click hidden columns"
         , clickDropdown = \id -> logAction ("open " ++ id)
+        , setPopover = \id -> logAction ("hover hidden columns: " ++ id)
         }
     , zoom = 1
     , conf = { layout = True, move = True, select = True, hover = True }
@@ -589,9 +575,9 @@ doc =
                                 , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
                                 , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
-                                , setPopover = \id -> updateDocState (\s -> { s | openedPopover = id })
                                 , clickHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
                                 , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = Bool.cond (id == s.openedDropdown) "" id })
+                                , setPopover = \id -> updateDocState (\s -> { s | openedPopover = id })
                                 }
                         }
               )

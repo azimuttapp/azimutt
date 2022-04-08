@@ -376,13 +376,14 @@ window.addEventListener('load', function() {
 
     const hotkeys = {}
     // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
+    function isInput(elt) { return elt.localName === 'input' || elt.localName === 'textarea' }
     function keydownHotkey(e) {
         const matches = (hotkeys[e.key] || []).filter(hotkey =>
             (hotkey.ctrl === e.ctrlKey) &&
             (!hotkey.shift || e.shiftKey) &&
             (hotkey.alt === e.altKey) &&
             (hotkey.meta === e.metaKey) &&
-            ((!hotkey.target && (hotkey.onInput || e.target.localName !== 'input')) ||
+            ((!hotkey.target && (hotkey.onInput || !isInput(e.target))) ||
                 (hotkey.target &&
                     (!hotkey.target.id || hotkey.target.id === e.target.id) &&
                     (!hotkey.target.class || e.target.className.split(' ').includes(hotkey.target.class)) &&
@@ -392,7 +393,7 @@ window.addEventListener('load', function() {
             if (hotkey.preventDefault) { e.preventDefault() }
             sendToElm({kind: 'GotHotkey', id: hotkey.id})
         })
-        if(matches.length === 0 && e.key === "Escape" && e.target.localName === 'input') { e.target.blur() }
+        if(matches.length === 0 && e.key === "Escape" && isInput(e.target)) { e.target.blur() }
     }
     function listenHotkeys(keys) {
         Object.keys(hotkeys).forEach(key => hotkeys[key] = [])

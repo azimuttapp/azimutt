@@ -1,18 +1,17 @@
 module PagesComponents.Projects.Id_.Views.Modals.EditNotes exposing (viewEditNotes)
 
+import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
-import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Dict
-import Html exposing (Html, div, h3, input, text)
-import Html.Attributes exposing (autofocus, class, id, name, type_, value)
+import Html exposing (Html, div, label, span, text, textarea)
+import Html.Attributes exposing (autofocus, class, for, id, name, placeholder, rows, value)
 import Html.Events exposing (onClick, onInput)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
-import Libs.Tailwind as Tw exposing (focus, sm)
+import Libs.Tailwind as Tw exposing (sm)
 import Models.Project.ColumnRef as ColumnRef
-import Models.Project.TableId as TableId
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), NoteRef(..), NotesDialog, NotesMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 
@@ -34,33 +33,31 @@ viewEditNotes opened erd model =
         , isOpen = opened
         , onBackgroundClick = ModalClose (NotesMsg NCancel)
         }
-        [ div [ css [ "px-6 pt-6", sm [ "flex items-start" ] ] ]
-            [ div [ css [ "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-primary-100", sm [ "mx-0 h-10 w-10" ] ] ]
-                [ Icon.outline PencilAlt "text-primary-600"
-                ]
-            , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
-                [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
-                    [ text ("Writes notes for " ++ refAsName erd model.ref) ]
-                , div [ class "mt-2" ]
-                    [ div [ class "mt-1" ]
-                        [ input [ type_ "text", name inputId, id inputId, value model.notes, onInput (NEdit >> NotesMsg), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
-                        ]
+        [ div [ class "m-4 relative" ]
+            [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Notes for ", refAsName erd model.ref ]
+            , div [ class "mt-2 border border-gray-300 rounded-lg shadow-sm overflow-hidden focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500" ]
+                [ textarea [ rows 4, name inputId, id inputId, value model.notes, onInput (NEdit >> NotesMsg), autofocus True, placeholder "Write your notes...", class "block w-full py-3 border-0 resize-none focus:ring-0 sm:text-sm" ] []
+                , {- Spacer element to match the height of the toolbar -}
+                  div [ class "py-2", ariaHidden True ]
+                    [ {- Matches height of button in toolbar (1px border + 36px content height) -} div [ class "py-px" ] [ div [ class "h-9" ] [] ]
                     ]
                 ]
-            ]
-        , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50" ]
-            [ Button.primary3 Tw.primary [ onClick (model.notes |> NSave model.ref |> NotesMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text "Save notes" ]
-            , Button.white3 Tw.gray [ onClick (NCancel |> NotesMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
+            , div [ class "absolute bottom-0 inset-x-0 pl-3 pr-2 py-2 flex justify-end" ]
+                [ div [ class "flex flex-shrink-0 flex-row-reverse" ]
+                    [ Button.primary3 Tw.primary [ onClick (model.notes |> NSave model.ref |> NotesMsg |> ModalClose), css [ "w-full text-base", sm [ "ml-2 w-auto text-sm" ] ] ] [ text "Save" ]
+                    , Button.white3 Tw.gray [ onClick (NCancel |> NotesMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Close" ]
+                    ]
+                ]
             ]
         ]
 
 
-refAsName : Erd -> NoteRef -> String
+refAsName : Erd -> NoteRef -> Html msg
 refAsName erd ref =
     case ref of
         ColumnNote column ->
             erd.tables
                 |> Dict.get column.table
                 |> Maybe.andThen (\t -> t.columns |> Ned.get column.column)
-                |> Maybe.map (\c -> TableId.show column.table ++ " " ++ c.name)
-                |> Maybe.withDefault ("unknown entity " ++ ColumnRef.show column)
+                |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (ColumnRef.show column) ], text " column" ])
+                |> Maybe.withDefault (text ("unknown entity " ++ ColumnRef.show column))
