@@ -12,8 +12,10 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Ned as Ned
 import Libs.Tailwind as Tw exposing (sm)
 import Models.Project.ColumnRef as ColumnRef
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), NoteRef(..), NotesDialog, NotesMsg(..))
+import Models.Project.TableId as TableId
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), NotesDialog, NotesMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Notes exposing (NotesRef(..))
 
 
 viewEditNotes : Bool -> Erd -> NotesDialog -> Html Msg
@@ -52,12 +54,18 @@ viewEditNotes opened erd model =
         ]
 
 
-refAsName : Erd -> NoteRef -> Html msg
+refAsName : Erd -> NotesRef -> Html msg
 refAsName erd ref =
     case ref of
+        TableNote table ->
+            erd.tables
+                |> Dict.get table
+                |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (TableId.show table) ], text " table" ])
+                |> Maybe.withDefault (text ("unknown table " ++ TableId.show table))
+
         ColumnNote column ->
             erd.tables
                 |> Dict.get column.table
                 |> Maybe.andThen (\t -> t.columns |> Ned.get column.column)
                 |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (ColumnRef.show column) ], text " column" ])
-                |> Maybe.withDefault (text ("unknown entity " ++ ColumnRef.show column))
+                |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show column))

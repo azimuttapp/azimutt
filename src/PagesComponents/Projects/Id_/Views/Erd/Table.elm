@@ -20,12 +20,13 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned
 import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), NoteRef(..), NotesMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.Notes as NoteRef
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Projects.Id_.Views.Modals.ColumnContextMenu exposing (viewColumnContextMenu, viewHiddenColumnContextMenu)
 
@@ -79,11 +80,14 @@ viewTable conf zoom cursorMode args index props table =
             , ref = { schema = table.schema, table = table.name }
             , label = table.label
             , isView = table.view
+            , comment = table.comment |> Maybe.map .text
+            , notes = props.notes
             , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
-                [ Maybe.when conf.layout { label = "Toggle columns", action = Right { action = ToggleColumns table.id, hotkey = Conf.hotkeys |> Dict.get "collapse" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
-                , Maybe.when conf.layout { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                [ Maybe.when conf.layout { label = "Hide table", action = Right { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                , Maybe.when conf.layout { label = "Toggle columns", action = Right { action = ToggleColumns table.id, hotkey = Conf.hotkeys |> Dict.get "collapse" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                , Maybe.when conf.layout { label = "Add notes", action = Right { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), hotkey = Nothing } }
                 , Maybe.when conf.layout { label = "Sort columns", action = Left (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
                 , Maybe.when conf.layout
                     { label = "Hide columns"
@@ -132,7 +136,7 @@ viewTable conf zoom cursorMode args index props table =
                 , hoverColumn = \col -> ToggleHoverColumn { table = table.id, column = col }
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
-                , clickColumnNotes = \col -> NotesMsg (NOpen (ColumnNote { table = table.id, column = col }))
+                , clickNotes = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
                 , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu i { table = table.id, column = col } (props.columnProps |> Dict.get col |> Maybe.andThen .notes))
                 , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
                 , clickRelations =

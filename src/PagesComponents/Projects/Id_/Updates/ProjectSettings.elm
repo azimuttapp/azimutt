@@ -16,6 +16,7 @@ import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDia
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import Ports
 import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
 import Services.SqlSourceUpload as SqlSourceUpload
@@ -93,7 +94,7 @@ handleProjectSettings msg model =
             ( model |> mapErdM (Erd.mapSettings (mapCollapseTableColumns not)), Cmd.none )
 
 
-hideColumns : Dict TableId ErdTable -> Dict String String -> HiddenColumns -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
+hideColumns : Dict TableId ErdTable -> Dict NotesKey Notes -> HiddenColumns -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
 hideColumns tables notes hiddenColumns tableProps =
     tableProps |> Dict.map (\tableId props -> tables |> Dict.get tableId |> Maybe.mapOrElse (\table -> props |> ErdTableProps.mapShownColumns (shouldHideColumns hiddenColumns table) notes) props)
 

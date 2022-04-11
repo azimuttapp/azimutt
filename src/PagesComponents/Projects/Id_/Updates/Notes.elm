@@ -5,9 +5,9 @@ import Dict
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Task as T
-import Models.Project.ColumnRef as ColumnRef
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), NoteRef(..), NotesDialog, NotesMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), NotesDialog, NotesMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Notes as NoteRef exposing (NotesRef(..))
 import Ports
 import Services.Lenses exposing (mapColumnProps, mapEditNotesM, mapErdMCmd, mapNotes, mapTableProps, setEditNotes, setNotes)
 import Track
@@ -23,13 +23,13 @@ type alias Model x =
 handleNotes : NotesMsg -> Model x -> ( Model x, Cmd Msg )
 handleNotes msg model =
     case msg of
-        NOpen noteKey ->
+        NOpen ref ->
             ( model
                 |> setEditNotes
                     (Just
                         { id = Conf.ids.editNotesDialog
-                        , ref = noteKey
-                        , notes = model.erd |> Maybe.andThen (\erd -> erd.notes |> Dict.get (refAsString noteKey)) |> Maybe.withDefault ""
+                        , ref = ref
+                        , notes = model.erd |> Maybe.andThen (\erd -> erd.notes |> Dict.get (ref |> NoteRef.asKey)) |> Maybe.withDefault ""
                         }
                     )
             , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.editNotesDialog), Ports.track Track.openEditNotes ]
@@ -38,26 +38,26 @@ handleNotes msg model =
         NEdit notes ->
             ( model |> mapEditNotesM (setNotes notes), Cmd.none )
 
-        NSave noteKey notes ->
-            model |> setEditNotes Nothing |> mapErdMCmd (updateNotes noteKey (Just notes |> Maybe.filter (\n -> n /= "")))
+        NSave key notes ->
+            model |> setEditNotes Nothing |> mapErdMCmd (updateNotes key (Just notes |> Maybe.filter (\n -> n /= "")))
 
         NCancel ->
             ( model |> setEditNotes Nothing, Cmd.none )
 
 
-refAsString : NoteRef -> String
-refAsString ref =
-    case ref of
-        ColumnNote c ->
-            ColumnRef.toString c
-
-
-updateNotes : NoteRef -> Maybe String -> Erd -> ( Erd, Cmd Msg )
+updateNotes : NotesRef -> Maybe String -> Erd -> ( Erd, Cmd Msg )
 updateNotes ref notes erd =
     case ref of
+        TableNote t ->
+            ( erd
+                |> mapNotes (Dict.set (ref |> NoteRef.asKey) notes)
+                |> mapTableProps (Dict.alter t (setNotes notes))
+            , Cmd.none
+            )
+
         ColumnNote c ->
             ( erd
-                |> mapNotes (Dict.set (refAsString ref) notes)
+                |> mapNotes (Dict.set (ref |> NoteRef.asKey) notes)
                 |> mapTableProps (Dict.alter c.table (mapColumnProps (Dict.alter c.column (setNotes notes))))
             , Cmd.none
             )

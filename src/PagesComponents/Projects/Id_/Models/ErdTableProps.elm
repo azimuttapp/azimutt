@@ -21,6 +21,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps as ErdColumnProps expo
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdRelationProps as ErdRelationProps exposing (ErdRelationProps)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.Notes as NoteRef exposing (Notes, NotesKey)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Services.Lenses exposing (setHighlighted)
 import Set exposing (Set)
@@ -47,10 +48,11 @@ type alias ErdTableProps =
     , collapsed : Bool
     , showHiddenColumns : Bool
     , relatedTables : Dict TableId ErdRelationProps
+    , notes : Maybe String
     }
 
 
-create : List Relation -> List TableId -> Maybe PositionHint -> Dict String String -> TableProps -> ErdTableProps
+create : List Relation -> List TableId -> Maybe PositionHint -> Dict NotesKey Notes -> TableProps -> ErdTableProps
 create tableRelations shownTables hint notes props =
     { id = props.id
     , positionHint = hint
@@ -65,6 +67,7 @@ create tableRelations shownTables hint notes props =
     , collapsed = props.collapsed
     , showHiddenColumns = props.hiddenColumns
     , relatedTables = buildRelatedTables tableRelations shownTables props.id
+    , notes = notes |> Dict.get (NoteRef.tableKey props.id)
     }
 
 
@@ -98,7 +101,7 @@ unpack props =
     }
 
 
-init : ProjectSettings -> List ErdRelation -> List TableId -> Maybe PositionHint -> Dict String String -> ErdTable -> ErdTableProps
+init : ProjectSettings -> List ErdRelation -> List TableId -> Maybe PositionHint -> Dict NotesKey Notes -> ErdTable -> ErdTableProps
 init settings erdRelations shownTables hint notes table =
     let
         relations : List Relation
@@ -187,7 +190,7 @@ setColor color props =
         { props | color = color, columnProps = props.columnProps |> Dict.map (\_ p -> { p | color = color }) }
 
 
-setShownColumns : List ColumnName -> Dict String String -> ErdTableProps -> ErdTableProps
+setShownColumns : List ColumnName -> Dict NotesKey Notes -> ErdTableProps -> ErdTableProps
 setShownColumns shownColumns notes props =
     if props.shownColumns == shownColumns then
         props
@@ -203,7 +206,7 @@ setShownColumns shownColumns notes props =
         }
 
 
-mapShownColumns : (List ColumnName -> List ColumnName) -> Dict String String -> ErdTableProps -> ErdTableProps
+mapShownColumns : (List ColumnName -> List ColumnName) -> Dict NotesKey Notes -> ErdTableProps -> ErdTableProps
 mapShownColumns transform notes props =
     setShownColumns (transform props.shownColumns) notes props
 

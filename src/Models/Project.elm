@@ -17,6 +17,7 @@ import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import Time
 
 
@@ -26,7 +27,7 @@ type alias Project =
     , sources : List Source
     , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
     , relations : List Relation -- computed from sources, do not update directly (see compute function)
-    , notes : Dict String String
+    , notes : Dict NotesKey Notes
     , layout : Layout
     , usedLayout : Maybe LayoutName
     , layouts : Dict LayoutName Layout
@@ -36,7 +37,7 @@ type alias Project =
     }
 
 
-new : ProjectId -> ProjectName -> List Source -> Dict String String -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
+new : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
 new id name sources notes layout usedLayout layouts settings createdAt updatedAt =
     { id = id
     , name = name

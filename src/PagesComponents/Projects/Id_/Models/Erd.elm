@@ -22,6 +22,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnPro
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Time
 
@@ -31,7 +32,7 @@ type alias Erd =
     , canvas : CanvasProps
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
-    , notes : Dict String String
+    , notes : Dict NotesKey Notes
     , relationsByTable : Dict TableId (List Relation)
     , tableProps : Dict TableId ErdTableProps
     , shownTables : List TableId
@@ -91,7 +92,7 @@ unpack erd =
     }
 
 
-createLayout : Dict TableId (List Relation) -> Dict String String -> Layout -> ( CanvasProps, Dict TableId ErdTableProps, List TableId )
+createLayout : Dict TableId (List Relation) -> Dict NotesKey Notes -> Layout -> ( CanvasProps, Dict TableId ErdTableProps, List TableId )
 createLayout relationsByTable notes layout =
     let
         layoutProps : List TableProps

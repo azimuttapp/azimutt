@@ -36,6 +36,8 @@ type alias Model msg =
     , ref : TableRef
     , label : String
     , isView : Bool
+    , comment : Maybe String
+    , notes : Maybe String
     , columns : List Column
     , hiddenColumns : List Column
     , settings : List (MenuItem msg)
@@ -105,7 +107,7 @@ type alias Actions msg =
     , hoverColumn : String -> Bool -> msg
     , clickHeader : Bool -> msg
     , clickColumn : Maybe (String -> Position -> msg)
-    , clickColumnNotes : String -> msg
+    , clickNotes : Maybe String -> msg
     , contextMenuColumn : Int -> String -> PointerEvent -> msg
     , dblClickColumn : String -> msg
     , clickRelations : List Relation -> Bool -> msg
@@ -178,12 +180,15 @@ viewHeader model =
             [ Attributes.when model.conf.select (onPointerUp (\e -> model.actions.clickHeader e.ctrl))
             , class "flex-grow text-center"
             ]
-            [ if model.isView then
+            ([ if model.isView then
                 span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
 
-              else
+               else
                 span ([ class "text-xl" ] ++ headerTextSize) [ text model.label ]
-            ]
+             ]
+                |> List.appendOn model.comment viewComment
+                |> List.appendOn model.notes (viewNotes model Nothing)
+            )
         , if model.settings |> List.nonEmpty then
             Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
                 (\m ->
@@ -409,7 +414,7 @@ viewColumnName model column =
     div [ css [ "ml-1 flex flex-grow", Bool.cond column.isPrimaryKey "font-bold" "" ] ]
         ([ text column.name ]
             |> List.appendOn column.comment viewComment
-            |> List.appendOn column.notes (viewNotes model column)
+            |> List.appendOn column.notes (viewNotes model (Just column.name))
         )
 
 
@@ -418,10 +423,10 @@ viewComment comment =
     Icon.outline Chat "w-4 ml-1 opacity-50" |> Tooltip.t comment
 
 
-viewNotes : Model msg -> Column -> String -> Html msg
+viewNotes : Model msg -> Maybe String -> String -> Html msg
 viewNotes model column notes =
     span
-        [ Attributes.when model.conf.layout (onClick (model.actions.clickColumnNotes column.name))
+        [ Attributes.when model.conf.layout (onClick (model.actions.clickNotes column))
         , classList [ ( "cursor-pointer", model.conf.layout ) ]
         ]
         [ Icon.outline DocumentText "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
@@ -508,6 +513,8 @@ sample =
     , ref = { schema = "public", table = "users" }
     , label = "users"
     , isView = False
+    , comment = Nothing
+    , notes = Nothing
     , columns =
         [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "public", table = "accounts", column = "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | name = "name", kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
@@ -543,7 +550,7 @@ sample =
         , hoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ Bool.cond h "on" " off")
         , clickHeader = \_ -> logAction "selected"
         , clickColumn = Nothing
-        , clickColumnNotes = \col -> logAction ("column notes: " ++ col)
+        , clickNotes = \col -> logAction ("click notes: " ++ (col |> Maybe.withDefault "table"))
         , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
         , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
         , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
@@ -571,7 +578,7 @@ doc =
                                 , hoverColumn = \c h -> updateDocState (\s -> { s | highlightedColumns = Bool.cond h (Set.fromList [ c ]) Set.empty })
                                 , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
                                 , clickColumn = Nothing
-                                , clickColumnNotes = \col -> logAction ("column notes: " ++ col)
+                                , clickNotes = \col -> logAction ("click notes: " ++ (col |> Maybe.withDefault "table"))
                                 , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
                                 , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
                                 , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
@@ -585,6 +592,8 @@ doc =
               , \_ ->
                     div [ css [ "flex flex-wrap gap-6" ] ]
                         ([ { sample | id = "View", isView = True }
+                         , { sample | id = "With comment", comment = Just "Here is a comment" }
+                         , { sample | id = "With notes", notes = Just "Here is some notes" }
                          , { sample | id = "Hover table", state = sample.state |> (\s -> { s | isHover = True }) }
                          , { sample | id = "Hover column", state = sample.state |> (\s -> { s | isHover = True, highlightedColumns = Set.fromList [ "name" ] }) }
                          , { sample | id = "Selected", state = sample.state |> (\s -> { s | selected = True }) }
