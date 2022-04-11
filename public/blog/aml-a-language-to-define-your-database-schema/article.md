@@ -7,11 +7,11 @@ author: loic
 published: 2022-04-11
 ---
 
-While Azimutt is primarily a database schema explorer allowing you to better navigate and understand big databases, I regularly got requests to extend it. Which totally makes sense when you are working on new evolutions or features. I delayed this as I had more important feature to develop such as [embed](./embed-your-database-diagram-anywhere) or [schema analysis](./improve-your-database-design-with-azimutt-analyzer), and I didn't know on how to do it well, but **now is the time**.
+While Azimutt is primarily a database schema explorer allowing you to better navigate and understand big databases, I regularly get requests to extend it. Which totally makes sense when you are working on new evolutions or features. I delayed this as I had more important feature to develop such as [embed](./embed-your-database-diagram-anywhere) or [schema analysis](./improve-your-database-design-with-azimutt-analyzer), and I didn't know how to do it well, but **it is now time**.
 
 ![hello]({{base_link}}/hello.jpg)
 
-I reviewed a lot of tools to build a [choice guide](./how-to-choose-your-entity-relationship-diagram) and could experiment many ways to define it. Most of them were quite bad with inputs for each information and a lot of buttons to add/edit/delete/move everything. Only two defined a simple language to define your schema. You could write it as full text, allowing copy/paste, code generation and even versioning. The experience was incredible. It seems obvious now, as we are not writing code just for fun but because it's the most efficient way to express ourselves with various levels of strictness or abstraction. And so AML was born in my mind.
+I reviewed a lot of tools to build a [choice guide](./how-to-choose-your-entity-relationship-diagram) and could experiment many ways to define it. Most of them were quite bad with inputs for each information and a lot of buttons to add/edit/delete/move everything. Only two use a simple language to define your schema. You could write it as full text, allowing copy/paste, code generation and even versioning. The experience was incredible. It seems obvious now, as we are not writing code just for fun but because it's the most efficient way to express ourselves with various levels of strictness or abstraction. And so AML was born in my mind.
 
 AML stands for **Azimutt Markup Language**. Its goal is clear: define a SQL database structure in the easiest and lightest way possible. It's meant to be intuitive and used without any prior learning.
 
@@ -29,7 +29,7 @@ users
   email varchar(128) nullable
 ```
 
-And another one with more attribute involved:
+And another one with more attributes involved:
 
 ```
 credentials
@@ -54,13 +54,13 @@ Now let's discover more precisely all the details of this language for Azimutt.
 
 ### Table definition
 
-In SQL, every table is defined by its schema and name, so do in AML. A table can be defined as easy as:
+In SQL, every table is defined by its schema and name, so does in AML. A table can be defined as easy as:
 
 ```
 schema_name.table_name
 ```
 
-As it's very common to put table in the default schema named `public`, you can omit the schema in this case the declaration becomes just:
+As it's very common to put table in the default schema named `public`, you can omit the schema, in this case the declaration becomes just:
 
 ```
 table_name
@@ -91,7 +91,7 @@ Just make sure to have them alone on the line.
 
 ### Column definition
 
-Defining tables is nice but columns are as much as important. To add them, just go to the line with a two space indent:
+Defining tables is nice but columns are as important. To add them, just go to the line with a two space indent:
 
 ```
 users
@@ -99,7 +99,7 @@ users
   name
 ```
 
-That's it. With that you have a `users` table with two columns `id` and `name`. Their type is set to `unknown`, but you can specify it, just after the name:
+That's it. With that, you have a `users` table with two columns `id` and `name`. Their type is set to `unknown`, but you can specify it, just after the name:
 
 ```
 users
@@ -225,7 +225,7 @@ Keywords such as `pk`, `fk`, `nullable` or `unique` are expected to be written i
 
 ### Recap
 
-Explaining everything is detail is quite long, but I hope everything is quite natural and the Azimutt editor will help with meaningful errors and contextual documentation and examples, so it should be really easy to use it for the first time.
+Explaining everything in details is quite long, but I hope everything is quite natural and the Azimutt editor will help with meaningful errors and contextual documentation and examples, so it should be really easy to use it for the first time.
 At least it's the goal so if you see anything that may be confusing, [please reach out](https://github.com/azimuttapp/azimutt/issues/84). Hopefully we can fix it before the first release.
 
 Another important thing to note about Azimutt source management: all active sources are merged to produce your browsable diagram. Your written ones but also imported ones. It could be very convenient to have several sources representing different evolutions but as they are all additive, you can't remove a table or column from another source. That's a small limitation you will have to keep in mind.
