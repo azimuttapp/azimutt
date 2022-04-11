@@ -6,7 +6,7 @@ import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas, toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas, toastInfo, toastWarning)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
 import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapSearch, mapTableProps)
@@ -128,6 +128,7 @@ cancelElement model =
         ((model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
             |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
             |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
+            |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))
             |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
             |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
             |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))

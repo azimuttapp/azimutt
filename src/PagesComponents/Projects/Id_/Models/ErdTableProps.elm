@@ -21,6 +21,7 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps as ErdColumnProps expo
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdRelationProps as ErdRelationProps exposing (ErdRelationProps)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.Notes as NoteRef exposing (Notes, NotesKey)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Services.Lenses exposing (setHighlighted)
 import Set exposing (Set)
@@ -47,11 +48,12 @@ type alias ErdTableProps =
     , collapsed : Bool
     , showHiddenColumns : Bool
     , relatedTables : Dict TableId ErdRelationProps
+    , notes : Maybe String
     }
 
 
-create : List Relation -> List TableId -> Maybe PositionHint -> TableProps -> ErdTableProps
-create tableRelations shownTables hint props =
+create : List Relation -> List TableId -> Maybe PositionHint -> Dict NotesKey Notes -> TableProps -> ErdTableProps
+create tableRelations shownTables hint notes props =
     { id = props.id
     , positionHint = hint
     , position = props.position
@@ -60,11 +62,12 @@ create tableRelations shownTables hint props =
     , color = props.color
     , shownColumns = props.columns
     , highlightedColumns = Set.empty
-    , columnProps = props.columns |> ErdColumnProps.createAll props.position props.size props.color Set.empty props.selected props.collapsed
+    , columnProps = props.columns |> ErdColumnProps.createAll props.id props.position props.size props.color Set.empty props.selected props.collapsed notes
     , selected = props.selected
     , collapsed = props.collapsed
     , showHiddenColumns = props.hiddenColumns
     , relatedTables = buildRelatedTables tableRelations shownTables props.id
+    , notes = notes |> Dict.get (NoteRef.tableKey props.id)
     }
 
 
@@ -98,8 +101,8 @@ unpack props =
     }
 
 
-init : ProjectSettings -> List ErdRelation -> List TableId -> Maybe PositionHint -> ErdTable -> ErdTableProps
-init settings erdRelations shownTables hint table =
+init : ProjectSettings -> List ErdRelation -> List TableId -> Maybe PositionHint -> Dict NotesKey Notes -> ErdTable -> ErdTableProps
+init settings erdRelations shownTables hint notes table =
     let
         relations : List Relation
         relations =
@@ -114,7 +117,7 @@ init settings erdRelations shownTables hint table =
     , collapsed = settings.collapseTableColumns
     , hiddenColumns = False
     }
-        |> create relations shownTables hint
+        |> create relations shownTables hint notes
 
 
 computeColumns : ProjectSettings -> List Relation -> ErdTable -> List ColumnName -> List ColumnName
@@ -187,8 +190,8 @@ setColor color props =
         { props | color = color, columnProps = props.columnProps |> Dict.map (\_ p -> { p | color = color }) }
 
 
-setShownColumns : List ColumnName -> ErdTableProps -> ErdTableProps
-setShownColumns shownColumns props =
+setShownColumns : List ColumnName -> Dict NotesKey Notes -> ErdTableProps -> ErdTableProps
+setShownColumns shownColumns notes props =
     if props.shownColumns == shownColumns then
         props
 
@@ -197,15 +200,15 @@ setShownColumns shownColumns props =
             | shownColumns = shownColumns
             , columnProps =
                 shownColumns
-                    |> ErdColumnProps.createAll props.position props.size props.color props.highlightedColumns props.selected props.collapsed
+                    |> ErdColumnProps.createAll props.id props.position props.size props.color props.highlightedColumns props.selected props.collapsed notes
                     -- if the recomputed version is the same as the existing one, keep the older to preserve referential equality
                     |> Dict.map (\c p -> props.columnProps |> Dict.get c |> Maybe.mapOrElse (\prev -> B.cond (p == prev) prev p) p)
         }
 
 
-mapShownColumns : (List ColumnName -> List ColumnName) -> ErdTableProps -> ErdTableProps
-mapShownColumns transform props =
-    setShownColumns (transform props.shownColumns) props
+mapShownColumns : (List ColumnName -> List ColumnName) -> Dict NotesKey Notes -> ErdTableProps -> ErdTableProps
+mapShownColumns transform notes props =
+    setShownColumns (transform props.shownColumns) notes props
 
 
 setHighlightedColumns : Set ColumnName -> ErdTableProps -> ErdTableProps

@@ -17,6 +17,7 @@ import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import Time
 
 
@@ -26,6 +27,7 @@ type alias Project =
     , sources : List Source
     , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
     , relations : List Relation -- computed from sources, do not update directly (see compute function)
+    , notes : Dict NotesKey Notes
     , layout : Layout
     , usedLayout : Maybe LayoutName
     , layouts : Dict LayoutName Layout
@@ -35,13 +37,14 @@ type alias Project =
     }
 
 
-new : ProjectId -> ProjectName -> List Source -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
-new id name sources layout usedLayout layouts settings createdAt updatedAt =
+new : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
+new id name sources notes layout usedLayout layouts settings createdAt updatedAt =
     { id = id
     , name = name
     , sources = sources
     , tables = Dict.empty
     , relations = []
+    , notes = notes
     , layout = layout
     , usedLayout = usedLayout
     , layouts = layouts
@@ -54,7 +57,7 @@ new id name sources layout usedLayout layouts settings createdAt updatedAt =
 
 create : ProjectId -> ProjectName -> Source -> Project
 create id name source =
-    new id name [ source ] (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init source.createdAt source.updatedAt
+    new id name [ source ] Dict.empty (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init source.createdAt source.updatedAt
 
 
 compute : Project -> Project
@@ -124,6 +127,7 @@ encode value =
         [ ( "id", value.id |> ProjectId.encode )
         , ( "name", value.name |> ProjectName.encode )
         , ( "sources", value.sources |> Encode.list Source.encode )
+        , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
         , ( "layout", value.layout |> Layout.encode )
         , ( "usedLayout", value.usedLayout |> Encode.maybe LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
@@ -136,10 +140,11 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map9 new
+    Decode.map10 new
         (Decode.field "id" ProjectId.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.field "sources" (Decode.list Source.decode))
+        (Decode.defaultField "notes" (Decode.dict Decode.string) Dict.empty)
         (Decode.defaultField "layout" Layout.decode (Layout.init (Time.millisToPosix 0)))
         (Decode.maybeField "usedLayout" LayoutName.decode)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)

@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Molecules.Toast as Toast exposing (Content(..))
@@ -30,6 +30,7 @@ import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
+import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Ports exposing (JsMsg)
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
@@ -47,6 +48,7 @@ type alias Model =
     , cursorMode : CursorMode
     , selectionBox : Maybe Area
     , newLayout : Maybe LayoutDialog
+    , editNotes : Maybe NotesDialog
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
@@ -86,6 +88,10 @@ type CursorMode
 
 type alias LayoutDialog =
     { id : HtmlId, name : LayoutName }
+
+
+type alias NotesDialog =
+    { id : HtmlId, ref : NotesRef, notes : Notes }
 
 
 type alias VirtualRelation =
@@ -156,6 +162,7 @@ type Msg
     | CreateRelation ColumnRef ColumnRef
     | ResetCanvas
     | LayoutMsg LayoutMsg
+    | NotesMsg NotesMsg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
@@ -205,6 +212,13 @@ type LayoutMsg
     | LUnload
     | LUpdate LayoutName
     | LDelete LayoutName
+
+
+type NotesMsg
+    = NOpen NotesRef
+    | NEdit Notes
+    | NSave NotesRef Notes
+    | NCancel
 
 
 type VirtualRelationMsg

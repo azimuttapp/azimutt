@@ -69,6 +69,7 @@ init query =
       , cursorMode = CursorSelect
       , selectionBox = Nothing
       , newLayout = Nothing
+      , editNotes = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing
