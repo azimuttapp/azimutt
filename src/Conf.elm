@@ -174,7 +174,7 @@ blogPosts =
     , "embed-your-database-diagram-anywhere"
     , "how-to-choose-your-entity-relationship-diagram"
     , "improve-your-database-design-with-azimutt-analyzer"
+    , "aml-a-language-to-define-your-database-schema"
 
-    --, "aml-a-language-to-define-your-database-schema"
     --, "make-your-app-hackable"
     ]
