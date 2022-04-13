@@ -1,46 +1,58 @@
-# Azimutt
+<p align="center"><a href="https://azimutt.app" target="_blank"><img width="200px" src="public/logo.svg" alt="logo"/></a></p>
+<h1 align="center">Azimutt</h1>
+<p align="center">
+  Next gen ERD<br>
+  to explore your database schema seamlessly
+</p>
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/c5073177-d6c0-4403-b8c2-ee4466234f52/deploy-status)](https://app.netlify.com/sites/azimutt/deploys)
+<p align="center">
+  <a href="https://azimutt.app">Website</a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="https://github.com/azimuttapp/azimutt/projects/1">Roadmap</a>
+  <span>&nbsp;•&nbsp;</span>
+  <a href="https://twitter.com/azimuttapp">@azimuttapp</a>
+</p>
 
-An Entity Relationship diagram (ERD) visualization tool, with various filters and inputs to help understand your SQL
-schema.
+<p align="center">
+  <a href="https://app.netlify.com/sites/azimutt/deploys"><img src="https://api.netlify.com/api/v1/badges/c5073177-d6c0-4403-b8c2-ee4466234f52/deploy-status" alt="Netlify status" /></a>
+</p>
 
-Why building my own ?
+Azimutt is an Entity Relationship diagram (ERD) targeting real world (big & messy) database schema.
+
+**Why building my own?**
 
 Most ERD tool I looked into ([DrawSQL](https://drawsql.app), [dbdiagram.io](https://dbdiagram.io)
 , [Lucidchart](https://www.lucidchart.com/pages/examples/er-diagram-tool), [ERDPlus](https://erdplus.com)
 , [Creately](https://creately.com/lp/er-diagram-tool-online), [SqlDBM](https://sqldbm.com)
-, [QuickDBD](https://www.quickdatabasediagrams.com)) are focusing on creating/editing the schema (collaboratively) and
-displaying it (statically). This is nice when starting a new project with a few tables but doesn't really help when you
-discover an existing one with hundreds of tables and relations.
+, [QuickDBD](https://www.quickdatabasediagrams.com)) are focusing on creating/editing/displaying the schema 
+(see [my review](https://azimutt.app/blog/how-to-choose-your-entity-relationship-diagram)). This is great when starting a new project with a few tables 
+but doesn't really help when you discover an existing database with hundreds of tables and relations.
 
 I really miss an interactive exploration tool with features like:
 
-- filter/show/hide some tables
-- filter/show/hide some columns
-- search for tables, columns or even in metadata
-- tag tables and columns to define meaningful groups (team ownership, domain exploration...)
-- rich UI infos with:
-    - source links (schema file but also app models)
+- show/hide/filter tables to show
+- show/hide/filter columns to show
+- search for tables and columns, or even in metadata
+- save meaningful layouts
+- define tables and columns groups (team ownership, domain exploration...)
+- rich UI:
+    - source links (schema file but also code models)
     - database statistics (table size, column value samples)
     - team/code ownership (git blame or specific format)
     - tables/columns updates (from migrations files or schema file history)
 
-For me, this tool is the missing piece between a classic ERD tool and a Data catalog:
+For me, this tool is the missing piece between a classic ERD tools and a Data catalogs:
 
 ![screenshot](public/assets/images/screenshot-gospeak-schema.png)
 
 ## Installation
 
-[Azimutt](https://azimutt.app) is a Single Page Application built with Elm that parse and explore your database schema.
-
-First launch:
-
 - install `npm`, [Elm](https://guide.elm-lang.org/install/elm.html) & [elm-spa](https://www.elm-spa.dev)
 - run `npm install` to download npm dependencies
+- run `npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css` to build styles
 - run `elm-spa server` to generate needed files (`.elm-spa/defaults` & `.elm-spa/generated`)
 
-Dev commands:
+## Dev commands
 
 - launch dev server: `elm-spa server` or `elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js` (needs `npm install -g elm-live` or use `npx`)
 - launch design system: `elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js` (needs `npm install -g elm-book` or use `npx`)
