@@ -227,13 +227,24 @@ viewSelectionBox area =
 viewEmptyState : Dict TableId ErdTable -> Html Msg
 viewEmptyState tables =
     let
-        bestTables : List ErdTable
-        bestTables =
+        bestOneWordTables : List ErdTable
+        bestOneWordTables =
             tables
                 |> Dict.values
                 |> List.filterNot (\t -> (t.schema |> String.contains "_") || (t.name |> String.contains "_") || (t.schema |> String.contains "-") || (t.name |> String.contains "-"))
                 |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
                 |> List.take 10
+
+        bestTables : List ErdTable
+        bestTables =
+            if bestOneWordTables |> List.isEmpty then
+                tables
+                    |> Dict.values
+                    |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
+                    |> List.take 10
+
+            else
+                bestOneWordTables
     in
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]
