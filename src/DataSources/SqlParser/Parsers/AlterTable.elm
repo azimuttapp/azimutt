@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition, sqlTriggers)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
@@ -229,8 +229,3 @@ parseAlterTableDropConstraint command =
 
         _ ->
             Err [ "Can't parse drop constraint: '" ++ command ++ "'" ]
-
-
-sqlTriggers : String
-sqlTriggers =
-    "(?:\\s+(?:ON UPDATE|ON DELETE)\\s+(?:NO ACTION|CASCADE|SET NULL|SET DEFAULT|RESTRICT))*"

@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.CreateTableTest exposing (..)
 
-import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn, parseCreateTableForeignKey, parseCreateTableKey)
+import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn, parseCreateTableColumnForeignKey, parseCreateTableForeignKey, parseCreateTableKey)
 import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParse, testParseSql)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
@@ -82,6 +82,9 @@ suite =
             , testParseSql ( parseCreateTableColumn "", "with foreign key having only table" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES users"
                 { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Nothing, table = "users", column = Nothing } ) }
+            , testParseSql ( parseCreateTableColumn "", "with unique" )
+                "`email` varchar(255) NOT NULL UNIQUE"
+                { parsedColumn | name = "email", kind = "varchar(255)", nullable = False, unique = Just "UNIQUE" }
             , testParseSql ( parseCreateTableColumn "", "with check" )
                 "state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable'))"
                 { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
@@ -96,6 +99,14 @@ suite =
             [ testParseSql ( parseCreateTableForeignKey, "sqlite" )
                 "foreign key(`ulid`) references `tasks`(`ulid`)"
                 { name = Nothing, src = "ulid", ref = { schema = Nothing, table = "tasks", column = Just "ulid" } }
+            ]
+        , describe "parseCreateTableColumnForeignKey"
+            [ testParseSql ( parseCreateTableColumnForeignKey, "references" )
+                "REFERENCES `t_house` (`id`)"
+                ( Nothing, { schema = Nothing, table = "t_house", column = Just "id" } )
+            , testParseSql ( parseCreateTableColumnForeignKey, "references with triggers" )
+                "REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"
+                ( Nothing, { schema = Nothing, table = "t_user", column = Just "id" } )
             ]
         , describe "parseCreateTableKey"
             [ testParseSql ( parseCreateTableKey, "using" )

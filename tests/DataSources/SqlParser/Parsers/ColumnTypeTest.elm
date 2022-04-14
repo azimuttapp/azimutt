@@ -36,6 +36,7 @@ suite =
             , testParse "date" "Date"
             , testParse "time without time zone" "Time"
             , testParse "datetime" "DateTime"
+            , testParse "DATETIME" "DateTime"
             , testParse "timestamp without time zone" "DateTime"
             , testParse "timestamp with time zone" "DateTime"
             , testParse "timestamp(6) without time zone" "DateTime"
