@@ -82,26 +82,28 @@ drawCurve conf ( p1, dir1 ) ( p2, dir2 ) ( arrowLength, arrowWidth ) onHover nul
         strength : Float
         strength =
             abs (p1.left - p2.left) / 2 |> max 15
+
+        path : List String
+        path =
+            [ moveTo p1
+            , lineTo (p1 |> add arrowLength dir1)
+            , moveTo (p1 |> Position.add { left = 0, top = negate arrowWidth })
+            , lineTo (p1 |> add arrowLength dir1)
+            , moveTo (p1 |> Position.add { left = 0, top = arrowWidth })
+            , lineTo (p1 |> add arrowLength dir1)
+            , moveTo (p1 |> add arrowLength dir1)
+            , curveTo (p1 |> add (arrowLength + strength) dir1) (p2 |> add strength dir2) p2
+            ]
+
+        hoverAttrs : List (Attribute msg)
+        hoverAttrs =
+            if conf.hover then
+                [ onMouseEnter (onHover True), onMouseLeave (onHover False) ]
+
+            else
+                []
     in
-    [ Svg.path
-        ([ d
-            ([ moveTo p1
-             , lineTo (p1 |> add arrowLength dir1)
-             , moveTo (p1 |> Position.add { left = 0, top = negate arrowWidth })
-             , lineTo (p1 |> add arrowLength dir1)
-             , moveTo (p1 |> Position.add { left = 0, top = arrowWidth })
-             , lineTo (p1 |> add arrowLength dir1)
-             , moveTo (p1 |> add arrowLength dir1)
-             , curveTo (p1 |> add (arrowLength + strength) dir1) (p2 |> add strength dir2) p2
-             ]
-                |> String.join " "
-            )
-         , Attributes.when conf.hover (onMouseEnter (onHover True))
-         , Attributes.when conf.hover (onMouseLeave (onHover False))
-         ]
-            ++ lineAttrs nullable color
-        )
-        []
+    [ Svg.path ([ d (path |> String.join " ") ] ++ hoverAttrs ++ lineAttrs nullable color) []
     , circle (p2 |> add 2 dir2) 2.5 [ class (color |> Maybe.mapOrElse (\c -> fill_500 c) "fill-default-400") ]
     ]
 
