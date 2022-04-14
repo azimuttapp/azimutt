@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, getSourceId, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -101,11 +101,6 @@ readRemoteFile project source url sample =
     messageToJs (GetRemoteFile project source url sample)
 
 
-getSourceId : ColumnRef -> ColumnRef -> Cmd msg
-getSourceId src ref =
-    messageToJs (GetSourceId src ref)
-
-
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -184,7 +179,6 @@ type ElmMsg
     | DropProject Project
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
-    | GetSourceId ColumnRef ColumnRef
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | TrackPage String
@@ -197,7 +191,6 @@ type JsMsg
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
-    | GotSourceId Time.Posix SourceId ColumnRef ColumnRef
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -288,9 +281,6 @@ elmEncoder elm =
         GetRemoteFile project source url sample ->
             Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> Encode.maybe Encode.string ) ]
 
-        GetSourceId src ref ->
-            Encode.object [ ( "kind", "GetSourceId" |> Encode.string ), ( "src", src |> ColumnRef.encode ), ( "ref", ref |> ColumnRef.encode ) ]
-
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -313,18 +303,19 @@ jsDecoder =
         (\kind ->
             case kind of
                 "GotSizes" ->
-                    Decode.field "sizes"
-                        (Decode.map4 SizeChange
-                            (Decode.field "id" Decode.string)
-                            (Decode.field "position" Position.decode)
-                            (Decode.field "size" Size.decode)
-                            (Decode.field "seeds" Position.decode)
-                            |> Decode.list
+                    Decode.map GotSizes
+                        (Decode.field "sizes"
+                            (Decode.map4 SizeChange
+                                (Decode.field "id" Decode.string)
+                                (Decode.field "position" Position.decode)
+                                (Decode.field "size" Size.decode)
+                                (Decode.field "seeds" Position.decode)
+                                |> Decode.list
+                            )
                         )
-                        |> Decode.map GotSizes
 
                 "GotProjects" ->
-                    Decode.field "projects" projectsDecoder |> Decode.map GotProjects
+                    Decode.map GotProjects (Decode.field "projects" projectsDecoder)
 
                 "GotLocalFile" ->
                     Decode.map5 GotLocalFile
@@ -343,15 +334,8 @@ jsDecoder =
                         (Decode.field "content" Decode.string)
                         (Decode.maybeField "sample" Decode.string)
 
-                "GotSourceId" ->
-                    Decode.map4 GotSourceId
-                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "sourceId" SourceId.decode)
-                        (Decode.field "src" ColumnRef.decode)
-                        (Decode.field "ref" ColumnRef.decode)
-
                 "GotHotkey" ->
-                    Decode.field "id" Decode.string |> Decode.map GotHotkey
+                    Decode.map GotHotkey (Decode.field "id" Decode.string)
 
                 "GotKeyHold" ->
                     Decode.map2 GotKeyHold (Decode.field "key" Decode.string) (Decode.field "start" Decode.bool)
@@ -363,10 +347,10 @@ jsDecoder =
                     Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decode)
 
                 "GotTableHide" ->
-                    Decode.field "id" TableId.decode |> Decode.map GotTableHide
+                    Decode.map GotTableHide (Decode.field "id" TableId.decode)
 
                 "GotTableToggleColumns" ->
-                    Decode.field "id" TableId.decode |> Decode.map GotTableToggleColumns
+                    Decode.map GotTableToggleColumns (Decode.field "id" TableId.decode)
 
                 "GotTablePosition" ->
                     Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decode)
@@ -375,13 +359,13 @@ jsDecoder =
                     Decode.map2 GotTableMove (Decode.field "id" TableId.decode) (Decode.field "delta" Delta.decode)
 
                 "GotTableSelect" ->
-                    Decode.field "id" TableId.decode |> Decode.map GotTableSelect
+                    Decode.map GotTableSelect (Decode.field "id" TableId.decode)
 
                 "GotColumnShow" ->
-                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotColumnShow
+                    Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
 
                 "GotColumnHide" ->
-                    Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString |> Decode.map GotColumnHide
+                    Decode.map GotColumnHide (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
 
                 "GotColumnMove" ->
                     Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString) (Decode.field "index" Decode.int)

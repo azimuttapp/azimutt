@@ -19,7 +19,7 @@ window.addEventListener('load', function() {
 
     window.azimutt = {
         getAllTables: () => {
-            const removedTables = window.azimutt.project.settings.removedTables.split(',').map(t => t.trim()).filter(t => t.length > 0)
+            const removedTables = (window.azimutt.project?.settings?.removedTables || '').split(',').map(t => t.trim()).filter(t => t.length > 0)
             return window.azimutt.project?.sources
                 .filter(s => s.enabled !== false)
                 .flatMap(s => s.tables)
@@ -86,7 +86,6 @@ window.addEventListener('load', function() {
                 case 'DropProject':       dropProject(port.project); break;
                 case 'GetLocalFile':      getLocalFile(port.project, port.source, port.file); break;
                 case 'GetRemoteFile':     getRemoteFile(port.project, port.source, port.url, port.sample); break;
-                case 'GetSourceId':       getSourceId(port.src, port.ref); break;
                 case 'ObserveSizes':      observeSizes(port.ids); break;
                 case 'ListenKeys':        listenHotkeys(port.keys); break;
                 case 'TrackPage':         analytics.then(a => a.trackPage(port.name)); break;
@@ -346,10 +345,6 @@ window.addEventListener('load', function() {
                 sample
             }))
             .catch(err => showMessage({kind: 'error', message: `Can't get remote file ${url}: ${err}`}))
-    }
-
-    function getSourceId(src, ref) {
-        sendToElm({kind: 'GotSourceId', now: Date.now(), sourceId: randomUID(), src, ref})
     }
 
     const resizeObserver = new ResizeObserver(entries => {

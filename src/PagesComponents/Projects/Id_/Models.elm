@@ -33,12 +33,14 @@ import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDial
 import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import Ports exposing (JsMsg)
+import Random
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
 import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
-    { conf : ErdConf
+    { seed : Random.Seed
+    , conf : ErdConf
     , navbar : NavbarModel
     , screen : ScreenProps
     , loaded : Bool

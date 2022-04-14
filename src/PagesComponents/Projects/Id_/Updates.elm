@@ -17,7 +17,6 @@ import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
-import Models.Project.Source as Source
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Models.DragState as DragState
@@ -38,6 +37,7 @@ import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideC
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
+import Random
 import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Time
@@ -141,7 +141,7 @@ update currentProject currentLayout now msg model =
             ( { model | hoverColumn = B.cond on (Just column) Nothing } |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
         CreateRelation src ref ->
-            model |> mapErdMCmd (Source.addRelation src ref)
+            model |> mapErdMCmd (Source.addRelation now src ref)
 
         ResetCanvas ->
             ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )
@@ -294,11 +294,14 @@ handleJsMessage currentProject currentLayout msg model =
                         |> Maybe.mapOrElse (\id -> projects |> List.find (\p -> p.id == id)) (projects |> List.head)
                         |> Maybe.map (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
 
+                ( childSeed, newSeed ) =
+                    Random.step (Random.int Random.minInt Random.maxInt) model.seed
+
                 erd : Maybe Erd
                 erd =
-                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create projects))
+                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create (Random.initialSeed childSeed) projects))
             in
-            ( { model | loaded = True, erd = erd }
+            ( { model | seed = newSeed, loaded = True, erd = erd }
             , Cmd.batch
                 ((model.erd
                     |> Maybe.mapOrElse (\_ -> [])
@@ -327,11 +330,6 @@ handleJsMessage currentProject currentLayout msg model =
 
             else
                 ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
-
-        GotSourceId now sourceId src ref ->
-            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [] now ]))
-            , Cmd.batch [ T.send (toastInfo "Created a user source to add the relation."), T.send (CreateRelation src ref) ]
-            )
 
         GotHotkey hotkey ->
             handleHotkey model hotkey
