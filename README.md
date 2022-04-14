@@ -1,23 +1,19 @@
-<p align="center"><a href="https://azimutt.app" target="_blank"><img width="200px" src="public/logo.svg" alt="logo"/></a></p>
+<p align="center"><a href="https://azimutt.app" target="_blank"><img width="150px" src="public/logo.svg" alt="logo"/></a></p>
 <h1 align="center">Azimutt</h1>
+<h4 align="center">Next gen ERD</h4>
+<p align="center">Explore your SQL database schema seamlessly</p>
+
 <p align="center">
-  Next gen ERD<br>
-  to explore your database schema seamlessly
+  <a href="https://azimutt.app" target="_blank">azimutt.app</a> •
+  <a href="https://github.com/azimuttapp/azimutt/projects/1" target="_blank">roadmap</a> •
+  <a href="https://twitter.com/azimuttapp" target="_blank">@azimuttapp</a>
 </p>
 
 <p align="center">
-  <a href="https://azimutt.app">Website</a>
-  <span>&nbsp;•&nbsp;</span>
-  <a href="https://github.com/azimuttapp/azimutt/projects/1">Roadmap</a>
-  <span>&nbsp;•&nbsp;</span>
-  <a href="https://twitter.com/azimuttapp">@azimuttapp</a>
+  <a href="https://app.netlify.com/sites/azimutt/deploys" target="_blank"><img src="https://api.netlify.com/api/v1/badges/c5073177-d6c0-4403-b8c2-ee4466234f52/deploy-status" alt="Netlify status" /></a>
 </p>
 
-<p align="center">
-  <a href="https://app.netlify.com/sites/azimutt/deploys"><img src="https://api.netlify.com/api/v1/badges/c5073177-d6c0-4403-b8c2-ee4466234f52/deploy-status" alt="Netlify status" /></a>
-</p>
-
-Azimutt is an Entity Relationship diagram (ERD) targeting real world (big & messy) database schema.
+Azimutt is an Entity Relationship Diagram (ERD) targeting real world database schema (big & messy).
 
 **Why building my own?**
 
@@ -26,7 +22,7 @@ Most ERD tool I looked into ([DrawSQL](https://drawsql.app), [dbdiagram.io](http
 , [Creately](https://creately.com/lp/er-diagram-tool-online), [SqlDBM](https://sqldbm.com)
 , [QuickDBD](https://www.quickdatabasediagrams.com)) are focusing on creating/editing/displaying the schema 
 (see [my review](https://azimutt.app/blog/how-to-choose-your-entity-relationship-diagram)). This is great when starting a new project with a few tables 
-but doesn't really help when you discover an existing database with hundreds of tables and relations.
+but doesn't really help when you discover an existing database with many tables and relations.
 
 I really miss an interactive exploration tool with features like:
 
