@@ -1,4 +1,4 @@
-module DataSources.AmlParser.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnProps, AmlColumnRef, AmlColumnType, AmlColumnValue, AmlComment, AmlNotes, AmlSchemaName, AmlTable, AmlTableInfo, AmlTableName, AmlTableProps, AmlTableRef, parse)
+module DataSources.AmlParser.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnProps, AmlColumnRef, AmlColumnType, AmlColumnValue, AmlComment, AmlNotes, AmlSchemaName, AmlTable, AmlTableName, AmlTableProps, AmlTableRef, parse)
 
 import Libs.Models exposing (FileContent)
 import Libs.Models.Position exposing (Position)
@@ -20,6 +20,10 @@ type alias AmlTable =
     }
 
 
+type alias AmlTableProps =
+    { position : Maybe Position, color : Maybe Color }
+
+
 type alias AmlColumn =
     { name : AmlColumnName
     , kind : Maybe AmlColumnType
@@ -38,14 +42,6 @@ type alias AmlColumn =
 
 type alias AmlColumnProps =
     { hidden : Bool }
-
-
-type alias AmlTableInfo =
-    { schema : Maybe AmlSchemaName, table : AmlTableName, props : AmlTableProps, notes : Maybe String, comment : Maybe String }
-
-
-type alias AmlTableProps =
-    { position : Maybe Position, color : Maybe Color }
 
 
 type alias AmlTableRef =

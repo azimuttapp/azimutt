@@ -148,6 +148,25 @@ property =
             )
 
 
+tableRef : Parser AmlTableRef
+tableRef =
+    succeed
+        (\schema tbl ->
+            case tbl of
+                Just t ->
+                    { schema = Just schema, table = t }
+
+                Nothing ->
+                    { schema = Nothing, table = schema }
+        )
+        |= schemaName
+        |= maybe
+            (succeed identity
+                |. symbol "."
+                |= tableName
+            )
+
+
 columnRef : Parser AmlColumnRef
 columnRef =
     succeed
@@ -166,25 +185,6 @@ columnRef =
             (succeed identity
                 |. symbol "."
                 |= columnName
-            )
-
-
-tableRef : Parser AmlTableRef
-tableRef =
-    succeed
-        (\schema tbl ->
-            case tbl of
-                Just t ->
-                    { schema = Just schema, table = t }
-
-                Nothing ->
-                    { schema = Nothing, table = schema }
-        )
-        |= schemaName
-        |= maybe
-            (succeed identity
-                |. symbol "."
-                |= tableName
             )
 
 
