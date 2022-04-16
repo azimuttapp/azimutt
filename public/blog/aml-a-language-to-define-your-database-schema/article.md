@@ -243,12 +243,12 @@ public.users {color=red, top=10, left=100} | Table description # a table with ev
   role varchar=guest {hidden}
   score "double precision"=0.0 index {hidden} | User progression # a column with almost all possible attributes
   first_name varchar(10) unique=name
-  laft_name varchar(10) unique=name
+  last_name varchar(10) unique=name
   email varchar nullable fk emails.email
 
 admins* | View of `users` table with only admins
   id
-  name | Computed from user first_name and laft_name
+  name | Computed from user first_name and last_name
   
 fk admins.id -> users.id
 ```
