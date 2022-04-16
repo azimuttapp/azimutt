@@ -21,7 +21,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Ned as Ned
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -232,7 +231,7 @@ viewEmptyState tables =
             tables
                 |> Dict.values
                 |> List.filterNot (\t -> (t.schema |> String.contains "_") || (t.name |> String.contains "_") || (t.schema |> String.contains "-") || (t.name |> String.contains "-"))
-                |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
+                |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Dict.size))
                 |> List.take 10
 
         bestTables : List ErdTable
@@ -240,7 +239,7 @@ viewEmptyState tables =
             if bestOneWordTables |> List.isEmpty then
                 tables
                     |> Dict.values
-                    |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
+                    |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Dict.size))
                     |> List.take 10
 
             else

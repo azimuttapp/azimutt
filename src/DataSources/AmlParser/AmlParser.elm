@@ -1,11 +1,9 @@
 module DataSources.AmlParser.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnProps, AmlColumnRef, AmlColumnType, AmlColumnValue, AmlComment, AmlEmpty, AmlNotes, AmlRelation, AmlSchemaName, AmlStatement(..), AmlTable, AmlTableName, AmlTableProps, AmlTableRef, aml, column, columnName, columnProps, columnRef, columnType, columnValue, comment, constraint, empty, notes, parse, properties, property, relation, schemaName, statement, table, tableName, tableProps, tableRef)
 
 import Dict exposing (Dict)
-import Libs.Models exposing (FileContent)
 import Libs.Models.Position exposing (Position)
-import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Color exposing (Color)
-import Parser exposing ((|.), (|=), Parser, Step(..), Trailing(..), chompIf, chompWhile, end, getChompedString, loop, oneOf, problem, sequence, succeed, symbol, variable)
+import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), Trailing(..), chompIf, chompWhile, end, getChompedString, loop, oneOf, problem, sequence, succeed, symbol, variable)
 import Set
 
 
@@ -98,9 +96,9 @@ type alias AmlComment =
     String
 
 
-parse : FileContent -> Result (Nel String) (List AmlTable)
-parse _ =
-    Ok []
+parse : String -> Result (List DeadEnd) (List AmlStatement)
+parse input =
+    input |> Parser.run aml
 
 
 aml : Parser (List AmlStatement)

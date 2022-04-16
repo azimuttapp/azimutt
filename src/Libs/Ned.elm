@@ -1,4 +1,4 @@
-module Libs.Ned exposing (Ned, build, buildMap, find, fromDict, fromList, fromNel, fromNelMap, get, map, merge, singleton, singletonMap, size, toDict, values)
+module Libs.Ned exposing (Ned, build, buildMap, find, from, fromDict, fromList, fromNel, fromNelMap, get, map, merge, singleton, singletonMap, size, toDict, values)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -69,6 +69,11 @@ buildMap getKey head tail =
 merge : (a -> a -> a) -> Ned comparable a -> Ned comparable a -> Ned comparable a
 merge mergeValue d1 d2 =
     Dict.merge Dict.insert (\k a1 a2 acc -> Dict.insert k (mergeValue a1 a2) acc) Dict.insert (d1 |> toDict) (d2 |> toDict) Dict.empty |> fromDict |> Maybe.withDefault d1
+
+
+from : comparable -> a -> Ned comparable a
+from key value =
+    Ned ( key, value ) Dict.empty
 
 
 fromNel : Nel ( comparable, a ) -> Ned comparable a

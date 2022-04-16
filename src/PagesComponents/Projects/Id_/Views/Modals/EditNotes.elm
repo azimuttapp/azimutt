@@ -9,7 +9,6 @@ import Html.Attributes exposing (autofocus, class, for, id, name, placeholder, r
 import Html.Events exposing (onClick, onInput)
 import Libs.Html.Attributes exposing (ariaHidden, css)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Ned as Ned
 import Libs.Tailwind as Tw exposing (sm)
 import Models.Project.ColumnRef as ColumnRef
 import Models.Project.TableId as TableId
@@ -66,6 +65,6 @@ refAsName erd ref =
         ColumnNote column ->
             erd.tables
                 |> Dict.get column.table
-                |> Maybe.andThen (\t -> t.columns |> Ned.get column.column)
+                |> Maybe.andThen (\t -> t.columns |> Dict.get column.column)
                 |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (ColumnRef.show column) ], text " column" ])
                 |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show column))

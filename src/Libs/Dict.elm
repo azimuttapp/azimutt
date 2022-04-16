@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, count, find, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember, set)
+module Libs.Dict exposing (alter, count, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember, set)
 
 import Dict exposing (Dict)
 
@@ -6,6 +6,11 @@ import Dict exposing (Dict)
 nonEmpty : Dict k a -> Bool
 nonEmpty dict =
     not (Dict.isEmpty dict)
+
+
+from : comparable -> a -> Dict comparable a
+from key value =
+    Dict.fromList [ ( key, value ) ]
 
 
 fromIndexedList : List a -> Dict Int a

@@ -5,9 +5,8 @@ import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Dict as Dict
 import Libs.Fuzz as F exposing (listN)
+import Libs.List as List
 import Libs.Models.Size as Size
-import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
@@ -80,7 +79,7 @@ table =
         schemaName
         tableName
         Fuzz.bool
-        (nelSmall (column 0) |> Fuzz.map (Nel.uniqueBy .name >> Nel.indexedMap (\i c -> { c | index = i }) >> Ned.fromNelMap .name))
+        (listSmall (column 0) |> Fuzz.map (List.uniqueBy .name >> List.indexedMap (\i c -> { c | index = i }) >> Dict.fromListMap .name))
         (Fuzz.maybe primaryKey)
         (listSmall unique)
         (listSmall index)
@@ -96,22 +95,22 @@ column i =
 
 primaryKey : Fuzzer PrimaryKey
 primaryKey =
-    Fuzz.map3 PrimaryKey primaryKeyName (nelSmall columnName) (listN 1 origin)
+    Fuzz.map3 PrimaryKey (Fuzz.maybe primaryKeyName) (nelSmall columnName) (listN 1 origin)
 
 
 unique : Fuzzer Unique
 unique =
-    Fuzz.map4 Unique uniqueName (nelSmall columnName) text (listN 1 origin)
+    Fuzz.map4 Unique uniqueName (nelSmall columnName) (Fuzz.maybe text) (listN 1 origin)
 
 
 index : Fuzzer Index
 index =
-    Fuzz.map4 Index indexName (nelSmall columnName) text (listN 1 origin)
+    Fuzz.map4 Index indexName (nelSmall columnName) (Fuzz.maybe text) (listN 1 origin)
 
 
 check : Fuzzer Check
 check =
-    Fuzz.map4 Check checkName (listSmall columnName) text (listN 1 origin)
+    Fuzz.map4 Check checkName (listSmall columnName) (Fuzz.maybe text) (listN 1 origin)
 
 
 comment : Fuzzer Comment

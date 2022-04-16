@@ -5,6 +5,7 @@ import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), 
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
 import Components.Molecules.Tooltip as Tooltip
+import Conf
 import Dict
 import Either exposing (Either(..))
 import ElmBook exposing (Msg)
@@ -459,7 +460,7 @@ viewColumnKind model column =
 
 formatTableRef : TableRef -> String
 formatTableRef ref =
-    if ref.schema == "public" then
+    if ref.schema == Conf.schema.default then
         ref.table
 
     else
@@ -468,7 +469,7 @@ formatTableRef ref =
 
 formatColumnRef : ColumnRef -> String
 formatColumnRef ref =
-    if ref.schema == "public" then
+    if ref.schema == Conf.schema.default then
         ref.table ++ "." ++ ref.column
 
     else
@@ -510,17 +511,17 @@ sampleColumn =
 sample : Model (Msg x)
 sample =
     { id = "table-public-users"
-    , ref = { schema = "public", table = "users" }
+    , ref = { schema = "demo", table = "users" }
     , label = "users"
     , isView = False
     , comment = Nothing
     , notes = Nothing
     , columns =
-        [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "public", table = "accounts", column = "user" }, nullable = True, tableShown = False } ] }
+        [ { sampleColumn | name = "id", kind = "integer", isPrimaryKey = True, inRelations = [ { column = { schema = "demo", table = "accounts", column = "user" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | name = "name", kind = "character varying(120)", comment = Just "Should be unique", notes = Just "A nice note", uniques = [ { name = "users_name_unique" } ] }
         , { sampleColumn | name = "email", kind = "character varying(120)", indexes = [ { name = "users_email_idx" } ] }
         , { sampleColumn | name = "bio", kind = "text", checks = [ { name = "users_bio_min_length" } ] }
-        , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { column = { schema = "public", table = "organizations", column = "id" }, nullable = True, tableShown = False } ] }
+        , { sampleColumn | name = "organization", kind = "integer", nullable = True, outRelations = [ { column = { schema = "demo", table = "organizations", column = "id" }, nullable = True, tableShown = False } ] }
         , { sampleColumn | name = "created", kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
     , hiddenColumns = []

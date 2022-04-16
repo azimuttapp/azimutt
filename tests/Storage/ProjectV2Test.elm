@@ -6,7 +6,6 @@ import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
-import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw
 import Models.ColumnOrder exposing (ColumnOrder(..))
@@ -96,7 +95,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
+    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing [] ]) Nothing [] [] [] Nothing [] ]
 
 
 project1 : Project
@@ -133,10 +132,11 @@ tables2 =
           , name = "users"
           , view = False
           , columns =
-                Ned.buildMap .name
-                    (Column 0 "id" "int" False Nothing Nothing [])
-                    [ Column 1 "name" "varchar" True Nothing Nothing [] ]
-          , primaryKey = Just (PrimaryKey "users_pk" (Nel "id" []) [])
+                Dict.fromListMap .name
+                    [ Column 0 "id" "int" False Nothing Nothing []
+                    , Column 1 "name" "varchar" True Nothing Nothing []
+                    ]
+          , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel "id" []) [])
           , uniques = []
           , indexes = []
           , checks = []
@@ -148,15 +148,15 @@ tables2 =
           , name = "creds"
           , view = False
           , columns =
-                Ned.buildMap .name
-                    (Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ])
-                    [ Column 1 "login" "varchar" False Nothing Nothing [ Origin src1 [ 15 ] ]
+                Dict.fromListMap .name
+                    [ Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ]
+                    , Column 1 "login" "varchar" False Nothing Nothing [ Origin src1 [ 15 ] ]
                     , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) [ Origin src1 [ 16 ] ]
                     , Column 3 "role" "varchar" True (Just "guest") Nothing [ Origin src1 [ 17 ] ]
                     ]
           , primaryKey = Nothing
-          , uniques = [ Unique "unique_login" (Nel "login" []) "(login)" [] ]
-          , indexes = [ Index "role_idx" (Nel "role" []) "(role)" [] ]
+          , uniques = [ Unique "unique_login" (Nel "login" []) (Just "(login)") [] ]
+          , indexes = [ Index "role_idx" (Nel "role" []) (Just "(role)") [] ]
           , checks = []
           , comment = Just (Comment "To allow users to login" [])
           , origins = [ Origin src1 [ 13, 14, 15, 16, 17, 18 ] ]

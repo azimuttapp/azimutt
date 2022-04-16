@@ -17,8 +17,6 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Models.ColumnOrder as ColumnOrder
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -57,7 +55,7 @@ viewTable conf zoom cursorMode args index props table =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Ned.values |> Nel.map (buildColumn useBasicTypes props) |> Nel.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
+            table.columns |> Dict.values |> List.map (buildColumn useBasicTypes props) |> List.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
 
         drag : List (Attribute Msg)
         drag =
