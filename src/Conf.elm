@@ -7,6 +7,7 @@ import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
+import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.SchemaName exposing (SchemaName)
 
 
@@ -88,9 +89,11 @@ canvas =
     }
 
 
-schema : { default : SchemaName }
+schema : { default : SchemaName, column : { unknownType : ColumnType } }
 schema =
-    { default = "public" }
+    { default = "public"
+    , column = { unknownType = "unknown" }
+    }
 
 
 ui : { openDuration : Int, closeDuration : Int, tableHeaderHeight : Float, tableColumnHeight : Float }

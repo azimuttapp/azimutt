@@ -7,8 +7,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
-import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color)
 import Models.ColumnOrder as ColumnOrder
@@ -112,7 +110,7 @@ init settings erdRelations shownTables hint notes table =
     , position = Position.zero
     , size = Size.zero
     , color = computeColor table.id
-    , columns = table.columns |> Ned.values |> Nel.toList |> List.map .name |> computeColumns settings relations table
+    , columns = table.columns |> Dict.values |> List.map .name |> computeColumns settings relations table
     , selected = False
     , collapsed = settings.collapseTableColumns
     , hiddenColumns = False
@@ -128,7 +126,7 @@ computeColumns settings relations table columns =
             relations |> Relation.withTableSrc table.id
     in
     columns
-        |> List.filterMap (\c -> table.columns |> Ned.get c)
+        |> List.filterMap (\c -> table.columns |> Dict.get c)
         |> List.filterNot (ProjectSettings.hideColumn settings.hiddenColumns)
         |> ColumnOrder.sortBy settings.columnOrder table tableRelations
         |> List.map .name

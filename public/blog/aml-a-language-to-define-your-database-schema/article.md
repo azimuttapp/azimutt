@@ -209,7 +209,7 @@ users | Store all our users # I'm an AML comment
 The syntax shown so far defines the database schema. But Azimutt being a diagram tool, it also has some interesting data you may want to define such as table position and color or if a column is shown or not. For that, you can use a JSON like definition with attributes as `key=value` or `property` inside `{}`:
 
 ```
-users {top=10, left=100, color=red}
+users {color=red, top=10, left=100}
   id integer
   name varchar(10) {hidden}
 ```
@@ -238,17 +238,17 @@ emails
   score "double precision"
 
 # How to define a table and it's columns
-public.users {top=10, left=100, color=red} | "Table description" # a table with everything!
+public.users {color=red, top=10, left=100} | Table description # a table with everything!
   id integer pk
-  role varchar=guest {hidden=true}
-  score "double precision"="0.0" index {hidden=true} | "User progression" # a column with almost all possible attributes
+  role varchar=guest {hidden}
+  score "double precision"=0.0 index {hidden} | User progression # a column with almost all possible attributes
   first_name varchar(10) unique=name
-  laft_name varchar(10) unique=name
+  last_name varchar(10) unique=name
   email varchar nullable fk emails.email
 
-admins* | "View of `users` table with only admins"
+admins* | View of `users` table with only admins
   id
-  name | "Computed from user first_name and laft_name"
+  name | Computed from user first_name and last_name
   
 fk admins.id -> users.id
 ```

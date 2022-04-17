@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, fromList, has, indexedMap, length, map, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
+module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, from, fromList, has, indexedMap, length, map, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
 
 -- Nel: NonEmptyList
 
@@ -133,9 +133,9 @@ merge getKey mergeValue l1 l2 =
     List.merge getKey mergeValue (l1 |> toList) (l2 |> toList) |> fromList |> Maybe.withDefault l1
 
 
-toList : Nel a -> List a
-toList xs =
-    xs.head :: xs.tail
+from : a -> Nel a
+from value =
+    Nel value []
 
 
 fromList : List a -> Maybe (Nel a)
@@ -146,3 +146,8 @@ fromList list =
 
         _ ->
             Nothing
+
+
+toList : Nel a -> List a
+toList xs =
+    xs.head :: xs.tail

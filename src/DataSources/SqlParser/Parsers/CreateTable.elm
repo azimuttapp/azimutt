@@ -1,7 +1,8 @@
 module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn, parseCreateTableColumnForeignKey, parseCreateTableForeignKey, parseCreateTableKey)
 
+import DataSources.Helpers exposing (defaultUniqueName)
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (TableConstraint(..), parseAlterTableAddConstraint)
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, defaultPkName, defaultUniqueName, sqlTriggers)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, sqlTriggers)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -84,7 +85,7 @@ parseCreateTable statement =
                     , checks = parsedConstraints |> List.filterMap checkConstraints
                     }
                 )
-                (columns |> List.map (parseCreateTableColumn tableName) |> List.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Create table can't have empty columns" ]))
+                (columns |> List.map parseCreateTableColumn |> List.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Create table can't have empty columns" ]))
                 (constraints |> List.filter (String.toUpper >> String.startsWith "PRIMARY KEY") |> List.map parseCreateTablePrimaryKey |> List.resultSeq)
                 (constraints |> List.filter (String.toUpper >> String.startsWith "FOREIGN KEY") |> List.map parseCreateTableForeignKey |> List.resultSeq)
                 (constraints |> List.filter (String.toUpper >> String.startsWith "UNIQUE KEY") |> List.map parseCreateTableUniqueKey |> List.resultSeq)
@@ -95,8 +96,8 @@ parseCreateTable statement =
             Err [ "Can't parse table: '" ++ buildRawSql statement ++ "'" ]
 
 
-parseCreateTableColumn : SqlTableName -> RawSql -> Result ParseError ParsedColumn
-parseCreateTableColumn table sql =
+parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
+parseCreateTableColumn sql =
     case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?$" of
         (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybeReference :: maybePrimary :: maybeUnique :: maybeCheck :: maybeGenerated :: [] ->
             maybeConstraint
@@ -115,7 +116,7 @@ parseCreateTableColumn table sql =
                             Err ("Constraint not handled: '" ++ constraint ++ "' in create table")
                     )
                 |> Maybe.orElse (maybeReference |> Maybe.map (parseCreateTableColumnForeignKey >> Result.map (\fk -> ( Nothing, Just fk, True ))))
-                |> Maybe.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just (defaultPkName table), Nothing, True )))
+                |> Maybe.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just "", Nothing, True )))
                 |> Maybe.withDefault (Ok ( Nothing, Nothing, True ))
                 |> Result.map
                     (\( pk, fk, nullable2 ) ->

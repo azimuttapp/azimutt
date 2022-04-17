@@ -3,8 +3,7 @@ module PagesComponents.Projects.Id_.Updates.FindPathTest exposing (..)
 import Dict exposing (Dict)
 import Expect
 import Libs.Dict as Dict
-import Libs.Ned as Ned
-import Libs.Nel as Nel exposing (Nel)
+import Libs.Nel exposing (Nel)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -103,7 +102,7 @@ tableId name =
 
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) "public" name False (columnNames |> Nel.fromList |> Maybe.withDefault (Nel "id" []) |> Nel.map buildColumn |> Ned.fromNelMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create Dict.empty []
+    Table (tableId name) "public" name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create Dict.empty []
 
 
 buildColumn : ColumnName -> Column

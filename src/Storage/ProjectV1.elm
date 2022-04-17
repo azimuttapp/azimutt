@@ -334,7 +334,7 @@ upgradeTable table =
     , schema = table.schema
     , name = table.name
     , view = False
-    , columns = table.columns |> Ned.map (\_ -> upgradeColumn)
+    , columns = table.columns |> Ned.toDict |> Dict.map (\_ -> upgradeColumn)
     , primaryKey = table.primaryKey |> Maybe.map upgradePrimaryKey
     , uniques = table.uniques |> List.map upgradeUnique
     , indexes = table.indexes |> List.map upgradeIndex
@@ -358,22 +358,22 @@ upgradeColumn column =
 
 upgradePrimaryKey : PrimaryKeyV1 -> PrimaryKey
 upgradePrimaryKey pk =
-    { name = pk.name, columns = pk.columns, origins = pk.sources |> List.map upgradeSource }
+    { name = Just pk.name, columns = pk.columns, origins = pk.sources |> List.map upgradeSource }
 
 
 upgradeUnique : UniqueV1 -> Unique
 upgradeUnique unique =
-    { name = unique.name, columns = unique.columns, definition = unique.definition, origins = unique.sources |> List.map upgradeSource }
+    { name = unique.name, columns = unique.columns, definition = Just unique.definition, origins = unique.sources |> List.map upgradeSource }
 
 
 upgradeIndex : IndexV1 -> Index
 upgradeIndex index =
-    { name = index.name, columns = index.columns, definition = index.definition, origins = index.sources |> List.map upgradeSource }
+    { name = index.name, columns = index.columns, definition = Just index.definition, origins = index.sources |> List.map upgradeSource }
 
 
 upgradeCheck : CheckV1 -> Check
 upgradeCheck check =
-    { name = check.name, columns = check.columns, predicate = check.predicate, origins = check.sources |> List.map upgradeSource }
+    { name = check.name, columns = check.columns, predicate = Just check.predicate, origins = check.sources |> List.map upgradeSource }
 
 
 upgradeComment : CommentV1 -> Comment

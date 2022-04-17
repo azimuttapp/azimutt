@@ -24,8 +24,6 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent, FileLineContent)
 import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
@@ -591,7 +589,7 @@ tableDiff : Table -> Table -> Maybe String
 tableDiff old new =
     let
         ( removedColumns, updatedColumns, newColumns ) =
-            List.diff .name (old.columns |> Ned.values |> Nel.toList) (new.columns |> Ned.values |> Nel.toList)
+            List.diff .name (old.columns |> Dict.values) (new.columns |> Dict.values)
 
         primaryKey : Bool
         primaryKey =

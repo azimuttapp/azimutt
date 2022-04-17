@@ -37,7 +37,7 @@ suite =
                         | schema = Just "public"
                         , table = "track"
                         , columns =
-                            Nel { parsedColumn | name = "trackid", kind = "INTEGER", primaryKey = Just "track_pk_az" }
+                            Nel { parsedColumn | name = "trackid", kind = "INTEGER", primaryKey = Just "" }
                                 [ { parsedColumn | name = "trackname", kind = "TEXT" }
                                 , { parsedColumn | name = "trackartist", kind = "INTEGER" }
                                 ]
@@ -55,7 +55,7 @@ suite =
                     { parsedTable
                         | table = "tasks"
                         , columns =
-                            Nel { parsedColumn | name = "ulid", kind = "text", nullable = False, primaryKey = Just "tasks_pk_az" }
+                            Nel { parsedColumn | name = "ulid", kind = "text", nullable = False, primaryKey = Just "" }
                                 [ { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
                                 ]
                         , foreignKeys = [ { name = Nothing, src = "ulid", ref = { schema = Nothing, table = "tasks", column = Just "ulid" } } ]

@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Ned as Ned
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -124,7 +123,7 @@ unpackLayout canvas tableProps shownTables createdAt updatedAt =
 
 getColumn : TableId -> ColumnName -> Erd -> Maybe ErdColumn
 getColumn table column erd =
-    erd.tables |> Dict.get table |> Maybe.andThen (\t -> t.columns |> Ned.get column)
+    erd.tables |> Dict.get table |> Maybe.andThen (\t -> t.columns |> Dict.get column)
 
 
 getColumnProps : TableId -> ColumnName -> Erd -> Maybe ErdColumnProps

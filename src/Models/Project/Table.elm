@@ -1,12 +1,13 @@
 module Models.Project.Table exposing (Table, TableLike, clearOrigins, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques, merge)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel
 import Models.Project.Check as Check exposing (Check)
 import Models.Project.Column as Column exposing (Column, ColumnLike)
@@ -27,7 +28,7 @@ type alias Table =
     , schema : SchemaName
     , name : TableName
     , view : Bool
-    , columns : Ned ColumnName Column
+    , columns : Dict ColumnName Column
     , primaryKey : Maybe PrimaryKey
     , uniques : List Unique
     , indexes : List Index
@@ -43,7 +44,7 @@ type alias TableLike x y =
         , schema : SchemaName
         , name : TableName
         , view : Bool
-        , columns : Ned ColumnName (ColumnLike y)
+        , columns : Dict ColumnName (ColumnLike y)
         , primaryKey : Maybe PrimaryKey
         , uniques : List Unique
         , indexes : List Index
@@ -84,7 +85,7 @@ merge t1 t2 =
     , schema = t1.schema
     , name = t1.name
     , view = t1.view
-    , columns = Ned.merge Column.merge t1.columns t2.columns
+    , columns = Dict.fuse Column.merge t1.columns t2.columns
     , primaryKey = Maybe.merge PrimaryKey.merge t1.primaryKey t2.primaryKey
     , uniques = List.merge .name Unique.merge t1.uniques t2.uniques
     , indexes = List.merge .name Index.merge t1.indexes t2.indexes
@@ -98,7 +99,7 @@ clearOrigins : Table -> Table
 clearOrigins table =
     table
         |> setOrigins []
-        |> mapColumns (Ned.map (\_ -> Column.clearOrigins))
+        |> mapColumns (Dict.map (\_ -> Column.clearOrigins))
         |> mapPrimaryKeyM PrimaryKey.clearOrigins
         |> mapUniques (List.map Unique.clearOrigins)
         |> mapIndexes (List.map Index.clearOrigins)
@@ -112,7 +113,7 @@ encode value =
         [ ( "schema", value.schema |> SchemaName.encode )
         , ( "table", value.name |> TableName.encode )
         , ( "view", value.view |> Encode.withDefault Encode.bool False )
-        , ( "columns", value.columns |> Ned.values |> Nel.sortBy .index |> Encode.nel Column.encode )
+        , ( "columns", value.columns |> Dict.values |> List.sortBy .index |> Encode.list Column.encode )
         , ( "primaryKey", value.primaryKey |> Encode.maybe PrimaryKey.encode )
         , ( "uniques", value.uniques |> Encode.withDefault (Encode.list Unique.encode) [] )
         , ( "indexes", value.indexes |> Encode.withDefault (Encode.list Index.encode) [] )
@@ -128,7 +129,7 @@ decode =
         (Decode.field "schema" SchemaName.decode)
         (Decode.field "table" TableName.decode)
         (Decode.defaultField "view" Decode.bool False)
-        (Decode.field "columns" (Decode.nel Column.decode |> Decode.map (Nel.indexedMap (\i c -> c i) >> Ned.fromNelMap .name)))
+        (Decode.field "columns" (Decode.list Column.decode |> Decode.map (List.indexedMap (\i c -> c i) >> Dict.fromListMap .name)))
         (Decode.maybeField "primaryKey" PrimaryKey.decode)
         (Decode.defaultField "uniques" (Decode.list Unique.decode) [])
         (Decode.defaultField "indexes" (Decode.list Index.decode) [])

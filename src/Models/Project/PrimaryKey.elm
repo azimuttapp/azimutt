@@ -12,7 +12,7 @@ import Services.Lenses exposing (setOrigins)
 
 
 type alias PrimaryKey =
-    { name : PrimaryKeyName
+    { name : Maybe PrimaryKeyName
     , columns : Nel ColumnName
     , origins : List Origin
     }
@@ -34,7 +34,7 @@ clearOrigins pk =
 encode : PrimaryKey -> Value
 encode value =
     Encode.notNullObject
-        [ ( "name", value.name |> PrimaryKeyName.encode )
+        [ ( "name", value.name |> Encode.maybe PrimaryKeyName.encode )
         , ( "columns", value.columns |> Encode.nel ColumnName.encode )
         , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
         ]
@@ -43,6 +43,6 @@ encode value =
 decode : Decode.Decoder PrimaryKey
 decode =
     Decode.map3 PrimaryKey
-        (Decode.field "name" PrimaryKeyName.decode)
+        (Decode.maybeField "name" PrimaryKeyName.decode)
         (Decode.field "columns" (Decode.nel ColumnName.decode))
         (Decode.defaultField "origins" (Decode.list Origin.decode) [])

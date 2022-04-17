@@ -6,8 +6,6 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -133,8 +131,8 @@ showColumns id kind erd =
                 |> (\tableRelations ->
                         columns
                             ++ (table.columns
-                                    |> Ned.values
-                                    |> Nel.filter (\c -> columns |> List.notMember c.name)
+                                    |> Dict.values
+                                    |> List.filter (\c -> columns |> List.notMember c.name)
                                     |> List.filter
                                         (\column ->
                                             case kind of
@@ -162,7 +160,7 @@ hideColumns id kind erd =
                 |> Relation.withTableLink id
                 |> (\tableRelations ->
                         columns
-                            |> List.zipWith (\name -> table.columns |> Ned.get name)
+                            |> List.zipWith (\name -> table.columns |> Dict.get name)
                             |> List.filter
                                 (\( name, col ) ->
                                     case ( kind, col ) of
@@ -195,7 +193,7 @@ sortColumns id kind erd =
     updateColumns id
         (\table columns ->
             columns
-                |> List.filterMap (\name -> table.columns |> Ned.get name)
+                |> List.filterMap (\name -> table.columns |> Dict.get name)
                 |> ColumnOrder.sortBy kind table erd.relations
                 |> List.map .name
         )
@@ -245,7 +243,7 @@ hoverColumn column enter erd props =
 
 getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRef
 getRelations table name =
-    table |> Maybe.andThen (\t -> t.columns |> Ned.get name) |> Maybe.mapOrElse (\c -> c.outRelations ++ c.inRelations) []
+    table |> Maybe.andThen (\t -> t.columns |> Dict.get name) |> Maybe.mapOrElse (\c -> c.outRelations ++ c.inRelations) []
 
 
 performShowTable : ErdTable -> Maybe PositionHint -> Erd -> Erd

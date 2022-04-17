@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Libs.Bool as B
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Ned as Ned
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -101,7 +100,7 @@ hideColumns tables notes hiddenColumns tableProps =
 
 shouldHideColumns : HiddenColumns -> ErdTable -> List ColumnName -> List ColumnName
 shouldHideColumns hiddenColumns table columns =
-    columns |> List.filterMap (\c -> table.columns |> Ned.get c) |> List.filterNot (ProjectSettings.hideColumn hiddenColumns) |> List.map .name
+    columns |> List.filterMap (\c -> table.columns |> Dict.get c) |> List.filterNot (ProjectSettings.hideColumn hiddenColumns) |> List.map .name
 
 
 sortColumns : ColumnOrder -> Erd -> Dict TableId ErdTableProps -> Dict TableId ErdTableProps
@@ -117,7 +116,7 @@ sortColumns order erd tableProps =
                                     ColumnOrder.sortBy order
                                         table
                                         (erd.relations |> List.filter (\r -> r.src.table == id))
-                                        (columnNames |> List.filterMap (\c -> table.columns |> Ned.get c))
+                                        (columnNames |> List.filterMap (\c -> table.columns |> Dict.get c))
                                         |> List.map .name
                                 )
                                 columnNames

@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Ned as Ned exposing (Ned)
 import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
@@ -27,7 +26,7 @@ type alias ErdTable =
     , schema : SchemaName
     , name : TableName
     , view : Bool
-    , columns : Ned ColumnName ErdColumn
+    , columns : Dict ColumnName ErdColumn
     , primaryKey : Maybe PrimaryKey
     , uniques : List Unique
     , indexes : List Index
@@ -67,7 +66,7 @@ create tables tableRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Ned.map (\name -> ErdColumn.create tables (relationsByColumn |> Dict.getOrElse name []) table)
+    , columns = table.columns |> Dict.map (\name -> ErdColumn.create tables (relationsByColumn |> Dict.getOrElse name []) table)
     , primaryKey = table.primaryKey
     , uniques = table.uniques
     , indexes = table.indexes
@@ -83,7 +82,7 @@ unpack table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Ned.map (\_ -> ErdColumn.unpack)
+    , columns = table.columns |> Dict.map (\_ -> ErdColumn.unpack)
     , primaryKey = table.primaryKey
     , uniques = table.uniques
     , indexes = table.indexes
