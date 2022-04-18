@@ -175,11 +175,19 @@ fk admins.id -> users.id
             , parserTest ( "color", AmlParser.tableProps ) "{color=red}" { position = Nothing, color = Just Color.red }
             , parserTest ( "position", AmlParser.tableProps ) "{left=20, top=10}" { position = Just { left = 20, top = 10 }, color = Nothing }
             , parserTest ( "both", AmlParser.tableProps ) "{color=red, left=20, top=10}" { position = Just { left = 20, top = 10 }, color = Just Color.red }
+            , parserFail ( "bad color", AmlParser.tableProps ) "{color=bad}" [ { row = 1, col = 12, problem = Problem "Unknown color 'bad'" } ]
+            , parserFail ( "bad left", AmlParser.tableProps ) "{left=a}" [ { row = 1, col = 9, problem = Problem "Property 'left' should be a number" } ]
+            , parserFail ( "bad top", AmlParser.tableProps ) "{top=a}" [ { row = 1, col = 8, problem = Problem "Property 'top' should be a number" } ]
+            , parserFail ( "no top", AmlParser.tableProps ) "{left=10}" [ { row = 1, col = 10, problem = Problem "Missing property 'top'" } ]
+            , parserFail ( "no left", AmlParser.tableProps ) "{top=10}" [ { row = 1, col = 9, problem = Problem "Missing property 'left'" } ]
+            , parserFail ( "unknown prop", AmlParser.tableProps ) "{wat=10}" [ { row = 1, col = 9, problem = Problem "Unknown property 'wat'" } ]
             ]
         , describe "columnProps"
             [ parserTest ( "empty", AmlParser.columnProps ) "{}" { hidden = False }
             , parserTest ( "hidden", AmlParser.columnProps ) "{hidden}" { hidden = True }
             , parserTest ( "hidden=", AmlParser.columnProps ) "{hidden=}" { hidden = True }
+            , parserFail ( "hidden=true", AmlParser.columnProps ) "{hidden=true}" [ { row = 1, col = 14, problem = Problem "Property 'hidden' should have no value" } ]
+            , parserFail ( "unknown prop", AmlParser.columnProps ) "{wat=10}" [ { row = 1, col = 9, problem = Problem "Unknown property 'wat'" } ]
             ]
         , describe "properties"
             [ parserTest ( "empty", AmlParser.properties ) "{}" Dict.empty

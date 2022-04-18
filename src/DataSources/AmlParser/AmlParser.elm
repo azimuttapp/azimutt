@@ -231,13 +231,13 @@ tableProps =
                                             acc |> Parser.map (\a -> { a | position = Just { left = left, top = top } })
 
                                         ( Nothing, _ ) ->
-                                            problem "Table property 'left' should be a number"
+                                            problem "Property 'left' should be a number"
 
                                         ( _, Just Nothing ) ->
-                                            problem "Table property 'top' should be a number"
+                                            problem "Property 'top' should be a number"
 
                                         ( _, Nothing ) ->
-                                            problem "Missing table property 'top'"
+                                            problem "Missing property 'top'"
 
                                 "top" ->
                                     case ( p |> Dict.get "left" |> Maybe.map String.toFloat, v |> String.toFloat ) of
@@ -245,16 +245,16 @@ tableProps =
                                             acc |> Parser.map (\a -> { a | position = Just { left = left, top = top } })
 
                                         ( _, Nothing ) ->
-                                            problem "Table property 'top' should be a number"
+                                            problem "Property 'top' should be a number"
 
                                         ( Just Nothing, _ ) ->
-                                            problem "Table property 'left' should be a number"
+                                            problem "Property 'left' should be a number"
 
                                         ( Nothing, _ ) ->
-                                            problem "Missing table property 'left'"
+                                            problem "Missing property 'left'"
 
                                 _ ->
-                                    problem ("Unknown table property '" ++ k ++ "'")
+                                    problem ("Unknown property '" ++ k ++ "'")
                         )
                         (succeed { color = Nothing, position = Nothing })
             )
@@ -272,10 +272,10 @@ columnProps =
                                 acc |> Parser.map (\a -> { a | hidden = True })
 
                             else
-                                problem "Column property 'hidden' should not have a value"
+                                problem "Property 'hidden' should have no value"
 
                         _ ->
-                            problem ("Unknown column property '" ++ k ++ "'")
+                            problem ("Unknown property '" ++ k ++ "'")
                 )
                 (succeed { hidden = False })
             )
