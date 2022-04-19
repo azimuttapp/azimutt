@@ -2,10 +2,21 @@
   "name": "azimutt",
   "version": "1.0.0",
   "description": "Next gen ERD: analyze and explore your SQL database schema seamlessly",
-  "keywords": ["erd", "entity-relationship diagram", "database tool", "database schema", "diagram"],
+  "keywords": [
+    "erd",
+    "entity-relationship diagram",
+    "database tool",
+    "database schema",
+    "diagram"
+  ],
   "homepage": "https://github.com/azimuttapp/azimutt",
-  "repository": { "type": "git", "url": "git+https://github.com/azimuttapp/azimutt.git" },
-  "bugs": { "url": "https://github.com/azimuttapp/azimutt/issues" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
   "license": "MIT",
   "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
   "scripts": {

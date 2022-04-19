@@ -40,7 +40,9 @@ viewHome model =
                     (Link.white5 Tw.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
     in
     [ Helpers.publicHeader
+    , div [] [ text "HELLO" ]
     , Editor.poc model.editor EditorChanged
+    , div [] [ text "BYE" ]
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your SQL database schema"
