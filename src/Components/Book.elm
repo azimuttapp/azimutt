@@ -20,6 +20,7 @@ import Components.Molecules.Popover as Popover
 import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Toast as Toast
 import Components.Molecules.Tooltip as Tooltip
+import Components.Organisms.Editor as Editor
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
@@ -84,7 +85,7 @@ main =
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc, Markdown.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Popover.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
-            , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc, Relation.doc, Table.doc ] )
+            , ( "Organisms", [ Editor.doc, Footer.doc, Header.doc, Navbar.doc, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc ] )
             ]
 

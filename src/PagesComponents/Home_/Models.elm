@@ -6,8 +6,10 @@ import Ports exposing (JsMsg)
 
 type alias Model =
     { projects : List Project
+    , editor : String
     }
 
 
 type Msg
-    = JsMessage JsMsg
+    = EditorChanged String
+    | JsMessage JsMsg

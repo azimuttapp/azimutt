@@ -43,7 +43,9 @@ title =
 
 init : ( Model, Cmd msg )
 init =
-    ( { projects = [] }
+    ( { projects = []
+      , editor = "function hello() {\n\talert('Hello world!');\n}"
+      }
     , Cmd.batch
         [ Ports.setMeta
             { title = Just title
@@ -64,7 +66,10 @@ init =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
+    case Debug.log "msg" msg of
+        EditorChanged value ->
+            ( { model | editor = value }, Cmd.none )
+
         JsMessage message ->
             model |> handleJsMessage message
 
@@ -92,6 +97,6 @@ subscriptions _ =
 -- VIEW
 
 
-view : Model -> View msg
+view : Model -> View Msg
 view model =
     { title = title, body = viewHome model }

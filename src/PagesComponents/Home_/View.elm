@@ -5,6 +5,7 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
 import Components.Molecules.Feature as Feature
 import Components.Molecules.Tooltip as Tooltip
+import Components.Organisms.Editor as Editor
 import Components.Slices.Cta as Cta
 import Components.Slices.FeatureGrid as FeatureGrid
 import Components.Slices.FeatureSideBySide as FeatureSideBySide exposing (Position(..))
@@ -18,11 +19,11 @@ import Libs.Html.Attributes exposing (css, track)
 import Libs.Maybe as Maybe
 import Libs.Tailwind as Tw
 import PagesComponents.Helpers as Helpers
-import PagesComponents.Home_.Models exposing (Model)
+import PagesComponents.Home_.Models exposing (Model, Msg(..))
 import Track
 
 
-viewHome : Model -> List (Html msg)
+viewHome : Model -> List (Html Msg)
 viewHome model =
     let
         heroCta : Html msg
@@ -39,6 +40,7 @@ viewHome model =
                     (Link.white5 Tw.indigo ([ href (Route.toHref Route.Projects) ] ++ track (Track.openAppCta "home-hero")) [ text "Explore your schema" ])
     in
     [ Helpers.publicHeader
+    , Editor.poc model.editor EditorChanged
     , Hero.backgroundImageSlice
         { bg = { src = "/assets/images/background_hero.jpeg", alt = "A compass on a map" }
         , title = "Explore your SQL database schema"
