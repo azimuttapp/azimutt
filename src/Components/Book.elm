@@ -47,6 +47,7 @@ import Libs.Tailwind as Tw
 
 type alias DocState =
     { dropdownDocState : Dropdown.DocState
+    , editorDocState : Editor.DocState
     , inputDocState : Input.DocState
     , modalDocState : Modal.DocState
     , navbarDocState : Navbar.DocState
@@ -60,6 +61,7 @@ type alias DocState =
 init : DocState
 init =
     { dropdownDocState = Dropdown.initDocState
+    , editorDocState = Editor.initDocState
     , inputDocState = Input.initDocState
     , modalDocState = Modal.initDocState
     , navbarDocState = Navbar.initDocState
