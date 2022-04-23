@@ -20,15 +20,20 @@
   "license": "MIT",
   "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
   "scripts": {
-    "server": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
-    "tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch",
-    "book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js"
-  },
-  "dependencies": {
+    "dev": "concurrently \"npm run dev:app\" \"npm run dev:tailwind\" \"npm run dev:book\"",
+    "build": "npm run build:tailwind && npm run build:app",
+    "dev:app": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
+    "build:app": "npx elm-spa build",
+    "dev:tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch",
+    "build:tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --minify",
+    "dev:book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js",
+    "dev:browser": "cd packages/browser-extension && npm run dev",
+    "build:browser": "cd packages/browser-extension && npm run build"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.4.0",
     "@tailwindcss/typography": "^0.5.1",
+    "concurrently": "^7.1.0",
     "elm-coverage": "^0.4.0",
     "elm-review": "^2.5.5",
     "elm-test": "^0.19.1-revision7",

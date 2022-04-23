@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "./build.js",
-    "dev": "./build.watch.js"
+    "dev": "./build.watch.js",
+    "build": "./build.js"
   },
   "dependencies": {
     "webextension-polyfill": "^0.8.0"
