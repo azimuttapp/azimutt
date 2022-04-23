@@ -14,6 +14,10 @@ import Time
 import View exposing (View)
 
 
+
+-- legacy route, use `/projects/last` instead `/pwa-start` but Azimutt chrome extension still use it :(
+
+
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page _ req =
     Page.element

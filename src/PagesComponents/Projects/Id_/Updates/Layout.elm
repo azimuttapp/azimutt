@@ -76,7 +76,7 @@ loadLayout name erd =
             (\layout ->
                 let
                     ( canvas, tableProps, shownTables ) =
-                        Erd.createLayout erd.relationsByTable layout
+                        Erd.createLayout erd.relationsByTable erd.notes layout
                 in
                 ( erd |> setUsedLayout (Just name) |> setCanvas canvas |> setTableProps tableProps |> setShownTables shownTables
                 , Cmd.batch [ Ports.observeTablesSize shownTables, Ports.track (Track.loadLayout layout) ]

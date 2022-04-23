@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, diff, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, diff, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, mergeMaybe, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -331,6 +331,12 @@ merge : (a -> comparable) -> (a -> a -> a) -> List a -> List a -> List a
 merge getKey mergeValue l1 l2 =
     (l1 |> List.map (\a1 -> l2 |> find (\a2 -> getKey a1 == getKey a2) |> Maybe.mapOrElse (mergeValue a1) a1))
         ++ (l2 |> filterNot (\a2 -> l1 |> List.any (\a1 -> getKey a1 == getKey a2)))
+
+
+mergeMaybe : (a -> Maybe comparable) -> (a -> a -> a) -> List a -> List a -> List a
+mergeMaybe getKey mergeValue l1 l2 =
+    (l1 |> List.map (\a1 -> l2 |> find (\a2 -> getKey a1 /= Nothing && getKey a1 == getKey a2) |> Maybe.mapOrElse (mergeValue a1) a1))
+        ++ (l2 |> filterNot (\a2 -> l1 |> List.any (\a1 -> getKey a1 /= Nothing && getKey a1 == getKey a2)))
 
 
 toggle : comparable -> List comparable -> List comparable

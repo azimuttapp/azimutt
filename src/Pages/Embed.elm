@@ -17,9 +17,11 @@ import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
 import Ports
+import Random
 import Request
 import Services.SqlSourceUpload as SqlSourceUpload
 import Shared
+import Time
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -30,7 +32,7 @@ page shared req =
             parseQueryString req.query
     in
     Page.element
-        { init = init query
+        { init = init shared.now query
         , update = Updates.update Nothing query.layout shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
@@ -57,9 +59,10 @@ type alias Msg =
 -- INIT
 
 
-init : QueryString -> ( Model, Cmd Msg )
-init query =
-    ( { conf = initConf query.mode
+init : Time.Posix -> QueryString -> ( Model, Cmd Msg )
+init now query =
+    ( { seed = Random.initialSeed (now |> Time.posixToMillis)
+      , conf = initConf query.mode
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = query.projectUrl == Nothing && query.sourceUrl == Nothing
@@ -69,6 +72,7 @@ init query =
       , cursorMode = CursorSelect
       , selectionBox = Nothing
       , newLayout = Nothing
+      , editNotes = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing

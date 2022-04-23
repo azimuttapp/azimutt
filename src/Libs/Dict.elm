@@ -1,4 +1,4 @@
-module Libs.Dict exposing (alter, count, find, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember)
+module Libs.Dict exposing (alter, count, find, from, fromIndexedList, fromListMap, fuse, getOrElse, getResult, nonEmpty, notMember, set)
 
 import Dict exposing (Dict)
 
@@ -6,6 +6,11 @@ import Dict exposing (Dict)
 nonEmpty : Dict k a -> Bool
 nonEmpty dict =
     not (Dict.isEmpty dict)
+
+
+from : comparable -> a -> Dict comparable a
+from key value =
+    Dict.fromList [ ( key, value ) ]
 
 
 fromIndexedList : List a -> Dict Int a
@@ -84,6 +89,11 @@ count predicate dict =
 alter : comparable -> (v -> v) -> Dict comparable v -> Dict comparable v
 alter key transform dict =
     Dict.update key (Maybe.map transform) dict
+
+
+set : comparable -> Maybe v -> Dict comparable v -> Dict comparable v
+set key value dict =
+    value |> Maybe.map (\v -> dict |> Dict.insert key v) |> Maybe.withDefault (dict |> Dict.remove key)
 
 
 fuse : (a -> a -> a) -> Dict comparable a -> Dict comparable a -> Dict comparable a

@@ -19,19 +19,35 @@ import { Elm } from './.elm-spa/defaults/Main.elm'
     /* JavaScript API */
 
     window.azimutt = {
-        showTable: tableId => sendToElm({kind: 'GotShowTable', id: tableId}),
-        hideTable: tableId => sendToElm({kind: 'GotHideTable', id: tableId}),
-        showColumn: columnRef => sendToElm({kind: 'GotShowColumn', ref: columnRef}),
-        hideColumn: columnRef => sendToElm({kind: 'GotHideColumn', ref: columnRef}),
-        selectTable: tableId => sendToElm({kind: 'GotSelectTable', id: tableId}),
-        moveTable: (tableId, dx, dy) => sendToElm({kind: 'GotMoveTable', id: tableId, dx, dy}),
-        moveColumn: (columnRef, index) => sendToElm({kind: 'GotMoveColumn', ref: columnRef, index}),
+        getAllTables: () => {
+            const removedTables = (window.azimutt.project?.settings?.removedTables || '').split(',').map(t => t.trim()).filter(t => t.length > 0)
+            return window.azimutt.project?.sources
+                .filter(s => s.enabled !== false)
+                .flatMap(s => s.tables)
+                .filter(t => !removedTables.find(r => t.table === r || new RegExp(r).test(t.table))) || []
+        },
+        getAllRelations: () => window.azimutt.project?.sources.filter(s => s.enabled !== false).flatMap(s => s.relations) || [],
+        getVisibleTables: () => {
+            const tables = window.azimutt.getAllTables().reduce((acc, t) => ({...acc, [`${t.schema}.${t.table}`]: t}), {})
+            return window.azimutt.project?.layout.tables.map(t => tables[t.id])
+        },
+        showTable: (tableId, left, top) => sendToElm({kind: 'GotTableShow', id: tableId, position: typeof top === 'number' ? {left, top} : undefined}),
+        hideTable: tableId => sendToElm({kind: 'GotTableHide', id: tableId}),
+        toggleTableColumns: tableId => sendToElm({kind: 'GotTableToggleColumns', id: tableId}),
+        moveTableTo: (tableId, left, top) => sendToElm({kind: 'GotTablePosition', id: tableId, position: {left, top}}),
+        moveTable: (tableId, dx, dy) => sendToElm({kind: 'GotTableMove', id: tableId, delta: {dx, dy}}),
+        selectTable: tableId => sendToElm({kind: 'GotTableSelect', id: tableId}),
+        showColumn: columnRef => sendToElm({kind: 'GotColumnShow', ref: columnRef}),
+        hideColumn: columnRef => sendToElm({kind: 'GotColumnHide', ref: columnRef}),
+        moveColumn: (columnRef, index) => sendToElm({kind: 'GotColumnMove', ref: columnRef, index}),
         fitToScreen: () => sendToElm({kind: 'GotFitToScreen'}),
+        resetCanvas: () => sendToElm({kind: 'GotResetCanvas'}),
         help: () => console.info('Hi! Welcome in the hackable world! 💻️🤓\n' +
             'We are just trying out this, so if you use it and it\'s helpful, please let us know. Also, if you need more feature like this, don\'t hesitate to ask.\n\n' +
             'Here are a few tips:\n' +
             ' - `tableId` is the "schema.table" of a table, but if schema is "public", you can omit it. Basically, what you see in table header.\n' +
-            ' - `columnRef` is similar to `tableId` but with the column name appended. For example "users.id" or "audit.logs.time".')
+            ' - `columnRef` is similar to `tableId` but with the column name appended. For example "users.id" or "audit.logs.time".\n\n' +
+            '⚠️ This is not a stable interface, just a toy to experiment. If you start using it heavily, let us know so we can define something more stable.')
     }
 
 
@@ -71,7 +87,6 @@ import { Elm } from './.elm-spa/defaults/Main.elm'
                 case 'DropProject':       dropProject(port.project); break;
                 case 'GetLocalFile':      getLocalFile(port.project, port.source, port.file); break;
                 case 'GetRemoteFile':     getRemoteFile(port.project, port.source, port.url, port.sample); break;
-                case 'GetSourceId':       getSourceId(port.src, port.ref); break;
                 case 'ObserveSizes':      observeSizes(port.ids); break;
                 case 'ListenKeys':        listenHotkeys(port.keys); break;
                 case 'TrackPage':         analytics.then(a => a.trackPage(port.name)); break;
@@ -103,23 +118,24 @@ import { Elm } from './.elm-spa/defaults/Main.elm'
         result.catch(_ => window.open(window.location.href, '_blank').focus()) // if full-screen is denied, open in a new tab
     }
     function setMeta(meta) {
-        if (meta.title) {
+        if (typeof meta.title === 'string') {
             document.title = meta.title
             document.querySelector('meta[property="og:title"]')?.setAttribute('content', meta.title)
             document.querySelector('meta[name="twitter:title"]')?.setAttribute('content', meta.title)
         }
-        if (meta.description) {
+        if (typeof meta.description === 'string') {
             document.querySelector('meta[name="description"]')?.setAttribute('content', meta.description)
             document.querySelector('meta[property="og:description"]')?.setAttribute('content', meta.description)
             document.querySelector('meta[name="twitter:description"]')?.setAttribute('content', meta.description)
         }
-        if (meta.canonical) {
-            document.querySelector('link[rel="canonical"]')?.setAttribute('href', meta.canonical)
+        if (typeof meta.canonical === 'string') {
+            const canonical = document.querySelector('link[rel="canonical"]')
+            canonical ? canonical.setAttribute('href', meta.canonical) : document.head.append(`<link rel="canonical" href="${meta.canonical}">`)
             document.querySelector('meta[property="og:url"]')?.setAttribute('content', meta.canonical)
             document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', meta.canonical)
         }
-        if (meta.html) { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
-        if (meta.body) { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
+        if (typeof meta.html === 'string') { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
+        if (typeof meta.body === 'string') { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
     }
     function autofocusWithin(id) {
         getElementById(id).querySelector('[autofocus]')?.focus()
@@ -135,139 +151,173 @@ import { Elm } from './.elm-spa/defaults/Main.elm'
             })
     }
 
-    const databaseName = 'azimutt'
-    const databaseVersion = 1
-    const dbProjects = 'projects'
-    function getConfiguredDb() {
-        return new Promise((resolve, reject) => {
-            function handleIndexedDBError(event) {
-                console.warn('IndexedDB not available', event)
-                reject(new Error('IndexedDB not available'))
-                alert("Azimutt needs IndexedDB but it's not available, please make it available or use a browser that support it!")
-            }
-            if (!window.indexedDB) {
-                handleIndexedDBError(undefined)
-            } else {
+    /* STORAGE.TS */
+    /*interface Project {
+        id: string
+        createdAt: number
+        updatedAt: number
+    }
+    type AzStorageKind = 'indexedDb' | 'localStorage' | 'inMemory'
+    interface AzStorage {
+        kind: AzStorageKind
+        loadProjects: () => Promise<Project[]>
+        saveProject: (p: Project) => Promise<void>
+        dropProject: (p: Project) => Promise<void>
+    }*/
+
+    function getIndexedDb()/*: Promise<AzStorage>*/ {
+        if (window.indexedDB) {
+            const databaseName = 'azimutt'
+            const databaseVersion = 1
+            const dbProjects = 'projects'
+            const reqToPromise = /*<T>*/(req/*: IDBRequest<T>*/)/*: Promise<T>*/ => new Promise((resolve, reject) => {
+                req.onerror = _ => reject(req.error)
+                req.onsuccess = _ => resolve(req.result)
+            })
+
+            return new Promise((resolve, reject) => {
                 const openRequest = window.indexedDB.open(databaseName, databaseVersion)
-                openRequest.onerror = event => handleIndexedDBError(event)
-                openRequest.onsuccess = function(event) {
+                openRequest.onerror = _ => reject('Unable to open indexedDB')
+                openRequest.onsuccess = (event/*: any*/) => resolve(event.target.result)
+                openRequest.onupgradeneeded = (event/*: any*/) => {
                     const db = event.target.result
-                    db.onerror = e => handleIndexedDBError(e)
-                    resolve(db)
-                }
-                openRequest.onupgradeneeded = function() {
-                    const db = openRequest.result
                     if (!db.objectStoreNames.contains(dbProjects)) {
                         db.createObjectStore(dbProjects, {keyPath: 'id'})
                     }
                 }
+            }).then((db/*: IDBDatabase*/) => {
+                const storage/*: AzStorage*/ = {
+                    kind: 'indexedDb',
+                    loadProjects: ()/*: Promise<Project[]>*/ =>
+                        new Promise(resolve => resolve(db.transaction(dbProjects, 'readonly').objectStore(dbProjects))).then((store/*: IDBObjectStore*/) =>
+                            new Promise((resolve, reject) => {
+                                let projects/*: Project[]*/ = []
+                                store.openCursor().onsuccess = (event/*: any*/) => {
+                                    const cursor = event.target.result
+                                    if (cursor) {
+                                        projects.push(cursor.value)
+                                        cursor.continue()
+                                    } else {
+                                        getLocalStorage().then(legacyStorage =>
+                                            legacyStorage.loadProjects().then(localStorageProjects =>
+                                                Promise.all(localStorageProjects.map(p => Promise.all([legacyStorage.dropProject(p), storage.saveProject(p)])))
+                                                    .then(_ => resolve(projects.concat(localStorageProjects)))
+                                            )
+                                        ).catch(reject)
+                                    }
+                                }
+                            })
+                        ),
+                    saveProject: (p/*: Project*/)/*: Promise<void>*/ =>
+                        new Promise(resolve => resolve(db.transaction(dbProjects, 'readwrite').objectStore(dbProjects))).then((store/*: IDBObjectStore*/) => {
+                            const now = Date.now()
+                            p.updatedAt = now
+                            if (!store.get(p.id)) {
+                                p.createdAt = now
+                                return reqToPromise(store.add(p)).then(_ => undefined)
+                            } else {
+                                return reqToPromise(store.put(p)).then(_ => undefined)
+                            }
+                        }),
+                    dropProject: (p/*: Project*/)/*: Promise<void>*/ =>
+                        new Promise(resolve => resolve(db.transaction(dbProjects, 'readwrite').objectStore(dbProjects))).then((store/*: IDBObjectStore*/) => {
+                            return reqToPromise(store.delete(p.id))
+                        })
+                }
+                return storage
+            })
+        } else {
+            return Promise.reject('indexedDB not available')
+        }
+    }
+
+    function getLocalStorage()/*: Promise<AzStorage>*/ {
+        const prefix = 'project-'
+        return window.localStorage ? Promise.resolve({
+            kind: 'localStorage',
+            loadProjects: ()/*: Promise<Project[]>*/ => {
+                const projects = Object.keys(window.localStorage)
+                    .filter(key => key.startsWith(prefix))
+                    .map(key => {
+                        const value = window.localStorage.getItem(key)
+                        try {
+                            return JSON.parse(value)
+                        } catch (e) {
+                            return value
+                        }
+                    })
+                return Promise.resolve(projects)
+            },
+            saveProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                const key = prefix + p.id
+                const now = Date.now()
+                p.updatedAt = now
+                if (window.localStorage.getItem(key) === null) {
+                    p.createdAt = now
+                }
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(p))
+                    return Promise.resolve()
+                } catch (e) {
+                    return Promise.reject(e)
+                }
+            },
+            dropProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                window.localStorage.removeItem(prefix + p.id)
+                return Promise.resolve()
+            }
+        }) : Promise.reject('localStorage not available')
+    }
+
+    function getInMemory()/*: Promise<AzStorage>*/ {
+        const projects = {}
+        return Promise.resolve({
+            kind: 'inMemory',
+            loadProjects: ()/*: Promise<Project[]>*/ => Promise.resolve(Object.values(projects)),
+            saveProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                projects[p.id] = p
+                return Promise.resolve()
+            },
+            dropProject: (p/*: Project*/)/*: Promise<void>*/ => {
+                delete projects[p.id]
+                return Promise.resolve()
             }
         })
     }
-    function getDbObjectStore(objectStore, transactionType) {
-        return new Promise((resolve, reject) => {
-            getConfiguredDb().then(db => {
-                const transaction = db.transaction(
-                    objectStore,
-                    typeof transactionType === 'undefined' ? 'readonly' : transactionType
-                )
-                resolve(transaction.objectStore(objectStore))
-            }, reject)
-        })
-    }
 
-    const localStorageProjectPrefix = 'project-'
-    function getLocalStorageProjects() {
-        return Object.keys(localStorage)
-            .filter(key => key.startsWith(localStorageProjectPrefix))
-            .map(key => safeParse(localStorage.getItem(key)))
-    }
-    function dropLocalStorageProject(project) {
-        localStorage.removeItem(localStorageProjectPrefix + project.id)
-    }
-    function loadAndMigrateLocaleStorageProjects() {
-        const projects = getLocalStorageProjects()
-        projects.forEach(p => saveProject(p, () => dropLocalStorageProject(p)))
-        return projects
-    }
+    const store = getIndexedDb().catch(() => getLocalStorage()).catch(() => getInMemory())
+    /* STORAGE.TS */
 
     function loadProjects() {
-        if (window.indexedDB) {
-            getDbObjectStore(dbProjects).then(store => {
-                let projects = []
-                store.openCursor().onsuccess = event => {
-                    const cursor = event.target.result
-                    if (cursor) {
-                        projects.push(cursor.value)
-                        cursor.continue()
-                    } else {
-                        projects = projects.concat(loadAndMigrateLocaleStorageProjects())
-                        sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
-                        window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
-                        const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-                        id ? window.azimutt.project = window.azimutt.projects[id] : undefined
-                    }
-                }
-            })
-        } else if (window.localStorage) {
-            const projects = getLocalStorageProjects()
+        store.then(s => s.loadProjects()).then(projects => {
             sendToElm({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
-            window.azimutt.projects = projects.reduce((acc, [id, p]) => ({...acc, [id]: p}), {})
+            window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
             const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
             id ? window.azimutt.project = window.azimutt.projects[id] : undefined
-        } else {
-            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
-                'Please make them available or use a browser that support them!')
-        }
+        })
     }
     function saveProject(project, callback) {
-        const now = Date.now()
-        project.updatedAt = now
-
-        if (window.indexedDB) {
-            getDbObjectStore(dbProjects, 'readwrite').then(store => {
-                if (!store.get(project.id)) {
-                    project.createdAt = now
-                    store.add(project).onsuccess = callback
-                } else {
-                    store.put(project).onsuccess = callback
-                }
-            })
-        } else if (window.localStorage) {
-            const key = localStorageProjectPrefix + project.id
-            if (localStorage.getItem(key) === null) { project.createdAt = now }
-            try {
-                localStorage.setItem(key, JSON.stringify(project))
-            } catch (e) {
-                let message
-                if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-                    message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
-                } else {
-                    message = 'Unknown localStorage error: ' + e.message
-                }
-                showMessage({kind: 'error', message})
-                const name = 'local-storage'
-                const details = {error: e.name, message: e.message}
-                analytics.then(a => a.trackError(name, details)); errorTracking.then(e => e.track(name, details));
-            }
+        store.then(s => s.saveProject(project)).then(_ => {
             callback()
-        } else {
-            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
-                'Please make them available or use a browser that support them!')
-        }
+        }).catch(e => {
+            let message
+            if(typeof e === 'string') {
+                message = e
+            } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
+                message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
+            } else {
+                message = 'Unknown localStorage error: ' + e.message
+            }
+            showMessage({kind: 'error', message})
+            const name = 'local-storage'
+            const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
+            analytics.then(a => a.trackError(name, details)); errorTracking.then(e => e.track(name, details));
+        })
     }
     function dropProject(project) {
-        if (window.indexedDB) {
-            getDbObjectStore(dbProjects, 'readwrite').then(store => {
-                store.delete(project.id).onsuccess = loadProjects
-            })
-        } else if (window.localStorage) {
-            localStorage.removeItem(localStorageProjectPrefix + project.id)
+        store.then(s => s.dropProject(project)).then(_ => {
             loadProjects()
-        } else {
-            alert('Azimutt needs IndexedDB or LocalStorage to store projects locally, but they are not available. ' +
-                'Please make them available or use a browser that support them!')
-        }
+        })
     }
 
     function getLocalFile(maybeProjectId, maybeSourceId, file) {
@@ -298,10 +348,6 @@ import { Elm } from './.elm-spa/defaults/Main.elm'
             .catch(err => showMessage({kind: 'error', message: `Can't get remote file ${url}: ${err}`}))
     }
 
-    function getSourceId(src, ref) {
-        sendToElm({kind: 'GotSourceId', now: Date.now(), sourceId: randomUID(), src, ref})
-    }
-
     const resizeObserver = new ResizeObserver(entries => {
         const sizes = entries.map(entry => ({
             id: entry.target.id,
@@ -326,13 +372,14 @@ import { Elm } from './.elm-spa/defaults/Main.elm'
 
     const hotkeys = {}
     // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
+    function isInput(elt) { return elt.localName === 'input' || elt.localName === 'textarea' }
     function keydownHotkey(e) {
         const matches = (hotkeys[e.key] || []).filter(hotkey =>
             (hotkey.ctrl === e.ctrlKey) &&
             (!hotkey.shift || e.shiftKey) &&
             (hotkey.alt === e.altKey) &&
             (hotkey.meta === e.metaKey) &&
-            ((!hotkey.target && (hotkey.onInput || e.target.localName !== 'input')) ||
+            ((!hotkey.target && (hotkey.onInput || !isInput(e.target))) ||
                 (hotkey.target &&
                     (!hotkey.target.id || hotkey.target.id === e.target.id) &&
                     (!hotkey.target.class || e.target.className.split(' ').includes(hotkey.target.class)) &&
@@ -342,7 +389,7 @@ import { Elm } from './.elm-spa/defaults/Main.elm'
             if (hotkey.preventDefault) { e.preventDefault() }
             sendToElm({kind: 'GotHotkey', id: hotkey.id})
         })
-        if(matches.length === 0 && e.key === "Escape" && e.target.localName === 'input') { e.target.blur() }
+        if(matches.length === 0 && e.key === "Escape" && isInput(e.target)) { e.target.blur() }
     }
     function listenHotkeys(keys) {
         Object.keys(hotkeys).forEach(key => hotkeys[key] = [])

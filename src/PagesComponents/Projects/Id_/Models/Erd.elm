@@ -4,7 +4,6 @@ import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Ned as Ned
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -22,15 +21,19 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnPro
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import Random
 import Time
 
 
 type alias Erd =
-    { project : ProjectInfo
+    { seed : Random.Seed
+    , project : ProjectInfo
     , canvas : CanvasProps
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
+    , notes : Dict NotesKey Notes
     , relationsByTable : Dict TableId (List Relation)
     , tableProps : Dict TableId ErdTableProps
     , shownTables : List TableId
@@ -42,20 +45,22 @@ type alias Erd =
     }
 
 
-create : List Project -> Project -> Erd
-create allProjects project =
+create : Random.Seed -> List Project -> Project -> Erd
+create seed allProjects project =
     let
         relationsByTable : Dict TableId (List Relation)
         relationsByTable =
             buildRelationsByTable project.relations
 
         ( canvas, tableProps, shownTables ) =
-            createLayout relationsByTable project.layout
+            createLayout relationsByTable project.notes project.layout
     in
-    { project = ProjectInfo.create project
+    { seed = seed
+    , project = ProjectInfo.create project
     , canvas = canvas
     , tables = project.tables |> Dict.map (\id -> ErdTable.create project.tables (relationsByTable |> Dict.getOrElse id []))
     , relations = project.relations |> List.map (ErdRelation.create project.tables)
+    , notes = project.notes
     , relationsByTable = relationsByTable
     , tableProps = tableProps
     , shownTables = shownTables
@@ -79,6 +84,7 @@ unpack erd =
     , sources = erd.sources
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = erd.relations |> List.map ErdRelation.unpack
+    , notes = erd.notes
     , layout = unpackLayout erd.canvas erd.tableProps erd.shownTables layoutCreatedAt layoutUpdatedAt
     , usedLayout = erd.usedLayout
     , layouts = erd.layouts
@@ -88,15 +94,15 @@ unpack erd =
     }
 
 
-createLayout : Dict TableId (List Relation) -> Layout -> ( CanvasProps, Dict TableId ErdTableProps, List TableId )
-createLayout relationsByTable layout =
+createLayout : Dict TableId (List Relation) -> Dict NotesKey Notes -> Layout -> ( CanvasProps, Dict TableId ErdTableProps, List TableId )
+createLayout relationsByTable notes layout =
     let
         layoutProps : List TableProps
         layoutProps =
             layout.tables ++ layout.hiddenTables
     in
     ( layout.canvas
-    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) Nothing p )) |> Dict.fromList
+    , layoutProps |> List.map (\p -> ( p.id, ErdTableProps.create (relationsByTable |> Dict.getOrElse p.id []) (layout.tables |> List.map .id) Nothing notes p )) |> Dict.fromList
     , layout.tables |> List.map .id
     )
 
@@ -117,7 +123,7 @@ unpackLayout canvas tableProps shownTables createdAt updatedAt =
 
 getColumn : TableId -> ColumnName -> Erd -> Maybe ErdColumn
 getColumn table column erd =
-    erd.tables |> Dict.get table |> Maybe.andThen (\t -> t.columns |> Ned.get column)
+    erd.tables |> Dict.get table |> Maybe.andThen (\t -> t.columns |> Dict.get column)
 
 
 getColumnProps : TableId -> ColumnName -> Erd -> Maybe ErdColumnProps

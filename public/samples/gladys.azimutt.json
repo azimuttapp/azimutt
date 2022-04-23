@@ -1,0 +1,5638 @@
+{
+  "id": "00000004-fa04-4985-a5b8-2ffeb5e47564",
+  "name": "Gladys Assistant",
+  "sources": [
+    {
+      "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+      "name": "gladys.sql",
+      "kind": {
+        "kind": "LocalFile",
+        "name": "gladys.sql",
+        "size": 11796,
+        "modified": 1649492400000
+      },
+      "content": [
+        "CREATE TABLE `t_user` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `firstname` varchar(255) NOT NULL,",
+        "    `lastname` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `email` varchar(255) NOT NULL UNIQUE,",
+        "    `birthdate` date NOT NULL,",
+        "    `language` varchar(255) NOT NULL,",
+        "    `picture` text,",
+        "    `password` varchar(255) NOT NULL,",
+        "    `role` varchar(255) NOT NULL,",
+        "    `temperature_unit_preference` varchar(255) NOT NULL,",
+        "    `distance_unit_preference` varchar(255) NOT NULL,",
+        "    `telegram_user_id` varchar(255) UNIQUE,",
+        "    `last_latitude` double precision,",
+        "    `last_longitude` double precision,",
+        "    `last_altitude` double precision,",
+        "    `last_accuracy` double precision,",
+        "    `last_location_changed` DATETIME,",
+        "    `current_house_id` uuid REFERENCES `t_house` (`id`),",
+        "    `last_house_changed` DATETIME,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_user_role` ON `t_user` (`role`);",
+        "",
+        "CREATE TABLE `t_location` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `user_id` uuid NOT NULL REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `latitude` double precision NOT NULL,",
+        "    `longitude` double precision NOT NULL,",
+        "    `altitude` double precision,",
+        "    `accuracy` double precision,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_location_user_id` ON `t_location` (`user_id`);",
+        "",
+        "CREATE INDEX `t_location_created_at` ON `t_location` (`created_at`);",
+        "",
+        "CREATE TABLE `t_house` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `name` varchar(255) NOT NULL UNIQUE,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `latitude` double precision,",
+        "    `longitude` double precision,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE TABLE `t_room` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `house_id` uuid NOT NULL REFERENCES `t_house` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL UNIQUE,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_room_house_id` ON `t_room` (`house_id`);",
+        "",
+        "CREATE TABLE `t_device` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `service_id` uuid NOT NULL REFERENCES `t_service` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `room_id` uuid REFERENCES `t_room` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `model` varchar(255),",
+        "    `external_id` varchar(255) NOT NULL UNIQUE,",
+        "    `should_poll` TINYINT (1) NOT NULL DEFAULT 0,",
+        "    `poll_frequency` integer,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_device_service_id` ON `t_device` (`service_id`);",
+        "",
+        "CREATE INDEX `t_device_room_id` ON `t_device` (`room_id`);",
+        "",
+        "CREATE TABLE `t_device_feature` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `device_id` uuid NOT NULL REFERENCES `t_device` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `external_id` varchar(255) NOT NULL UNIQUE,",
+        "    `category` varchar(255) NOT NULL,",
+        "    `type` varchar(255) NOT NULL,",
+        "    `read_only` TINYINT (1) NOT NULL,",
+        "    `keep_history` TINYINT (1) NOT NULL DEFAULT 1,",
+        "    `has_feedback` TINYINT (1) NOT NULL,",
+        "    `unit` varchar(255),",
+        "    `min` double precision NOT NULL,",
+        "    `max` double precision NOT NULL,",
+        "    `last_value` double precision,",
+        "    `last_value_string` text,",
+        "    `last_value_changed` DATETIME,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL,",
+        "    `last_monthly_aggregate` DATETIME DEFAULT NULL,",
+        "    `last_daily_aggregate` DATETIME DEFAULT NULL,",
+        "    `last_hourly_aggregate` DATETIME DEFAULT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_device_feature_device_id` ON `t_device_feature` (`device_id`);",
+        "",
+        "CREATE INDEX `t_device_feature_category` ON `t_device_feature` (`category`);",
+        "",
+        "CREATE TABLE `t_device_feature_state` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `device_feature_id` uuid NOT NULL REFERENCES `t_device_feature` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `value` double precision NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_device_feature_state_device_feature_id` ON `t_device_feature_state` (`device_feature_id`);",
+        "",
+        "CREATE TABLE `t_calendar` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `user_id` uuid NOT NULL REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `service_id` uuid REFERENCES `t_service` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `external_id` varchar(255) UNIQUE,",
+        "    `description` varchar(255) NOT NULL,",
+        "    `sync` TINYINT (1) NOT NULL DEFAULT 1,",
+        "    `notify` TINYINT (1) NOT NULL DEFAULT 0,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL,",
+        "    `ctag` varchar(255),",
+        "    `sync_token` varchar(255),",
+        "    `color` varchar(255),",
+        "    `shared` TINYINT (1) NOT NULL DEFAULT 0",
+        ");",
+        "",
+        "CREATE INDEX `t_calendar_user_id` ON `t_calendar` (`user_id`);",
+        "",
+        "CREATE INDEX `t_calendar_service_id` ON `t_calendar` (`service_id`);",
+        "",
+        "CREATE TABLE `t_calendar_event` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `calendar_id` uuid NOT NULL REFERENCES `t_calendar` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `external_id` varchar(255) UNIQUE,",
+        "    `location` varchar(255),",
+        "    `start` DATETIME NOT NULL,",
+        "    `end` DATETIME,",
+        "    `full_day` TINYINT (1) NOT NULL DEFAULT 0,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL,",
+        "    `url` varchar(255)",
+        ");",
+        "",
+        "CREATE INDEX `t_calendar_event_calendar_id` ON `t_calendar_event` (`calendar_id`);",
+        "",
+        "CREATE INDEX `t_calendar_event_start` ON `t_calendar_event` (`start`);",
+        "",
+        "CREATE INDEX `t_calendar_event_end` ON `t_calendar_event` (`end`);",
+        "",
+        "CREATE TABLE `t_pod` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `room_id` uuid REFERENCES `t_room` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_pod_room_id` ON `t_pod` (`room_id`);",
+        "",
+        "CREATE TABLE `t_service` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `pod_id` uuid REFERENCES `t_pod` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `version` varchar(255) NOT NULL,",
+        "    `enabled` TINYINT (1) NOT NULL DEFAULT 1,",
+        "    `has_message_feature` TINYINT (1) NOT NULL DEFAULT 0,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL,",
+        "    `status` text NOT NULL DEFAULT 'UNKNWON'",
+        ");",
+        "",
+        "CREATE INDEX `t_service_pod_id` ON `t_service` (`pod_id`);",
+        "",
+        "CREATE UNIQUE INDEX `t_service_pod_id_name` ON `t_service` (`pod_id`, `name`);",
+        "",
+        "CREATE TABLE `t_variable` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `service_id` uuid REFERENCES `t_service` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `user_id` uuid REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `value` text NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_variable_service_id` ON `t_variable` (`service_id`);",
+        "",
+        "CREATE UNIQUE INDEX `t_variable_service_id_user_id_name` ON `t_variable` (`service_id`, `user_id`, `name`);",
+        "",
+        "CREATE TABLE `t_script` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `name` varchar(255) NOT NULL UNIQUE,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `code` text NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE TABLE `t_area` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `name` varchar(255) NOT NULL UNIQUE,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `latitude` double precision NOT NULL,",
+        "    `longitude` double precision NOT NULL,",
+        "    `radius` double precision NOT NULL,",
+        "    `color` varchar(255) NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE TABLE `t_dashboard` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `name` varchar(255) NOT NULL UNIQUE,",
+        "    `type` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `boxes` json NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL,",
+        "    `user_id` uuid REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE",
+        ");",
+        "",
+        "CREATE TABLE `t_scene` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `icon` varchar(255) NOT NULL,",
+        "    `selector` varchar(255) NOT NULL UNIQUE,",
+        "    `actions` json NOT NULL,",
+        "    `last_executed` DATETIME,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL,",
+        "    `triggers` json,",
+        "    `active` TINYINT (1) NOT NULL DEFAULT 1",
+        ");",
+        "",
+        "CREATE TABLE `t_message` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `sender_id` uuid REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `receiver_id` uuid REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `text` text NOT NULL,",
+        "    `file` text,",
+        "    `conversation_id` uuid NOT NULL,",
+        "    `is_read` TINYINT (1) NOT NULL DEFAULT 0,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_message_sender_id` ON `t_message` (`sender_id`);",
+        "",
+        "CREATE INDEX `t_message_receiver_id` ON `t_message` (`receiver_id`);",
+        "",
+        "CREATE TABLE `t_session` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `user_id` uuid NOT NULL REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `token_type` varchar(255) NOT NULL,",
+        "    `token_hash` text NOT NULL,",
+        "    `scope` text NOT NULL,",
+        "    `valid_until` DATETIME,",
+        "    `last_seen` DATETIME,",
+        "    `revoked` TINYINT (1) NOT NULL DEFAULT 0,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL,",
+        "    `useragent` text",
+        ");",
+        "",
+        "CREATE INDEX `t_session_user_id` ON `t_session` (`user_id`);",
+        "",
+        "CREATE TABLE `t_device_param` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `device_id` uuid NOT NULL REFERENCES `t_device` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `name` varchar(255) NOT NULL,",
+        "    `value` text NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_device_param_device_id` ON `t_device_param` (`device_id`);",
+        "",
+        "CREATE UNIQUE INDEX `t_device_param_device_id_name` ON `t_device_param` (`device_id`, `name`);",
+        "",
+        "CREATE TABLE `t_device_feature_state_aggregate` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `type` varchar(255) NOT NULL,",
+        "    `device_feature_id` uuid NOT NULL REFERENCES `t_device_feature` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,",
+        "    `value` double precision NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_device_feature_state_aggregate_type` ON `t_device_feature_state_aggregate` (`type`);",
+        "",
+        "CREATE INDEX `t_device_feature_state_aggregate_device_feature_id` ON `t_device_feature_state_aggregate` (`device_feature_id`);",
+        "",
+        "CREATE INDEX `t_device_feature_state_aggregate_created_at` ON `t_device_feature_state_aggregate` (`created_at`);",
+        "",
+        "CREATE INDEX `t_device_feature_state_created_at` ON `t_device_feature_state` (`created_at`);",
+        "",
+        "CREATE TABLE `t_job` (",
+        "    `id` uuid NOT NULL PRIMARY KEY,",
+        "    `type` varchar(255) NOT NULL,",
+        "    `status` varchar(255) NOT NULL,",
+        "    `progress` integer NOT NULL,",
+        "    `data` json NOT NULL,",
+        "    `created_at` DATETIME NOT NULL,",
+        "    `updated_at` DATETIME NOT NULL",
+        ");",
+        "",
+        "CREATE INDEX `t_job_created_at` ON `t_job` (`created_at`);",
+        "",
+        "CREATE INDEX `t_job_type` ON `t_job` (`type`);",
+        "",
+        ""
+      ],
+      "tables": [
+        {
+          "schema": "public",
+          "table": "t_area",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "latitude",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "longitude",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "radius",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "color",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_area_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  213,
+                  214,
+                  215,
+                  216,
+                  217,
+                  218,
+                  219,
+                  220,
+                  221,
+                  222,
+                  223
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_area_name_unique_az",
+              "columns": [
+                "name"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    213,
+                    214,
+                    215,
+                    216,
+                    217,
+                    218,
+                    219,
+                    220,
+                    221,
+                    222,
+                    223
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_area_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    213,
+                    214,
+                    215,
+                    216,
+                    217,
+                    218,
+                    219,
+                    220,
+                    221,
+                    222,
+                    223
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                213,
+                214,
+                215,
+                216,
+                217,
+                218,
+                219,
+                220,
+                221,
+                222,
+                223
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_calendar",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "user_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "service_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "external_id",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "description",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "sync",
+              "type": "TINYINT (1)",
+              "default": "1",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "notify",
+              "type": "TINYINT (1)",
+              "default": "0",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "ctag",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "sync_token",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "color",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "shared",
+              "type": "TINYINT (1)",
+              "default": "0",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_calendar_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  119,
+                  120,
+                  121,
+                  122,
+                  123,
+                  124,
+                  125,
+                  126,
+                  127,
+                  128,
+                  129,
+                  130,
+                  131,
+                  132,
+                  133,
+                  134,
+                  135
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_calendar_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    119,
+                    120,
+                    121,
+                    122,
+                    123,
+                    124,
+                    125,
+                    126,
+                    127,
+                    128,
+                    129,
+                    130,
+                    131,
+                    132,
+                    133,
+                    134,
+                    135
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_calendar_external_id_unique_az",
+              "columns": [
+                "external_id"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    119,
+                    120,
+                    121,
+                    122,
+                    123,
+                    124,
+                    125,
+                    126,
+                    127,
+                    128,
+                    129,
+                    130,
+                    131,
+                    132,
+                    133,
+                    134,
+                    135
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_calendar_user_id`",
+              "columns": [
+                "`user_id`"
+              ],
+              "definition": "(`user_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    137
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_calendar_service_id`",
+              "columns": [
+                "`service_id`"
+              ],
+              "definition": "(`service_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    139
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                119,
+                120,
+                121,
+                122,
+                123,
+                124,
+                125,
+                126,
+                127,
+                128,
+                129,
+                130,
+                131,
+                132,
+                133,
+                134,
+                135
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_calendar_event",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "calendar_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "external_id",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "location",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "start",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "end",
+              "type": "DATETIME",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "full_day",
+              "type": "TINYINT (1)",
+              "default": "0",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "url",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_calendar_event_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  141,
+                  142,
+                  143,
+                  144,
+                  145,
+                  146,
+                  147,
+                  148,
+                  149,
+                  150,
+                  151,
+                  152,
+                  153,
+                  154
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_calendar_event_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    141,
+                    142,
+                    143,
+                    144,
+                    145,
+                    146,
+                    147,
+                    148,
+                    149,
+                    150,
+                    151,
+                    152,
+                    153,
+                    154
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_calendar_event_external_id_unique_az",
+              "columns": [
+                "external_id"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    141,
+                    142,
+                    143,
+                    144,
+                    145,
+                    146,
+                    147,
+                    148,
+                    149,
+                    150,
+                    151,
+                    152,
+                    153,
+                    154
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_calendar_event_calendar_id`",
+              "columns": [
+                "`calendar_id`"
+              ],
+              "definition": "(`calendar_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    156
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_calendar_event_start`",
+              "columns": [
+                "`start`"
+              ],
+              "definition": "(`start`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    158
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_calendar_event_end`",
+              "columns": [
+                "`end`"
+              ],
+              "definition": "(`end`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    160
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                141,
+                142,
+                143,
+                144,
+                145,
+                146,
+                147,
+                148,
+                149,
+                150,
+                151,
+                152,
+                153,
+                154
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_dashboard",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "type",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "boxes",
+              "type": "json",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "user_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_dashboard_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  225,
+                  226,
+                  227,
+                  228,
+                  229,
+                  230,
+                  231,
+                  232,
+                  233,
+                  234
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_dashboard_name_unique_az",
+              "columns": [
+                "name"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    225,
+                    226,
+                    227,
+                    228,
+                    229,
+                    230,
+                    231,
+                    232,
+                    233,
+                    234
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_dashboard_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    225,
+                    226,
+                    227,
+                    228,
+                    229,
+                    230,
+                    231,
+                    232,
+                    233,
+                    234
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                225,
+                226,
+                227,
+                228,
+                229,
+                230,
+                231,
+                232,
+                233,
+                234
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_device",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "service_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "room_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "model",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "external_id",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "should_poll",
+              "type": "TINYINT (1)",
+              "default": "0",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "poll_frequency",
+              "type": "integer",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_device_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  63,
+                  64,
+                  65,
+                  66,
+                  67,
+                  68,
+                  69,
+                  70,
+                  71,
+                  72,
+                  73,
+                  74,
+                  75
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_device_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_device_external_id_unique_az",
+              "columns": [
+                "external_id"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    63,
+                    64,
+                    65,
+                    66,
+                    67,
+                    68,
+                    69,
+                    70,
+                    71,
+                    72,
+                    73,
+                    74,
+                    75
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_device_service_id`",
+              "columns": [
+                "`service_id`"
+              ],
+              "definition": "(`service_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    77
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_device_room_id`",
+              "columns": [
+                "`room_id`"
+              ],
+              "definition": "(`room_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    79
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                63,
+                64,
+                65,
+                66,
+                67,
+                68,
+                69,
+                70,
+                71,
+                72,
+                73,
+                74,
+                75
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_device_feature",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "device_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "external_id",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "category",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "type",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "read_only",
+              "type": "TINYINT (1)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "keep_history",
+              "type": "TINYINT (1)",
+              "default": "1",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "has_feedback",
+              "type": "TINYINT (1)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "unit",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "min",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "max",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_value",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_value_string",
+              "type": "text",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_value_changed",
+              "type": "DATETIME",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_monthly_aggregate",
+              "type": "DATETIME",
+              "nullable": true,
+              "default": "NULL",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_daily_aggregate",
+              "type": "DATETIME",
+              "nullable": true,
+              "default": "NULL",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_hourly_aggregate",
+              "type": "DATETIME",
+              "nullable": true,
+              "default": "NULL",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_device_feature_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  81,
+                  82,
+                  83,
+                  84,
+                  85,
+                  86,
+                  87,
+                  88,
+                  89,
+                  90,
+                  91,
+                  92,
+                  93,
+                  94,
+                  95,
+                  96,
+                  97,
+                  98,
+                  99,
+                  100,
+                  101,
+                  102,
+                  103
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_device_feature_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    81,
+                    82,
+                    83,
+                    84,
+                    85,
+                    86,
+                    87,
+                    88,
+                    89,
+                    90,
+                    91,
+                    92,
+                    93,
+                    94,
+                    95,
+                    96,
+                    97,
+                    98,
+                    99,
+                    100,
+                    101,
+                    102,
+                    103
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_device_feature_external_id_unique_az",
+              "columns": [
+                "external_id"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    81,
+                    82,
+                    83,
+                    84,
+                    85,
+                    86,
+                    87,
+                    88,
+                    89,
+                    90,
+                    91,
+                    92,
+                    93,
+                    94,
+                    95,
+                    96,
+                    97,
+                    98,
+                    99,
+                    100,
+                    101,
+                    102,
+                    103
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_device_feature_device_id`",
+              "columns": [
+                "`device_id`"
+              ],
+              "definition": "(`device_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    105
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_device_feature_category`",
+              "columns": [
+                "`category`"
+              ],
+              "definition": "(`category`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    107
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                81,
+                82,
+                83,
+                84,
+                85,
+                86,
+                87,
+                88,
+                89,
+                90,
+                91,
+                92,
+                93,
+                94,
+                95,
+                96,
+                97,
+                98,
+                99,
+                100,
+                101,
+                102,
+                103
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_device_feature_state",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "device_feature_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "value",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_device_feature_state_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  109,
+                  110,
+                  111,
+                  112,
+                  113,
+                  114,
+                  115
+                ]
+              }
+            ]
+          },
+          "indexes": [
+            {
+              "name": "`t_device_feature_state_device_feature_id`",
+              "columns": [
+                "`device_feature_id`"
+              ],
+              "definition": "(`device_feature_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    117
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_device_feature_state_created_at`",
+              "columns": [
+                "`created_at`"
+              ],
+              "definition": "(`created_at`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    309
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                109,
+                110,
+                111,
+                112,
+                113,
+                114,
+                115
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_device_feature_state_aggregate",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "type",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "device_feature_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "value",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_device_feature_state_aggregate_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  294,
+                  295,
+                  296,
+                  297,
+                  298,
+                  299,
+                  300,
+                  301
+                ]
+              }
+            ]
+          },
+          "indexes": [
+            {
+              "name": "`t_device_feature_state_aggregate_type`",
+              "columns": [
+                "`type`"
+              ],
+              "definition": "(`type`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    303
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_device_feature_state_aggregate_device_feature_id`",
+              "columns": [
+                "`device_feature_id`"
+              ],
+              "definition": "(`device_feature_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    305
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_device_feature_state_aggregate_created_at`",
+              "columns": [
+                "`created_at`"
+              ],
+              "definition": "(`created_at`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    307
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                294,
+                295,
+                296,
+                297,
+                298,
+                299,
+                300,
+                301
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_device_param",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "device_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "value",
+              "type": "text",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_device_param_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  281,
+                  282,
+                  283,
+                  284,
+                  285,
+                  286,
+                  287,
+                  288
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "`t_device_param_device_id_name`",
+              "columns": [
+                "`device_id`",
+                "`name`"
+              ],
+              "definition": "(`device_id`, `name`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    292
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_device_param_device_id`",
+              "columns": [
+                "`device_id`"
+              ],
+              "definition": "(`device_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    290
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                281,
+                282,
+                283,
+                284,
+                285,
+                286,
+                287,
+                288
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_house",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "latitude",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "longitude",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_house_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  42,
+                  43,
+                  44,
+                  45,
+                  46,
+                  47,
+                  48,
+                  49,
+                  50
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_house_name_unique_az",
+              "columns": [
+                "name"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_house_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    42,
+                    43,
+                    44,
+                    45,
+                    46,
+                    47,
+                    48,
+                    49,
+                    50
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                42,
+                43,
+                44,
+                45,
+                46,
+                47,
+                48,
+                49,
+                50
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_job",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "type",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "status",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "progress",
+              "type": "integer",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "data",
+              "type": "json",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_job_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  311,
+                  312,
+                  313,
+                  314,
+                  315,
+                  316,
+                  317,
+                  318,
+                  319
+                ]
+              }
+            ]
+          },
+          "indexes": [
+            {
+              "name": "`t_job_created_at`",
+              "columns": [
+                "`created_at`"
+              ],
+              "definition": "(`created_at`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    321
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_job_type`",
+              "columns": [
+                "`type`"
+              ],
+              "definition": "(`type`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    323
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                311,
+                312,
+                313,
+                314,
+                315,
+                316,
+                317,
+                318,
+                319
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_location",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "user_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "latitude",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "longitude",
+              "type": "double precision",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "altitude",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "accuracy",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_location_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  27,
+                  28,
+                  29,
+                  30,
+                  31,
+                  32,
+                  33,
+                  34,
+                  35,
+                  36
+                ]
+              }
+            ]
+          },
+          "indexes": [
+            {
+              "name": "`t_location_user_id`",
+              "columns": [
+                "`user_id`"
+              ],
+              "definition": "(`user_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    38
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_location_created_at`",
+              "columns": [
+                "`created_at`"
+              ],
+              "definition": "(`created_at`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    40
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                27,
+                28,
+                29,
+                30,
+                31,
+                32,
+                33,
+                34,
+                35,
+                36
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_message",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "sender_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "receiver_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "text",
+              "type": "text",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "file",
+              "type": "text",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "conversation_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "is_read",
+              "type": "TINYINT (1)",
+              "default": "0",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_message_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  249,
+                  250,
+                  251,
+                  252,
+                  253,
+                  254,
+                  255,
+                  256,
+                  257,
+                  258,
+                  259
+                ]
+              }
+            ]
+          },
+          "indexes": [
+            {
+              "name": "`t_message_sender_id`",
+              "columns": [
+                "`sender_id`"
+              ],
+              "definition": "(`sender_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    261
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_message_receiver_id`",
+              "columns": [
+                "`receiver_id`"
+              ],
+              "definition": "(`receiver_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    263
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                249,
+                250,
+                251,
+                252,
+                253,
+                254,
+                255,
+                256,
+                257,
+                258,
+                259
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_pod",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "room_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_pod_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  162,
+                  163,
+                  164,
+                  165,
+                  166,
+                  167,
+                  168,
+                  169
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_pod_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    162,
+                    163,
+                    164,
+                    165,
+                    166,
+                    167,
+                    168,
+                    169
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_pod_room_id`",
+              "columns": [
+                "`room_id`"
+              ],
+              "definition": "(`room_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    171
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                162,
+                163,
+                164,
+                165,
+                166,
+                167,
+                168,
+                169
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_room",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "house_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_room_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  52,
+                  53,
+                  54,
+                  55,
+                  56,
+                  57,
+                  58,
+                  59
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_room_name_unique_az",
+              "columns": [
+                "name"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_room_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    52,
+                    53,
+                    54,
+                    55,
+                    56,
+                    57,
+                    58,
+                    59
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_room_house_id`",
+              "columns": [
+                "`house_id`"
+              ],
+              "definition": "(`house_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    61
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                52,
+                53,
+                54,
+                55,
+                56,
+                57,
+                58,
+                59
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_scene",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "icon",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "actions",
+              "type": "json",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_executed",
+              "type": "DATETIME",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "triggers",
+              "type": "json",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "active",
+              "type": "TINYINT (1)",
+              "default": "1",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_scene_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  236,
+                  237,
+                  238,
+                  239,
+                  240,
+                  241,
+                  242,
+                  243,
+                  244,
+                  245,
+                  246,
+                  247
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_scene_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    236,
+                    237,
+                    238,
+                    239,
+                    240,
+                    241,
+                    242,
+                    243,
+                    244,
+                    245,
+                    246,
+                    247
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                236,
+                237,
+                238,
+                239,
+                240,
+                241,
+                242,
+                243,
+                244,
+                245,
+                246,
+                247
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_script",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "code",
+              "type": "text",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_script_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  204,
+                  205,
+                  206,
+                  207,
+                  208,
+                  209,
+                  210,
+                  211
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_script_name_unique_az",
+              "columns": [
+                "name"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    204,
+                    205,
+                    206,
+                    207,
+                    208,
+                    209,
+                    210,
+                    211
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_script_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    204,
+                    205,
+                    206,
+                    207,
+                    208,
+                    209,
+                    210,
+                    211
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                204,
+                205,
+                206,
+                207,
+                208,
+                209,
+                210,
+                211
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_service",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "pod_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "version",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "enabled",
+              "type": "TINYINT (1)",
+              "default": "1",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "has_message_feature",
+              "type": "TINYINT (1)",
+              "default": "0",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "status",
+              "type": "text",
+              "default": "'UNKNWON'",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_service_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  173,
+                  174,
+                  175,
+                  176,
+                  177,
+                  178,
+                  179,
+                  180,
+                  181,
+                  182,
+                  183,
+                  184
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_service_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    173,
+                    174,
+                    175,
+                    176,
+                    177,
+                    178,
+                    179,
+                    180,
+                    181,
+                    182,
+                    183,
+                    184
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "`t_service_pod_id_name`",
+              "columns": [
+                "`pod_id`",
+                "`name`"
+              ],
+              "definition": "(`pod_id`, `name`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    188
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_service_pod_id`",
+              "columns": [
+                "`pod_id`"
+              ],
+              "definition": "(`pod_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    186
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                173,
+                174,
+                175,
+                176,
+                177,
+                178,
+                179,
+                180,
+                181,
+                182,
+                183,
+                184
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_session",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "user_id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "token_type",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "token_hash",
+              "type": "text",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "scope",
+              "type": "text",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "valid_until",
+              "type": "DATETIME",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_seen",
+              "type": "DATETIME",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "revoked",
+              "type": "TINYINT (1)",
+              "default": "0",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "useragent",
+              "type": "text",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_session_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  265,
+                  266,
+                  267,
+                  268,
+                  269,
+                  270,
+                  271,
+                  272,
+                  273,
+                  274,
+                  275,
+                  276,
+                  277
+                ]
+              }
+            ]
+          },
+          "indexes": [
+            {
+              "name": "`t_session_user_id`",
+              "columns": [
+                "`user_id`"
+              ],
+              "definition": "(`user_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    279
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                265,
+                266,
+                267,
+                268,
+                269,
+                270,
+                271,
+                272,
+                273,
+                274,
+                275,
+                276,
+                277
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_user",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "firstname",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "lastname",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "selector",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "email",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "birthdate",
+              "type": "date",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "language",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "picture",
+              "type": "text",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "password",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "role",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "temperature_unit_preference",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "distance_unit_preference",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "telegram_user_id",
+              "type": "varchar(255)",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_latitude",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_longitude",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_altitude",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_accuracy",
+              "type": "double precision",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_location_changed",
+              "type": "DATETIME",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "current_house_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "last_house_changed",
+              "type": "DATETIME",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_user_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  4,
+                  5,
+                  6,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                  16,
+                  17,
+                  18,
+                  19,
+                  20,
+                  21,
+                  22,
+                  23
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "t_user_selector_unique_az",
+              "columns": [
+                "selector"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_user_email_unique_az",
+              "columns": [
+                "email"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "t_user_telegram_user_id_unique_az",
+              "columns": [
+                "telegram_user_id"
+              ],
+              "definition": "UNIQUE",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    0,
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_user_role`",
+              "columns": [
+                "`role`"
+              ],
+              "definition": "(`role`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    25
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23
+              ]
+            }
+          ]
+        },
+        {
+          "schema": "public",
+          "table": "t_variable",
+          "columns": [
+            {
+              "name": "id",
+              "type": "uuid",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "service_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "user_id",
+              "type": "uuid",
+              "nullable": true,
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "name",
+              "type": "varchar(255)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "value",
+              "type": "text",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "created_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            },
+            {
+              "name": "updated_at",
+              "type": "DATETIME",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": []
+                }
+              ]
+            }
+          ],
+          "primaryKey": {
+            "name": "t_variable_pk_az",
+            "columns": [
+              "id"
+            ],
+            "origins": [
+              {
+                "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                "lines": [
+                  190,
+                  191,
+                  192,
+                  193,
+                  194,
+                  195,
+                  196,
+                  197,
+                  198
+                ]
+              }
+            ]
+          },
+          "uniques": [
+            {
+              "name": "`t_variable_service_id_user_id_name`",
+              "columns": [
+                "`service_id`",
+                "`user_id`",
+                "`name`"
+              ],
+              "definition": "(`service_id`, `user_id`, `name`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    202
+                  ]
+                }
+              ]
+            }
+          ],
+          "indexes": [
+            {
+              "name": "`t_variable_service_id`",
+              "columns": [
+                "`service_id`"
+              ],
+              "definition": "(`service_id`)",
+              "origins": [
+                {
+                  "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+                  "lines": [
+                    200
+                  ]
+                }
+              ]
+            }
+          ],
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                190,
+                191,
+                192,
+                193,
+                194,
+                195,
+                196,
+                197,
+                198
+              ]
+            }
+          ]
+        }
+      ],
+      "relations": [
+        {
+          "name": "t_calendar_user_id_fk_az",
+          "src": {
+            "table": "public.t_calendar",
+            "column": "user_id"
+          },
+          "ref": {
+            "table": "public.t_user",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                119,
+                120,
+                121,
+                122,
+                123,
+                124,
+                125,
+                126,
+                127,
+                128,
+                129,
+                130,
+                131,
+                132,
+                133,
+                134,
+                135
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_calendar_service_id_fk_az",
+          "src": {
+            "table": "public.t_calendar",
+            "column": "service_id"
+          },
+          "ref": {
+            "table": "public.t_service",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                119,
+                120,
+                121,
+                122,
+                123,
+                124,
+                125,
+                126,
+                127,
+                128,
+                129,
+                130,
+                131,
+                132,
+                133,
+                134,
+                135
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_calendar_event_calendar_id_fk_az",
+          "src": {
+            "table": "public.t_calendar_event",
+            "column": "calendar_id"
+          },
+          "ref": {
+            "table": "public.t_calendar",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                141,
+                142,
+                143,
+                144,
+                145,
+                146,
+                147,
+                148,
+                149,
+                150,
+                151,
+                152,
+                153,
+                154
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_dashboard_user_id_fk_az",
+          "src": {
+            "table": "public.t_dashboard",
+            "column": "user_id"
+          },
+          "ref": {
+            "table": "public.t_user",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                225,
+                226,
+                227,
+                228,
+                229,
+                230,
+                231,
+                232,
+                233,
+                234
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_device_service_id_fk_az",
+          "src": {
+            "table": "public.t_device",
+            "column": "service_id"
+          },
+          "ref": {
+            "table": "public.t_service",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                63,
+                64,
+                65,
+                66,
+                67,
+                68,
+                69,
+                70,
+                71,
+                72,
+                73,
+                74,
+                75
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_device_room_id_fk_az",
+          "src": {
+            "table": "public.t_device",
+            "column": "room_id"
+          },
+          "ref": {
+            "table": "public.t_room",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                63,
+                64,
+                65,
+                66,
+                67,
+                68,
+                69,
+                70,
+                71,
+                72,
+                73,
+                74,
+                75
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_device_feature_device_id_fk_az",
+          "src": {
+            "table": "public.t_device_feature",
+            "column": "device_id"
+          },
+          "ref": {
+            "table": "public.t_device",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                81,
+                82,
+                83,
+                84,
+                85,
+                86,
+                87,
+                88,
+                89,
+                90,
+                91,
+                92,
+                93,
+                94,
+                95,
+                96,
+                97,
+                98,
+                99,
+                100,
+                101,
+                102,
+                103
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_device_feature_state_device_feature_id_fk_az",
+          "src": {
+            "table": "public.t_device_feature_state",
+            "column": "device_feature_id"
+          },
+          "ref": {
+            "table": "public.t_device_feature",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                109,
+                110,
+                111,
+                112,
+                113,
+                114,
+                115
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_device_feature_state_aggregate_device_feature_id_fk_az",
+          "src": {
+            "table": "public.t_device_feature_state_aggregate",
+            "column": "device_feature_id"
+          },
+          "ref": {
+            "table": "public.t_device_feature",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                294,
+                295,
+                296,
+                297,
+                298,
+                299,
+                300,
+                301
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_device_param_device_id_fk_az",
+          "src": {
+            "table": "public.t_device_param",
+            "column": "device_id"
+          },
+          "ref": {
+            "table": "public.t_device",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                281,
+                282,
+                283,
+                284,
+                285,
+                286,
+                287,
+                288
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_location_user_id_fk_az",
+          "src": {
+            "table": "public.t_location",
+            "column": "user_id"
+          },
+          "ref": {
+            "table": "public.t_user",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                27,
+                28,
+                29,
+                30,
+                31,
+                32,
+                33,
+                34,
+                35,
+                36
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_message_sender_id_fk_az",
+          "src": {
+            "table": "public.t_message",
+            "column": "sender_id"
+          },
+          "ref": {
+            "table": "public.t_user",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                249,
+                250,
+                251,
+                252,
+                253,
+                254,
+                255,
+                256,
+                257,
+                258,
+                259
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_message_receiver_id_fk_az",
+          "src": {
+            "table": "public.t_message",
+            "column": "receiver_id"
+          },
+          "ref": {
+            "table": "public.t_user",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                249,
+                250,
+                251,
+                252,
+                253,
+                254,
+                255,
+                256,
+                257,
+                258,
+                259
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_pod_room_id_fk_az",
+          "src": {
+            "table": "public.t_pod",
+            "column": "room_id"
+          },
+          "ref": {
+            "table": "public.t_room",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                162,
+                163,
+                164,
+                165,
+                166,
+                167,
+                168,
+                169
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_room_house_id_fk_az",
+          "src": {
+            "table": "public.t_room",
+            "column": "house_id"
+          },
+          "ref": {
+            "table": "public.t_house",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                52,
+                53,
+                54,
+                55,
+                56,
+                57,
+                58,
+                59
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_service_pod_id_fk_az",
+          "src": {
+            "table": "public.t_service",
+            "column": "pod_id"
+          },
+          "ref": {
+            "table": "public.t_pod",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                173,
+                174,
+                175,
+                176,
+                177,
+                178,
+                179,
+                180,
+                181,
+                182,
+                183,
+                184
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_session_user_id_fk_az",
+          "src": {
+            "table": "public.t_session",
+            "column": "user_id"
+          },
+          "ref": {
+            "table": "public.t_user",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                265,
+                266,
+                267,
+                268,
+                269,
+                270,
+                271,
+                272,
+                273,
+                274,
+                275,
+                276,
+                277
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_user_current_house_id_fk_az",
+          "src": {
+            "table": "public.t_user",
+            "column": "current_house_id"
+          },
+          "ref": {
+            "table": "public.t_house",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                0,
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                7,
+                8,
+                9,
+                10,
+                11,
+                12,
+                13,
+                14,
+                15,
+                16,
+                17,
+                18,
+                19,
+                20,
+                21,
+                22,
+                23
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_variable_service_id_fk_az",
+          "src": {
+            "table": "public.t_variable",
+            "column": "service_id"
+          },
+          "ref": {
+            "table": "public.t_service",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                190,
+                191,
+                192,
+                193,
+                194,
+                195,
+                196,
+                197,
+                198
+              ]
+            }
+          ]
+        },
+        {
+          "name": "t_variable_user_id_fk_az",
+          "src": {
+            "table": "public.t_variable",
+            "column": "user_id"
+          },
+          "ref": {
+            "table": "public.t_user",
+            "column": "id"
+          },
+          "origins": [
+            {
+              "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
+              "lines": [
+                190,
+                191,
+                192,
+                193,
+                194,
+                195,
+                196,
+                197,
+                198
+              ]
+            }
+          ]
+        }
+      ],
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
+    }
+  ],
+  "layout": {
+    "canvas": {
+      "position": {
+        "left": 0,
+        "top": 0
+      },
+      "zoom": 0.78
+    },
+    "tables": [
+      {
+        "id": "public.t_area",
+        "position": {
+          "left": 430,
+          "top": 810
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "name",
+          "selector",
+          "color",
+          "latitude",
+          "longitude",
+          "radius"
+        ]
+      },
+      {
+        "id": "public.t_calendar",
+        "position": {
+          "left": 1180,
+          "top": 370
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "service_id",
+          "user_id",
+          "selector",
+          "external_id",
+          "description",
+          "name",
+          "notify",
+          "shared",
+          "sync",
+          "color",
+          "ctag",
+          "sync_token"
+        ]
+      },
+      {
+        "id": "public.t_calendar_event",
+        "position": {
+          "left": 930,
+          "top": 370
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "calendar_id",
+          "selector",
+          "external_id",
+          "full_day",
+          "name",
+          "start",
+          "end",
+          "location",
+          "url"
+        ]
+      },
+      {
+        "id": "public.t_dashboard",
+        "position": {
+          "left": 1990,
+          "top": 500
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "user_id",
+          "name",
+          "selector",
+          "boxes",
+          "type"
+        ]
+      },
+      {
+        "id": "public.t_device",
+        "position": {
+          "left": 860,
+          "top": 20
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "room_id",
+          "service_id",
+          "external_id",
+          "selector",
+          "name",
+          "should_poll",
+          "model",
+          "poll_frequency"
+        ]
+      },
+      {
+        "id": "public.t_device_feature",
+        "position": {
+          "left": 490,
+          "top": 210
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "device_id",
+          "external_id",
+          "selector",
+          "category",
+          "has_feedback",
+          "keep_history",
+          "max",
+          "min",
+          "name",
+          "read_only",
+          "type",
+          "last_daily_aggregate",
+          "last_hourly_aggregate",
+          "last_monthly_aggregate",
+          "last_value",
+          "last_value_changed",
+          "last_value_string",
+          "unit"
+        ]
+      },
+      {
+        "id": "public.t_device_feature_state",
+        "position": {
+          "left": 170,
+          "top": 390
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "device_feature_id",
+          "value"
+        ]
+      },
+      {
+        "id": "public.t_device_feature_state_aggregate",
+        "position": {
+          "left": 70,
+          "top": 210
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "device_feature_id",
+          "type",
+          "value"
+        ]
+      },
+      {
+        "id": "public.t_device_param",
+        "position": {
+          "left": 600,
+          "top": 20
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "device_id",
+          "name",
+          "value"
+        ]
+      },
+      {
+        "id": "public.t_house",
+        "position": {
+          "left": 1940,
+          "top": 60
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "name",
+          "selector",
+          "latitude",
+          "longitude"
+        ]
+      },
+      {
+        "id": "public.t_job",
+        "position": {
+          "left": 630,
+          "top": 810
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "data",
+          "progress",
+          "status",
+          "type"
+        ]
+      },
+      {
+        "id": "public.t_location",
+        "position": {
+          "left": 1870,
+          "top": 830
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "user_id",
+          "latitude",
+          "longitude",
+          "accuracy",
+          "altitude"
+        ]
+      },
+      {
+        "id": "public.t_message",
+        "position": {
+          "left": 2110,
+          "top": 740
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "receiver_id",
+          "sender_id",
+          "conversation_id",
+          "is_read",
+          "text",
+          "file"
+        ]
+      },
+      {
+        "id": "public.t_pod",
+        "position": {
+          "left": 1280,
+          "top": 100
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "room_id",
+          "selector",
+          "name"
+        ]
+      },
+      {
+        "id": "public.t_room",
+        "position": {
+          "left": 1630,
+          "top": 30
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "house_id",
+          "name",
+          "selector"
+        ]
+      },
+      {
+        "id": "public.t_scene",
+        "position": {
+          "left": 180,
+          "top": 810
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "selector",
+          "actions",
+          "active",
+          "icon",
+          "name",
+          "last_executed",
+          "triggers"
+        ]
+      },
+      {
+        "id": "public.t_script",
+        "position": {
+          "left": 830,
+          "top": 810
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "name",
+          "selector",
+          "code"
+        ]
+      },
+      {
+        "id": "public.t_service",
+        "position": {
+          "left": 1540,
+          "top": 250
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "pod_id",
+          "selector",
+          "enabled",
+          "has_message_feature",
+          "name",
+          "status",
+          "version"
+        ]
+      },
+      {
+        "id": "public.t_session",
+        "position": {
+          "left": 1120,
+          "top": 790
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "user_id",
+          "revoked",
+          "scope",
+          "token_hash",
+          "token_type",
+          "last_seen",
+          "useragent",
+          "valid_until"
+        ]
+      },
+      {
+        "id": "public.t_user",
+        "position": {
+          "left": 1500,
+          "top": 540
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "current_house_id",
+          "email",
+          "selector",
+          "telegram_user_id",
+          "birthdate",
+          "distance_unit_preference",
+          "firstname",
+          "language",
+          "lastname",
+          "password",
+          "role",
+          "temperature_unit_preference",
+          "last_accuracy",
+          "last_altitude",
+          "last_house_changed",
+          "last_latitude",
+          "last_location_changed",
+          "last_longitude",
+          "picture"
+        ]
+      },
+      {
+        "id": "public.t_variable",
+        "position": {
+          "left": 1990,
+          "top": 290
+        },
+        "color": "emerald",
+        "columns": [
+          "id",
+          "service_id",
+          "user_id",
+          "name",
+          "value"
+        ]
+      }
+    ],
+    "createdAt": 0,
+    "updatedAt": 0
+  },
+  "layouts": {},
+  "createdAt": 1649492400000,
+  "updatedAt": 1649492400000,
+  "version": 2
+}

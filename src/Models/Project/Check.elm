@@ -14,7 +14,7 @@ import Services.Lenses exposing (setOrigins)
 type alias Check =
     { name : CheckName
     , columns : List ColumnName
-    , predicate : String
+    , predicate : Maybe String
     , origins : List Origin
     }
 
@@ -38,7 +38,7 @@ encode value =
     Encode.notNullObject
         [ ( "name", value.name |> CheckName.encode )
         , ( "columns", value.columns |> Encode.withDefault (Encode.list ColumnName.encode) [] )
-        , ( "predicate", value.predicate |> Encode.string )
+        , ( "predicate", value.predicate |> Encode.maybe Encode.string )
         , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
         ]
 
@@ -48,5 +48,5 @@ decode =
     Decode.map4 Check
         (Decode.field "name" CheckName.decode)
         (Decode.defaultField "columns" (Decode.list ColumnName.decode) [])
-        (Decode.field "predicate" Decode.string)
+        (Decode.maybeField "predicate" Decode.string)
         (Decode.defaultField "origins" (Decode.list Origin.decode) [])

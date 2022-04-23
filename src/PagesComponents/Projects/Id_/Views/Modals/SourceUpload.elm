@@ -163,11 +163,11 @@ newSourceModal titleId model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text "Add a new source" ]
+                [ text "Add a source" ]
             , div [ class "mt-2" ]
                 [ p [ class "text-sm text-gray-500" ]
-                    [ text """A project can have several sources and they can be independently enabled or not.
-                      It's a great way to explore multiple database at once if you project use multiple databases."""
+                    [ text """A project can have several sources. They are independent and merged together when enabled to build the usable schema.
+                      It's a great way to explore multiple database at once or create isolated schema evolutions."""
                     ]
                 ]
             ]

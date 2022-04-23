@@ -1,59 +1,62 @@
-# Azimutt
+<p align="center"><a href="https://azimutt.app" target="_blank"><img width="150px" src="public/logo.svg" alt="logo"/></a></p>
+<h1 align="center">Azimutt</h1>
+<h4 align="center">Next gen ERD</h4>
+<p align="center">Explore and analyze your SQL database schema</p>
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/c5073177-d6c0-4403-b8c2-ee4466234f52/deploy-status)](https://app.netlify.com/sites/azimutt/deploys)
+<p align="center">
+  <a href="https://azimutt.app" target="_blank">azimutt.app</a> •
+  <a href="https://github.com/azimuttapp/azimutt/projects/1" target="_blank">roadmap</a> •
+  <a href="https://twitter.com/azimuttapp" target="_blank">@azimuttapp</a>
+</p>
 
-An Entity Relationship diagram (ERD) visualization tool, with various filters and inputs to help understand your SQL
-schema.
+<p align="center">
+  <a href="https://app.netlify.com/sites/azimutt/deploys" target="_blank"><img src="https://api.netlify.com/api/v1/badges/c5073177-d6c0-4403-b8c2-ee4466234f52/deploy-status" alt="Netlify status" /></a>
+</p>
 
-Why building my own ?
+Azimutt is an Entity Relationship Diagram (ERD) targeting real world database schema (big & messy).
+
+**Why building my own?**
 
 Most ERD tool I looked into ([DrawSQL](https://drawsql.app), [dbdiagram.io](https://dbdiagram.io)
 , [Lucidchart](https://www.lucidchart.com/pages/examples/er-diagram-tool), [ERDPlus](https://erdplus.com)
 , [Creately](https://creately.com/lp/er-diagram-tool-online), [SqlDBM](https://sqldbm.com)
-, [QuickDBD](https://www.quickdatabasediagrams.com)) are focusing on creating/editing the schema (collaboratively) and
-displaying it (statically). This is nice when starting a new project with a few tables but doesn't really help when you
-discover an existing one with hundreds of tables and relations.
+, [QuickDBD](https://www.quickdatabasediagrams.com)) are focusing on creating/editing/displaying the schema 
+(see [my review](https://azimutt.app/blog/how-to-choose-your-entity-relationship-diagram)). This is great when starting a new project with a few tables 
+but doesn't really help when you discover an existing database with many tables and relations.
 
 I really miss an interactive exploration tool with features like:
 
-- filter/show/hide some tables
-- filter/show/hide some columns
-- search for tables, columns or even in metadata
-- tag tables and columns to define meaningful groups (team ownership, domain exploration...)
-- rich UI infos with:
-    - source links (schema file but also app models)
+- show/hide/filter tables to show
+- show/hide/filter columns to show
+- search for tables and columns, or even in metadata
+- save meaningful layouts
+- define tables and columns groups (team ownership, domain exploration...)
+- rich UI:
+    - source links (schema file but also code models)
     - database statistics (table size, column value samples)
     - team/code ownership (git blame or specific format)
     - tables/columns updates (from migrations files or schema file history)
 
-For me, this tool is the missing piece between a classic ERD tool and a Data catalog:
+For me, this tool is the missing piece between a classic ERD tools and a Data catalogs:
 
 ![screenshot](public/assets/images/screenshot-gospeak-schema.png)
 
 ## Installation
 
-[Azimutt](https://azimutt.app) is a Single Page Application built with Elm that parse and explore your database schema.
-
-First launch:
-
 - install `npm`, [Elm](https://guide.elm-lang.org/install/elm.html) & [elm-spa](https://www.elm-spa.dev)
 - run `npm install` to download npm dependencies
-- run `elm-spa server` to generate needed files (`.elm-spa/defaults` & `.elm-spa/generated`)
+- run `elm-spa build` to generate needed files (`.elm-spa/defaults` & `.elm-spa/generated`)
 
-Dev commands:
+## Dev commands
 
-- launch dev server: `elm-spa server` or `elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js` (needs `npm install -g elm-live` or use `npx`)
-- launch design system: `elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js` (needs `npm install -g elm-book` or use `npx`)
-- launch tailwind: `npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch` (needs `npm install -D tailwindcss`)
-- launch the tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
+- launch dev server: `npm run dev` (needs `npm install -g elm-live` or use `npx`)
+- launch tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
 - run linter: `elm-review` (needs `npm install -g elm-review` or use `npx`)
 - check format: `elm-format src tests --validate` (needs `npm install -g elm-format` or use `npx`)
 - run coverage: `elm-coverage --open` (needs `npm install -g elm-coverage`) (**doesn't work with elm-spa**)
 - install deps `elm-json install author/package` (needs `npm install --g elm-json`)
 - uninstall deps `elm-json uninstall author/package`
 - update deps `elm-json upgrade` (use `--unsafe` flag for major versions)
-
-If `elm-spa` don't display a relevant error, try using `elm-live` instead or compile with `elm-make`: `elm make .elm-spa/defaults/Main.elm`.
 
 Elm folders are `src` for sources, `tests` for tests and `public` for static assets.
 

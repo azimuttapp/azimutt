@@ -44,7 +44,7 @@ parse kind =
     else if kind |> Regex.match "^time ?(\\(\\d+\\))?( with(out)? time zone)?$" then
         Time
 
-    else if kind == "datetime" || (kind |> Regex.match "^timestamp(tz)? ?(\\(\\d+\\))?( with(out)? time zone)?$") then
+    else if (kind |> Regex.match "^datetime$") || (kind |> Regex.match "^timestamp(tz)? ?(\\(\\d+\\))?( with(out)? time zone)?$") then
         DateTime
 
     else if kind |> Regex.match "^interval ?(\\(\\d+\\))?$" then

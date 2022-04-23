@@ -13,14 +13,16 @@ import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
 import Ports
+import Random
 import Request
 import Shared exposing (StoredProjects(..))
+import Time
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init req.params.id
+        { init = init shared.now req.params.id
         , update = Updates.update (Just req.params.id) Nothing shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
@@ -39,9 +41,10 @@ type alias Msg =
 -- INIT
 
 
-init : ProjectId -> ( Model, Cmd Msg )
-init id =
-    ( { conf = ErdConf.default
+init : Time.Posix -> ProjectId -> ( Model, Cmd Msg )
+init now id =
+    ( { seed = Random.initialSeed (now |> Time.posixToMillis)
+      , conf = ErdConf.default
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = False
@@ -51,6 +54,7 @@ init id =
       , cursorMode = CursorSelect
       , selectionBox = Nothing
       , newLayout = Nothing
+      , editNotes = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing

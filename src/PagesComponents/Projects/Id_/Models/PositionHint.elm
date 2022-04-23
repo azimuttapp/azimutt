@@ -7,6 +7,7 @@ import Libs.Models.Size exposing (Size)
 type PositionHint
     = PlaceLeft Position
     | PlaceRight Position Size
+    | PlaceAt Position
 
 
 move : Position -> PositionHint -> PositionHint
@@ -17,3 +18,6 @@ move position hint =
 
         PlaceRight pos size ->
             PlaceRight (pos |> Position.add position) size
+
+        PlaceAt pos ->
+            PlaceAt pos

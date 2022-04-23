@@ -1,8 +1,7 @@
-module Libs.Svg.Attributes exposing (css, vectorEffect)
+module Libs.Svg.Attributes exposing (css, vectorEffect, when)
 
-import Html.Attributes exposing (attribute)
+import Html.Attributes exposing (attribute, classList)
 import Libs.Html.Attributes exposing (computeStyles)
-import Libs.List as List
 import Libs.Tailwind exposing (TwClass)
 import Svg exposing (Attribute)
 import Svg.Attributes exposing (class)
@@ -16,3 +15,12 @@ css values =
 vectorEffect : String -> Attribute msg
 vectorEffect value =
     attribute "vector-effect" value
+
+
+when : Bool -> Attribute msg -> Attribute msg
+when p attr =
+    if p then
+        attr
+
+    else
+        classList []

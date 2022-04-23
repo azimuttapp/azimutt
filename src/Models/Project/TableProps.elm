@@ -18,6 +18,7 @@ type alias TableProps =
     , color : Color
     , columns : List ColumnName
     , selected : Bool
+    , collapsed : Bool
     , hiddenColumns : Bool
     }
 
@@ -32,17 +33,19 @@ encode value =
         , ( "color", value.color |> Tw.encodeColor )
         , ( "columns", value.columns |> Encode.withDefault (Encode.list ColumnName.encode) [] )
         , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
+        , ( "collapsed", value.collapsed |> Encode.withDefault Encode.bool False )
         , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefault Encode.bool False )
         ]
 
 
 decode : Decode.Decoder TableProps
 decode =
-    Decode.map7 TableProps
+    Decode.map8 TableProps
         (Decode.field "id" TableId.decode)
         (Decode.field "position" Position.decode)
         (Decode.defaultField "size" Size.decode Size.zero)
         (Decode.field "color" Tw.decodeColor)
         (Decode.defaultField "columns" (Decode.list ColumnName.decode) [])
         (Decode.defaultField "selected" Decode.bool False)
+        (Decode.defaultField "collapsed" Decode.bool False)
         (Decode.defaultField "hiddenColumns" Decode.bool False)

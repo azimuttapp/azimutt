@@ -7,6 +7,7 @@ import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
+import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.SchemaName exposing (SchemaName)
 
 
@@ -39,8 +40,8 @@ constants =
     , azimuttDiscussionSearch = github ++ "/discussions/8"
     , azimuttDiscussionCanvas = github ++ "/discussions/9"
     , azimuttEmail = "hey@azimutt.app"
-    , defaultTitle = "Azimutt - Explore your database schema"
-    , defaultDescription = "Database schema explorer that help you understand it: search and display what you need, in and out relations, find possible paths and much more..."
+    , defaultTitle = "Azimutt - Database explorer"
+    , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search, display what you want, follow relations, find paths and much more..."
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     }
@@ -69,7 +70,8 @@ schemaSamples : Dict String SampleSchema
 schemaSamples =
     [ { url = "/samples/basic.azimutt.json", color = Tw.pink, icon = ViewList, key = "basic", name = "Basic", description = "Simple login/role schema. The easiest one, just enough play with Azimutt features.", tables = 4 }
     , { url = "/samples/wordpress.azimutt.json", color = Tw.yellow, icon = Template, key = "wordpress", name = "Wordpress", description = "The well known CMS powering most of the web. An interesting schema, but with no foreign keys!", tables = 12 }
-    , { url = "/samples/gospeak.azimutt.json", color = Tw.green, icon = ClipboardList, key = "gospeak", name = "Gospeak.io", description = "A full featured SaaS for meetup organizers. A good real world example to explore and really see the power of Azimutt.", tables = 26 }
+    , { url = "/samples/gladys.azimutt.json", color = Tw.cyan, icon = Home, key = "gladys", name = "Gladys Assistant", description = "A privacy-first, open-source home assistant with many features and integrations", tables = 21 }
+    , { url = "/samples/gospeak.azimutt.json", color = Tw.purple, icon = ClipboardList, key = "gospeak", name = "Gospeak.io", description = "SaaS for meetup organizers. Good real world example to explore and see the power of Azimutt.", tables = 26 }
     ]
         |> List.map (\sample -> ( sample.key, sample ))
         |> Dict.fromList
@@ -87,9 +89,11 @@ canvas =
     }
 
 
-schema : { default : SchemaName }
+schema : { default : SchemaName, column : { unknownType : ColumnType } }
 schema =
-    { default = "public" }
+    { default = "public"
+    , column = { unknownType = "unknown" }
+    }
 
 
 ui : { openDuration : Int, closeDuration : Int, tableHeaderHeight : Float, tableColumnHeight : Float }
@@ -106,6 +110,7 @@ ids :
     , erd : HtmlId
     , selectionBox : HtmlId
     , newLayoutDialog : HtmlId
+    , editNotesDialog : HtmlId
     , findPathDialog : HtmlId
     , schemaAnalysisDialog : HtmlId
     , helpDialog : HtmlId
@@ -122,6 +127,7 @@ ids =
     , erd = "erd"
     , selectionBox = "selection-box"
     , newLayoutDialog = "new-layout-dialog"
+    , editNotesDialog = "edit-notes-dialog"
     , findPathDialog = "find-path-dialog"
     , schemaAnalysisDialog = "schema-analysis-dialog"
     , helpDialog = "help-dialog"
@@ -138,6 +144,7 @@ hotkeys =
         , ( "search-up", [ { hotkey | key = "ArrowUp", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-down", [ { hotkey | key = "ArrowDown", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
         , ( "search-confirm", [ { hotkey | key = "Enter", target = Just { target | tag = Just "input", id = Just ids.searchInput } } ] )
+        , ( "collapse", [ { hotkey | key = "c" } ] )
         , ( "remove", [ { hotkey | key = "d" }, { hotkey | key = "Backspace" }, { hotkey | key = "Delete" } ] )
         , ( "save", [ { hotkey | key = "s", ctrl = True, onInput = True, preventDefault = True } ] )
         , ( "move-up", [ { hotkey | key = "ArrowUp" } ] )
@@ -172,7 +179,9 @@ blogPosts =
     , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
     , "embed-your-database-diagram-anywhere"
     , "how-to-choose-your-entity-relationship-diagram"
+    , "improve-your-database-design-with-azimutt-analyzer"
+    , "aml-a-language-to-define-your-database-schema"
+    , "stop-using-auto-increment-for-primary-keys"
 
-    --, "improve-your-database-design-with-azimutt-analyzer"
     --, "make-your-app-hackable"
     ]

@@ -8,6 +8,7 @@ import DataSources.SqlParser.Parsers.CreateUnique exposing (ParsedUnique, parseC
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView, parseView)
 import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
+import Libs.Regex as Regex
 
 
 type Command
@@ -28,7 +29,7 @@ parse statement =
         firstLine =
             statement.head.text |> String.trim |> String.toUpper
     in
-    (if firstLine |> String.startsWith "CREATE TABLE " then
+    (if firstLine |> Regex.match "^CREATE( UNLOGGED)? TABLE " then
         parseCreateTable statement |> Result.map CreateTable
 
      else if firstLine |> String.startsWith "CREATE VIEW " then
@@ -79,7 +80,7 @@ parse statement =
      else if firstLine |> String.startsWith "COMMENT ON TYPE " then
         Ok (Ignored statement)
 
-     else if (firstLine |> String.startsWith "CREATE FUNCTION ") || (firstLine |> String.startsWith "CREATE OR REPLACE FUNCTION ") then
+     else if firstLine |> Regex.match "^CREATE( OR REPLACE)? FUNCTION " then
         Ok (Ignored statement)
 
      else if firstLine |> String.startsWith "ALTER FUNCTION " then

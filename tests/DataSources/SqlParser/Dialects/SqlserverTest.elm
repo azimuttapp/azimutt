@@ -19,7 +19,7 @@ suite =
                     { parsedTable
                         | schema = Just "dbo"
                         , table = "Employee"
-                        , columns = Nel { parsedColumn | name = "EmployeeID", kind = "INT", primaryKey = Just "Employee_pk_az" } []
+                        , columns = Nel { parsedColumn | name = "EmployeeID", kind = "INT", primaryKey = Just "" } []
                     }
                 )
             ]

@@ -1,7 +1,8 @@
-module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn, parseCreateTableForeignKey, parseCreateTableKey)
+module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique, parseCreateTable, parseCreateTableColumn, parseCreateTableColumnForeignKey, parseCreateTableForeignKey, parseCreateTableKey)
 
+import DataSources.Helpers exposing (defaultUniqueName)
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (TableConstraint(..), parseAlterTableAddConstraint)
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, defaultPkName)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, sqlTriggers)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -29,6 +30,7 @@ type alias ParsedColumn =
     , default : Maybe SqlColumnValue
     , primaryKey : Maybe SqlConstraintName
     , foreignKey : Maybe ( Maybe SqlConstraintName, SqlForeignKeyRef )
+    , unique : Maybe String
     , check : Maybe SqlPredicate
     }
 
@@ -78,12 +80,12 @@ parseCreateTable statement =
                     , columns = cols
                     , primaryKey = (pk ++ (parsedConstraints |> List.filterMap primaryKeyConstraints)) |> List.head
                     , foreignKeys = fks ++ (parsedConstraints |> List.filterMap foreignKeyConstraints)
-                    , uniques = uniques ++ (parsedConstraints |> List.filterMap uniqueKeyConstraints)
+                    , uniques = uniques ++ (cols |> Nel.filterMap (columnUniqueKey tableName)) ++ (parsedConstraints |> List.filterMap uniqueKeyConstraints)
                     , indexes = indexes
                     , checks = parsedConstraints |> List.filterMap checkConstraints
                     }
                 )
-                (columns |> List.map (parseCreateTableColumn tableName) |> List.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Create table can't have empty columns" ]))
+                (columns |> List.map parseCreateTableColumn |> List.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Create table can't have empty columns" ]))
                 (constraints |> List.filter (String.toUpper >> String.startsWith "PRIMARY KEY") |> List.map parseCreateTablePrimaryKey |> List.resultSeq)
                 (constraints |> List.filter (String.toUpper >> String.startsWith "FOREIGN KEY") |> List.map parseCreateTableForeignKey |> List.resultSeq)
                 (constraints |> List.filter (String.toUpper >> String.startsWith "UNIQUE KEY") |> List.map parseCreateTableUniqueKey |> List.resultSeq)
@@ -94,10 +96,10 @@ parseCreateTable statement =
             Err [ "Can't parse table: '" ++ buildRawSql statement ++ "'" ]
 
 
-parseCreateTableColumn : SqlTableName -> RawSql -> Result ParseError ParsedColumn
-parseCreateTableColumn table sql =
-    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?$" of
-        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybeReference :: maybePrimary :: maybeCheck :: maybeGenerated :: [] ->
+parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
+parseCreateTableColumn sql =
+    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?$" of
+        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybeReference :: maybePrimary :: maybeUnique :: maybeCheck :: maybeGenerated :: [] ->
             maybeConstraint
                 |> Maybe.map
                     (\constraint ->
@@ -114,7 +116,7 @@ parseCreateTableColumn table sql =
                             Err ("Constraint not handled: '" ++ constraint ++ "' in create table")
                     )
                 |> Maybe.orElse (maybeReference |> Maybe.map (parseCreateTableColumnForeignKey >> Result.map (\fk -> ( Nothing, Just fk, True ))))
-                |> Maybe.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just (defaultPkName table), Nothing, True )))
+                |> Maybe.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just "", Nothing, True )))
                 |> Maybe.withDefault (Ok ( Nothing, Nothing, True ))
                 |> Result.map
                     (\( pk, fk, nullable2 ) ->
@@ -124,6 +126,7 @@ parseCreateTableColumn table sql =
                         , default = default1 |> Maybe.orElse default2 |> Maybe.orElse (maybeGenerated |> Maybe.map String.trim)
                         , primaryKey = pk
                         , foreignKey = fk
+                        , unique = maybeUnique |> Maybe.map String.trim
                         , check = maybeCheck
                         }
                     )
@@ -152,7 +155,7 @@ parseCreateTableColumnForeignKey constraint =
             Ok ( constraintName, { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, column = column |> Maybe.map buildColumnName } )
 
         _ ->
-            case constraint |> Regex.matches "^(?:(?<constraint>[^ ]+)\\s+)?REFERENCES\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .(]+)(?:\\((?<column>[^ .]+)\\))?$" of
+            case constraint |> Regex.matches ("^(?:(?<constraint>[^ ]+)\\s+)?REFERENCES\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .(]+)(?:\\s*\\((?<column>[^ .]+)\\))?" ++ sqlTriggers ++ "$") of
                 constraintName :: schema :: (Just table) :: column :: [] ->
                     Ok ( constraintName, { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, column = column |> Maybe.map buildColumnName } )
 
@@ -253,3 +256,8 @@ checkConstraints constraint =
 
         _ ->
             Nothing
+
+
+columnUniqueKey : SqlTableName -> ParsedColumn -> Maybe ParsedUnique
+columnUniqueKey table col =
+    col.unique |> Maybe.map (\u -> { name = defaultUniqueName table col.name, columns = Nel col.name [], definition = u })

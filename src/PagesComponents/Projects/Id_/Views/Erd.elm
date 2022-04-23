@@ -21,7 +21,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
-import Libs.Ned as Ned
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -118,7 +117,7 @@ viewErd conf screen erd cursorMode selectionBox virtualRelation args dragging =
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
             [ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
-            , Lazy.lazy3 viewRelations dragging displayedTables displayedRelations
+            , Lazy.lazy4 viewRelations conf dragging displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse viewVirtualRelation viewEmptyRelation
             ]
@@ -189,8 +188,8 @@ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging
         )
 
 
-viewRelations : Maybe DragState -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
-viewRelations dragging tableProps relations =
+viewRelations : ErdConf -> Maybe DragState -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
+viewRelations conf dragging tableProps relations =
     let
         getColumnProps : ErdColumnRef -> Maybe ErdColumnProps
         getColumnProps ref =
@@ -202,7 +201,8 @@ viewRelations dragging tableProps relations =
             |> List.map
                 (\r ->
                     ( r.name
-                    , Lazy.lazy4 viewRelation
+                    , Lazy.lazy5 viewRelation
+                        conf
                         (dragging |> Maybe.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
                         (getColumnProps r.src)
                         (getColumnProps r.ref)
@@ -226,13 +226,24 @@ viewSelectionBox area =
 viewEmptyState : Dict TableId ErdTable -> Html Msg
 viewEmptyState tables =
     let
-        bestTables : List ErdTable
-        bestTables =
+        bestOneWordTables : List ErdTable
+        bestOneWordTables =
             tables
                 |> Dict.values
                 |> List.filterNot (\t -> (t.schema |> String.contains "_") || (t.name |> String.contains "_") || (t.schema |> String.contains "-") || (t.name |> String.contains "-"))
-                |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Ned.size))
+                |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Dict.size))
                 |> List.take 10
+
+        bestTables : List ErdTable
+        bestTables =
+            if bestOneWordTables |> List.isEmpty then
+                tables
+                    |> Dict.values
+                    |> List.sortBy (\t -> (t.name |> String.length) - (t.columns |> Dict.size))
+                    |> List.take 10
+
+            else
+                bestOneWordTables
     in
     div [ class "flex h-full justify-center items-center" ]
         [ div [ class "max-w-prose p-6 bg-white border border-gray-200 rounded-lg" ]

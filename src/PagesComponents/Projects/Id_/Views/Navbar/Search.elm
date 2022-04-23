@@ -13,8 +13,6 @@ import Libs.Html.Attributes exposing (css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Ned as Ned
-import Libs.Nel as Nel
 import Libs.Tailwind exposing (TwClass, focus, lg, sm)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel)
@@ -144,7 +142,7 @@ performSearch tables relations query =
         columnResults : List ( Float, SearchResult )
         columnResults =
             if (tableResults |> List.length) < maxResults then
-                tables |> Dict.values |> List.concatMap (\table -> table.columns |> Ned.values |> Nel.filterMap (columnMatch query table))
+                tables |> Dict.values |> List.concatMap (\table -> table.columns |> Dict.values |> List.filterMap (columnMatch query table))
 
             else
                 []
@@ -173,10 +171,10 @@ tableMatch query table =
 
     else if
         (table.comment |> Maybe.any (.text >> String.contains query))
-            || (table.primaryKey |> Maybe.any (.name >> String.contains query))
-            || (table.uniques |> List.any (\u -> (u.name |> String.contains query) || (u.definition |> String.contains query)))
-            || (table.indexes |> List.any (\i -> (i.name |> String.contains query) || (i.definition |> String.contains query)))
-            || (table.checks |> List.any (\c -> (c.name |> String.contains query) || (c.predicate |> String.contains query)))
+            || (table.primaryKey |> Maybe.any (\pk -> pk |> .name |> Maybe.withDefault "" |> String.contains query))
+            || (table.uniques |> List.any (\u -> (u.name |> String.contains query) || (u.definition |> Maybe.withDefault "" |> String.contains query)))
+            || (table.indexes |> List.any (\i -> (i.name |> String.contains query) || (i.definition |> Maybe.withDefault "" |> String.contains query)))
+            || (table.checks |> List.any (\c -> (c.name |> String.contains query) || (c.predicate |> Maybe.withDefault "" |> String.contains query)))
     then
         Just ( 7 + shortBonus table.name, FoundTable table )
 

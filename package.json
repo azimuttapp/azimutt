@@ -1,21 +1,41 @@
 {
   "name": "azimutt",
   "version": "1.0.0",
-  "description": "Explore your database schema more easily",
-  "main": "script.js",
-  "author": "Loïc Knuchel",
+  "description": "Next gen ERD: explore and analyze your SQL database schema",
+  "keywords": [
+    "erd",
+    "entity-relationship diagram",
+    "database tool",
+    "database schema",
+    "diagram"
+  ],
+  "homepage": "https://github.com/azimuttapp/azimutt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
   "license": "MIT",
+  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
   "scripts": {
-    "start": "npm install && npm run dev",
-    "dev": "concurrently \"vite\" \"elm-spa watch\" \"npx tailwindcss -i ./public/styles.tailwind.css -o ./public/styles.css --watch\"",
-    "buildbook": "npx elm make ./src/Components/Book.elm --output=./dist/book.js",
-    "build": "npx tailwindcss -i ./public/styles.tailwind.css -o ./public/styles.css --minify && elm-spa gen && vite build && npm run buildbook",
+    "dev": "concurrently \"vite\" \"npm run dev:app\" \"npm run dev:tailwind\" \"npm run dev:book\"",
+    "build": "npm run build:tailwind && npm run build:app && npm run build:book && vite build",
+    "dev:app": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
+    "build:app": "npx elm-spa build",
+    "dev:tailwind": "npx tailwindcss -i ./public/styles.tailwind.css -o ./public/styles.css --watch",
+    "build:tailwind": "npx tailwindcss -i ./public/styles.tailwind.css -o ./public/styles.css --minify",
+    "dev:book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js",
+    "build:book": "npx elm make ./src/Components/Book.elm --output=./dist/book.js",
+    "dev:browser": "cd packages/browser-extension && npm run dev",
+    "build:browser": "cd packages/browser-extension && npm run build",
     "preview": "vite preview"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.4.0",
     "@tailwindcss/typography": "^0.5.1",
-    "concurrently": "^7.0.0",
+    "concurrently": "^7.1.0",
     "elm-coverage": "^0.4.0",
     "elm-review": "^2.5.5",
     "elm-spa": "^6.0.4",

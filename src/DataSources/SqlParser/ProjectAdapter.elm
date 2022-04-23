@@ -44,7 +44,7 @@ buildTable source table =
     , schema = table.schema
     , name = table.table
     , view = table.view
-    , columns = table.columns |> Nel.indexedMap (buildColumn source) |> Ned.fromNelMap .name
+    , columns = table.columns |> Nel.indexedMap (buildColumn source) |> Ned.fromNelMap .name |> Ned.toDict
     , primaryKey = table.primaryKey |> Maybe.map (buildPrimaryKey source)
     , uniques = table.uniques |> List.map (buildUnique source)
     , indexes = table.indexes |> List.map (buildIndex source)
@@ -78,7 +78,7 @@ buildUnique : SourceId -> SqlUnique -> Unique
 buildUnique source unique =
     { name = unique.name
     , columns = unique.columns
-    , definition = unique.definition
+    , definition = Just unique.definition
     , origins = [ buildOrigin source unique ]
     }
 
@@ -87,7 +87,7 @@ buildIndex : SourceId -> SqlIndex -> Index
 buildIndex source index =
     { name = index.name
     , columns = index.columns
-    , definition = index.definition
+    , definition = Just index.definition
     , origins = [ buildOrigin source index ]
     }
 
@@ -96,7 +96,7 @@ buildCheck : SourceId -> SqlCheck -> Check
 buildCheck source check =
     { name = check.name
     , columns = check.columns
-    , predicate = check.predicate
+    , predicate = Just check.predicate
     , origins = [ buildOrigin source check ]
     }
 

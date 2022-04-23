@@ -1,0 +1,18 @@
+{
+  "name": "azimutt-browser-extension",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "./build.watch.js",
+    "build": "./build.js"
+  },
+  "dependencies": {
+    "webextension-polyfill": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/webextension-polyfill": "^0.8.3",
+    "esbuild": "^0.14.27",
+    "esbuild-plugin-copy": "^1.2.1",
+    "typescript": "^4.6.3"
+  }
+}

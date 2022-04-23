@@ -36,4 +36,11 @@ suite =
         , describe "uniqueBy"
             [ test "get unique values" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" }, { id = 1, name = "c" } ] |> List.uniqueBy .id |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "b" } ])
             ]
+        , describe "mergeMaybe"
+            [ test "merge similar values"
+                (\_ ->
+                    List.mergeMaybe .key (\a b -> { a | value = a.value ++ b.value }) [ { key = Nothing, value = "a" }, { key = Just "b", value = "b" } ] [ { key = Nothing, value = "c" }, { key = Just "b", value = "d" } ]
+                        |> Expect.equal [ { key = Nothing, value = "a" }, { key = Just "b", value = "bd" }, { key = Nothing, value = "c" } ]
+                )
+            ]
         ]

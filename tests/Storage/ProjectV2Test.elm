@@ -6,7 +6,6 @@ import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
-import Libs.Ned as Ned
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw
 import Models.ColumnOrder exposing (ColumnOrder(..))
@@ -77,6 +76,7 @@ project0 =
     , sources = [ Source src1 "source 1" (LocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
     , tables = Dict.empty
     , relations = []
+    , notes = Dict.empty
     , layout = Layout (CanvasProps (Position 1 2) 0.75) [] [] (time 1200) (time 1201)
     , usedLayout = Nothing
     , layouts = Dict.empty
@@ -95,7 +95,7 @@ project0Json =
 
 tables1 : Dict TableId Table
 tables1 =
-    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Ned.singletonMap .name (Column 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
+    Dict.fromListMap .id [ Table ( "public", "users" ) "public" "users" False (Dict.fromListMap .name [ Column 0 "id" "int" False Nothing Nothing [] ]) Nothing [] [] [] Nothing [] ]
 
 
 project1 : Project
@@ -105,10 +105,11 @@ project1 =
     , sources = [ Source src1 "source 1" (LocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
     , tables = tables1
     , relations = []
-    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) Size.zero Tw.red [ "id" ] True False ] [] (time 1200) (time 1201)
+    , notes = Dict.empty
+    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201)
     , usedLayout = Nothing
     , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
-    , settings = ProjectSettings (FindPathSettings 4 "" "") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True
+    , settings = ProjectSettings (FindPathSettings 4 "" "") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True False
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -131,10 +132,11 @@ tables2 =
           , name = "users"
           , view = False
           , columns =
-                Ned.buildMap .name
-                    (Column 0 "id" "int" False Nothing Nothing [])
-                    [ Column 1 "name" "varchar" True Nothing Nothing [] ]
-          , primaryKey = Just (PrimaryKey "users_pk" (Nel "id" []) [])
+                Dict.fromListMap .name
+                    [ Column 0 "id" "int" False Nothing Nothing []
+                    , Column 1 "name" "varchar" True Nothing Nothing []
+                    ]
+          , primaryKey = Just (PrimaryKey (Just "users_pk") (Nel "id" []) [])
           , uniques = []
           , indexes = []
           , checks = []
@@ -146,15 +148,15 @@ tables2 =
           , name = "creds"
           , view = False
           , columns =
-                Ned.buildMap .name
-                    (Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ])
-                    [ Column 1 "login" "varchar" False Nothing Nothing [ Origin src1 [ 15 ] ]
+                Dict.fromListMap .name
+                    [ Column 0 "user_id" "int" False Nothing Nothing [ Origin src1 [ 14 ] ]
+                    , Column 1 "login" "varchar" False Nothing Nothing [ Origin src1 [ 15 ] ]
                     , Column 2 "pass" "varchar" False Nothing (Just (Comment "Encrypted field" [])) [ Origin src1 [ 16 ] ]
                     , Column 3 "role" "varchar" True (Just "guest") Nothing [ Origin src1 [ 17 ] ]
                     ]
           , primaryKey = Nothing
-          , uniques = [ Unique "unique_login" (Nel "login" []) "(login)" [] ]
-          , indexes = [ Index "role_idx" (Nel "role" []) "(role)" [] ]
+          , uniques = [ Unique "unique_login" (Nel "login" []) (Just "(login)") [] ]
+          , indexes = [ Index "role_idx" (Nel "role" []) (Just "(role)") [] ]
           , checks = []
           , comment = Just (Comment "To allow users to login" [])
           , origins = [ Origin src1 [ 13, 14, 15, 16, 17, 18 ] ]
@@ -206,14 +208,15 @@ project2 =
         ]
     , tables = tables2
     , relations = relations2
-    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) Size.zero Tw.red [ "id" ] True False ] [] (time 1200) (time 1201)
+    , notes = Dict.empty
+    , layout = Layout (CanvasProps (Position 1 2) 0.75) [ TableProps ( "public", "users" ) (Position 3 4) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201)
     , usedLayout = Just "users"
     , layouts =
         Dict.fromList
             [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) Size.zero Tw.red [ "id", "name" ] True False ] [] (time 1202) (time 1203) )
+            , ( "users", Layout (CanvasProps (Position 12 32) 1.5) [ TableProps ( "public", "users" ) (Position 90 102) Size.zero Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
-    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True
+    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True False
     , createdAt = time 1000
     , updatedAt = time 1001
     }

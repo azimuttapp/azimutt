@@ -1,22 +1,28 @@
 module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 
-import Components.Organisms.Relation as Relation
+import Components.Organisms.Relation as Relation exposing (RelationConf)
 import Conf
 import Libs.Bool as B
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnRef as ColumnRef
+import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (class, height, width)
 
 
-viewRelation : Bool -> Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg msg
-viewRelation dragging srcProps refProps relation =
+viewRelation : ErdConf -> Bool -> Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg Msg
+viewRelation conf dragging srcProps refProps relation =
     let
+        relConf : RelationConf
+        relConf =
+            { hover = conf.hover }
+
         label : String
         label =
             ColumnRef.show relation.src ++ " -> " ++ relation.name ++ " -> " ++ ColumnRef.show relation.ref
@@ -24,37 +30,64 @@ viewRelation dragging srcProps refProps relation =
         color : Maybe Color
         color =
             getColor srcProps refProps
+
+        onHover : Bool -> Msg
+        onHover =
+            ToggleHoverColumn { table = relation.src.table, column = relation.src.column }
     in
     case ( srcProps, refProps ) of
         ( Nothing, Nothing ) ->
             viewEmptyRelation
 
-        ( Just { index, position, size }, Nothing ) ->
-            { left = position.left + size.width, top = positionTop position index }
-                |> (\srcPos -> Relation.line srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
+        ( Just { index, position, size, collapsed }, Nothing ) ->
+            if collapsed then
+                viewEmptyRelation
 
-        ( Nothing, Just { index, position } ) ->
-            { left = position.left, top = positionTop position index }
-                |> (\refPos -> Relation.line { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0))
+            else
+                { left = position.left + size.width, top = positionTop position index collapsed }
+                    |> (\srcPos -> Relation.line relConf srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
+
+        ( Nothing, Just { index, position, collapsed } ) ->
+            if collapsed then
+                viewEmptyRelation
+
+            else
+                { left = position.left, top = positionTop position index collapsed }
+                    |> (\refPos -> Relation.line relConf { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
 
         ( Just src, Just ref ) ->
-            ( positionLeft src.position src.size ref.position ref.size, ( positionTop src.position src.index, positionTop ref.position ref.index ) )
-                |> (\( ( srcX, refX ), ( srcY, refY ) ) -> Relation.line { left = srcX, top = srcY } { left = refX, top = refY } relation.src.nullable color label (Conf.canvas.zIndex.tables + min src.index ref.index + B.cond dragging 1000 0))
+            let
+                ( ( srcX, srcDir ), ( refX, refDir ) ) =
+                    positionLeft src ref
+
+                ( srcY, refY ) =
+                    ( positionTop src.position src.index src.collapsed, positionTop ref.position ref.index ref.collapsed )
+
+                zIndex : Int
+                zIndex =
+                    Conf.canvas.zIndex.tables - 1 + min src.index ref.index
+            in
+            Relation.curve relConf ( { left = srcX, top = srcY }, srcDir ) ( { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
 
 
-viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg msg
+viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg Msg
 viewVirtualRelation ( ( maybeProps, column ), position ) =
     case maybeProps of
         Just props ->
-            Relation.line
-                { left = props.position.left + B.cond (position.left < props.position.left + props.size.width / 2) 0 props.size.width
-                , top = positionTop props.position props.index
-                }
-                { left = position.left, top = position.top }
+            let
+                isRight : Bool
+                isRight =
+                    position.left > props.position.left + props.size.width / 2
+            in
+            Relation.curve
+                { hover = False }
+                ( { left = props.position.left + B.cond isRight props.size.width 0, top = positionTop props.position props.index props.collapsed }, B.cond isRight Relation.Right Relation.Left )
+                ( { left = position.left, top = position.top }, B.cond isRight Relation.Left Relation.Right )
                 column.nullable
                 (Just props.color)
                 "virtual relation"
                 (Conf.canvas.zIndex.tables - 1)
+                (\_ -> Noop "hover new virtual relation")
 
         Nothing ->
             viewEmptyRelation
@@ -81,26 +114,44 @@ getColor src ref =
             Nothing
 
 
-positionTop : Position -> Int -> Float
-positionTop position index =
-    position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
+positionTop : Position -> Int -> Bool -> Float
+positionTop position index collapsed =
+    if collapsed then
+        position.top + Conf.ui.tableHeaderHeight * 0.5
+
+    else
+        position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
 
 
-positionLeft : Position -> Size -> Position -> Size -> ( Float, Float )
-positionLeft srcPos srcSize refPos refSize =
-    case ( tablePositions srcPos srcSize, tablePositions refPos refSize ) of
+positionLeft : ErdColumnProps -> ErdColumnProps -> ( ( Float, Relation.Direction ), ( Float, Relation.Direction ) )
+positionLeft src ref =
+    case ( tablePositions src.position src.size, tablePositions ref.position ref.size ) of
         ( ( srcLeft, srcCenter, srcRight ), ( refLeft, refCenter, refRight ) ) ->
-            if srcRight < refLeft then
-                ( srcRight, refLeft )
+            (if srcRight < refLeft then
+                ( ( srcRight, Relation.Right ), ( refLeft, Relation.Left ) )
 
-            else if srcCenter < refCenter then
-                ( srcRight, refRight )
+             else if srcCenter < refCenter then
+                ( ( srcRight, Relation.Right ), ( refRight, Relation.Right ) )
 
-            else if srcLeft < refRight then
-                ( srcLeft, refLeft )
+             else if srcLeft < refRight then
+                ( ( srcLeft, Relation.Left ), ( refLeft, Relation.Left ) )
 
-            else
-                ( srcLeft, refRight )
+             else
+                ( ( srcLeft, Relation.Left ), ( refRight, Relation.Right ) )
+            )
+                |> (\( ( srcPos, srcDir ), ( refPos, refDir ) ) ->
+                        ( if src.collapsed then
+                            ( srcCenter, Relation.None )
+
+                          else
+                            ( srcPos, srcDir )
+                        , if ref.collapsed then
+                            ( refCenter, Relation.None )
+
+                          else
+                            ( refPos, refDir )
+                        )
+                   )
 
 
 tablePositions : Position -> Size -> ( Float, Float, Float )

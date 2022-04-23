@@ -14,7 +14,7 @@ import Services.Lenses exposing (setOrigins)
 type alias Unique =
     { name : UniqueName
     , columns : Nel ColumnName
-    , definition : String
+    , definition : Maybe String
     , origins : List Origin
     }
 
@@ -38,7 +38,7 @@ encode value =
     Encode.notNullObject
         [ ( "name", value.name |> UniqueName.encode )
         , ( "columns", value.columns |> Encode.nel ColumnName.encode )
-        , ( "definition", value.definition |> Encode.string )
+        , ( "definition", value.definition |> Encode.maybe Encode.string )
         , ( "origins", value.origins |> Encode.withDefault (Encode.list Origin.encode) [] )
         ]
 
@@ -48,5 +48,5 @@ decode =
     Decode.map4 Unique
         (Decode.field "name" UniqueName.decode)
         (Decode.field "columns" (Decode.nel ColumnName.decode))
-        (Decode.field "definition" Decode.string)
+        (Decode.maybeField "definition" Decode.string)
         (Decode.defaultField "origins" (Decode.list Origin.decode) [])

@@ -17,7 +17,6 @@ import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
-import Models.Project.Source as Source
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Models.DragState as DragState
@@ -30,6 +29,7 @@ import PagesComponents.Projects.Id_.Updates.FindPath exposing (handleFindPath)
 import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
+import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
@@ -37,6 +37,7 @@ import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideC
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
+import Random
 import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Time
@@ -77,6 +78,25 @@ update currentProject currentLayout now msg model =
         HideAllTables ->
             ( model |> mapErdM hideAllTables, Cmd.none )
 
+        ToggleColumns id ->
+            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapCollapsed not))), Cmd.none )
+
+        ToggleColumnsForAllTables ->
+            ( model
+                |> mapErdM
+                    (mapTableProps
+                        (\props ->
+                            let
+                                nextToggle : Bool
+                                nextToggle =
+                                    (props |> Dict.find (\_ p -> not p.collapsed)) /= Nothing
+                            in
+                            props |> Dict.map (\_ -> ErdTableProps.setCollapsed nextToggle)
+                        )
+                    )
+            , Cmd.none
+            )
+
         ShowColumn { table, column } ->
             ( model |> mapErdM (showColumn table column), Cmd.none )
 
@@ -100,7 +120,10 @@ update currentProject currentLayout now msg model =
                 ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
 
         TableMove id delta ->
-            ( model |> mapErdM (mapTableProps (\tables -> tables |> Dict.map (\_ t -> B.cond (t.id == id) (t |> ErdTableProps.mapPosition (\p -> delta |> Delta.move p)) t))), Cmd.none )
+            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapPosition (\p -> delta |> Delta.move p)))), Cmd.none )
+
+        TablePosition id position ->
+            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.setPosition position))), Cmd.none )
 
         TableOrder id index ->
             ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
@@ -109,7 +132,7 @@ update currentProject currentLayout now msg model =
             ( model |> mapErdM (sortColumns id kind), Cmd.none )
 
         MoveColumn column position ->
-            ( model |> mapErdM (mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position)))), Cmd.none )
+            ( model |> mapErdM (\erd -> erd |> mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position) erd.notes))), Cmd.none )
 
         ToggleHoverTable table on ->
             ( { model | hoverTable = B.cond on (Just table) Nothing } |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
@@ -118,13 +141,16 @@ update currentProject currentLayout now msg model =
             ( { model | hoverColumn = B.cond on (Just column) Nothing } |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
         CreateRelation src ref ->
-            model |> mapErdMCmd (Source.addRelation src ref)
+            model |> mapErdMCmd (Source.addRelation now src ref)
 
         ResetCanvas ->
             ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )
 
         LayoutMsg message ->
             model |> handleLayout now message
+
+        NotesMsg message ->
+            model |> handleNotes message
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -268,11 +294,14 @@ handleJsMessage currentProject currentLayout msg model =
                         |> Maybe.mapOrElse (\id -> projects |> List.find (\p -> p.id == id)) (projects |> List.head)
                         |> Maybe.map (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
 
+                ( childSeed, newSeed ) =
+                    Random.step (Random.int Random.minInt Random.maxInt) model.seed
+
                 erd : Maybe Erd
                 erd =
-                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create projects))
+                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create (Random.initialSeed childSeed) projects))
             in
-            ( { model | loaded = True, erd = erd }
+            ( { model | seed = newSeed, loaded = True, erd = erd }
             , Cmd.batch
                 ((model.erd
                     |> Maybe.mapOrElse (\_ -> [])
@@ -302,11 +331,6 @@ handleJsMessage currentProject currentLayout msg model =
             else
                 ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
-        GotSourceId now sourceId src ref ->
-            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [] now ]))
-            , Cmd.batch [ T.send (toastInfo "Created a user source to add the relation."), T.send (CreateRelation src ref) ]
-            )
-
         GotHotkey hotkey ->
             handleHotkey model hotkey
 
@@ -335,29 +359,38 @@ handleJsMessage currentProject currentLayout msg model =
                 _ ->
                     ( model, T.send (toastError message) )
 
-        GotShowTable id ->
-            ( model, T.send (ShowTable id Nothing) )
+        GotTableShow id hint ->
+            ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt)) )
 
-        GotHideTable id ->
+        GotTableHide id ->
             ( model, T.send (HideTable id) )
 
-        GotShowColumn ref ->
-            ( model, T.send (ShowColumn ref) )
+        GotTableToggleColumns id ->
+            ( model, T.send (ToggleColumns id) )
 
-        GotHideColumn ref ->
-            ( model, T.send (HideColumn ref) )
+        GotTablePosition id pos ->
+            ( model, T.send (TablePosition id pos) )
 
-        GotSelectTable id ->
+        GotTableMove id delta ->
+            ( model, T.send (TableMove id delta) )
+
+        GotTableSelect id ->
             ( model, T.send (SelectTable id False) )
 
-        GotMoveTable id dx dy ->
-            ( model, T.send (TableMove id { dx = dx, dy = dy }) )
+        GotColumnShow ref ->
+            ( model, T.send (ShowColumn ref) )
 
-        GotMoveColumn ref index ->
+        GotColumnHide ref ->
+            ( model, T.send (HideColumn ref) )
+
+        GotColumnMove ref index ->
             ( model, T.send (MoveColumn ref index) )
 
         GotFitToScreen ->
             ( model, T.send FitContent )
+
+        GotResetCanvas ->
+            ( model, T.send ResetCanvas )
 
         Error err ->
             ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
@@ -409,6 +442,9 @@ computeInitialPosition allProps viewport change hint =
 
                     PlaceRight position size ->
                         position |> Position.add { left = size.width + 50, top = 0 } |> moveDownIfExists (allProps |> Dict.values) change.size
+
+                    PlaceAt position ->
+                        position
             )
             (if allProps |> Dict.filter (\_ p -> p.size /= Size.zero) |> Dict.isEmpty then
                 viewport |> Area.center |> Position.sub (change |> Area.center) |> mapTop (max viewport.position.top)

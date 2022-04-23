@@ -20,7 +20,7 @@ suite =
                     { parsedTable
                         | table = "t1"
                         , columns =
-                            Nel { parsedColumn | name = "c1", kind = "INT", nullable = False, primaryKey = Just "t1_pk_az" }
+                            Nel { parsedColumn | name = "c1", kind = "INT", nullable = False, primaryKey = Just "" }
                                 [ { parsedColumn | name = "c2", kind = "VARCHAR(100)" }
                                 , { parsedColumn | name = "c3", kind = "VARCHAR(100)" }
                                 ]
