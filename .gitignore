@@ -3,6 +3,8 @@
 /elm-stuff
 /local
 /node_modules
+/dist
 /public/dist
 /review/elm-stuff/
 /public/blog/drafts/
+/public/styles.css
