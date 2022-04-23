@@ -20,6 +20,7 @@
   "license": "MIT",
   "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
   "scripts": {
+    "start": "npm install && npm run dev",
     "dev": "concurrently \"vite\" \"npm run dev:app\" \"npm run dev:tailwind\" \"npm run dev:book\"",
     "build": "npm run build:tailwind && npm run build:app && npm run build:book && vite build",
     "dev:app": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
@@ -30,7 +31,8 @@
     "build:book": "npx elm make ./src/Components/Book.elm --output=./dist/book.js",
     "dev:browser": "cd packages/browser-extension && npm run dev",
     "build:browser": "cd packages/browser-extension && npm run build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "upgrade": "npx npm-check-updates -u"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.0",
