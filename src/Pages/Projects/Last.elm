@@ -1,9 +1,9 @@
-module Pages.PwaStart exposing (Model, Msg, page)
+module Pages.Projects.Last exposing (Model, Msg, page)
 
 import Components.Atoms.Loader as Loader
 import Conf
 import Dict
-import Gen.Params.PwaStart exposing (Params)
+import Gen.Params.Projects.Last exposing (Params)
 import Gen.Route as Route
 import Libs.Maybe as Maybe
 import Page
@@ -12,10 +12,6 @@ import Request
 import Shared
 import Time
 import View exposing (View)
-
-
-
--- legacy route, use `/projects/last` instead `/pwa-start` but Azimutt chrome extension still use it :(
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -52,11 +48,11 @@ init =
         [ Ports.setMeta
             { title = Just title
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just { route = Route.PwaStart, query = Dict.empty }
+            , canonical = Just { route = Route.Projects__Last, query = Dict.empty }
             , html = Just "h-full"
             , body = Just "h-full"
             }
-        , Ports.trackPage "pwa-start"
+        , Ports.trackPage "last-project"
         , Ports.loadProjects
         ]
     )
