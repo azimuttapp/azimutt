@@ -10,10 +10,15 @@
     "48": "azimutt_48.png",
     "128": "azimutt_128.png"
   },
+  "permissions": [],
   "content_scripts": [
     {
-      "matches": ["https://github.com/*.sql"],
-      "js": ["appendButton.js"]
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": [
+        "appendButton.js"
+      ]
     }
   ],
   "background": {
