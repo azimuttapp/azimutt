@@ -1,4 +1,31 @@
 {
+  "name": "azimutt",
+  "version": "1.0.0",
+  "description": "Next gen ERD: explore and analyze your SQL database schema",
+  "keywords": [
+    "erd",
+    "entity-relationship diagram",
+    "database tool",
+    "database schema",
+    "diagram"
+  ],
+  "homepage": "https://github.com/azimuttapp/azimutt",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/azimuttapp/azimutt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/azimuttapp/azimutt/issues"
+  },
+  "license": "MIT",
+  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
+  "scripts": {
+    "server": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
+    "tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch",
+    "book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js"
+  },
+  "dependencies": {
+  },
   "devDependencies": {
     "@tailwindcss/forms": "^0.4.0",
     "@tailwindcss/typography": "^0.5.1",

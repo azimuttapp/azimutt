@@ -3,7 +3,7 @@
   "name": "Azimutt",
   "version": "0.1",
   "homepage_url": "https://azimutt.app",
-  "description": "Next gen ERD, explore and analyze your SQL database schema",
+  "description": "Next gen ERD: explore and analyze your SQL database schema",
   "icons": {
     "16": "azimutt_16.png",
     "32": "azimutt_32.png",
