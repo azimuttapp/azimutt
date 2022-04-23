@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
   "name": "Azimutt",
-  "version": "1.0",
+  "version": "0.1",
   "homepage_url": "https://azimutt.app",
-  "description": "A new way to explore your database schema",
+  "description": "Next gen ERD, explore and analyze your SQL database schema",
   "icons": {
     "16": "azimutt_16.png",
     "32": "azimutt_32.png",

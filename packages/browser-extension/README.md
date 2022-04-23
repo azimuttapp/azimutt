@@ -11,6 +11,11 @@ Do an `npm install` and then run `npm run dev` to build the extension in live.
 
 To do a build you can do `npm run build` (needed when changing the manifest)
 
+## Publish extension
+
+### Chrome
+
+See https://developer.chrome.com/docs/webstore/publish
 
 ## Inspirations
 
