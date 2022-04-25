@@ -27,7 +27,7 @@ sqlTriggers =
 
 deferrable : String
 deferrable =
-    "(?:(?:\\s+NOT)?\\s+DEFERRABLE(?:\\s+INITIALLY DEFERRED)?)?"
+    "(?:(?:\\s+NOT)?\\s+DEFERRABLE(?:\\s+INITIALLY (?:IMMEDIATE|DEFERRED))?)?"
 
 
 buildRawSql : SqlStatement -> RawSql
