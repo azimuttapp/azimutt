@@ -1,5 +1,6 @@
 module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, area, buildRelatedTables, create, init, mapCollapsed, mapPosition, mapSelected, mapShowHiddenColumns, mapShownColumns, setCollapsed, setColor, setHighlightedColumns, setHover, setPosition, setSelected, setShowHiddenColumns, setShownColumns, setSize, unpack)
 
+import Conf
 import Dict exposing (Dict)
 import Libs.Area exposing (Area)
 import Libs.Bool as B
@@ -149,11 +150,16 @@ area props =
 
 setPosition : Position -> ErdTableProps -> ErdTableProps
 setPosition position props =
-    if props.position == position then
+    let
+        gridPosition : Position
+        gridPosition =
+            position |> Position.stepBy Conf.canvas.grid
+    in
+    if props.position == gridPosition then
         props
 
     else
-        { props | position = position, columnProps = props.columnProps |> Dict.map (\_ p -> { p | position = position }) }
+        { props | position = gridPosition, columnProps = props.columnProps |> Dict.map (\_ p -> { p | position = gridPosition }) }
 
 
 mapPosition : (Position -> Position) -> ErdTableProps -> ErdTableProps

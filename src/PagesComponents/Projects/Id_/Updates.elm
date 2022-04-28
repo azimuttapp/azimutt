@@ -457,7 +457,6 @@ computeInitialPosition allProps viewport change hint =
                 , top = viewport.position.top + change.seeds.top * max 0 (viewport.size.height - change.size.height)
                 }
             )
-        |> Position.stepBy Conf.canvas.grid
 
 
 
