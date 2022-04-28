@@ -1,13 +1,12 @@
 module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableConf, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), MenuItem)
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), ItemAction(..), MenuItem)
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
-import Either exposing (Either(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -526,10 +525,10 @@ sample =
         ]
     , hiddenColumns = []
     , settings =
-        [ { label = "Menu item 1", action = Right { action = logAction "menu item 1", hotkey = Nothing } }
+        [ { label = "Menu item 1", action = Simple { action = logAction "menu item 1", hotkey = Nothing } }
         , { label = "Menu item 2"
           , action =
-                Left
+                SubMenu
                     [ { label = "Menu item 2.1", action = logAction "menu item 2.1", hotkey = Nothing }
                     , { label = "Menu item 2.2", action = logAction "menu item 2.2", hotkey = Nothing }
                     ]

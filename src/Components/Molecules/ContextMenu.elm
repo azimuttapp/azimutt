@@ -1,7 +1,6 @@
-module Components.Molecules.ContextMenu exposing (Action, Direction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, menu, menuStyles)
+module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, menu, menuStyles)
 
 import Components.Atoms.Kbd as Kbd
-import Either exposing (Either(..))
 import Html exposing (Html, a, button, div, text)
 import Html.Attributes exposing (class, href, tabindex, type_)
 import Html.Events exposing (onClick)
@@ -70,7 +69,13 @@ btnDisabled styles content =
 
 
 type alias MenuItem msg =
-    { label : String, action : Either (List (SubMenuItem msg)) (Action msg) }
+    { label : String, action : ItemAction msg }
+
+
+type ItemAction msg
+    = Simple (Action msg)
+    | SubMenu (List (SubMenuItem msg))
+    | Custom (Html msg)
 
 
 type alias Action msg =
@@ -84,15 +89,18 @@ type alias SubMenuItem msg =
 btnSubmenu : MenuItem msg -> Html msg
 btnSubmenu item =
     case item.action of
-        Left submenus ->
+        Simple { action, hotkey } ->
+            btnHotkey action item.label hotkey
+
+        SubMenu submenus ->
             div [ css [ "group relative", itemStyles ] ]
                 [ text (item.label ++ " »")
                 , div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ]
                     (submenus |> List.map (\submenu -> btnHotkey submenu.action submenu.label submenu.hotkey))
                 ]
 
-        Right { action, hotkey } ->
-            btnHotkey action item.label hotkey
+        Custom html ->
+            html
 
 
 link : Link -> Html msg

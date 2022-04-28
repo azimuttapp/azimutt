@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, black, blue, border_400, border_500, cyan, decodeColor, default, disabled, emerald, encodeColor, extractColor, fill_500, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, from, fuchsia, gray, green, hover, indigo, levels, lg, lime, list, md, orange, pink, primary, purple, red, ring_200, ring_500, ring_600, ring_offset_600, rose, sky, sm, stroke_500, teal, text_300, text_400, text_500, text_600, text_700, text_800, violet, white, xl, xxl, yellow)
+module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, black, blue, border_400, border_500, cyan, decodeColor, default, disabled, emerald, encodeColor, extractColor, fill_500, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, from, fuchsia, gray, green, hover, indigo, levels, lg, lime, list, md, orange, pink, primary, purple, red, ring_200, ring_500, ring_600, ring_offset_600, rose, selectable, sky, sm, stroke_500, teal, text_300, text_400, text_500, text_600, text_700, text_800, toString, violet, white, xl, xxl, yellow)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -223,6 +223,11 @@ list =
     [ indigo, violet, purple, fuchsia, pink, rose, red, orange, amber, yellow, lime, green, emerald, teal, cyan, sky, blue ]
 
 
+selectable : List Color
+selectable =
+    list ++ [ gray ]
+
+
 all : List Color
 all =
     list ++ [ primary, default, black, white, gray ]
@@ -346,6 +351,11 @@ rose =
 levels : List ColorLevel
 levels =
     [ 50, 100, 200, 300, 400, 500, 600, 700, 800, 900 ]
+
+
+toString : Color -> String
+toString (Color color) =
+    color
 
 
 encodeColor : Color -> Value
