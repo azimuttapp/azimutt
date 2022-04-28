@@ -12,7 +12,7 @@ import Libs.Models.DragId exposing (DragId)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
-import Libs.Tailwind as Tw
+import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -157,6 +157,7 @@ type Msg
     | TableMove TableId Delta
     | TablePosition TableId Position
     | TableOrder TableId Int
+    | TableColor TableId Color
     | SortColumns TableId ColumnOrder
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool

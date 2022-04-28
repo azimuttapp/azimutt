@@ -2,8 +2,7 @@ module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, 
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
-import Either exposing (Either(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), ItemAction(..))
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -79,8 +78,8 @@ doc =
                                 [ ContextMenu.btn "" (logAction "btn") [ text "btn" ]
                                 , ContextMenu.btnDisabled "" [ text "btnDisabled" ]
                                 , ContextMenu.link { url = "#", text = "link" }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Right", action = Right { action = logAction "submenuButton Right", hotkey = Nothing } }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Left", action = Left ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label, hotkey = Nothing })) }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Right", action = Simple { action = logAction "submenuButton Right", hotkey = Nothing } }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Left", action = SubMenu ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label, hotkey = Nothing })) }
                                 ]
                         )
                 )

@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
+module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
 
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel
@@ -23,6 +23,11 @@ parseIndexDefinition definition =
 sqlTriggers : String
 sqlTriggers =
     "(?:\\s+(?:ON UPDATE|ON DELETE)\\s+(?:NO ACTION|CASCADE|SET NULL|SET DEFAULT|RESTRICT))*"
+
+
+deferrable : String
+deferrable =
+    "(?:(?:\\s+NOT)?\\s+DEFERRABLE(?:\\s+INITIALLY (?:IMMEDIATE|DEFERRED))?)?"
 
 
 buildRawSql : SqlStatement -> RawSql

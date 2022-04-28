@@ -68,6 +68,12 @@ suite =
             , testParseSql ( parseAlterTableAddConstraintForeignKey, "with on delete not deferrable" )
                 """FOREIGN KEY ("postId") REFERENCES post_entity(id) ON DELETE CASCADE NOT DEFERRABLE"""
                 { column = "postId", ref = { schema = Nothing, table = "post_entity", column = Just "id" } }
+            , testParseSql ( parseAlterTableAddConstraintForeignKey, "with initially immediate" )
+                """FOREIGN KEY (actor_id) REFERENCES auth_user(id) DEFERRABLE INITIALLY IMMEDIATE"""
+                { column = "actor_id", ref = { schema = Nothing, table = "auth_user", column = Just "id" } }
+            , testParseSql ( parseAlterTableAddConstraintForeignKey, "with initially deferred" )
+                """FOREIGN KEY (actor_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED"""
+                { column = "actor_id", ref = { schema = Just "public", table = "auth_user", column = Just "id" } }
             , testParseSql ( parseAlterTableAddConstraintForeignKey, "with on update on delete and deferrable" )
                 """FOREIGN KEY (postId) REFERENCES public.post(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE"""
                 { column = "postId", ref = { schema = Just "public", table = "post", column = Just "id" } }

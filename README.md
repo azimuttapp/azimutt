@@ -1,7 +1,7 @@
 <p align="center"><a href="https://azimutt.app" target="_blank"><img width="150px" src="public/logo.svg" alt="logo"/></a></p>
 <h1 align="center">Azimutt</h1>
 <h4 align="center">Next gen ERD</h4>
-<p align="center">Explore your SQL database schema seamlessly</p>
+<p align="center">Explore and analyze your SQL database schema</p>
 
 <p align="center">
   <a href="https://azimutt.app" target="_blank">azimutt.app</a> •
@@ -45,23 +45,18 @@ For me, this tool is the missing piece between a classic ERD tools and a Data ca
 
 - install `npm`, [Elm](https://guide.elm-lang.org/install/elm.html) & [elm-spa](https://www.elm-spa.dev)
 - run `npm install` to download npm dependencies
-- run `npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css` to build styles
-- run `elm-spa server` to generate needed files (`.elm-spa/defaults` & `.elm-spa/generated`)
+- run `elm-spa build` to generate needed files (`.elm-spa/defaults` & `.elm-spa/generated`)
 
 ## Dev commands
 
-- launch dev server: `elm-spa server` or `elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js` (needs `npm install -g elm-live` or use `npx`)
-- launch design system: `elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js` (needs `npm install -g elm-book` or use `npx`)
-- launch tailwind: `npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch` (needs `npm install -D tailwindcss`)
-- launch the tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
+- launch dev server: `npm run dev` (needs `npm install -g elm-live` or use `npx`)
+- launch tests: `elm-test` (needs `npm install -g elm-test` or use `npx`)
 - run linter: `elm-review` (needs `npm install -g elm-review` or use `npx`)
 - check format: `elm-format src tests --validate` (needs `npm install -g elm-format` or use `npx`)
 - run coverage: `elm-coverage --open` (needs `npm install -g elm-coverage`) (**doesn't work with elm-spa**)
 - install deps `elm-json install author/package` (needs `npm install --g elm-json`)
 - uninstall deps `elm-json uninstall author/package`
 - update deps `elm-json upgrade` (use `--unsafe` flag for major versions)
-
-If `elm-spa` don't display a relevant error, try using `elm-live` instead or compile with `elm-make`: `elm make .elm-spa/defaults/Main.elm`.
 
 Elm folders are `src` for sources, `tests` for tests and `public` for static assets.
 

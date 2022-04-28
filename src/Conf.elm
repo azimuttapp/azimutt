@@ -40,8 +40,8 @@ constants =
     , azimuttDiscussionSearch = github ++ "/discussions/8"
     , azimuttDiscussionCanvas = github ++ "/discussions/9"
     , azimuttEmail = "hey@azimutt.app"
-    , defaultTitle = "Azimutt - Explore your database schema"
-    , defaultDescription = "Database schema explorer that help you understand it: search and display what you need, in and out relations, find possible paths and much more..."
+    , defaultTitle = "Azimutt - Database explorer"
+    , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search, display what you want, follow relations, find paths and much more..."
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     }

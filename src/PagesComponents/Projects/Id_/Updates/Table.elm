@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, setTableColor, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 
 import Conf
 import Dict exposing (Dict)
@@ -6,6 +6,7 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Tailwind exposing (Color)
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -239,6 +240,31 @@ hoverColumn column enter erd props =
                 )
                     |> (\highlightedColumns -> p |> ErdTableProps.setHighlightedColumns highlightedColumns)
             )
+
+
+setTableColor : TableId -> Color -> Dict TableId ErdTableProps -> ( Dict TableId ErdTableProps, Cmd Msg )
+setTableColor id color props =
+    props
+        |> Dict.get id
+        |> Maybe.map
+            (\prop ->
+                if prop.selected then
+                    ( props
+                        |> Dict.map
+                            (\_ p ->
+                                if p.selected then
+                                    ErdTableProps.setColor color p
+
+                                else
+                                    p
+                            )
+                    , Cmd.none
+                    )
+
+                else
+                    ( props |> Dict.alter id (ErdTableProps.setColor color), Cmd.none )
+            )
+        |> Maybe.withDefault ( props, T.send (toastInfo ("Table " ++ TableId.show id ++ " not found")) )
 
 
 getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRef

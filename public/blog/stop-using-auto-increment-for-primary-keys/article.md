@@ -36,7 +36,7 @@ Sequential numbers are of course easily guessable. It's easy for anyone to get t
 
 With such an identifier generation, anyone also knows which identifiers will be used next, at some point in the future or even just the next one (when you create an entity, you get the current incremented value). This ease a lot possible timing attacks with tricky race condition.
 
-Such identifiers also leak information about the size of your tables but also when a specific item was created. These might be precious information for an attacker or competitors to exploit.
+Such identifiers also leak information about the size of your tables but also when a specific item has been created. These might be precious information for an attacker or competitors to exploit.
 
 Random UUIDs on the other hand makes all this impossible and makes vulnerability exploitation much harder.
 
@@ -56,7 +56,7 @@ Moving to a long number will give you much more time but changing a column type 
 
 ### Error identification
 
-Enough with security or scaling issues, now let's talk about you, the developer. You may have heard about the little things called bugs. Sadly they are far from rare, even with all the current techniques (types, tests, code review, QA...). Sooner or later you will use a non-identifier integer as identifier, and this time you will see: nothing, absolutely nothing. You have high chances for this specific integer to have a record matching with this identifier, so everything with work fine. Except you are now corrupting user data without knowing. Your best chance to notice is a user bug report saying they have strange data. But it will be far from easy to reproduce, troubleshoot and identify the root cause. And if you do, you will have so much fun fixing all the corrupted data, if it's even possible (probably since a long time ago).
+Enough with security or scaling issues, now let's talk about you, the developer. You may have heard about these little things called bugs. Sadly they are far from rare, even with all the current techniques (types, tests, code review, QA...). Sooner or later you will use a non-identifier integer as identifier, and this time you will see: nothing, absolutely nothing. You have high chances for this specific integer to have a record matching with this identifier, so everything with work fine. Except you are now corrupting user data without knowing it. Your best chance to notice is a user bug report saying they have strange data. But it will be far from easy to reproduce, troubleshoot and identify the root cause. And if you do, you will have so much fun fixing all the corrupted data, if it's even possible (probably since a long time ago).
 
 Instead of that, with UUIDs you will have a failing selection or join as UUIDs are globally unique, not only inside your table but your whole database. Way easier to identify and no data to fix.
 
@@ -76,10 +76,10 @@ Please, take my advice and avoid yourself all this future trouble.
 
 ![gift]({{base_link}}/gift.jpg)
 
-I personally experienced each one of the mentioned problems in different situations, so I can assure you, this is very painful to deal with them after the fact. Sometimes difficult to troubleshoot, sometimes hard to fix or even sometimes completely impossible 🤯
-That's why I can only encourage you to do this simple choice from the beginning, so you and you co-workers can live your peaceful life of developers ^^
+I personally experienced each one of the mentioned problems in different situations, so I can assure you, it is very painful to deal with them after the fact. Sometimes difficult to troubleshoot, sometimes hard to fix or even sometimes completely impossible 🤯
+That's why I can only encourage you to do this simple choice from the beginning, so you and your co-workers can live your peaceful life of developers ^^
 
-If you are dealing with a large database, have a look at [Azimutt]({{app_link}}). I built for myself, especially to handle very large databases because I couldn't find any decently useful tool for that. If you do, please [honestly tell me what you think]({{feedback_link}}): it's key for me to build a generally useful tool, not just one for my specific case ;)
+If you are dealing with a large database, have a look at [Azimutt]({{app_link}}). I built it for myself, especially to handle very large databases because I couldn't find any decently useful tool for that. If you do, please [honestly tell me what you think]({{feedback_link}}): it's key for me to build a generally useful tool, not just one for my specific case ;)
 
 Cheers!
 Have fun and enjoy!

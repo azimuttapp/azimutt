@@ -33,12 +33,12 @@ import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, setTableColor, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Time
 import Track
@@ -127,6 +127,9 @@ update currentProject currentLayout now msg model =
 
         TableOrder id index ->
             ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
+
+        TableColor id color ->
+            model |> mapErdMCmd (mapTablePropsCmd (setTableColor id color))
 
         SortColumns id kind ->
             ( model |> mapErdM (sortColumns id kind), Cmd.none )
@@ -454,7 +457,6 @@ computeInitialPosition allProps viewport change hint =
                 , top = viewport.position.top + change.seeds.top * max 0 (viewport.size.height - change.size.height)
                 }
             )
-        |> Position.stepBy Conf.canvas.grid
 
 
 

@@ -78,7 +78,7 @@ moveTables drag zoom tables =
 
 move : DragState -> ZoomLevel -> Position -> Position
 move drag zoom position =
-    position |> Position.add ((drag.last |> Position.sub drag.init) |> Position.div zoom) |> Position.stepBy Conf.canvas.grid
+    position |> Position.add ((drag.last |> Position.sub drag.init) |> Position.div zoom)
 
 
 buildSelectionArea : ScreenProps -> CanvasProps -> DragState -> Area
