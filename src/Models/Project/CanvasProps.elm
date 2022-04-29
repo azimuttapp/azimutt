@@ -6,6 +6,7 @@ import Libs.Area as Area exposing (Area)
 import Libs.Json.Encode as Encode
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
+import Models.Project.GridPosition as GridPosition
 import Models.ScreenProps exposing (ScreenProps)
 
 
@@ -31,7 +32,7 @@ viewport screen canvas =
 encode : CanvasProps -> Value
 encode value =
     Encode.notNullObject
-        [ ( "position", value.position |> Position.encode )
+        [ ( "position", value.position |> GridPosition.encode )
         , ( "zoom", value.zoom |> ZoomLevel.encode )
         ]
 
@@ -39,5 +40,5 @@ encode value =
 decode : Decode.Decoder CanvasProps
 decode =
     Decode.map2 CanvasProps
-        (Decode.field "position" Position.decode)
+        (Decode.field "position" GridPosition.decode)
         (Decode.field "zoom" ZoomLevel.decode)

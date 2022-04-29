@@ -18,6 +18,7 @@ import Libs.Models.Size as Size
 import Libs.Tailwind as Color exposing (Color)
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -309,8 +310,9 @@ jsDecoder =
                         (Decode.field "sizes"
                             (Decode.map4 SizeChange
                                 (Decode.field "id" Decode.string)
-                                (Decode.field "position" Position.decode)
+                                (Decode.field "position" GridPosition.decode)
                                 (Decode.field "size" Size.decode)
+                                -- don't round seeds, use Position instead of GridPosition
                                 (Decode.field "seeds" Position.decode)
                                 |> Decode.list
                             )
@@ -346,7 +348,7 @@ jsDecoder =
                     Decode.map2 GotToast (Decode.field "level" Decode.string) (Decode.field "message" Decode.string)
 
                 "GotTableShow" ->
-                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decode)
+                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" GridPosition.decode)
 
                 "GotTableHide" ->
                     Decode.map GotTableHide (Decode.field "id" TableId.decode)
@@ -355,7 +357,7 @@ jsDecoder =
                     Decode.map GotTableToggleColumns (Decode.field "id" TableId.decode)
 
                 "GotTablePosition" ->
-                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decode)
+                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" GridPosition.decode)
 
                 "GotTableMove" ->
                     Decode.map2 GotTableMove (Decode.field "id" TableId.decode) (Decode.field "delta" Delta.decode)
