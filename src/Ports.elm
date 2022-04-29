@@ -15,6 +15,7 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
+import Libs.Tailwind as Color exposing (Color)
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
@@ -200,6 +201,7 @@ type JsMsg
     | GotTablePosition TableId Position
     | GotTableMove TableId Delta
     | GotTableSelect TableId
+    | GotTableColor TableId Color
     | GotColumnShow ColumnRef
     | GotColumnHide ColumnRef
     | GotColumnMove ColumnRef Int
@@ -360,6 +362,11 @@ jsDecoder =
 
                 "GotTableSelect" ->
                     Decode.map GotTableSelect (Decode.field "id" TableId.decode)
+
+                "GotTableColor" ->
+                    Decode.map2 GotTableColor
+                        (Decode.field "id" TableId.decode)
+                        (Decode.field "color" Color.decodeColor)
 
                 "GotColumnShow" ->
                     Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)

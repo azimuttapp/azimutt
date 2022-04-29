@@ -36,6 +36,7 @@ window.addEventListener('load', function() {
         moveTableTo: (tableId, left, top) => sendToElm({kind: 'GotTablePosition', id: tableId, position: {left, top}}),
         moveTable: (tableId, dx, dy) => sendToElm({kind: 'GotTableMove', id: tableId, delta: {dx, dy}}),
         selectTable: tableId => sendToElm({kind: 'GotTableSelect', id: tableId}),
+        setTableColor: (tableId, color) => sendToElm({kind: 'GotTableColor', id: tableId, color}),
         showColumn: columnRef => sendToElm({kind: 'GotColumnShow', ref: columnRef}),
         hideColumn: columnRef => sendToElm({kind: 'GotColumnHide', ref: columnRef}),
         moveColumn: (columnRef, index) => sendToElm({kind: 'GotColumnMove', ref: columnRef, index}),
