@@ -145,20 +145,18 @@ type Msg
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables
     | HideTable TableId
-    | HideAllTables
     | ToggleColumns TableId
-    | ToggleColumnsForAllTables
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
     | ShowColumns TableId String
     | HideColumns TableId String
+    | SortColumns TableId ColumnOrder
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
     | TableMove TableId Delta
     | TablePosition TableId Position
     | TableOrder TableId Int
     | TableColor TableId Color
-    | SortColumns TableId ColumnOrder
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool

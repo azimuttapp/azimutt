@@ -100,7 +100,10 @@ btnSubmenu item =
                 ]
 
         Custom html ->
-            html
+            div [ css [ "group relative", itemStyles ] ]
+                [ text (item.label ++ " »")
+                , div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ] [ html ]
+                ]
 
 
 link : Link -> Html msg

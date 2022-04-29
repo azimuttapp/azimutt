@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, setTableColor, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 
 import Conf
 import Dict exposing (Dict)
@@ -6,7 +6,6 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Tailwind exposing (Color)
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -21,7 +20,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint as PositionHint exposing (PositionHint)
 import Ports
-import Services.Lenses exposing (mapRelatedTables, mapShown, mapShownTables, mapTableProps, setHoverColumn, setShownTables)
+import Services.Lenses exposing (mapRelatedTables, mapShown, mapShownTables, mapTableProps, mapTablePropsCmd, setHoverColumn)
 import Set
 
 
@@ -89,16 +88,18 @@ showAllTables erd =
 
 hideTable : TableId -> Erd -> Erd
 hideTable id erd =
+    if erd.tableProps |> Dict.get id |> Maybe.map .selected |> Maybe.withDefault False then
+        erd.tableProps |> Dict.values |> List.filter .selected |> List.foldl (\p -> hideTableReal p.id) erd
+
+    else
+        hideTableReal id erd
+
+
+hideTableReal : TableId -> Erd -> Erd
+hideTableReal id erd =
     erd
-        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.update id (Maybe.map (mapShown (\_ -> False))))))
+        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.alter id (mapShown (\_ -> False)))))
         |> mapShownTables (List.filter (\t -> t /= id))
-
-
-hideAllTables : Erd -> Erd
-hideAllTables erd =
-    erd
-        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.map (\_ -> mapShown (\_ -> False)))))
-        |> setShownTables []
 
 
 showColumn : TableId -> ColumnName -> Erd -> Erd
@@ -123,9 +124,9 @@ hoverNextColumn table column model =
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
 
 
-showColumns : TableId -> String -> Erd -> Erd
+showColumns : TableId -> String -> Erd -> ( Erd, Cmd Msg )
 showColumns id kind erd =
-    updateColumns id
+    mapTablePropsOrSelectedColumns id
         (\table columns ->
             erd.relations
                 |> Relation.withTableLink id
@@ -153,9 +154,9 @@ showColumns id kind erd =
         erd
 
 
-hideColumns : TableId -> String -> Erd -> Erd
+hideColumns : TableId -> String -> Erd -> ( Erd, Cmd Msg )
 hideColumns id kind erd =
-    updateColumns id
+    mapTablePropsOrSelectedColumns id
         (\table columns ->
             erd.relations
                 |> Relation.withTableLink id
@@ -189,9 +190,9 @@ hideColumns id kind erd =
         erd
 
 
-sortColumns : TableId -> ColumnOrder -> Erd -> Erd
+sortColumns : TableId -> ColumnOrder -> Erd -> ( Erd, Cmd Msg )
 sortColumns id kind erd =
-    updateColumns id
+    mapTablePropsOrSelectedColumns id
         (\table columns ->
             columns
                 |> List.filterMap (\name -> table.columns |> Dict.get name)
@@ -242,8 +243,8 @@ hoverColumn column enter erd props =
             )
 
 
-setTableColor : TableId -> Color -> Dict TableId ErdTableProps -> ( Dict TableId ErdTableProps, Cmd Msg )
-setTableColor id color props =
+mapTablePropOrSelected : TableId -> (ErdTableProps -> ErdTableProps) -> Dict TableId ErdTableProps -> ( Dict TableId ErdTableProps, Cmd Msg )
+mapTablePropOrSelected id transform props =
     props
         |> Dict.get id
         |> Maybe.map
@@ -253,7 +254,7 @@ setTableColor id color props =
                         |> Dict.map
                             (\_ p ->
                                 if p.selected then
-                                    ErdTableProps.setColor color p
+                                    transform p
 
                                 else
                                     p
@@ -262,7 +263,7 @@ setTableColor id color props =
                     )
 
                 else
-                    ( props |> Dict.alter id (ErdTableProps.setColor color), Cmd.none )
+                    ( props |> Dict.alter id transform, Cmd.none )
             )
         |> Maybe.withDefault ( props, T.send (toastInfo ("Table " ++ TableId.show id ++ " not found")) )
 
@@ -280,8 +281,20 @@ performShowTable table hint erd =
         |> mapShownTables (\t -> B.cond (t |> List.member table.id) t (table.id :: t))
 
 
-updateColumns : TableId -> (ErdTable -> List ColumnName -> List ColumnName) -> Erd -> Erd
-updateColumns id update erd =
-    erd.tables
-        |> Dict.get id
-        |> Maybe.mapOrElse (\table -> erd |> mapTableProps (Dict.alter id (ErdTableProps.mapShownColumns (update table) erd.notes))) erd
+mapTablePropsOrSelectedColumns : TableId -> (ErdTable -> List ColumnName -> List ColumnName) -> Erd -> ( Erd, Cmd Msg )
+mapTablePropsOrSelectedColumns id transform erd =
+    erd
+        |> mapTablePropsCmd
+            (mapTablePropOrSelected id
+                (\p ->
+                    p
+                        |> ErdTableProps.mapShownColumns
+                            (\cols ->
+                                erd.tables
+                                    |> Dict.get p.id
+                                    |> Maybe.map (\table -> transform table cols)
+                                    |> Maybe.withDefault cols
+                            )
+                            erd.notes
+                )
+            )

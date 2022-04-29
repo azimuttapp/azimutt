@@ -61,6 +61,8 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                         div []
                             [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
                                 [ text "Type to search into tables (", Icon.solid Icon.Table "", text "), columns (", Icon.solid Tag "", text ") and relations (", Icon.solid ExternalLink "", text ")" ]
+                            , button [ type_ "button", onMouseDown ShowAllTables, role "menuitem", tabindex -1, css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
+                                [ text "Show all tables" ]
                             ]
 
                     else

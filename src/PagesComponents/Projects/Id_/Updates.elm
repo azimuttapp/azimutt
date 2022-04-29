@@ -33,7 +33,7 @@ import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideAllTables, hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, setTableColor, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
@@ -75,27 +75,13 @@ update currentProject currentLayout now msg model =
         HideTable id ->
             ( model |> mapErdM (hideTable id), Cmd.none )
 
-        HideAllTables ->
-            ( model |> mapErdM hideAllTables, Cmd.none )
-
         ToggleColumns id ->
-            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapCollapsed not))), Cmd.none )
-
-        ToggleColumnsForAllTables ->
-            ( model
-                |> mapErdM
-                    (mapTableProps
-                        (\props ->
-                            let
-                                nextToggle : Bool
-                                nextToggle =
-                                    (props |> Dict.find (\_ p -> not p.collapsed)) /= Nothing
-                            in
-                            props |> Dict.map (\_ -> ErdTableProps.setCollapsed nextToggle)
-                        )
-                    )
-            , Cmd.none
-            )
+            let
+                collapsed : Bool
+                collapsed =
+                    model.erd |> Maybe.andThen (\e -> e.tableProps |> Dict.get id) |> Maybe.mapOrElse .collapsed False
+            in
+            model |> mapErdMCmd (mapTablePropsCmd (mapTablePropOrSelected id (ErdTableProps.setCollapsed (not collapsed))))
 
         ShowColumn { table, column } ->
             ( model |> mapErdM (showColumn table column), Cmd.none )
@@ -104,10 +90,13 @@ update currentProject currentLayout now msg model =
             ( model |> mapErdM (hideColumn table column) |> hoverNextColumn table column, Cmd.none )
 
         ShowColumns id kind ->
-            ( model |> mapErdM (showColumns id kind), Cmd.none )
+            model |> mapErdMCmd (showColumns id kind)
 
         HideColumns id kind ->
-            ( model |> mapErdM (hideColumns id kind), Cmd.none )
+            model |> mapErdMCmd (hideColumns id kind)
+
+        SortColumns id kind ->
+            model |> mapErdMCmd (sortColumns id kind)
 
         ToggleHiddenColumns id ->
             ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapShowHiddenColumns not))), Cmd.none )
@@ -129,10 +118,7 @@ update currentProject currentLayout now msg model =
             ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
 
         TableColor id color ->
-            model |> mapErdMCmd (mapTablePropsCmd (setTableColor id color))
-
-        SortColumns id kind ->
-            ( model |> mapErdM (sortColumns id kind), Cmd.none )
+            model |> mapErdMCmd (mapTablePropsCmd (mapTablePropOrSelected id (ErdTableProps.setColor color)))
 
         MoveColumn column position ->
             ( model |> mapErdM (\erd -> erd |> mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position) erd.notes))), Cmd.none )

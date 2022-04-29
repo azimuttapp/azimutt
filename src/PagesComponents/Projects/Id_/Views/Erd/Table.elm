@@ -1,11 +1,11 @@
 module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToString, stringToArgs, viewTable)
 
-import Components.Molecules.ContextMenu as ContextMenu exposing (ItemAction(..))
+import Components.Molecules.ContextMenu exposing (ItemAction(..))
 import Components.Organisms.Table as Table
 import Conf
 import DataSources.SqlParser.Parsers.ColumnType as ColumnType
 import Dict
-import Html exposing (Attribute, Html, button, div, text)
+import Html exposing (Attribute, Html, button, div)
 import Html.Attributes exposing (style, tabindex, title, type_)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse exposing (Button(..))
@@ -85,36 +85,41 @@ viewTable conf zoom cursorMode args index props table =
             , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
-                [ Maybe.when conf.layout { label = "Hide table", action = Simple { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
-                , Maybe.when conf.layout { label = "Toggle columns", action = Simple { action = ToggleColumns table.id, hotkey = Conf.hotkeys |> Dict.get "collapse" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                [ Maybe.when conf.layout { label = B.cond props.selected "Hide selected tables" "Hide table", action = Simple { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                , Maybe.when conf.layout
+                    { label =
+                        if props.collapsed then
+                            B.cond props.selected "Expand selected tables" "Expand table"
+
+                        else
+                            B.cond props.selected "Collapse selected tables" "Collapse table"
+                    , action = Simple { action = ToggleColumns table.id, hotkey = Conf.hotkeys |> Dict.get "collapse" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                    }
                 , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), hotkey = Nothing } }
                 , Maybe.when conf.layout
-                    { label = "Change color"
+                    { label = B.cond props.selected "Set color of selected tables" "Set color"
                     , action =
                         Custom
-                            (div [ css [ "group relative", ContextMenu.itemStyles ] ]
-                                [ text "Change color »"
-                                , div [ css [ "hidden group-hover:grid grid-cols-6 gap-1 p-1 top-0 left-full", ContextMenu.menuStyles ] ]
-                                    (Color.selectable
-                                        |> List.map
-                                            (\c ->
-                                                button
-                                                    [ type_ "button"
-                                                    , onClick (TableColor table.id c)
-                                                    , title (Color.toString c)
-                                                    , role "menuitem"
-                                                    , tabindex -1
-                                                    , css [ "rounded-full w-6 h-6", bg_500 c, hover [ "scale-125" ], focus [ "outline-none" ] ]
-                                                    ]
-                                                    []
-                                            )
-                                    )
-                                ]
+                            (div [ css [ "group-hover:grid grid-cols-6 gap-1 p-1 pl-2" ] ]
+                                (Color.selectable
+                                    |> List.map
+                                        (\c ->
+                                            button
+                                                [ type_ "button"
+                                                , onClick (TableColor table.id c)
+                                                , title (Color.toString c)
+                                                , role "menuitem"
+                                                , tabindex -1
+                                                , css [ "rounded-full w-6 h-6", bg_500 c, hover [ "scale-125" ], focus [ "outline-none" ] ]
+                                                ]
+                                                []
+                                        )
+                                )
                             )
                     }
-                , Maybe.when conf.layout { label = "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
+                , Maybe.when conf.layout { label = B.cond props.selected "Sort columns of selected tables" "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
                 , Maybe.when conf.layout
-                    { label = "Hide columns"
+                    { label = B.cond props.selected "Hide columns of selected tables" "Hide columns"
                     , action =
                         SubMenu
                             [ { label = "Without relation", action = HideColumns table.id "relations", hotkey = Nothing }
@@ -124,7 +129,7 @@ viewTable conf zoom cursorMode args index props table =
                             ]
                     }
                 , Maybe.when conf.layout
-                    { label = "Show columns"
+                    { label = B.cond props.selected "Show columns of selected tables" "Show columns"
                     , action =
                         SubMenu
                             [ { label = "With relations", action = ShowColumns table.id "relations", hotkey = Nothing }
@@ -132,7 +137,7 @@ viewTable conf zoom cursorMode args index props table =
                             ]
                     }
                 , Maybe.when conf.layout
-                    { label = "Column order"
+                    { label = "Table order"
                     , action =
                         SubMenu
                             [ { label = "Bring forward", action = TableOrder table.id (index + 1), hotkey = Conf.hotkeys |> Dict.get "move-forward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
