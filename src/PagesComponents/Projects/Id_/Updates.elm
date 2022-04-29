@@ -380,6 +380,9 @@ handleJsMessage currentProject currentLayout msg model =
         GotTableSelect id ->
             ( model, T.send (SelectTable id False) )
 
+        GotTableColor id color ->
+            ( model, T.send (TableColor id color) )
+
         GotColumnShow ref ->
             ( model, T.send (ShowColumn ref) )
 
