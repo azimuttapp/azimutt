@@ -8,7 +8,7 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models exposing (UID)
-import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
@@ -21,6 +21,7 @@ import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
+import Models.Project.GridPosition as GridPosition
 import Models.Project.Index exposing (Index)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
@@ -578,7 +579,7 @@ decodeTableProps : Decode.Decoder TablePropsV1
 decodeTableProps =
     Decode.map5 TablePropsV1
         (Decode.field "id" decodeTableId)
-        (Decode.field "position" Position.decode)
+        (Decode.field "position" GridPosition.decode)
         (Decode.field "color" Tw.decodeColor)
         (Decode.defaultField "columns" (Decode.list Decode.string) [])
         (Decode.defaultField "selected" Decode.bool False)

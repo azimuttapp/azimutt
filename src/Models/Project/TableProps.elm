@@ -4,10 +4,11 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
-import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.GridPosition as GridPosition
 import Models.Project.TableId as TableId exposing (TableId)
 
 
@@ -27,7 +28,7 @@ encode : TableProps -> Value
 encode value =
     Encode.notNullObject
         [ ( "id", value.id |> TableId.encode )
-        , ( "position", value.position |> Position.encode )
+        , ( "position", value.position |> GridPosition.encode )
 
         -- , ( "size", value.size |> Size.encode ) do not store size, it should be re-computed
         , ( "color", value.color |> Tw.encodeColor )
@@ -42,7 +43,7 @@ decode : Decode.Decoder TableProps
 decode =
     Decode.map8 TableProps
         (Decode.field "id" TableId.decode)
-        (Decode.field "position" Position.decode)
+        (Decode.field "position" GridPosition.decode)
         (Decode.defaultField "size" Size.decode Size.zero)
         (Decode.field "color" Tw.decodeColor)
         (Decode.defaultField "columns" (Decode.list ColumnName.decode) [])

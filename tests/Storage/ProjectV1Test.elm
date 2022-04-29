@@ -33,7 +33,7 @@ project0 =
     { id = "prj-0"
     , name = "Project 0"
     , sources = Nel (ProjectSourceV1 "src-1" "source 1" (LocalFileV1 "structure.sql" 10000 (time 1102)) (time 1100) (time 1101)) []
-    , schema = SchemaV1 Dict.empty [] (LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [] [] (time 1200) (time 1201))
+    , schema = SchemaV1 Dict.empty [] (LayoutV1 (CanvasPropsV1 (Position 10 20) 0.75) [] [] (time 1200) (time 1201))
     , layouts = Dict.empty
     , currentLayout = Nothing
     , settings = defaultProjectSettings
@@ -47,7 +47,7 @@ project0Json : String
 project0Json =
     """{"id":"prj-0","name":"Project 0","""
         ++ """"sources":[{"id":"src-1","name":"source 1","source":{"kind":"LocalFile","name":"structure.sql","size":10000,"lastModified":1102},"createdAt":1100,"updatedAt":1101}],"""
-        ++ """"schema":{"tables":[],"relations":[],"layout":{"canvas":{"position":{"left":1,"top":2},"zoom":0.75},"tables":[],"createdAt":1200,"updatedAt":1201}},"layouts":{},"createdAt":1000,"updatedAt":1001,"version":1}"""
+        ++ """"schema":{"tables":[],"relations":[],"layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[],"createdAt":1200,"updatedAt":1201}},"layouts":{},"createdAt":1000,"updatedAt":1001,"version":1}"""
 
 
 project1 : ProjectV1
@@ -58,7 +58,7 @@ project1 =
     , schema =
         { tables = Dict.fromListMap .id [ TableV1 ( "public", "users" ) "public" "users" (Ned.singletonMap .name (ColumnV1 0 "id" "int" False Nothing Nothing [])) Nothing [] [] [] Nothing [] ]
         , relations = []
-        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Tw.red [ "id" ] True ] [] (time 1200) (time 1201)
+        , layout = LayoutV1 (CanvasPropsV1 (Position 10 20) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 30 40) Tw.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
     , layouts = Dict.fromList [ ( "empty", LayoutV1 (CanvasPropsV1 Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
     , currentLayout = Nothing
@@ -74,7 +74,7 @@ project1Json =
     """{"id":"prj-0","name":"Project 0","""
         ++ """"sources":[{"id":"src-1","name":"source 1","source":{"kind":"LocalFile","name":"structure.sql","size":10000,"lastModified":200},"createdAt":1100,"updatedAt":1101}],"""
         ++ """"schema":{"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int"}]}],"relations":[],"""
-        ++ """"layout":{"canvas":{"position":{"left":1,"top":2},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":3,"top":4},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
+        ++ """"layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
         ++ """"layouts":{"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203}},"""
         ++ """"settings":{"findPath":{"maxPathLength":4}},"createdAt":1000,"updatedAt":1001,"fromSample":"basic","version":1}"""
 
@@ -130,12 +130,12 @@ project2 =
                   }
                 ]
         , relations = [ RelationV1 "creds_user_id" (ColumnRefV1 ( "public", "creds" ) "user_id") (ColumnRefV1 ( "public", "users" ) "id") [] ]
-        , layout = LayoutV1 (CanvasPropsV1 (Position 1 2) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 3 4) Tw.red [ "id" ] True ] [] (time 1200) (time 1201)
+        , layout = LayoutV1 (CanvasPropsV1 (Position 10 20) 0.75) [ TablePropsV1 ( "public", "users" ) (Position 30 40) Tw.red [ "id" ] True ] [] (time 1200) (time 1201)
         }
     , layouts =
         Dict.fromList
             [ ( "empty", LayoutV1 (CanvasPropsV1 Position.zero 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", LayoutV1 (CanvasPropsV1 (Position 12 32) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 102) Tw.red [ "id", "name" ] True ] [] (time 1202) (time 1203) )
+            , ( "users", LayoutV1 (CanvasPropsV1 (Position 120 320) 1.5) [ TablePropsV1 ( "public", "users" ) (Position 90 100) Tw.red [ "id", "name" ] True ] [] (time 1202) (time 1203) )
             ]
     , currentLayout = Just "users"
     , settings = { findPath = FindPathSettingsV1 4 [ ( "public", "users" ) ] [ "created_by" ] }
@@ -153,10 +153,10 @@ project2Json =
         ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int","sources":[{"id":"src-1","lines":[{"no":14,"text":"  user_id int NOT NULL,"}]}]},{"name":"login","type":"varchar","sources":[{"id":"src-1","lines":[{"no":15,"text":"  login varchar NOT NULL,"}]}]},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field"},"sources":[{"id":"src-1","lines":[{"no":16,"text":"  pass varchar NOT NULL,"}]}]},{"name":"role","type":"varchar","nullable":true,"default":"guest","sources":[{"id":"src-1","lines":[{"no":17,"text":"  role varchar"}]}]}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)"}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)"}],"comment":{"text":"To allow users to login"},"sources":[{"id":"src-1","lines":[{"no":13,"text":"CREATE TABLE creds ("},{"no":14,"text":"  user_id int NOT NULL,"},{"no":15,"text":"  login varchar NOT NULL,"},{"no":16,"text":"  pass varchar NOT NULL,"},{"no":17,"text":"  role varchar"},{"no":18,"text":");"}]}]},"""
         ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int"},{"name":"name","type":"varchar","nullable":true}],"primaryKey":{"name":"users_pk","columns":["id"]},"sources":[{"id":"src-1","lines":[{"no":10,"text":"CREATE TABLE users"},{"no":11,"text":"  (id int NOT NULL, name varchar);"}]}]}],"""
         ++ """"relations":[{"name":"creds_user_id","src":{"table":"public.creds","column":"user_id"},"ref":{"table":"public.users","column":"id"}}],"""
-        ++ """"layout":{"canvas":{"position":{"left":1,"top":2},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":3,"top":4},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
+        ++ """"layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
         ++ """"layouts":{"""
         ++ """"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203},"""
-        ++ """"users":{"canvas":{"position":{"left":12,"top":32},"zoom":1.5},"tables":[{"id":"public.users","position":{"left":90,"top":102},"color":"red","columns":["id","name"],"selected":true}],"createdAt":1202,"updatedAt":1203}},"""
+        ++ """"users":{"canvas":{"position":{"left":120,"top":320},"zoom":1.5},"tables":[{"id":"public.users","position":{"left":90,"top":100},"color":"red","columns":["id","name"],"selected":true}],"createdAt":1202,"updatedAt":1203}},"""
         ++ """"currentLayout":"users","settings":{"findPath":{"maxPathLength":4,"ignoredTables":["public.users"],"ignoredColumns":["created_by"]}},"createdAt":1000,"updatedAt":1001,"version":1}"""
 
 

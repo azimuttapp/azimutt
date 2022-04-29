@@ -9,7 +9,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
@@ -20,9 +20,11 @@ import Time
 
 position : Fuzzer Position
 position =
-    Fuzz.map2 Position
-        (Fuzz.floatRange -10000 10000)
-        (Fuzz.floatRange -10000 10000)
+    Fuzz.map (Position.stepBy Conf.canvas.grid)
+        (Fuzz.map2 Position
+            (Fuzz.floatRange -10000 10000)
+            (Fuzz.floatRange -10000 10000)
+        )
 
 
 size : Fuzzer Size
