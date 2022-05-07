@@ -25,6 +25,9 @@ type alias Model =
     , sqlSourceUpload : Maybe (SqlSourceUpload Msg)
     , projectImport : Maybe ProjectImport
     , sampleSelection : Maybe ProjectImport
+
+    -- global attrs
+    , openedDropdown : HtmlId
     , toastIdx : Int
     , toasts : List Toast.Model
     , confirm : Maybe ConfirmDialog
@@ -57,6 +60,8 @@ type Msg
     | SampleSelectMsg ProjectImportMsg
     | SampleSelectDrop
     | SampleSelectCreate Project
+      -- global messages
+    | DropdownToggle HtmlId
     | ToastAdd (Maybe Millis) Toast.Content
     | ToastShow (Maybe Millis) String
     | ToastHide String
@@ -66,7 +71,7 @@ type Msg
     | ModalOpen HtmlId
     | ModalClose Msg
     | JsMessage JsMsg
-    | Noop
+    | Noop String
 
 
 toastError : String -> Msg

@@ -1,5 +1,6 @@
-module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, dropdown, initDocState)
+module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, dropdown, initDocState, subscriptions, update)
 
+import Browser.Events
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), ItemAction(..))
@@ -9,10 +10,13 @@ import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, div, text)
 import Html.Attributes exposing (class, id)
 import Html.Events exposing (onClick)
+import Json.Decode as Decode exposing (Decoder)
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup)
+import Libs.Json.Decode as Decode
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw
+import Services.Lenses exposing (mapOpenedDropdown)
 
 
 type alias Model =
@@ -25,6 +29,35 @@ dropdown model elt content =
         [ elt model
         , ContextMenu.menu model.id model.direction 2 model.isOpen (content model)
         ]
+
+
+update : HtmlId -> { x | openedDropdown : HtmlId } -> { x | openedDropdown : HtmlId }
+update id model =
+    model |> mapOpenedDropdown (\d -> B.cond (d == id) "" id)
+
+
+subscriptions : { x | openedDropdown : HtmlId } -> (HtmlId -> msg) -> msg -> List (Sub msg)
+subscriptions model toggle noop =
+    if model.openedDropdown == "" then
+        []
+
+    else
+        [ Browser.Events.onClick (targetIdDecoder |> Decode.map (\id -> B.cond (id == model.openedDropdown) noop (toggle id))) ]
+
+
+targetIdDecoder : Decoder HtmlId
+targetIdDecoder =
+    Decode.field "target"
+        (Decode.oneOf
+            [ Decode.at [ "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.at [ "parentElement", "parentElement", "parentElement", "parentElement", "parentElement", "id" ] Decode.string |> Decode.filter (\id -> id /= "")
+            , Decode.succeed ""
+            ]
+        )
 
 
 

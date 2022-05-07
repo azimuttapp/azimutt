@@ -1,5 +1,6 @@
 module PagesComponents.Projects.Id_.Updates exposing (update)
 
+import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict exposing (Dict)
 import Libs.Area as Area exposing (Area, AreaLike)
@@ -38,7 +39,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Time
 import Track
@@ -190,7 +191,7 @@ update currentProject currentLayout now msg model =
             ( model, Ports.focus id )
 
         DropdownToggle id ->
-            ( model |> mapOpenedDropdown (\d -> B.cond (d == id) "" id), Cmd.none )
+            ( model |> Dropdown.update id, Cmd.none )
 
         PopoverSet id ->
             ( model |> setOpenedPopover id, Cmd.none )

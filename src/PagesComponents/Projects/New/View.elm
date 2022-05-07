@@ -25,6 +25,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
 import Models.Project exposing (Project)
+import Models.User exposing (User(..))
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.ProjectImport as ProjectImport exposing (ProjectImport)
@@ -34,7 +35,9 @@ import Time
 
 viewNewProject : Time.Zone -> Model -> List (Html Msg)
 viewNewProject zone model =
-    appShell (\link -> SelectMenu link.text)
+    appShell Guest
+        (\link -> SelectMenu link.text)
+        DropdownToggle
         ToggleMobileMenu
         model
         [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
@@ -107,7 +110,7 @@ viewSchemaUploadTab htmlId openedCollapse sqlSourceUpload =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ FileInput.schemaFile (htmlId ++ "-file-upload") (SqlSourceUpload.SelectLocalFile >> SqlSourceUploadMsg) Noop
+                    [ FileInput.schemaFile (htmlId ++ "-file-upload") (SqlSourceUpload.SelectLocalFile >> SqlSourceUploadMsg) (Noop "file-input-noop")
                     ]
                 ]
             ]
@@ -121,7 +124,7 @@ viewSchemaUploadTab htmlId openedCollapse sqlSourceUpload =
                 , placeholder "https://azimutt.app/samples/gospeak.sql"
                 , value (sqlSourceUpload.selectedRemoteFile |> Maybe.withDefault "")
                 , onInput (SqlSourceUpload.UpdateRemoteFile >> SqlSourceUploadMsg)
-                , onBlur (sqlSourceUpload.selectedRemoteFile |> Maybe.mapOrElse (SqlSourceUpload.SelectRemoteFile >> SqlSourceUploadMsg) Noop)
+                , onBlur (sqlSourceUpload.selectedRemoteFile |> Maybe.mapOrElse (SqlSourceUpload.SelectRemoteFile >> SqlSourceUploadMsg) (Noop "no-source-file"))
                 , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ]
                 []
@@ -159,7 +162,7 @@ viewProjectImportTab htmlId zone projects projectImport =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ FileInput.projectFile (htmlId ++ "-file-upload") (ProjectImport.SelectLocalFile >> ProjectImportMsg) Noop
+                    [ FileInput.projectFile (htmlId ++ "-file-upload") (ProjectImport.SelectLocalFile >> ProjectImportMsg) (Noop "no-project-file")
                     ]
                 ]
             ]

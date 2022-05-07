@@ -12,7 +12,9 @@ import Html.Attributes exposing (class)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models exposing (Link)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (lg, md, sm)
+import Models.User exposing (User(..))
 
 
 publicHeader : Html msg
@@ -46,14 +48,21 @@ publicFooter =
 
 
 appShell :
-    (Link -> msg)
+    User
+    -> (Link -> msg)
+    -> (HtmlId -> msg)
     -> msg
-    -> { x | selectedMenu : String, mobileMenuOpen : Bool }
+    -> { x | selectedMenu : String, mobileMenuOpen : Bool, openedDropdown : HtmlId }
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell onNavigationClick onMobileMenuClick model title content footer =
+appShell user onNavigationClick onProfileClick onMobileMenuClick model title content footer =
+    let
+        profileDropdown : HtmlId
+        profileDropdown =
+            "shell-profile-dropdown"
+    in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
             { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
@@ -63,12 +72,41 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
                 }
             , search = Nothing
             , notifications = Nothing
-            , profile = Nothing
+            , profile =
+                case user of
+                    Guest ->
+                        Just
+                            { id = profileDropdown
+                            , avatar = "/assets/images/guest.png"
+                            , firstName = "Guest"
+                            , lastName = ""
+                            , email = ""
+                            , links =
+                                [ { url = Route.toHref Route.Login, text = "Log in" }
+                                , { url = Route.toHref Route.Login, text = "Sign in" }
+                                ]
+                            , onClick = onProfileClick "shell-profile"
+                            }
+
+                    Logged infos ->
+                        Just
+                            { id = profileDropdown
+                            , avatar = infos.avatar
+                            , firstName = infos.firstName
+                            , lastName = infos.lastName
+                            , email = infos.email
+                            , links =
+                                [ { url = "", text = "Your profile" }
+                                , { url = "", text = "Settings" }
+                                , { url = "", text = "Sign out" }
+                                ]
+                            , onClick = onProfileClick "shell-profile"
+                            }
             , mobileMenu = { id = "mobile-menu", onClick = onMobileMenuClick }
             }
             { selectedMenu = model.selectedMenu
             , mobileMenuOpen = model.mobileMenuOpen
-            , profileOpen = False
+            , profileOpen = model.openedDropdown == profileDropdown
             }
         , viewHeader title
         ]

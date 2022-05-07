@@ -17,6 +17,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project exposing (Project)
+import Models.User exposing (User(..))
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
@@ -26,7 +27,9 @@ import Track
 
 viewProjects : Shared.Model -> Model -> List (Html Msg)
 viewProjects shared model =
-    appShell (\link -> SelectMenu link.text)
+    appShell Guest
+        (\link -> SelectMenu link.text)
+        DropdownToggle
         ToggleMobileMenu
         model
         [ text model.selectedMenu ]

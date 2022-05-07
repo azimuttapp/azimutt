@@ -1,5 +1,6 @@
 module Pages.Projects.New exposing (Model, Msg, page)
 
+import Components.Molecules.Dropdown as Dropdown
 import Conf exposing (SampleSchema)
 import Dict
 import Gen.Params.Projects.New exposing (Params)
@@ -88,6 +89,7 @@ init req =
       , sqlSourceUpload = Nothing
       , projectImport = Nothing
       , sampleSelection = Nothing
+      , openedDropdown = ""
       , toastIdx = 0
       , toasts = []
       , confirm = Nothing
@@ -114,7 +116,7 @@ setSelectedTab : Tab -> Model -> Model
 setSelectedTab tab model =
     case tab of
         Schema ->
-            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Nothing Nothing (\_ -> Noop)), projectImport = Nothing, sampleSelection = Nothing }
+            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Nothing Nothing (\_ -> Noop "select-tab-source-upload")), projectImport = Nothing, sampleSelection = Nothing }
 
         Import ->
             { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Just ProjectImport.init, sampleSelection = Nothing }
@@ -146,7 +148,7 @@ update req msg model =
             model |> mapSqlSourceUploadMCmd (SqlSourceUpload.update message SqlSourceUploadMsg)
 
         SqlSourceUploadDrop ->
-            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing (\_ -> Noop)), Cmd.none )
+            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing (\_ -> Noop "drop-source-upload")), Cmd.none )
 
         SqlSourceUploadCreate projectId source ->
             Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source
@@ -178,6 +180,9 @@ update req msg model =
         SampleSelectCreate project ->
             ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
+        DropdownToggle id ->
+            ( model |> Dropdown.update id, Cmd.none )
+
         ToastAdd millis toast ->
             model.toastIdx |> String.fromInt |> (\key -> ( model |> setToastIdx (model.toastIdx + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (ToastShow millis key) ))
 
@@ -205,7 +210,7 @@ update req msg model =
         JsMessage message ->
             model |> handleJsMessage message
 
-        Noop ->
+        Noop _ ->
             ( model, Cmd.none )
 
 
@@ -248,8 +253,11 @@ handleJsMessage msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Ports.onJsMessage JsMessage
+subscriptions model =
+    Sub.batch
+        ([ Ports.onJsMessage JsMessage ]
+            ++ Dropdown.subscriptions model DropdownToggle (Noop "dropdown already opened")
+        )
 
 
 

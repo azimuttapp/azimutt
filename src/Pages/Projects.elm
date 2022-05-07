@@ -1,6 +1,7 @@
 module Pages.Projects exposing (Model, Msg, page)
 
 import Browser.Navigation as Navigation
+import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict
 import Gen.Params.Projects exposing (Params)
@@ -50,6 +51,7 @@ init =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
       , projects = Loading
+      , openedDropdown = ""
       , confirm = Nothing
       , modalOpened = False
       }
@@ -83,6 +85,9 @@ update req msg model =
         DeleteProject project ->
             ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
 
+        DropdownToggle id ->
+            ( model |> Dropdown.update id, Cmd.none )
+
         ConfirmOpen confirm ->
             ( { model | confirm = Just confirm }, T.sendAfter 1 ModalOpen )
 
@@ -101,6 +106,9 @@ update req msg model =
         JsMessage message ->
             model |> handleJsMessage message
 
+        Noop _ ->
+            ( model, Cmd.none )
+
 
 handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
@@ -117,8 +125,11 @@ handleJsMessage msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Ports.onJsMessage JsMessage
+subscriptions model =
+    Sub.batch
+        ([ Ports.onJsMessage JsMessage ]
+            ++ Dropdown.subscriptions model DropdownToggle (Noop "dropdown already opened")
+        )
 
 
 
