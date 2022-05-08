@@ -1,12 +1,12 @@
 module PagesComponents.Projects.View exposing (viewProjects)
 
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
-import Gen.Route as Route
+import Gen.Route as Route exposing (Route)
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
@@ -17,7 +17,6 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project exposing (Project)
-import Models.User exposing (User(..))
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
@@ -25,12 +24,13 @@ import Time
 import Track
 
 
-viewProjects : Shared.Model -> Model -> List (Html Msg)
-viewProjects shared model =
-    appShell Guest
+viewProjects : Route -> Shared.Model -> Model -> List (Html Msg)
+viewProjects currentRoute shared model =
+    appShell shared.user
+        currentRoute
         (\link -> SelectMenu link.text)
         DropdownToggle
-        ToggleMobileMenu
+        Logout
         model
         [ text model.selectedMenu ]
         [ viewContent shared model ]
@@ -91,7 +91,7 @@ viewNoProjects =
 viewFirstProject : Html msg
 viewFirstProject =
     a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover [ "border-gray-400" ], focus [ "outline-none ring-2 ring-offset-2 ring-primary-500" ] ] ]
-        [ Icon.outline2x DocumentAdd "mx-auto"
+        [ Icon.outline2x Icon.DocumentAdd "mx-auto"
         , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
         ]
 
@@ -142,10 +142,10 @@ viewProjectCard zone project =
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
-                [ Icon.outline Trash "text-gray-400" ]
+                [ Icon.outline Icon.Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
             , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
-                [ Icon.outline ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
+                [ Icon.outline Icon.ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]
 
@@ -154,7 +154,7 @@ confirmDeleteProject : Project -> Msg
 confirmDeleteProject project =
     ConfirmOpen
         { color = Tw.red
-        , icon = Trash
+        , icon = Icon.Trash
         , title = "Delete project"
         , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
         , confirm = "Delete " ++ project.name
@@ -167,7 +167,7 @@ viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
         [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Tw.primary ] ]
-            [ Icon.outline2x DocumentAdd "mx-auto"
+            [ Icon.outline2x Icon.DocumentAdd "mx-auto"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]
         ]

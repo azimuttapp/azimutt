@@ -4,11 +4,13 @@ import Components.Atoms.Icon as Icon
 import Gen.Route as Route
 import Html exposing (Html, a, button, div, form, h2, img, input, label, p, span, text)
 import Html.Attributes exposing (action, alt, attribute, class, for, href, id, method, name, required, src, type_)
-import PagesComponents.Login.Models exposing (Model, Msg)
+import Html.Events exposing (onClick)
+import PagesComponents.Login.Models exposing (Model, Msg(..))
 
 
 viewLogin : Model -> List (Html Msg)
 viewLogin _ =
+    -- inspiration: https://app.supabase.io
     [ div [ class "min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8" ]
         [ div [ class "sm:mx-auto sm:w-full sm:max-w-md" ]
             [ a [ href (Route.toHref Route.Home_) ] [ img [ class "mx-auto h-12 w-auto", src "/logo.png", alt "Workflow" ] [] ]
@@ -66,7 +68,7 @@ viewLogin _ =
                                 ]
                             ]
                         , div []
-                            [ a [ href "#", class "w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" ]
+                            [ button [ onClick GithubLogin, class "w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" ]
                                 [ span [ class "sr-only" ] [ text "Sign in with GitHub" ]
                                 , Icon.github ""
                                 ]

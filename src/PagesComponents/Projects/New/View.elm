@@ -2,7 +2,7 @@ module PagesComponents.Projects.New.View exposing (viewNewProject)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
 import Components.Molecules.Divider as Divider
@@ -12,7 +12,7 @@ import Components.Molecules.Modal as Modal
 import Components.Molecules.Toast as Toast
 import Conf
 import Dict
-import Gen.Route as Route
+import Gen.Route as Route exposing (Route)
 import Html exposing (Html, a, aside, div, form, h2, input, li, nav, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
@@ -25,7 +25,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
 import Models.Project exposing (Project)
-import Models.User exposing (User(..))
+import Models.User exposing (User)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.ProjectImport as ProjectImport exposing (ProjectImport)
@@ -33,21 +33,22 @@ import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload)
 import Time
 
 
-viewNewProject : Time.Zone -> Model -> List (Html Msg)
-viewNewProject zone model =
-    appShell Guest
+viewNewProject : Time.Zone -> Maybe User -> Route -> Model -> List (Html Msg)
+viewNewProject zone user currentRoute model =
+    appShell user
+        currentRoute
         (\link -> SelectMenu link.text)
         DropdownToggle
-        ToggleMobileMenu
+        Logout
         model
-        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
+        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             zone
             model
             { tabs =
-                [ { tab = Schema, icon = DocumentText, content = [ text "From SQL schema" ] }
-                , { tab = Import, icon = FolderDownload, content = [ text "Import project", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
-                , { tab = Sample, icon = Gift, content = [ text "From sample" ] }
+                [ { tab = Schema, icon = Icon.DocumentText, content = [ text "From SQL schema" ] }
+                , { tab = Import, icon = Icon.FolderDownload, content = [ text "Import project", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = Sample, icon = Icon.Gift, content = [ text "From sample" ] }
                 ]
             }
         ]

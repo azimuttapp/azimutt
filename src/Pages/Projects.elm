@@ -24,7 +24,7 @@ page shared req =
     Page.element
         { init = init
         , update = update req
-        , view = view shared
+        , view = view shared req
         , subscriptions = subscriptions
         }
 
@@ -79,8 +79,8 @@ update req msg model =
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
 
-        ToggleMobileMenu ->
-            ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
+        Logout ->
+            ( model, Ports.logout )
 
         DeleteProject project ->
             ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
@@ -136,6 +136,6 @@ subscriptions model =
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
-    { title = title, body = model |> viewProjects shared }
+view : Shared.Model -> Request.With Params -> Model -> View Msg
+view shared req model =
+    { title = title, body = model |> viewProjects req.route shared }

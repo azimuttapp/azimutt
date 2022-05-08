@@ -1,8 +1,10 @@
 import {File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
 import {Color, ColumnId, Delta, Position, Project, ProjectId, Size, SourceId, TableId} from "./project";
+import {User} from "./user";
 
 export interface ElmFlags {
     now: Timestamp
+    user: User | null
 }
 
 export interface ElmInit {
@@ -27,7 +29,9 @@ export interface OutPort<T> {
 }
 
 export type JsMsg =
-    GotSizes
+    GotLogin
+    | GotLogout
+    | GotSizes
     | GotProjects
     | GotLocalFile
     | GotRemoteFile
@@ -47,6 +51,8 @@ export type JsMsg =
     | GotFitToScreen
     | GotResetCanvas
     | Error
+export type GotLogin = { kind: 'GotLogin', user: User }
+export type GotLogout = { kind: 'GotLogout' }
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, Project][] }
 export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
@@ -77,6 +83,8 @@ export type ElmMsg =
     | FullscreenMsg
     | SetMetaMsg
     | AutofocusWithinMsg
+    | LoginMsg
+    | LogoutMsg
     | LoadProjectsMsg
     | LoadRemoteProjectMsg
     | SaveProjectMsg
@@ -97,6 +105,8 @@ export type ScrollToMsg = { kind: 'ScrollTo', id: HtmlId, position: ViewPosition
 export type FullscreenMsg = { kind: 'Fullscreen', maybeId?: HtmlId }
 export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string, canonical?: string, html?: string, body?: string }
 export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
+export type LoginMsg = { kind: 'Login', redirect?: string }
+export type LogoutMsg = { kind: 'Logout' }
 export type LoadProjectsMsg = { kind: 'LoadProjects' }
 export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: FileUrl }
 export type SaveProjectMsg = { kind: 'SaveProject', project: Project }

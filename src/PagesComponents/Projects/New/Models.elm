@@ -47,7 +47,7 @@ type alias ConfirmDialog =
 
 type Msg
     = SelectMenu String
-    | ToggleMobileMenu
+    | Logout
     | ToggleCollapse HtmlId
     | SelectTab Tab
     | SqlSourceUploadMsg SqlSourceUploadMsg

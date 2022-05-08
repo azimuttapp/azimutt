@@ -13,6 +13,7 @@ import {Color, ColumnId, Delta, Position, Project, TableId} from "../types/proje
 import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import {Utils} from "../utils/utils";
+import {User} from "../types/user";
 
 type Callback<key> = (msg: ElmMsg & { kind: key }) => void
 
@@ -30,6 +31,8 @@ export class ElmApp {
         Fullscreen: [],
         SetMeta: [],
         AutofocusWithin: [],
+        Login: [],
+        Logout: [],
         LoadProjects: [],
         LoadRemoteProject: [],
         SaveProject: [],
@@ -67,6 +70,8 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
 
+    login = (user: User) => this.send({kind: 'GotLogin', user})
+    logout = () => this.send({kind: 'GotLogout'})
     updateSizes = (sizes: ElementSize[]) => this.send({kind: 'GotSizes', sizes})
     loadProjects = (projects: Project[]): void => this.send({
         kind: 'GotProjects',

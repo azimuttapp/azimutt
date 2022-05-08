@@ -1,6 +1,7 @@
 module Pages.Login exposing (Model, Msg, page)
 
 import Conf
+import Dict
 import Effect exposing (Effect)
 import Gen.Params.Login exposing (Params)
 import Page
@@ -13,9 +14,9 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page _ _ =
+page _ req =
     Page.advanced
-        { init = init
+        { init = init req
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -39,9 +40,9 @@ title =
     Conf.constants.defaultTitle
 
 
-init : ( Model, Effect Msg )
-init =
-    ( {}, Effect.none )
+init : Request.With Params -> ( Model, Effect Msg )
+init req =
+    ( { redirect = req.query |> Dict.get "redirect" }, Effect.none )
 
 
 
@@ -51,6 +52,9 @@ init =
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
+        GithubLogin ->
+            ( model, Effect.fromCmd (Ports.login model.redirect) )
+
         JsMessage _ ->
             ( model, Effect.none )
 

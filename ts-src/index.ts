@@ -20,10 +20,27 @@ import {InMemoryStorage} from "./storages/inmemory";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyphills";
 import {Utils} from "./utils/utils";
+import {User} from "./types/user";
+import {SupabaseUser} from "./types/window";
 
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
-const app = ElmApp.init({now: Date.now()}, logger)
+
+const {createClient} = window.supabase
+// FIXME: inject this values from conf
+const supabaseUrl = 'https://ywieybitcnbtklzsfxgd.supabase.co'
+const publicAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE'
+const _supabase = createClient(supabaseUrl, publicAnonKey) // https://github.com/supabase/gotrue-js/blob/master/src/GoTrueClient.ts#L357 update user
+
+// on redirect, session is in url but not yet stored
+_supabase.auth.getSessionFromUrl({storeSession: true}).then(res => {
+    const user = supabaseToAzimuttUser(res?.data?.user)
+    if (user) {
+        app.login(user)
+    }
+})
+
+const app = ElmApp.init({now: Date.now(), user: supabaseToAzimuttUser(_supabase.auth.user())}, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
 const errorTracking: Promise<ErrLogger> = env === 'prod' ? SentryErrLogger.init() : Promise.resolve(new LogErrLogger(logger))
@@ -56,6 +73,8 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
+app.on('Login', msg => login(msg.redirect))
+app.on('Logout', logout)
 app.on('LoadProjects', loadProjects)
 app.on('LoadRemoteProject', loadRemoteProject)
 app.on('SaveProject', msg => saveProject(msg, loadProjects))
@@ -167,6 +186,37 @@ const resizeObserver = new ResizeObserver(entries => {
 })
 function observeSizes(msg: ObserveSizesMsg) {
     msg.ids.flatMap(Utils.maybeElementById).forEach(elt => resizeObserver.observe(elt))
+}
+
+function login(redirect?: string) {
+    _supabase.auth.signIn({provider: 'github'}, redirect ? {redirectTo: `${window.location.origin}${redirect}`} : {})
+        .then(res => {
+            if (res.error) {
+                console.warn(`Can't login`, res.error)
+            } else {
+                const user = supabaseToAzimuttUser(res.user)
+                user ? app.login(user) : console.warn(`No user`)
+            }
+        })
+}
+function logout() {
+    _supabase.auth.signOut()
+        .then(res => res.error ? console.warn(`Can't logout`, res.error) : app.logout())
+}
+function supabaseToAzimuttUser(user: SupabaseUser): User | null {
+    if (user) {
+        return {
+            id: user.id, // uuid
+            username: user.user_metadata.user_name,
+            name: user.user_metadata.name,
+            email: user.email,
+            avatar: user.user_metadata.avatar_url,
+            role: user.role, // ex: authenticated
+            provider: user.app_metadata.provider // ex: github
+        }
+    } else {
+        return null
+    }
 }
 
 const hotkeys: {[key: string]: (Hotkey & {id: HotkeyId})[]} = {}

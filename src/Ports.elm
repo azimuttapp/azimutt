@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, listenHotkeys, loadProjects, loadRemoteProject, login, logout, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -24,6 +24,7 @@ import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
+import Models.User as User exposing (User)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
 
@@ -61,6 +62,16 @@ fullscreen maybeId =
 autofocusWithin : HtmlId -> Cmd msg
 autofocusWithin id =
     messageToJs (AutofocusWithin id)
+
+
+login : Maybe String -> Cmd msg
+login redirect =
+    messageToJs (Login redirect)
+
+
+logout : Cmd msg
+logout =
+    messageToJs Logout
 
 
 setMeta : MetaInfos -> Cmd msg
@@ -174,6 +185,8 @@ type ElmMsg
     | Fullscreen (Maybe HtmlId)
     | SetMeta MetaInfos
     | AutofocusWithin HtmlId
+    | Login (Maybe String)
+    | Logout
     | LoadProjects
     | LoadRemoteProject FileUrl
     | SaveProject Project
@@ -190,6 +203,8 @@ type ElmMsg
 
 type JsMsg
     = GotSizes (List SizeChange)
+    | GotLogin User
+    | GotLogout
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
@@ -263,6 +278,12 @@ elmEncoder elm =
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
+        Login redirect ->
+            Encode.object [ ( "kind", "Login" |> Encode.string ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
+
+        Logout ->
+            Encode.object [ ( "kind", "Logout" |> Encode.string ) ]
+
         LoadProjects ->
             Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
 
@@ -317,6 +338,12 @@ jsDecoder =
                                 |> Decode.list
                             )
                         )
+
+                "GotLogin" ->
+                    Decode.map GotLogin (Decode.field "user" User.decode)
+
+                "GotLogout" ->
+                    Decode.succeed GotLogout
 
                 "GotProjects" ->
                     Decode.map GotProjects (Decode.field "projects" projectsDecoder)

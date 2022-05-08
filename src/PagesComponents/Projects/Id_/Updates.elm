@@ -276,6 +276,12 @@ handleJsMessage currentProject currentLayout msg model =
         GotSizes sizes ->
             model |> updateSizes sizes
 
+        GotLogin _ ->
+            ( model, Cmd.none )
+
+        GotLogout ->
+            ( model, Cmd.none )
+
         GotProjects ( errors, projects ) ->
             let
                 project : Maybe Project

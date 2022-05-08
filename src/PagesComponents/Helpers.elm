@@ -1,20 +1,25 @@
 module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
 import Components.Slices.Newsletter as Newsletter
 import Conf
-import Gen.Route as Route
-import Html exposing (Html, div, footer, h1, header, main_, p, span, text)
-import Html.Attributes exposing (class)
+import Gen.Route as Route exposing (Route)
+import Html exposing (Html, button, div, footer, h1, header, img, main_, p, span, text)
+import Html.Attributes exposing (alt, class, height, id, src, type_, width)
+import Html.Events exposing (onClick)
 import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
+import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind exposing (lg, md, sm)
-import Models.User exposing (User(..))
+import Libs.Tailwind as Tw exposing (focus_ring_offset_600, lg, md, sm)
+import Models.User exposing (User)
+import Router
 
 
 publicHeader : Html msg
@@ -48,7 +53,8 @@ publicFooter =
 
 
 appShell :
-    User
+    Maybe User
+    -> Route
     -> (Link -> msg)
     -> (HtmlId -> msg)
     -> msg
@@ -57,7 +63,7 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell user onNavigationClick onProfileClick onMobileMenuClick model title content footer =
+appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -71,41 +77,30 @@ appShell user onNavigationClick onProfileClick onMobileMenuClick model title con
                 , onClick = onNavigationClick
                 }
             , search = Nothing
-            , notifications = Nothing
-            , profile =
-                case user of
-                    Guest ->
-                        Just
-                            { id = profileDropdown
-                            , avatar = "/assets/images/guest.png"
-                            , firstName = "Guest"
-                            , lastName = ""
-                            , email = ""
-                            , links =
-                                [ { url = Route.toHref Route.Login, text = "Log in" }
-                                , { url = Route.toHref Route.Login, text = "Sign in" }
-                                ]
-                            , onClick = onProfileClick "shell-profile"
-                            }
-
-                    Logged infos ->
-                        Just
-                            { id = profileDropdown
-                            , avatar = infos.avatar
-                            , firstName = infos.firstName
-                            , lastName = infos.lastName
-                            , email = infos.email
-                            , links =
-                                [ { url = "", text = "Your profile" }
-                                , { url = "", text = "Settings" }
-                                , { url = "", text = "Sign out" }
-                                ]
-                            , onClick = onProfileClick "shell-profile"
-                            }
-            , mobileMenu = { id = "mobile-menu", onClick = onMobileMenuClick }
+            , rightIcons =
+                [ Dropdown.dropdown { id = profileDropdown, direction = BottomLeft, isOpen = model.openedDropdown == profileDropdown }
+                    (\m ->
+                        button [ type_ "button", id m.id, onClick (onProfileClick profileDropdown), css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
+                            [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
+                            , img [ css [ "rounded-full h-8 w-8" ], src (maybeUser |> Maybe.mapOrElse .avatar "/assets/images/guest.png"), alt (maybeUser |> Maybe.mapOrElse .name "Guest"), width 32, height 32 ] []
+                            ]
+                    )
+                    (\_ ->
+                        div []
+                            (maybeUser
+                                |> Maybe.mapOrElse
+                                    (\_ ->
+                                        [ ContextMenu.link { url = "#", text = "Your profile" }
+                                        , ContextMenu.link { url = "#", text = "Settings" }
+                                        , ContextMenu.btn "" onLogout [ text "Log out" ]
+                                        ]
+                                    )
+                                    [ ContextMenu.link { url = Router.login currentRoute, text = "Log in" } ]
+                            )
+                    )
+                ]
             }
             { selectedMenu = model.selectedMenu
-            , mobileMenuOpen = model.mobileMenuOpen
             , profileOpen = model.openedDropdown == profileDropdown
             }
         , viewHeader title

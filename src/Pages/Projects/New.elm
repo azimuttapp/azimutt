@@ -30,7 +30,7 @@ page shared req =
     Page.element
         { init = init req
         , update = update req
-        , view = view shared
+        , view = view shared req
         , subscriptions = subscriptions
         }
 
@@ -135,8 +135,8 @@ update req msg model =
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
 
-        ToggleMobileMenu ->
-            ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
+        Logout ->
+            ( model, Ports.logout )
 
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
@@ -264,6 +264,6 @@ subscriptions model =
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
-    { title = title, body = model |> viewNewProject shared.zone }
+view : Shared.Model -> Request.With Params -> Model -> View Msg
+view shared req model =
+    { title = title, body = model |> viewNewProject shared.zone shared.user req.route }
