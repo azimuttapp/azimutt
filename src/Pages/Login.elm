@@ -55,9 +55,6 @@ update msg model =
         GithubLogin ->
             ( model, Effect.fromCmd (Ports.login model.redirect) )
 
-        JsMessage _ ->
-            ( model, Effect.none )
-
 
 
 -- SUBSCRIPTIONS
@@ -65,7 +62,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Ports.onJsMessage JsMessage
+    Sub.none
 
 
 
