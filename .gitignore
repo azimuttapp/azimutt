@@ -5,6 +5,6 @@
 /node_modules
 /public/dist
 /review/elm-stuff/
-/public/index.js
-/public/index.js.map
+/public/script.js
+/public/script.js.map
 /public/blog/drafts/
