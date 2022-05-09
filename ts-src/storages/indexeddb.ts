@@ -7,7 +7,7 @@ export class IndexedDBStorage implements StorageApi {
     static databaseVersion = 1
     static dbProjects = 'projects'
     static init(): Promise<IndexedDBStorage> {
-        return window.indexedDB ? new Promise((resolve, reject) => {
+        return window.indexedDB ? new Promise<IndexedDBStorage>((resolve, reject) => {
             const openRequest = window.indexedDB.open(IndexedDBStorage.databaseName, IndexedDBStorage.databaseVersion)
             openRequest.onerror = _ => reject('Unable to open indexedDB')
             openRequest.onsuccess = (event: any) => resolve(new IndexedDBStorage(event.target.result))
@@ -27,7 +27,7 @@ export class IndexedDBStorage implements StorageApi {
 
     loadProjects = (): Promise<Project[]> => {
         return this.openStore('readonly').then(store => {
-            return new Promise((resolve, reject) => {
+            return new Promise<Project[]>((resolve, reject) => {
                 let projects: Project[] = []
                 store.openCursor().onsuccess = (event: any) => {
                     const cursor = event.target.result
@@ -69,7 +69,7 @@ export class IndexedDBStorage implements StorageApi {
 }
 
 function reqToPromise<T>(req: IDBRequest<T>): Promise<T> {
-    return new Promise((resolve, reject) => {
+    return new Promise<T>((resolve, reject) => {
         req.onerror = _ => reject(req.error)
         req.onsuccess = _ => resolve(req.result)
     })
