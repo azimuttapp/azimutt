@@ -10,7 +10,7 @@ export class IndexedDBStorage implements StorageApi {
         return window.indexedDB ? new Promise((resolve, reject) => {
             const openRequest = window.indexedDB.open(IndexedDBStorage.databaseName, IndexedDBStorage.databaseVersion)
             openRequest.onerror = _ => reject('Unable to open indexedDB')
-            openRequest.onsuccess = (event: any) => resolve(event.target.result)
+            openRequest.onsuccess = (event: any) => resolve(new IndexedDBStorage(event.target.result))
             openRequest.onupgradeneeded = (event: any) => {
                 const db = event.target.result
                 if (!db.objectStoreNames.contains(IndexedDBStorage.dbProjects)) {
