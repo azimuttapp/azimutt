@@ -1,5 +1,6 @@
-import {loadScript} from "./utils";
-import {Sentry} from "./types/sentry";
+import {loadScript} from "../utils";
+import {Logger} from "./logger";
+import {Sentry} from "../types/window";
 
 export interface ErrLogger {
     trackError: (name: string, details: object) => void
@@ -18,6 +19,9 @@ export class SentryErrLogger implements ErrLogger {
     trackError = (name: string, details: object): void => this.sentry.captureException(new Error(JSON.stringify({name, ...details})))
 }
 
-export class ConsoleErrLogger implements ErrLogger {
-    trackError = (name: string, details: object): void => console.log('error.track', name, details)
+export class LogErrLogger implements ErrLogger {
+    constructor(private logger: Logger) {
+    }
+
+    trackError = (name: string, details: object): void => this.logger.debug('error.track', name, details)
 }

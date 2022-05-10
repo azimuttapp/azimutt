@@ -1,16 +1,17 @@
 import {Project} from "../types/project";
 import {StorageApi, StorageKind} from "./api";
 import {LocalStorageStorage} from "./localstorage";
+import {Logger} from "../services/logger";
 
 export class IndexedDBStorage implements StorageApi {
     static databaseName = 'azimutt'
     static databaseVersion = 1
     static dbProjects = 'projects'
-    static init(): Promise<IndexedDBStorage> {
+    static init(logger: Logger): Promise<IndexedDBStorage> {
         return window.indexedDB ? new Promise<IndexedDBStorage>((resolve, reject) => {
             const openRequest = window.indexedDB.open(IndexedDBStorage.databaseName, IndexedDBStorage.databaseVersion)
             openRequest.onerror = _ => reject('Unable to open indexedDB')
-            openRequest.onsuccess = (event: any) => resolve(new IndexedDBStorage(event.target.result))
+            openRequest.onsuccess = (event: any) => resolve(new IndexedDBStorage(event.target.result, logger))
             openRequest.onupgradeneeded = (event: any) => {
                 const db = event.target.result
                 if (!db.objectStoreNames.contains(IndexedDBStorage.dbProjects)) {
@@ -22,7 +23,7 @@ export class IndexedDBStorage implements StorageApi {
 
     public kind: StorageKind = 'indexedDb'
 
-    constructor(private db: IDBDatabase) {
+    constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
     loadProjects = (): Promise<Project[]> => {
@@ -35,7 +36,7 @@ export class IndexedDBStorage implements StorageApi {
                         projects.push(cursor.value)
                         cursor.continue()
                     } else {
-                        LocalStorageStorage.init().then(legacyStorage =>
+                        LocalStorageStorage.init(this.logger).then(legacyStorage =>
                             legacyStorage.loadProjects().then(localStorageProjects =>
                                 Promise.all(localStorageProjects.map(p => Promise.all([legacyStorage.dropProject(p), this.saveProject(p)])))
                                     .then(_ => resolve(projects.concat(localStorageProjects)))

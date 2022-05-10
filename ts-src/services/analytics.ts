@@ -1,4 +1,5 @@
-import {Splitbee} from "./types/splitbee";
+import {Logger} from "./logger";
+import {Splitbee} from "../types/window";
 
 export interface Analytics {
     trackPage: (name: string) => void
@@ -32,8 +33,11 @@ export class SplitbeeAnalytics implements Analytics {
     }
 }
 
-export class ConsoleAnalytics implements Analytics {
-    trackPage = (name: string): void => console.log('analytics.page', name)
-    trackEvent = (name: string, details: object): void => console.log('analytics.event', name, details)
-    trackError = (name: string, details: object): void => console.log('analytics.error', name, details)
+export class LogAnalytics implements Analytics {
+    constructor(private logger: Logger) {
+    }
+
+    trackPage = (name: string): void => this.logger.debug('analytics.page', name)
+    trackEvent = (name: string, details: object): void => this.logger.debug('analytics.event', name, details)
+    trackError = (name: string, details: object): void => this.logger.debug('analytics.error', name, details)
 }

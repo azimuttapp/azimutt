@@ -1,17 +1,18 @@
 import {Project} from "../types/project";
 import {StorageApi, StorageKind} from "./api";
+import {Logger} from "../services/logger";
 
 export class LocalStorageStorage implements StorageApi {
-    static init(): Promise<LocalStorageStorage> {
+    static init(logger: Logger): Promise<LocalStorageStorage> {
         return window.localStorage ?
-            Promise.resolve(new LocalStorageStorage(window.localStorage)) :
+            Promise.resolve(new LocalStorageStorage(window.localStorage, logger)) :
             Promise.reject('localStorage not available')
     }
 
     public kind: StorageKind = 'localStorage'
     private prefix = 'project-'
 
-    constructor(private storage: Storage) {
+    constructor(private storage: Storage, private logger: Logger) {
     }
 
     loadProjects = (): Promise<Project[]> => {
@@ -22,7 +23,7 @@ export class LocalStorageStorage implements StorageApi {
                 try {
                     return [JSON.parse(value)]
                 } catch (e) {
-                    console.warn(`Unable to parse ${key} project`)
+                    this.logger.warn(`Unable to parse ${key} project`)
                     return []
                 }
             })

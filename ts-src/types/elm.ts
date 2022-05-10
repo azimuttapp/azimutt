@@ -47,7 +47,7 @@ export type JsMsg =
     | GotFitToScreen
     | GotResetCanvas
     | Error
-export type GotSizes = { kind: 'GotSizes', sizes: { id: HtmlId, position: Position, size: Size, seeds: Position }[] }
+export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, Project][] }
 export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
 export type GotRemoteFile = { kind: 'GotRemoteFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, url: string, content: string, sample?: string }
@@ -67,7 +67,6 @@ export type GotColumnMove = { kind: 'GotColumnMove', ref: ColumnId, index: numbe
 export type GotFitToScreen = { kind: 'GotFitToScreen' }
 export type GotResetCanvas = { kind: 'GotResetCanvas' }
 export type Error = { kind: 'Error', message: string }
-
 
 export type ElmMsg =
     ClickMsg
@@ -113,6 +112,13 @@ export type TrackErrorMsg = { kind: 'TrackError', name: string, details: object 
 
 
 export type SampleKey = string
+
+export interface ElementSize {
+    id: HtmlId,
+    position: Position,
+    size: Size,
+    seeds: Position
+}
 
 export type HotkeyId = string
 

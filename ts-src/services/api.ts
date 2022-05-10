@@ -1,10 +1,11 @@
-import {AzimuttApi} from "./types/api";
-import {Color, ColumnId, Project, Relation, Table, TableId} from "./types/project";
-import {Px} from "./types/basics";
+import {Color, ColumnId, Project, Relation, Table, TableId} from "../types/project";
+import {Px} from "../types/basics";
 import {ElmApp} from "./elm";
+import {Logger} from "./logger";
 
-export class AzimuttApiImpl implements AzimuttApi {
+export class AzimuttApi {
     constructor(private app: ElmApp,
+                private logger: Logger,
                 public project: Project | undefined = undefined,
                 public projects: {[id: string]: Project} | undefined = undefined) {
     }
@@ -21,19 +22,19 @@ export class AzimuttApiImpl implements AzimuttApi {
         const tables: { [id: TableId]: Table } = this.getAllTables().reduce((acc, t) => ({...acc, [`${t.schema}.${t.table}`]: t}), {})
         return this.project?.layout.tables.map(t => tables[t.id]).filter(t => t !== undefined) as Table[]
     }
-    showTable = (id: TableId, left?: Px, top?: Px): void => this.app.send({kind: 'GotTableShow', id, position: typeof left === 'number' && typeof top === 'number' ? {left, top} : undefined})
-    hideTable = (id: TableId): void => this.app.send({kind: 'GotTableHide', id})
-    toggleTableColumns = (id: TableId): void => this.app.send({kind: 'GotTableToggleColumns', id})
-    moveTableTo = (id: TableId, left: Px, top: Px): void => this.app.send({kind: 'GotTablePosition', id, position: {left, top}})
-    moveTable = (id: TableId, dx: Px, dy: Px): void => this.app.send({kind: 'GotTableMove', id, delta: {dx, dy}})
-    selectTable = (id: TableId): void => this.app.send({kind: 'GotTableSelect', id})
-    setTableColor = (id: TableId, color: Color): void => this.app.send({kind: 'GotTableColor', id, color})
-    showColumn = (id: ColumnId): void => this.app.send({kind: 'GotColumnShow', ref: id})
-    hideColumn = (id: ColumnId): void => this.app.send({kind: 'GotColumnHide', ref: id})
-    moveColumn = (id: ColumnId, index: number): void => this.app.send({kind: 'GotColumnMove', ref: id, index})
-    fitToScreen = (): void => this.app.send({kind: 'GotFitToScreen'})
-    resetCanvas = (): void => this.app.send({kind: 'GotResetCanvas'})
-    help = (): void => console.info('Hi! Welcome in the hackable world! 💻️🤓\n' +
+    showTable = (id: TableId, left?: Px, top?: Px): void => this.app.showTable(id, typeof left === 'number' && typeof top === 'number' ? {left, top} : undefined)
+    hideTable = (id: TableId): void => this.app.hideTable(id)
+    toggleTableColumns = (id: TableId): void => this.app.toggleTableColumns(id)
+    moveTableTo = (id: TableId, left: Px, top: Px): void => this.app.setTablePosition(id, {left, top})
+    moveTable = (id: TableId, dx: Px, dy: Px): void => this.app.moveTable(id, {dx, dy})
+    selectTable = (id: TableId): void => this.app.selectTable(id)
+    setTableColor = (id: TableId, color: Color): void => this.app.setTableColor(id, color)
+    showColumn = (id: ColumnId): void => this.app.showColumn(id)
+    hideColumn = (id: ColumnId): void => this.app.hideColumn(id)
+    moveColumn = (id: ColumnId, index: number): void => this.app.moveColumn(id, index)
+    fitToScreen = (): void => this.app.fitToScreen()
+    resetCanvas = (): void => this.app.resetCanvas()
+    help = (): void => this.logger.info('Hi! Welcome in the hackable world! 💻️🤓\n' +
         'We are just trying out this, so if you use it and it\'s helpful, please let us know. Also, if you need more feature like this, don\'t hesitate to ask.\n\n' +
         'Here are a few tips:\n' +
         ' - `tableId` is the "schema.table" of a table, but if schema is "public", you can omit it. Basically, what you see in table header.\n' +

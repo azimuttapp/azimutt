@@ -12,3 +12,4 @@ export interface File {
 }
 export type ViewPosition = 'start' | 'end'
 export type ToastLevel = 'info' | 'success' | 'warning' | 'error'
+export type Env = 'dev' | 'staging' | 'prod'

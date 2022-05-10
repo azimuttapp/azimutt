@@ -1,25 +1,37 @@
 import {
-    AutofocusWithinMsg,
-    BlurMsg,
-    ClickMsg, DownloadFileMsg, DropProjectMsg,
-    FocusMsg,
-    FullscreenMsg, GetLocalFileMsg, GetRemoteFileMsg, Hotkey, HotkeyId, ListenKeysMsg,
+    DownloadFileMsg,
+    FullscreenMsg,
+    GetLocalFileMsg,
+    GetRemoteFileMsg,
+    Hotkey,
+    HotkeyId,
+    ListenKeysMsg,
     LoadRemoteProjectMsg,
-    MouseDownMsg, ObserveSizesMsg, SaveProjectMsg,
-    ScrollToMsg,
+    ObserveSizesMsg,
+    SaveProjectMsg,
     SetMetaMsg
 } from "./types/elm";
-import {ElmApp} from "./elm";
-import {AzimuttApiImpl} from "./api";
+import {ElmApp} from "./services/elm";
+import {AzimuttApi} from "./services/api";
 import {Project} from "./types/project";
-import {Analytics, ConsoleAnalytics, SplitbeeAnalytics} from "./analytics";
-import {ConsoleErrLogger, ErrLogger, SentryErrLogger} from "./errors";
+import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
+import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
 import {IndexedDBStorage} from "./storages/indexeddb";
 import {LocalStorageStorage} from "./storages/localstorage";
 import {InMemoryStorage} from "./storages/inmemory";
 import {HtmlId} from "./types/basics";
+import {getEnv} from "./utils";
+import {ConsoleLogger} from "./services/logger";
 
-console.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
+const env = getEnv()
+const logger = new ConsoleLogger(env)
+const app = ElmApp.init({now: Date.now()}, logger)
+const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
+const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
+const errorTracking: Promise<ErrLogger> = env === 'prod' ? SentryErrLogger.init() : Promise.resolve(new LogErrLogger(logger))
+const store = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
+store.then(s => logger.debug('store', s.kind))
+logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
     'Just look at `azimutt` variable and perform what you want.\n' +
@@ -27,67 +39,45 @@ console.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     '  `azimutt.project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`\n\n' +
     'Use `azimutt.help()` for more details!')
 
-const isDev = window.location.hostname === 'localhost'
-const isProd = window.location.hostname === 'azimutt.app'
-const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics: Promise<Analytics> = isProd && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new ConsoleAnalytics())
-const errorTracking: Promise<ErrLogger> = isProd ? SentryErrLogger.init() : Promise.resolve(new ConsoleErrLogger())
-const app = ElmApp.init({now: Date.now()})
-
-window.azimutt = new AzimuttApiImpl(app)
+window.azimutt = new AzimuttApi(app, logger)
 
 /* PWA service worker */
 
-if ('serviceWorker' in navigator && isProd) {
+if ('serviceWorker' in navigator && env === 'prod') {
     navigator.serviceWorker.register("/service-worker.js")
-    // .then(reg => console.log('service-worker registered!', reg))
-    // .catch(err => console.log('service-worker failed to register!', err))
+        // .then(reg => logger.debug('service-worker registered!', reg))
+        // .catch(err => logger.debug('service-worker failed to register!', err))
 }
 
 /* Elm ports */
 
-app.subscribe(msg => {
-    // console.log('elm message', msg)
-    switch (msg.kind) {
-        case 'Click':             click(msg); break;
-        case 'MouseDown':         mousedown(msg); break;
-        case 'Focus':             focus(msg); break;
-        case 'Blur':              blur(msg); break;
-        case 'ScrollTo':          scrollTo(msg); break;
-        case 'Fullscreen':        fullscreen(msg); break;
-        case 'SetMeta':           setMeta(msg); break;
-        case 'AutofocusWithin':   autofocusWithin(msg); break;
-        case 'LoadProjects':      loadProjects(); break;
-        case 'LoadRemoteProject': loadRemoteProject(msg); break;
-        case 'SaveProject':       saveProject(msg, loadProjects); break;
-        case 'DownloadFile':      downloadFile(msg); break;
-        case 'DropProject':       dropProject(msg); break;
-        case 'GetLocalFile':      getLocalFile(msg); break;
-        case 'GetRemoteFile':     getRemoteFile(msg); break;
-        case 'ObserveSizes':      observeSizes(msg); break;
-        case 'ListenKeys':        listenHotkeys(msg); break;
-        case 'TrackPage':         analytics.then(a => a.trackPage(msg.name)); break;
-        case 'TrackEvent':        analytics.then(a => a.trackEvent(msg.name, msg.details)); break;
-        case 'TrackError':        analytics.then(a => a.trackError(msg.name, msg.details)); errorTracking.then(e => e.trackError(msg.name, msg.details)); break;
-        default: console.error('Unsupported Elm message', msg); break;
-    }
+app.on('Click', msg => getElementById(msg.id).click())
+app.on('MouseDown', msg => getElementById(msg.id).dispatchEvent(new Event('mousedown')))
+app.on('Focus', msg => getElementById(msg.id).focus())
+app.on('Blur', msg => getElementById(msg.id).blur())
+app.on('ScrollTo', msg => maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== 'end')))
+app.on('Fullscreen', fullscreen)
+app.on('SetMeta', setMeta)
+app.on('AutofocusWithin', msg => (getElementById(msg.id).querySelector('[autofocus]') as HTMLElement | null)?.focus())
+app.on('LoadProjects', loadProjects)
+app.on('LoadRemoteProject', loadRemoteProject)
+app.on('SaveProject', msg => saveProject(msg, loadProjects))
+app.on('DownloadFile', downloadFile)
+app.on('DropProject', msg => store.then(s => s.dropProject(msg.project)).then(_ => loadProjects()))
+app.on('GetLocalFile', getLocalFile)
+app.on('GetRemoteFile', getRemoteFile)
+app.on('ObserveSizes', observeSizes)
+app.on('ListenKeys', listenHotkeys)
+app.on('TrackPage', msg => analytics.then(a => a.trackPage(msg.name)))
+app.on('TrackEvent', msg => analytics.then(a => a.trackEvent(msg.name, msg.details)))
+app.on('TrackError', msg => {
+    analytics.then(a => a.trackError(msg.name, msg.details))
+    errorTracking.then(e => e.trackError(msg.name, msg.details))
 })
+if(app.noListeners().length > 0) {
+    logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
+}
 
-function click(msg: ClickMsg) {
-    getElementById(msg.id).click()
-}
-function mousedown(msg: MouseDownMsg) {
-    getElementById(msg.id).dispatchEvent(new Event('mousedown'))
-}
-function focus(msg: FocusMsg) {
-    getElementById(msg.id).focus()
-}
-function blur(msg: BlurMsg) {
-    getElementById(msg.id).blur()
-}
-function scrollTo(msg: ScrollToMsg) {
-    maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== 'end'))
-}
 function fullscreen(msg: FullscreenMsg) {
     const element = msg.maybeId ? getElementById(msg.maybeId) : document.body
     const result = element.requestFullscreen ? element.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available'))
@@ -113,81 +103,56 @@ function setMeta(meta: SetMetaMsg) {
     if (typeof meta.html === 'string') { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
     if (typeof meta.body === 'string') { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
 }
-function autofocusWithin(msg: AutofocusWithinMsg) {
-    (getElementById(msg.id).querySelector('[autofocus]') as HTMLElement | null)?.focus()
-}
 
 function loadRemoteProject(msg: LoadRemoteProjectMsg) {
     fetch(msg.projectUrl)
         .then(res => res.json())
-        .then((project: Project) => app.send({kind: 'GotProjects', projects: [[project.id, project]]}))
+        .then((project: Project) => app.loadProjects([project]))
         .catch(err => {
-            app.send({kind: 'GotProjects', projects: []})
-            app.send({kind: 'GotToast', level: 'error', message: `Can't load remote project: ${err}`})
+            app.loadProjects([])
+            app.toast('error', `Can't load remote project: ${err}`)
         })
 }
 
-const store = IndexedDBStorage.init().catch(() => LocalStorageStorage.init()).catch(() => new InMemoryStorage())
-
 function loadProjects() {
     store.then(s => s.loadProjects()).then((projects: Project[]) => {
-        app.send({kind: 'GotProjects', projects: projects.map(p => [p.id, p])})
+        app.loadProjects(projects)
         window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
         const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
         id ? window.azimutt.project = window.azimutt.projects[id] : undefined
     })
 }
 function saveProject(msg: SaveProjectMsg, callback: () => void) {
-    store.then(s => s.saveProject(msg.project)).then(_ => {
-        callback()
-    }).catch(e => {
-        let message
-        if(typeof e === 'string') {
-            message = e
-        } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-            message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
-        } else {
-            message = 'Unknown localStorage error: ' + e.message
-        }
-        app.send({kind: 'GotToast', level: 'error', message})
-        const name = 'local-storage'
-        const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
-        analytics.then(a => a.trackError(name, details))
-        errorTracking.then(e => e.trackError(name, details))
-    })
-}
-function dropProject(msg: DropProjectMsg) {
-    store.then(s => s.dropProject(msg.project)).then(_ => {
-        loadProjects()
-    })
+    store.then(s => s.saveProject(msg.project))
+        .then(_ => callback())
+        .catch(e => {
+            let message
+            if (typeof e === 'string') {
+                message = e
+            } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
+                message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
+            } else {
+                message = 'Unknown localStorage error: ' + e.message
+            }
+            app.toast('error', message)
+            const name = 'local-storage'
+            const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
+            analytics.then(a => a.trackError(name, details))
+            errorTracking.then(e => e.trackError(name, details))
+        })
 }
 
 function getLocalFile(msg: GetLocalFileMsg) {
     const reader = new FileReader()
-    reader.onload = (e: any) => app.send({
-        kind: 'GotLocalFile',
-        now: Date.now(),
-        projectId: msg.project || randomUID(),
-        sourceId: msg.source || randomUID(),
-        file: msg.file,
-        content: e.target.result
-    })
+    reader.onload = (e: any) => app.gotLocalFile(msg, e.target.result)
     reader.readAsText(msg.file as any)
 }
 
 function getRemoteFile(msg: GetRemoteFileMsg) {
     fetch(msg.url)
         .then(res => res.text())
-        .then(content => app.send({
-            kind: 'GotRemoteFile',
-            now: Date.now(),
-            projectId: msg.project || randomUID(),
-            sourceId: msg.source || randomUID(),
-            url: msg.url,
-            content,
-            sample: msg.sample
-        }))
-        .catch(err => app.send({kind: 'GotToast', level: 'error', message: `Can't get remote file ${msg.url}: ${err}`}))
+        .then(content => app.gotRemoteFile(msg, content))
+        .catch(err => app.toast('error', `Can't get remote file ${msg.url}: ${err}`))
 }
 
 const resizeObserver = new ResizeObserver(entries => {
@@ -206,7 +171,7 @@ const resizeObserver = new ResizeObserver(entries => {
             top: Math.random()
         }
     }))
-    app.send({kind: 'GotSizes', sizes: sizes})
+    app.updateSizes(sizes)
 })
 function observeSizes(msg: ObserveSizesMsg) {
     msg.ids.flatMap(maybeElementById).forEach(elt => resizeObserver.observe(elt))
@@ -230,7 +195,7 @@ function keydownHotkey(e: KeyboardEvent) {
     })
     matches.map(hotkey => {
         if (hotkey.preventDefault) { e.preventDefault() }
-        app.send({kind: 'GotHotkey', id: hotkey.id})
+        app.gotHotkey(hotkey)
     })
     if(matches.length === 0 && e.key === "Escape" && isInput(target)) { target.blur() }
 }
@@ -252,7 +217,7 @@ const holdKeyState = {drag: false}
 function keydownHoldKey(e: KeyboardEvent) {
     if (e.code === 'Space') {
         if (!holdKeyState.drag && (e.target as Element).localName !== 'input') {
-            app.send({kind: 'GotKeyHold', key: e.code, start: true})
+            app.gotKeyHold(e.code, true)
         }
         holdKeyState.drag = true
     }
@@ -260,7 +225,7 @@ function keydownHoldKey(e: KeyboardEvent) {
 function keyupHoldKey(e: KeyboardEvent) {
     if (e.code === 'Space') {
         if (holdKeyState.drag) {
-            app.send({kind: 'GotKeyHold', key: e.code, start: false})
+            app.gotKeyHold(e.code, false)
         }
         holdKeyState.drag = false
     }
@@ -332,10 +297,6 @@ function findParent(elt: HTMLElement, predicate: (e: HTMLElement) => boolean): H
     } else {
         return undefined
     }
-}
-
-function randomUID() {
-    return window.uuidv4()
 }
 
 function downloadFile(msg: DownloadFileMsg) {
