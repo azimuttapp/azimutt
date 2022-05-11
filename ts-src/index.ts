@@ -1,6 +1,4 @@
 import {
-    DownloadFileMsg,
-    FullscreenMsg,
     GetLocalFileMsg,
     GetRemoteFileMsg,
     Hotkey,
@@ -19,18 +17,17 @@ import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
 import {IndexedDBStorage} from "./storages/indexeddb";
 import {LocalStorageStorage} from "./storages/localstorage";
 import {InMemoryStorage} from "./storages/inmemory";
-import {HtmlId} from "./types/basics";
-import {getEnv} from "./utils";
 import {ConsoleLogger} from "./services/logger";
+import {loadPolyfills} from "./utils/polyphills";
+import {Utils} from "./utils/utils";
 
-const env = getEnv()
+const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
 const app = ElmApp.init({now: Date.now()}, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
 const errorTracking: Promise<ErrLogger> = env === 'prod' ? SentryErrLogger.init() : Promise.resolve(new LogErrLogger(logger))
 const store = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
-store.then(s => logger.debug('store', s.kind))
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -51,18 +48,18 @@ if ('serviceWorker' in navigator && env === 'prod') {
 
 /* Elm ports */
 
-app.on('Click', msg => getElementById(msg.id).click())
-app.on('MouseDown', msg => getElementById(msg.id).dispatchEvent(new Event('mousedown')))
-app.on('Focus', msg => getElementById(msg.id).focus())
-app.on('Blur', msg => getElementById(msg.id).blur())
-app.on('ScrollTo', msg => maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== 'end')))
-app.on('Fullscreen', fullscreen)
+app.on('Click', msg => Utils.getElementById(msg.id).click())
+app.on('MouseDown', msg => Utils.getElementById(msg.id).dispatchEvent(new Event('mousedown')))
+app.on('Focus', msg => Utils.getElementById(msg.id).focus())
+app.on('Blur', msg => Utils.getElementById(msg.id).blur())
+app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== 'end')))
+app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
-app.on('AutofocusWithin', msg => (getElementById(msg.id).querySelector('[autofocus]') as HTMLElement | null)?.focus())
+app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
 app.on('LoadProjects', loadProjects)
 app.on('LoadRemoteProject', loadRemoteProject)
 app.on('SaveProject', msg => saveProject(msg, loadProjects))
-app.on('DownloadFile', downloadFile)
+app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('DropProject', msg => store.then(s => s.dropProject(msg.project)).then(_ => loadProjects()))
 app.on('GetLocalFile', getLocalFile)
 app.on('GetRemoteFile', getRemoteFile)
@@ -78,11 +75,6 @@ if(app.noListeners().length > 0) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
 
-function fullscreen(msg: FullscreenMsg) {
-    const element = msg.maybeId ? getElementById(msg.maybeId) : document.body
-    const result = element.requestFullscreen ? element.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available'))
-    result.catch(_ => window.open(window.location.href, '_blank')?.focus()) // if full-screen is denied, open in a new tab
-}
 function setMeta(meta: SetMetaMsg) {
     if (typeof meta.title === 'string') {
         document.title = meta.title
@@ -174,7 +166,7 @@ const resizeObserver = new ResizeObserver(entries => {
     app.updateSizes(sizes)
 })
 function observeSizes(msg: ObserveSizesMsg) {
-    msg.ids.flatMap(maybeElementById).forEach(elt => resizeObserver.observe(elt))
+    msg.ids.flatMap(Utils.maybeElementById).forEach(elt => resizeObserver.observe(elt))
 }
 
 const hotkeys: {[key: string]: (Hotkey & {id: HotkeyId})[]} = {}
@@ -235,7 +227,7 @@ function keyupHoldKey(e: KeyboardEvent) {
 // listen at every click to handle tracking events
 function trackClick(e: MouseEvent) {
     const target = e.target as HTMLElement
-    const tracked = findParent(target, e => !!e.getAttribute('data-track-event'))
+    const tracked = Utils.findParent(target, e => !!e.getAttribute('data-track-event'))
     if (tracked) {
         const eventName = tracked.getAttribute('data-track-event') || ''
         const details: { [key: string]: string } = {label: (tracked.textContent || '').trim()}
@@ -262,80 +254,4 @@ document.addEventListener('keyup', (e: KeyboardEvent) => {
     keyupHoldKey(e)
 })
 
-
-/* Libs */
-
-function getElementById(id: HtmlId): HTMLElement {
-    const elem = document.getElementById(id)
-    if (elem) {
-        return elem
-    } else {
-        throw new Error(`Can't find element with id '${id}'`)
-    }
-}
-
-function maybeElementById(id: HtmlId): HTMLElement[] {
-    const elem = document.getElementById(id)
-    return elem ? [elem] : []
-}
-
-function getParents(elt: HTMLElement): HTMLElement[] {
-    const parents = [elt]
-    let parent = elt.parentElement
-    while (parent) {
-        parents.push(parent)
-        parent = parent.parentElement
-    }
-    return parents
-}
-
-function findParent(elt: HTMLElement, predicate: (e: HTMLElement) => boolean): HTMLElement | undefined {
-    if (predicate(elt)) {
-        return elt
-    } else if (elt.parentElement) {
-        return findParent(elt.parentElement, predicate)
-    } else {
-        return undefined
-    }
-}
-
-function downloadFile(msg: DownloadFileMsg) {
-    const element = document.createElement('a')
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(msg.content))
-    element.setAttribute('download', msg.filename)
-
-    element.style.display = 'none'
-    document.body.appendChild(element)
-
-    element.click()
-
-    document.body.removeChild(element)
-}
-
-/* polyfills */
-
-// https://developer.mozilla.org/fr/docs/Web/JavaScript/Reference/Global_Objects/String/includes
-if (!String.prototype.includes) {
-    String.prototype.includes = function(search: string | RegExp, start) {
-        if (search instanceof RegExp) {
-            throw TypeError('first argument must not be a RegExp')
-        }
-        if (start === undefined) { start = 0 }
-        return this.indexOf(search, start) !== -1
-    }
-}
-
-// empower Elm for time measurements (inspired from https://ellie-app.com/g7kpM8n9Z6Ka1)
-const consoleLog = console.log
-console.log = (...args) => {
-    const msg = args[0]
-    if (typeof msg === 'string' && msg.startsWith('[elm-time')) {
-        if (msg.startsWith('[elm-time-end]')) {
-            console.timeEnd(msg.slice(15, -4))
-        } else {
-            console.time(msg.slice(11, -4))
-        }
-    } else {
-        consoleLog(...args)
-    }
-}
+loadPolyfills()

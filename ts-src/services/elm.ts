@@ -11,8 +11,8 @@ import {
 } from "../types/elm";
 import {Color, ColumnId, Delta, Position, Project, TableId} from "../types/project";
 import {ToastLevel} from "../types/basics";
-import {randomUID} from "../utils";
 import {Logger} from "./logger";
+import {Utils} from "../utils/utils";
 
 type Callback<key> = (msg: ElmMsg & { kind: key }) => void
 
@@ -75,16 +75,16 @@ export class ElmApp {
     gotLocalFile = (msg: GetLocalFileMsg, content: string) => this.send({
         kind: 'GotLocalFile',
         now: Date.now(),
-        projectId: msg.project || randomUID(),
-        sourceId: msg.source || randomUID(),
+        projectId: msg.project || Utils.randomUID(),
+        sourceId: msg.source || Utils.randomUID(),
         file: msg.file,
         content
     })
     gotRemoteFile = (msg: GetRemoteFileMsg, content: string) => this.send({
         kind: 'GotRemoteFile',
         now: Date.now(),
-        projectId: msg.project || randomUID(),
-        sourceId: msg.source || randomUID(),
+        projectId: msg.project || Utils.randomUID(),
+        sourceId: msg.source || Utils.randomUID(),
         url: msg.url,
         content,
         sample: msg.sample

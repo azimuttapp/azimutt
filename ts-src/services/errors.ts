@@ -1,6 +1,6 @@
-import {loadScript} from "../utils";
 import {Logger} from "./logger";
 import {Sentry} from "../types/window";
+import {Utils} from "../utils/utils";
 
 export interface ErrLogger {
     trackError: (name: string, details: object) => void
@@ -10,7 +10,7 @@ export class SentryErrLogger implements ErrLogger {
     static init(): Promise<SentryErrLogger> {
         // see https://sentry.io
         // initial: https://js.sentry-cdn.com/268b122ecafb4f20b6316b87246e509c.min.js
-        return loadScript('/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js').then(() => new SentryErrLogger(window.Sentry))
+        return Utils.loadScript('/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js').then(() => new SentryErrLogger(window.Sentry))
     }
 
     constructor(private sentry: Sentry) {
