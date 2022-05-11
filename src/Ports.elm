@@ -324,7 +324,7 @@ jsDecoder =
                 "GotLocalFile" ->
                     Decode.map5 GotLocalFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "projectId" Decode.string)
+                        (Decode.field "projectId" ProjectId.decode)
                         (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
@@ -332,7 +332,7 @@ jsDecoder =
                 "GotRemoteFile" ->
                     Decode.map6 GotRemoteFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "projectId" Decode.string)
+                        (Decode.field "projectId" ProjectId.decode)
                         (Decode.field "sourceId" SourceId.decode)
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
