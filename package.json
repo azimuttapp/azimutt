@@ -32,6 +32,9 @@
     "dev:book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js",
     "upgrade": "npx npm-check-updates -u"
   },
+  "dependencies": {
+    "@supabase/supabase-js": "^1.35.3"
+  },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.0",
     "@tailwindcss/typography": "^0.5.2",
