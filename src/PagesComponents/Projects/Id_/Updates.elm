@@ -56,7 +56,14 @@ update currentProject currentLayout now msg model =
 
         SaveProject ->
             if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+
+            else
+                ( model, Cmd.none )
+
+        MoveProjectTo storage ->
+            if model.conf.save then
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.moveProjectTo p storage ]) [ T.send (toastWarning "No project to move") ]) )
 
             else
                 ( model, Cmd.none )

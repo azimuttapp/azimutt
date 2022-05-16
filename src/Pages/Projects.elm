@@ -128,7 +128,7 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
         ([ Ports.onJsMessage JsMessage ]
-            ++ Dropdown.subscriptions model DropdownToggle (Noop "dropdown already opened")
+            ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
         )
 
 

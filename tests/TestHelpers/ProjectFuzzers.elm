@@ -30,6 +30,7 @@ import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings)
+import Models.Project.ProjectStorage as ProjectStrorage exposing (ProjectStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.SampleKey exposing (SampleKey)
@@ -50,7 +51,7 @@ import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModifi
 
 project : Fuzzer Project
 project =
-    F.map10 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings posix posix
+    F.map11 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings projectStorage posix posix
 
 
 source : Fuzzer Source
@@ -161,6 +162,19 @@ findPathSettings =
 findHiddenColumns : Fuzzer HiddenColumns
 findHiddenColumns =
     Fuzz.map3 HiddenColumns stringSmall Fuzz.bool Fuzz.bool
+
+
+projectStorage : Fuzzer ProjectStorage
+projectStorage =
+    Fuzz.map
+        (\b ->
+            if b then
+                ProjectStrorage.Browser
+
+            else
+                ProjectStrorage.Cloud
+        )
+        Fuzz.bool
 
 
 projectId : Fuzzer ProjectId

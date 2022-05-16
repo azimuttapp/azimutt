@@ -1,5 +1,5 @@
 import {File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
-import {Color, ColumnId, Delta, Position, Project, ProjectId, Size, SourceId, TableId} from "./project";
+import {Color, ColumnId, Delta, Position, Project, ProjectId, Size, SourceId, Storage, TableId} from "./project";
 import {User} from "./user";
 
 export interface ElmFlags {
@@ -88,6 +88,7 @@ export type ElmMsg =
     | LoadProjectsMsg
     | LoadRemoteProjectMsg
     | SaveProjectMsg
+    | MoveProjectToMsg
     | DownloadFileMsg
     | DropProjectMsg
     | GetLocalFileMsg
@@ -110,6 +111,7 @@ export type LogoutMsg = { kind: 'Logout' }
 export type LoadProjectsMsg = { kind: 'LoadProjects' }
 export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: FileUrl }
 export type SaveProjectMsg = { kind: 'SaveProject', project: Project }
+export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: Storage }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
 export type DropProjectMsg = { kind: 'DropProject', project: Project }
 export type GetLocalFileMsg = { kind: 'GetLocalFile', project?: ProjectId, source?: SourceId, file: File }

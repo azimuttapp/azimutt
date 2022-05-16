@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, listenHotkeys, loadProjects, loadRemoteProject, login, logout, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, listenHotkeys, loadProjects, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -20,6 +20,7 @@ import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
+import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -92,6 +93,11 @@ loadRemoteProject projectUrl =
 saveProject : Project -> Cmd msg
 saveProject project =
     messageToJs (SaveProject project)
+
+
+moveProjectTo : Project -> ProjectStorage -> Cmd msg
+moveProjectTo project storage =
+    messageToJs (MoveProjectTo project storage)
 
 
 downloadFile : FileName -> FileContent -> Cmd msg
@@ -190,6 +196,7 @@ type ElmMsg
     | LoadProjects
     | LoadRemoteProject FileUrl
     | SaveProject Project
+    | MoveProjectTo Project ProjectStorage
     | DownloadFile FileName FileContent
     | DropProject Project
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
@@ -292,6 +299,9 @@ elmEncoder elm =
 
         SaveProject project ->
             Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        MoveProjectTo project storage ->
+            Encode.object [ ( "kind", "MoveProjectTo" |> Encode.string ), ( "project", project |> Project.encode ), ( "storage", storage |> ProjectStorage.encode ) ]
 
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]

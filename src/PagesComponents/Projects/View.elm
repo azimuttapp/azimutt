@@ -10,6 +10,7 @@ import Gen.Route as Route exposing (Route)
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
+import Libs.Bool as Bool
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
@@ -17,6 +18,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project exposing (Project)
+import Models.Project.ProjectStorage exposing (ProjectStorage(..))
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Shared exposing (StoredProjects(..))
@@ -134,7 +136,7 @@ viewProjectCard : Time.Zone -> Project -> Html Msg
 viewProjectCard zone project =
     li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
-            [ h3 [ css [ "text-lg font-medium" ] ] [ text project.name ]
+            [ h3 [ css [ "text-lg font-medium flex" ] ] [ Icon.outline (Bool.cond (project.storage == Cloud) Icon.Cloud Icon.Folder) "mr-1", text project.name ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
                 [ li [] [ text ((project.tables |> String.pluralizeD "table") ++ ", " ++ (project.layouts |> String.pluralizeD "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]

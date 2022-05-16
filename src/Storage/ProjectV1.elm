@@ -27,6 +27,7 @@ import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectSettings as ProjectSettings
+import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
@@ -280,6 +281,7 @@ upgrade project =
     , usedLayout = project.currentLayout
     , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)
     , settings = ProjectSettings.init |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
+    , storage = ProjectStorage.Browser
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }

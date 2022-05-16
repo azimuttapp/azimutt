@@ -10,6 +10,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
+import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
@@ -41,6 +42,7 @@ type alias Erd =
     , layouts : Dict LayoutName Layout
     , sources : List Source
     , settings : ProjectSettings
+    , storage : ProjectStorage
     , otherProjects : List ProjectInfo
     }
 
@@ -68,6 +70,7 @@ create seed allProjects project =
     , layouts = project.layouts
     , sources = project.sources
     , settings = project.settings
+    , storage = project.storage
     , otherProjects = allProjects |> List.filter (\p -> p.id /= project.id) |> List.map ProjectInfo.create |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
     }
         |> computeSchema
@@ -89,6 +92,7 @@ unpack erd =
     , usedLayout = erd.usedLayout
     , layouts = erd.layouts
     , settings = erd.settings
+    , storage = erd.storage
     , createdAt = erd.project.createdAt
     , updatedAt = erd.project.updatedAt
     }

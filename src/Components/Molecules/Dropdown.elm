@@ -1,4 +1,4 @@
-module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, dropdown, initDocState, subscriptions, update)
+module Components.Molecules.Dropdown exposing (DocState, Model, SharedDocState, doc, dropdown, initDocState, subs, update)
 
 import Browser.Events
 import Components.Atoms.Button as Button
@@ -36,8 +36,8 @@ update id model =
     model |> mapOpenedDropdown (\d -> B.cond (d == id) "" id)
 
 
-subscriptions : { x | openedDropdown : HtmlId } -> (HtmlId -> msg) -> msg -> List (Sub msg)
-subscriptions model toggle noop =
+subs : { x | openedDropdown : HtmlId } -> (HtmlId -> msg) -> msg -> List (Sub msg)
+subs model toggle noop =
     if model.openedDropdown == "" then
         []
 

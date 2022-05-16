@@ -36,6 +36,7 @@ export class ElmApp {
         LoadProjects: [],
         LoadRemoteProject: [],
         SaveProject: [],
+        MoveProjectTo: [],
         DownloadFile: [],
         DropProject: [],
         GetLocalFile: [],

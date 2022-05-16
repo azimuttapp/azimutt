@@ -5,6 +5,7 @@ import {
     HotkeyId,
     ListenKeysMsg,
     LoadRemoteProjectMsg,
+    MoveProjectToMsg,
     ObserveSizesMsg,
     SaveProjectMsg,
     SetMetaMsg
@@ -30,7 +31,7 @@ const initializer = SupabaseInitializer.init({
     supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE'
 })
 const app = ElmApp.init({now: Date.now(), user: initializer.getLoggedUser()}, logger)
-const supabase = initializer.init(app)
+const supabase = initializer.init(app, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
 const errorTracking: Promise<ErrLogger> = env === 'prod' ? SentryErrLogger.init() : Promise.resolve(new LogErrLogger(logger))
@@ -68,8 +69,9 @@ app.on('Logout', supabase.logout)
 app.on('LoadProjects', loadProjects)
 app.on('LoadRemoteProject', loadRemoteProject)
 app.on('SaveProject', msg => saveProject(msg, loadProjects))
+app.on('MoveProjectTo', moveProjectTo)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
-app.on('DropProject', msg => store.then(s => s.dropProject(msg.project)).then(_ => loadProjects()))
+app.on('DropProject', msg => (msg.project.storage === 'cloud' ? supabase.dropProject(msg.project) : store.then(s => s.dropProject(msg.project))).then(_ => loadProjects()))
 app.on('GetLocalFile', getLocalFile)
 app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
@@ -116,7 +118,9 @@ function loadRemoteProject(msg: LoadRemoteProjectMsg) {
 }
 
 function loadProjects() {
-    store.then(s => s.loadProjects()).then((projects: Project[]) => {
+    // FIXME: load projects in several steps (local are faster than remote)
+    Promise.all([store.then(s => s.loadProjects()), supabase.loadProjects()]).then((allProjects: Project[][]) => {
+        const projects = allProjects.flat()
         app.loadProjects(projects)
         window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
         const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
@@ -124,7 +128,9 @@ function loadProjects() {
     })
 }
 function saveProject(msg: SaveProjectMsg, callback: () => void) {
-    store.then(s => s.saveProject(msg.project))
+    const storing = msg.project.storage === 'cloud' ? supabase.saveProject(msg.project) : store.then(s => s.saveProject(msg.project))
+    storing
+        .then(_ => app.toast('success', 'Project saved'))
         .then(_ => callback())
         .catch(e => {
             let message
@@ -141,6 +147,24 @@ function saveProject(msg: SaveProjectMsg, callback: () => void) {
             analytics.then(a => a.trackError(name, details))
             errorTracking.then(e => e.trackError(name, details))
         })
+}
+async function moveProjectTo(msg: MoveProjectToMsg): Promise<void> {
+    if (msg.project.storage === 'cloud') {
+        if (msg.storage === 'browser') {
+            msg.project.storage = msg.storage
+            return await store.then(s => s.saveProject(msg.project))
+                .then(_ => supabase.dropProject(msg.project))
+                .then(_ => app.toast('success', 'Project moved to browser storage'))
+        }
+    } else if (msg.project.storage === 'browser' || msg.project.storage === undefined) {
+        if (msg.storage === 'cloud') {
+            msg.project.storage = msg.storage
+            return await supabase.saveProject(msg.project)
+                .then(_ => store.then(s => s.dropProject(msg.project)))
+                .then(_ => app.toast('success', 'Project moved to cloud storage'))
+        }
+    }
+    return app.toast('warning', `Unable to move project from ${msg.project.storage} to ${msg.storage}`)
 }
 
 function getLocalFile(msg: GetLocalFileMsg) {

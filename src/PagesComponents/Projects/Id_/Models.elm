@@ -20,6 +20,7 @@ import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
@@ -140,6 +141,7 @@ type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | SaveProject
+    | MoveProjectTo ProjectStorage
     | RenameProject ProjectName
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)

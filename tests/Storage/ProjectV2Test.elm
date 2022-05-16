@@ -21,6 +21,7 @@ import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectSettings as ProjectSettings exposing (HiddenColumns, ProjectSettings)
+import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -81,6 +82,7 @@ project0 =
     , usedLayout = Nothing
     , layouts = Dict.empty
     , settings = ProjectSettings.init
+    , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -110,6 +112,7 @@ project1 =
     , usedLayout = Nothing
     , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True False
+    , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -217,6 +220,7 @@ project2 =
             , ( "users", Layout (CanvasProps (Position 120 320) 1.5) [ TableProps ( "public", "users" ) (Position 90 100) Size.zero Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True False
+    , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001
     }
