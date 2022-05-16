@@ -1,5 +1,5 @@
 import {File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
-import {Color, ColumnId, Delta, Position, Project, ProjectId, Size, SourceId, Storage, TableId} from "./project";
+import {Color, ColumnId, Delta, Position, Project, ProjectId, Size, SourceId, ProjectStorage, TableId} from "./project";
 import {User} from "./user";
 
 export interface ElmFlags {
@@ -33,6 +33,8 @@ export type JsMsg =
     | GotLogout
     | GotSizes
     | GotProjects
+    | GotProject
+    | ProjectDropped
     | GotLocalFile
     | GotRemoteFile
     | GotHotkey
@@ -55,6 +57,8 @@ export type GotLogin = { kind: 'GotLogin', user: User }
 export type GotLogout = { kind: 'GotLogout' }
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, Project][] }
+export type GotProject = { kind: 'GotProject', project: Project }
+export type ProjectDropped = { kind: 'ProjectDropped', id: ProjectId }
 export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
 export type GotRemoteFile = { kind: 'GotRemoteFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, url: string, content: string, sample?: string }
 export type GotHotkey = { kind: 'GotHotkey', id: string }
@@ -111,7 +115,7 @@ export type LogoutMsg = { kind: 'Logout' }
 export type LoadProjectsMsg = { kind: 'LoadProjects' }
 export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: FileUrl }
 export type SaveProjectMsg = { kind: 'SaveProject', project: Project }
-export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: Storage }
+export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
 export type DropProjectMsg = { kind: 'DropProject', project: Project }
 export type GetLocalFileMsg = { kind: 'GetLocalFile', project?: ProjectId, source?: SourceId, file: File }

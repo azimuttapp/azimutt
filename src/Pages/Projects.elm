@@ -116,6 +116,14 @@ handleJsMessage msg model =
         GotProjects ( _, projects ) ->
             ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
 
+        ProjectDropped projectId ->
+            case model.projects of
+                Loading ->
+                    ( model, Cmd.none )
+
+                Loaded projects ->
+                    ( { model | projects = Loaded (projects |> List.filter (\p -> p.id /= projectId)) }, Cmd.none )
+
         _ ->
             ( model, Cmd.none )
 

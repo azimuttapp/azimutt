@@ -15,13 +15,11 @@ import {AzimuttApi} from "./services/api";
 import {Project} from "./types/project";
 import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
-import {IndexedDBStorage} from "./storages/indexeddb";
-import {LocalStorageStorage} from "./storages/localstorage";
-import {InMemoryStorage} from "./storages/inmemory";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyphills";
 import {Utils} from "./utils/utils";
 import {SupabaseInitializer} from "./services/supabase";
+import {StorageManager} from "./storages/manager";
 
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
@@ -32,10 +30,14 @@ const initializer = SupabaseInitializer.init({
 })
 const app = ElmApp.init({now: Date.now(), user: initializer.getLoggedUser()}, logger)
 const supabase = initializer.init(app, logger)
+supabase.onLogin(user => {
+    app.login(user)
+    loadProjects()
+})
+const store = new StorageManager(supabase, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
 const errorTracking: Promise<ErrLogger> = env === 'prod' ? SentryErrLogger.init() : Promise.resolve(new LogErrLogger(logger))
-const store = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -64,14 +66,14 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
-app.on('Login', msg => supabase.login(msg.redirect))
-app.on('Logout', supabase.logout)
+app.on('Login', msg => supabase.login(msg.redirect).then(_ => loadProjects()))
+app.on('Logout', _ => supabase.logout().then(_ => loadProjects()))
 app.on('LoadProjects', loadProjects)
 app.on('LoadRemoteProject', loadRemoteProject)
-app.on('SaveProject', msg => saveProject(msg, loadProjects))
+app.on('SaveProject', msg => saveProject(msg).then(_ => app.gotProject(msg.project)))
 app.on('MoveProjectTo', moveProjectTo)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
-app.on('DropProject', msg => (msg.project.storage === 'cloud' ? supabase.dropProject(msg.project) : store.then(s => s.dropProject(msg.project))).then(_ => loadProjects()))
+app.on('DropProject', msg => store.dropProject(msg.project).then(_ => app.dropProject(msg.project.id)))
 app.on('GetLocalFile', getLocalFile)
 app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
@@ -119,19 +121,16 @@ function loadRemoteProject(msg: LoadRemoteProjectMsg) {
 
 function loadProjects() {
     // FIXME: load projects in several steps (local are faster than remote)
-    Promise.all([store.then(s => s.loadProjects()), supabase.loadProjects()]).then((allProjects: Project[][]) => {
-        const projects = allProjects.flat()
+    store.loadProjects().then((projects: Project[]) => {
         app.loadProjects(projects)
         window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
         const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
         id ? window.azimutt.project = window.azimutt.projects[id] : undefined
     })
 }
-function saveProject(msg: SaveProjectMsg, callback: () => void) {
-    const storing = msg.project.storage === 'cloud' ? supabase.saveProject(msg.project) : store.then(s => s.saveProject(msg.project))
-    storing
+function saveProject(msg: SaveProjectMsg) {
+    return store.saveProject(msg.project)
         .then(_ => app.toast('success', 'Project saved'))
-        .then(_ => callback())
         .catch(e => {
             let message
             if (typeof e === 'string') {
@@ -148,23 +147,13 @@ function saveProject(msg: SaveProjectMsg, callback: () => void) {
             errorTracking.then(e => e.trackError(name, details))
         })
 }
-async function moveProjectTo(msg: MoveProjectToMsg): Promise<void> {
-    if (msg.project.storage === 'cloud') {
-        if (msg.storage === 'browser') {
-            msg.project.storage = msg.storage
-            return await store.then(s => s.saveProject(msg.project))
-                .then(_ => supabase.dropProject(msg.project))
-                .then(_ => app.toast('success', 'Project moved to browser storage'))
-        }
-    } else if (msg.project.storage === 'browser' || msg.project.storage === undefined) {
-        if (msg.storage === 'cloud') {
-            msg.project.storage = msg.storage
-            return await supabase.saveProject(msg.project)
-                .then(_ => store.then(s => s.dropProject(msg.project)))
-                .then(_ => app.toast('success', 'Project moved to cloud storage'))
-        }
-    }
-    return app.toast('warning', `Unable to move project from ${msg.project.storage} to ${msg.storage}`)
+function moveProjectTo(msg: MoveProjectToMsg) {
+    store.moveProjectTo(msg.project, msg.storage)
+        .then(project => {
+            app.gotProject(project)
+            app.toast('success', `Project moved to ${project.storage} storage`)
+        })
+        .catch(err => app.toast('error', err))
 }
 
 function getLocalFile(msg: GetLocalFileMsg) {

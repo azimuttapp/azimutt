@@ -9,7 +9,7 @@ import {
     HotkeyId,
     JsMsg
 } from "../types/elm";
-import {Color, ColumnId, Delta, Position, Project, TableId} from "../types/project";
+import {Color, ColumnId, Delta, Position, Project, ProjectId, TableId} from "../types/project";
 import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import {Utils} from "../utils/utils";
@@ -78,6 +78,8 @@ export class ElmApp {
         kind: 'GotProjects',
         projects: projects.map(p => [p.id, p])
     })
+    gotProject = (project: Project): void => this.send({kind: 'GotProject', project})
+    dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
     gotLocalFile = (msg: GetLocalFileMsg, content: string) => this.send({
         kind: 'GotLocalFile',
         now: Date.now(),

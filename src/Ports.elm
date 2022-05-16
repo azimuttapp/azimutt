@@ -213,6 +213,8 @@ type JsMsg
     | GotLogin User
     | GotLogout
     | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
+    | GotProject (Result Decode.Error Project)
+    | ProjectDropped ProjectId
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
     | GotHotkey String
@@ -358,6 +360,12 @@ jsDecoder =
                 "GotProjects" ->
                     Decode.map GotProjects (Decode.field "projects" projectsDecoder)
 
+                "GotProject" ->
+                    Decode.map GotProject (Decode.field "project" projectDecoder)
+
+                "ProjectDropped" ->
+                    Decode.map ProjectDropped (Decode.field "id" ProjectId.decode)
+
                 "GotLocalFile" ->
                     Decode.map5 GotLocalFile
                         (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
@@ -441,6 +449,11 @@ projectsDecoder =
                         )
                     |> List.resultCollect
             )
+
+
+projectDecoder : Decoder (Result Decode.Error Project)
+projectDecoder =
+    Decode.map (Decode.decodeValue decodeProject) Decode.value
 
 
 port elmToJs : Value -> Cmd msg

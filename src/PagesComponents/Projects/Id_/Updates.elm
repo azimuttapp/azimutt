@@ -24,6 +24,7 @@ import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
+import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.FindPath exposing (handleFindPath)
@@ -300,9 +301,13 @@ handleJsMessage currentProject currentLayout msg model =
                 ( childSeed, newSeed ) =
                     Random.step (Random.int Random.minInt Random.maxInt) model.seed
 
+                otherProjects : List ProjectInfo
+                otherProjects =
+                    project |> Maybe.mapOrElse (\prj -> projects |> List.filter (\p -> p.id /= prj.id) |> List.map ProjectInfo.create |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) []
+
                 erd : Maybe Erd
                 erd =
-                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create (Random.initialSeed childSeed) projects))
+                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create (Random.initialSeed childSeed) otherProjects))
             in
             ( { model | seed = newSeed, loaded = True, erd = erd }
             , Cmd.batch
@@ -323,6 +328,39 @@ handleJsMessage currentProject currentLayout msg model =
                        )
                 )
             )
+
+        GotProject res ->
+            case res of
+                Err err ->
+                    ( model, Cmd.batch [ T.send (toastError ("Unable to read project: " ++ Decode.errorToHtml err)), Ports.trackJsonError "decode-project" err ] )
+
+                Ok project ->
+                    ( model
+                        |> mapErdM
+                            (\erd ->
+                                if erd.project.id == project.id then
+                                    Erd.create erd.seed erd.otherProjects project
+
+                                else
+                                    { erd
+                                        | otherProjects =
+                                            erd.otherProjects
+                                                |> List.map
+                                                    (\p ->
+                                                        if p.id == project.id then
+                                                            ProjectInfo.create project
+
+                                                        else
+                                                            p
+                                                    )
+                                                |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
+                                    }
+                            )
+                    , Cmd.none
+                    )
+
+        ProjectDropped projectId ->
+            ( model |> mapErdM (\erd -> { erd | otherProjects = erd.otherProjects |> List.filter (\p -> p.id /= projectId) }), Cmd.none )
 
         GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )

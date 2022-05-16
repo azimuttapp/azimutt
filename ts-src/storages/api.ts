@@ -1,6 +1,6 @@
 import {Project} from "../types/project";
 
-export type StorageKind = 'indexedDb' | 'localStorage' | 'inMemory' | 'supabase'
+export type StorageKind = 'indexedDb' | 'localStorage' | 'inMemory' | 'supabase' | 'manager'
 
 export interface StorageApi {
     kind: StorageKind

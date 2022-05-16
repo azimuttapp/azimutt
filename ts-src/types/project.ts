@@ -7,7 +7,7 @@ export interface Project {
     layout: Layout
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
-    storage?: Storage
+    storage?: ProjectStorage
     createdAt: Timestamp
     updatedAt: Timestamp
     version: number
@@ -150,7 +150,7 @@ export interface Settings {
     removedTables?: string
 }
 
-export type Storage = 'browser' | 'cloud'
+export type ProjectStorage = 'browser' | 'cloud'
 
 export type ProjectId = string
 export type ProjectName = string

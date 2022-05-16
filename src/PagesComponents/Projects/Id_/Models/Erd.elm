@@ -47,8 +47,8 @@ type alias Erd =
     }
 
 
-create : Random.Seed -> List Project -> Project -> Erd
-create seed allProjects project =
+create : Random.Seed -> List ProjectInfo -> Project -> Erd
+create seed otherProjects project =
     let
         relationsByTable : Dict TableId (List Relation)
         relationsByTable =
@@ -71,7 +71,7 @@ create seed allProjects project =
     , sources = project.sources
     , settings = project.settings
     , storage = project.storage
-    , otherProjects = allProjects |> List.filter (\p -> p.id /= project.id) |> List.map ProjectInfo.create |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
+    , otherProjects = otherProjects
     }
         |> computeSchema
 

@@ -1,6 +1,8 @@
 module PagesComponents.Projects.View exposing (viewProjects)
 
 import Components.Atoms.Icon as Icon
+import Components.Atoms.Link as Link
+import Components.Molecules.Alert as Alert
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
@@ -21,6 +23,7 @@ import Models.Project exposing (Project)
 import Models.Project.ProjectStorage exposing (ProjectStorage(..))
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
+import Router
 import Shared exposing (StoredProjects(..))
 import Time
 import Track
@@ -43,6 +46,22 @@ viewContent : Shared.Model -> Model -> Html Msg
 viewContent shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
+        , if shared.user == Nothing then
+            div [ class "mt-3" ]
+                [ Alert.withActions
+                    { color = Tw.blue
+                    , icon = Icon.InformationCircle
+                    , title = "You are not logged in"
+                    , actions =
+                        [ Link.secondary3 Tw.blue [ href (Router.login Route.Projects) ] [ text "Login or Signup" ]
+                        ]
+                    }
+                    [ text "Login to access your cloud stored projects or store some projects in the cloud (instead of browser only)."
+                    ]
+                ]
+
+          else
+            div [] []
         ]
 
 

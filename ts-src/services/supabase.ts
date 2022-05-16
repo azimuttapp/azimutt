@@ -18,28 +18,26 @@ export class SupabaseInitializer {
         return new SupabaseInitializer(window.supabase.createClient(conf.supabaseUrl, conf.supabaseKey, conf.options))
     }
 
+    user: User | null = null
+
     constructor(private supabase: SupabaseClient) {
     }
 
     getLoggedUser = (): User | null => {
         const user = this.supabase.auth.user()
-        return user !== null ? supabaseToAzimuttUser(user) : null
+        this.user = user !== null ? supabaseToAzimuttUser(user) : null
+        return this.user
     }
 
     init = (app: ElmApp, logger: Logger): Supabase => {
-        return new Supabase(this.supabase, app, logger)
+        return new Supabase(this.supabase, this.user, app, logger)
     }
 }
 
 export class Supabase implements StorageApi {
-    constructor(private supabase: SupabaseClient, private app: ElmApp, private logger: Logger) {
-        // login on redirect, session is in url but not yet stored, so get it from there
-        this.supabase.auth.getSessionFromUrl({storeSession: true}).then(res => {
-            const user = res?.data?.user
-            if (user) {
-                app.login(supabaseToAzimuttUser(user))
-            }
-        })
+    projectsBucket = 'projects'
+
+    constructor(private supabase: SupabaseClient, private user: User | null, private app: ElmApp, private logger: Logger) {
     }
 
     login = (redirect?: string): Promise<void> => {
@@ -49,41 +47,68 @@ export class Supabase implements StorageApi {
         ).then(res => {
             if (res.error) {
                 this.logger.warn(`Can't login`, res.error)
+            } else if (res.user) {
+                this.user = supabaseToAzimuttUser(res.user)
+                this.app.login(this.user)
             } else {
-                const user = res.user
-                user !== null ? this.app.login(supabaseToAzimuttUser(user)) : this.logger.warn(`No user`)
+                this.logger.warn(`No user`)
             }
         })
     }
 
     logout = (): Promise<void> => {
-        return this.supabase.auth.signOut()
-            .then(res => res.error ? this.logger.warn(`Can't logout`, res.error) : this.app.logout())
+        return this.supabase.auth.signOut().then(res => {
+            if (res.error) {
+                this.logger.warn(`Can't logout`, res.error)
+            } else {
+                this.user = null
+                return this.app.logout()
+            }
+        })
+    }
+
+    onLogin(callback: (u: User) => void) {
+        // login on redirect, session is in url but not yet stored, so get it from there
+        this.supabase.auth.getSessionFromUrl({storeSession: true}).then(res => {
+            const user = res?.data?.user
+            if (user) {
+                this.user = supabaseToAzimuttUser(user)
+                callback(this.user)
+            }
+        })
     }
 
     // storage
 
-    // TODO add cache
     kind: StorageKind = 'supabase'
     loadProjects = async (): Promise<Project[]> => {
-        const files = await this.getStore().list().then(resultToPromise)
+        if (!this.user) {
+            return []
+        }
+        const files = await this.getBucket().list().then(resultToPromise)
         return await Promise.all(files.map(file =>
-            this.getStore().download(file.name)
+            this.getBucket().download(file.name)
                 .then(resultToPromise)
                 .then(blob => blob.text())
                 .then(json => JSON.parse(json) as Project)
         ))
     }
     saveProject = async (p: Project): Promise<void> => {
-        return await this.getStore().upload(this.projectPath(p), JSON.stringify(p), {
+        if (!this.user) {
+            return Promise.reject('Not logged in')
+        }
+        return await this.getBucket().upload(this.projectPath(p), JSON.stringify(p), {
             contentType: 'application/json;charset=UTF-8',
             upsert: true
         }).then(resultToPromise).then(_ => undefined)
     }
     dropProject = async (p: Project): Promise<void> => {
-        return await this.getStore().remove([this.projectPath(p)]).then(resultToPromise).then(_ => undefined)
+        if (!this.user) {
+            return Promise.reject('Not logged in')
+        }
+        return await this.getBucket().remove([this.projectPath(p)]).then(resultToPromise).then(_ => undefined)
     }
-    private getStore = () => this.supabase.storage.from('projects')
+    private getBucket = () => this.supabase.storage.from(this.projectsBucket)
     private projectPath = (p: Project) => `${p.id}.json`
 }
 

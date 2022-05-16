@@ -29,8 +29,7 @@ encode value =
     Encode.notNullObject
         [ ( "id", value.id |> TableId.encode )
         , ( "position", value.position |> GridPosition.encode )
-
-        -- , ( "size", value.size |> Size.encode ) do not store size, it should be re-computed
+        , ( "size", value.size |> Encode.withDefault Size.encode Size.zero )
         , ( "color", value.color |> Tw.encodeColor )
         , ( "columns", value.columns |> Encode.withDefault (Encode.list ColumnName.encode) [] )
         , ( "selected", value.selected |> Encode.withDefault Encode.bool False )
