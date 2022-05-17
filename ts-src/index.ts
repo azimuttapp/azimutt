@@ -18,22 +18,21 @@ import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyphills";
 import {Utils} from "./utils/utils";
-import {SupabaseInitializer} from "./services/supabase";
+import {Supabase} from "./services/supabase";
 import {StorageManager} from "./storages/manager";
 
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
-const initializer = SupabaseInitializer.init({
+const supabase = Supabase.init({
     // FIXME: inject this values from conf
     supabaseUrl: 'https://ywieybitcnbtklzsfxgd.supabase.co',
-    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE'
-})
-const app = ElmApp.init({now: Date.now(), user: initializer.getLoggedUser()}, logger)
-const supabase = initializer.init(app, logger)
-supabase.onLogin(user => {
+    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE',
+    projectsBucket: 'projects'
+}).onLogin(user => {
     app.login(user)
     loadProjects()
 })
+const app = ElmApp.init({now: Date.now(), user: supabase.getLoggedUser()}, logger)
 const store = new StorageManager(supabase, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
@@ -66,8 +65,8 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
-app.on('Login', msg => supabase.login(msg.redirect).then(_ => loadProjects()))
-app.on('Logout', _ => supabase.logout().then(_ => loadProjects()))
+app.on('Login', msg => supabase.login(msg.redirect).then(app.login).then(loadProjects).catch(logger.warn))
+app.on('Logout', _ => supabase.logout().then(app.logout).then(loadProjects).catch(logger.warn))
 app.on('LoadProjects', loadProjects)
 app.on('LoadRemoteProject', loadRemoteProject)
 app.on('SaveProject', msg => saveProject(msg).then(_ => app.gotProject(msg.project)))

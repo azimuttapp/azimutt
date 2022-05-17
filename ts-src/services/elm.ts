@@ -71,16 +71,16 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
 
-    login = (user: User) => this.send({kind: 'GotLogin', user})
-    logout = () => this.send({kind: 'GotLogout'})
-    updateSizes = (sizes: ElementSize[]) => this.send({kind: 'GotSizes', sizes})
+    login = (user: User): void => this.send({kind: 'GotLogin', user})
+    logout = (): void => this.send({kind: 'GotLogout'})
+    updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
     loadProjects = (projects: Project[]): void => this.send({
         kind: 'GotProjects',
         projects: projects.map(p => [p.id, p])
     })
     gotProject = (project: Project): void => this.send({kind: 'GotProject', project})
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
-    gotLocalFile = (msg: GetLocalFileMsg, content: string) => this.send({
+    gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
         now: Date.now(),
         projectId: msg.project || Utils.randomUID(),
@@ -88,7 +88,7 @@ export class ElmApp {
         file: msg.file,
         content
     })
-    gotRemoteFile = (msg: GetRemoteFileMsg, content: string) => this.send({
+    gotRemoteFile = (msg: GetRemoteFileMsg, content: string): void => this.send({
         kind: 'GotRemoteFile',
         now: Date.now(),
         projectId: msg.project || Utils.randomUID(),
@@ -97,9 +97,9 @@ export class ElmApp {
         content,
         sample: msg.sample
     })
-    gotHotkey = (hotkey: Hotkey & { id: HotkeyId }) => this.send({kind: 'GotHotkey', id: hotkey.id})
-    gotKeyHold = (key: string, start: boolean) => this.send({kind: 'GotKeyHold', key, start})
-    toast = (level: ToastLevel, message: string) => this.send({kind: 'GotToast', level, message})
+    gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
+    gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
+    toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})
     showTable = (id: TableId, position?: Position): void => this.send({kind: 'GotTableShow', id, position})
     hideTable = (id: TableId): void => this.send({kind: 'GotTableHide', id})
     toggleTableColumns = (id: TableId): void => this.send({kind: 'GotTableToggleColumns', id})
@@ -110,8 +110,8 @@ export class ElmApp {
     showColumn = (id: ColumnId): void => this.send({kind: 'GotColumnShow', ref: id})
     hideColumn = (id: ColumnId): void => this.send({kind: 'GotColumnHide', ref: id})
     moveColumn = (id: ColumnId, index: number): void => this.send({kind: 'GotColumnMove', ref: id, index})
-    fitToScreen = () => this.send({kind: 'GotFitToScreen'})
-    resetCanvas = () => this.send({kind: 'GotResetCanvas'})
+    fitToScreen = (): void => this.send({kind: 'GotFitToScreen'})
+    resetCanvas = (): void => this.send({kind: 'GotResetCanvas'})
 
     private send(msg: JsMsg): void {
         this.elm.ports?.jsToElm.send(msg)

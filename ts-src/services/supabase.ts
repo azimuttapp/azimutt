@@ -1,26 +1,31 @@
 import {SupabaseClient} from "@supabase/supabase-js";
-import {ElmApp} from "./elm";
 import {User as SupabaseUser} from "@supabase/gotrue-js/src/lib/types";
 import {User} from "../types/user";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
 import {Project} from "../types/project";
 import {StorageApi, StorageKind} from "../storages/api";
-import {Logger} from "./logger";
+
+/*
+Tables (https://dbdiagram.io/d/628351d27f945876b6310c15):
+    - projects (id, name, tables, layouts, created_at, updated_at)
+    - project_accesses (project_id, user_id, access (owner, write, read, none), created_at, created_by)
+Storage:
+    - policies (storage.objects)
+ */
 
 export interface SupabaseConf {
     supabaseUrl: string
     supabaseKey: string
     options?: SupabaseClientOptions
+    projectsBucket: string
 }
 
-export class SupabaseInitializer {
-    static init(conf: SupabaseConf): SupabaseInitializer {
-        return new SupabaseInitializer(window.supabase.createClient(conf.supabaseUrl, conf.supabaseKey, conf.options))
+export class Supabase implements StorageApi {
+    static init({supabaseUrl, supabaseKey, options, projectsBucket}: SupabaseConf): Supabase {
+        return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options), projectsBucket)
     }
 
-    user: User | null = null
-
-    constructor(private supabase: SupabaseClient) {
+    constructor(private supabase: SupabaseClient, private projectsBucket: string, private user: User | null = null) {
     }
 
     getLoggedUser = (): User | null => {
@@ -29,29 +34,17 @@ export class SupabaseInitializer {
         return this.user
     }
 
-    init = (app: ElmApp, logger: Logger): Supabase => {
-        return new Supabase(this.supabase, this.user, app, logger)
-    }
-}
-
-export class Supabase implements StorageApi {
-    projectsBucket = 'projects'
-
-    constructor(private supabase: SupabaseClient, private user: User | null, private app: ElmApp, private logger: Logger) {
-    }
-
-    login = (redirect?: string): Promise<void> => {
+    login = (redirect?: string): Promise<User> => {
         return this.supabase.auth.signIn(
             {provider: 'github'},
             redirect ? {redirectTo: `${window.location.origin}${redirect}`} : {}
         ).then(res => {
             if (res.error) {
-                this.logger.warn(`Can't login`, res.error)
+                return Promise.reject(`Can't login: ${res.error}`)
             } else if (res.user) {
-                this.user = supabaseToAzimuttUser(res.user)
-                this.app.login(this.user)
+                return this.user = supabaseToAzimuttUser(res.user)
             } else {
-                this.logger.warn(`No user`)
+                return Promise.reject('No user')
             }
         })
     }
@@ -59,15 +52,14 @@ export class Supabase implements StorageApi {
     logout = (): Promise<void> => {
         return this.supabase.auth.signOut().then(res => {
             if (res.error) {
-                this.logger.warn(`Can't logout`, res.error)
+                return Promise.reject(`Can't logout: ${res.error}`)
             } else {
                 this.user = null
-                return this.app.logout()
             }
         })
     }
 
-    onLogin(callback: (u: User) => void) {
+    onLogin(callback: (u: User) => void): Supabase {
         // login on redirect, session is in url but not yet stored, so get it from there
         this.supabase.auth.getSessionFromUrl({storeSession: true}).then(res => {
             const user = res?.data?.user
@@ -76,6 +68,7 @@ export class Supabase implements StorageApi {
                 callback(this.user)
             }
         })
+        return this
     }
 
     // storage
