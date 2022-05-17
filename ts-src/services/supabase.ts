@@ -4,6 +4,7 @@ import {User} from "../types/user";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
 import {Project} from "../types/project";
 import {StorageApi, StorageKind} from "../storages/api";
+import {Env} from "../types/basics";
 
 /*
 Tables (https://dbdiagram.io/d/628351d27f945876b6310c15):
@@ -17,12 +18,31 @@ export interface SupabaseConf {
     supabaseUrl: string
     supabaseKey: string
     options?: SupabaseClientOptions
-    projectsBucket: string
 }
 
 export class Supabase implements StorageApi {
-    static init({supabaseUrl, supabaseKey, options, projectsBucket}: SupabaseConf): Supabase {
-        return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options), projectsBucket)
+    // https://supabase.com/docs/guides/local-development
+    static conf: {[env in Env]: SupabaseConf} = {
+        dev: {
+            supabaseUrl: 'http://localhost:54321',
+            // dbUrl: 'postgresql://postgres:postgres@localhost:54322/postgres',
+            // studioUrl: 'http://localhost:54323',
+            // inbucketUrl: 'http://localhost:54324',
+            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24ifQ.625_WdcF3KHqz5amU0x2X5WWHP-OEs_4qj0ssLNHzTs',
+            // serviceRoleKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSJ9.vI9obAHOGyVVKa3pD--kJlyxp-Z2zV9UUMAhKpNLAcU',
+        },
+        staging: {
+            supabaseUrl: 'https://ywieybitcnbtklzsfxgd.supabase.co',
+            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE',
+        },
+        prod: {
+            supabaseUrl: '',
+            supabaseKey: '',
+        }
+    }
+    static init(env: Env): Supabase {
+        const {supabaseUrl, supabaseKey, options} = this.conf[env]
+        return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options), 'projects')
     }
 
     constructor(private supabase: SupabaseClient, private projectsBucket: string, private user: User | null = null) {

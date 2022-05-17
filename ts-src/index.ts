@@ -23,12 +23,7 @@ import {StorageManager} from "./storages/manager";
 
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
-const supabase = Supabase.init({
-    // FIXME: inject this values from conf
-    supabaseUrl: 'https://ywieybitcnbtklzsfxgd.supabase.co',
-    supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE',
-    projectsBucket: 'projects'
-}).onLogin(user => {
+const supabase = Supabase.init(env).onLogin(user => {
     app.login(user)
     loadProjects()
 })
