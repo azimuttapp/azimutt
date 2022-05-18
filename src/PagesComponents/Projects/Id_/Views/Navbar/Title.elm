@@ -28,7 +28,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
 
 viewNavbarTitle : ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarTitle conf otherProjects project usedLayout layouts htmlId openedDropdown =
+viewNavbarTitle conf projects project usedLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
         ([ if project.storage == ProjectStorage.Cloud then
             button [ onClick (MoveProjectTo ProjectStorage.Browser) ] [ Icon.outline Cloud "" ]
@@ -36,7 +36,7 @@ viewNavbarTitle conf otherProjects project usedLayout layouts htmlId openedDropd
            else
             button [ onClick (MoveProjectTo ProjectStorage.Cloud) ] [ Icon.outline CloudUpload "" ]
          , if conf.projectManagement then
-            Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy4 viewProjectsDropdown projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -46,7 +46,12 @@ viewNavbarTitle conf otherProjects project usedLayout layouts htmlId openedDropd
 
 
 viewProjectsDropdown : List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown otherProjects project htmlId openedDropdown =
+viewProjectsDropdown projects project htmlId openedDropdown =
+    let
+        otherProjects : List ProjectInfo
+        otherProjects =
+            projects |> List.filter (\p -> p.id /= project.id)
+    in
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]

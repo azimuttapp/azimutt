@@ -29,6 +29,7 @@ import Models.Project.CanvasProps as CanvasProps
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 
@@ -37,8 +38,8 @@ type alias Btn msg =
     { action : Either String msg, content : Html msg, hotkey : Maybe Hotkey }
 
 
-viewNavbar : ErdConf -> Maybe VirtualRelation -> Erd -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
-viewNavbar conf virtualRelation erd model htmlId openedDropdown =
+viewNavbar : ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
+viewNavbar conf virtualRelation erd projects model htmlId openedDropdown =
     let
         features : List (Btn Msg)
         features =
@@ -67,7 +68,7 @@ viewNavbar conf virtualRelation erd model htmlId openedDropdown =
                     , viewNavbarHelp
                     ]
                 , div [ class "flex-1 flex justify-center px-2" ]
-                    [ Lazy.lazy7 viewNavbarTitle conf erd.otherProjects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
+                    [ Lazy.lazy7 viewNavbarTitle conf projects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]

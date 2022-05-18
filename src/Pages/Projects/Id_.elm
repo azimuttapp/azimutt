@@ -23,7 +23,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init shared.now req.params.id
-        , update = Updates.update (Just req.params.id) Nothing shared.now
+        , update = Updates.update Nothing shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -49,6 +49,7 @@ init now id =
       , screen = ScreenProps.zero
       , loaded = False
       , erd = Nothing
+      , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
@@ -83,6 +84,7 @@ init now id =
             }
         , Ports.trackPage "app"
         , Ports.listenHotkeys Conf.hotkeys
-        , Ports.loadProjects
+        , Ports.loadProject id
+        , Ports.listProjects
         ]
     )

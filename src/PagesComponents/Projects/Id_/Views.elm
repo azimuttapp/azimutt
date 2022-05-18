@@ -67,7 +67,7 @@ viewApp : Model -> HtmlId -> Erd -> Html Msg
 viewApp model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy6 viewNavbar model.conf model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+            Lazy.lazy7 viewNavbar model.conf model.virtualRelation erd model.projects model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
 
           else
             div [] []

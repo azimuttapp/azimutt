@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
 import Libs.Models.HtmlId exposing (HtmlId)
-import Models.Project exposing (Project)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Shared exposing (Confirm, StoredProjects)
 
@@ -25,7 +25,7 @@ type alias Model =
 type Msg
     = SelectMenu String
     | Logout
-    | DeleteProject Project
+    | DeleteProject ProjectInfo
       -- global messages
     | DropdownToggle HtmlId
     | ConfirmOpen (Confirm Msg)

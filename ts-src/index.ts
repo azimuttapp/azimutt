@@ -7,12 +7,12 @@ import {
     LoadRemoteProjectMsg,
     MoveProjectToMsg,
     ObserveSizesMsg,
-    SaveProjectMsg,
-    SetMetaMsg
+    SetMetaMsg,
+    UpdateProjectMsg
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {Project} from "./types/project";
+import {Project, ProjectId} from "./types/project";
 import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
@@ -25,7 +25,7 @@ const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
 const supabase = Supabase.init(env).onLogin(user => {
     app.login(user)
-    loadProjects()
+    listProjects()
 })
 const app = ElmApp.init({now: Date.now(), user: supabase.getLoggedUser()}, logger)
 const store = new StorageManager(supabase, logger)
@@ -40,7 +40,8 @@ logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     '  `azimutt.project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`\n\n' +
     'Use `azimutt.help()` for more details!')
 
-window.azimutt = new AzimuttApi(app, logger)
+const azimutt = new AzimuttApi(app, logger)
+window.azimutt = azimutt
 
 /* PWA service worker */
 
@@ -60,11 +61,13 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
-app.on('Login', msg => supabase.login(msg.redirect).then(app.login).then(loadProjects).catch(logger.warn))
-app.on('Logout', _ => supabase.logout().then(app.logout).then(loadProjects).catch(logger.warn))
-app.on('LoadProjects', loadProjects)
+app.on('Login', msg => supabase.login(msg.redirect).then(app.login).then(listProjects).catch(logger.warn))
+app.on('Logout', _ => supabase.logout().then(app.logout).then(listProjects).catch(logger.warn))
+app.on('ListProjects', listProjects)
+app.on('LoadProject', msg => loadProject(msg.id))
 app.on('LoadRemoteProject', loadRemoteProject)
-app.on('SaveProject', msg => saveProject(msg).then(_ => app.gotProject(msg.project)))
+app.on('CreateProject', msg => store.createProject(msg.project).then(_ => app.gotProject(msg.project)))
+app.on('UpdateProject', msg => updateProject(msg).then(_ => app.gotProject(msg.project)))
 app.on('MoveProjectTo', moveProjectTo)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('DropProject', msg => store.dropProject(msg.project).then(_ => app.dropProject(msg.project.id)))
@@ -106,24 +109,24 @@ function setMeta(meta: SetMetaMsg) {
 function loadRemoteProject(msg: LoadRemoteProjectMsg) {
     fetch(msg.projectUrl)
         .then(res => res.json())
-        .then((project: Project) => app.loadProjects([project]))
+        .then((project: Project) => app.gotProject(project))
         .catch(err => {
             app.loadProjects([])
             app.toast('error', `Can't load remote project: ${err}`)
         })
 }
 
-function loadProjects() {
-    // FIXME: load projects in several steps (local are faster than remote)
-    store.loadProjects().then((projects: Project[]) => {
-        app.loadProjects(projects)
-        window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
-        const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-        id ? window.azimutt.project = window.azimutt.projects[id] : undefined
+function listProjects() {
+    store.listProjects().then(app.loadProjects)
+}
+function loadProject(id: ProjectId) {
+    store.loadProject(id).then((project: Project) => {
+        app.gotProject(project)
+        azimutt.project = project
     })
 }
-function saveProject(msg: SaveProjectMsg) {
-    return store.saveProject(msg.project)
+function updateProject(msg: UpdateProjectMsg) {
+    return store.updateProject(msg.project)
         .then(_ => app.toast('success', 'Project saved'))
         .catch(e => {
             let message
@@ -132,10 +135,10 @@ function saveProject(msg: SaveProjectMsg) {
             } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
                 message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
             } else {
-                message = 'Unknown localStorage error: ' + e.message
+                message = 'Unknown storage error: ' + e.message
             }
             app.toast('error', message)
-            const name = 'local-storage'
+            const name = 'storage'
             const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
             analytics.then(a => a.trackError(name, details))
             errorTracking.then(e => e.trackError(name, details))

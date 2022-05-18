@@ -24,9 +24,9 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
-import Models.Project exposing (Project)
 import Models.User exposing (User)
 import PagesComponents.Helpers exposing (appShell)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.ProjectImport as ProjectImport exposing (ProjectImport)
 import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload)
@@ -156,7 +156,7 @@ viewSchemaUploadTab htmlId openedCollapse sqlSourceUpload =
         ]
 
 
-viewProjectImportTab : HtmlId -> Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewProjectImportTab : HtmlId -> Time.Zone -> List ProjectInfo -> ProjectImport -> Html Msg
 viewProjectImportTab htmlId zone projects projectImport =
     div []
         [ viewHeading "Import an existing project" "If you have an Azimutt project, you can load it here."
@@ -172,7 +172,7 @@ viewProjectImportTab htmlId zone projects projectImport =
         ]
 
 
-viewSampleSelectionTab : Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewSampleSelectionTab : Time.Zone -> List ProjectInfo -> ProjectImport -> Html Msg
 viewSampleSelectionTab zone projects projectImport =
     div []
         [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
@@ -222,10 +222,10 @@ viewSqlSourceUpload sqlSourceUpload =
         ]
 
 
-viewProjectImport : Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewProjectImport : Time.Zone -> List ProjectInfo -> ProjectImport -> Html Msg
 viewProjectImport zone projects projectImport =
     div []
-        [ ProjectImport.viewParsing zone projects projectImport
+        [ ProjectImport.viewParsing zone Nothing projectImport
         , projectImport.parsedProject
             |> Maybe.andThen (\( id, res ) -> res |> Result.toMaybe |> Maybe.map (\p -> ( id, p )))
             |> Maybe.map
@@ -250,10 +250,10 @@ viewProjectImport zone projects projectImport =
         ]
 
 
-viewSampleSelection : Time.Zone -> List Project -> ProjectImport -> Html Msg
+viewSampleSelection : Time.Zone -> List ProjectInfo -> ProjectImport -> Html Msg
 viewSampleSelection zone projects projectImport =
     div []
-        [ ProjectImport.viewParsing zone projects projectImport
+        [ ProjectImport.viewParsing zone Nothing projectImport
         , projectImport.parsedProject
             |> Maybe.andThen (\( _, res ) -> res |> Result.toMaybe)
             |> Maybe.map

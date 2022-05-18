@@ -64,7 +64,7 @@ init =
             , body = Just "h-full"
             }
         , Ports.trackPage "dashboard"
-        , Ports.loadProjects
+        , Ports.listProjects
         ]
     )
 

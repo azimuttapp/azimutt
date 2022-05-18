@@ -43,12 +43,11 @@ type alias Erd =
     , sources : List Source
     , settings : ProjectSettings
     , storage : ProjectStorage
-    , otherProjects : List ProjectInfo
     }
 
 
-create : Random.Seed -> List ProjectInfo -> Project -> Erd
-create seed otherProjects project =
+create : Random.Seed -> Project -> Erd
+create seed project =
     let
         relationsByTable : Dict TableId (List Relation)
         relationsByTable =
@@ -71,7 +70,6 @@ create seed otherProjects project =
     , sources = project.sources
     , settings = project.settings
     , storage = project.storage
-    , otherProjects = otherProjects
     }
         |> computeSchema
 

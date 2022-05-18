@@ -4,6 +4,7 @@ import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
+import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileLineContent, TrackEvent)
@@ -13,6 +14,7 @@ import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
+import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 
 
 
@@ -75,26 +77,26 @@ parsedSource =
 
 
 createProject : Project -> TrackEvent
-createProject =
-    projectEvent "create"
+createProject project =
+    projectEvent "create" (ProjectInfo.create project)
 
 
 importProject : Project -> TrackEvent
-importProject =
-    projectEvent "import"
+importProject project =
+    projectEvent "import" (ProjectInfo.create project)
 
 
-loadProject : Project -> TrackEvent
+loadProject : ProjectInfo -> TrackEvent
 loadProject =
     projectEvent "load"
 
 
 updateProject : Project -> TrackEvent
-updateProject =
-    projectEvent "update"
+updateProject project =
+    projectEvent "update" (ProjectInfo.create project)
 
 
-deleteProject : Project -> TrackEvent
+deleteProject : ProjectInfo -> TrackEvent
 deleteProject =
     projectEvent "delete"
 
@@ -182,13 +184,13 @@ parseSQLEvent parser source =
     }
 
 
-projectEvent : String -> Project -> TrackEvent
+projectEvent : String -> ProjectInfo -> TrackEvent
 projectEvent eventName project =
-    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> Maybe.toList) |> List.head |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-project"
+    { name = eventName ++ Bool.cond (ProjectInfo.isSample project) "-sample" "" ++ "-project"
     , details =
-        [ ( "table-count", project.tables |> Dict.size |> String.fromInt )
-        , ( "relation-count", project.relations |> List.length |> String.fromInt )
-        , ( "layout-count", project.layouts |> Dict.size |> String.fromInt )
+        [ ( "table-count", project.tables |> String.fromInt )
+        , ( "relation-count", project.relations |> String.fromInt )
+        , ( "layout-count", project.layouts |> String.fromInt )
         ]
     , enabled = True
     }

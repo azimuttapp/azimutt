@@ -33,6 +33,9 @@ suite =
         , describe "dropUntil"
             [ test "drop items while its false" (\_ -> [ 1, 2, 3, 4, 5 ] |> List.dropUntil (\i -> i == 3) |> Expect.equal [ 3, 4, 5 ])
             ]
+        , describe "unique"
+            [ test "get unique values" (\_ -> [ "a", "b", "a" ] |> List.unique |> Expect.equal [ "a", "b" ])
+            ]
         , describe "uniqueBy"
             [ test "get unique values" (\_ -> [ { id = 1, name = "a" }, { id = 2, name = "b" }, { id = 1, name = "c" } ] |> List.uniqueBy .id |> Expect.equal [ { id = 1, name = "a" }, { id = 2, name = "b" } ])
             ]

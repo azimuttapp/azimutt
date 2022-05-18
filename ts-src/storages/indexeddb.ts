@@ -1,5 +1,5 @@
-import {Project} from "../types/project";
-import {StorageApi, StorageKind} from "./api";
+import {Project, ProjectId, ProjectInfo} from "../types/project";
+import {projectToInfo, StorageApi, StorageKind} from "./api";
 import {LocalStorageStorage} from "./localstorage";
 import {Logger} from "../services/logger";
 
@@ -26,7 +26,7 @@ export class IndexedDBStorage implements StorageApi {
     constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
-    loadProjects = (): Promise<Project[]> => {
+    private loadProjects = (): Promise<Project[]> => {
         return this.openStore('readonly').then(store => {
             return new Promise<Project[]>((resolve, reject) => {
                 let projects: Project[] = []
@@ -38,7 +38,7 @@ export class IndexedDBStorage implements StorageApi {
                     } else {
                         LocalStorageStorage.init(this.logger).then(legacyStorage =>
                             legacyStorage.loadProjects().then(localStorageProjects =>
-                                Promise.all(localStorageProjects.map(p => Promise.all([legacyStorage.dropProject(p), this.saveProject(p)])))
+                                Promise.all(localStorageProjects.map(p => Promise.all([legacyStorage.dropProject(projectToInfo(p)), this.createProject(p)])))
                                     .then(_ => resolve(projects.concat(localStorageProjects)))
                             )
                         ).catch(reject)
@@ -48,7 +48,9 @@ export class IndexedDBStorage implements StorageApi {
         }
         )
     }
-    saveProject = (p: Project): Promise<void> => {
+    listProjects = (): Promise<ProjectInfo[]> => this.loadProjects().then(projects => projects.map(projectToInfo))
+    loadProject = (id: ProjectId): Promise<Project> => this.loadProjects().then(projects => projects.find(p => p.id === id) || Promise.reject(`Project ${id} not found`))
+    createProject = (p: Project): Promise<void> => {
         return this.openStore('readwrite').then(store => {
             const now = Date.now()
             p.updatedAt = now
@@ -60,7 +62,8 @@ export class IndexedDBStorage implements StorageApi {
             }
         })
     }
-    dropProject = (p: Project): Promise<void> => {
+    updateProject = (p: Project): Promise<void> => this.createProject(p)
+    dropProject = (p: ProjectInfo): Promise<void> => {
         return this.openStore('readwrite').then(store => reqToPromise(store.delete(p.id)))
     }
 

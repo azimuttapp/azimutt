@@ -14,17 +14,15 @@ import Libs.Models exposing (SizeChange)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T
-import Models.Project as Project exposing (Project)
+import Models.Project as Project
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
-import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
 import PagesComponents.Projects.Id_.Updates.FindPath exposing (handleFindPath)
@@ -46,8 +44,8 @@ import Time
 import Track
 
 
-update : Maybe ProjectId -> Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update currentProject currentLayout now msg model =
+update : Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout now msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -57,7 +55,7 @@ update currentProject currentLayout now msg model =
 
         SaveProject ->
             if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
 
             else
                 ( model, Cmd.none )
@@ -175,7 +173,7 @@ update currentProject currentLayout now msg model =
             model |> mapSourceParsingMCmd (mapParsingCmd (SqlSourceUpload.update message SourceParsing))
 
         SourceParsed projectId source ->
-            ( model, T.send (JsMessage (GotProjects ( [], [ Project.create projectId source.name source ] ))) )
+            ( model, T.send (JsMessage (GotProject (Ok (Project.create projectId source.name source)))) )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -269,7 +267,7 @@ update currentProject currentLayout now msg model =
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
-            model |> handleJsMessage currentProject currentLayout message
+            model |> handleJsMessage currentLayout message
 
         Send cmd ->
             ( model, cmd )
@@ -278,8 +276,8 @@ update currentProject currentLayout now msg model =
             ( model, Cmd.none )
 
 
-handleJsMessage : Maybe ProjectId -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage currentProject currentLayout msg model =
+handleJsMessage : Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage currentLayout msg model =
     case msg of
         GotSizes sizes ->
             model |> updateSizes sizes
@@ -291,41 +289,15 @@ handleJsMessage currentProject currentLayout msg model =
             ( model, Cmd.none )
 
         GotProjects ( errors, projects ) ->
-            let
-                project : Maybe Project
-                project =
-                    currentProject
-                        |> Maybe.mapOrElse (\id -> projects |> List.find (\p -> p.id == id)) (projects |> List.head)
-                        |> Maybe.map (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
-
-                ( childSeed, newSeed ) =
-                    Random.step (Random.int Random.minInt Random.maxInt) model.seed
-
-                otherProjects : List ProjectInfo
-                otherProjects =
-                    project |> Maybe.mapOrElse (\prj -> projects |> List.filter (\p -> p.id /= prj.id) |> List.map ProjectInfo.create |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) []
-
-                erd : Maybe Erd
-                erd =
-                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create (Random.initialSeed childSeed) otherProjects))
-            in
-            ( { model | seed = newSeed, loaded = True, erd = erd }
+            ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }
             , Cmd.batch
-                ((model.erd
-                    |> Maybe.mapOrElse (\_ -> [])
-                        [ Ports.observeSize Conf.ids.erd
-                        , Ports.observeTablesSize (project |> Maybe.mapOrElse (.layout >> .tables) [] |> List.map .id)
-                        , Ports.setMeta { title = Just (Views.title erd), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
-                        ]
-                 )
-                    ++ (errors
-                            |> List.concatMap
-                                (\( name, err ) ->
-                                    [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err))
-                                    , Ports.trackJsonError "decode-project" err
-                                    ]
-                                )
-                       )
+                (errors
+                    |> List.concatMap
+                        (\( name, err ) ->
+                            [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err))
+                            , Ports.trackJsonError "decode-project" err
+                            ]
+                        )
                 )
             )
 
@@ -335,32 +307,26 @@ handleJsMessage currentProject currentLayout msg model =
                     ( model, Cmd.batch [ T.send (toastError ("Unable to read project: " ++ Decode.errorToHtml err)), Ports.trackJsonError "decode-project" err ] )
 
                 Ok project ->
-                    ( model
-                        |> mapErdM
-                            (\erd ->
-                                if erd.project.id == project.id then
-                                    Erd.create erd.seed erd.otherProjects project
+                    let
+                        ( childSeed, newSeed ) =
+                            Random.step (Random.int Random.minInt Random.maxInt) model.seed
 
-                                else
-                                    { erd
-                                        | otherProjects =
-                                            erd.otherProjects
-                                                |> List.map
-                                                    (\p ->
-                                                        if p.id == project.id then
-                                                            ProjectInfo.create project
-
-                                                        else
-                                                            p
-                                                    )
-                                                |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
-                                    }
-                            )
-                    , Cmd.none
+                        erd : Erd
+                        erd =
+                            project
+                                |> (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
+                                |> Erd.create (Random.initialSeed childSeed)
+                    in
+                    ( { model | seed = newSeed, loaded = True, erd = Just erd }
+                    , Cmd.batch
+                        [ Ports.observeSize Conf.ids.erd
+                        , Ports.observeTablesSize erd.shownTables
+                        , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
+                        ]
                     )
 
         ProjectDropped projectId ->
-            ( model |> mapErdM (\erd -> { erd | otherProjects = erd.otherProjects |> List.filter (\p -> p.id /= projectId) }), Cmd.none )
+            ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
 
         GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )

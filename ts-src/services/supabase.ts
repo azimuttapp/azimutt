@@ -2,16 +2,42 @@ import {SupabaseClient} from "@supabase/supabase-js";
 import {User as SupabaseUser} from "@supabase/gotrue-js/src/lib/types";
 import {User} from "../types/user";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
-import {Project} from "../types/project";
-import {StorageApi, StorageKind} from "../storages/api";
+import {Project, ProjectId, ProjectInfo, ProjectStorage} from "../types/project";
+import {computeRelations, computeTables, projectToInfo, StorageApi, StorageKind} from "../storages/api";
 import {Env} from "../types/basics";
+import {PostgrestError} from "@supabase/postgrest-js/src/lib/types";
 
 /*
-Tables (https://dbdiagram.io/d/628351d27f945876b6310c15):
-    - projects (id, name, tables, layouts, created_at, updated_at)
-    - project_accesses (project_id, user_id, access (owner, write, read, none), created_at, created_by)
-Storage:
-    - policies (storage.objects)
+# Tables (https://dbdiagram.io/d/628351d27f945876b6310c15)
+
+auth.users
+  id uuid
+  role varchar
+  email varchar
+  created_at timestamptz
+  updated_at timestamptz
+
+projects | list of stored projects
+  id uuid pk
+  name varchar
+  tables int2
+  relations int2
+  layouts int2
+  project json
+  created_at timestamptz default=now()
+  created_by uuid default=auth.uid() fk auth.users.id
+  updated_at timestamptz default=now()
+  updated_by uuid default=auth.uid() fk auth.users.id
+
+project_accesses | give access to stored projects
+  id uuid default=uuid_generate_v4() pk
+  user_id uuid fk auth.users.id
+  project_id uuid fk projects.id
+  access varchar | values: owner, write, read, none
+  created_at timestamptz default=now()
+  created_by uuid default=auth.uid() fk auth.users.id
+  updated_at timestamptz default=now()
+  updated_by uuid default=auth.uid() fk auth.users.id
  */
 
 export interface SupabaseConf {
@@ -22,7 +48,7 @@ export interface SupabaseConf {
 
 export class Supabase implements StorageApi {
     // https://supabase.com/docs/guides/local-development
-    static conf: {[env in Env]: SupabaseConf} = {
+    static conf: { [env in Env]: SupabaseConf } = {
         dev: {
             supabaseUrl: 'http://localhost:54321',
             // dbUrl: 'postgresql://postgres:postgres@localhost:54322/postgres',
@@ -40,12 +66,17 @@ export class Supabase implements StorageApi {
             supabaseKey: '',
         }
     }
+
     static init(env: Env): Supabase {
-        const {supabaseUrl, supabaseKey, options} = this.conf[env]
-        return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options), 'projects')
+        const {supabaseUrl, supabaseKey, options} = this.conf['staging'] // social auth & file storage not supported in local :(
+        return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options))
     }
 
-    constructor(private supabase: SupabaseClient, private projectsBucket: string, private user: User | null = null) {
+    store: StorageApi
+
+    constructor(private supabase: SupabaseClient, private user: User | null = null) {
+        // this.store = new FileStorage(supabase, 'projects')
+        this.store = new DbStorage(supabase)
     }
 
     getLoggedUser = (): User | null => {
@@ -72,7 +103,7 @@ export class Supabase implements StorageApi {
     logout = (): Promise<void> => {
         return this.supabase.auth.signOut().then(res => {
             if (res.error) {
-                return Promise.reject(`Can't logout: ${res.error}`)
+                return Promise.reject(`Can't logout: ${JSON.stringify(res.error)}`)
             } else {
                 this.user = null
             }
@@ -91,46 +122,117 @@ export class Supabase implements StorageApi {
         return this
     }
 
-    // storage
+    kind: StorageKind = 'supabase'
+    listProjects = (): Promise<ProjectInfo[]> => this.user ? this.store.listProjects() : Promise.resolve([])
+    loadProject = (id: ProjectId): Promise<Project> => this.user ? this.store.loadProject(id) : Promise.reject('Not logged in')
+    createProject = (p: Project): Promise<void> => this.user ? this.store.createProject(p) : Promise.reject('Not logged in')
+    updateProject = (p: Project): Promise<void> => this.user ? this.store.updateProject(p) : Promise.reject('Not logged in')
+    dropProject = (p: ProjectInfo): Promise<void> => this.user ? this.store.dropProject(p) : Promise.reject('Not logged in')
+}
+
+class DbStorage implements StorageApi {
+    constructor(private supabase: SupabaseClient) {
+    }
 
     kind: StorageKind = 'supabase'
-    loadProjects = async (): Promise<Project[]> => {
-        if (!this.user) {
-            return []
-        }
-        const files = await this.getBucket().list().then(resultToPromise)
-        return await Promise.all(files.map(file =>
-            this.getBucket().download(file.name)
-                .then(resultToPromise)
-                .then(blob => blob.text())
-                .then(json => JSON.parse(json) as Project)
-        ))
+    listProjects = async (): Promise<ProjectInfo[]> => {
+        const projects = await this.supabase.from('projects')
+            .select('id, name, tables, relations, layouts, created_at, updated_at').then(resultToPromise)
+        return projects.map(p => ({
+            id: p.id,
+            name: p.name,
+            tables: p.tables,
+            relations: p.relations,
+            layouts: p.layouts,
+            storage: ProjectStorage.cloud,
+            createdAt: new Date(p.created_at).getTime(),
+            updatedAt: new Date(p.updated_at).getTime()
+        }))
     }
-    saveProject = async (p: Project): Promise<void> => {
-        if (!this.user) {
-            return Promise.reject('Not logged in')
+    loadProject = async (id: ProjectId): Promise<Project> => {
+        const projects = await this.supabase.from('projects')
+            .select('project').match({id}).then(resultToPromise)
+        return projects.length === 1 ? projects[0].project : Promise.reject(`Project ${id} not found`)
+    }
+    createProject = async (p: Project): Promise<void> => {
+        if (isSample(p)) {
+            return Promise.reject("Sample projects can't be uploaded!")
         }
-        return await this.getBucket().upload(this.projectPath(p), JSON.stringify(p), {
+        return await this.supabase.from('projects').insert({
+            id: p.id,
+            name: p.name,
+            tables: computeTables(p.sources),
+            relations: computeRelations(p.sources),
+            layouts: Object.keys(p.layouts).length,
+            project: p,
+        }, {returning: 'minimal'}).then(checkResult)
+    }
+    updateProject = async (p: Project): Promise<void> => {
+        return await this.supabase.from('projects').update({
+            name: p.name,
+            tables: computeTables(p.sources),
+            relations: computeRelations(p.sources),
+            layouts: Object.keys(p.layouts).length,
+            project: p,
+            // FIXME update updated_at & updated_by: https://github.com/supabase/supabase/issues/379#issuecomment-1005614974
+            // FIXME prevent edit other fields: https://dev.to/jdgamble555/supabase-date-protection-on-postgresql-1n91
+        }).match({id: p.id}).then(checkResult)
+    }
+    dropProject = async (p: ProjectInfo): Promise<void> => {
+        return await this.supabase.from('projects').delete()
+            .match({id: p.id}).then(checkDelete)
+    }
+}
+
+// slow query as needs to load everything and files are not saved in backup, use db instead!
+class FileStorage implements StorageApi {
+    constructor(private supabase: SupabaseClient, private projectsBucket: string) {
+    }
+
+    kind: StorageKind = 'supabase'
+    listProjects = async (): Promise<ProjectInfo[]> => {
+        const files = await this.getBucket().list().then(resultToPromise)
+        const projects = await Promise.all(files.map(file => this.download(file.name)))
+        return projects.map(projectToInfo)
+    }
+    loadProject = (id: ProjectId): Promise<Project> => this.download(this.projectPath(id))
+    createProject = async (p: Project): Promise<void> => {
+        if (isSample(p)) {
+            return Promise.reject("Sample projects can't be uploaded!")
+        }
+        return await this.getBucket().upload(this.projectPath(p.id), JSON.stringify(p), {
             contentType: 'application/json;charset=UTF-8',
             upsert: true
         }).then(resultToPromise).then(_ => undefined)
     }
-    dropProject = async (p: Project): Promise<void> => {
-        if (!this.user) {
-            return Promise.reject('Not logged in')
-        }
-        return await this.getBucket().remove([this.projectPath(p)]).then(resultToPromise).then(_ => undefined)
-    }
+    updateProject = async (p: Project): Promise<void> => this.createProject(p)
+    dropProject = (p: ProjectInfo): Promise<void> => this.getBucket().remove([this.projectPath(p.id)]).then(resultToPromise).then(_ => undefined)
     private getBucket = () => this.supabase.storage.from(this.projectsBucket)
-    private projectPath = (p: Project) => `${p.id}.json`
+    private projectPath = (id: ProjectId) => `${id}.json`
+    private download = async (path: string): Promise<Project> => {
+        return await this.getBucket().download(path)
+            .then(resultToPromise)
+            .then(blob => blob.text())
+            .then(json => JSON.parse(json) as Project)
+    }
 }
 
-type Result<T> = { data: T | null; error: Error | null }
+// HELPERS
+
+type Result<T> = { data: T | null; error: Error | PostgrestError | null }
 
 function resultToPromise<T>(res: Result<T>): Promise<T> {
-    return res.error ? Promise.reject(res.error) :
+    return res.error ? Promise.reject(res.error.message ? res.error.message : res.error) :
         res.data === null ? Promise.reject('Data is null') :
             Promise.resolve(res.data)
+}
+
+function checkResult<T>(res: Result<T>): Promise<void> {
+    return res.error === null ? Promise.resolve(undefined) : Promise.reject(res.error.message ? res.error.message : res.error)
+}
+
+function checkDelete<T>(res: Result<T[]>): Promise<void> {
+    return res.error === null && res.data?.length === 1 ? Promise.resolve(undefined) : Promise.reject(`Can't delete: ${res.error?.message}`)
 }
 
 function supabaseToAzimuttUser(user: SupabaseUser): User {
@@ -143,4 +245,8 @@ function supabaseToAzimuttUser(user: SupabaseUser): User {
         role: user.role, // ex: authenticated
         provider: user.app_metadata.provider // ex: github
     }
+}
+
+function isSample(p: Project): boolean {
+    return p.id.startsWith('0000')
 }

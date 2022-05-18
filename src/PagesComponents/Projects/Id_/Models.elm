@@ -33,6 +33,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Random
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
@@ -46,6 +47,7 @@ type alias Model =
     , screen : ScreenProps
     , loaded : Bool
     , erd : Maybe Erd
+    , projects : List ProjectInfo
     , hoverTable : Maybe TableId -- TODO remove?
     , hoverColumn : Maybe ColumnRef -- TODO remove?
     , cursorMode : CursorMode

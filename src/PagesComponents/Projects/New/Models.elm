@@ -10,6 +10,7 @@ import Libs.Task as T
 import Models.Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.ProjectImport exposing (ProjectImport, ProjectImportMsg)
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
@@ -20,7 +21,7 @@ type alias Model =
     { selectedMenu : String
     , mobileMenuOpen : Bool
     , openedCollapse : HtmlId
-    , projects : List Project
+    , projects : List ProjectInfo
     , selectedTab : Tab
     , sqlSourceUpload : Maybe (SqlSourceUpload Msg)
     , projectImport : Maybe ProjectImport

@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, listenHotkeys, loadProjects, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -26,6 +26,7 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
 import Models.User as User exposing (User)
+import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
 
@@ -80,9 +81,14 @@ setMeta payload =
     messageToJs (SetMeta payload)
 
 
-loadProjects : Cmd msg
-loadProjects =
-    messageToJs LoadProjects
+listProjects : Cmd msg
+listProjects =
+    messageToJs ListProjects
+
+
+loadProject : ProjectId -> Cmd msg
+loadProject id =
+    messageToJs (LoadProject id)
 
 
 loadRemoteProject : String -> Cmd msg
@@ -90,9 +96,14 @@ loadRemoteProject projectUrl =
     messageToJs (LoadRemoteProject projectUrl)
 
 
-saveProject : Project -> Cmd msg
-saveProject project =
-    messageToJs (SaveProject project)
+createProject : Project -> Cmd msg
+createProject project =
+    messageToJs (CreateProject project)
+
+
+updateProject : Project -> Cmd msg
+updateProject project =
+    messageToJs (UpdateProject project)
 
 
 moveProjectTo : Project -> ProjectStorage -> Cmd msg
@@ -105,7 +116,7 @@ downloadFile filename content =
     messageToJs (DownloadFile filename content)
 
 
-dropProject : Project -> Cmd msg
+dropProject : ProjectInfo -> Cmd msg
 dropProject project =
     messageToJs (DropProject project)
 
@@ -193,12 +204,14 @@ type ElmMsg
     | AutofocusWithin HtmlId
     | Login (Maybe String)
     | Logout
-    | LoadProjects
+    | ListProjects
+    | LoadProject ProjectId
     | LoadRemoteProject FileUrl
-    | SaveProject Project
+    | CreateProject Project
+    | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | DownloadFile FileName FileContent
-    | DropProject Project
+    | DropProject ProjectInfo
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
     | ObserveSizes (List HtmlId)
@@ -212,7 +225,7 @@ type JsMsg
     = GotSizes (List SizeChange)
     | GotLogin User
     | GotLogout
-    | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
+    | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
     | GotProject (Result Decode.Error Project)
     | ProjectDropped ProjectId
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
@@ -293,14 +306,20 @@ elmEncoder elm =
         Logout ->
             Encode.object [ ( "kind", "Logout" |> Encode.string ) ]
 
-        LoadProjects ->
-            Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
+        ListProjects ->
+            Encode.object [ ( "kind", "ListProjects" |> Encode.string ) ]
+
+        LoadProject id ->
+            Encode.object [ ( "kind", "LoadProject" |> Encode.string ), ( "id", id |> ProjectId.encode ) ]
 
         LoadRemoteProject projectUrl ->
             Encode.object [ ( "kind", "LoadRemoteProject" |> Encode.string ), ( "projectUrl", projectUrl |> Encode.string ) ]
 
-        SaveProject project ->
-            Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+        CreateProject project ->
+            Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        UpdateProject project ->
+            Encode.object [ ( "kind", "UpdateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         MoveProjectTo project storage ->
             Encode.object [ ( "kind", "MoveProjectTo" |> Encode.string ), ( "project", project |> Project.encode ), ( "storage", storage |> ProjectStorage.encode ) ]
@@ -309,7 +328,7 @@ elmEncoder elm =
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]
 
         DropProject project ->
-            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ) ]
 
         GetLocalFile project source file ->
             Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
@@ -358,7 +377,7 @@ jsDecoder =
                     Decode.succeed GotLogout
 
                 "GotProjects" ->
-                    Decode.map GotProjects (Decode.field "projects" projectsDecoder)
+                    Decode.map GotProjects (Decode.field "projects" projectInfosDecoder)
 
                 "GotProject" ->
                     Decode.map GotProject (Decode.field "project" projectDecoder)
@@ -435,8 +454,8 @@ jsDecoder =
         )
 
 
-projectsDecoder : Decoder ( List ( ProjectId, Decode.Error ), List Project )
-projectsDecoder =
+projectInfosDecoder : Decoder ( List ( ProjectId, Decode.Error ), List ProjectInfo )
+projectInfosDecoder =
     Decode.list (Decode.tuple Decode.string Decode.value)
         |> Decode.map
             (\list ->
@@ -444,7 +463,7 @@ projectsDecoder =
                     |> List.map
                         (\( k, v ) ->
                             v
-                                |> Decode.decodeValue decodeProject
+                                |> Decode.decodeValue ProjectInfo.decode
                                 |> Result.mapError (\e -> ( k, e ))
                         )
                     |> List.resultCollect

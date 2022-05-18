@@ -53,7 +53,7 @@ init =
             , body = Just ""
             }
         , Ports.trackPage "home"
-        , Ports.loadProjects
+        , Ports.listProjects
         ]
     )
 

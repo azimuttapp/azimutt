@@ -1,5 +1,17 @@
 import {File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
-import {Color, ColumnId, Delta, Position, Project, ProjectId, Size, SourceId, ProjectStorage, TableId} from "./project";
+import {
+    Color,
+    ColumnId,
+    Delta,
+    Position,
+    Project,
+    ProjectId,
+    Size,
+    SourceId,
+    ProjectStorage,
+    TableId,
+    ProjectInfo
+} from "./project";
 import {User} from "./user";
 
 export interface ElmFlags {
@@ -56,7 +68,7 @@ export type JsMsg =
 export type GotLogin = { kind: 'GotLogin', user: User }
 export type GotLogout = { kind: 'GotLogout' }
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
-export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, Project][] }
+export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
 export type GotProject = { kind: 'GotProject', project: Project }
 export type ProjectDropped = { kind: 'ProjectDropped', id: ProjectId }
 export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
@@ -89,9 +101,11 @@ export type ElmMsg =
     | AutofocusWithinMsg
     | LoginMsg
     | LogoutMsg
-    | LoadProjectsMsg
+    | ListProjectsMsg
+    | LoadProjectMsg
     | LoadRemoteProjectMsg
-    | SaveProjectMsg
+    | CreateProjectMsg
+    | UpdateProjectMsg
     | MoveProjectToMsg
     | DownloadFileMsg
     | DropProjectMsg
@@ -112,12 +126,14 @@ export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string
 export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
 export type LoginMsg = { kind: 'Login', redirect?: string }
 export type LogoutMsg = { kind: 'Logout' }
-export type LoadProjectsMsg = { kind: 'LoadProjects' }
+export type ListProjectsMsg = { kind: 'ListProjects' }
+export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
 export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: FileUrl }
-export type SaveProjectMsg = { kind: 'SaveProject', project: Project }
+export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
+export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
-export type DropProjectMsg = { kind: 'DropProject', project: Project }
+export type DropProjectMsg = { kind: 'DropProject', project: ProjectInfo }
 export type GetLocalFileMsg = { kind: 'GetLocalFile', project?: ProjectId, source?: SourceId, file: File }
 export type GetRemoteFileMsg = { kind: 'GetRemoteFile', project?: ProjectId, source?: SourceId, url: FileUrl, sample: SampleKey }
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }

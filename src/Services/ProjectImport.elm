@@ -11,7 +11,6 @@ import Json.Decode as Decode
 import Libs.DateTime as DateTime
 import Libs.Html exposing (extLink)
 import Libs.Json.Decode as Decode
-import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
 import Libs.Models.FileUrl exposing (FileUrl)
@@ -89,8 +88,8 @@ gotRemoteFile projectId content =
 -- VIEW
 
 
-viewParsing : Time.Zone -> List Project -> ProjectImport -> Html msg
-viewParsing zone currentProjects model =
+viewParsing : Time.Zone -> Maybe Project -> ProjectImport -> Html msg
+viewParsing zone currentProject model =
     let
         isSample : Bool
         isSample =
@@ -106,12 +105,7 @@ viewParsing zone currentProjects model =
                     , model.parsedProject
                         |> Maybe.map Tuple.second
                         |> Maybe.andThen Result.toMaybe
-                        |> Maybe.andThen
-                            (\project ->
-                                currentProjects
-                                    |> List.find (\p -> p.id == project.id)
-                                    |> Maybe.map (\p -> viewDiffAlert zone isSample p project)
-                            )
+                        |> Maybe.andThen (\project -> currentProject |> Maybe.map (\p -> viewDiffAlert zone isSample p project))
                         |> Maybe.withDefault (div [] [])
                     ]
             )

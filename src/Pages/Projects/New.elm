@@ -105,7 +105,7 @@ init req =
             , body = Just "h-full"
             }
          , Ports.trackPage "new-project"
-         , Ports.loadProjects
+         , Ports.listProjects
          ]
             ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleSelectMsg (ProjectImport.SelectRemoteFile s.url (Just s.key))) ]) [])
         )
@@ -153,7 +153,7 @@ update req msg model =
         SqlSourceUploadCreate projectId source ->
             Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source
                 |> (\project ->
-                        ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+                        ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
                    )
 
         ProjectImportMsg message ->
@@ -163,12 +163,12 @@ update req msg model =
             ( model |> mapProjectImportM (\_ -> ProjectImport.init), Cmd.none )
 
         ProjectImportCreate project ->
-            ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
         ProjectImportCreateNew id project ->
             { project | id = id, name = String.unique (model.projects |> List.map .name) project.name }
                 |> (\p ->
-                        ( model, Cmd.batch [ Ports.saveProject p, Ports.track (Track.importProject p), Request.pushRoute (Route.Projects__Id_ { id = p.id }) req ] )
+                        ( model, Cmd.batch [ Ports.createProject p, Ports.track (Track.importProject p), Request.pushRoute (Route.Projects__Id_ { id = p.id }) req ] )
                    )
 
         SampleSelectMsg message ->
@@ -178,7 +178,7 @@ update req msg model =
             ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )
 
         SampleSelectCreate project ->
-            ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )

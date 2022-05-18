@@ -1,5 +1,5 @@
-import {Project} from "../types/project";
-import {StorageApi, StorageKind} from "./api";
+import {Project, ProjectId, ProjectInfo} from "../types/project";
+import {projectToInfo, StorageApi, StorageKind} from "./api";
 import {Logger} from "../services/logger";
 
 export class LocalStorageStorage implements StorageApi {
@@ -29,7 +29,9 @@ export class LocalStorageStorage implements StorageApi {
             })
         return Promise.resolve(projects)
     }
-    saveProject = (p: Project): Promise<void> => {
+    listProjects = (): Promise<ProjectInfo[]> => this.loadProjects().then(projects => projects.map(projectToInfo))
+    loadProject = (id: ProjectId): Promise<Project> => this.loadProjects().then(projects => projects.find(p => p.id === id) || Promise.reject(`Project ${id} not found`))
+    createProject = (p: Project): Promise<void> => {
         const key = this.prefix + p.id
         const now = Date.now()
         p.updatedAt = now
@@ -43,7 +45,8 @@ export class LocalStorageStorage implements StorageApi {
             return Promise.reject(e)
         }
     }
-    dropProject = (p: Project): Promise<void> => {
+    updateProject = (p: Project): Promise<void> => this.createProject(p)
+    dropProject = (p: ProjectInfo): Promise<void> => {
         this.storage.removeItem(this.prefix + p.id)
         return Promise.resolve()
     }

@@ -19,9 +19,9 @@ import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
-import Models.Project exposing (Project)
 import Models.Project.ProjectStorage exposing (ProjectStorage(..))
 import PagesComponents.Helpers exposing (appShell)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Router
 import Shared exposing (StoredProjects(..))
@@ -128,8 +128,8 @@ viewProjectPlaceholder =
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ viewTextPlaceholder "w-24 h-3" ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
-                [ li [] [ viewTextPlaceholder "" ]
-                , li [] [ viewTextPlaceholder "" ]
+                [ li [] [ viewTextPlaceholder "w-full" ]
+                , li [] [ viewTextPlaceholder "w-full" ]
                 ]
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
@@ -143,7 +143,7 @@ viewProjectPlaceholder =
 
 viewTextPlaceholder : TwClass -> Html msg
 viewTextPlaceholder styles =
-    span [ css [ "inline-block w-full max-w-full h-2 bg-gray-300 rounded-full", styles ] ] []
+    span [ css [ "inline-block h-2 bg-gray-300 rounded-full", styles ] ] []
 
 
 viewIconPlaceholder : TwClass -> Html msg
@@ -151,13 +151,13 @@ viewIconPlaceholder styles =
     span [ css [ "h-6 w-6 rounded-full bg-gray-300", styles ] ] []
 
 
-viewProjectCard : Time.Zone -> Project -> Html Msg
+viewProjectCard : Time.Zone -> ProjectInfo -> Html Msg
 viewProjectCard zone project =
     li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium flex" ] ] [ Icon.outline (Bool.cond (project.storage == Cloud) Icon.Cloud Icon.Folder) "mr-1", text project.name ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
-                [ li [] [ text ((project.tables |> String.pluralizeD "table") ++ ", " ++ (project.layouts |> String.pluralizeD "layout")) ]
+                [ li [] [ text ((project.tables |> String.pluralize "table") ++ ", " ++ (project.layouts |> String.pluralize "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]
                 ]
             ]
@@ -171,7 +171,7 @@ viewProjectCard zone project =
         ]
 
 
-confirmDeleteProject : Project -> Msg
+confirmDeleteProject : ProjectInfo -> Msg
 confirmDeleteProject project =
     ConfirmOpen
         { color = Tw.red

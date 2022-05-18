@@ -9,7 +9,7 @@ import {
     HotkeyId,
     JsMsg
 } from "../types/elm";
-import {Color, ColumnId, Delta, Position, Project, ProjectId, TableId} from "../types/project";
+import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
 import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import {Utils} from "../utils/utils";
@@ -33,9 +33,11 @@ export class ElmApp {
         AutofocusWithin: [],
         Login: [],
         Logout: [],
-        LoadProjects: [],
+        ListProjects: [],
+        LoadProject: [],
         LoadRemoteProject: [],
-        SaveProject: [],
+        CreateProject: [],
+        UpdateProject: [],
         MoveProjectTo: [],
         DownloadFile: [],
         DropProject: [],
@@ -74,7 +76,7 @@ export class ElmApp {
     login = (user: User): void => this.send({kind: 'GotLogin', user})
     logout = (): void => this.send({kind: 'GotLogout'})
     updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
-    loadProjects = (projects: Project[]): void => this.send({
+    loadProjects = (projects: ProjectInfo[]): void => this.send({
         kind: 'GotProjects',
         projects: projects.map(p => [p.id, p])
     })

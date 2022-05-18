@@ -33,7 +33,7 @@ page shared req =
     in
     Page.element
         { init = init shared.now query
-        , update = Updates.update Nothing query.layout shared.now
+        , update = Updates.update query.layout shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -67,6 +67,7 @@ init now query =
       , screen = ScreenProps.zero
       , loaded = query.projectUrl == Nothing && query.sourceUrl == Nothing
       , erd = Nothing
+      , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect

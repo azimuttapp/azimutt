@@ -1,5 +1,5 @@
-import {StorageApi, StorageKind} from "./api";
-import {Project, ProjectStorage} from "../types/project";
+import {projectToInfo, StorageApi, StorageKind} from "./api";
+import {Project, ProjectId, ProjectInfo, ProjectStorage} from "../types/project";
 import {Supabase} from "../services/supabase";
 import {IndexedDBStorage} from "./indexeddb";
 import {LocalStorageStorage} from "./localstorage";
@@ -14,32 +14,36 @@ export class StorageManager implements StorageApi {
         this.browser = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
     }
 
-    loadProjects = async (): Promise<Project[]> => {
+    listProjects = async (): Promise<ProjectInfo[]> => {
         return await Promise.all([
-            this.browser.then(s => s.loadProjects()),
-            this.cloud.loadProjects()
-        ]).then((projects: Project[][]) => projects.flat())
+            this.browser.then(s => s.listProjects()),
+            this.cloud.listProjects()
+        ]).then((projects: ProjectInfo[][]) => projects.flat())
     }
-    saveProject = async (p: Project): Promise<void> => {
-        return await p.storage === 'cloud' ? this.cloud.saveProject(p) : this.browser.then(s => s.saveProject(p))
+    loadProject = (id: ProjectId): Promise<Project> => this.browser.then(s => s.loadProject(id)).catch(_ => this.cloud.loadProject(id))
+    createProject = async (p: Project): Promise<void> => {
+        return await p.storage === 'cloud' ? this.cloud.createProject(p) : this.browser.then(s => s.createProject(p))
     }
-    dropProject = async (p: Project): Promise<void> => {
+    updateProject = async (p: Project): Promise<void> => {
+        return await p.storage === 'cloud' ? this.cloud.updateProject(p) : this.browser.then(s => s.updateProject(p))
+    }
+    dropProject = async (p: ProjectInfo): Promise<void> => {
         return await p.storage === 'cloud' ? this.cloud.dropProject(p) : this.browser.then(s => s.dropProject(p))
     }
 
     moveProjectTo = async (p: Project, storage: ProjectStorage): Promise<Project> => {
-        if (p.storage === 'cloud') {
-            if (storage === 'browser') {
+        if (p.storage === ProjectStorage.cloud) {
+            if (storage === ProjectStorage.browser) {
                 const project = {...p, storage}
-                return await this.browser.then(s => s.saveProject(project))
-                    .then(_ => this.cloud.dropProject(project))
+                return await this.browser.then(s => s.createProject(project))
+                    .then(_ => this.cloud.dropProject(projectToInfo(project)))
                     .then(_ => project)
             }
-        } else if (p.storage === 'browser' || p.storage === undefined) {
-            if (storage === 'cloud') {
+        } else if (p.storage === ProjectStorage.browser || p.storage === undefined) {
+            if (storage === ProjectStorage.cloud) {
                 const project = {...p, storage}
-                return await this.cloud.saveProject(project)
-                    .then(_ => this.browser.then(s => s.dropProject(project)))
+                return await this.cloud.createProject(project)
+                    .then(_ => this.browser.then(s => s.dropProject(projectToInfo(project))))
                     .then(_ => project)
             }
         }
