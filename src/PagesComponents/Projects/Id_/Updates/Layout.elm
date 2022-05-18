@@ -51,9 +51,8 @@ handleLayout now msg model =
 
 createLayout : LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd Msg )
 createLayout name now erd =
-    -- TODO check that layout name does not already exist
-    erd.usedLayout
-        |> Maybe.andThen (\l -> erd.layouts |> Dict.get l)
+    erd.layouts
+        |> Dict.get name
         |> Maybe.mapOrElse
             (\_ -> ( erd, Cmd.batch [ T.send (toastError ("Layout " ++ name ++ " already exists")) ] ))
             (let

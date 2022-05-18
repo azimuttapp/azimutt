@@ -115,7 +115,7 @@ viewModal zone now model =
         [ class "az-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
          , model.prompt |> Maybe.map (\m -> ( m.id, viewPrompt (model.openedDialogs |> List.has m.id) m ))
-         , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout (model.openedDialogs |> List.has m.id) m ))
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, viewCreateLayout (e.layouts |> Dict.keys) (model.openedDialogs |> List.has m.id) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
