@@ -1,10 +1,10 @@
 import {SupabaseClient} from "@supabase/supabase-js";
-import {User as SupabaseUser} from "@supabase/gotrue-js/src/lib/types";
+import {User as SupabaseUser, UserCredentials} from "@supabase/gotrue-js/src/lib/types";
 import {User} from "../types/user";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
 import {Project, ProjectId, ProjectInfo, ProjectStorage} from "../types/project";
 import {computeRelations, computeTables, projectToInfo, StorageApi, StorageKind} from "../storages/api";
-import {Env} from "../types/basics";
+import {Email, Env} from "../types/basics";
 import {PostgrestError} from "@supabase/postgrest-js/src/lib/types";
 
 /*
@@ -38,13 +38,19 @@ project_accesses | give access to stored projects
   created_by uuid default=auth.uid() fk auth.users.id
   updated_at timestamptz default=now()
   updated_by uuid default=auth.uid() fk auth.users.id
- */
 
-export interface SupabaseConf {
-    supabaseUrl: string
-    supabaseKey: string
-    options?: SupabaseClientOptions
-}
+# Policies (examples: https://github.com/steve-chavez/socnet/blob/master/security/users.sql)
+
+CREATE POLICY "See your rights" ON "public"."project_accesses"
+AS PERMISSIVE FOR SELECT
+TO authenticated
+USING (auth.uid() = user_id)
+
+CREATE POLICY "Create new rights" ON "public"."project_accesses"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK ((auth.uid() in (select user_id from project_accesses pa where project_id=pa.project_id and access='owner')))
+ */
 
 export class Supabase implements StorageApi {
     // https://supabase.com/docs/guides/local-development
@@ -85,9 +91,9 @@ export class Supabase implements StorageApi {
         return this.user
     }
 
-    login = (redirect?: string): Promise<User> => {
+    login = (credentials: LoginInfo, redirect?: string): Promise<User> => {
         return this.supabase.auth.signIn(
-            {provider: 'github'},
+            formatLogin(credentials),
             redirect ? {redirectTo: `${window.location.origin}${redirect}`} : {}
         ).then(res => {
             if (res.error) {
@@ -129,6 +135,14 @@ export class Supabase implements StorageApi {
     updateProject = (p: Project): Promise<void> => this.user ? this.store.updateProject(p) : Promise.reject('Not logged in')
     dropProject = (p: ProjectInfo): Promise<void> => this.user ? this.store.dropProject(p) : Promise.reject('Not logged in')
 }
+
+export interface SupabaseConf {
+    supabaseUrl: string
+    supabaseKey: string
+    options?: SupabaseClientOptions
+}
+
+export type LoginInfo = { kind: 'Github' } | { kind: 'MagicLink', email: Email }
 
 class DbStorage implements StorageApi {
     constructor(private supabase: SupabaseClient) {
@@ -238,12 +252,22 @@ function checkDelete<T>(res: Result<T[]>): Promise<void> {
 function supabaseToAzimuttUser(user: SupabaseUser): User {
     return {
         id: user.id, // uuid
-        username: user.user_metadata.user_name,
-        name: user.user_metadata.name,
+        username: user.user_metadata.user_name || user.email?.split('@')[0],
+        name: user.user_metadata.name || user.email?.split('@')[0],
         email: user.email,
-        avatar: user.user_metadata.avatar_url,
+        avatar: user.user_metadata.avatar_url || '/assets/images/guest.png',
         role: user.role, // ex: authenticated
-        provider: user.app_metadata.provider // ex: github
+        provider: user.app_metadata.provider // ex: github or email
+    }
+}
+
+function formatLogin(creds: LoginInfo): UserCredentials {
+    if (creds.kind === 'Github') {
+        return {provider: 'github'}
+    } else if (creds.kind === 'MagicLink') {
+        return {email: creds.email}
+    } else {
+        throw new Error(`Unknown creds: ${creds}`)
     }
 }
 

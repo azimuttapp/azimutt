@@ -6,13 +6,14 @@ import {
     Position,
     Project,
     ProjectId,
+    ProjectInfo,
+    ProjectStorage,
     Size,
     SourceId,
-    ProjectStorage,
-    TableId,
-    ProjectInfo
+    TableId
 } from "./project";
 import {User} from "./user";
+import {LoginInfo} from "../services/supabase";
 
 export interface ElmFlags {
     now: Timestamp
@@ -124,7 +125,7 @@ export type ScrollToMsg = { kind: 'ScrollTo', id: HtmlId, position: ViewPosition
 export type FullscreenMsg = { kind: 'Fullscreen', maybeId?: HtmlId }
 export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string, canonical?: string, html?: string, body?: string }
 export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
-export type LoginMsg = { kind: 'Login', redirect?: string }
+export type LoginMsg = { kind: 'Login', info: LoginInfo, redirect?: string }
 export type LogoutMsg = { kind: 'Logout' }
 export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }

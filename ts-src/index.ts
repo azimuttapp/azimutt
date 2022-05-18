@@ -61,7 +61,7 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
-app.on('Login', msg => supabase.login(msg.redirect).then(app.login).then(listProjects).catch(logger.warn))
+app.on('Login', msg => supabase.login(msg.info, msg.redirect).then(app.login).then(listProjects).catch(logger.warn))
 app.on('Logout', _ => supabase.logout().then(app.logout).then(listProjects).catch(logger.warn))
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))

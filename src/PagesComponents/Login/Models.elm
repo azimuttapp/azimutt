@@ -1,9 +1,14 @@
 module PagesComponents.Login.Models exposing (Model, Msg(..))
 
+import Ports exposing (LoginInfo)
+
 
 type alias Model =
-    { redirect : Maybe String }
+    { email : String
+    , redirect : Maybe String
+    }
 
 
 type Msg
-    = GithubLogin
+    = UpdateEmail String
+    | Login LoginInfo

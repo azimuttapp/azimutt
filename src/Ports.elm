@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, updateProject)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -10,6 +10,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
+import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -66,9 +67,9 @@ autofocusWithin id =
     messageToJs (AutofocusWithin id)
 
 
-login : Maybe String -> Cmd msg
-login redirect =
-    messageToJs (Login redirect)
+login : LoginInfo -> Maybe String -> Cmd msg
+login info redirect =
+    messageToJs (Login info redirect)
 
 
 logout : Cmd msg
@@ -202,7 +203,7 @@ type ElmMsg
     | Fullscreen (Maybe HtmlId)
     | SetMeta MetaInfos
     | AutofocusWithin HtmlId
-    | Login (Maybe String)
+    | Login LoginInfo (Maybe String)
     | Logout
     | ListProjects
     | LoadProject ProjectId
@@ -219,6 +220,11 @@ type ElmMsg
     | TrackPage String
     | TrackEvent String Value
     | TrackError String Value
+
+
+type LoginInfo
+    = Github
+    | MagicLink Email
 
 
 type JsMsg
@@ -300,8 +306,8 @@ elmEncoder elm =
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
-        Login redirect ->
-            Encode.object [ ( "kind", "Login" |> Encode.string ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
+        Login info redirect ->
+            Encode.object [ ( "kind", "Login" |> Encode.string ), ( "info", info |> encodeLoginInfo ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
 
         Logout ->
             Encode.object [ ( "kind", "Logout" |> Encode.string ) ]
@@ -473,6 +479,16 @@ projectInfosDecoder =
 projectDecoder : Decoder (Result Decode.Error Project)
 projectDecoder =
     Decode.map (Decode.decodeValue decodeProject) Decode.value
+
+
+encodeLoginInfo : LoginInfo -> Encode.Value
+encodeLoginInfo info =
+    case info of
+        Github ->
+            Encode.object [ ( "kind", "Github" |> Encode.string ) ]
+
+        MagicLink email ->
+            Encode.object [ ( "kind", "MagicLink" |> Encode.string ), ( "email", email |> Encode.string ) ]
 
 
 port elmToJs : Value -> Cmd msg

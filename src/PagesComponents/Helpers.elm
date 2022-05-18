@@ -3,6 +3,7 @@ module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFoot
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
+import Components.Molecules.Tooltip as Tooltip
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
@@ -82,7 +83,10 @@ appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model 
                     (\m ->
                         button [ type_ "button", id m.id, onClick (onProfileClick profileDropdown), css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
                             [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
-                            , img [ css [ "rounded-full h-8 w-8" ], src (maybeUser |> Maybe.mapOrElse .avatar "/assets/images/guest.png"), alt (maybeUser |> Maybe.mapOrElse .name "Guest"), width 32, height 32 ] []
+                            , maybeUser
+                                |> Maybe.mapOrElse
+                                    (\u -> img [ css [ "rounded-full h-8 w-8" ], src u.avatar, alt u.name, width 32, height 32 ] [] |> Tooltip.bl u.name)
+                                    (img [ css [ "rounded-full h-8 w-8" ], src "/assets/images/guest.png", alt "Guest", width 32, height 32 ] [])
                             ]
                     )
                     (\_ ->

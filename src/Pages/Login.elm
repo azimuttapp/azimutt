@@ -42,7 +42,11 @@ title =
 
 init : Request.With Params -> ( Model, Effect Msg )
 init req =
-    ( { redirect = req.query |> Dict.get "redirect" }, Effect.none )
+    ( { email = ""
+      , redirect = req.query |> Dict.get "redirect"
+      }
+    , Effect.none
+    )
 
 
 
@@ -52,8 +56,11 @@ init req =
 update : Msg -> Model -> ( Model, Effect Msg )
 update msg model =
     case msg of
-        GithubLogin ->
-            ( model, Effect.fromCmd (Ports.login model.redirect) )
+        UpdateEmail email ->
+            ( { model | email = email }, Effect.none )
+
+        Login info ->
+            ( model, Effect.fromCmd (Ports.login info model.redirect) )
 
 
 
