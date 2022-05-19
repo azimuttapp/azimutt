@@ -6,8 +6,8 @@ export interface StorageApi {
     kind: StorageKind
     listProjects: () => Promise<ProjectInfo[]>
     loadProject: (id: ProjectId) => Promise<Project>
-    createProject: (p: Project) => Promise<void>
-    updateProject: (p: Project) => Promise<void>
+    createProject: (p: Project) => Promise<Project>
+    updateProject: (p: Project) => Promise<Project>
     dropProject: (p: ProjectInfo) => Promise<void>
 }
 

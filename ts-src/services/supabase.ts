@@ -2,10 +2,10 @@ import {SupabaseClient} from "@supabase/supabase-js";
 import {User as SupabaseUser, UserCredentials} from "@supabase/gotrue-js/src/lib/types";
 import {User} from "../types/user";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
-import {Project, ProjectId, ProjectInfo, ProjectStorage} from "../types/project";
-import {computeRelations, computeTables, projectToInfo, StorageApi, StorageKind} from "../storages/api";
+import {Project, ProjectId, ProjectInfo} from "../types/project";
+import {StorageApi, StorageKind} from "../storages/api";
 import {Email, Env} from "../types/basics";
-import {PostgrestError} from "@supabase/postgrest-js/src/lib/types";
+import {SupabaseStorage} from "../storages/supabase";
 
 /*
 # Tables (https://dbdiagram.io/d/628351d27f945876b6310c15)
@@ -24,6 +24,7 @@ projects | list of stored projects
   relations int2
   layouts int2
   project json
+  owner uuid default=auth.uid() fk auth.users.id
   created_at timestamptz default=now()
   created_by uuid default=auth.uid() fk auth.users.id
   updated_at timestamptz default=now()
@@ -33,23 +34,62 @@ project_accesses | give access to stored projects
   id uuid default=uuid_generate_v4() pk
   user_id uuid fk auth.users.id
   project_id uuid fk projects.id
-  access varchar | values: owner, write, read, none
+  access varchar | values: none, read, write
   created_at timestamptz default=now()
   created_by uuid default=auth.uid() fk auth.users.id
   updated_at timestamptz default=now()
   updated_by uuid default=auth.uid() fk auth.users.id
 
-# Policies (examples: https://github.com/steve-chavez/socnet/blob/master/security/users.sql)
+# Policies (https://www.postgresql.org/docs/12/sql-createpolicy.html, examples: https://github.com/steve-chavez/socnet/blob/master/security/users.sql)
+tip: existing rows are checked using "USING" and new ones are checked with "WITH CHECK" clause
 
-CREATE POLICY "See your rights" ON "public"."project_accesses"
+CREATE POLICY "Users can insert" ON "public"."projects"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK (true)
+
+CREATE POLICY "Owners can delete" ON "public"."projects"
+AS PERMISSIVE FOR DELETE
+TO authenticated
+USING (uid() = owner)
+
+CREATE POLICY "Owners or contributors can update" ON "public"."projects"
+AS PERMISSIVE FOR UPDATE
+TO authenticated
+USING (auth.uid() = owner or auth.uid() in (select user_id from project_accesses pa where projects.id=pa.project_id and access='write'))
+WITH CHECK (auth.uid() = owner or auth.uid() in (select user_id from project_accesses pa where projects.id=pa.project_id and access='write'))
+
+CREATE POLICY "Owner or readers can select" ON "public"."projects"
+AS PERMISSIVE FOR SELECT
+TO authenticated
+USING (auth.uid() = owner or auth.uid() in (select user_id from project_accesses pa where projects.id=pa.project_id and (access='write' or access='read')))
+
+
+CREATE POLICY "Owners can create" ON "public"."project_accesses"
+AS PERMISSIVE FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = (select owner from projects p where project_id=p.id))
+
+CREATE POLICY "Owners can delete" ON "public"."project_accesses"
+AS PERMISSIVE FOR DELETE
+TO authenticated
+USING (auth.uid() = (select owner from projects p where project_id=p.id))
+
+CREATE POLICY "Owners can update" ON "public"."project_accesses"
+AS PERMISSIVE FOR UPDATE
+TO authenticated
+USING (auth.uid() = (select owner from projects p where project_id=p.id))
+WITH CHECK (auth.uid() = (select owner from projects p where project_id=p.id))
+
+CREATE POLICY "Owners can select" ON "public"."project_accesses" => INFINITE LOOP :(
+AS PERMISSIVE FOR SELECT
+TO authenticated
+USING (auth.uid() = (select owner from projects p where project_id=p.id))
+
+CREATE POLICY "Users can select theirs" ON "public"."project_accesses"
 AS PERMISSIVE FOR SELECT
 TO authenticated
 USING (auth.uid() = user_id)
-
-CREATE POLICY "Create new rights" ON "public"."project_accesses"
-AS PERMISSIVE FOR INSERT
-TO authenticated
-WITH CHECK ((auth.uid() in (select user_id from project_accesses pa where project_id=pa.project_id and access='owner')))
  */
 
 export class Supabase implements StorageApi {
@@ -78,11 +118,10 @@ export class Supabase implements StorageApi {
         return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options))
     }
 
-    store: StorageApi
+    store: SupabaseStorage
 
     constructor(private supabase: SupabaseClient, private user: User | null = null) {
-        // this.store = new FileStorage(supabase, 'projects')
-        this.store = new DbStorage(supabase)
+        this.store = new SupabaseStorage(supabase)
     }
 
     getLoggedUser = (): User | null => {
@@ -131,8 +170,8 @@ export class Supabase implements StorageApi {
     kind: StorageKind = 'supabase'
     listProjects = (): Promise<ProjectInfo[]> => this.user ? this.store.listProjects() : Promise.resolve([])
     loadProject = (id: ProjectId): Promise<Project> => this.user ? this.store.loadProject(id) : Promise.reject('Not logged in')
-    createProject = (p: Project): Promise<void> => this.user ? this.store.createProject(p) : Promise.reject('Not logged in')
-    updateProject = (p: Project): Promise<void> => this.user ? this.store.updateProject(p) : Promise.reject('Not logged in')
+    createProject = (p: Project): Promise<Project> => this.user ? this.store.createProject(p) : Promise.reject('Not logged in')
+    updateProject = (p: Project): Promise<Project> => this.user ? this.store.updateProject(p) : Promise.reject('Not logged in')
     dropProject = (p: ProjectInfo): Promise<void> => this.user ? this.store.dropProject(p) : Promise.reject('Not logged in')
 }
 
@@ -144,77 +183,7 @@ export interface SupabaseConf {
 
 export type LoginInfo = { kind: 'Github' } | { kind: 'MagicLink', email: Email }
 
-class DbStorage implements StorageApi {
-    constructor(private supabase: SupabaseClient) {
-    }
-
-    kind: StorageKind = 'supabase'
-    listProjects = async (): Promise<ProjectInfo[]> => {
-        const projects = await this.supabase.from('projects')
-            .select('id, name, tables, relations, layouts, created_at, updated_at').then(resultToPromise)
-        return projects.map(p => ({
-            id: p.id,
-            name: p.name,
-            tables: p.tables,
-            relations: p.relations,
-            layouts: p.layouts,
-            storage: ProjectStorage.cloud,
-            createdAt: new Date(p.created_at).getTime(),
-            updatedAt: new Date(p.updated_at).getTime()
-        }))
-    }
-    loadProject = async (id: ProjectId): Promise<Project> => {
-        const projects = await this.supabase.from('projects')
-            .select('project').match({id}).then(resultToPromise)
-        return projects.length === 1 ? projects[0].project : Promise.reject(`Project ${id} not found`)
-    }
-    createProject = async (p: Project): Promise<void> => {
-        if (isSample(p)) {
-            return Promise.reject("Sample projects can't be uploaded!")
-        }
-        return await this.supabase.from('projects').insert({
-            id: p.id,
-            name: p.name,
-            tables: computeTables(p.sources),
-            relations: computeRelations(p.sources),
-            layouts: Object.keys(p.layouts).length,
-            project: p,
-        }, {returning: 'minimal'}).then(checkResult)
-    }
-    updateProject = async (p: Project): Promise<void> => {
-        return await this.supabase.from('projects').update({
-            name: p.name,
-            tables: computeTables(p.sources),
-            relations: computeRelations(p.sources),
-            layouts: Object.keys(p.layouts).length,
-            project: p,
-            // FIXME update updated_at & updated_by: https://github.com/supabase/supabase/issues/379#issuecomment-1005614974
-            // FIXME prevent edit other fields: https://dev.to/jdgamble555/supabase-date-protection-on-postgresql-1n91
-        }).match({id: p.id}).then(checkResult)
-    }
-    dropProject = async (p: ProjectInfo): Promise<void> => {
-        return await this.supabase.from('projects').delete()
-            .match({id: p.id}).then(checkDelete)
-    }
-}
-
 // HELPERS
-
-type Result<T> = { data: T | null; error: Error | PostgrestError | null }
-
-function resultToPromise<T>(res: Result<T>): Promise<T> {
-    return res.error ? Promise.reject(res.error.message ? res.error.message : res.error) :
-        res.data === null ? Promise.reject('Data is null') :
-            Promise.resolve(res.data)
-}
-
-function checkResult<T>(res: Result<T>): Promise<void> {
-    return res.error === null ? Promise.resolve(undefined) : Promise.reject(res.error.message ? res.error.message : res.error)
-}
-
-function checkDelete<T>(res: Result<T[]>): Promise<void> {
-    return res.error === null && res.data?.length === 1 ? Promise.resolve(undefined) : Promise.reject(`Can't delete: ${res.error?.message}`)
-}
 
 function supabaseToAzimuttUser(user: SupabaseUser): User {
     return {
@@ -236,8 +205,4 @@ function formatLogin(creds: LoginInfo): UserCredentials {
     } else {
         throw new Error(`Unknown creds: ${creds}`)
     }
-}
-
-function isSample(p: Project): boolean {
-    return p.id.startsWith('0000')
 }

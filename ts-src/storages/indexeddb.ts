@@ -7,6 +7,7 @@ export class IndexedDBStorage implements StorageApi {
     static databaseName = 'azimutt'
     static databaseVersion = 1
     static dbProjects = 'projects'
+
     static init(logger: Logger): Promise<IndexedDBStorage> {
         return window.indexedDB ? new Promise<IndexedDBStorage>((resolve, reject) => {
             const openRequest = window.indexedDB.open(IndexedDBStorage.databaseName, IndexedDBStorage.databaseVersion)
@@ -21,54 +22,86 @@ export class IndexedDBStorage implements StorageApi {
         }) : Promise.reject('indexedDB not available')
     }
 
+    private migrated = false
     public kind: StorageKind = 'indexedDb'
 
     constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
-    private loadProjects = (): Promise<Project[]> => {
-        return this.openStore('readonly').then(store => {
-            return new Promise<Project[]>((resolve, reject) => {
-                let projects: Project[] = []
+    listProjects = (): Promise<ProjectInfo[]> => {
+        return this.migrateLegacyProjects().then(_ => this.openStore('readonly')).then(store => {
+            return new Promise<ProjectInfo[]>((resolve, reject) => {
+                const projects: ProjectInfo[] = []
                 store.openCursor().onsuccess = (event: any) => {
                     const cursor = event.target.result
                     if (cursor) {
-                        projects.push(cursor.value)
+                        projects.push(projectToInfo(cursor.value))
                         cursor.continue()
                     } else {
-                        LocalStorageStorage.init(this.logger).then(legacyStorage =>
-                            legacyStorage.loadProjects().then(localStorageProjects =>
-                                Promise.all(localStorageProjects.map(p => Promise.all([legacyStorage.dropProject(projectToInfo(p)), this.createProject(p)])))
-                                    .then(_ => resolve(projects.concat(localStorageProjects)))
-                            )
-                        ).catch(reject)
+                        resolve(projects)
                     }
                 }
+                (store as any).onerror = (err: any) => reject(`Unable to load projects: ${err}`)
             })
-        }
-        )
-    }
-    listProjects = (): Promise<ProjectInfo[]> => this.loadProjects().then(projects => projects.map(projectToInfo))
-    loadProject = (id: ProjectId): Promise<Project> => this.loadProjects().then(projects => projects.find(p => p.id === id) || Promise.reject(`Project ${id} not found`))
-    createProject = (p: Project): Promise<void> => {
-        return this.openStore('readwrite').then(store => {
-            const now = Date.now()
-            p.updatedAt = now
-            if (!store.get(p.id)) {
-                p.createdAt = now
-                return reqToPromise(store.add(p)).then(_ => undefined)
-            } else {
-                return reqToPromise(store.put(p)).then(_ => undefined)
-            }
         })
     }
-    updateProject = (p: Project): Promise<void> => this.createProject(p)
+    loadProject = (id: ProjectId): Promise<Project> =>
+        this.migrateLegacyProjects()
+            .then(_ => this.openStore('readonly'))
+            .then(store => this.getProject(store, id))
+            .then(p => p ? p : Promise.reject(`Not found`))
+    createProject = (p: Project): Promise<Project> => {
+        return this.openStore('readwrite').then(store => {
+            return this.getProject(store, p.id).then(project => {
+                if (project) {
+                    return Promise.reject(`Project ${p.id} already exists in ${this.kind}`)
+                } else {
+                    const now = Date.now()
+                    const prj = {...p, createdAt: now, updatedAt: now}
+                    return reqToPromise(store.add(prj)).then(_ => prj)
+                }
+            })
+        })
+    }
+    updateProject = (p: Project): Promise<Project> => {
+        return this.openStore('readwrite').then(store => {
+            return this.getProject(store, p.id).then(project => {
+                if (project) {
+                    const prj = {...p, updatedAt: Date.now()}
+                    return reqToPromise(store.put(prj)).then(_ => prj)
+                } else {
+                    return Promise.reject(`Project ${p.id} doesn't exists in ${this.kind}`)
+                }
+            })
+        })
+    }
     dropProject = (p: ProjectInfo): Promise<void> => {
         return this.openStore('readwrite').then(store => reqToPromise(store.delete(p.id)))
     }
 
     private openStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
         return new Promise<IDBObjectStore>(resolve => resolve(this.db.transaction(IndexedDBStorage.dbProjects, mode).objectStore(IndexedDBStorage.dbProjects)))
+    }
+
+    private getProject(store: IDBObjectStore, id: ProjectId): Promise<Project | undefined> {
+        return new Promise<Project>((resolve, reject) => {
+            store.get(id).onsuccess = (event: any) => resolve(event.target.result);
+            (store as any).onerror = (err: any) => reject(`Unable to load project: ${err}`)
+        })
+    }
+
+    private migrateLegacyProjects = (): Promise<void> => {
+        if (this.migrated) return Promise.resolve()
+        this.migrated = true
+        return LocalStorageStorage.init(this.logger).then(legacyStorage =>
+            legacyStorage.listProjects().then(projectInfos =>
+                Promise.all(projectInfos.map(p =>
+                    legacyStorage.loadProject(p.id)
+                        .then(project => this.createProject(project))
+                        .then(_ => legacyStorage.dropProject(p))
+                )).then(_ => undefined)
+            )
+        )
     }
 }
 

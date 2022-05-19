@@ -16,7 +16,7 @@ import {Project, ProjectId} from "./types/project";
 import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
-import {loadPolyfills} from "./utils/polyphills";
+import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
 import {Supabase} from "./services/supabase";
 import {StorageManager} from "./storages/manager";
@@ -66,8 +66,8 @@ app.on('Logout', _ => supabase.logout().then(app.logout).then(listProjects).catc
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))
 app.on('LoadRemoteProject', loadRemoteProject)
-app.on('CreateProject', msg => store.createProject(msg.project).then(_ => app.gotProject(msg.project)))
-app.on('UpdateProject', msg => updateProject(msg).then(_ => app.gotProject(msg.project)))
+app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProject))
+app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
 app.on('MoveProjectTo', moveProjectTo)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('DropProject', msg => store.dropProject(msg.project).then(_ => app.dropProject(msg.project.id)))
@@ -123,11 +123,17 @@ function loadProject(id: ProjectId) {
     store.loadProject(id).then((project: Project) => {
         app.gotProject(project)
         azimutt.project = project
+    }).catch(err => {
+        // FIXME: better error handling => send message to be in loaded state
+        app.toast('error', `Can't load project: ${err}`)
     })
 }
-function updateProject(msg: UpdateProjectMsg) {
+function updateProject(msg: UpdateProjectMsg): Promise<Project> {
     return store.updateProject(msg.project)
-        .then(_ => app.toast('success', 'Project saved'))
+        .then(p => {
+            app.toast('success', 'Project saved')
+            return p
+        })
         .catch(e => {
             let message
             if (typeof e === 'string') {
@@ -142,6 +148,7 @@ function updateProject(msg: UpdateProjectMsg) {
             const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
             analytics.then(a => a.trackError(name, details))
             errorTracking.then(e => e.trackError(name, details))
+            return msg.project
         })
 }
 function moveProjectTo(msg: MoveProjectToMsg) {

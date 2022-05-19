@@ -14,22 +14,14 @@ export class StorageManager implements StorageApi {
         this.browser = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
     }
 
-    listProjects = async (): Promise<ProjectInfo[]> => {
-        return await Promise.all([
-            this.browser.then(s => s.listProjects()),
-            this.cloud.listProjects()
-        ]).then((projects: ProjectInfo[][]) => projects.flat())
-    }
+    listProjects = async (): Promise<ProjectInfo[]> => await Promise.all([
+        this.browser.then(s => s.listProjects()),
+        this.cloud.listProjects()
+    ]).then(projects => projects.flat())
     loadProject = (id: ProjectId): Promise<Project> => this.browser.then(s => s.loadProject(id)).catch(_ => this.cloud.loadProject(id))
-    createProject = async (p: Project): Promise<void> => {
-        return await p.storage === 'cloud' ? this.cloud.createProject(p) : this.browser.then(s => s.createProject(p))
-    }
-    updateProject = async (p: Project): Promise<void> => {
-        return await p.storage === 'cloud' ? this.cloud.updateProject(p) : this.browser.then(s => s.updateProject(p))
-    }
-    dropProject = async (p: ProjectInfo): Promise<void> => {
-        return await p.storage === 'cloud' ? this.cloud.dropProject(p) : this.browser.then(s => s.dropProject(p))
-    }
+    createProject = (p: Project): Promise<Project> => p.storage === 'cloud' ? this.cloud.createProject(p) : this.browser.then(s => s.createProject(p))
+    updateProject = (p: Project): Promise<Project> => p.storage === 'cloud' ? this.cloud.updateProject(p) : this.browser.then(s => s.updateProject(p))
+    dropProject = (p: ProjectInfo): Promise<void> => p.storage === 'cloud' ? this.cloud.dropProject(p) : this.browser.then(s => s.dropProject(p))
 
     moveProjectTo = async (p: Project, storage: ProjectStorage): Promise<Project> => {
         if (p.storage === ProjectStorage.cloud) {
