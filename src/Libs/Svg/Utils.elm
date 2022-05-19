@@ -16,8 +16,8 @@ lineTo pos =
 
 
 curveTo : Position -> Position -> Position -> String
-curveTo c1 c2 p2 =
-    "C" ++ point c1 ++ " " ++ point c2 ++ " " ++ point p2
+curveTo from anchor to =
+    "C" ++ point from ++ " " ++ point anchor ++ " " ++ point to
 
 
 point : Position -> String
