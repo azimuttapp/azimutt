@@ -198,39 +198,6 @@ class DbStorage implements StorageApi {
     }
 }
 
-// slow query as needs to load everything and files are not saved in backup, use db instead!
-class FileStorage implements StorageApi {
-    constructor(private supabase: SupabaseClient, private projectsBucket: string) {
-    }
-
-    kind: StorageKind = 'supabase'
-    listProjects = async (): Promise<ProjectInfo[]> => {
-        const files = await this.getBucket().list().then(resultToPromise)
-        const projects = await Promise.all(files.map(file => this.download(file.name)))
-        return projects.map(projectToInfo)
-    }
-    loadProject = (id: ProjectId): Promise<Project> => this.download(this.projectPath(id))
-    createProject = async (p: Project): Promise<void> => {
-        if (isSample(p)) {
-            return Promise.reject("Sample projects can't be uploaded!")
-        }
-        return await this.getBucket().upload(this.projectPath(p.id), JSON.stringify(p), {
-            contentType: 'application/json;charset=UTF-8',
-            upsert: true
-        }).then(resultToPromise).then(_ => undefined)
-    }
-    updateProject = async (p: Project): Promise<void> => this.createProject(p)
-    dropProject = (p: ProjectInfo): Promise<void> => this.getBucket().remove([this.projectPath(p.id)]).then(resultToPromise).then(_ => undefined)
-    private getBucket = () => this.supabase.storage.from(this.projectsBucket)
-    private projectPath = (id: ProjectId) => `${id}.json`
-    private download = async (path: string): Promise<Project> => {
-        return await this.getBucket().download(path)
-            .then(resultToPromise)
-            .then(blob => blob.text())
-            .then(json => JSON.parse(json) as Project)
-    }
-}
-
 // HELPERS
 
 type Result<T> = { data: T | null; error: Error | PostgrestError | null }
