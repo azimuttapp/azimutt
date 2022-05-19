@@ -24,17 +24,7 @@ projects | list of stored projects
   relations int2
   layouts int2
   project json
-  owner uuid default=auth.uid() fk auth.users.id
-  created_at timestamptz default=now()
-  created_by uuid default=auth.uid() fk auth.users.id
-  updated_at timestamptz default=now()
-  updated_by uuid default=auth.uid() fk auth.users.id
-
-project_accesses | give access to stored projects
-  id uuid default=uuid_generate_v4() pk
-  user_id uuid fk auth.users.id
-  project_id uuid fk projects.id
-  access varchar | values: none, read, write
+  owners uuid[]
   created_at timestamptz default=now()
   created_by uuid default=auth.uid() fk auth.users.id
   updated_at timestamptz default=now()
@@ -51,45 +41,18 @@ WITH CHECK (true)
 CREATE POLICY "Owners can delete" ON "public"."projects"
 AS PERMISSIVE FOR DELETE
 TO authenticated
-USING (uid() = owner)
+USING (auth.uid() = ANY (owners))
 
-CREATE POLICY "Owners or contributors can update" ON "public"."projects"
+CREATE POLICY "Owners can update" ON "public"."projects"
 AS PERMISSIVE FOR UPDATE
 TO authenticated
-USING (auth.uid() = owner or auth.uid() in (select user_id from project_accesses pa where projects.id=pa.project_id and access='write'))
-WITH CHECK (auth.uid() = owner or auth.uid() in (select user_id from project_accesses pa where projects.id=pa.project_id and access='write'))
+USING (auth.uid() = ANY (owners))
+WITH CHECK (auth.uid() = ANY (owners))
 
-CREATE POLICY "Owner or readers can select" ON "public"."projects"
+CREATE POLICY "Owners can select" ON "public"."projects"
 AS PERMISSIVE FOR SELECT
 TO authenticated
-USING (auth.uid() = owner or auth.uid() in (select user_id from project_accesses pa where projects.id=pa.project_id and (access='write' or access='read')))
-
-
-CREATE POLICY "Owners can create" ON "public"."project_accesses"
-AS PERMISSIVE FOR INSERT
-TO authenticated
-WITH CHECK (auth.uid() = (select owner from projects p where project_id=p.id))
-
-CREATE POLICY "Owners can delete" ON "public"."project_accesses"
-AS PERMISSIVE FOR DELETE
-TO authenticated
-USING (auth.uid() = (select owner from projects p where project_id=p.id))
-
-CREATE POLICY "Owners can update" ON "public"."project_accesses"
-AS PERMISSIVE FOR UPDATE
-TO authenticated
-USING (auth.uid() = (select owner from projects p where project_id=p.id))
-WITH CHECK (auth.uid() = (select owner from projects p where project_id=p.id))
-
-CREATE POLICY "Owners can select" ON "public"."project_accesses" => INFINITE LOOP :(
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (auth.uid() = (select owner from projects p where project_id=p.id))
-
-CREATE POLICY "Users can select theirs" ON "public"."project_accesses"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (auth.uid() = user_id)
+USING (auth.uid() = ANY (owners))
  */
 
 export class Supabase implements StorageApi {
@@ -170,7 +133,7 @@ export class Supabase implements StorageApi {
     kind: StorageKind = 'supabase'
     listProjects = (): Promise<ProjectInfo[]> => this.user ? this.store.listProjects() : Promise.resolve([])
     loadProject = (id: ProjectId): Promise<Project> => this.user ? this.store.loadProject(id) : Promise.reject('Not logged in')
-    createProject = (p: Project): Promise<Project> => this.user ? this.store.createProject(p) : Promise.reject('Not logged in')
+    createProject = (p: Project): Promise<Project> => this.user ? this.store.createProject(p, this.user) : Promise.reject('Not logged in')
     updateProject = (p: Project): Promise<Project> => this.user ? this.store.updateProject(p) : Promise.reject('Not logged in')
     dropProject = (p: ProjectInfo): Promise<void> => this.user ? this.store.dropProject(p) : Promise.reject('Not logged in')
 }

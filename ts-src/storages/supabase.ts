@@ -2,6 +2,7 @@ import {computeRelations, computeTables} from "./api";
 import {SupabaseClient} from "@supabase/supabase-js";
 import {Project, ProjectId, ProjectInfo, ProjectStorage} from "../types/project";
 import {PostgrestError} from "@supabase/postgrest-js/src/lib/types";
+import {User} from "../types/user";
 
 const db = {
     projects: {
@@ -35,7 +36,7 @@ export class SupabaseStorage {
             .select('project').match({id}).maybeSingle().then(resultToPromiseOpt)
         return project ? project.project : Promise.reject(`Not found`)
     }
-    createProject = async (p: Project): Promise<Project> => {
+    createProject = async (p: Project, user: User): Promise<Project> => {
         // if (isSample(p)) {
         //     return Promise.reject("Sample projects can't be uploaded!")
         // }
@@ -48,6 +49,7 @@ export class SupabaseStorage {
             relations: computeRelations(p.sources),
             layouts: Object.keys(p.layouts).length,
             project: p,
+            owners: [user.id]
         }, {returning: 'minimal'}).then(checkResult).then(_ => prj)
     }
     updateProject = async (p: Project): Promise<Project> => {
