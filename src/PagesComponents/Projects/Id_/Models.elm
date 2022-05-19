@@ -182,6 +182,7 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
       -- global messages
+    | Logout
     | Focus HtmlId
     | DropdownToggle HtmlId
     | PopoverSet HtmlId

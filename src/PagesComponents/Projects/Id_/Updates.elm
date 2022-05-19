@@ -193,6 +193,9 @@ update currentLayout now msg model =
         Zoom delta ->
             ( model |> mapErdM (mapCanvas (zoomCanvas delta model.screen)), Cmd.none )
 
+        Logout ->
+            ( model, Ports.logout )
+
         Focus id ->
             ( model, Ports.focus id )
 

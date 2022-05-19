@@ -1,4 +1,4 @@
-module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader)
+module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader, viewProfileIcon)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -18,7 +18,7 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind as Tw exposing (focus_ring_offset_600, lg, md, sm)
+import Libs.Tailwind as Tw exposing (TwClass, focus_ring_offset_600, lg, md, sm)
 import Models.User exposing (User)
 import Router
 
@@ -78,31 +78,7 @@ appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model 
                 , onClick = onNavigationClick
                 }
             , search = Nothing
-            , rightIcons =
-                [ Dropdown.dropdown { id = profileDropdown, direction = BottomLeft, isOpen = model.openedDropdown == profileDropdown }
-                    (\m ->
-                        button [ type_ "button", id m.id, onClick (onProfileClick profileDropdown), css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
-                            [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
-                            , maybeUser
-                                |> Maybe.mapOrElse
-                                    (\u -> img [ css [ "rounded-full h-8 w-8" ], src u.avatar, alt u.name, width 32, height 32 ] [] |> Tooltip.bl u.name)
-                                    (img [ css [ "rounded-full h-8 w-8" ], src "/assets/images/guest.png", alt "Guest", width 32, height 32 ] [])
-                            ]
-                    )
-                    (\_ ->
-                        div []
-                            (maybeUser
-                                |> Maybe.mapOrElse
-                                    (\_ ->
-                                        [ ContextMenu.link { url = "#", text = "Your profile" }
-                                        , ContextMenu.link { url = "#", text = "Settings" }
-                                        , ContextMenu.btn "" onLogout [ text "Log out" ]
-                                        ]
-                                    )
-                                    [ ContextMenu.link { url = Router.login currentRoute, text = "Log in" } ]
-                            )
-                    )
-                ]
+            , rightIcons = [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout "text-white bg-primary-600" ]
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown
@@ -116,6 +92,33 @@ appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model 
         ]
     ]
         ++ (viewFooter :: footer)
+
+
+viewProfileIcon : Maybe User -> Route -> HtmlId -> HtmlId -> (HtmlId -> msg) -> msg -> TwClass -> Html msg
+viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onLogout styles =
+    Dropdown.dropdown { id = profileDropdown, direction = BottomLeft, isOpen = openedDropdown == profileDropdown }
+        (\m ->
+            button [ type_ "button", id m.id, onClick (toggle profileDropdown), css [ "rounded-full flex text-sm", styles, focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
+                [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
+                , maybeUser
+                    |> Maybe.mapOrElse
+                        (\u -> img [ css [ "rounded-full h-6 w-6" ], src u.avatar, alt u.name, width 24, height 24 ] [] |> Tooltip.bl u.name)
+                        (Icon.outline Icon.User "")
+                ]
+        )
+        (\_ ->
+            div []
+                (maybeUser
+                    |> Maybe.mapOrElse
+                        (\_ ->
+                            [ ContextMenu.link { url = "#", text = "Your profile" }
+                            , ContextMenu.link { url = "#", text = "Settings" }
+                            , ContextMenu.btn "" onLogout [ text "Log out" ]
+                            ]
+                        )
+                        [ ContextMenu.link { url = Router.login currentRoute, text = "Log in" } ]
+                )
+        )
 
 
 viewHeader : List (Html msg) -> Html msg

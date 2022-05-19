@@ -53,7 +53,7 @@ view shared model =
 viewProject : Shared.Model -> Model -> List (Html Msg)
 viewProject shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp model "app") (viewNotFound model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp shared model "app") (viewNotFound model.conf)
 
       else
         Loader.fullScreen
@@ -63,11 +63,11 @@ viewProject shared model =
     ]
 
 
-viewApp : Model -> HtmlId -> Erd -> Html Msg
-viewApp model htmlId erd =
+viewApp : Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
+viewApp shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy7 viewNavbar model.conf model.virtualRelation erd model.projects model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+            Lazy.lazy8 viewNavbar shared.user model.conf model.virtualRelation erd model.projects model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
 
           else
             div [] []

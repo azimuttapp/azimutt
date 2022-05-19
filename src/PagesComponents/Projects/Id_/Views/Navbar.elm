@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 
 import Components.Atoms.Button as Button
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon
 import Components.Atoms.Kbd as Kbd
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
@@ -26,6 +26,8 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.Project.CanvasProps as CanvasProps
+import Models.User exposing (User)
+import PagesComponents.Helpers as Helpers
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -38,8 +40,8 @@ type alias Btn msg =
     { action : Either String msg, content : Html msg, hotkey : Maybe Hotkey }
 
 
-viewNavbar : ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
-viewNavbar conf virtualRelation erd projects model htmlId openedDropdown =
+viewNavbar : Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
+viewNavbar maybeUser conf virtualRelation erd projects model htmlId openedDropdown =
     let
         features : List (Btn Msg)
         features =
@@ -77,6 +79,7 @@ viewNavbar conf virtualRelation erd projects model htmlId openedDropdown =
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond conf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
+                        , Helpers.viewProfileIcon maybeUser (Route.Projects__Id_ { id = erd.project.id }) (htmlId ++ "-profile") openedDropdown DropdownToggle Logout "mx-1 text-primary-200 hover:text-white"
                         ]
                     ]
                 ]
@@ -105,7 +108,7 @@ viewNavbarBrand conf =
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
     button [ onClick (HelpMsg (HOpen "")), css [ "ml-3 rounded-full print:hidden", focus_ring_offset_600 Tw.primary ] ]
-        [ Icon.solid QuestionMarkCircle "text-primary-300" ]
+        [ Icon.solid Icon.QuestionMarkCircle "text-primary-300" ]
 
 
 viewNavbarResetLayout : Bool -> Html Msg
@@ -119,7 +122,7 @@ viewNavbarFeatures features htmlId openedDropdown =
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "mx-1 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-bounce" ], focus_ring_offset_600 Tw.primary ] ]
                 [ span [ class "sr-only" ] [ text "Advanced features" ]
-                , Icon.outline LightningBolt ""
+                , Icon.outline Icon.LightningBolt ""
                 ]
                 |> Tooltip.b "Advanced features"
         )
@@ -141,7 +144,7 @@ viewNavbarShare : Html Msg
 viewNavbarShare =
     button [ type_ "button", onClick (SharingMsg SOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-pulse" ], focus_ring_offset_600 Tw.primary ] ]
         [ span [ class "sr-only" ] [ text "Share" ]
-        , Icon.outline Share ""
+        , Icon.outline Icon.Share ""
         ]
         |> Tooltip.b "Share diagram"
 
@@ -150,7 +153,7 @@ viewNavbarSettings : Html Msg
 viewNavbarSettings =
     button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-spin" ], focus_ring_offset_600 Tw.primary ] ]
         [ span [ class "sr-only" ] [ text "Settings" ]
-        , Icon.outline Cog ""
+        , Icon.outline Icon.Cog ""
         ]
         |> Tooltip.b "Settings"
 
@@ -160,8 +163,8 @@ navbarMobileButton open =
     div [ css [ "flex", lg [ "hidden" ] ] ]
         [ button [ type_ "button", onClick ToggleMobileMenu, ariaControls "mobile-menu", ariaExpanded False, css [ "inline-flex items-center justify-center p-2 rounded-md text-primary-200", hover [ "text-white bg-primary-500" ], focus [ "outline-none ring-2 ring-inset ring-white" ] ] ]
             [ span [ class "sr-only" ] [ text "Open main menu" ]
-            , Icon.outline Menu (B.cond open "hidden" "block")
-            , Icon.outline X (B.cond open "block" "hidden")
+            , Icon.outline Icon.Menu (B.cond open "hidden" "block")
+            , Icon.outline Icon.X (B.cond open "block" "hidden")
             ]
         ]
 
@@ -191,7 +194,7 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
                             (\url -> extLink url [ class btnStyle ] [ f.content ])
                             (\action -> button [ type_ "button", onClick action, class btnStyle ] [ f.content ])
                 )
-         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Cog "mr-3", text "Settings" ] ]
+         , [ button [ type_ "button", onClick (ProjectSettingsMsg PSOpen), class btnStyle ] [ Icon.outline Icon.Cog "mr-3", text "Settings" ] ]
          ]
             |> List.filter List.nonEmpty
             |> List.indexedMap (\i groupContent -> div [ css [ groupSpace, B.cond (i /= 0) groupBorder "" ] ] groupContent)
