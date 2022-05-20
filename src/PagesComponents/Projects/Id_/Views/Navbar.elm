@@ -79,7 +79,7 @@ viewNavbar maybeUser conf virtualRelation erd projects model htmlId openedDropdo
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond conf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
-                        , Helpers.viewProfileIcon maybeUser (Route.Projects__Id_ { id = erd.project.id }) (htmlId ++ "-profile") openedDropdown DropdownToggle Logout "mx-1 text-primary-200 hover:text-white"
+                        , Helpers.viewProfileIcon maybeUser (Route.Projects__Id_ { id = erd.project.id }) (htmlId ++ "-profile") openedDropdown DropdownToggle Logout
                         ]
                     ]
                 ]

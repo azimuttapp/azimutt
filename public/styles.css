@@ -44,3 +44,47 @@ input[type="search"]::-webkit-search-results-decoration {
 .blog-article img + br + em {
     margin-top: -64px;
 }
+
+/* animations */
+
+/* from https://codepen.io/chrislang/pen/pvPpQb */
+.hover\:animate-flip-h, .hover\:animate-flip-v {
+    transition: .6s;
+    transform-style: preserve-3d;
+}
+.hover\:animate-flip-h:hover {
+    transform: rotateY(180deg);
+}
+.hover\:animate-flip-v:hover {
+    transform: rotateX(180deg);
+}
+
+/* from https://webcode.tools/generators/css/keyframe-animation */
+.hover\:animate-wobble-t:hover {
+    animation: wobble-t 2s ease 0s 1 normal forwards;
+}
+@keyframes wobble-t {
+    0%,
+    100% {
+        transform: translateX(0%);
+        transform-origin: 50% 50%;
+    }
+    15% { transform: translateX(-5px) rotate(6deg); }
+    30% { transform: translateX(2px) rotate(-6deg); }
+    45% { transform: translateX(-2px) rotate(3.6deg); }
+    60% { transform: translateX(1px) rotate(-2.4deg); }
+    75% { transform: translateX(-1px) rotate(1.2deg); }
+}
+
+.hover\:animate-jello-h:hover {
+    animation: jello-h 2s ease 0s 1 normal forwards;
+}
+@keyframes jello-h {
+    0% { transform: scale3d(1, 1, 1); }
+    30% { transform: scale3d(1.25, 0.75, 1); }
+    40% { transform: scale3d(0.75, 1.25, 1); }
+    50% { transform: scale3d(1.15, 0.85, 1); }
+    65% { transform: scale3d(0.95, 1.05, 1); }
+    75% { transform: scale3d(1.05, 0.95, 1); }
+    100% { transform: scale3d(1, 1, 1); }
+}

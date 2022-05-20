@@ -1,8 +1,10 @@
-module Models.User exposing (User, UserId, Username, decode)
+module Models.User exposing (User, UserId, Username, avatar, decode)
 
+import Conf
 import Json.Decode as Decode
 import Libs.Json.Decode as Decode
 import Libs.Models.Email exposing (Email)
+import Libs.String as String
 
 
 type alias UserId =
@@ -26,6 +28,11 @@ type alias User =
     , github : Maybe String
     , twitter : Maybe String
     }
+
+
+avatar : User -> String
+avatar user =
+    user.avatar |> Maybe.withDefault (Conf.constants.externalAssets ++ "/funny-cartoon-monsters/" ++ (user.email |> String.hashCode |> modBy 40 |> String.fromInt) ++ ".jpg")
 
 
 decode : Decode.Decoder User

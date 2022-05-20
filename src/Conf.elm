@@ -27,6 +27,7 @@ constants :
     , defaultDescription : String
     , cheeringTweet : String
     , sharingTweet : String
+    , externalAssets : String
     }
 constants =
     { azimuttWebsite = "https://azimutt.app"
@@ -44,6 +45,7 @@ constants =
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search, display what you want, follow relations, find paths and much more..."
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
+    , externalAssets = "https://ywieybitcnbtklzsfxgd.supabase.co/storage/v1/object/public/assets"
     }
 
 

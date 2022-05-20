@@ -10,16 +10,16 @@ import Components.Organisms.Navbar as Navbar
 import Components.Slices.Newsletter as Newsletter
 import Conf
 import Gen.Route as Route exposing (Route)
-import Html exposing (Html, button, div, footer, h1, header, img, main_, p, span, text)
-import Html.Attributes exposing (alt, class, height, id, src, type_, width)
+import Html exposing (Html, a, button, div, footer, h1, header, img, main_, p, span, text)
+import Html.Attributes exposing (alt, class, height, href, id, src, type_, width)
 import Html.Events exposing (onClick)
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind as Tw exposing (TwClass, focus_ring_offset_600, lg, md, sm)
-import Models.User exposing (User)
+import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
+import Models.User as User exposing (User)
 import Router
 
 
@@ -78,7 +78,7 @@ appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model 
                 , onClick = onNavigationClick
                 }
             , search = Nothing
-            , rightIcons = [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout "text-white bg-primary-600" ]
+            , rightIcons = [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout ]
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown
@@ -94,31 +94,33 @@ appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model 
         ++ (viewFooter :: footer)
 
 
-viewProfileIcon : Maybe User -> Route -> HtmlId -> HtmlId -> (HtmlId -> msg) -> msg -> TwClass -> Html msg
-viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onLogout styles =
-    Dropdown.dropdown { id = profileDropdown, direction = BottomLeft, isOpen = openedDropdown == profileDropdown }
-        (\m ->
-            button [ type_ "button", id m.id, onClick (toggle profileDropdown), css [ "rounded-full flex text-sm", styles, focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
-                [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
-                , maybeUser
-                    |> Maybe.mapOrElse
-                        (\u -> img [ css [ "rounded-full h-6 w-6" ], src (u.avatar |> Maybe.withDefault "/assets/images/guest.png"), alt u.name, width 24, height 24 ] [] |> Tooltip.bl u.name)
-                        (Icon.outline Icon.User "")
-                ]
-        )
-        (\_ ->
-            div []
-                (maybeUser
-                    |> Maybe.mapOrElse
-                        (\_ ->
-                            [ ContextMenu.link { url = "#", text = "Your profile" }
-                            , ContextMenu.link { url = "#", text = "Settings" }
-                            , ContextMenu.btn "" onLogout [ text "Log out" ]
+viewProfileIcon : Maybe User -> Route -> HtmlId -> HtmlId -> (HtmlId -> msg) -> msg -> Html msg
+viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onLogout =
+    maybeUser
+        |> Maybe.mapOrElse
+            (\user ->
+                Dropdown.dropdown { id = profileDropdown, direction = BottomLeft, isOpen = openedDropdown == profileDropdown }
+                    (\m ->
+                        button [ type_ "button", id m.id, onClick (toggle profileDropdown), css [ "mx-1 flex-shrink-0 p-0.5 rounded-full flex text-sm", hover [ "animate-jello-h" ], focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
+                            [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
+                            , img [ css [ "rounded-full h-7 w-7" ], src (user |> User.avatar), alt user.name, width 28, height 28 ] []
                             ]
-                        )
-                        [ ContextMenu.link { url = Router.login currentRoute, text = "Log in" } ]
-                )
-        )
+                            |> Tooltip.bl user.name
+                    )
+                    (\_ ->
+                        div []
+                            --[ ContextMenu.link { url = "#", text = "Your profile" }
+                            --, ContextMenu.link { url = "#", text = "Settings" }
+                            [ ContextMenu.btn "" onLogout [ text "Log out" ]
+                            ]
+                    )
+            )
+            (a [ href (Router.login currentRoute), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
+                [ span [ class "sr-only" ] [ text "Sign in" ]
+                , Icon.outline Icon.User ""
+                ]
+                |> Tooltip.bl "Sign in"
+            )
 
 
 viewHeader : List (Html msg) -> Html msg

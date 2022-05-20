@@ -5,8 +5,14 @@
 
 -- drop everything
 
-drop table if exists public.profiles;
+delete from storage.buckets where id='avatars';
+drop policy if exists "Users can create avatars" on storage.objects;
+drop policy if exists "Users can delete their avatar" on storage.objects;
+drop policy if exists "Users can update their avatar" on storage.objects;
+drop policy if exists "Anyone can select avatars" on storage.objects;
 drop table if exists public.projects;
+drop table if exists public.profiles;
+delete from auth.users where true;
 
 -- create db
 create extension if not exists moddatetime schema extensions;

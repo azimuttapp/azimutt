@@ -55,12 +55,12 @@ viewContent shared model =
                 [ Alert.withActions
                     { color = Tw.blue
                     , icon = Icon.InformationCircle
-                    , title = "You are not logged in"
+                    , title = "You are not signed in"
                     , actions =
-                        [ Link.secondary3 Tw.blue [ href (Router.login Route.Projects) ] [ text "Login or Signup" ]
+                        [ Link.secondary3 Tw.blue [ href (Router.login Route.Projects) ] [ text "Sign in now" ]
                         ]
                     }
-                    [ text "Login to access your cloud stored projects or store some projects in the cloud (instead of browser only)."
+                    [ text "Sign in to store your projects in your account, access them from anywhere and even share them with your team."
                     ]
                 ]
 
