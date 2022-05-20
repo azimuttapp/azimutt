@@ -15,8 +15,6 @@ import {Logger} from "./logger";
 import {Utils} from "../utils/utils";
 import {User} from "../types/user";
 
-type Callback<key> = (msg: ElmMsg & { kind: key }) => void
-
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {
         return new ElmApp(window.Elm.Main.init({flags}), logger)
@@ -80,7 +78,10 @@ export class ElmApp {
         kind: 'GotProjects',
         projects: projects.map(p => [p.id, p])
     })
-    gotProject = (project: Project): void => this.send({kind: 'GotProject', project})
+    gotProject = (project: Project): void => {
+        window.azimutt.project = project
+        this.send({kind: 'GotProject', project})
+    }
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
     gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
@@ -119,3 +120,5 @@ export class ElmApp {
         this.elm.ports?.jsToElm.send(msg)
     }
 }
+
+type Callback<key> = (msg: ElmMsg & { kind: key }) => void

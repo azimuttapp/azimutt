@@ -4,56 +4,8 @@ import {User} from "../types/user";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
 import {Project, ProjectId, ProjectInfo} from "../types/project";
 import {StorageApi, StorageKind} from "../storages/api";
-import {Email, Env} from "../types/basics";
+import {Email, Env, Username} from "../types/basics";
 import {SupabaseStorage} from "../storages/supabase";
-
-/*
-# Tables (https://dbdiagram.io/d/628351d27f945876b6310c15)
-
-auth.users
-  id uuid
-  role varchar
-  email varchar
-  created_at timestamptz
-  updated_at timestamptz
-
-projects | list of stored projects
-  id uuid pk
-  name varchar
-  tables int2
-  relations int2
-  layouts int2
-  project json
-  owners uuid[]
-  created_at timestamptz default=now()
-  created_by uuid default=auth.uid() fk auth.users.id
-  updated_at timestamptz default=now()
-  updated_by uuid default=auth.uid() fk auth.users.id
-
-# Policies (https://www.postgresql.org/docs/12/sql-createpolicy.html, examples: https://github.com/steve-chavez/socnet/blob/master/security/users.sql)
-tip: existing rows are checked using "USING" and new ones are checked with "WITH CHECK" clause
-
-CREATE POLICY "Users can insert" ON "public"."projects"
-AS PERMISSIVE FOR INSERT
-TO authenticated
-WITH CHECK (true)
-
-CREATE POLICY "Owners can delete" ON "public"."projects"
-AS PERMISSIVE FOR DELETE
-TO authenticated
-USING (auth.uid() = ANY (owners))
-
-CREATE POLICY "Owners can update" ON "public"."projects"
-AS PERMISSIVE FOR UPDATE
-TO authenticated
-USING (auth.uid() = ANY (owners))
-WITH CHECK (auth.uid() = ANY (owners))
-
-CREATE POLICY "Owners can select" ON "public"."projects"
-AS PERMISSIVE FOR SELECT
-TO authenticated
-USING (auth.uid() = ANY (owners))
- */
 
 export class Supabase implements StorageApi {
     // https://supabase.com/docs/guides/local-development
@@ -130,12 +82,20 @@ export class Supabase implements StorageApi {
         return this
     }
 
+    // deleteAccount = (): Promise<void> => this.supabase.auth.update({data: {deleted_at: Date.now()}})
+
     kind: StorageKind = 'supabase'
     listProjects = (): Promise<ProjectInfo[]> => this.user ? this.store.listProjects() : Promise.resolve([])
     loadProject = (id: ProjectId): Promise<Project> => this.user ? this.store.loadProject(id) : Promise.reject('Not logged in')
     createProject = (p: Project): Promise<Project> => this.user ? this.store.createProject(p, this.user) : Promise.reject('Not logged in')
     updateProject = (p: Project): Promise<Project> => this.user ? this.store.updateProject(p) : Promise.reject('Not logged in')
     dropProject = (p: ProjectInfo): Promise<void> => this.user ? this.store.dropProject(p) : Promise.reject('Not logged in')
+
+    findUser = (email: Email | Username): Promise<User[]> => {
+        // https://supabase.com/docs/guides/auth/managing-user-data
+        return Promise.reject('Not found')
+    }
+    // shareProject = (p: Project, user: UserInfo, access: UserAccess): Promise<void> => { throw 'TODO' },
 }
 
 export interface SupabaseConf {

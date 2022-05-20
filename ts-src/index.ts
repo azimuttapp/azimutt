@@ -40,15 +40,14 @@ logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     '  `azimutt.project.sources.flatMap(s => s.tables).flatMap(t => t.columns).length`\n\n' +
     'Use `azimutt.help()` for more details!')
 
-const azimutt = new AzimuttApi(app, logger)
-window.azimutt = azimutt
+window.azimutt = new AzimuttApi(app, logger)
 
 /* PWA service worker */
 
 if ('serviceWorker' in navigator && env === 'prod') {
     navigator.serviceWorker.register("/service-worker.js")
-        // .then(reg => logger.debug('service-worker registered!', reg))
-        // .catch(err => logger.debug('service-worker failed to register!', err))
+    // .then(reg => logger.debug('service-worker registered!', reg))
+    // .catch(err => logger.debug('service-worker failed to register!', err))
 }
 
 /* Elm ports */
@@ -81,7 +80,7 @@ app.on('TrackError', msg => {
     analytics.then(a => a.trackError(msg.name, msg.details))
     errorTracking.then(e => e.trackError(msg.name, msg.details))
 })
-if(app.noListeners().length > 0) {
+if (app.noListeners().length > 0) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
 
@@ -102,8 +101,12 @@ function setMeta(meta: SetMetaMsg) {
         document.querySelector('meta[property="og:url"]')?.setAttribute('content', meta.canonical)
         document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', meta.canonical)
     }
-    if (typeof meta.html === 'string') { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
-    if (typeof meta.body === 'string') { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
+    if (typeof meta.html === 'string') {
+        document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html)
+    }
+    if (typeof meta.body === 'string') {
+        document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body)
+    }
 }
 
 function loadRemoteProject(msg: LoadRemoteProjectMsg) {
@@ -122,15 +125,14 @@ function listProjects() {
         app.toast('error', `Can't list projects: ${err}`)
     })
 }
+
 function loadProject(id: ProjectId) {
-    store.loadProject(id).then((project: Project) => {
-        app.gotProject(project)
-        azimutt.project = project
-    }).catch(err => {
+    store.loadProject(id).then(app.gotProject).catch(err => {
         // FIXME: better error handling => send message to be in loaded state
         app.toast('error', `Can't load project: ${err}`)
     })
 }
+
 function updateProject(msg: UpdateProjectMsg): Promise<Project> {
     return store.updateProject(msg.project)
         .then(p => {
@@ -154,13 +156,12 @@ function updateProject(msg: UpdateProjectMsg): Promise<Project> {
             return msg.project
         })
 }
+
 function moveProjectTo(msg: MoveProjectToMsg) {
-    store.moveProjectTo(msg.project, msg.storage)
-        .then(project => {
-            app.gotProject(project)
-            app.toast('success', `Project moved to ${project.storage} storage`)
-        })
-        .catch(err => app.toast('error', err))
+    store.moveProjectTo(msg.project, msg.storage).then(project => {
+        app.gotProject(project)
+        app.toast('success', `Project moved to ${project.storage} storage`)
+    }).catch(err => app.toast('error', err))
 }
 
 function getLocalFile(msg: GetLocalFileMsg) {
@@ -194,13 +195,18 @@ const resizeObserver = new ResizeObserver(entries => {
     }))
     app.updateSizes(sizes)
 })
+
 function observeSizes(msg: ObserveSizesMsg) {
     msg.ids.flatMap(Utils.maybeElementById).forEach(elt => resizeObserver.observe(elt))
 }
 
-const hotkeys: {[key: string]: (Hotkey & {id: HotkeyId})[]} = {}
+const hotkeys: { [key: string]: (Hotkey & { id: HotkeyId })[] } = {}
+
 // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
-function isInput(elt: Element) { return elt.localName === 'input' || elt.localName === 'textarea' }
+function isInput(elt: Element) {
+    return elt.localName === 'input' || elt.localName === 'textarea'
+}
+
 function keydownHotkey(e: KeyboardEvent) {
     const target = e.target as HTMLElement
     const matches = (hotkeys[e.key] || []).filter(hotkey => {
@@ -215,11 +221,12 @@ function keydownHotkey(e: KeyboardEvent) {
                     (!hotkey.target.tag || hotkey.target.tag === target.localName)))
     })
     matches.map(hotkey => {
-        if (hotkey.preventDefault) { e.preventDefault() }
+        if (hotkey.preventDefault) e.preventDefault()
         app.gotHotkey(hotkey)
     })
-    if(matches.length === 0 && e.key === "Escape" && isInput(target)) { target.blur() }
+    if (matches.length === 0 && e.key === "Escape" && isInput(target)) target.blur()
 }
+
 function listenHotkeys(msg: ListenKeysMsg) {
     Object.keys(hotkeys).forEach(key => hotkeys[key] = [])
     Object.entries(msg.keys).forEach(([id, alternatives]) => {
@@ -235,6 +242,7 @@ function listenHotkeys(msg: ListenKeysMsg) {
 
 // handle key hold
 const holdKeyState = {drag: false}
+
 function keydownHoldKey(e: KeyboardEvent) {
     if (e.code === 'Space') {
         if (!holdKeyState.drag && (e.target as Element).localName !== 'input') {
@@ -243,6 +251,7 @@ function keydownHoldKey(e: KeyboardEvent) {
         holdKeyState.drag = true
     }
 }
+
 function keyupHoldKey(e: KeyboardEvent) {
     if (e.code === 'Space') {
         if (holdKeyState.drag) {
