@@ -13,7 +13,7 @@ import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, Table
 import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import {Utils} from "../utils/utils";
-import {User} from "../types/user";
+import {Profile} from "../types/profile";
 
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {
@@ -71,7 +71,7 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
 
-    login = (user: User): void => this.send({kind: 'GotLogin', user})
+    login = (user: Profile): void => this.send({kind: 'GotLogin', user})
     logout = (): void => this.send({kind: 'GotLogout'})
     updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
     loadProjects = (projects: ProjectInfo[]): void => this.send({

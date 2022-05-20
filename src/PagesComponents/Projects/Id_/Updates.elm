@@ -3,6 +3,7 @@ module PagesComponents.Projects.Id_.Updates exposing (update)
 import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict exposing (Dict)
+import Gen.Route as Route
 import Libs.Area as Area exposing (Area, AreaLike)
 import Libs.Bool as B
 import Libs.Delta as Delta
@@ -17,6 +18,7 @@ import Libs.Task as T
 import Models.Project as Project
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.DragState as DragState
@@ -38,6 +40,7 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
+import Request
 import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
@@ -45,8 +48,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout now msg model =
+update : Request.With params -> Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update req currentLayout now msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -195,7 +198,8 @@ update currentLayout now msg model =
             ( model |> mapErdM (mapCanvas (zoomCanvas delta model.screen)), Cmd.none )
 
         Logout ->
-            ( model, Ports.logout )
+            B.cond (model.erd |> Maybe.mapOrElse (\e -> e.project.storage /= ProjectStorage.Browser) False) (Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ]) Ports.logout
+                |> (\cmd -> ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Browser) }, cmd ))
 
         Focus id ->
             ( model, Ports.focus id )

@@ -102,7 +102,7 @@ viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onL
                 [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
                 , maybeUser
                     |> Maybe.mapOrElse
-                        (\u -> img [ css [ "rounded-full h-6 w-6" ], src u.avatar, alt u.name, width 24, height 24 ] [] |> Tooltip.bl u.name)
+                        (\u -> img [ css [ "rounded-full h-6 w-6" ], src (u.avatar |> Maybe.withDefault "/assets/images/guest.png"), alt u.name, width 24, height 24 ] [] |> Tooltip.bl u.name)
                         (Icon.outline Icon.User "")
                 ]
         )

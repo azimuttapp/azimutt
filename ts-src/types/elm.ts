@@ -12,12 +12,11 @@ import {
     SourceId,
     TableId
 } from "./project";
-import {User} from "./user";
 import {LoginInfo} from "../services/supabase";
+import {Profile} from "./profile";
 
 export interface ElmFlags {
     now: Timestamp
-    user: User | null
 }
 
 export interface ElmInit {
@@ -66,7 +65,7 @@ export type JsMsg =
     | GotFitToScreen
     | GotResetCanvas
     | Error
-export type GotLogin = { kind: 'GotLogin', user: User }
+export type GotLogin = { kind: 'GotLogin', user: Profile }
 export type GotLogout = { kind: 'GotLogout' }
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }

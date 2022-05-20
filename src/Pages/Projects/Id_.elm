@@ -24,7 +24,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init shared.now req.params.id
-        , update = Updates.update Nothing shared.now
+        , update = Updates.update req Nothing shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }

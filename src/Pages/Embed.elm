@@ -34,7 +34,7 @@ page shared req =
     in
     Page.element
         { init = init shared.now query
-        , update = Updates.update query.layout shared.now
+        , update = Updates.update req query.layout shared.now
         , view = Views.view shared
         , subscriptions = Subscriptions.subscriptions
         }

@@ -23,11 +23,11 @@ import {StorageManager} from "./storages/manager";
 
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
+const app = ElmApp.init({now: Date.now()}, logger)
 const supabase = Supabase.init(env).onLogin(user => {
     app.login(user)
     listProjects()
 })
-const app = ElmApp.init({now: Date.now(), user: supabase.getLoggedUser()}, logger)
 const store = new StorageManager(supabase, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))

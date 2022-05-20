@@ -11,6 +11,7 @@ import Libs.Models.FileUrl as FileUrl
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
+import Models.Project.ProjectStorage as ProjectStorage
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
@@ -136,7 +137,7 @@ update req msg model =
             ( { model | selectedMenu = menu }, Cmd.none )
 
         Logout ->
-            ( model, Ports.logout )
+            ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Browser) }, Ports.logout )
 
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )

@@ -1,10 +1,10 @@
-import {SupabaseClient} from "@supabase/supabase-js";
+import {AuthChangeEvent, Session, SupabaseClient} from "@supabase/supabase-js";
 import {User as SupabaseUser, UserCredentials} from "@supabase/gotrue-js/src/lib/types";
-import {User} from "../types/user";
+import {Profile} from "../types/profile";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
 import {Project, ProjectId, ProjectInfo} from "../types/project";
 import {StorageApi, StorageKind} from "../storages/api";
-import {Email, Env, Username} from "../types/basics";
+import {Email, Env} from "../types/basics";
 import {SupabaseStorage} from "../storages/supabase";
 
 export class Supabase implements StorageApi {
@@ -33,27 +33,43 @@ export class Supabase implements StorageApi {
         return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options))
     }
 
+    user: SupabaseUser | null = null
     store: SupabaseStorage
+    events: Partial<{ [key in AuthChangeEvent]: (Session | null)[] }> = {}
+    callbacks: Partial<{ [key in AuthChangeEvent]: ((session: Session | null) => void)[] }> = {}
 
-    constructor(private supabase: SupabaseClient, private user: User | null = null) {
+    constructor(private supabase: SupabaseClient) {
         this.store = new SupabaseStorage(supabase)
+        supabase.auth.onAuthStateChange((event, session) => {
+            const callbacks = this.callbacks[event]
+            if (callbacks === undefined) {
+                const events = this.events[event]
+                if (events === undefined) {
+                    this.events[event] = [session]
+                } else {
+                    events.push(session)
+                }
+            } else {
+                callbacks.forEach(cb => cb(session))
+            }
+
+            if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+                this.user = session !== null ? session.user : null
+            } else if (event === 'SIGNED_OUT') {
+                this.user = null
+            }
+        })
     }
 
-    getLoggedUser = (): User | null => {
-        const user = this.supabase.auth.user()
-        this.user = user !== null ? supabaseToAzimuttUser(user) : null
-        return this.user
-    }
-
-    login = (credentials: LoginInfo, redirect?: string): Promise<User> => {
+    login = (credentials: LoginInfo, redirect?: string): Promise<Profile> => {
         return this.supabase.auth.signIn(
             formatLogin(credentials),
             redirect ? {redirectTo: `${window.location.origin}${redirect}`} : {}
         ).then(res => {
             if (res.error) {
                 return Promise.reject(`Can't login: ${res.error}`)
-            } else if (res.user) {
-                return this.user = supabaseToAzimuttUser(res.user)
+            } else if (res.user !== null) {
+                return this.store.getOrCreateProfile(res.user)
             } else {
                 return Promise.reject('No user')
             }
@@ -62,40 +78,57 @@ export class Supabase implements StorageApi {
 
     logout = (): Promise<void> => {
         return this.supabase.auth.signOut().then(res => {
-            if (res.error) {
-                return Promise.reject(`Can't logout: ${JSON.stringify(res.error)}`)
-            } else {
-                this.user = null
+            if (res.error) return Promise.reject(`Can't logout: ${JSON.stringify(res.error)}`)
+        })
+    }
+
+    onLogin(callback: (p: Profile) => void): Supabase {
+        return this.on('SIGNED_IN', session => {
+            if (session !== null && session.user !== null) {
+                this.store.getOrCreateProfile(session.user).then(callback)
             }
         })
     }
 
-    onLogin(callback: (u: User) => void): Supabase {
-        // login on redirect, session is in url but not yet stored, so get it from there
-        this.supabase.auth.getSessionFromUrl({storeSession: true}).then(res => {
-            const user = res?.data?.user
-            if (user) {
-                this.user = supabaseToAzimuttUser(user)
-                callback(this.user)
-            }
-        })
+    on(event: AuthChangeEvent, callback: (session: Session | null) => void): Supabase {
+        const callbacks = this.callbacks[event]
+        if (callbacks === undefined) {
+            this.callbacks[event] = [callback]
+        } else {
+            callbacks.push(callback)
+        }
+
+        const events = this.events[event]
+        if (events !== undefined) {
+            events.forEach(callback)
+            delete this.events[event]
+        }
+
         return this
     }
 
     // deleteAccount = (): Promise<void> => this.supabase.auth.update({data: {deleted_at: Date.now()}})
 
     kind: StorageKind = 'supabase'
-    listProjects = (): Promise<ProjectInfo[]> => this.user ? this.store.listProjects() : Promise.resolve([])
-    loadProject = (id: ProjectId): Promise<Project> => this.user ? this.store.loadProject(id) : Promise.reject('Not logged in')
-    createProject = (p: Project): Promise<Project> => this.user ? this.store.createProject(p, this.user) : Promise.reject('Not logged in')
-    updateProject = (p: Project): Promise<Project> => this.user ? this.store.updateProject(p) : Promise.reject('Not logged in')
-    dropProject = (p: ProjectInfo): Promise<void> => this.user ? this.store.dropProject(p) : Promise.reject('Not logged in')
+    listProjects = (): Promise<ProjectInfo[]> => this.waitLogin(500, _ => this.store.listProjects(), () => Promise.resolve([]))
+    loadProject = (id: ProjectId): Promise<Project> => this.waitLogin(500, _ => this.store.loadProject(id))
+    createProject = (p: Project): Promise<Project> => this.waitLogin(500, u => this.store.createProject(p, u.id))
+    updateProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.updateProject(p))
+    dropProject = (p: ProjectInfo): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(p))
 
-    findUser = (email: Email | Username): Promise<User[]> => {
-        // https://supabase.com/docs/guides/auth/managing-user-data
-        return Promise.reject('Not found')
+    private waitLogin<T>(timeout: number, success: (u: SupabaseUser) => Promise<T>, failure: () => Promise<T> = () => Promise.reject('try to log in')): Promise<T> {
+        if (this.user !== null) {
+            return success(this.user)
+        } else if (timeout > 0) {
+            return new Promise<T>((resolve, reject) => {
+                setTimeout(() => {
+                    this.waitLogin(timeout - 100, success, failure).then(resolve, reject)
+                }, 100)
+            })
+        } else {
+            return failure()
+        }
     }
-    // shareProject = (p: Project, user: UserInfo, access: UserAccess): Promise<void> => { throw 'TODO' },
 }
 
 export interface SupabaseConf {
@@ -107,18 +140,6 @@ export interface SupabaseConf {
 export type LoginInfo = { kind: 'Github' } | { kind: 'MagicLink', email: Email }
 
 // HELPERS
-
-function supabaseToAzimuttUser(user: SupabaseUser): User {
-    return {
-        id: user.id, // uuid
-        username: user.user_metadata.user_name || user.email?.split('@')[0],
-        name: user.user_metadata.name || user.email?.split('@')[0],
-        email: user.email,
-        avatar: user.user_metadata.avatar_url || '/assets/images/guest.png',
-        role: user.role, // ex: authenticated
-        provider: user.app_metadata.provider // ex: github or email
-    }
-}
 
 function formatLogin(creds: LoginInfo): UserCredentials {
     if (creds.kind === 'Github') {

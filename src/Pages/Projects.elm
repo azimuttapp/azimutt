@@ -8,7 +8,9 @@ import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Task as T
+import Models.Project.ProjectStorage as ProjectStorage
 import Page
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
 import Ports exposing (JsMsg(..))
@@ -83,7 +85,7 @@ update req msg model =
             ( { model | selectedMenu = menu }, Cmd.none )
 
         Logout ->
-            ( model, Ports.logout )
+            ( model |> mapProjects (List.filter (\p -> p.storage == ProjectStorage.Browser)), Ports.logout )
 
         DeleteProject project ->
             ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
@@ -123,18 +125,23 @@ handleJsMessage msg model =
             ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
 
         ProjectDropped projectId ->
-            case model.projects of
-                Loading ->
-                    ( model, Cmd.none )
-
-                Loaded projects ->
-                    ( { model | projects = Loaded (projects |> List.filter (\p -> p.id /= projectId)) }, Cmd.none )
+            ( model |> mapProjects (List.filter (\p -> p.id /= projectId)), Cmd.none )
 
         GotToast level message ->
             ( model, Toasts.create Toast level message )
 
         _ ->
             ( model, Cmd.none )
+
+
+mapProjects : (List ProjectInfo -> List ProjectInfo) -> Model -> Model
+mapProjects f model =
+    case model.projects of
+        Loading ->
+            model
+
+        Loaded projects ->
+            { model | projects = Loaded (f projects) }
 
 
 

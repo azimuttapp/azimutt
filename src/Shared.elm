@@ -12,7 +12,7 @@ import Time
 
 
 type alias Flags =
-    { now : Int, user : Maybe User }
+    { now : Int }
 
 
 type alias Model =
@@ -63,7 +63,7 @@ init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
-      , user = flags.user
+      , user = Nothing
       }
     , Cmd.batch [ Time.here |> Task.perform ZoneChanged ]
     )
