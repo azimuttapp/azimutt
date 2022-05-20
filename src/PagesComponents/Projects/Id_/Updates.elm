@@ -18,7 +18,7 @@ import Models.Project as Project
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.TableId as TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -38,8 +38,9 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Toasts as Toasts
 import Time
 import Track
 
@@ -55,14 +56,14 @@ update currentLayout now msg model =
 
         SaveProject ->
             if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ]) [ Toasts.warning Toast "No project to save" ]) )
 
             else
                 ( model, Cmd.none )
 
         MoveProjectTo storage ->
             if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.moveProjectTo p storage ]) [ T.send (toastWarning "No project to move") ]) )
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.moveProjectTo p storage ]) [ Toasts.warning Toast "No project to move" ]) )
 
             else
                 ( model, Cmd.none )
@@ -216,7 +217,7 @@ update currentLayout now msg model =
 
         DragStart id pos ->
             model.dragging
-                |> Maybe.mapOrElse (\d -> ( model, T.send (toastInfo ("Already dragging " ++ d.id)) ))
+                |> Maybe.mapOrElse (\d -> ( model, Toasts.info Toast ("Already dragging " ++ d.id) ))
                     ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag d False), Cmd.none )
 
         DragMove pos ->
@@ -236,17 +237,8 @@ update currentLayout now msg model =
         DragCancel ->
             ( model |> setDragging Nothing, Cmd.none )
 
-        ToastAdd millis toast ->
-            model.toastIdx |> String.fromInt |> (\key -> ( model |> setToastIdx (model.toastIdx + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (ToastShow millis key) ))
-
-        ToastShow millis key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> Maybe.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
-
-        ToastHide key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen False)), T.sendAfter 300 (ToastRemove key) )
-
-        ToastRemove key ->
-            ( model |> mapToasts (List.filter (\t -> t.key /= key)), Cmd.none )
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
 
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
@@ -297,7 +289,7 @@ handleJsMessage currentLayout msg model =
                 (errors
                     |> List.concatMap
                         (\( name, err ) ->
-                            [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err))
+                            [ Toasts.error Toast ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err)
                             , Ports.trackJsonError "decode-project" err
                             ]
                         )
@@ -307,7 +299,7 @@ handleJsMessage currentLayout msg model =
         GotProject res ->
             case res of
                 Err err ->
-                    ( model, Cmd.batch [ T.send (toastError ("Unable to read project: " ++ Decode.errorToHtml err)), Ports.trackJsonError "decode-project" err ] )
+                    ( model, Cmd.batch [ Toasts.error Toast ("Unable to read project: " ++ Decode.errorToHtml err), Ports.trackJsonError "decode-project" err ] )
 
                 Ok project ->
                     let
@@ -356,18 +348,7 @@ handleJsMessage currentLayout msg model =
                 ( model, Cmd.none )
 
         GotToast level message ->
-            case level of
-                "success" ->
-                    ( model, T.send (toastSuccess message) )
-
-                "info" ->
-                    ( model, T.send (toastInfo message) )
-
-                "warning" ->
-                    ( model, T.send (toastWarning message) )
-
-                _ ->
-                    ( model, T.send (toastError message) )
+            ( model, Toasts.create Toast level message )
 
         GotTableShow id hint ->
             ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt)) )
@@ -406,7 +387,7 @@ handleJsMessage currentLayout msg model =
             ( model, T.send ResetCanvas )
 
         Error err ->
-            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ Toasts.error Toast ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err), Ports.trackJsonError "js-message" err ] )
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )

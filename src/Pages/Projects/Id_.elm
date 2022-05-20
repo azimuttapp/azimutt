@@ -15,6 +15,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports
 import Random
 import Request
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
 
@@ -68,8 +69,7 @@ init now id =
       , openedPopover = ""
       , contextMenu = Nothing
       , dragging = Nothing
-      , toastIdx = 0
-      , toasts = []
+      , toasts = Toasts.init
       , confirm = Nothing
       , prompt = Nothing
       , openedDialogs = []

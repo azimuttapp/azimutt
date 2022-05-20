@@ -12,13 +12,14 @@ import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
 import Page
-import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..), toastError)
+import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapList, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapToasts, setConfirm, setIsOpen, setToastIdx)
+import Services.Lenses exposing (mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapToastsCmd, setConfirm)
 import Services.ProjectImport as ProjectImport
 import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Toasts as Toasts
 import Shared
 import Time
 import Track
@@ -90,8 +91,7 @@ init req =
       , projectImport = Nothing
       , sampleSelection = Nothing
       , openedDropdown = ""
-      , toastIdx = 0
-      , toasts = []
+      , toasts = Toasts.init
       , confirm = Nothing
       , openedDialogs = []
       }
@@ -183,17 +183,8 @@ update req msg model =
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
 
-        ToastAdd millis toast ->
-            model.toastIdx |> String.fromInt |> (\key -> ( model |> setToastIdx (model.toastIdx + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (ToastShow millis key) ))
-
-        ToastShow millis key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> Maybe.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
-
-        ToastHide key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen False)), T.sendAfter 300 (ToastRemove key) )
-
-        ToastRemove key ->
-            ( model |> mapToasts (List.filter (\t -> t.key /= key)), Cmd.none )
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
 
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
@@ -228,7 +219,7 @@ handleJsMessage msg model =
                 ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> SqlSourceUploadMsg) )
 
             else
-                ( model, T.send (toastError ("File should end with .json or .sql, " ++ file.name ++ " is not handled :(")) )
+                ( model, Toasts.error Toast ("File should end with .json or .sql, " ++ file.name ++ " is not handled :(") )
 
         GotRemoteFile now projectId sourceId url content sample ->
             if url |> FileUrl.filename |> String.endsWith ".json" then
@@ -242,7 +233,10 @@ handleJsMessage msg model =
                 ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> SqlSourceUploadMsg) )
 
             else
-                ( model, T.send (toastError ("File should end with .json or .sql, " ++ url ++ " is not handled :(")) )
+                ( model, Toasts.error Toast ("File should end with .json or .sql, " ++ url ++ " is not handled :(") )
+
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
 
         _ ->
             ( model, Cmd.none )

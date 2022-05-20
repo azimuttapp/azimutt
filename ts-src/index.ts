@@ -117,7 +117,10 @@ function loadRemoteProject(msg: LoadRemoteProjectMsg) {
 }
 
 function listProjects() {
-    store.listProjects().then(app.loadProjects)
+    store.listProjects().then(app.loadProjects).catch(err => {
+        app.loadProjects([])
+        app.toast('error', `Can't list projects: ${err}`)
+    })
 }
 function loadProject(id: ProjectId) {
     store.loadProject(id).then((project: Project) => {

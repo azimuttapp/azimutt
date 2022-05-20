@@ -20,6 +20,7 @@ import Ports
 import Random
 import Request
 import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Toasts as Toasts
 import Shared
 import Time
 
@@ -89,8 +90,7 @@ init now query =
       , openedPopover = ""
       , contextMenu = Nothing
       , dragging = Nothing
-      , toastIdx = 0
-      , toasts = []
+      , toasts = Toasts.init
       , confirm = Nothing
       , prompt = Nothing
       , openedDialogs = []

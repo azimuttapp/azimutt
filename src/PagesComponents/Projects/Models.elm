@@ -3,6 +3,7 @@ module PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Libs.Models.HtmlId exposing (HtmlId)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
+import Services.Toasts as Toasts exposing (Model, Msg)
 import Shared exposing (Confirm, StoredProjects)
 
 
@@ -17,6 +18,7 @@ type alias Model =
 
     -- global attrs
     , openedDropdown : HtmlId
+    , toasts : Toasts.Model
     , confirm : Maybe (Confirm Msg)
     , modalOpened : Bool
     }
@@ -28,6 +30,7 @@ type Msg
     | DeleteProject ProjectInfo
       -- global messages
     | DropdownToggle HtmlId
+    | Toast Toasts.Msg
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | ModalOpen

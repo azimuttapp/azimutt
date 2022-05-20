@@ -6,10 +6,11 @@ import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas, toastInfo, toastWarning)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
 import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapSearch, mapTableProps)
+import Services.Toasts as Toasts
 
 
 handleHotkey : Model -> String -> ( Model, Cmd Msg )
@@ -92,11 +93,11 @@ handleHotkey model hotkey =
 
         "undo" ->
             -- FIXME
-            ( model, T.send (toastInfo "Undo action not handled yet") )
+            ( model, Toasts.info Toast "Undo action not handled yet" )
 
         "redo" ->
             -- FIXME
-            ( model, T.send (toastInfo "Redo action not handled yet") )
+            ( model, Toasts.info Toast "Redo action not handled yet" )
 
         "cancel" ->
             ( model, cancelElement model )
@@ -105,13 +106,13 @@ handleHotkey model hotkey =
             ( model, T.send (HelpMsg (model.help |> Maybe.mapOrElse (\_ -> HClose) (HOpen ""))) )
 
         _ ->
-            ( model, T.send (toastWarning ("Unhandled hotkey '" ++ hotkey ++ "'")) )
+            ( model, Toasts.warning Toast ("Unhandled hotkey '" ++ hotkey ++ "'") )
 
 
 collapseElement : Model -> Cmd Msg
 collapseElement model =
     (model.hoverTable |> Maybe.map (ToggleColumns >> T.send))
-        |> Maybe.withDefault (T.send (toastInfo "Can't find an element to collapse :("))
+        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to collapse :(")
 
 
 removeElement : Model -> Cmd Msg
@@ -119,27 +120,26 @@ removeElement model =
     (model.hoverColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model.hoverTable |> Maybe.map (HideTable >> T.send))
         |> Maybe.orElse (model.erd |> Maybe.filter (\e -> e.shownTables |> List.nonEmpty) |> Maybe.map (\_ -> resetCanvas |> T.send))
-        |> Maybe.withDefault (T.send (toastInfo "Can't find an element to remove :("))
+        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to remove :(")
 
 
 cancelElement : Model -> Cmd Msg
 cancelElement model =
-    T.send
-        ((model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
-            |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
-            |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
-            |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))
-            |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
-            |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
-            |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
-            |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
-            |> Maybe.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSSourceUploadClose)))
-            |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg SClose)))
-            |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
-            |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
-            |> Maybe.orElse (model.erd |> Maybe.andThen (\e -> e.tableProps |> Dict.values |> List.find (\p -> p.selected)) |> Maybe.map (\p -> SelectTable p.id False))
-            |> Maybe.withDefault (toastInfo "Nothing to cancel")
-        )
+    (model.contextMenu |> Maybe.map (\_ -> ContextMenuClose))
+        |> Maybe.orElse (model.confirm |> Maybe.map (\c -> ModalClose (ConfirmAnswer False c.content.onConfirm)))
+        |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
+        |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))
+        |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
+        |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
+        |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
+        |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
+        |> Maybe.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSSourceUploadClose)))
+        |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg SClose)))
+        |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
+        |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (\e -> e.tableProps |> Dict.values |> List.find (\p -> p.selected)) |> Maybe.map (\p -> SelectTable p.id False))
+        |> Maybe.map T.send
+        |> Maybe.withDefault (Toasts.info Toast "Nothing to cancel")
 
 
 moveTables : Delta -> Model -> Cmd Msg
@@ -175,4 +175,4 @@ moveTablesOrder delta model =
             |> Maybe.andThen (\id -> tables |> List.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
             |> Maybe.map (\( id, i ) -> T.send (TableOrder id (List.length tables - 1 - i + delta)))
         )
-            |> Maybe.withDefault (T.send (toastInfo "Can't find an element to move :("))
+            |> Maybe.withDefault (Toasts.info Toast "Can't find an element to move :(")

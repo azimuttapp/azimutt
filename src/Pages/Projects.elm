@@ -13,6 +13,8 @@ import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
 import Ports exposing (JsMsg(..))
 import Request
+import Services.Lenses exposing (mapToastsCmd)
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
 import Track
@@ -52,6 +54,7 @@ init =
       , mobileMenuOpen = False
       , projects = Loading
       , openedDropdown = ""
+      , toasts = Toasts.init
       , confirm = Nothing
       , modalOpened = False
       }
@@ -88,6 +91,9 @@ update req msg model =
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
 
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
+
         ConfirmOpen confirm ->
             ( { model | confirm = Just confirm }, T.sendAfter 1 ModalOpen )
 
@@ -123,6 +129,9 @@ handleJsMessage msg model =
 
                 Loaded projects ->
                     ( { model | projects = Loaded (projects |> List.filter (\p -> p.id /= projectId)) }, Cmd.none )
+
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
 
         _ ->
             ( model, Cmd.none )

@@ -2,7 +2,6 @@ module PagesComponents.Projects.Id_.Views exposing (title, view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
-import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Dict
@@ -33,6 +32,7 @@ import PagesComponents.Projects.Id_.Views.Modals.SourceParsing exposing (viewSou
 import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
 import View exposing (View)
@@ -58,7 +58,7 @@ viewProject shared model =
       else
         Loader.fullScreen
     , Lazy.lazy3 viewModal shared.zone shared.now model
-    , Lazy.lazy viewToasts model.toasts
+    , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
     ]
 
@@ -128,11 +128,6 @@ viewModal zone now model =
             |> List.filterMap identity
             |> List.sortBy (\( id, _ ) -> model.openedDialogs |> List.indexOf id |> Maybe.withDefault 0 |> negate)
         )
-
-
-viewToasts : List Toast.Model -> Html Msg
-viewToasts toasts =
-    div [ class "az-toasts" ] [ Toast.container toasts ToastHide ]
 
 
 viewContextMenu : Maybe ContextMenu -> Html Msg

@@ -12,6 +12,7 @@ import Gen.Route as Route exposing (Route)
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
+import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
@@ -24,6 +25,7 @@ import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Router
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
 import Track
@@ -39,7 +41,9 @@ viewProjects currentRoute shared model =
         model
         [ text model.selectedMenu ]
         [ viewContent shared model ]
-        [ viewModal model ]
+        [ viewModal model
+        , Lazy.lazy2 Toasts.view Toast model.toasts
+        ]
 
 
 viewContent : Shared.Model -> Model -> Html Msg

@@ -1,13 +1,12 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
 
 import Components.Atoms.Icon exposing (Icon(..))
-import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
-import Libs.Models exposing (Millis, ZoomDelta)
+import Libs.Models exposing (ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -37,6 +36,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Random
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
+import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
 
 
@@ -68,8 +68,7 @@ type alias Model =
     , openedPopover : HtmlId
     , contextMenu : Maybe ContextMenu
     , dragging : Maybe DragState
-    , toastIdx : Int
-    , toasts : List Toast.Model
+    , toasts : Toasts.Model
     , confirm : Maybe ConfirmDialog
     , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
@@ -193,10 +192,7 @@ type Msg
     | DragMove Position
     | DragEnd Position
     | DragCancel
-    | ToastAdd (Maybe Millis) Toast.Content
-    | ToastShow (Maybe Millis) String
-    | ToastHide String
-    | ToastRemove String
+    | Toast Toasts.Msg
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | PromptOpen (Prompt Msg) String
@@ -285,26 +281,6 @@ type HelpMsg
     = HOpen String
     | HClose
     | HToggle String
-
-
-toastSuccess : String -> Msg
-toastSuccess message =
-    ToastAdd (Just 8000) (Simple { color = Tw.green, icon = CheckCircle, title = message, message = "" })
-
-
-toastInfo : String -> Msg
-toastInfo message =
-    ToastAdd (Just 8000) (Simple { color = Tw.blue, icon = InformationCircle, title = message, message = "" })
-
-
-toastWarning : String -> Msg
-toastWarning message =
-    ToastAdd (Just 8000) (Simple { color = Tw.yellow, icon = ExclamationCircle, title = message, message = "" })
-
-
-toastError : String -> Msg
-toastError message =
-    ToastAdd Nothing (Simple { color = Tw.red, icon = Exclamation, title = message, message = "" })
 
 
 confirm : String -> Html Msg -> Msg -> Msg

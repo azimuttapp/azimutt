@@ -11,7 +11,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (HiddenColumns)
 import Models.Project.Source as Source
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog, toastInfo)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -19,6 +19,7 @@ import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import Ports
 import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
 import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Toasts as Toasts
 import Track
 
 
@@ -43,12 +44,12 @@ handleProjectSettings msg model =
             ( model |> mapErdM (Erd.mapSource source.id (mapEnabled not))
             , Cmd.batch
                 [ Ports.observeTablesSize (model.erd |> Maybe.mapOrElse .shownTables [])
-                , T.send (toastInfo ("Source " ++ source.name ++ " set to " ++ B.cond source.enabled "hidden" "visible" ++ "."))
+                , Toasts.info Toast ("Source " ++ source.name ++ " set to " ++ B.cond source.enabled "hidden" "visible" ++ ".")
                 ]
             )
 
         PSSourceDelete source ->
-            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), T.send (toastInfo ("Source " ++ source.name ++ " has been deleted from your project.")) )
+            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Toasts.info Toast ("Source " ++ source.name ++ " has been deleted from your project.") )
 
         PSSourceUploadOpen source ->
             ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SqlSourceUpload.init (model.erd |> Maybe.map (\p -> p.project.id)) source (\_ -> Noop "project-settings-source-parsed") }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )

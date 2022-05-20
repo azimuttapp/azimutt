@@ -9,7 +9,6 @@ import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
-import Components.Molecules.Toast as Toast
 import Conf
 import Dict
 import Gen.Route as Route exposing (Route)
@@ -17,6 +16,7 @@ import Html exposing (Html, a, aside, div, form, h2, input, li, nav, p, span, te
 import Html.Attributes exposing (class, href, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Html.Keyed as Keyed
+import Html.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (ariaCurrent, css)
@@ -30,6 +30,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.ProjectImport as ProjectImport exposing (ProjectImport)
 import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload)
+import Services.Toasts as Toasts
 import Time
 
 
@@ -53,7 +54,7 @@ viewNewProject zone user currentRoute model =
             }
         ]
         [ viewModal model
-        , viewToasts model.toasts
+        , Lazy.lazy2 Toasts.view Toast model.toasts
         ]
 
 
@@ -299,8 +300,3 @@ viewConfirm opened model =
         , onCancel = ModalClose (ConfirmAnswer False Cmd.none)
         }
         opened
-
-
-viewToasts : List Toast.Model -> Html Msg
-viewToasts toasts =
-    div [ class "az-toasts" ] [ Toast.container toasts ToastHide ]
