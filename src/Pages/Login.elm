@@ -4,6 +4,7 @@ import Conf
 import Dict
 import Effect exposing (Effect)
 import Gen.Params.Login exposing (Params)
+import Gen.Route as Route
 import Page
 import PagesComponents.Login.Models as Models exposing (Msg(..))
 import PagesComponents.Login.View exposing (viewLogin)
@@ -45,7 +46,18 @@ init req =
     ( { email = ""
       , redirect = req.query |> Dict.get "redirect"
       }
-    , Effect.none
+    , Effect.fromCmd
+        (Cmd.batch
+            [ Ports.setMeta
+                { title = Just title
+                , description = Just Conf.constants.defaultDescription
+                , canonical = Just { route = Route.Login, query = Dict.empty }
+                , html = Just "h-full bg-gray-100"
+                , body = Just "h-full"
+                }
+            , Ports.trackPage "login"
+            ]
+        )
     )
 
 

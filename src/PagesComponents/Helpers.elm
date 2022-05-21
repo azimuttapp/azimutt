@@ -111,7 +111,7 @@ viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onL
                         div []
                             --[ ContextMenu.link { url = "#", text = "Your profile" }
                             --, ContextMenu.link { url = "#", text = "Settings" }
-                            [ ContextMenu.btn "" onLogout [ text "Log out" ]
+                            [ ContextMenu.btn "" onLogout [ text "Logout" ]
                             ]
                     )
             )
