@@ -1,4 +1,4 @@
-import {File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
+import {Email, File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
 import {
     Color,
     ColumnId,
@@ -13,7 +13,7 @@ import {
     TableId
 } from "./project";
 import {LoginInfo} from "../services/supabase";
-import {Profile} from "./profile";
+import {Profile, UserId} from "./profile";
 
 export interface ElmFlags {
     now: Timestamp
@@ -46,6 +46,8 @@ export type JsMsg =
     | GotSizes
     | GotProjects
     | GotProject
+    | GotUser
+    | GotOwners
     | ProjectDropped
     | GotLocalFile
     | GotRemoteFile
@@ -70,6 +72,8 @@ export type GotLogout = { kind: 'GotLogout' }
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
 export type GotProject = { kind: 'GotProject', project: Project }
+export type GotUser = { kind: 'GotUser', email: Email, user: Profile | undefined }
+export type GotOwners = { kind: 'GotOwners', project: ProjectId, owners: Profile[] }
 export type ProjectDropped = { kind: 'ProjectDropped', id: ProjectId }
 export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
 export type GotRemoteFile = { kind: 'GotRemoteFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, url: string, content: string, sample?: string }
@@ -107,6 +111,9 @@ export type ElmMsg =
     | CreateProjectMsg
     | UpdateProjectMsg
     | MoveProjectToMsg
+    | GetUserMsg
+    | GetOwnersMsg
+    | SetOwnersMsg
     | DownloadFileMsg
     | DropProjectMsg
     | GetLocalFileMsg
@@ -132,6 +139,9 @@ export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: File
 export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
+export type GetUserMsg = { kind: 'GetUser', email: Email }
+export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
+export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
 export type DropProjectMsg = { kind: 'DropProject', project: ProjectInfo }
 export type GetLocalFileMsg = { kind: 'GetLocalFile', project?: ProjectId, source?: SourceId, file: File }

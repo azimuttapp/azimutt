@@ -24,6 +24,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
+import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -259,12 +260,13 @@ type SharingMsg
 
 
 type alias ProjectUploadDialog =
-    { id : HtmlId }
+    { id : HtmlId, shareInput : String, shareUser : Maybe ( String, Maybe User ), owners : List User }
 
 
 type ProjectUploadDialogMsg
     = PUOpen
     | PUClose
+    | PUShareUpdate String
 
 
 type ProjectSettingsMsg

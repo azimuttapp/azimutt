@@ -5,6 +5,8 @@ import {IndexedDBStorage} from "./indexeddb";
 import {LocalStorageStorage} from "./localstorage";
 import {InMemoryStorage} from "./inmemory";
 import {Logger} from "../services/logger";
+import {Profile, UserId} from "../types/profile";
+import {Email} from "../types/basics";
 
 export class StorageManager implements StorageApi {
     public kind: StorageKind = 'manager'
@@ -41,4 +43,8 @@ export class StorageManager implements StorageApi {
         }
         return Promise.reject(`Unable to move project from ${p.storage} to ${storage}`)
     }
+
+    getUser = (email: Email): Promise<Profile | undefined> => this.cloud.getUser(email)
+    getOwners = (id: ProjectId): Promise<Profile[]> => this.cloud.getOwners(id)
+    setOwners = (id: ProjectId, owners: UserId[]): Promise<Profile[]> => this.cloud.setOwners(id, owners)
 }

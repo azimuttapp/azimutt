@@ -107,8 +107,9 @@ viewNavbarBrand conf =
 
 viewNavbarHelp : Html Msg
 viewNavbarHelp =
-    button [ onClick (HelpMsg (HOpen "")), css [ "ml-3 rounded-full print:hidden", focus_ring_offset_600 Tw.primary ] ]
+    button [ onClick (HelpMsg (HOpen "")), css [ "mx-3 rounded-full print:hidden", focus_ring_offset_600 Tw.primary ] ]
         [ Icon.solid Icon.QuestionMarkCircle "text-primary-300" ]
+        |> Tooltip.b "Help"
 
 
 viewNavbarResetLayout : Bool -> Html Msg

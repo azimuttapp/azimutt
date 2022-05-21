@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, updateProject)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -27,6 +27,7 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
 import Models.User as User exposing (User)
+import Models.UserId as UserId exposing (UserId)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
@@ -110,6 +111,21 @@ updateProject project =
 moveProjectTo : Project -> ProjectStorage -> Cmd msg
 moveProjectTo project storage =
     messageToJs (MoveProjectTo project storage)
+
+
+getUser : Email -> Cmd msg
+getUser email =
+    messageToJs (GetUser email)
+
+
+getOwners : ProjectId -> Cmd msg
+getOwners projectId =
+    messageToJs (GetOwners projectId)
+
+
+setOwners : ProjectId -> List UserId -> Cmd msg
+setOwners projectId owners =
+    messageToJs (SetOwners projectId owners)
 
 
 downloadFile : FileName -> FileContent -> Cmd msg
@@ -211,6 +227,9 @@ type ElmMsg
     | CreateProject Project
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
+    | GetUser Email
+    | GetOwners ProjectId
+    | SetOwners ProjectId (List UserId)
     | DownloadFile FileName FileContent
     | DropProject ProjectInfo
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
@@ -233,6 +252,8 @@ type JsMsg
     | GotLogout
     | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
     | GotProject (Result Decode.Error Project)
+    | GotUser Email (Maybe User)
+    | GotOwners ProjectId (List User)
     | ProjectDropped ProjectId
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
@@ -330,6 +351,15 @@ elmEncoder elm =
         MoveProjectTo project storage ->
             Encode.object [ ( "kind", "MoveProjectTo" |> Encode.string ), ( "project", project |> Project.encode ), ( "storage", storage |> ProjectStorage.encode ) ]
 
+        GetUser email ->
+            Encode.object [ ( "kind", "GetUser" |> Encode.string ), ( "email", email |> Encode.string ) ]
+
+        GetOwners project ->
+            Encode.object [ ( "kind", "GetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ) ]
+
+        SetOwners project users ->
+            Encode.object [ ( "kind", "SetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ), ( "owners", users |> Encode.list UserId.encode ) ]
+
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]
 
@@ -387,6 +417,16 @@ jsDecoder =
 
                 "GotProject" ->
                     Decode.map GotProject (Decode.field "project" projectDecoder)
+
+                "GotUser" ->
+                    Decode.map2 GotUser
+                        (Decode.field "email" Decode.string)
+                        (Decode.maybeField "user" User.decode)
+
+                "GotOwners" ->
+                    Decode.map2 GotOwners
+                        (Decode.field "project" ProjectId.decode)
+                        (Decode.field "owners" (Decode.list User.decode))
 
                 "ProjectDropped" ->
                     Decode.map ProjectDropped (Decode.field "id" ProjectId.decode)

@@ -10,7 +10,7 @@ import {
     JsMsg
 } from "../types/elm";
 import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
-import {ToastLevel} from "../types/basics";
+import {Email, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import {Utils} from "../utils/utils";
 import {Profile} from "../types/profile";
@@ -37,6 +37,9 @@ export class ElmApp {
         CreateProject: [],
         UpdateProject: [],
         MoveProjectTo: [],
+        GetUser: [],
+        GetOwners: [],
+        SetOwners: [],
         DownloadFile: [],
         DropProject: [],
         GetLocalFile: [],
@@ -82,6 +85,8 @@ export class ElmApp {
         window.azimutt.project = project
         this.send({kind: 'GotProject', project})
     }
+    gotUser = (email: Email, user: Profile | undefined): void => this.send({kind: 'GotUser', email, user})
+    gotOwners = (project: ProjectId, owners: Profile[]): void => this.send({kind: 'GotOwners', project, owners})
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
     gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',

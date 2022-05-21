@@ -66,6 +66,16 @@ export class SupabaseStorage {
         return await this.supabase.from(db.projects.table).select('project')
             .match({id}).maybeSingle().then(singleResult).then(p => p.project)
     }
+    getOwners = async (id: ProjectId): Promise<Profile[]> => {
+        const owners: UserId[] = await this.supabase.from(db.projects.table).select('owners')
+            .match({id}).maybeSingle().then(singleResult).then(p => p.owners)
+        const profiles: (Profile | undefined)[] = await Promise.all(owners.map(id => this.getProfile(id)))
+        return profiles.filter(p => !!p) as Profile[]
+    }
+    setOwners = async (id: ProjectId, owners: UserId[]): Promise<Profile[]> => {
+        await this.supabase.from(db.projects.table).update({owners}).match({id}).then(updateResult)
+        return this.getOwners(id)
+    }
     createProject = async (p: Project, user: UserId): Promise<Project> => {
         if (isSample(p)) return Promise.reject("Sample projects can't be uploaded!")
         const now = Date.now()

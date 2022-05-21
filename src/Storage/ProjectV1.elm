@@ -7,7 +7,7 @@ import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
-import Libs.Models exposing (UID)
+import Libs.Models exposing (Uuid)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
@@ -159,7 +159,7 @@ type alias FindPathSettingsV1 =
 
 
 type alias ProjectIdV1 =
-    UID
+    Uuid
 
 
 type alias ProjectNameV1 =
@@ -167,7 +167,7 @@ type alias ProjectNameV1 =
 
 
 type alias ProjectSourceIdV1 =
-    UID
+    Uuid
 
 
 type alias ProjectSourceNameV1 =

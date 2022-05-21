@@ -1,6 +1,6 @@
 import {AuthChangeEvent, Session, SupabaseClient} from "@supabase/supabase-js";
 import {User as SupabaseUser, UserCredentials} from "@supabase/gotrue-js/src/lib/types";
-import {Profile} from "../types/profile";
+import {Profile, UserId} from "../types/profile";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
 import {Project, ProjectId, ProjectInfo} from "../types/project";
 import {StorageApi, StorageKind} from "../storages/api";
@@ -33,10 +33,10 @@ export class Supabase implements StorageApi {
         return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options))
     }
 
-    user: SupabaseUser | null = null
-    store: SupabaseStorage
-    events: Partial<{ [key in AuthChangeEvent]: (Session | null)[] }> = {}
-    callbacks: Partial<{ [key in AuthChangeEvent]: ((session: Session | null) => void)[] }> = {}
+    private user: SupabaseUser | null = null
+    private store: SupabaseStorage
+    private events: Partial<{ [key in AuthChangeEvent]: (Session | null)[] }> = {}
+    private callbacks: Partial<{ [key in AuthChangeEvent]: ((session: Session | null) => void)[] }> = {}
 
     constructor(private supabase: SupabaseClient) {
         this.store = new SupabaseStorage(supabase)
@@ -115,6 +115,10 @@ export class Supabase implements StorageApi {
     createProject = (p: Project): Promise<Project> => this.waitLogin(500, u => this.store.createProject(p, u.id))
     updateProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.updateProject(p))
     dropProject = (p: ProjectInfo): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(p))
+
+    getUser = (email: Email): Promise<Profile | undefined> => this.store.fetchProfile(email)
+    getOwners = (id: ProjectId): Promise<Profile[]> => this.store.getOwners(id)
+    setOwners = (id: ProjectId, owners: UserId[]): Promise<Profile[]> => this.store.setOwners(id, owners)
 
     private waitLogin<T>(timeout: number, success: (u: SupabaseUser) => Promise<T>, failure: () => Promise<T> = () => Promise.reject('try to log in')): Promise<T> {
         if (this.user !== null) {

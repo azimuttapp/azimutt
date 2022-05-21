@@ -1,4 +1,4 @@
-module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, TrackEvent, TrackedLink, UID, ZoomDelta)
+module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, TrackEvent, TrackedLink, Uuid, ZoomDelta)
 
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -6,7 +6,7 @@ import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 
 
-type alias UID =
+type alias Uuid =
     String
 
 
