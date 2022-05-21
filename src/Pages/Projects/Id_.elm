@@ -61,6 +61,7 @@ init now id =
       , findPath = Nothing
       , schemaAnalysis = Nothing
       , sharing = Nothing
+      , upload = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , sourceParsing = Nothing

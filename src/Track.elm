@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUpload, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
@@ -24,6 +24,11 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (
 openAppCta : String -> TrackEvent
 openAppCta source =
     { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
+
+
+openUpload : TrackEvent
+openUpload =
+    { name = "open-upload", details = [], enabled = True }
 
 
 openSharing : TrackEvent

@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), ProjectUploadDialog, ProjectUploadMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Dict exposing (Dict)
@@ -58,6 +58,7 @@ type alias Model =
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
     , sharing : Maybe SharingDialog
+    , upload : Maybe ProjectUploadDialog
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
     , sourceParsing : Maybe SourceParsingDialog
@@ -108,6 +109,10 @@ type alias SchemaAnalysisDialog =
 
 type alias SharingDialog =
     { id : HtmlId, url : FileUrl, layout : LayoutName, mode : String }
+
+
+type alias ProjectUploadDialog =
+    { id : HtmlId }
 
 
 type alias ProjectSettingsDialog =
@@ -171,6 +176,7 @@ type Msg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
+    | ProjectUploadMsg ProjectUploadMsg
     | ProjectSettingsMsg ProjectSettingsMsg
     | SourceParsing SqlSourceUploadMsg
     | SourceParsed ProjectId Source
@@ -254,6 +260,11 @@ type SharingMsg
     | SProjectUrlUpdate FileUrl
     | SLayoutUpdate LayoutName
     | SModeUpdate String
+
+
+type ProjectUploadMsg
+    = PUOpen
+    | PUClose
 
 
 type ProjectSettingsMsg

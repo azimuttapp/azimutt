@@ -20,7 +20,7 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.TableId as TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), ProjectUploadMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -33,6 +33,7 @@ import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
+import PagesComponents.Projects.Id_.Updates.ProjectUpload exposing (handleProjectUpload)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
@@ -66,7 +67,15 @@ update req currentLayout now msg model =
 
         MoveProjectTo storage ->
             if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.moveProjectTo p storage ]) [ Toasts.warning Toast "No project to move" ]) )
+                ( model
+                , Cmd.batch
+                    (model.erd
+                        |> Maybe.map Erd.unpack
+                        |> Maybe.mapOrElse
+                            (\p -> [ Ports.moveProjectTo p storage, T.send (ModalClose (ProjectUploadMsg PUClose)) ])
+                            [ Toasts.warning Toast "No project to move" ]
+                    )
+                )
 
             else
                 ( model, Cmd.none )
@@ -169,6 +178,9 @@ update req currentLayout now msg model =
 
         SharingMsg message ->
             model |> handleSharing message
+
+        ProjectUploadMsg message ->
+            model |> handleProjectUpload message
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message

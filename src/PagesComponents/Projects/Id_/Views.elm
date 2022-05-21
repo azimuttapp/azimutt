@@ -25,6 +25,7 @@ import PagesComponents.Projects.Id_.Views.Modals.EditNotes exposing (viewEditNot
 import PagesComponents.Projects.Id_.Views.Modals.FindPath exposing (viewFindPath)
 import PagesComponents.Projects.Id_.Views.Modals.Help exposing (viewHelp)
 import PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
+import PagesComponents.Projects.Id_.Views.Modals.ProjectUpload exposing (viewProjectUpload)
 import PagesComponents.Projects.Id_.Views.Modals.Prompt exposing (viewPrompt)
 import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
 import PagesComponents.Projects.Id_.Views.Modals.Sharing exposing (viewSharing)
@@ -120,6 +121,7 @@ viewModal zone now model =
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, viewProjectUpload (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload zone now (model.openedDialogs |> List.has m.id) m ))
          , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.has m.id) m ))

@@ -22,7 +22,7 @@ import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
-import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
+import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), ProjectUploadMsg(..), prompt)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 
@@ -30,11 +30,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 viewNavbarTitle : ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarTitle conf projects project usedLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
-        ([ if project.storage == ProjectStorage.Cloud then
-            button [ onClick (MoveProjectTo ProjectStorage.Browser) ] [ Icon.outline Cloud "" ]
-
-           else
-            button [ onClick (MoveProjectTo ProjectStorage.Cloud) ] [ Icon.outline CloudUpload "" ]
+        ([ button [ onClick (ProjectUploadMsg PUOpen), class "mr-1" ] [ Icon.outline (B.cond (project.storage == ProjectStorage.Cloud) Cloud CloudUpload) "" ]
          , if conf.projectManagement then
             Lazy.lazy4 viewProjectsDropdown projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 

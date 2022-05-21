@@ -79,6 +79,7 @@ init now query =
       , findPath = Nothing
       , schemaAnalysis = Nothing
       , sharing = Nothing
+      , upload = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , sourceParsing =
