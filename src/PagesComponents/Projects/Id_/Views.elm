@@ -14,6 +14,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -25,7 +26,6 @@ import PagesComponents.Projects.Id_.Views.Modals.EditNotes exposing (viewEditNot
 import PagesComponents.Projects.Id_.Views.Modals.FindPath exposing (viewFindPath)
 import PagesComponents.Projects.Id_.Views.Modals.Help exposing (viewHelp)
 import PagesComponents.Projects.Id_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
-import PagesComponents.Projects.Id_.Views.Modals.ProjectUpload exposing (viewProjectUpload)
 import PagesComponents.Projects.Id_.Views.Modals.Prompt exposing (viewPrompt)
 import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
 import PagesComponents.Projects.Id_.Views.Modals.Sharing exposing (viewSharing)
@@ -35,7 +35,6 @@ import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
 import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
-import Time
 import View exposing (View)
 
 
@@ -58,7 +57,7 @@ viewProject shared model =
 
       else
         Loader.fullScreen
-    , Lazy.lazy3 viewModal shared.zone shared.now model
+    , Lazy.lazy2 viewModal shared model
     , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
     ]
@@ -110,8 +109,8 @@ viewNotFound conf =
         }
 
 
-viewModal : Time.Zone -> Time.Posix -> Model -> Html Msg
-viewModal zone now model =
+viewModal : Shared.Model -> Model -> Html Msg
+viewModal shared model =
     Keyed.node "div"
         [ class "az-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
@@ -121,9 +120,9 @@ viewModal zone now model =
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.upload |> Maybe.map2 (\e m -> ( m.id, viewProjectUpload (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload zone now (model.openedDialogs |> List.has m.id) m ))
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view shared.user (model.openedDialogs |> List.has m.id) e m )) model.erd
+         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.has m.id) e m )) model.erd
+         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload shared.zone shared.now (model.openedDialogs |> List.has m.id) m ))
          , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.has m.id) m ))
          , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> List.has m.id) m ))
          ]

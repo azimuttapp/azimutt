@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), ProjectUploadDialog, ProjectUploadMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), ProjectUploadDialog, ProjectUploadDialogMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Dict exposing (Dict)
@@ -111,10 +111,6 @@ type alias SharingDialog =
     { id : HtmlId, url : FileUrl, layout : LayoutName, mode : String }
 
 
-type alias ProjectUploadDialog =
-    { id : HtmlId }
-
-
 type alias ProjectSettingsDialog =
     { id : HtmlId }
 
@@ -176,7 +172,7 @@ type Msg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
-    | ProjectUploadMsg ProjectUploadMsg
+    | ProjectUploadDialogMsg ProjectUploadDialogMsg
     | ProjectSettingsMsg ProjectSettingsMsg
     | SourceParsing SqlSourceUploadMsg
     | SourceParsed ProjectId Source
@@ -262,7 +258,11 @@ type SharingMsg
     | SModeUpdate String
 
 
-type ProjectUploadMsg
+type alias ProjectUploadDialog =
+    { id : HtmlId }
+
+
+type ProjectUploadDialogMsg
     = PUOpen
     | PUClose
 

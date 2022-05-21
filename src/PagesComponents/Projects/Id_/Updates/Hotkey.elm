@@ -6,7 +6,8 @@ import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), ProjectUploadMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas)
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import Ports
 import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapSearch, mapTableProps)
@@ -135,7 +136,7 @@ cancelElement model =
         |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
         |> Maybe.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSSourceUploadClose)))
         |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg SClose)))
-        |> Maybe.orElse (model.upload |> Maybe.map (\_ -> ModalClose (ProjectUploadMsg PUClose)))
+        |> Maybe.orElse (model.upload |> Maybe.map (\_ -> ProjectUploadDialog.close))
         |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
         |> Maybe.orElse (model.erd |> Maybe.andThen (\e -> e.tableProps |> Dict.values |> List.find (\p -> p.selected)) |> Maybe.map (\p -> SelectTable p.id False))

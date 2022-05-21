@@ -20,7 +20,8 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.TableId as TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), ProjectUploadMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), ProjectUploadDialogMsg, SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -33,7 +34,6 @@ import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
-import PagesComponents.Projects.Id_.Updates.ProjectUpload exposing (handleProjectUpload)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
 import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
@@ -42,7 +42,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Time
@@ -72,7 +72,7 @@ update req currentLayout now msg model =
                     (model.erd
                         |> Maybe.map Erd.unpack
                         |> Maybe.mapOrElse
-                            (\p -> [ Ports.moveProjectTo p storage, T.send (ModalClose (ProjectUploadMsg PUClose)) ])
+                            (\p -> [ Ports.moveProjectTo p storage, T.send ProjectUploadDialog.close ])
                             [ Toasts.warning Toast "No project to move" ]
                     )
                 )
@@ -179,8 +179,8 @@ update req currentLayout now msg model =
         SharingMsg message ->
             model |> handleSharing message
 
-        ProjectUploadMsg message ->
-            model |> handleProjectUpload message
+        ProjectUploadDialogMsg message ->
+            model |> mapUploadCmd (ProjectUploadDialog.update message)
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message

@@ -106,7 +106,6 @@ ui =
 ids :
     { searchInput : HtmlId
     , sharingDialog : HtmlId
-    , uploadDialog : HtmlId
     , settingsDialog : HtmlId
     , sourceUploadDialog : HtmlId
     , sourceParsingDialog : HtmlId
@@ -124,7 +123,6 @@ ids :
 ids =
     { searchInput = "app-nav-search"
     , sharingDialog = "sharing-dialog"
-    , uploadDialog = "upload-dialog"
     , settingsDialog = "settings-dialog"
     , sourceUploadDialog = "source-upload-dialog"
     , sourceParsingDialog = "source-parsing-dialog"
