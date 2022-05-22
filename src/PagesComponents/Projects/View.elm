@@ -13,14 +13,13 @@ import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
-import Libs.Bool as Bool
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
-import Models.Project.ProjectStorage exposing (ProjectStorage(..))
+import Models.Project.ProjectStorage as ProjectStorage
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
@@ -159,7 +158,14 @@ viewProjectCard : Time.Zone -> ProjectInfo -> Html Msg
 viewProjectCard zone project =
     li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
-            [ h3 [ css [ "text-lg font-medium flex" ] ] [ Icon.outline (Bool.cond (project.storage == Cloud) Icon.Cloud Icon.Folder) "mr-1", text project.name ]
+            [ h3 [ css [ "text-lg font-medium flex" ] ]
+                [ if project.storage == ProjectStorage.Cloud then
+                    Icon.outline Icon.Cloud "" |> Tooltip.t "Sync in Azimutt"
+
+                  else
+                    Icon.outline Icon.Folder "" |> Tooltip.t "Local project"
+                , span [ class "ml-1" ] [ text project.name ]
+                ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
                 [ li [] [ text ((project.tables |> String.pluralize "table") ++ ", " ++ (project.layouts |> String.pluralize "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]

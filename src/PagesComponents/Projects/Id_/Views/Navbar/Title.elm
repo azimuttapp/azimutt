@@ -34,7 +34,7 @@ viewNavbarTitle conf projects project usedLayout layouts htmlId openedDropdown =
         ([ button [ onClick ProjectUploadDialog.open, css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
             [ Icon.outline (B.cond (project.storage == ProjectStorage.Browser) CloudUpload Cloud) ""
             ]
-            |> Tooltip.b (B.cond (project.storage == ProjectStorage.Browser) "Sync your project" "Stored in Azimutt")
+            |> Tooltip.b (B.cond (project.storage == ProjectStorage.Browser) "Sync your project" "Sync in Azimutt")
          , if conf.projectManagement then
             Lazy.lazy4 viewProjectsDropdown projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
@@ -65,7 +65,18 @@ viewProjectsDropdown projects project htmlId openedDropdown =
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
                     ]
                   ]
-                    ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> ContextMenu.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
+                    ++ B.cond (List.isEmpty otherProjects)
+                        []
+                        [ otherProjects
+                            |> List.map
+                                (\p ->
+                                    ContextMenu.linkHtml (Route.toHref (Route.Projects__Id_ { id = p.id }))
+                                        [ class "flex" ]
+                                        [ Icon.outline (ProjectStorage.icon p.storage) "mr-1"
+                                        , text p.name
+                                        ]
+                                )
+                        ]
                     ++ [ [ ContextMenu.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty

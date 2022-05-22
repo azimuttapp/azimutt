@@ -1,5 +1,6 @@
-module Models.Project.ProjectStorage exposing (ProjectStorage(..), decode, encode)
+module Models.Project.ProjectStorage exposing (ProjectStorage(..), decode, encode, icon)
 
+import Components.Atoms.Icon as Icon
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 
@@ -7,6 +8,15 @@ import Json.Encode as Encode exposing (Value)
 type ProjectStorage
     = Browser
     | Cloud
+
+
+icon : ProjectStorage -> Icon.Icon
+icon storage =
+    if storage == Browser then
+        Icon.Folder
+
+    else
+        Icon.Cloud
 
 
 encode : ProjectStorage -> Value
