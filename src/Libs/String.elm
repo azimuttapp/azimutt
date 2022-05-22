@@ -1,9 +1,9 @@
 module Libs.String exposing (filterStartsWith, hashCode, inflect, nonEmpty, nonEmptyMaybe, orElse, plural, pluralize, pluralizeD, pluralizeL, stripRight, unique, wordSplit)
 
-import Bitwise
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
 import Libs.Regex as Regex
+import MD5
 
 
 nonEmpty : String -> Bool
@@ -54,12 +54,12 @@ wordSplit input =
 
 hashCode : String -> Int
 hashCode input =
-    String.foldl updateHash 5381 input
+    input |> MD5.hex |> String.toList |> List.foldl (\c code -> ((31 * code) + Char.toCode c) |> modBy maxSafeInteger) 7
 
 
-updateHash : Char -> Int -> Int
-updateHash char code =
-    Bitwise.shiftLeftBy code (5 + code + Char.toCode char)
+maxSafeInteger : number
+maxSafeInteger =
+    2 ^ 53 - 1
 
 
 unique : List String -> String -> String

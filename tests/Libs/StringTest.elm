@@ -23,8 +23,8 @@ suite =
             , test "split works on space" (\_ -> wordSplit "table test" |> Expect.equal [ "table", "test" ])
             ]
         , describe "stringHashCode"
-            [ test "compute hello hashcode" (\_ -> hashCode "hello" |> Expect.equal -641073152)
-            , test "compute demo hashcode" (\_ -> hashCode "demo" |> Expect.equal 179990644)
+            [ test "compute hello hashcode" (\_ -> hashCode "hello" |> Expect.equal 5170077755645853)
+            , test "compute demo hashcode" (\_ -> hashCode "demo" |> Expect.equal 1100405414441372)
             ]
         , describe "plural"
             [ test "simple" (\_ -> plural "cat" |> Expect.equal "cats")

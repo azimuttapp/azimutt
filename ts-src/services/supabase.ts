@@ -110,8 +110,8 @@ export class Supabase implements StorageApi {
     // deleteAccount = (): Promise<void> => this.supabase.auth.update({data: {deleted_at: Date.now()}})
 
     kind: StorageKind = 'supabase'
-    listProjects = (): Promise<ProjectInfo[]> => this.waitLogin(500, _ => this.store.listProjects(), () => Promise.resolve([]))
-    loadProject = (id: ProjectId): Promise<Project> => this.waitLogin(500, _ => this.store.loadProject(id))
+    listProjects = (): Promise<ProjectInfo[]> => this.waitLogin(500, _ => this.store.getProjects(), () => Promise.resolve([]))
+    loadProject = (id: ProjectId): Promise<Project> => this.waitLogin(500, _ => this.store.getProject(id))
     createProject = (p: Project): Promise<Project> => this.waitLogin(500, u => this.store.createProject(p, u.id))
     updateProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.updateProject(p))
     dropProject = (p: ProjectInfo): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(p))

@@ -251,7 +251,7 @@ type JsMsg
     | GotLogin User
     | GotLogout
     | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
-    | GotProject (Result Decode.Error Project)
+    | GotProject (Maybe (Result Decode.Error Project))
     | GotUser Email (Maybe User)
     | GotOwners ProjectId (List User)
     | ProjectDropped ProjectId
@@ -416,7 +416,7 @@ jsDecoder =
                     Decode.map GotProjects (Decode.field "projects" projectInfosDecoder)
 
                 "GotProject" ->
-                    Decode.map GotProject (Decode.field "project" projectDecoder)
+                    Decode.map GotProject (Decode.maybeField "project" projectDecoder)
 
                 "GotUser" ->
                     Decode.map2 GotUser

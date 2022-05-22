@@ -131,7 +131,7 @@ function listProjects() {
 
 function loadProject(id: ProjectId) {
     store.loadProject(id).then(app.gotProject).catch(err => {
-        // FIXME: better error handling => send message to be in loaded state
+        app.gotProject(undefined)
         app.toast('error', `Can't load project: ${err}`)
     })
 }

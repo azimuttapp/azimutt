@@ -18,6 +18,8 @@ const db = {
 }
 
 export class SupabaseStorage {
+    private projects: { [id: ProjectId]: Project } = {}
+
     constructor(private supabase: SupabaseClient) {
     }
 
@@ -49,7 +51,7 @@ export class SupabaseStorage {
     getOrCreateProfile = async (user: SupabaseUser): Promise<Profile> => this.getProfile(user.id).then(p => p ? p : this.createProfile(user))
 
 
-    listProjects = async (): Promise<ProjectInfo[]> => {
+    getProjects = async (): Promise<ProjectInfo[]> => {
         return await this.supabase.from(db.projects.table).select(db.projects.infoColumns)
             .then(listResult).then(projects => projects.map(p => ({
                 id: p.id,
@@ -62,10 +64,57 @@ export class SupabaseStorage {
                 updatedAt: new Date(p.updated_at).getTime()
             })))
     }
-    loadProject = async (id: ProjectId): Promise<Project> => {
+    getProject = async (id: ProjectId): Promise<Project> => {
+        const project = await this.fetchProject(id)
+        this.projects[id] = project
+        return project
+    }
+    private fetchProject = async (id: ProjectId): Promise<Project> => {
         return await this.supabase.from(db.projects.table).select('project')
             .match({id}).maybeSingle().then(singleResult).then(p => p.project)
     }
+    createProject = async (p: Project, user: UserId): Promise<Project> => {
+        if (isSample(p)) return Promise.reject("Sample projects can't be uploaded!")
+        const now = Date.now()
+        const prj = {...p, createdAt: now, updatedAt: now}
+        const project = await this.supabase.from(db.projects.table).insert({
+            id: p.id,
+            name: p.name,
+            tables: computeTables(p.sources),
+            relations: computeRelations(p.sources),
+            layouts: Object.keys(p.layouts).length,
+            project: prj,
+            owners: [user]
+        }).then(insertResult).then(p => p.project)
+        this.projects[p.id] = project
+        return project
+    }
+    updateProject = async (p: Project): Promise<Project> => {
+        const initial: Project = this.projects[p.id]
+        const current: Project = await this.fetchProject(p.id)
+        if (initial.updatedAt !== current.updatedAt) {
+            // needs to build https://github.com/cujojs/jiff :(
+            // const patch = jiff.diff(initial, p)
+            // p = jiff.patch(patch, current)
+            return Promise.reject("Project has been updated by another user, please refresh")
+        }
+        const prj = {...p, updatedAt: Date.now()}
+        const project = await this.supabase.from(db.projects.table).update({
+            name: p.name,
+            tables: computeTables(p.sources),
+            relations: computeRelations(p.sources),
+            layouts: Object.keys(p.layouts).length,
+            project: prj
+        }).match({id: p.id}).then(updateResult).then(p => p.project)
+        this.projects[p.id] = project
+        return project
+    }
+    dropProject = async (p: ProjectInfo): Promise<void> => {
+        await this.supabase.from(db.projects.table).delete()
+            .match({id: p.id}).then(deleteResult)
+        delete this.projects[p.id]
+    }
+
     getOwners = async (id: ProjectId): Promise<Profile[]> => {
         const owners: UserId[] = await this.supabase.from(db.projects.table).select('owners')
             .match({id}).maybeSingle().then(singleResult).then(p => p.owners)
@@ -75,35 +124,6 @@ export class SupabaseStorage {
     setOwners = async (id: ProjectId, owners: UserId[]): Promise<Profile[]> => {
         await this.supabase.from(db.projects.table).update({owners}).match({id}).then(updateResult)
         return this.getOwners(id)
-    }
-    createProject = async (p: Project, user: UserId): Promise<Project> => {
-        if (isSample(p)) return Promise.reject("Sample projects can't be uploaded!")
-        const now = Date.now()
-        const prj = {...p, createdAt: now, updatedAt: now}
-        return await this.supabase.from(db.projects.table).insert({
-            id: p.id,
-            name: p.name,
-            tables: computeTables(p.sources),
-            relations: computeRelations(p.sources),
-            layouts: Object.keys(p.layouts).length,
-            project: prj,
-            owners: [user]
-        }).then(insertResult).then(p => p.project)
-    }
-    updateProject = async (p: Project): Promise<Project> => {
-        const prj = {...p, updatedAt: Date.now()}
-        return await this.supabase.from(db.projects.table).update({
-            name: p.name,
-            tables: computeTables(p.sources),
-            relations: computeRelations(p.sources),
-            layouts: Object.keys(p.layouts).length,
-            project: prj
-        }).match({id: p.id}).then(updateResult).then(p => p.project)
-    }
-    // shareProject = (p: Project, user: UserInfo, access: UserAccess): Promise<void> => { throw 'TODO' },
-    dropProject = async (p: ProjectInfo): Promise<void> => {
-        return await this.supabase.from(db.projects.table).delete()
-            .match({id: p.id}).then(deleteResult)
     }
 }
 

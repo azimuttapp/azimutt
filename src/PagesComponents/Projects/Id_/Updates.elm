@@ -189,7 +189,7 @@ update req currentLayout now msg model =
             model |> mapSourceParsingMCmd (mapParsingCmd (SqlSourceUpload.update message SourceParsing))
 
         SourceParsed projectId source ->
-            ( model, T.send (JsMessage (GotProject (Ok (Project.create projectId source.name source)))) )
+            ( model, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -314,10 +314,13 @@ handleJsMessage currentLayout msg model =
 
         GotProject res ->
             case res of
-                Err err ->
-                    ( model, Cmd.batch [ Toasts.error Toast ("Unable to read project: " ++ Decode.errorToHtml err), Ports.trackJsonError "decode-project" err ] )
+                Nothing ->
+                    ( { model | loaded = True }, Cmd.none )
 
-                Ok project ->
+                Just (Err err) ->
+                    ( { model | loaded = True }, Cmd.batch [ Toasts.error Toast ("Unable to read project: " ++ Decode.errorToHtml err), Ports.trackJsonError "decode-project" err ] )
+
+                Just (Ok project) ->
                     let
                         ( childSeed, newSeed ) =
                             Random.step (Random.int Random.minInt Random.maxInt) model.seed

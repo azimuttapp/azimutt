@@ -81,9 +81,9 @@ export class ElmApp {
         kind: 'GotProjects',
         projects: projects.map(p => [p.id, p])
     })
-    gotProject = (project: Project): void => {
+    gotProject = (project: Project | undefined): void => {
         window.azimutt.project = project
-        this.send({kind: 'GotProject', project})
+        project ? this.send({kind: 'GotProject', project}) : this.send({kind: 'GotProject'})
     }
     gotUser = (email: Email, user: Profile | undefined): void => this.send({kind: 'GotUser', email, user})
     gotOwners = (project: ProjectId, owners: Profile[]): void => this.send({kind: 'GotOwners', project, owners})
