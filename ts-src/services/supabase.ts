@@ -1,4 +1,4 @@
-import {AuthChangeEvent, Session, SupabaseClient} from "@supabase/supabase-js";
+import {AuthChangeEvent, createClient, Session, SupabaseClient} from "@supabase/supabase-js";
 import {User as SupabaseUser, UserCredentials} from "@supabase/gotrue-js/src/lib/types";
 import {Profile, UserId} from "../types/profile";
 import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
@@ -30,7 +30,7 @@ export class Supabase implements StorageApi {
 
     static init(env: Env): Supabase {
         const {supabaseUrl, supabaseKey, options} = this.conf['staging'] // social auth & file storage not supported in local :(
-        return new Supabase(window.supabase.createClient(supabaseUrl, supabaseKey, options))
+        return new Supabase(createClient(supabaseUrl, supabaseKey, options))
     }
 
     private user: SupabaseUser | null = null

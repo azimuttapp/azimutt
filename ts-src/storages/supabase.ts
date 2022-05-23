@@ -5,6 +5,7 @@ import {PostgrestError} from "@supabase/postgrest-js/src/lib/types";
 import {Profile, UserId} from "../types/profile";
 import {User as SupabaseUser} from "@supabase/gotrue-js/src/lib/types";
 import {Email, Username} from "../types/basics";
+import jiff from "jiff";
 
 const db = {
     profiles: {
@@ -93,10 +94,13 @@ export class SupabaseStorage {
         const initial: Project = this.projects[p.id]
         const current: Project = await this.fetchProject(p.id)
         if (initial.updatedAt !== current.updatedAt) {
-            // needs to build https://github.com/cujojs/jiff :(
-            // const patch = jiff.diff(initial, p)
-            // p = jiff.patch(patch, current)
-            return Promise.reject("Project has been updated by another user, please refresh")
+            try {
+                const patch = jiff.diff(initial, p)
+                p = jiff.patch(patch, current)
+            } catch (e) {
+                console.warn('patch failed', e)
+                return Promise.reject("Project has been updated by another user and can't be patched!")
+            }
         }
         const prj = {...p, updatedAt: Date.now()}
         const project = await this.supabase.from(db.projects.table).update({

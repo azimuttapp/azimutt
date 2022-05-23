@@ -26,12 +26,13 @@ const logger = new ConsoleLogger(env)
 const app = ElmApp.init({now: Date.now()}, logger)
 const supabase = Supabase.init(env).onLogin(user => {
     app.login(user)
+    analytics.login(user)
     listProjects()
 })
 const store = new StorageManager(supabase, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
-const errorTracking: Promise<ErrLogger> = env === 'prod' ? SentryErrLogger.init() : Promise.resolve(new LogErrLogger(logger))
+const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics() : new LogAnalytics(logger)
+const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger() : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -60,8 +61,14 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
-app.on('Login', msg => supabase.login(msg.info, msg.redirect).then(app.login).then(listProjects).catch(logger.warn))
-app.on('Logout', _ => supabase.logout().then(app.logout).then(listProjects).catch(logger.warn))
+app.on('Login', msg => supabase.login(msg.info, msg.redirect).then(user => {
+    app.login(user)
+    analytics.login(user)
+}).then(listProjects).catch(logger.warn))
+app.on('Logout', _ => supabase.logout().then(() => {
+    app.logout()
+    analytics.logout()
+}).then(listProjects).catch(logger.warn))
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))
 app.on('LoadRemoteProject', loadRemoteProject)
@@ -77,11 +84,11 @@ app.on('GetLocalFile', getLocalFile)
 app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
-app.on('TrackPage', msg => analytics.then(a => a.trackPage(msg.name)))
-app.on('TrackEvent', msg => analytics.then(a => a.trackEvent(msg.name, msg.details)))
+app.on('TrackPage', msg => analytics.trackPage(msg.name))
+app.on('TrackEvent', msg => analytics.trackEvent(msg.name, msg.details))
 app.on('TrackError', msg => {
-    analytics.then(a => a.trackError(msg.name, msg.details))
-    errorTracking.then(e => e.trackError(msg.name, msg.details))
+    analytics.trackError(msg.name, msg.details)
+    errorTracking.trackError(msg.name, msg.details)
 })
 if (app.noListeners().length > 0) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
@@ -154,8 +161,8 @@ function updateProject(msg: UpdateProjectMsg): Promise<Project> {
             app.toast('error', message)
             const name = 'storage'
             const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
-            analytics.then(a => a.trackError(name, details))
-            errorTracking.then(e => e.trackError(name, details))
+            analytics.trackError(name, details)
+            errorTracking.trackError(name, details)
             return msg.project
         })
 }
@@ -279,7 +286,7 @@ function trackClick(e: MouseEvent) {
                 details[attr.name.replace('data-track-event-', '')] = attr.value
             }
         }
-        analytics.then(a => a.trackEvent(eventName, details))
+        analytics.trackEvent(eventName, details)
     }
 }
 

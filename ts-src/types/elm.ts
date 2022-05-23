@@ -21,6 +21,7 @@ export interface ElmFlags {
 
 export interface ElmInit {
     flags: ElmFlags
+    node?: HTMLElement
 }
 
 export interface ElmRuntime {
@@ -149,9 +150,11 @@ export type GetRemoteFileMsg = { kind: 'GetRemoteFile', project?: ProjectId, sou
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
 export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export type TrackPageMsg = { kind: 'TrackPage', name: string }
-export type TrackEventMsg = { kind: 'TrackEvent', name: string, details: object }
-export type TrackErrorMsg = { kind: 'TrackError', name: string, details: object }
+export type TrackEventMsg = { kind: 'TrackEvent', name: string, details?: Data }
+export type TrackErrorMsg = { kind: 'TrackError', name: string, details?: Data }
 
+// from node_modules/@splitbee/web/src/types.ts but not exported :(
+export type Data = { [key: string]: string | number | boolean | undefined | null };
 
 export type SampleKey = string
 

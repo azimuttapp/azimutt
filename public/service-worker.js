@@ -11,7 +11,6 @@ const assets = [
     '/assets/images/gospeak-layouts.png',
     '/assets/images/gospeak-schema-full.png',
     '/assets/images/gospeak-schema-light.png',
-    '/assets/sentry-268b122ecafb4f20b6316b87246e509c.min.js',
     '/assets/uuidv4.min.js',
     '/dist/elm.js',
     '/dist/styles.css',
