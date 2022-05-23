@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), ProjectUploadDialog, ProjectUploadDialogMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Dict exposing (Dict)
@@ -24,7 +24,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
-import Models.User exposing (User)
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -59,7 +59,7 @@ type alias Model =
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
     , sharing : Maybe SharingDialog
-    , upload : Maybe ProjectUploadDialog
+    , upload : Maybe ProjectUploadDialog.Model
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
     , sourceParsing : Maybe SourceParsingDialog
@@ -173,7 +173,7 @@ type Msg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
-    | ProjectUploadDialogMsg ProjectUploadDialogMsg
+    | ProjectUploadDialogMsg ProjectUploadDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | SourceParsing SqlSourceUploadMsg
     | SourceParsed ProjectId Source
@@ -257,16 +257,6 @@ type SharingMsg
     | SProjectUrlUpdate FileUrl
     | SLayoutUpdate LayoutName
     | SModeUpdate String
-
-
-type alias ProjectUploadDialog =
-    { id : HtmlId, shareInput : String, shareUser : Maybe ( String, Maybe User ), owners : List User }
-
-
-type ProjectUploadDialogMsg
-    = PUOpen
-    | PUClose
-    | PUShareUpdate String
 
 
 type ProjectSettingsMsg

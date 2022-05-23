@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Components.ProjectTeam exposing (view)
+module PagesComponents.Projects.Id_.Components.ProjectTeam exposing (Model, Msg(..), init, update, view)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -6,28 +6,60 @@ import Components.Molecules.Tooltip as Tooltip
 import Html exposing (Html, br, div, img, input, label, p, text)
 import Html.Attributes exposing (alt, class, disabled, for, id, name, placeholder, src, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Libs.Bool as Bool
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaDescribedby, css, role)
 import Libs.Models.Email as Email
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.User as User exposing (User)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectUploadDialogMsg(..))
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports
 
 
-view : HtmlId -> User -> String -> Maybe ( String, Maybe User ) -> List User -> ProjectInfo -> Html Msg
-view htmlId user shareInput shareUser owners project =
+type alias Model =
+    { shareInput : String
+    , shareUser : Maybe ( String, Maybe User )
+    , owners : List User
+    }
+
+
+type Msg
+    = ShareUpdate String
+    | UpdateShareUser (Maybe ( String, Maybe User ))
+    | UpdateOwners (List User)
+
+
+init : Model
+init =
+    { shareInput = ""
+    , shareUser = Nothing
+    , owners = []
+    }
+
+
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
+    case msg of
+        ShareUpdate value ->
+            ( { model | shareInput = value }, Cmd.none )
+
+        UpdateShareUser value ->
+            ( { model | shareUser = value }, Cmd.none )
+
+        UpdateOwners value ->
+            ( { model | owners = value }, Cmd.none )
+
+
+view : (Cmd msg -> msg) -> (Msg -> msg) -> HtmlId -> User -> ProjectInfo -> Model -> Html msg
+view send wrap htmlId user project model =
     div []
-        [ shareWithForm htmlId shareInput shareUser owners project
-        , listOwners user owners project
+        [ shareWithForm send wrap htmlId model.shareInput model.shareUser model.owners project
+        , listOwners send user model.owners project
         ]
 
 
-shareWithForm : HtmlId -> String -> Maybe ( String, Maybe User ) -> List User -> ProjectInfo -> Html Msg
-shareWithForm htmlId shareInput shareUser owners project =
+shareWithForm : (Cmd msg -> msg) -> (Msg -> msg) -> HtmlId -> String -> Maybe ( String, Maybe User ) -> List User -> ProjectInfo -> Html msg
+shareWithForm send wrap htmlId shareInput shareUser owners project =
     let
         ( inputId, descriptionId ) =
             ( htmlId ++ "-email", htmlId ++ "-email-description" )
@@ -60,13 +92,17 @@ shareWithForm htmlId shareInput shareUser owners project =
                         , placeholder "you@example.com"
                         , ariaDescribedby descriptionId
                         , value shareInput
-                        , onInput (PUShareUpdate >> ProjectUploadDialogMsg)
+                        , onInput (ShareUpdate >> wrap)
                         , css [ "block w-full rounded-md shadow-sm", inputBorder, focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ]
                         ]
                         []
                     , inputIndicator
                     ]
-                , Button.primary3 Tw.emerald [ onClick (Bool.cond (Email.isValid shareInput) (Send (Ports.getUser shareInput)) (Noop "share-invalid-email")), class "ml-3 whitespace-nowrap" ] [ text "Search" ]
+                , if Email.isValid shareInput then
+                    Button.primary3 Tw.emerald [ onClick (send (Ports.getUser shareInput)), class "ml-3 whitespace-nowrap" ] [ text "Search" ]
+
+                  else
+                    Button.primary3 Tw.emerald [ disabled True, class "ml-3 whitespace-nowrap" ] [ text "Search" ]
                 ]
             ]
         , case shareUser of
@@ -87,7 +123,7 @@ shareWithForm htmlId shareInput shareUser owners project =
                         Button.primary3 Tw.emerald [ disabled True, class "ml-3 whitespace-nowrap" ] [ text "Already owner" ]
 
                       else
-                        Button.primary3 Tw.emerald [ onClick (Send (Ports.setOwners project.id ((owners |> List.map .id) ++ [ user.id ]))), class "ml-3 whitespace-nowrap" ] [ text "Add as owner" ]
+                        Button.primary3 Tw.emerald [ onClick (send (Ports.setOwners project.id ((owners |> List.map .id) ++ [ user.id ]))), class "ml-3 whitespace-nowrap" ] [ text "Add as owner" ]
                     ]
         , p [ class "mt-1 text-sm text-gray-500", id descriptionId ]
             [ text "Use email to share project ownership with other people."
@@ -99,8 +135,8 @@ shareWithForm htmlId shareInput shareUser owners project =
         ]
 
 
-listOwners : User -> List User -> ProjectInfo -> Html Msg
-listOwners user owners project =
+listOwners : (Cmd msg -> msg) -> User -> List User -> ProjectInfo -> Html msg
+listOwners send user owners project =
     div [ class "mt-3" ]
         [ div [ class "text-sm font-semibold text-gray-800" ] [ text "Project owners:" ]
         , if owners == [] then
@@ -117,7 +153,7 @@ listOwners user owners project =
                                     Button.primary1 Tw.red [ disabled True, class "ml-3 whitespace-nowrap" ] [ text "Remove" ] |> Tooltip.tl "You can't remove yourself"
 
                                   else
-                                    Button.primary1 Tw.red [ onClick (Send (Ports.setOwners project.id (owners |> List.map .id |> List.filter (\id -> id /= owner.id)))), class "ml-3 whitespace-nowrap" ] [ text "Remove" ]
+                                    Button.primary1 Tw.red [ onClick (send (Ports.setOwners project.id (owners |> List.map .id |> List.filter (\id -> id /= owner.id)))), class "ml-3 whitespace-nowrap" ] [ text "Remove" ]
                                 ]
                         )
                 )

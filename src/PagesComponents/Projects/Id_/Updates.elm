@@ -20,8 +20,9 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.TableId as TableId exposing (TableId)
+import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), ProjectUploadDialogMsg, SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -42,7 +43,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Time
@@ -72,7 +73,7 @@ update req currentLayout now msg model =
                     (model.erd
                         |> Maybe.map Erd.unpack
                         |> Maybe.mapOrElse
-                            (\p -> [ Ports.moveProjectTo p storage, T.send ProjectUploadDialog.close ])
+                            (\p -> [ Ports.moveProjectTo p storage, T.send (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) ])
                             [ Toasts.warning Toast "No project to move" ]
                     )
                 )
@@ -180,7 +181,7 @@ update req currentLayout now msg model =
             model |> handleSharing message
 
         ProjectUploadDialogMsg message ->
-            model |> mapUploadCmd (ProjectUploadDialog.update model.erd message)
+            model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message
@@ -340,10 +341,18 @@ handleJsMessage currentLayout msg model =
                     )
 
         GotUser email user ->
-            ( model |> mapUploadM (\u -> { u | shareUser = Just ( email, user ) }), Cmd.none )
+            if model.upload == Nothing then
+                ( model, Cmd.none )
+
+            else
+                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateShareUser (Just ( email, user ))))) )
 
         GotOwners _ owners ->
-            ( model |> mapUploadM (\u -> { u | owners = owners }), Cmd.none )
+            if model.upload == Nothing then
+                ( model, Cmd.none )
+
+            else
+                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
 
         ProjectDropped projectId ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
