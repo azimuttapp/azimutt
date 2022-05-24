@@ -95,20 +95,20 @@ export class SupabaseStorage {
         const current: Project = await this.fetchProject(p.id)
         if (initial.updatedAt !== current.updatedAt) {
             try {
-                const patch = jiff.diff(initial, p)
-                p = jiff.patch(patch, current)
+                // always erase the current layout
+                const patch = jiff.diff({...initial, layout: p.layout}, p)
+                p = jiff.patch(patch, {...current, layout: p.layout})
             } catch (e) {
                 console.warn('patch failed', e)
                 return Promise.reject("Project has been updated by another user and can't be patched!")
             }
         }
-        const prj = {...p, updatedAt: Date.now()}
         const project = await this.supabase.from(db.projects.table).update({
             name: p.name,
             tables: computeTables(p.sources),
             relations: computeRelations(p.sources),
             layouts: Object.keys(p.layouts).length,
-            project: prj
+            project: {...p, updatedAt: Date.now()}
         }).match({id: p.id}).then(updateResult).then(p => p.project)
         this.projects[p.id] = project
         return project

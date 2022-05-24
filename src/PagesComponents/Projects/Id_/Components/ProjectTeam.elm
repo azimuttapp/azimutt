@@ -89,7 +89,7 @@ shareWithForm send wrap htmlId shareInput shareUser owners project =
                         [ type_ "email"
                         , name "email"
                         , id inputId
-                        , placeholder "you@example.com"
+                        , placeholder "friend@mail.com"
                         , ariaDescribedby descriptionId
                         , value shareInput
                         , onInput (ShareUpdate >> wrap)
