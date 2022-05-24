@@ -1,9 +1,12 @@
 module PagesComponents.Profile.View exposing (viewProfile)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Dict
 import Html exposing (Html, a, aside, button, div, form, h1, h2, header, img, input, label, li, main_, nav, p, span, text, textarea, ul)
 import Html.Attributes exposing (action, alt, attribute, class, for, href, id, method, name, placeholder, rows, src, style, tabindex, type_, value)
-import Html.Events exposing (onSubmit)
+import Html.Events exposing (onClick, onSubmit)
+import Libs.Bool as Bool
+import Libs.Html.Attributes exposing (ariaChecked, ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabelledby, ariaOrientation, css, role)
 import PagesComponents.Profile.Models exposing (Model, Msg(..))
 import Shared
 import Svg exposing (path, svg)
@@ -15,31 +18,12 @@ import Svg.Attributes as Svg
 
 
 viewProfile : Shared.Model -> Model -> List (Html Msg)
-viewProfile _ _ =
+viewProfile _ model =
     [ div []
         [ div [ class "relative bg-sky-700 pb-32 overflow-hidden" ]
-            [ {- Menu open: "bg-sky-900", Menu closed: "bg-transparent" -} navbar
-            , {- Menu open: "bottom-0", Menu closed: "inset-y-0" -}
-              div [ attribute "aria-hidden" "true", class "inset-y-0 absolute inset-x-0 left-1/2 transform -translate-x-1/2 w-full overflow-hidden lg:inset-y-0" ]
-                [ div [ class "absolute inset-0 flex" ]
-                    [ div [ class "h-full w-1/2", style "background-color" "#0a527b" ] []
-                    , div [ class "h-full w-1/2", style "background-color" "#065d8c" ] []
-                    ]
-                , div [ class "relative flex justify-center" ]
-                    [ svg [ Svg.class "flex-shrink-0", Svg.width "1750", Svg.height "308", Svg.viewBox "0 0 1750 308" ]
-                        [ path [ Svg.d "M284.161 308H1465.84L875.001 182.413 284.161 308z", Svg.fill "#0369a1" ] []
-                        , path [ Svg.d "M1465.84 308L16.816 0H1750v308h-284.16z", Svg.fill "#065d8c" ] []
-                        , path [ Svg.d "M1733.19 0L284.161 308H0V0h1733.19z", Svg.fill "#0a527b" ] []
-                        , path [ Svg.d "M875.001 182.413L1733.19 0H16.816l858.185 182.413z", Svg.fill "#0a4f76" ] []
-                        ]
-                    ]
-                ]
-            , header [ class "relative py-10" ]
-                [ div [ class "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" ]
-                    [ h1 [ class "text-3xl font-bold text-white" ]
-                        [ text "Settings" ]
-                    ]
-                ]
+            [ navbar model
+            , headerTexture model.mobileMenuOpen
+            , headerTitle
             ]
         , main_ [ class "relative -mt-32" ]
             [ div [ class "max-w-screen-xl mx-auto pb-6 px-4 sm:px-6 lg:pb-16 lg:px-8" ]
@@ -47,8 +31,9 @@ viewProfile _ _ =
                     [ div [ class "divide-y divide-gray-200 lg:grid lg:grid-cols-12 lg:divide-y-0 lg:divide-x" ]
                         [ menus
                         , form [ class "divide-y divide-gray-200 lg:col-span-9", action "#", method "POST", onSubmit (Noop "submit-form") ]
-                            [ {- Profile section -} profileForm
-                            , {- Privacy section -} privacyForm
+                            [ profileForm
+                            , privacyForm model
+                            , formButtons
                             ]
                         ]
                     ]
@@ -58,9 +43,9 @@ viewProfile _ _ =
     ]
 
 
-navbar : Html msg
-navbar =
-    nav [ class "bg-transparent relative z-10 border-b border-teal-500 border-opacity-25 lg:bg-transparent lg:border-none" ]
+navbar : Model -> Html Msg
+navbar model =
+    nav [ css [ Bool.cond model.mobileMenuOpen "bg-sky-900" "bg-transparent", "relative z-10 border-b border-teal-500 border-opacity-25 lg:bg-transparent lg:border-none" ] ]
         [ div [ class "max-w-7xl mx-auto px-2 sm:px-4 lg:px-8" ]
             [ div [ class "relative h-16 flex items-center justify-between lg:border-b lg:border-sky-800" ]
                 [ div [ class "px-2 flex items-center lg:px-0" ]
@@ -69,15 +54,10 @@ navbar =
                         ]
                     , div [ class "hidden lg:block lg:ml-6 lg:space-x-4" ]
                         [ div [ class "flex" ]
-                            [ {- Current: "bg-black bg-opacity-25", Default: "hover:bg-sky-800" -}
-                              a [ href "#", class "bg-black bg-opacity-25 rounded-md py-2 px-3 text-sm font-medium text-white" ]
-                                [ text "Dashboard" ]
-                            , a [ href "#", class "hover:bg-sky-800 rounded-md py-2 px-3 text-sm font-medium text-white" ]
-                                [ text "Jobs" ]
-                            , a [ href "#", class "hover:bg-sky-800 rounded-md py-2 px-3 text-sm font-medium text-white" ]
-                                [ text "Applicants" ]
-                            , a [ href "#", class "hover:bg-sky-800 rounded-md py-2 px-3 text-sm font-medium text-white" ]
-                                [ text "Company" ]
+                            [ navbarMenuDesktop "#" "Dashboard" True
+                            , navbarMenuDesktop "#" "Jobs" False
+                            , navbarMenuDesktop "#" "Applicants" False
+                            , navbarMenuDesktop "#" "Company" False
                             ]
                         ]
                     ]
@@ -92,85 +72,24 @@ navbar =
                             ]
                         ]
                     ]
-                , div [ class "flex lg:hidden" ]
-                    [ {- Mobile menu button -}
-                      button
-                        [ type_ "button"
-                        , class "p-2 rounded-md inline-flex items-center justify-center text-sky-200 hover:text-white hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-                        , attribute "aria-controls" "mobile-menu"
-                        , attribute "aria-expanded" "false"
-                        ]
-                        [ span [ class "sr-only" ]
-                            [ text "Open main menu" ]
-                        , {-
-                             Icon when menu is closed.
-
-                             Heroicon name: outline/menu
-
-                             Menu open: "hidden", Menu closed: "block"
-                          -}
-                          Icon.outline Menu "block"
-                        , {-
-                             Icon when menu is open.
-
-                             Heroicon name: outline/x
-
-                             Menu open: "block", Menu closed: "hidden"
-                          -}
-                          Icon.outline X "hidden"
-                        ]
-                    ]
+                , div [ class "flex lg:hidden" ] [ mobileMenuButton model.mobileMenuOpen ]
                 , div [ class "hidden lg:block lg:ml-4" ]
                     [ div [ class "flex items-center" ]
                         [ button [ type_ "button", class "flex-shrink-0 rounded-full p-1 text-sky-200 hover:bg-sky-800 hover:text-white focus:outline-none focus:bg-sky-900 focus:ring-2 focus:ring-offset-2 focus:ring-offset-sky-900 focus:ring-white" ]
                             [ span [ class "sr-only" ] [ text "View notifications" ]
-                            , {- Heroicon name: outline/bell -} Icon.outline Bell ""
+                            , Icon.outline Bell ""
                             ]
-                        , {- Profile dropdown -}
-                          div [ class "relative flex-shrink-0 ml-4" ]
-                            [ div []
-                                [ button
-                                    [ type_ "button", id "user-menu-button", class "rounded-full flex text-sm text-white focus:outline-none focus:bg-sky-900 focus:ring-2 focus:ring-offset-2 focus:ring-offset-sky-900 focus:ring-white", attribute "aria-expanded" "false", attribute "aria-haspopup" "true" ]
-                                    [ span [ class "sr-only" ] [ text "Open user menu" ]
-                                    , img [ class "rounded-full h-8 w-8", src "https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=4&w=320&h=320&q=80", alt "" ] []
-                                    ]
-                                ]
-                            , {-
-                                 Dropdown menu, show/hide based on menu state.
-
-                                 Entering: "transition ease-out duration-100"
-                                   From: "transform opacity-0 scale-95"
-                                   To: "transform opacity-100 scale-100"
-                                 Leaving: "transition ease-in duration-75"
-                                   From: "transform opacity-100 scale-100"
-                                   To: "transform opacity-0 scale-95"
-                              -}
-                              div [ attribute "role" "menu", attribute "aria-orientation" "vertical", attribute "aria-labelledby" "user-menu-button", tabindex -1, class "origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none" ]
-                                [ {- Active: "bg-gray-100", Not Active: "" -}
-                                  a [ href "#", id "user-menu-item-0", attribute "role" "menuitem", tabindex -1, class "block py-2 px-4 text-sm text-gray-700" ]
-                                    [ text "Your Profile" ]
-                                , a [ href "#", id "user-menu-item-1", attribute "role" "menuitem", tabindex -1, class "block py-2 px-4 text-sm text-gray-700" ]
-                                    [ text "Settings" ]
-                                , a [ href "#", id "user-menu-item-2", attribute "role" "menuitem", tabindex -1, class "block py-2 px-4 text-sm text-gray-700" ]
-                                    [ text "Sign out" ]
-                                ]
-                            ]
+                        , profileDropdown model.profileDropdownOpen
                         ]
                     ]
                 ]
             ]
-        , {- Mobile menu, show/hide based on menu state. -}
-          div [ class "bg-sky-900 lg:hidden", id "mobile-menu" ]
+        , div [ css [ Bool.cond model.mobileMenuOpen "" "hidden", "bg-sky-900 lg:hidden" ], id "mobile-menu" ]
             [ div [ class "pt-2 pb-3 px-2 space-y-1" ]
-                [ {- Current: "bg-black bg-opacity-25", Default: "hover:bg-sky-800" -}
-                  a [ href "#", class "bg-black bg-opacity-25 block rounded-md py-2 px-3 text-base font-medium text-white" ]
-                    [ text "Dashboard" ]
-                , a [ href "#", class "hover:bg-sky-800 block rounded-md py-2 px-3 text-base font-medium text-white" ]
-                    [ text "Jobs" ]
-                , a [ href "#", class "hover:bg-sky-800 block rounded-md py-2 px-3 text-base font-medium text-white" ]
-                    [ text "Applicants" ]
-                , a [ href "#", class "hover:bg-sky-800 block rounded-md py-2 px-3 text-base font-medium text-white" ]
-                    [ text "Company" ]
+                [ navbarMenuMobile "#" "Dashboard" True
+                , navbarMenuMobile "#" "Jobs" False
+                , navbarMenuMobile "#" "Applicants" False
+                , navbarMenuMobile "#" "Company" False
                 ]
             , div [ class "pt-4 pb-3 border-t border-sky-800" ]
                 [ div [ class "flex items-center px-4" ]
@@ -178,26 +97,102 @@ navbar =
                         [ img [ class "rounded-full h-10 w-10", src "https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=4&w=320&h=320&q=80", alt "" ] []
                         ]
                     , div [ class "ml-3" ]
-                        [ div [ class "text-base font-medium text-white" ]
-                            [ text "Debbie Lewis" ]
-                        , div [ class "text-sm font-medium text-sky-200" ]
-                            [ text "debbielewis@example.com" ]
+                        [ div [ class "text-base font-medium text-white" ] [ text "Debbie Lewis" ]
+                        , div [ class "text-sm font-medium text-sky-200" ] [ text "debbielewis@example.com" ]
                         ]
                     , button [ type_ "button", class "ml-auto flex-shrink-0 rounded-full p-1 text-sky-200 hover:bg-sky-800 hover:text-white focus:outline-none focus:bg-sky-900 focus:ring-2 focus:ring-offset-2 focus:ring-offset-sky-900 focus:ring-white" ]
-                        [ span [ class "sr-only" ]
-                            [ text "View notifications" ]
+                        [ span [ class "sr-only" ] [ text "View notifications" ]
                         , Icon.outline Bell ""
                         ]
                     ]
                 , div [ class "mt-3 px-2" ]
-                    [ a [ href "#", class "block rounded-md py-2 px-3 text-base font-medium text-sky-200 hover:text-white hover:bg-sky-800" ]
-                        [ text "Your Profile" ]
-                    , a [ href "#", class "block rounded-md py-2 px-3 text-base font-medium text-sky-200 hover:text-white hover:bg-sky-800" ]
-                        [ text "Settings" ]
-                    , a [ href "#", class "block rounded-md py-2 px-3 text-base font-medium text-sky-200 hover:text-white hover:bg-sky-800" ]
-                        [ text "Sign out" ]
+                    [ a [ href "#", class "block rounded-md py-2 px-3 text-base font-medium text-sky-200 hover:text-white hover:bg-sky-800" ] [ text "Your Profile" ]
+                    , a [ href "#", class "block rounded-md py-2 px-3 text-base font-medium text-sky-200 hover:text-white hover:bg-sky-800" ] [ text "Settings" ]
+                    , a [ href "#", class "block rounded-md py-2 px-3 text-base font-medium text-sky-200 hover:text-white hover:bg-sky-800" ] [ text "Sign out" ]
                     ]
                 ]
+            ]
+        ]
+
+
+mobileMenuButton : Bool -> Html Msg
+mobileMenuButton mobileMenuOpen =
+    button
+        [ type_ "button"
+        , onClick ToggleMobileMenu
+        , class "p-2 rounded-md inline-flex items-center justify-center text-sky-200 hover:text-white hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+        , ariaControls "mobile-menu"
+        , ariaExpanded False
+        ]
+        [ span [ class "sr-only" ] [ text "Open main menu" ]
+        , Icon.outline Menu (Bool.cond mobileMenuOpen "hidden" "block")
+        , Icon.outline X (Bool.cond mobileMenuOpen "block" "hidden")
+        ]
+
+
+profileDropdown : Bool -> Html Msg
+profileDropdown profileDropdownOpen =
+    div [ class "relative flex-shrink-0 ml-4" ]
+        [ div []
+            [ button
+                [ type_ "button", id "user-menu-button", onClick ToggleProfileDropdown, class "rounded-full flex text-sm text-white focus:outline-none focus:bg-sky-900 focus:ring-2 focus:ring-offset-2 focus:ring-offset-sky-900 focus:ring-white", ariaExpanded False, ariaHaspopup True ]
+                [ span [ class "sr-only" ] [ text "Open user menu" ]
+                , img [ class "rounded-full h-8 w-8", src "https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=4&w=320&h=320&q=80", alt "" ] []
+                ]
+            ]
+        , div
+            [ role "menu"
+            , ariaOrientation "vertical"
+            , ariaLabelledby "user-menu-button"
+            , tabindex -1
+            , css
+                [ Bool.cond profileDropdownOpen
+                    "transition ease-in duration-75 transform scale-100 opacity-100"
+                    "transition ease-out duration-100 transform scale-95 opacity-0 pointer-events-none"
+                , "origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+                ]
+            ]
+            [ a [ href "#", id "user-menu-item-0", role "menuitem", tabindex -1, class "block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" ] [ text "Your Profile" ]
+            , a [ href "#", id "user-menu-item-1", role "menuitem", tabindex -1, class "block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" ] [ text "Settings" ]
+            , a [ href "#", id "user-menu-item-2", role "menuitem", tabindex -1, class "block py-2 px-4 text-sm text-gray-700 hover:bg-gray-100" ] [ text "Sign out" ]
+            ]
+        ]
+
+
+navbarMenuDesktop : String -> String -> Bool -> Html msg
+navbarMenuDesktop url label active =
+    a [ href url, css [ Bool.cond active "bg-black bg-opacity-25" "hover:bg-sky-800", "rounded-md py-2 px-3 text-sm font-medium text-white" ] ] [ text label ]
+
+
+navbarMenuMobile : String -> String -> Bool -> Html msg
+navbarMenuMobile url label active =
+    a [ href url, css [ Bool.cond active "bg-black bg-opacity-25" "hover:bg-sky-800", "block rounded-md py-2 px-3 text-base font-medium text-white" ] ] [ text label ]
+
+
+headerTexture : Bool -> Html msg
+headerTexture mobileMenuOpen =
+    div [ ariaHidden True, css [ Bool.cond mobileMenuOpen "bottom-0" "inset-y-0", "absolute inset-x-0 left-1/2 transform -translate-x-1/2 w-full overflow-hidden lg:inset-y-0" ] ]
+        [ div [ class "absolute inset-0 flex" ]
+            [ div [ class "h-full w-1/2", style "background-color" "#0a527b" ] []
+            , div [ class "h-full w-1/2", style "background-color" "#065d8c" ] []
+            ]
+        , div [ class "relative flex justify-center" ]
+            [ svg [ Svg.class "flex-shrink-0", Svg.width "1750", Svg.height "308", Svg.viewBox "0 0 1750 308" ]
+                [ path [ Svg.d "M284.161 308H1465.84L875.001 182.413 284.161 308z", Svg.fill "#0369a1" ] []
+                , path [ Svg.d "M1465.84 308L16.816 0H1750v308h-284.16z", Svg.fill "#065d8c" ] []
+                , path [ Svg.d "M1733.19 0L284.161 308H0V0h1733.19z", Svg.fill "#0a527b" ] []
+                , path [ Svg.d "M875.001 182.413L1733.19 0H16.816l858.185 182.413z", Svg.fill "#0a4f76" ] []
+                ]
+            ]
+        ]
+
+
+headerTitle : Html msg
+headerTitle =
+    header [ class "relative py-10" ]
+        [ div [ class "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" ]
+            [ h1 [ class "text-3xl font-bold text-white" ]
+                [ text "Settings" ]
             ]
         ]
 
@@ -206,36 +201,29 @@ menus : Html msg
 menus =
     aside [ class "py-6 lg:col-span-3" ]
         [ nav [ class "space-y-1" ]
-            [ {- Current: "bg-teal-50 border-teal-500 text-teal-700 hover:bg-teal-50 hover:text-teal-700", Default: "border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900" -}
-              a [ href "#", class "bg-teal-50 border-teal-500 text-teal-700 hover:bg-teal-50 hover:text-teal-700 group border-l-4 px-3 py-2 flex items-center text-sm font-medium", attribute "aria-current" "page" ]
-                [ {-
-                     Current: "text-teal-500 group-hover:text-teal-500", Default: "text-gray-400 group-hover:text-gray-500"
-                  -}
-                  Icon.outline UserCircle "text-teal-500 group-hover:text-teal-500 -ml-1 mr-3"
-                , span [ class "truncate" ] [ text "Profile" ]
-                ]
-            , a [ href "#", class "border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900 group border-l-4 px-3 py-2 flex items-center text-sm font-medium" ]
-                [ Icon.outline Cog "text-gray-400 group-hover:text-gray-500 -ml-1 mr-3"
-                , span [ class "truncate" ] [ text "Account" ]
-                ]
-            , a [ href "#", class "border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900 group border-l-4 px-3 py-2 flex items-center text-sm font-medium" ]
-                [ Icon.outline Key "text-gray-400 group-hover:text-gray-500 -ml-1 mr-3"
-                , span [ class "truncate" ] [ text "Password" ]
-                ]
-            , a [ href "#", class "border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900 group border-l-4 px-3 py-2 flex items-center text-sm font-medium" ]
-                [ Icon.outline Bell "text-gray-400 group-hover:text-gray-500 -ml-1 mr-3"
-                , span [ class "truncate" ] [ text "Notifications" ]
-                ]
-            , a [ href "#", class "border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900 group border-l-4 px-3 py-2 flex items-center text-sm font-medium" ]
-                [ Icon.outline CreditCard "text-gray-400 group-hover:text-gray-500 -ml-1 mr-3"
-                , span [ class "truncate" ] [ text "Billing" ]
-                ]
-            , a [ href "#", class "border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900 group border-l-4 px-3 py-2 flex items-center text-sm font-medium" ]
-                [ Icon.outline ViewGridAdd "text-gray-400 group-hover:text-gray-500 -ml-1 mr-3"
-                , span [ class "truncate" ] [ text "Integrations" ]
-                ]
+            [ menuLink "#" UserCircle "Profile" True
+            , menuLink "#" Cog "Account" False
+            , menuLink "#" Key "Password" False
+            , menuLink "#" Bell "Notifications" False
+            , menuLink "#" CreditCard "Billing" False
+            , menuLink "#" ViewGridAdd "Integrations" False
             ]
         ]
+
+
+menuLink : String -> Icon -> String -> Bool -> Html msg
+menuLink url icon label active =
+    if active then
+        a [ href url, css [ "bg-teal-50 border-teal-500 text-teal-700 hover:bg-teal-50 hover:text-teal-700", "group border-l-4 px-3 py-2 flex items-center text-sm font-medium" ], ariaCurrent "page" ]
+            [ Icon.outline icon "text-teal-500 group-hover:text-teal-500 -ml-1 mr-3"
+            , span [ class "truncate" ] [ text label ]
+            ]
+
+    else
+        a [ href url, css [ "border-transparent text-gray-900 hover:bg-gray-50 hover:text-gray-900", "group border-l-4 px-3 py-2 flex items-center text-sm font-medium" ] ]
+            [ Icon.outline icon "text-gray-400 group-hover:text-gray-500 -ml-1 mr-3"
+            , span [ class "truncate" ] [ text label ]
+            ]
 
 
 profileForm : Html msg
@@ -269,11 +257,11 @@ profileForm =
                     ]
                 ]
             , div [ class "mt-6 flex-grow lg:mt-0 lg:ml-6 lg:flex-grow-0 lg:flex-shrink-0" ]
-                [ p [ class "text-sm font-medium text-gray-700", attribute "aria-hidden" "true" ]
+                [ p [ class "text-sm font-medium text-gray-700", ariaHidden True ]
                     [ text "Photo" ]
                 , div [ class "mt-1 lg:hidden" ]
                     [ div [ class "flex items-center" ]
-                        [ div [ class "flex-shrink-0 inline-block rounded-full overflow-hidden h-12 w-12", attribute "aria-hidden" "true" ]
+                        [ div [ class "flex-shrink-0 inline-block rounded-full overflow-hidden h-12 w-12", ariaHidden True ]
                             [ img [ class "rounded-full h-full w-full", src "https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=4&w=320&h=320&q=80", alt "" ] []
                             ]
                         , div [ class "ml-5 rounded-md shadow-sm" ]
@@ -322,8 +310,8 @@ profileForm =
         ]
 
 
-privacyForm : Html msg
-privacyForm =
+privacyForm : Model -> Html Msg
+privacyForm model =
     div [ class "pt-6 divide-y divide-gray-200" ]
         [ div [ class "px-4 sm:px-6" ]
             [ div []
@@ -332,67 +320,44 @@ privacyForm =
                 , p [ class "mt-1 text-sm text-gray-500" ]
                     [ text "Ornare eu a volutpat eget vulputate. Fringilla commodo amet." ]
                 ]
-            , ul [ attribute "role" "list", class "mt-2 divide-y divide-gray-200" ]
-                [ li [ class "py-4 flex items-center justify-between" ]
-                    [ div [ class "flex flex-col" ]
-                        [ p [ class "text-sm font-medium text-gray-900", id "privacy-option-1-label" ]
-                            [ text "Available to hire" ]
-                        , p [ class "text-sm text-gray-500", id "privacy-option-1-description" ]
-                            [ text "Nulla amet tempus sit accumsan. Aliquet turpis sed sit lacinia." ]
-                        ]
-                    , {- Enabled: "bg-teal-500", Not Enabled: "bg-gray-200" -}
-                      button [ type_ "button", attribute "role" "switch", attribute "aria-checked" "true", attribute "aria-labelledby" "privacy-option-1-label", attribute "aria-describedby" "privacy-option-1-description", class "bg-gray-200 ml-4 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
-                        [ {- Enabled: "translate-x-5", Not Enabled: "translate-x-0" -}
-                          span [ attribute "aria-hidden" "true", class "translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200" ]
-                            []
-                        ]
-                    ]
-                , li [ class "py-4 flex items-center justify-between" ]
-                    [ div [ class "flex flex-col" ]
-                        [ p [ class "text-sm font-medium text-gray-900", id "privacy-option-2-label" ]
-                            [ text "Make account private" ]
-                        , p [ class "text-sm text-gray-500", id "privacy-option-2-description" ]
-                            [ text "Pharetra morbi dui mi mattis tellus sollicitudin cursus pharetra." ]
-                        ]
-                    , {- Enabled: "bg-teal-500", Not Enabled: "bg-gray-200" -}
-                      button [ type_ "button", attribute "role" "switch", attribute "aria-checked" "false", attribute "aria-labelledby" "privacy-option-2-label", attribute "aria-describedby" "privacy-option-2-description", class "bg-gray-200 ml-4 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
-                        [ {- Enabled: "translate-x-5", Not Enabled: "translate-x-0" -}
-                          span [ attribute "aria-hidden" "true", class "translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200" ]
-                            []
-                        ]
-                    ]
-                , li [ class "py-4 flex items-center justify-between" ]
-                    [ div [ class "flex flex-col" ]
-                        [ p [ class "text-sm font-medium text-gray-900", id "privacy-option-3-label" ]
-                            [ text "Allow commenting" ]
-                        , p [ class "text-sm text-gray-500", id "privacy-option-3-description" ]
-                            [ text "Integer amet, nunc hendrerit adipiscing nam. Elementum ame" ]
-                        ]
-                    , {- Enabled: "bg-teal-500", Not Enabled: "bg-gray-200" -}
-                      button [ type_ "button", attribute "role" "switch", attribute "aria-checked" "true", attribute "aria-labelledby" "privacy-option-3-label", attribute "aria-describedby" "privacy-option-3-description", class "bg-gray-200 ml-4 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
-                        [ {- Enabled: "translate-x-5", Not Enabled: "translate-x-0" -} span [ attribute "aria-hidden" "true", class "translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200" ] []
-                        ]
-                    ]
-                , li [ class "py-4 flex items-center justify-between" ]
-                    [ div [ class "flex flex-col" ]
-                        [ p [ class "text-sm font-medium text-gray-900", id "privacy-option-4-label" ]
-                            [ text "Allow mentions" ]
-                        , p [ class "text-sm text-gray-500", id "privacy-option-4-description" ]
-                            [ text "Adipiscing est venenatis enim molestie commodo eu gravid" ]
-                        ]
-                    , {- Enabled: "bg-teal-500", Not Enabled: "bg-gray-200" -}
-                      button [ type_ "button", attribute "role" "switch", attribute "aria-checked" "true", attribute "aria-labelledby" "privacy-option-4-label", attribute "aria-describedby" "privacy-option-4-description", class "bg-gray-200 ml-4 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
-                        [ {- Enabled: "translate-x-5", Not Enabled: "translate-x-0" -}
-                          span [ attribute "aria-hidden" "true", class "translate-x-0 inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200" ]
-                            []
-                        ]
-                    ]
+            , ul [ role "list", class "mt-2 divide-y divide-gray-200" ]
+                [ privacyToggle 1 "Available to hire" "Nulla amet tempus sit accumsan. Aliquet turpis sed sit lacinia." model
+                , privacyToggle 2 "Make account private" "Pharetra morbi dui mi mattis tellus sollicitudin cursus pharetra." model
+                , privacyToggle 3 "Allow commenting" "Integer amet, nunc hendrerit adipiscing nam. Elementum ame" model
+                , privacyToggle 4 "Allow mentions" "Adipiscing est venenatis enim molestie commodo eu gravid" model
                 ]
             ]
-        , div [ class "mt-4 py-4 px-4 flex justify-end sm:px-6" ]
-            [ button [ type_ "button", class "bg-white border border-gray-300 rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
-                [ text "Cancel" ]
-            , button [ type_ "submit", class "ml-5 bg-sky-700 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
-                [ text "Save" ]
+        ]
+
+
+privacyToggle : Int -> String -> String -> Model -> Html Msg
+privacyToggle index label description model =
+    let
+        htmlId : String
+        htmlId =
+            "privacy-option-" ++ String.fromInt index
+
+        value =
+            model.toggles |> Dict.get label |> Maybe.withDefault False
+    in
+    li [ class "py-4 flex items-center justify-between" ]
+        [ div [ class "flex flex-col" ]
+            [ p [ class "text-sm font-medium text-gray-900", id (htmlId ++ "-label") ]
+                [ text label ]
+            , p [ class "text-sm text-gray-500", id (htmlId ++ "-description") ]
+                [ text description ]
             ]
+        , button [ type_ "button", role "switch", onClick (TogglePrivacy label), ariaChecked True, ariaLabelledby (htmlId ++ "-label"), ariaDescribedby (htmlId ++ "-description"), css [ Bool.cond value "bg-teal-500" "bg-gray-200", "ml-4 relative inline-flex flex-shrink-0 h-6 w-11 border-2 border-transparent rounded-full cursor-pointer transition-colors ease-in-out duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ] ]
+            [ span [ ariaHidden True, css [ Bool.cond value "translate-x-5" "translate-x-0", "inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition ease-in-out duration-200" ] ] []
+            ]
+        ]
+
+
+formButtons : Html msg
+formButtons =
+    div [ class "mt-4 py-4 px-4 flex justify-end sm:px-6" ]
+        [ button [ type_ "button", class "bg-white border border-gray-300 rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
+            [ text "Cancel" ]
+        , button [ type_ "submit", class "ml-5 bg-sky-700 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-sky-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500" ]
+            [ text "Save" ]
         ]

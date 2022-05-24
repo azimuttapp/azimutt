@@ -1,4 +1,4 @@
-module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, hrefBlank, none, role, track, when)
+module Libs.Html.Attributes exposing (ariaChecked, ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, hrefBlank, none, role, track, when)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (attribute, class, classList, href, rel, target)
@@ -10,6 +10,11 @@ import Libs.Tailwind exposing (TwClass)
 
 
 -- sorted alphabetically
+
+
+ariaChecked : Bool -> Attribute msg
+ariaChecked value =
+    attribute "aria-checked" (B.toString value)
 
 
 ariaControls : HtmlId -> Attribute msg

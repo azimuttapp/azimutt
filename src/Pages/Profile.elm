@@ -43,14 +43,17 @@ title shared =
 
 init : Shared.Model -> ( Model, Cmd Msg )
 init shared =
-    ( {}
+    ( { mobileMenuOpen = False
+      , profileDropdownOpen = False
+      , toggles = Dict.empty
+      }
     , Cmd.batch
         [ Ports.setMeta
             { title = Just (title shared)
             , description = Just (shared.user |> Maybe.andThen .bio |> Maybe.withDefault Conf.constants.defaultDescription)
             , canonical = Just { route = Route.Profile, query = Dict.empty }
             , html = Nothing
-            , body = Nothing
+            , body = Just "antialiased font-sans bg-gray-200"
             }
         , Ports.trackPage "profile"
         ]
@@ -64,6 +67,15 @@ init shared =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        ToggleMobileMenu ->
+            ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
+
+        ToggleProfileDropdown ->
+            ( { model | profileDropdownOpen = not model.profileDropdownOpen }, Cmd.none )
+
+        TogglePrivacy key ->
+            ( { model | toggles = model.toggles |> Dict.update key (\v -> Just (v |> Maybe.withDefault False |> not)) }, Cmd.none )
+
         JsMessage message ->
             model |> handleJsMessage message
 
