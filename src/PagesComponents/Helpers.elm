@@ -109,9 +109,10 @@ viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onL
                     )
                     (\_ ->
                         div []
-                            --[ ContextMenu.link { url = "#", text = "Your profile" }
+                            [ ContextMenu.link { url = Route.toHref Route.Profile, text = "Your profile" }
+
                             --, ContextMenu.link { url = "#", text = "Settings" }
-                            [ ContextMenu.btn "" onLogout [ text "Logout" ]
+                            , ContextMenu.btn "" onLogout [ text "Logout" ]
                             ]
                     )
             )

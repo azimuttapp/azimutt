@@ -1,9 +1,9 @@
 #!/bin/bash
 
-elm-test --fuzz 5 &&
- npm test &&
- echo "Running elm-review:" &&
+echo "Running elm-review:" &&
  elm-review &&
+ elm-test --fuzz 5 &&
+ npm test &&
  printf "\nCheck elm-format:\n" &&
  elm-format src tests --validate &&
  echo ""
