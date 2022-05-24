@@ -337,6 +337,7 @@ privacyToggle index label description model =
         htmlId =
             "privacy-option-" ++ String.fromInt index
 
+        value : Bool
         value =
             model.toggles |> Dict.get label |> Maybe.withDefault False
     in
