@@ -79,9 +79,9 @@ admin model state =
 
 adminBrand : AdminBrand -> Html msg
 adminBrand brand =
-    a [ href brand.link.url, css [ "flex justify-start items-center font-medium" ] ]
+    a [ href brand.link.url, css [ "flex justify-start items-center" ] ]
         [ img [ css [ "block h-8 w-8" ], src brand.img.src, alt brand.img.alt, width 32, height 32 ] []
-        , span [ css [ "ml-3 text-2xl text-white hidden", lg [ "block" ] ] ] [ text brand.link.text ]
+        , span [ css [ "ml-3 text-2xl text-white font-medium hidden", lg [ "block" ] ] ] [ text brand.link.text ]
         ]
 
 

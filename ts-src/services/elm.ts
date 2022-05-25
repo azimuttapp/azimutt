@@ -38,6 +38,7 @@ export class ElmApp {
         UpdateProject: [],
         MoveProjectTo: [],
         GetUser: [],
+        UpdateUser: [],
         GetOwners: [],
         SetOwners: [],
         DownloadFile: [],

@@ -45,6 +45,7 @@ export class StorageManager implements StorageApi {
     }
 
     getUser = (email: Email): Promise<Profile | undefined> => this.cloud.getUser(email)
+    updateUser = (user: Profile): Promise<Profile> => this.cloud.updateUser(user)
     getOwners = (id: ProjectId): Promise<Profile[]> => this.cloud.getOwners(id)
     setOwners = (id: ProjectId, owners: UserId[]): Promise<Profile[]> => this.cloud.setOwners(id, owners)
 }

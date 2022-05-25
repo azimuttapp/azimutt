@@ -32,6 +32,19 @@ export class SupabaseStorage {
         return await this.supabase.from(db.profiles.table).select(db.profiles.columns)
             .or(`email.eq.${input},username.eq.${input}`).maybeSingle().then(optResult)
     }
+    updateProfile = async (profile: Profile): Promise<Profile> => {
+        return await this.supabase.from(db.profiles.table).update({
+            username: profile.username,
+            name: profile.name,
+            avatar: profile.avatar || null,
+            bio: profile.bio || null,
+            company: profile.company || null,
+            location: profile.location || null,
+            website: profile.website || null,
+            github: profile.github || null,
+            twitter: profile.twitter || null,
+        }).match({id: profile.id}).then(updateResult)
+    }
     createProfile = async (user: SupabaseUser): Promise<Profile> => {
         if (!user.email) return Promise.reject('missing email')
         const profile: Profile = {

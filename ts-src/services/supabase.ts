@@ -117,6 +117,7 @@ export class Supabase implements StorageApi {
     dropProject = (p: ProjectInfo): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(p))
 
     getUser = (email: Email): Promise<Profile | undefined> => this.store.fetchProfile(email)
+    updateUser = (user: Profile): Promise<Profile> => this.store.updateProfile(user)
     getOwners = (id: ProjectId): Promise<Profile[]> => this.store.getOwners(id)
     setOwners = (id: ProjectId, owners: UserId[]): Promise<Profile[]> => this.store.setOwners(id, owners)
 

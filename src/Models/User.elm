@@ -1,15 +1,15 @@
-module Models.User exposing (User, Username, avatar, decode)
+module Models.User exposing (User, avatar, decode, encode)
 
 import Conf
-import Json.Decode as Decode
+import Json.Decode as Decode exposing (Value)
+import Json.Encode as Encode
 import Libs.Json.Decode as Decode
-import Libs.Models.Email exposing (Email)
+import Libs.Json.Encode as Encode
+import Libs.Models.Email as Email exposing (Email)
+import Libs.Models.Website as Website exposing (Website)
 import Libs.String as String
-import Models.UserId exposing (UserId)
-
-
-type alias Username =
-    String
+import Models.UserId as UserId exposing (UserId)
+import Models.Username as Username exposing (Username)
 
 
 type alias User =
@@ -21,9 +21,9 @@ type alias User =
     , bio : Maybe String
     , company : Maybe String
     , location : Maybe String
-    , website : Maybe String
-    , github : Maybe String
-    , twitter : Maybe String
+    , website : Maybe Website
+    , github : Maybe Username
+    , twitter : Maybe Username
     }
 
 
@@ -32,17 +32,34 @@ avatar user =
     user.avatar |> Maybe.withDefault (Conf.constants.externalAssets ++ "/funny-cartoon-monsters/" ++ (user.email |> String.hashCode |> modBy 40 |> String.fromInt) ++ ".jpg")
 
 
+encode : User -> Value
+encode value =
+    Encode.notNullObject
+        [ ( "id", value.id |> UserId.encode )
+        , ( "email", value.email |> Email.encode )
+        , ( "username", value.username |> Username.encode )
+        , ( "name", value.name |> Encode.string )
+        , ( "avatar", value.avatar |> Encode.maybe Encode.string )
+        , ( "bio", value.bio |> Encode.maybe Encode.string )
+        , ( "company", value.company |> Encode.maybe Encode.string )
+        , ( "location", value.location |> Encode.maybe Encode.string )
+        , ( "website", value.website |> Encode.maybe Website.encode )
+        , ( "github", value.github |> Encode.maybe Username.encode )
+        , ( "twitter", value.twitter |> Encode.maybe Username.encode )
+        ]
+
+
 decode : Decode.Decoder User
 decode =
     Decode.map11 User
         (Decode.field "id" Decode.string)
-        (Decode.field "email" Decode.string)
-        (Decode.field "username" Decode.string)
+        (Decode.field "email" Email.decode)
+        (Decode.field "username" Username.decode)
         (Decode.field "name" Decode.string)
         (Decode.maybeField "avatar" Decode.string)
         (Decode.maybeField "bio" Decode.string)
         (Decode.maybeField "company" Decode.string)
         (Decode.maybeField "location" Decode.string)
-        (Decode.maybeField "website" Decode.string)
-        (Decode.maybeField "github" Decode.string)
-        (Decode.maybeField "twitter" Decode.string)
+        (Decode.maybeField "website" Website.decode)
+        (Decode.maybeField "github" Username.decode)
+        (Decode.maybeField "twitter" Username.decode)

@@ -76,6 +76,7 @@ app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProj
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
 app.on('MoveProjectTo', moveProjectTo)
 app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)))
+app.on('UpdateUser', msg => store.updateUser(msg.user).then(user => app.login(user)))
 app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
 app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners => app.gotOwners(msg.project, owners)))
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))

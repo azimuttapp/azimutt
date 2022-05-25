@@ -22,7 +22,7 @@ create table public.profiles
     id         uuid        not null primary key references auth.users,
     email      varchar     not null unique check (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
     username   varchar     not null unique check (char_length(username) > 3),
-    name       varchar     not null,
+    name       varchar     not null check (char_length(username) > 2),
     avatar     varchar,
     bio        varchar,
     company    varchar,

@@ -1,21 +1,32 @@
 module PagesComponents.Profile.Models exposing (Model, Msg(..))
 
-import Dict exposing (Dict)
+import Libs.Models.Website exposing (Website)
 import Models.User exposing (User)
+import Models.Username exposing (Username)
 import Ports exposing (JsMsg)
 
 
 type alias Model =
     { mobileMenuOpen : Bool
     , profileDropdownOpen : Bool
-    , toggles : Dict String Bool
-    , profile : Maybe User
+    , user : Maybe User
     }
 
 
 type Msg
     = ToggleMobileMenu
     | ToggleProfileDropdown
-    | TogglePrivacy String
+    | UpdateUsername Username
+    | UpdateBio String
+    | UpdateName String
+    | UpdateWebsite Website
+    | UpdateLocation String
+    | UpdateCompany String
+    | UpdateGithub Username
+    | UpdateTwitter Username
+    | UpdateUser User
+    | ResetUser
+    | DeleteAccount
+    | DoLogout
     | JsMessage JsMsg
     | Noop String

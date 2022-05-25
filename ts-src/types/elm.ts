@@ -113,6 +113,7 @@ export type ElmMsg =
     | UpdateProjectMsg
     | MoveProjectToMsg
     | GetUserMsg
+    | UpdateUserMsg
     | GetOwnersMsg
     | SetOwnersMsg
     | DownloadFileMsg
@@ -141,6 +142,7 @@ export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type GetUserMsg = { kind: 'GetUser', email: Email }
+export type UpdateUserMsg = { kind: 'UpdateUser', user: Profile }
 export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
 export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }

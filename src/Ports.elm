@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject, updateUser)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -118,6 +118,11 @@ getUser email =
     messageToJs (GetUser email)
 
 
+updateUser : User -> Cmd msg
+updateUser user =
+    messageToJs (UpdateUser user)
+
+
 getOwners : ProjectId -> Cmd msg
 getOwners projectId =
     messageToJs (GetOwners projectId)
@@ -228,6 +233,7 @@ type ElmMsg
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | GetUser Email
+    | UpdateUser User
     | GetOwners ProjectId
     | SetOwners ProjectId (List UserId)
     | DownloadFile FileName FileContent
@@ -353,6 +359,9 @@ elmEncoder elm =
 
         GetUser email ->
             Encode.object [ ( "kind", "GetUser" |> Encode.string ), ( "email", email |> Encode.string ) ]
+
+        UpdateUser user ->
+            Encode.object [ ( "kind", "UpdateUser" |> Encode.string ), ( "user", user |> User.encode ) ]
 
         GetOwners project ->
             Encode.object [ ( "kind", "GetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ) ]
