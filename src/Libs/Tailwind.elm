@@ -1,4 +1,4 @@
-module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, black, blue, border_400, border_500, cyan, decodeColor, default, disabled, emerald, encodeColor, extractColor, fill_500, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, from, fuchsia, gray, green, hover, indigo, levels, lg, lime, list, md, orange, pink, primary, purple, red, ring_200, ring_500, ring_600, ring_offset_600, rose, selectable, sky, sm, stroke_500, teal, text_300, text_400, text_500, text_600, text_700, text_800, toString, violet, white, xl, xxl, yellow)
+module Libs.Tailwind exposing (Color, ColorLevel, TwClass, active, all, amber, batch, bg_100, bg_200, bg_300, bg_50, bg_500, bg_600, bg_700, bg_800, bg_900, black, blue, border_400, border_500, border_800, cyan, decodeColor, default, disabled, emerald, encodeColor, extractColor, fill_500, focus, focusWithin, focus_ring_500, focus_ring_offset_600, focus_ring_within_600, from, fuchsia, gray, green, groupHover, hover, indigo, levels, lg, lime, list, md, orange, pink, placeholder_100, primary, purple, red, ring_200, ring_500, ring_600, ring_offset_600, ring_offset_900, rose, selectable, sky, sm, stroke_500, teal, text_100, text_200, text_300, text_400, text_500, text_600, text_700, text_800, toString, violet, white, xl, xxl, yellow)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -90,6 +90,11 @@ focusWithin =
     addState "focus-within"
 
 
+groupHover : List TwClass -> TwClass
+groupHover =
+    addState "group-hover"
+
+
 addState : String -> List TwClass -> TwClass
 addState state classes =
     classes |> String.join " " |> String.split " " |> List.map String.trim |> List.filter (\c -> c /= "") |> List.map (\c -> state ++ ":" ++ c) |> String.join " "
@@ -136,6 +141,16 @@ bg_700 (Color color) =
     "bg-" ++ color ++ "-700"
 
 
+bg_800 : Color -> TwClass
+bg_800 (Color color) =
+    "bg-" ++ color ++ "-800"
+
+
+bg_900 : Color -> TwClass
+bg_900 (Color color) =
+    "bg-" ++ color ++ "-900"
+
+
 border_400 : Color -> TwClass
 border_400 (Color color) =
     "border-" ++ color ++ "-400"
@@ -144,6 +159,11 @@ border_400 (Color color) =
 border_500 : Color -> TwClass
 border_500 (Color color) =
     "border-" ++ color ++ "-500"
+
+
+border_800 : Color -> TwClass
+border_800 (Color color) =
+    "border-" ++ color ++ "-800"
 
 
 fill_500 : Color -> TwClass
@@ -171,9 +191,24 @@ ring_offset_600 (Color color) =
     "ring-offset-" ++ color ++ "-600"
 
 
+ring_offset_900 : Color -> TwClass
+ring_offset_900 (Color color) =
+    "ring-offset-" ++ color ++ "-900"
+
+
 stroke_500 : Color -> TwClass
 stroke_500 (Color color) =
     "stroke-" ++ color ++ "-500"
+
+
+text_100 : Color -> TwClass
+text_100 (Color color) =
+    "text-" ++ color ++ "-100"
+
+
+text_200 : Color -> TwClass
+text_200 (Color color) =
+    "text-" ++ color ++ "-200"
 
 
 text_300 : Color -> TwClass
@@ -204,6 +239,11 @@ text_700 (Color color) =
 text_800 : Color -> TwClass
 text_800 (Color color) =
     "text-" ++ color ++ "-800"
+
+
+placeholder_100 : Color -> TwClass
+placeholder_100 (Color color) =
+    "placeholder-" ++ color ++ "-100"
 
 
 

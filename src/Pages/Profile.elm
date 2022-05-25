@@ -46,6 +46,7 @@ init shared =
     ( { mobileMenuOpen = False
       , profileDropdownOpen = False
       , toggles = Dict.empty
+      , profile = shared.user
       }
     , Cmd.batch
         [ Ports.setMeta
