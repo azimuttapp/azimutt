@@ -146,7 +146,15 @@ update req msg model =
             ( model |> setSelectedTab tab, Cmd.none )
 
         SqlSourceUploadMsg message ->
-            model |> mapSqlSourceUploadMCmd (SqlSourceUpload.update message SqlSourceUploadMsg)
+            model
+                |> mapSqlSourceUploadMCmd (SqlSourceUpload.update message SqlSourceUploadMsg)
+                |> (\( m, cmd ) ->
+                        if message == SqlSourceUpload.BuildSource then
+                            ( m, Cmd.batch [ cmd, Ports.confetti "create-project-btn" ] )
+
+                        else
+                            ( m, cmd )
+                   )
 
         SqlSourceUploadDrop ->
             ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing (\_ -> Noop "drop-source-upload")), Cmd.none )

@@ -213,7 +213,7 @@ viewSqlSourceUpload sqlSourceUpload =
                 div [ css [ "mt-6" ] ]
                     [ div [ css [ "flex justify-end" ] ]
                         [ Button.white3 Tw.primary [ onClick SqlSourceUploadDrop ] [ text "Trash this" ]
-                        , Button.primary3 Tw.primary [ onClick (SqlSourceUploadCreate projectId source), css [ "ml-3" ] ] [ text "Create project!" ]
+                        , Button.primary3 Tw.primary [ onClick (SqlSourceUploadCreate projectId source), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
                         ]
                     ]
             )

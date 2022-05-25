@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject, updateUser)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -182,6 +182,11 @@ listenHotkeys keys =
     messageToJs (ListenKeys keys)
 
 
+confetti : HtmlId -> Cmd msg
+confetti id =
+    messageToJs (Confetti id)
+
+
 track : TrackEvent -> Cmd msg
 track event =
     if event.enabled then
@@ -242,6 +247,7 @@ type ElmMsg
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
+    | Confetti HtmlId
     | TrackPage String
     | TrackEvent String Value
     | TrackError String Value
@@ -386,6 +392,9 @@ elmEncoder elm =
 
         ListenKeys keys ->
             Encode.object [ ( "kind", "ListenKeys" |> Encode.string ), ( "keys", keys |> Encode.dict identity (Encode.list hotkeyEncoder) ) ]
+
+        Confetti id ->
+            Encode.object [ ( "kind", "Confetti" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
         TrackPage name ->
             Encode.object [ ( "kind", "TrackPage" |> Encode.string ), ( "name", name |> Encode.string ) ]

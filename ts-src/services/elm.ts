@@ -48,6 +48,7 @@ export class ElmApp {
         ObserveSizes: [],
         ListenKeys: [],
         TrackPage: [],
+        Confetti: [],
         TrackEvent: [],
         TrackError: [],
     }

@@ -38,11 +38,13 @@
     "@sentry/tracing": "^6.19.7",
     "@splitbee/web": "^0.3.0",
     "@supabase/supabase-js": "^1.35.3",
+    "canvas-confetti": "^1.5.1",
     "jiff": "^0.7.3"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.0",
     "@tailwindcss/typography": "^0.5.2",
+    "@types/canvas-confetti": "^1.4.2",
     "@types/jest": "^27.5.1",
     "concurrently": "^7.1.0",
     "elm-coverage": "^0.4.1",

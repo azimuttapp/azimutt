@@ -1,4 +1,5 @@
 import {Env, HtmlId} from "../types/basics";
+import confetti from "canvas-confetti";
 
 export const Utils = {
     getEnv(): Env {
@@ -56,4 +57,18 @@ export const Utils = {
 
         document.body.removeChild(element)
     },
+    launchConfetti(id: string): void {
+        const elt = document.getElementById(id) as HTMLElement
+        if (!elt) return
+
+        const rect = elt.getBoundingClientRect()
+        const left = (rect.left + rect.right) / 2
+        const top = 80 + (rect.top + rect.bottom) / 2
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: {x: left / window.innerWidth, y: top / window.innerHeight},
+            disableForReducedMotion: true
+        });
+    }
 }
