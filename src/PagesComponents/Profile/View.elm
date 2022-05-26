@@ -106,11 +106,11 @@ navbar color model =
                 , div [ class "flex lg:hidden" ] [ mobileMenuButton color model.mobileMenuOpen ]
                 , div [ class "hidden lg:block lg:ml-4" ]
                     [ div [ class "flex items-center" ]
-                        [ button [ type_ "button", css [ text_200 color, "flex-shrink-0 rounded-full p-1", hover [ bg_800 color, "text-white animate-wobble-t" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ] ]
-                            [ span [ class "sr-only" ] [ text "View notifications" ]
-                            , Icon.outline Bell ""
-                            ]
-                        , profileDropdown color model.user profileLinks model.profileDropdownOpen
+                        --[ button [ type_ "button", css [ text_200 color, "flex-shrink-0 rounded-full p-1", hover [ bg_800 color, "text-white animate-wobble-t" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ] ]
+                        --    [ span [ class "sr-only" ] [ text "View notifications" ]
+                        --    , Icon.outline Bell ""
+                        --    ]
+                        [ profileDropdown color model.user profileLinks model.profileDropdownOpen
                         ]
                     ]
                 ]
@@ -129,10 +129,11 @@ navbar color model =
                                     [ div [ class "text-base font-medium text-white" ] [ text user.name ]
                                     , div [ css [ text_200 color, "text-sm font-medium" ] ] [ text user.email ]
                                     ]
-                                , button [ type_ "button", css [ text_200 color, "ml-auto flex-shrink-0 rounded-full p-1", hover [ bg_800 color, "text-white" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ] ]
-                                    [ span [ class "sr-only" ] [ text "View notifications" ]
-                                    , Icon.outline Bell ""
-                                    ]
+
+                                --, button [ type_ "button", css [ text_200 color, "ml-auto flex-shrink-0 rounded-full p-1", hover [ bg_800 color, "text-white" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ] ]
+                                --    [ span [ class "sr-only" ] [ text "View notifications" ]
+                                --    , Icon.outline Bell ""
+                                --    ]
                                 ]
                             , div [ class "mt-3 px-2" ]
                                 (profileLinks

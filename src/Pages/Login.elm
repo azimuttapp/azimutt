@@ -52,8 +52,8 @@ init req =
                 { title = Just title
                 , description = Just Conf.constants.defaultDescription
                 , canonical = Just { route = Route.Login, query = Dict.empty }
-                , html = Just "h-full bg-gray-100"
-                , body = Just "h-full"
+                , html = Just ""
+                , body = Just ""
                 }
             , Ports.trackPage "login"
             ]

@@ -29,7 +29,7 @@ type alias RightLinksTheme =
 
 rightLinksWhite : RightLinksModel msg -> Html msg
 rightLinksWhite model =
-    rightLinks { bg = "bg-white", text = batch [ "text-gray-500", hover [ "text-gray-900" ] ] } model
+    rightLinks { bg = "bg-white", text = batch [ "text-slate-600", hover [ "text-slate-900" ] ] } model
 
 
 rightLinksIndigo : RightLinksModel msg -> Html msg
