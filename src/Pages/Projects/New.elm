@@ -166,7 +166,16 @@ update req msg model =
                    )
 
         ProjectImportMsg message ->
-            model |> mapProjectImportMCmd (ProjectImport.update message)
+            model
+                |> mapProjectImportMCmd (ProjectImport.update message)
+                |> (\( m, cmd ) ->
+                        case message of
+                            ProjectImport.FileLoaded _ _ ->
+                                ( m, Cmd.batch [ cmd, Ports.confetti "import-project-btn" ] )
+
+                            _ ->
+                                ( m, cmd )
+                   )
 
         ProjectImportDrop ->
             ( model |> mapProjectImportM (\_ -> ProjectImport.init), Cmd.none )
@@ -181,7 +190,16 @@ update req msg model =
                    )
 
         SampleSelectMsg message ->
-            model |> mapSampleSelectionMCmd (ProjectImport.update message)
+            model
+                |> mapSampleSelectionMCmd (ProjectImport.update message)
+                |> (\( m, cmd ) ->
+                        case message of
+                            ProjectImport.FileLoaded _ _ ->
+                                ( m, Cmd.batch [ cmd, Ports.confetti "sample-project-btn" ] )
+
+                            _ ->
+                                ( m, cmd )
+                   )
 
         SampleSelectDrop ->
             ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )

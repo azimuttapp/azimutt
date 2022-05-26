@@ -59,11 +59,14 @@ export const Utils = {
     },
     launchConfetti(id: string): void {
         const elt = document.getElementById(id) as HTMLElement
-        if (!elt) return
+        if (!elt) {
+            console.warn(`Didn't found ${id} to launch confetti`)
+            return
+        }
 
         const rect = elt.getBoundingClientRect()
         const left = (rect.left + rect.right) / 2
-        const top = 80 + (rect.top + rect.bottom) / 2
+        const top = 50 + (rect.top + rect.bottom) / 2
         confetti({
             particleCount: 100,
             spread: 70,

@@ -230,7 +230,7 @@ viewProjectImport zone projects projectImport =
         , projectImport.parsedProject
             |> Maybe.andThen (\( id, res ) -> res |> Result.toMaybe |> Maybe.map (\p -> ( id, p )))
             |> Maybe.map
-                (\( id, project ) ->
+                (\( projectId, project ) ->
                     div [ css [ "mt-6" ] ]
                         [ div [ css [ "flex justify-end" ] ]
                             (Button.white3 Tw.primary [ onClick ProjectImportDrop ] [ text "Don't import" ]
@@ -239,10 +239,10 @@ viewProjectImport zone projects projectImport =
                                         |> Maybe.mapOrElse
                                             (\p ->
                                                 [ Button.secondary3 Tw.red [ onClick (ProjectImportCreate project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                , Button.primary3 Tw.primary [ onClick (ProjectImportCreateNew id project), css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                , Button.primary3 Tw.primary [ onClick (ProjectImportCreateNew projectId project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                 ]
                                             )
-                                            [ Button.primary3 Tw.primary [ onClick (ProjectImportCreate project), css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                            [ Button.primary3 Tw.primary [ onClick (ProjectImportCreate project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
                                    )
                             )
                         ]
@@ -265,8 +265,8 @@ viewSampleSelection zone projects projectImport =
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.mapOrElse
-                                            (\_ -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "ml-3" ] ] [ text "View this project" ] ])
-                                            [ Button.primary3 Tw.primary [ onClick (SampleSelectCreate project), css [ "ml-3" ] ] [ text "Load sample" ] ]
+                                            (\_ -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), id "sample-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                            [ Button.primary3 Tw.primary [ onClick (SampleSelectCreate project), id "sample-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )
                         ]
