@@ -73,5 +73,32 @@ export const Utils = {
             origin: {x: left / window.innerWidth, y: top / window.innerHeight},
             disableForReducedMotion: true
         });
+    },
+    launchConfettiPride(): void {
+        const end = Date.now() + (3 * 1000);
+        const colors = ['#28BEC9', '#0C4F9C'];
+
+        (function frame() {
+            confetti({
+                particleCount: 2,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: colors,
+                zIndex: 20000
+            });
+            confetti({
+                particleCount: 2,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: colors,
+                zIndex: 20000
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
     }
 }

@@ -19,6 +19,7 @@ type alias Model =
     { zone : Time.Zone
     , now : Time.Posix
     , user : Maybe User
+    , projects : StoredProjects
     }
 
 
@@ -64,6 +65,7 @@ init _ flags =
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
       , user = Nothing
+      , projects = Loading
       }
     , Cmd.batch [ Time.here |> Task.perform ZoneChanged ]
     )
@@ -87,6 +89,9 @@ update _ msg model =
 
         JsMessage GotLogout ->
             ( { model | user = Nothing }, Cmd.none )
+
+        JsMessage (GotProjects ( _, projects )) ->
+            ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
 
         JsMessage _ ->
             ( model, Cmd.none )

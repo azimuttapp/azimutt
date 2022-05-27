@@ -23,6 +23,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports
 import Router
 import Services.Lenses exposing (mapMTeamCmd)
+import Shared exposing (Confirm)
 import Track
 
 
@@ -32,7 +33,10 @@ dialogId =
 
 
 type alias Model =
-    { id : HtmlId, team : ProjectTeam.Model }
+    { id : HtmlId
+    , movingProject : Bool
+    , team : ProjectTeam.Model
+    }
 
 
 type Msg
@@ -45,7 +49,7 @@ update : (HtmlId -> msg) -> Maybe Erd -> Msg -> Maybe Model -> ( Maybe Model, Cm
 update modalOpen erd msg model =
     case msg of
         Open ->
-            ( Just { id = dialogId, team = ProjectTeam.init }
+            ( Just { id = dialogId, movingProject = False, team = ProjectTeam.init }
             , Cmd.batch
                 ([ T.sendAfter 1 (modalOpen dialogId), Ports.track Track.openProjectUploadDialog ]
                     ++ (erd |> Maybe.mapOrElse (\e -> Bool.cond (e.project.storage == ProjectStorage.Cloud) [ Ports.getOwners e.project.id ] []) [])
@@ -59,8 +63,8 @@ update modalOpen erd msg model =
             model |> mapMTeamCmd (ProjectTeam.update message)
 
 
-view : (Cmd msg -> msg) -> (Msg -> msg) -> (ProjectStorage -> msg) -> msg -> Maybe User -> Bool -> ProjectInfo -> Model -> Html msg
-view send wrap moveProject modalClose user opened project model =
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> msg -> Maybe User -> Bool -> ProjectInfo -> Model -> Html msg
+view confirm onDelete wrap moveProject modalClose user opened project model =
     let
         titleId : HtmlId
         titleId =
@@ -76,10 +80,10 @@ view send wrap moveProject modalClose user opened project model =
             |> Maybe.mapOrElse
                 (\u ->
                     if project.storage == ProjectStorage.Browser then
-                        uploadModal modalClose moveProject titleId project
+                        uploadModal modalClose moveProject titleId model.movingProject project
 
                     else
-                        cloudModal send wrap moveProject model.id titleId u model.team project
+                        cloudModal confirm onDelete wrap moveProject model.id titleId u model.team model.movingProject project
                 )
                 (signInModal modalClose titleId project)
         ]
@@ -111,8 +115,8 @@ signInModal modalClose titleId project =
         ]
 
 
-uploadModal : msg -> (ProjectStorage -> msg) -> HtmlId -> ProjectInfo -> Html msg
-uploadModal modalClose moveProjectTo titleId project =
+uploadModal : msg -> (ProjectStorage -> msg) -> HtmlId -> Bool -> ProjectInfo -> Html msg
+uploadModal modalClose moveProjectTo titleId movingProject project =
     div [ class "px-4 pt-5 pb-4 sm:max-w-md sm:p-6" ]
         [ div []
             [ div [ class "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100" ]
@@ -132,14 +136,18 @@ uploadModal modalClose moveProjectTo titleId project =
             ]
         , div [ class "mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "No thanks" ]
-            , Button.primary3 Tw.emerald [ onClick (moveProjectTo ProjectStorage.Cloud) ] [ text "Upload to Azimutt" ]
+            , if movingProject then
+                Button.primary3 Tw.emerald [ disabled True ] [ Icon.loading "animate-spin mr-3", text "Upload to Azimutt" ]
+
+              else
+                Button.primary3 Tw.emerald [ onClick (moveProjectTo ProjectStorage.Cloud) ] [ text "Upload to Azimutt" ]
             ]
         , p [ class "mt-2 text-xs text-right text-gray-500" ] [ text "You can revert this decision at any time." ]
         ]
 
 
-cloudModal : (Cmd msg -> msg) -> (Msg -> msg) -> (ProjectStorage -> msg) -> HtmlId -> HtmlId -> User -> ProjectTeam.Model -> ProjectInfo -> Html msg
-cloudModal send wrap moveProject htmlId titleId user team project =
+cloudModal : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> HtmlId -> HtmlId -> User -> ProjectTeam.Model -> Bool -> ProjectInfo -> Html msg
+cloudModal confirm onDelete wrap moveProject htmlId titleId user team movingProject project =
     div [ class "px-4 pt-5 pb-4 sm:max-w-3xl sm:p-6" ]
         [ div []
             [ div [ class "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100" ]
@@ -150,16 +158,16 @@ cloudModal send wrap moveProject htmlId titleId user team project =
                     [ text (project.name ++ " is stored in Azimutt 👍️") ]
                 ]
             , div [ class "mt-8" ]
-                [ ProjectTeam.view send (ProjectTeamMsg >> wrap) htmlId user project team
+                [ ProjectTeam.view confirm onDelete (ProjectTeamMsg >> wrap) htmlId user project team
                 ]
             ]
         , div [ class "mt-3 w-full border-t border-gray-300" ] []
-        , moveToLocal moveProject team.owners
+        , moveToLocal moveProject movingProject team.owners
         ]
 
 
-moveToLocal : (ProjectStorage -> msg) -> List User -> Html msg
-moveToLocal moveProjectTo owners =
+moveToLocal : (ProjectStorage -> msg) -> Bool -> List User -> Html msg
+moveToLocal moveProjectTo movingProject owners =
     div [ class "mt-2 sm:flex sm:justify-between" ]
         [ div [ class "max-w-xl text-sm text-gray-500" ]
             [ p [] [ text "You can bring back your project to local storage only.", br [] [], text "Your project will be saved in your browser and then deleted from Azimutt servers." ]
@@ -168,7 +176,10 @@ moveToLocal moveProjectTo owners =
             [ if List.length owners > 1 then
                 Button.primary1 Tw.red [ disabled True ] [ text "Go local only" ] |> Tooltip.tl "You need to remove all other owners before you can go local."
 
+              else if movingProject then
+                Button.primary1 Tw.red [ disabled True ] [ Icon.loading "animate-spin mr-3", text "Go local only" ]
+
               else
-                Button.primary1 Tw.red [ onClick (moveProjectTo ProjectStorage.Browser) ] [ text "Go local only" ]
+                Button.primary1 Tw.red [ onClick (moveProjectTo ProjectStorage.Browser), class "ml-8" ] [ text "Go local only" ]
             ]
         ]

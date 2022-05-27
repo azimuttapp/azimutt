@@ -1,4 +1,5 @@
 import {
+    ConfettiPrideMsg,
     ElementSize,
     ElmFlags,
     ElmMsg,
@@ -49,6 +50,7 @@ export class ElmApp {
         ListenKeys: [],
         TrackPage: [],
         Confetti: [],
+        ConfettiPride: [],
         TrackEvent: [],
         TrackError: [],
     }

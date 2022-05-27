@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject, updateUser)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -31,6 +31,7 @@ import Models.UserId as UserId exposing (UserId)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
+import Track
 
 
 click : HtmlId -> Cmd msg
@@ -140,7 +141,7 @@ downloadFile filename content =
 
 dropProject : ProjectInfo -> Cmd msg
 dropProject project =
-    messageToJs (DropProject project)
+    Cmd.batch [ messageToJs (DropProject project), track (Track.deleteProject project) ]
 
 
 readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> Cmd msg
@@ -185,6 +186,11 @@ listenHotkeys keys =
 confetti : HtmlId -> Cmd msg
 confetti id =
     messageToJs (Confetti id)
+
+
+confettiPride : Cmd msg
+confettiPride =
+    messageToJs ConfettiPride
 
 
 track : TrackEvent -> Cmd msg
@@ -248,6 +254,7 @@ type ElmMsg
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
+    | ConfettiPride
     | TrackPage String
     | TrackEvent String Value
     | TrackError String Value
@@ -395,6 +402,9 @@ elmEncoder elm =
 
         Confetti id ->
             Encode.object [ ( "kind", "Confetti" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        ConfettiPride ->
+            Encode.object [ ( "kind", "ConfettiPride" |> Encode.string ) ]
 
         TrackPage name ->
             Encode.object [ ( "kind", "TrackPage" |> Encode.string ), ( "name", name |> Encode.string ) ]

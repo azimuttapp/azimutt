@@ -19,14 +19,13 @@ import Services.Lenses exposing (mapToastsCmd)
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
-import Track
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init
+        { init = init shared
         , update = update req
         , view = view shared req
         , subscriptions = subscriptions
@@ -50,11 +49,11 @@ title =
     Conf.constants.defaultTitle
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Shared.Model -> ( Model, Cmd Msg )
+init shared =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
-      , projects = Loading
+      , projects = shared.projects
       , openedDropdown = ""
       , toasts = Toasts.init
       , confirm = Nothing
@@ -88,7 +87,7 @@ update req msg model =
             ( model |> mapProjects (List.filter (\p -> p.storage == ProjectStorage.Browser)), Ports.logout )
 
         DeleteProject project ->
-            ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
+            ( model, Ports.dropProject project )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )

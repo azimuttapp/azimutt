@@ -5,7 +5,6 @@ import {
     HotkeyId,
     ListenKeysMsg,
     LoadRemoteProjectMsg,
-    MoveProjectToMsg,
     ObserveSizesMsg,
     SetMetaMsg,
     UpdateProjectMsg
@@ -74,7 +73,7 @@ app.on('LoadProject', msg => loadProject(msg.id))
 app.on('LoadRemoteProject', loadRemoteProject)
 app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProject))
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
-app.on('MoveProjectTo', moveProjectTo)
+app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
 app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)))
 app.on('UpdateUser', msg => store.updateUser(msg.user).then(user => app.login(user)))
 app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
@@ -86,6 +85,7 @@ app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
+app.on('ConfettiPride', msg => Utils.launchConfettiPride())
 app.on('TrackPage', msg => analytics.trackPage(msg.name))
 app.on('TrackEvent', msg => analytics.trackEvent(msg.name, msg.details))
 app.on('TrackError', msg => {
@@ -167,13 +167,6 @@ function updateProject(msg: UpdateProjectMsg): Promise<Project> {
             errorTracking.trackError(name, details)
             return msg.project
         })
-}
-
-function moveProjectTo(msg: MoveProjectToMsg) {
-    store.moveProjectTo(msg.project, msg.storage).then(project => {
-        app.gotProject(project)
-        app.toast('success', `Project moved to ${project.storage} storage`)
-    }).catch(err => app.toast('error', err))
 }
 
 function getLocalFile(msg: GetLocalFileMsg) {

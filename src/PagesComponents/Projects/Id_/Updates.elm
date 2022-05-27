@@ -43,7 +43,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Time
@@ -68,12 +68,12 @@ update req currentLayout now msg model =
 
         MoveProjectTo storage ->
             if model.conf.save then
-                ( model
+                ( model |> mapUploadM (\u -> { u | movingProject = True })
                 , Cmd.batch
                     (model.erd
                         |> Maybe.map Erd.unpack
                         |> Maybe.mapOrElse
-                            (\p -> [ Ports.moveProjectTo p storage, T.send (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) ])
+                            (\p -> [ Ports.moveProjectTo p storage ])
                             [ Toasts.warning Toast "No project to move" ]
                     )
                 )
@@ -331,13 +331,26 @@ handleJsMessage currentLayout msg model =
                             project
                                 |> (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
                                 |> Erd.create (Random.initialSeed childSeed)
+
+                        uploadCmd : List (Cmd msg)
+                        uploadCmd =
+                            if model.upload == Nothing then
+                                []
+
+                            else if project.storage == ProjectStorage.Cloud then
+                                [ Ports.getOwners project.id, Ports.confettiPride ]
+
+                            else
+                                []
                     in
-                    ( { model | seed = newSeed, loaded = True, erd = Just erd }
+                    ( { model | seed = newSeed, loaded = True, erd = Just erd } |> mapUploadM (\u -> { u | movingProject = False })
                     , Cmd.batch
-                        [ Ports.observeSize Conf.ids.erd
-                        , Ports.observeTablesSize erd.shownTables
-                        , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
-                        ]
+                        ([ Ports.observeSize Conf.ids.erd
+                         , Ports.observeTablesSize erd.shownTables
+                         , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
+                         ]
+                            ++ uploadCmd
+                        )
                     )
 
         GotUser email user ->

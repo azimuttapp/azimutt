@@ -43,21 +43,21 @@ title erd =
     erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") Conf.constants.defaultTitle
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
+view : Cmd Msg -> Shared.Model -> Model -> View Msg
+view onDelete shared model =
     { title = model.erd |> title
-    , body = model |> viewProject shared
+    , body = model |> viewProject onDelete shared
     }
 
 
-viewProject : Shared.Model -> Model -> List (Html Msg)
-viewProject shared model =
+viewProject : Cmd Msg -> Shared.Model -> Model -> List (Html Msg)
+viewProject onDelete shared model =
     [ if model.loaded then
         model.erd |> Maybe.mapOrElse (viewApp shared model "app") (viewNotFound model.conf)
 
       else
         Loader.fullScreen
-    , Lazy.lazy2 viewModal shared model
+    , Lazy.lazy3 viewModal shared model onDelete
     , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
     ]
@@ -109,8 +109,8 @@ viewNotFound conf =
         }
 
 
-viewModal : Shared.Model -> Model -> Html Msg
-viewModal shared model =
+viewModal : Shared.Model -> Model -> Cmd Msg -> Html Msg
+viewModal shared model onDelete =
     Keyed.node "div"
         [ class "az-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
@@ -120,7 +120,7 @@ viewModal shared model =
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view Send ProjectUploadDialogMsg MoveProjectTo (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) shared.user (model.openedDialogs |> List.has m.id) e.project m )) model.erd
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadDialogMsg MoveProjectTo (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) shared.user (model.openedDialogs |> List.has m.id) e.project m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload shared.zone shared.now (model.openedDialogs |> List.has m.id) m ))
          , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.has m.id) m ))

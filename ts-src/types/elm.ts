@@ -123,6 +123,7 @@ export type ElmMsg =
     | ObserveSizesMsg
     | ListenKeysMsg
     | ConfettiMsg
+    | ConfettiPrideMsg
     | TrackPageMsg
     | TrackEventMsg
     | TrackErrorMsg
@@ -153,6 +154,7 @@ export type GetRemoteFileMsg = { kind: 'GetRemoteFile', project?: ProjectId, sou
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
 export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export type ConfettiMsg = { kind: 'Confetti', id: HtmlId }
+export type ConfettiPrideMsg = { kind: 'ConfettiPride' }
 export type TrackPageMsg = { kind: 'TrackPage', name: string }
 export type TrackEventMsg = { kind: 'TrackEvent', name: string, details?: Data }
 export type TrackErrorMsg = { kind: 'TrackError', name: string, details?: Data }

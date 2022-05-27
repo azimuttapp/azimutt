@@ -9,15 +9,15 @@ import PagesComponents.Home_.Models as Models exposing (Msg(..))
 import PagesComponents.Home_.View exposing (viewHome)
 import Ports exposing (JsMsg(..))
 import Request
-import Shared
+import Shared exposing (StoredProjects(..))
 import Time
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page _ _ =
+page shared _ =
     Page.element
-        { init = init
+        { init = init shared
         , update = update
         , view = view
         , subscriptions = subscriptions
@@ -41,9 +41,16 @@ title =
     Conf.constants.defaultTitle
 
 
-init : ( Model, Cmd msg )
-init =
-    ( { projects = [] }
+init : Shared.Model -> ( Model, Cmd msg )
+init shared =
+    ( { projects =
+            case shared.projects of
+                Loading ->
+                    []
+
+                Loaded projects ->
+                    projects
+      }
     , Cmd.batch
         [ Ports.setMeta
             { title = Just title
