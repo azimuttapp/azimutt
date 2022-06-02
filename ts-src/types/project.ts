@@ -170,7 +170,7 @@ export const ProjectStorage: {[key in ProjectStorage]: key} = {
 
 export type ProjectId = Uuid
 export type ProjectName = string
-export type SourceId = string
+export type SourceId = Uuid
 export type SourceName = string
 export type SchemaName = string
 export type TableId = string

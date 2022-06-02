@@ -1,5 +1,4 @@
 import {
-    ConfettiPrideMsg,
     ElementSize,
     ElmFlags,
     ElmMsg,
@@ -58,7 +57,7 @@ export class ElmApp {
     constructor(private elm: ElmRuntime, private logger: Logger) {
         this.elm.ports?.elmToJs.subscribe(msg => {
             // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
-            // TODO: use requestAnimationFrame instead!
+            // FIXME: use requestAnimationFrame instead!
             setTimeout(() => {
                 const calls = this.callbacks[msg.kind]
                 if (calls.length > 0) {

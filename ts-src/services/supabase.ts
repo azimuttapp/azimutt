@@ -84,7 +84,7 @@ export class Supabase implements StorageApi {
 
     onLogin(callback: (p: Profile) => void): Supabase {
         return this.on('SIGNED_IN', session => {
-            if (session !== null && session.user !== null) {
+            if (session !== null && session.user !== null && this.user === null) {
                 this.store.getOrCreateProfile(session.user).then(callback)
             }
         })
