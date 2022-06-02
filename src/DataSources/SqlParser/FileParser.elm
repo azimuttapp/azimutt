@@ -124,8 +124,9 @@ evolve ( statement, command ) tables =
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just (SqlPrimaryKey constraintName pk statement) }) tables
 
-        AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fk)) ->
-            updateColumn statement (buildId schema table) fk.column (\c -> buildFk tables statement table fk.column (Just constraint) fk.ref.schema fk.ref.table fk.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
+        AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fks)) ->
+            -- FIXME: handle multi-column foreign key!
+            updateColumn statement (buildId schema table) fks.head.column (\c -> buildFk tables statement table fks.head.column (Just constraint) fks.head.ref.schema fks.head.ref.table fks.head.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
 
         AlterTable (AddTableConstraint schema table (ParsedUnique constraint unique)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ SqlUnique constraint unique.columns unique.definition statement ] }) tables
@@ -396,7 +397,7 @@ buildStatements lines =
 
 hasKeyword : String -> SqlLine -> Bool
 hasKeyword keyword line =
-    (line.text |> Regex.match ("(^|[^A-Z_\"'`])" ++ keyword ++ "([^A-Z_\"'`]|$)")) && not (line.text |> Regex.match ("'.*" ++ keyword ++ ".*'"))
+    (line.text |> Regex.match ("(^|[^A-Z0-9_\"'`])" ++ keyword ++ "([^A-Z0-9_\"'`]|$)")) && not (line.text |> Regex.match ("'.*" ++ keyword ++ ".*'"))
 
 
 hasOnlyComment : SqlLine -> Bool

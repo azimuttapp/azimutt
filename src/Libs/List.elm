@@ -1,4 +1,4 @@
-module Libs.List exposing (addAt, appendIf, appendOn, diff, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, mergeMaybe, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing (addAt, appendIf, appendOn, diff, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, mergeMaybe, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zip, zipBy, zipWith, zipWithIndex)
 
 import Dict exposing (Dict)
 import Libs.Bool as B
@@ -120,6 +120,11 @@ has item xs =
 hasNot : a -> List a -> Bool
 hasNot item xs =
     not (has item xs)
+
+
+zip : List b -> List a -> List ( a, b )
+zip lb la =
+    List.map2 (\a b -> ( a, b )) la lb
 
 
 filterZip : (a -> Maybe b) -> List a -> List ( a, b )

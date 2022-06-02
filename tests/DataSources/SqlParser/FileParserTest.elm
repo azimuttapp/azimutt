@@ -174,6 +174,7 @@ suite =
             , test "column name" (\_ -> { line = 0, text = "  `end` timestamp," } |> hasKeyword "END" |> Expect.equal False)
             , test "inside column name" (\_ -> { line = 0, text = "  pending bool," } |> hasKeyword "END" |> Expect.equal False)
             , test "start column name" (\_ -> { line = 0, text = "  end_at timestamp," } |> hasKeyword "END" |> Expect.equal False)
+            , test "with numbers" (\_ -> { line = 0, text = "CREATE TABLE 0end1 (" } |> hasKeyword "END" |> Expect.equal False)
             , test "inside name" (\_ -> { line = 0, text = "CREATE TABLE job_end (" } |> hasKeyword "END" |> Expect.equal False)
             , test "inside string" (\_ -> { line = 0, text = "COMMENT ON COLUMN public.t1.c1 IS 'Item end date'" } |> hasKeyword "END" |> Expect.equal False)
             , test "$$ separator" (\_ -> { line = 0, text = "$$;" } |> hasKeyword "\\$\\$;" |> Expect.equal True)

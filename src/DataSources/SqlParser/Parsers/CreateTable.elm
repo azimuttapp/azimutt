@@ -231,8 +231,9 @@ primaryKeyConstraints constraint =
 foreignKeyConstraints : TableConstraint -> Maybe ParsedForeignKey
 foreignKeyConstraints constraint =
     case constraint of
-        AlterTable.ParsedForeignKey name { column, ref } ->
-            Just { name = Just name, src = column, ref = ref }
+        AlterTable.ParsedForeignKey name fks ->
+            -- FIXME: handle multi-column foreign key!
+            Just { name = Just name, src = fks.head.column, ref = fks.head.ref }
 
         _ ->
             Nothing
