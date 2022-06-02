@@ -15,19 +15,19 @@ suite =
                 (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey (Just "t2_id_pkey") (Nel "id" [])))
             , testParse ( parseAlterTable, "foreign key" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES p.t1 (id);"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } }))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } } [])))
             , testParse ( parseAlterTable, "foreign key without schema" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES t1 (id);"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Just "id" } }))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Just "id" } } [])))
             , testParse ( parseAlterTable, "foreign key without column" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES p.t1;"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Nothing } }))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Nothing } } [])))
             , testParse ( parseAlterTable, "foreign key without schema & column" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES t1;"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Nothing } }))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Nothing } } [])))
             , testParse ( parseAlterTable, "foreign key not valid" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES p.t1 (id) NOT VALID;"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } }))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } } [])))
             , testParse ( parseAlterTable, "unique" )
                 "ALTER TABLE p.t1 ADD CONSTRAINT name_unique UNIQUE (first_name, last_name);"
                 (AddTableConstraint (Just "p") "t1" (ParsedUnique "name_unique" { columns = Nel "first_name" [ "last_name" ], definition = "(first_name, last_name)" }))
@@ -64,18 +64,25 @@ suite =
         , describe "parseAlterTableAddConstraintForeignKey"
             [ testParseSql ( parseAlterTableAddConstraintForeignKey, "with on delete" )
                 "FOREIGN KEY (supply_order_bill_id) REFERENCES public.supply_order_bills(id) ON DELETE SET NULL"
-                { column = "supply_order_bill_id", ref = { schema = Just "public", table = "supply_order_bills", column = Just "id" } }
+                (Nel { column = "supply_order_bill_id", ref = { schema = Just "public", table = "supply_order_bills", column = Just "id" } } [])
             , testParseSql ( parseAlterTableAddConstraintForeignKey, "with on delete not deferrable" )
                 """FOREIGN KEY ("postId") REFERENCES post_entity(id) ON DELETE CASCADE NOT DEFERRABLE"""
-                { column = "postId", ref = { schema = Nothing, table = "post_entity", column = Just "id" } }
+                (Nel { column = "postId", ref = { schema = Nothing, table = "post_entity", column = Just "id" } } [])
             , testParseSql ( parseAlterTableAddConstraintForeignKey, "with initially immediate" )
                 """FOREIGN KEY (actor_id) REFERENCES auth_user(id) DEFERRABLE INITIALLY IMMEDIATE"""
-                { column = "actor_id", ref = { schema = Nothing, table = "auth_user", column = Just "id" } }
+                (Nel { column = "actor_id", ref = { schema = Nothing, table = "auth_user", column = Just "id" } } [])
             , testParseSql ( parseAlterTableAddConstraintForeignKey, "with initially deferred" )
                 """FOREIGN KEY (actor_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED"""
-                { column = "actor_id", ref = { schema = Just "public", table = "auth_user", column = Just "id" } }
+                (Nel { column = "actor_id", ref = { schema = Just "public", table = "auth_user", column = Just "id" } } [])
             , testParseSql ( parseAlterTableAddConstraintForeignKey, "with on update on delete and deferrable" )
                 """FOREIGN KEY (postId) REFERENCES public.post(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE"""
-                { column = "postId", ref = { schema = Just "public", table = "post", column = Just "id" } }
+                (Nel { column = "postId", ref = { schema = Just "public", table = "post", column = Just "id" } } [])
+            , testParseSql ( parseAlterTableAddConstraintForeignKey, "multi-column foreign key" )
+                """FOREIGN KEY ("SCHED_NAME", "TRIGGER_NAME", "TRIGGER_GROUP") REFERENCES "CRPDTA"."QRTZ_TRIGGERS" ("SCHED_NAME", "TRIGGER_NAME", "TRIGGER_GROUP") ENABLE"""
+                (Nel { column = "SCHED_NAME", ref = { schema = Just "CRPDTA", table = "QRTZ_TRIGGERS", column = Just "SCHED_NAME" } }
+                    [ { column = "TRIGGER_NAME", ref = { schema = Just "CRPDTA", table = "QRTZ_TRIGGERS", column = Just "TRIGGER_NAME" } }
+                    , { column = "TRIGGER_GROUP", ref = { schema = Just "CRPDTA", table = "QRTZ_TRIGGERS", column = Just "TRIGGER_GROUP" } }
+                    ]
+                )
             ]
         ]

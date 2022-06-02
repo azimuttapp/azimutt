@@ -7,7 +7,7 @@ import Libs.Regex as Regex
 
 parseIndexDefinition : String -> Result (List ParseError) (List SqlColumnName)
 parseIndexDefinition definition =
-    case definition |> Regex.matches "^\\((?<columns>[^)]+)\\)(?:(?:\\s+NOT)?\\s+DEFERRABLE)?$" of
+    case definition |> Regex.matches "^\\((?<columns>[^)]+)\\)(?:(?:\\s+NOT)?\\s+DEFERRABLE)?.*$" of
         (Just columns) :: [] ->
             Ok (columns |> String.split "," |> List.map String.trim)
 
@@ -57,7 +57,7 @@ buildColumnName name =
 
 buildConstraintName : String -> SqlConstraintName
 buildConstraintName name =
-    name |> String.trim |> noEnclosingQuotes
+    name |> String.trim |> String.split "." |> List.map noEnclosingQuotes |> String.join "."
 
 
 noEnclosingQuotes : String -> String

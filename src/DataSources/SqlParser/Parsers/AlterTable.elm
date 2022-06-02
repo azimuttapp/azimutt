@@ -1,7 +1,9 @@
 module DataSources.SqlParser.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, deferrable, parseIndexDefinition, sqlTriggers)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition, sqlTriggers)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 
@@ -16,7 +18,7 @@ type TableUpdate
 
 type TableConstraint
     = ParsedPrimaryKey (Maybe SqlConstraintName) PrimaryKeyInner
-    | ParsedForeignKey SqlConstraintName ForeignKeyInner
+    | ParsedForeignKey SqlConstraintName (Nel ForeignKeyInner)
     | ParsedUnique SqlConstraintName UniqueInner
     | ParsedCheck SqlConstraintName CheckInner
 
@@ -111,7 +113,7 @@ parseAlterTableAddConstraint command =
 
 parseAlterTableAddConstraintPrimaryKey : RawSql -> Result (List ParseError) PrimaryKeyInner
 parseAlterTableAddConstraintPrimaryKey constraint =
-    case constraint |> Regex.matches "^PRIMARY KEY\\s*\\((?<columns>[^)]+)\\)$" of
+    case constraint |> Regex.matches "^PRIMARY KEY\\s*\\((?<columns>[^)]+)\\).*$" of
         (Just columns) :: [] ->
             columns |> String.split "," |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Primary key can't have empty columns" ]
 
@@ -119,9 +121,9 @@ parseAlterTableAddConstraintPrimaryKey constraint =
             Err [ "Can't parse primary key: '" ++ constraint ++ "'" ]
 
 
-parseAlterTableAddConstraintForeignKey : RawSql -> Result (List ParseError) ForeignKeyInner
+parseAlterTableAddConstraintForeignKey : RawSql -> Result (List ParseError) (Nel ForeignKeyInner)
 parseAlterTableAddConstraintForeignKey constraint =
-    case constraint |> Regex.matches ("^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?(?:\\s+NOT VALID)?" ++ sqlTriggers ++ deferrable ++ "$") of
+    case constraint |> Regex.matches "^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?" of
         (Just columns) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
             buildForeignKeyInner constraint columns schemaDest tableDest columnDest
 
@@ -134,17 +136,27 @@ parseAlterTableAddConstraintForeignKey constraint =
                     Err [ "Can't parse foreign key: '" ++ constraint ++ "'" ]
 
 
-buildForeignKeyInner : RawSql -> String -> Maybe String -> String -> Maybe String -> Result (List ParseError) ForeignKeyInner
-buildForeignKeyInner constraint columns schemaDest tableDest columnDest =
-    case columns |> String.split "," of
-        column :: [] ->
-            Ok
+buildForeignKeyInner : RawSql -> String -> Maybe String -> String -> Maybe String -> Result (List ParseError) (Nel ForeignKeyInner)
+buildForeignKeyInner constraint columnsStr schemaDest tableDest columnsStrDest =
+    let
+        columns : List String
+        columns =
+            columnsStr |> String.split ","
+
+        columnsDest : List (Maybe String)
+        columnsDest =
+            columnsStrDest |> Maybe.mapOrElse (String.split "," >> List.map Just) (Nothing |> List.repeat (columns |> List.length))
+    in
+    columns
+        |> List.zip columnsDest
+        |> List.map
+            (\( column, columnDest ) ->
                 { column = column |> buildColumnName
                 , ref = { schema = schemaDest |> Maybe.map buildSchemaName, table = tableDest |> buildTableName, column = columnDest |> Maybe.map buildColumnName }
                 }
-
-        _ ->
-            Err [ "Multi-column foreign key is not supported: '" ++ constraint ++ "'" ]
+            )
+        |> Nel.fromList
+        |> Result.fromMaybe [ "No foreign key column in '" ++ constraint ++ "'" ]
 
 
 parseAlterTableAddConstraintUnique : RawSql -> Result (List ParseError) UniqueInner
