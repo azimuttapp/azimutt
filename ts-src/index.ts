@@ -20,6 +20,18 @@ import {Utils} from "./utils/utils";
 import {Supabase} from "./services/supabase";
 import {StorageManager} from "./storages/manager";
 
+/*
+ * TODO:
+ *  - embed remote project
+ *  - change avatar from profile page
+ *  - login/redirect on embed
+ *  - remove current layout
+ *  - layout origin is center (not top-left)
+ *  - bug: what if local and remote project have the same id?
+ *  - improvement: when listen JsMsg add toast if msg is not handled (not supported, should never happen)
+ *  - improvements: with backend: send notification email on sharing + ask for ownership on not found & logged
+ *  - improvement: user rights (owner, write, read)
+ */
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
 const app = ElmApp.init({now: Date.now()}, logger)

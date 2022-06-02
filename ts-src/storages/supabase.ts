@@ -25,10 +25,14 @@ export class SupabaseStorage {
     }
 
     getProfile = async (id: UserId): Promise<Profile | undefined> => {
+        const url = `https://azimutt-staging.onrender.com/users/${id}`
+        // Authorization: Bearer ${token}
         return await this.supabase.from(db.profiles.table).select(db.profiles.columns)
             .match({id}).maybeSingle().then(optResult)
     }
     fetchProfile = async (input: Email | Username): Promise<Profile | undefined> => {
+        const url = `https://azimutt-staging.onrender.com/users/fetch?email=${input}`
+        // Authorization: Bearer ${token}
         return await this.supabase.from(db.profiles.table).select(db.profiles.columns)
             .or(`email.eq.${input},username.eq.${input}`).maybeSingle().then(optResult)
     }

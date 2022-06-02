@@ -69,6 +69,8 @@ viewTable conf zoom cursorMode args index props table =
     in
     div
         ([ css [ "select-none absolute", B.cond (props.size == Size.zero) "invisible" "" ]
+
+         -- center origin: change computations to dynamically add the top-left -> center vector or use css: calc(50% + left px)
          , style "left" (String.fromFloat props.position.left ++ "px")
          , style "top" (String.fromFloat props.position.top ++ "px")
          , style "z-index" (String.fromInt zIndex)
