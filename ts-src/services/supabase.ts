@@ -11,6 +11,7 @@ export class Supabase implements StorageApi {
     // https://supabase.com/docs/guides/local-development
     static conf: { [env in Env]: SupabaseConf } = {
         dev: {
+            backendUrl: 'http://localhost:3000',
             supabaseUrl: 'http://localhost:54321',
             // dbUrl: 'postgresql://postgres:postgres@localhost:54322/postgres',
             // studioUrl: 'http://localhost:54323',
@@ -19,18 +20,20 @@ export class Supabase implements StorageApi {
             // serviceRoleKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSJ9.vI9obAHOGyVVKa3pD--kJlyxp-Z2zV9UUMAhKpNLAcU',
         },
         staging: {
+            backendUrl: 'https://azimutt-staging.onrender.com',
             supabaseUrl: 'https://ywieybitcnbtklzsfxgd.supabase.co',
             supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE',
         },
         prod: {
+            backendUrl: '',
             supabaseUrl: '',
             supabaseKey: '',
         }
     }
 
     static init(env: Env): Supabase {
-        const {supabaseUrl, supabaseKey, options} = this.conf['staging'] // social auth & file storage not supported in local :(
-        return new Supabase(createClient(supabaseUrl, supabaseKey, options))
+        const {backendUrl, supabaseUrl, supabaseKey, options} = this.conf[env]
+        return new Supabase(createClient(supabaseUrl, supabaseKey, options), backendUrl)
     }
 
     private user: SupabaseUser | null = null
@@ -38,8 +41,8 @@ export class Supabase implements StorageApi {
     private events: Partial<{ [key in AuthChangeEvent]: (Session | null)[] }> = {}
     private callbacks: Partial<{ [key in AuthChangeEvent]: ((session: Session | null) => void)[] }> = {}
 
-    constructor(private supabase: SupabaseClient) {
-        this.store = new SupabaseStorage(supabase)
+    constructor(private supabase: SupabaseClient, backendUrl: string) {
+        this.store = new SupabaseStorage(supabase, backendUrl)
         supabase.auth.onAuthStateChange((event, session) => {
             const callbacks = this.callbacks[event]
             if (callbacks === undefined) {
@@ -82,10 +85,10 @@ export class Supabase implements StorageApi {
         })
     }
 
-    onLogin(callback: (p: Profile) => void): Supabase {
+    onLogin(callback: (p: Profile) => void, errorCallback: (err: string) => void): Supabase {
         return this.on('SIGNED_IN', session => {
             if (session !== null && session.user !== null && this.user === null) {
-                this.store.getOrCreateProfile(session.user).then(callback)
+                this.store.getOrCreateProfile(session.user).then(callback).catch(errorCallback)
             }
         })
     }
@@ -112,12 +115,12 @@ export class Supabase implements StorageApi {
     kind: StorageKind = 'supabase'
     listProjects = (): Promise<ProjectInfo[]> => this.waitLogin(500, _ => this.store.getProjects(), () => Promise.resolve([]))
     loadProject = (id: ProjectId): Promise<Project> => this.waitLogin(500, _ => this.store.getProject(id))
-    createProject = (p: Project): Promise<Project> => this.waitLogin(500, u => this.store.createProject(p, u.id))
+    createProject = (p: Project): Promise<Project> => this.waitLogin(500, u => this.store.createProject(p))
     updateProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.updateProject(p))
     dropProject = (p: ProjectInfo): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(p))
 
-    getUser = (email: Email): Promise<Profile | undefined> => this.store.fetchProfile(email)
-    updateUser = (user: Profile): Promise<Profile> => this.store.updateProfile(user)
+    getUser = (email: Email): Promise<Profile> => this.store.fetchProfile(email)
+    updateUser = (user: Profile): Promise<void> => this.store.updateProfile(user)
     getOwners = (id: ProjectId): Promise<Profile[]> => this.store.getOwners(id)
     setOwners = (id: ProjectId, owners: UserId[]): Promise<Profile[]> => this.store.setOwners(id, owners)
 
@@ -137,6 +140,7 @@ export class Supabase implements StorageApi {
 }
 
 export interface SupabaseConf {
+    backendUrl: string
     supabaseUrl: string
     supabaseKey: string
     options?: SupabaseClientOptions

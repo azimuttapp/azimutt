@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo, create, decode, encode, isSample)
+module PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo, create, decode, encode)
 
 import Dict
 import Json.Decode as Decode exposing (Value)
@@ -36,11 +36,6 @@ create project =
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }
-
-
-isSample : ProjectInfo -> Bool
-isSample project =
-    project.id |> String.startsWith "0000"
 
 
 encode : ProjectInfo -> Value

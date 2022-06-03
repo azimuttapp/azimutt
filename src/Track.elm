@@ -12,6 +12,7 @@ import Libs.Result as Result
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -191,7 +192,7 @@ parseSQLEvent parser source =
 
 projectEvent : String -> ProjectInfo -> TrackEvent
 projectEvent eventName project =
-    { name = eventName ++ Bool.cond (ProjectInfo.isSample project) "-sample" "" ++ "-project"
+    { name = eventName ++ Bool.cond (ProjectId.isSample project.id) "-sample" "" ++ "-project"
     , details =
         [ ( "table-count", project.tables |> String.fromInt )
         , ( "relation-count", project.relations |> String.fromInt )

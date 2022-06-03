@@ -15,6 +15,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw
 import Libs.Task as T
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
@@ -138,6 +139,9 @@ uploadModal modalClose moveProjectTo titleId movingProject project =
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "No thanks" ]
             , if movingProject then
                 Button.primary3 Tw.emerald [ disabled True ] [ Icon.loading "animate-spin mr-3", text "Upload to Azimutt" ]
+
+              else if ProjectId.isSample project.id then
+                Button.primary3 Tw.emerald [ disabled True ] [ text "Can't upload samples" ]
 
               else
                 Button.primary3 Tw.emerald [ onClick (moveProjectTo ProjectStorage.Cloud) ] [ text "Upload to Azimutt" ]

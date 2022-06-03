@@ -44,8 +44,8 @@ export class StorageManager implements StorageApi {
         return Promise.reject(`Unable to move project from ${p.storage} to ${storage}`)
     }
 
-    getUser = (email: Email): Promise<Profile | undefined> => this.cloud.getUser(email)
-    updateUser = (user: Profile): Promise<Profile> => this.cloud.updateUser(user)
+    getUser = (email: Email): Promise<Profile> => this.cloud.getUser(email)
+    updateUser = (user: Profile): Promise<void> => this.cloud.updateUser(user)
     getOwners = (id: ProjectId): Promise<Profile[]> => this.cloud.getOwners(id)
     setOwners = (id: ProjectId, owners: UserId[]): Promise<Profile[]> => this.cloud.setOwners(id, owners)
 }
