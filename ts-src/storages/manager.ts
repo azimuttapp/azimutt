@@ -12,18 +12,18 @@ export class StorageManager implements StorageApi {
     public kind: StorageKind = 'manager'
     private browser: Promise<StorageApi>
 
-    constructor(private cloud: Supabase, private logger: Logger) {
+    constructor(private cloud: Supabase, private enableCloud: boolean, private logger: Logger) {
         this.browser = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
     }
 
     listProjects = async (): Promise<ProjectInfo[]> => await Promise.all([
         this.browser.then(s => s.listProjects()),
-        this.cloud.listProjects()
+        this.enableCloud ? this.cloud.listProjects() : Promise.resolve([])
     ]).then(projects => projects.flat())
-    loadProject = (id: ProjectId): Promise<Project> => this.browser.then(s => s.loadProject(id)).catch(_ => this.cloud.loadProject(id))
-    createProject = (p: Project): Promise<Project> => p.storage === 'cloud' ? this.cloud.createProject(p) : this.browser.then(s => s.createProject(p))
-    updateProject = (p: Project): Promise<Project> => p.storage === 'cloud' ? this.cloud.updateProject(p) : this.browser.then(s => s.updateProject(p))
-    dropProject = (p: ProjectInfo): Promise<void> => p.storage === 'cloud' ? this.cloud.dropProject(p) : this.browser.then(s => s.dropProject(p))
+    loadProject = (id: ProjectId): Promise<Project> => this.browser.then(s => s.loadProject(id)).catch(e => this.enableCloud ? this.cloud.loadProject(id) : Promise.reject(e))
+    createProject = (p: Project): Promise<Project> => p.storage === 'cloud' && this.enableCloud ? this.cloud.createProject(p) : this.browser.then(s => s.createProject(p))
+    updateProject = (p: Project): Promise<Project> => p.storage === 'cloud' && this.enableCloud ? this.cloud.updateProject(p) : this.browser.then(s => s.updateProject(p))
+    dropProject = (p: ProjectInfo): Promise<void> => p.storage === 'cloud' && this.enableCloud ? this.cloud.dropProject(p) : this.browser.then(s => s.dropProject(p))
 
     moveProjectTo = async (p: Project, storage: ProjectStorage): Promise<Project> => {
         if (p.storage === ProjectStorage.cloud) {

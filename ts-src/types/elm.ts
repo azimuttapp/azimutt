@@ -16,7 +16,7 @@ import {LoginInfo} from "../services/supabase";
 import {Profile, UserId} from "./profile";
 
 export interface GlobalConf {
-    enableLogin: boolean
+    enableCloud: boolean
 }
 
 export interface ElmFlags {

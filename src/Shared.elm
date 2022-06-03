@@ -16,7 +16,7 @@ type alias Flags =
 
 
 type alias GlobalConf =
-    { enableLogin : Bool }
+    { enableCloud : Bool }
 
 
 type alias Model =

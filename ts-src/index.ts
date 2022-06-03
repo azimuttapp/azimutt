@@ -34,14 +34,14 @@ import {StorageManager} from "./storages/manager";
  */
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
-const conf = {enableLogin: !!localStorage.getItem('enable-login')}
+const conf = {enableCloud: !!localStorage.getItem('enable-cloud')}
 const app = ElmApp.init({now: Date.now(), conf}, logger)
 const supabase = Supabase.init(env).onLogin(user => {
     app.login(user)
     analytics.login(user)
     listProjects()
 }, err => app.toast('error', err))
-const store = new StorageManager(supabase, logger)
+const store = new StorageManager(supabase, conf.enableCloud, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics() : new LogAnalytics(logger)
 const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger() : new LogErrLogger(logger)

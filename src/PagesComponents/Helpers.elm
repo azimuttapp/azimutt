@@ -81,7 +81,7 @@ appShell gConf maybeUser currentRoute onNavigationClick onProfileClick onLogout 
                 }
             , search = Nothing
             , rightIcons =
-                if gConf.enableLogin then
+                if gConf.enableCloud then
                     [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout ]
 
                 else

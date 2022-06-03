@@ -1,8 +1,3 @@
--- TODO: handle updated_by column
--- TODO: forbid change columns: id, created_at, created_by, updated_at, updated_by => https://dev.to/jdgamble555/supabase-date-protection-on-postgresql-1n91
-
--- security definers: https://supabase.com/docs/guides/auth/row-level-security#policies-with-security-definer-functions
-
 -- drop everything
 
 delete from storage.buckets where id='avatars';
@@ -15,8 +10,6 @@ drop table if exists public.profiles;
 delete from auth.users where true;
 
 -- create db
-create extension if not exists moddatetime schema extensions;
-
 create table public.profiles
 (
     id         uuid        not null primary key references auth.users,
@@ -35,18 +28,8 @@ create table public.profiles
 );
 comment on table public.profiles is 'browsable user information';
 comment on column public.profiles.id is 'references the internal supabase auth user';
-create trigger handle_updated_at
-    before update
-    on public.profiles
-    for each row
-execute procedure moddatetime(updated_at);
 alter table public.profiles
     enable row level security;
-create policy "Users can insert their" on public.profiles as permissive for insert to authenticated with check (auth.uid() = id);
-create policy "Users can delete their" on public.profiles as permissive for delete to authenticated using (auth.uid() = id);
-create policy "Users can update their" on public.profiles as permissive for update to authenticated using (auth.uid() = id) with check (auth.uid() = id);
-create policy "Users can select any" on public.profiles as permissive for select to authenticated using (true);
-
 
 create table public.projects
 (
@@ -63,17 +46,8 @@ create table public.projects
     updated_by uuid        not null default auth.uid() references auth.users
 );
 comment on table public.projects is 'list stored projects';
-create trigger handle_updated_at
-    before update
-    on public.projects
-    for each row
-execute procedure moddatetime(updated_at);
 alter table public.projects
     enable row level security;
-create policy "Users can insert" on public.projects as permissive for insert to authenticated with check (true);
-create policy "Owners can delete" on public.projects as permissive for delete to authenticated using (auth.uid() = any (owners));
-create policy "Owners can update" on public.projects as permissive for update to authenticated using (auth.uid() = any (owners)) with check (auth.uid() = any (owners));
-create policy "Owners can select" on public.projects as permissive for select to authenticated using (auth.uid() = any (owners));
 
 
 insert into storage.buckets (id, name)

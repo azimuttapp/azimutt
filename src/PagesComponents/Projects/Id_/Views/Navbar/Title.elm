@@ -32,7 +32,7 @@ import Shared exposing (GlobalConf)
 viewNavbarTitle : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarTitle gConf eConf projects project usedLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
-        ([ if gConf.enableLogin then
+        ([ if gConf.enableCloud then
             button [ onClick (ProjectUploadDialogMsg ProjectUploadDialog.Open), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
                 [ Icon.outline (B.cond (project.storage == ProjectStorage.Browser) CloudUpload Cloud) ""
                 ]

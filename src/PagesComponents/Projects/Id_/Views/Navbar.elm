@@ -102,7 +102,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
-                        , if gConf.enableLogin then
+                        , if gConf.enableCloud then
                             Helpers.viewProfileIcon maybeUser (Route.Projects__Id_ { id = erd.project.id }) (htmlId ++ "-profile") openedDropdown DropdownToggle Logout
 
                           else
