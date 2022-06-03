@@ -15,8 +15,13 @@ import {
 import {LoginInfo} from "../services/supabase";
 import {Profile, UserId} from "./profile";
 
+export interface GlobalConf {
+    enableLogin: boolean
+}
+
 export interface ElmFlags {
     now: Timestamp
+    conf: GlobalConf
 }
 
 export interface ElmInit {

@@ -34,7 +34,8 @@ import {StorageManager} from "./storages/manager";
  */
 const env = Utils.getEnv()
 const logger = new ConsoleLogger(env)
-const app = ElmApp.init({now: Date.now()}, logger)
+const conf = {enableLogin: !!localStorage.getItem('enable-login')}
+const app = ElmApp.init({now: Date.now(), conf}, logger)
 const supabase = Supabase.init(env).onLogin(user => {
     app.login(user)
     analytics.login(user)

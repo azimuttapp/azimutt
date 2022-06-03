@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
+module PagesComponents.Projects.Id_.Views.Navbar exposing (NavbarArgs, argsToString, viewNavbar)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -34,24 +34,47 @@ import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
+import Shared exposing (GlobalConf)
 
 
 type alias Btn msg =
     { action : Either String msg, content : Html msg, hotkey : Maybe Hotkey }
 
 
-viewNavbar : Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> HtmlId -> HtmlId -> Html Msg
-viewNavbar maybeUser conf virtualRelation erd projects model htmlId openedDropdown =
+type alias NavbarArgs =
+    String
+
+
+argsToString : HtmlId -> HtmlId -> NavbarArgs
+argsToString htmlId openedDropdown =
+    htmlId ++ "#" ++ openedDropdown
+
+
+stringToArgs : NavbarArgs -> ( HtmlId, HtmlId )
+stringToArgs args =
+    case args |> String.split "#" of
+        [ htmlId, openedDropdown ] ->
+            ( htmlId, openedDropdown )
+
+        _ ->
+            ( "", "" )
+
+
+viewNavbar : GlobalConf -> Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
+viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
     let
+        ( htmlId, openedDropdown ) =
+            stringToArgs args
+
         features : List (Btn Msg)
         features =
-            [ Maybe.when conf.layoutManagement { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
+            [ Maybe.when eConf.layoutManagement { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
             , Just
                 (virtualRelation
                     |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
                     |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
                 )
-            , Maybe.when conf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
+            , Maybe.when eConf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
             , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkey = Nothing }
             , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkey = Nothing }
             ]
@@ -65,21 +88,25 @@ viewNavbar maybeUser conf virtualRelation erd projects model htmlId openedDropdo
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
-                    [ viewNavbarBrand conf
+                    [ viewNavbarBrand eConf
                     , Lazy.lazy6 viewNavbarSearch model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
                 , div [ class "flex-1 flex justify-center px-2" ]
-                    [ Lazy.lazy7 viewNavbarTitle conf projects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
+                    [ Lazy.lazy8 viewNavbarTitle gConf eConf projects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
                     [ div [ class "flex items-center print:hidden" ]
                         [ viewNavbarResetLayout canResetCanvas
                         , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
-                        , B.cond conf.sharing viewNavbarShare Html.none
+                        , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
-                        , Helpers.viewProfileIcon maybeUser (Route.Projects__Id_ { id = erd.project.id }) (htmlId ++ "-profile") openedDropdown DropdownToggle Logout
+                        , if gConf.enableLogin then
+                            Helpers.viewProfileIcon maybeUser (Route.Projects__Id_ { id = erd.project.id }) (htmlId ++ "-profile") openedDropdown DropdownToggle Logout
+
+                          else
+                            div [] []
                         ]
                     ]
                 ]

@@ -21,6 +21,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
 import Models.User as User exposing (User)
 import Router
+import Shared exposing (GlobalConf)
 
 
 publicHeader : Html msg
@@ -54,7 +55,8 @@ publicFooter =
 
 
 appShell :
-    Maybe User
+    GlobalConf
+    -> Maybe User
     -> Route
     -> (Link -> msg)
     -> (HtmlId -> msg)
@@ -64,7 +66,7 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model title content footer =
+appShell gConf maybeUser currentRoute onNavigationClick onProfileClick onLogout model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -78,7 +80,12 @@ appShell maybeUser currentRoute onNavigationClick onProfileClick onLogout model 
                 , onClick = onNavigationClick
                 }
             , search = Nothing
-            , rightIcons = [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout ]
+            , rightIcons =
+                if gConf.enableLogin then
+                    [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout ]
+
+                else
+                    []
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown

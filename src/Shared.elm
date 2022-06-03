@@ -1,4 +1,4 @@
-module Shared exposing (Confirm, Flags, Model, Msg, Prompt, StoredProjects(..), init, subscriptions, update)
+module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, StoredProjects(..), init, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
@@ -12,12 +12,17 @@ import Time
 
 
 type alias Flags =
-    { now : Int }
+    { now : Int, conf : GlobalConf }
+
+
+type alias GlobalConf =
+    { enableLogin : Bool }
 
 
 type alias Model =
     { zone : Time.Zone
     , now : Time.Posix
+    , conf : GlobalConf
     , user : Maybe User
     , projects : StoredProjects
     }
@@ -64,6 +69,7 @@ init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
+      , conf = flags.conf
       , user = Nothing
       , projects = Loading
       }

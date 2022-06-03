@@ -3,6 +3,7 @@ module PagesComponents.Projects.Id_.Components.ProjectUploadDialog exposing (Mod
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
+import Components.Molecules.Alert as Alert
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Gen.Route as Route
@@ -132,10 +133,11 @@ uploadModal modalClose moveProjectTo titleId movingProject project =
                         , bText "share it with your colleagues"
                         , text "."
                         ]
+                    , div [ class "mt-5" ] [ Alert.simple Tw.blue InformationCircle [ text "This is a BETA feature. It's here so you can try it but it may change at any time." ] ]
                     ]
                 ]
             ]
-        , div [ class "mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
+        , div [ class "mt-5 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "No thanks" ]
             , if movingProject then
                 Button.primary3 Tw.emerald [ disabled True ] [ Icon.loading "animate-spin mr-3", text "Upload to Azimutt" ]

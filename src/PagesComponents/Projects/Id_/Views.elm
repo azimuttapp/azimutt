@@ -31,7 +31,7 @@ import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSc
 import PagesComponents.Projects.Id_.Views.Modals.Sharing exposing (viewSharing)
 import PagesComponents.Projects.Id_.Views.Modals.SourceParsing exposing (viewSourceParsing)
 import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
-import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
+import PagesComponents.Projects.Id_.Views.Navbar as Navbar exposing (viewNavbar)
 import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
@@ -67,7 +67,7 @@ viewApp : Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
 viewApp shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy8 viewNavbar shared.user model.conf model.virtualRelation erd model.projects model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd model.projects model.navbar (Navbar.argsToString (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
 
           else
             div [] []

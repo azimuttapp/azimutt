@@ -32,7 +32,8 @@ import Track
 
 viewProjects : Route -> Shared.Model -> Model -> List (Html Msg)
 viewProjects currentRoute shared model =
-    appShell shared.user
+    appShell shared.conf
+        shared.user
         currentRoute
         (\link -> SelectMenu link.text)
         DropdownToggle
@@ -49,7 +50,7 @@ viewContent : Shared.Model -> Model -> Html Msg
 viewContent shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
-        , if shared.user == Nothing then
+        , if shared.conf.enableLogin && shared.user == Nothing then
             div [ class "mt-3" ]
                 [ Alert.withActions
                     { color = Tw.blue

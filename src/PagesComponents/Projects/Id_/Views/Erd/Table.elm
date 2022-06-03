@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToString, stringToArgs, viewTable)
+module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToString, viewTable)
 
 import Components.Molecules.ContextMenu exposing (ItemAction(..))
 import Components.Organisms.Table as Table

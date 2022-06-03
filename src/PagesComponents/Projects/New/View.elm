@@ -24,19 +24,20 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
-import Models.User exposing (User)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.ProjectImport as ProjectImport exposing (ProjectImport)
 import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload)
 import Services.Toasts as Toasts
+import Shared
 import Time
 
 
-viewNewProject : Time.Zone -> Maybe User -> Route -> Model -> List (Html Msg)
-viewNewProject zone user currentRoute model =
-    appShell user
+viewNewProject : Shared.Model -> Route -> Model -> List (Html Msg)
+viewNewProject shared currentRoute model =
+    appShell shared.conf
+        shared.user
         currentRoute
         (\link -> SelectMenu link.text)
         DropdownToggle
@@ -44,7 +45,7 @@ viewNewProject zone user currentRoute model =
         model
         [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
-            zone
+            shared.zone
             model
             { tabs =
                 [ { tab = Schema, icon = Icon.DocumentText, content = [ text "From SQL schema" ] }
