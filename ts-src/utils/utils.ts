@@ -7,8 +7,8 @@ export const Utils = {
             window.location.hostname === 'azimutt.app' ? 'prod' :
                 'staging'
     },
-    randomUID() {
-        return window.uuidv4()
+    randomId() {
+        return crypto.randomUUID()
     },
     getElementById(id: HtmlId): HTMLElement {
         const elem = document.getElementById(id)

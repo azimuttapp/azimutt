@@ -21,9 +21,9 @@ export class Conf {
 
 const supabase: { [env in Env]: SupabaseConf } = {
     dev: {
-        backendUrl: 'http://localhost:3000',
-        supabaseUrl: 'http://localhost:54321',
-        supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24ifQ.625_WdcF3KHqz5amU0x2X5WWHP-OEs_4qj0ssLNHzTs',
+        backendUrl: 'https://azimutt-staging.onrender.com', // 'http://localhost:3000',
+        supabaseUrl: 'https://ywieybitcnbtklzsfxgd.supabase.co', // 'http://localhost:54321',
+        supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE', // 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24ifQ.625_WdcF3KHqz5amU0x2X5WWHP-OEs_4qj0ssLNHzTs',
     },
     staging: {
         backendUrl: 'https://azimutt-staging.onrender.com',
@@ -31,7 +31,7 @@ const supabase: { [env in Env]: SupabaseConf } = {
         supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE',
     },
     prod: {
-        backendUrl: 'https://api.azimutt.app',
+        backendUrl: 'https://azimutt.onrender.com', // 'https://api.azimutt.app',
         supabaseUrl: 'https://xkwctrduvpdgjarqzjkc.supabase.co',
         supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhrd2N0cmR1dnBkZ2phcnF6amtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTIwMjc0OTgsImV4cCI6MTk2NzYwMzQ5OH0.f5W1-tXT64Ih0TG7LDDxyfTJ6Jh9ta4slet8fnkumKo',
     }

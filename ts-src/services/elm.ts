@@ -94,16 +94,16 @@ export class ElmApp {
     gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
         now: Date.now(),
-        projectId: msg.project || Utils.randomUID(),
-        sourceId: msg.source || Utils.randomUID(),
+        projectId: msg.project || Utils.randomId(),
+        sourceId: msg.source || Utils.randomId(),
         file: msg.file,
         content
     })
     gotRemoteFile = (msg: GetRemoteFileMsg, content: string): void => this.send({
         kind: 'GotRemoteFile',
         now: Date.now(),
-        projectId: msg.project || Utils.randomUID(),
-        sourceId: msg.source || Utils.randomUID(),
+        projectId: msg.project || Utils.randomId(),
+        sourceId: msg.source || Utils.randomId(),
         url: msg.url,
         content,
         sample: msg.sample
