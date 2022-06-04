@@ -56,9 +56,7 @@ export class IndexedDBStorage implements StorageApi {
                 if (project) {
                     return Promise.reject(`Project ${p.id} already exists in ${this.kind}`)
                 } else {
-                    const now = Date.now()
-                    const prj = {...p, createdAt: now, updatedAt: now}
-                    return reqToPromise(store.add(prj)).then(_ => prj)
+                    return reqToPromise(store.add(p)).then(_ => p)
                 }
             })
         })
@@ -67,8 +65,7 @@ export class IndexedDBStorage implements StorageApi {
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, p.id).then(project => {
                 if (project) {
-                    const prj = {...p, updatedAt: Date.now()}
-                    return reqToPromise(store.put(prj)).then(_ => prj)
+                    return reqToPromise(store.put(p)).then(_ => p)
                 } else {
                     return Promise.reject(`Project ${p.id} doesn't exists in ${this.kind}`)
                 }

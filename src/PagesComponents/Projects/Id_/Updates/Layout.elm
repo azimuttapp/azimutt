@@ -55,7 +55,7 @@ createLayout name now erd =
     erd.layouts
         |> Dict.get name
         |> Maybe.mapOrElse
-            (\_ -> ( erd, Cmd.batch [ Toasts.error Toast ("Layout " ++ name ++ " already exists") ] ))
+            (\_ -> ( erd, Toasts.error Toast ("Layout " ++ name ++ " already exists") ))
             (let
                 layout : Layout
                 layout =

@@ -1,8 +1,7 @@
 module Models.Project.ProjectId exposing (ProjectId, decode, encode, isSample)
 
-import Json.Decode as Decode
-import Json.Encode as Encode exposing (Value)
-import Libs.Models exposing (Uuid)
+import Json.Decode as Decode exposing (Value)
+import Libs.Models.Uuid as Uuid exposing (Uuid)
 
 
 type alias ProjectId =
@@ -16,9 +15,9 @@ isSample id =
 
 encode : ProjectId -> Value
 encode value =
-    Encode.string value
+    Uuid.encode value
 
 
 decode : Decode.Decoder ProjectId
 decode =
-    Decode.string
+    Uuid.decode

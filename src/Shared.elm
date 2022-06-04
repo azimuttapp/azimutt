@@ -73,7 +73,7 @@ init _ flags =
       , user = Nothing
       , projects = Loading
       }
-    , Cmd.batch [ Time.here |> Task.perform ZoneChanged ]
+    , Task.perform ZoneChanged Time.here
     )
 
 

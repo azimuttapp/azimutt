@@ -1,10 +1,12 @@
 module PagesComponents.Login.View exposing (viewLogin)
 
 import Components.Atoms.Icon as Icon
+import Conf
 import Gen.Route as Route
-import Html exposing (Html, a, button, div, h1, hr, img, input, nav, p, span, text)
+import Html exposing (Html, a, b, button, div, h1, hr, img, input, nav, p, span, text)
 import Html.Attributes exposing (alt, attribute, class, disabled, href, name, placeholder, required, src, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
 import PagesComponents.Login.Models exposing (Model, Msg(..))
 import Ports exposing (LoginInfo(..))
@@ -21,7 +23,8 @@ viewLogin model =
                 , description
                 , cta
                 , magicLinkLogin model
-                , legal
+
+                --, legal
                 , hr [ class "mt-16 max-w-[75px] border-zinc-500 sm:mx-auto" ] []
                 , footer
                 ]
@@ -41,7 +44,8 @@ logo =
 navCta : Html Msg
 navCta =
     div [ class "flex items-center space-x-3 ml-3" ]
-        [ a [ href "https://github.com/azimuttapp/azimutt/projects/1", class "text-sm text-slate-600 hover:text-slate-900" ]
+        [ extLink Conf.constants.azimuttRoadmap
+            [ class "text-sm text-slate-600 hover:text-slate-900" ]
             [ text "Roadmap" ]
         , button [ onClick (Login Github), css [ "inline-flex items-center space-x-2 bg-primary-600 text-white text-xs rounded shadow-sm px-2.5 py-1 outline-none outline-0 transition transition-all ease-out duration-200 hover:bg-primary-800" ] ]
             [ Icon.github2 14
@@ -53,8 +57,8 @@ navCta =
 heading : Html msg
 heading =
     h1 [ class "text-3xl" ]
-        [ text "Database tool that "
-        , span [ class "text-primary-700 whitespace-nowrap" ] [ text "empowers you" ]
+        [ text "The database tool that "
+        , b [ class "text-primary-700 whitespace-nowrap" ] [ text "empowers you" ]
         , text "."
         ]
 
@@ -62,7 +66,7 @@ heading =
 description : Html msg
 description =
     p [ class "text-slate-600 mb-10 mt-5 sm:mx-auto sm:max-w-2xl" ]
-        [ text "Explore your database like never before. Search in schema, follow relations, find path, save layouts, identify design smells and much more. Works well with thousands tables." ]
+        [ text "Explore your database like ", bText "never before", text ". Search, follow relations, find path, save layouts, identify design smells and much more. Works well with thousands of tables." ]
 
 
 cta : Html Msg
@@ -92,22 +96,23 @@ magicLinkLogin model =
         div [] []
 
 
-legal : Html msg
-legal =
-    div [ class "sm:text-center" ]
-        [ p [ class "text-slate-400 mt-8 mb-5 text-xs sm:mx-auto sm:max-w-sm" ]
-            [ text "By continuing, you agree to Azimutt's "
-            , a [ class "underline hover:text-slate-600", href "#" ] [ text "Terms of Service" ]
-            , text " and "
-            , a [ class "underline hover:text-slate-600", href "#" ] [ text "Privacy Policy" ]
-            , text ", and to receive periodic emails with updates."
-            ]
-        ]
+
+--legal : Html msg
+--legal =
+--    div [ class "sm:text-center" ]
+--        [ p [ class "text-slate-400 mt-8 mb-5 text-xs sm:mx-auto sm:max-w-sm" ]
+--            [ text "By continuing, you agree to Azimutt's "
+--            , a [ class "underline hover:text-slate-600", href "#" ] [ text "Terms of Service" ]
+--            , text " and "
+--            , a [ class "underline hover:text-slate-600", href "#" ] [ text "Privacy Policy" ]
+--            , text ", and to receive periodic emails with updates."
+--            ]
+--        ]
 
 
 footer : Html msg
 footer =
     div [ class "sm:text-center" ]
-        [ p [ class "mt-16 mb-5 text-slate-900 sm:mx-auto sm:max-w-2xl" ] [ text "You have specific needs regarding your database management?" ]
-        , a [ href "#" ] [ text "Let's talk!" ]
+        [ p [ class "mt-16 mb-5 text-slate-400 sm:mx-auto sm:max-w-2xl" ] [ text "You have specific needs regarding your database management?" ]
+        , a [ class "text-slate-800", href ("mailto:" ++ Conf.constants.azimuttEmail) ] [ text "Let's talk!" ]
         ]

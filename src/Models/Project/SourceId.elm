@@ -1,8 +1,7 @@
 module Models.Project.SourceId exposing (SourceId, decode, encode, new, toString)
 
-import Json.Decode as Decode
-import Json.Encode as Encode exposing (Value)
-import Libs.Models exposing (Uuid)
+import Json.Decode as Decode exposing (Value)
+import Libs.Models.Uuid as Uuid exposing (Uuid)
 
 
 type SourceId
@@ -21,9 +20,9 @@ toString (SourceId id) =
 
 encode : SourceId -> Value
 encode value =
-    value |> toString |> Encode.string
+    value |> toString |> Uuid.encode
 
 
 decode : Decode.Decoder SourceId
 decode =
-    Decode.string |> Decode.map new
+    Uuid.decode |> Decode.map new

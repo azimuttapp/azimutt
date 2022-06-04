@@ -7,9 +7,9 @@ import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
-import Libs.Models exposing (Uuid)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
+import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)

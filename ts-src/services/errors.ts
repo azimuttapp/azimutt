@@ -1,15 +1,16 @@
 import {Logger} from "./logger";
 import * as Sentry from "@sentry/browser";
 import {BrowserTracing} from "@sentry/tracing";
+import {SentryConf} from "../conf";
 
 export interface ErrLogger {
     trackError: (name: string, details?: object) => void
 }
 
 export class SentryErrLogger implements ErrLogger {
-    constructor() {
+    constructor(conf: SentryConf) {
         Sentry.init({
-            dsn: "https://268b122ecafb4f20b6316b87246e509c@o937148.ingest.sentry.io/5887547",
+            dsn: conf.dsn,
             integrations: [new BrowserTracing()],
             tracesSampleRate: 1.0,
         })

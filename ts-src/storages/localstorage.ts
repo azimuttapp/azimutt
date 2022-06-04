@@ -26,8 +26,7 @@ export class LocalStorageStorage implements StorageApi {
     createProject = (p: Project): Promise<Project> => {
         const key = this.prefix + p.id
         if (this.storage.getItem(key) === null) {
-            const now = Date.now()
-            return this.setProject(key, {...p, createdAt: now, updatedAt: now})
+            return this.setProject(key, p)
         } else {
             return Promise.reject(`Project ${p.id} already exists in ${this.kind}`)
         }
@@ -37,7 +36,7 @@ export class LocalStorageStorage implements StorageApi {
         if (this.storage.getItem(key) === null) {
             return Promise.reject(`Project ${p.id} doesn't exists in ${this.kind}`)
         } else {
-            return this.setProject(key, {...p, updatedAt: Date.now()})
+            return this.setProject(key, p)
         }
     }
     dropProject = (p: ProjectInfo): Promise<void> => {

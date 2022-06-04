@@ -2,6 +2,7 @@ import {Logger} from "./logger";
 import splitbee from '@splitbee/web';
 import {Data} from "../types/elm";
 import {Profile} from "../types/profile";
+import {SplitbeeConf} from "../conf";
 
 export interface Analytics {
     trackPage: (name: string) => void
@@ -12,11 +13,8 @@ export interface Analytics {
 }
 
 export class SplitbeeAnalytics implements Analytics {
-    constructor() {
-        splitbee.init({
-            scriptUrl: "https://azimutt.app/bee.js",
-            apiUrl: "https://azimutt.app/_hive"
-        })
+    constructor(conf: SplitbeeConf) {
+        splitbee.init(conf)
     }
 
     trackPage = (name: string): void => { /* automatically tracked, do nothing */

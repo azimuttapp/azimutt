@@ -21,8 +21,15 @@ export class StorageManager implements StorageApi {
         this.enableCloud ? this.cloud.listProjects() : Promise.resolve([])
     ]).then(projects => projects.flat())
     loadProject = (id: ProjectId): Promise<Project> => this.browser.then(s => s.loadProject(id)).catch(e => this.enableCloud ? this.cloud.loadProject(id) : Promise.reject(e))
-    createProject = (p: Project): Promise<Project> => p.storage === 'cloud' && this.enableCloud ? this.cloud.createProject(p) : this.browser.then(s => s.createProject(p))
-    updateProject = (p: Project): Promise<Project> => p.storage === 'cloud' && this.enableCloud ? this.cloud.updateProject(p) : this.browser.then(s => s.updateProject(p))
+    createProject = ({storage, ...p}: Project): Promise<Project> => {
+        const now = Date.now()
+        const prj = {...p, createdAt: now, updatedAt: now}
+        return storage === 'cloud' && this.enableCloud ? this.cloud.createProject(prj) : this.browser.then(s => s.createProject(prj))
+    }
+    updateProject = ({storage, ...p}: Project): Promise<Project> => {
+        const prj = {...p, updatedAt: Date.now()}
+        return storage === 'cloud' && this.enableCloud ? this.cloud.updateProject(prj) : this.browser.then(s => s.updateProject(prj))
+    }
     dropProject = (p: ProjectInfo): Promise<void> => p.storage === 'cloud' && this.enableCloud ? this.cloud.dropProject(p) : this.browser.then(s => s.dropProject(p))
 
     moveProjectTo = async (p: Project, storage: ProjectStorage): Promise<Project> => {

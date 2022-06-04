@@ -15,10 +15,6 @@ import Router
 import Shared
 
 
-
--- from https://tailwindui.com/components/application-ui/page-examples/settings-screens
-
-
 viewProfile : Shared.Model -> Model -> List (Html Msg)
 viewProfile shared model =
     let
@@ -38,7 +34,7 @@ viewProfile shared model =
                         |> Maybe.mapOrElse
                             (\user ->
                                 div [ class "divide-y divide-gray-200 lg:grid lg:grid-cols-12 lg:divide-y-0 lg:divide-x" ]
-                                    [ asideMenus Tw.teal
+                                    [ asideMenus color
                                     , form [ class "divide-y divide-gray-200 lg:col-span-9", action "#", method "POST", onSubmit (Noop "submit-form") ]
                                         [ profileForm color user
                                         , formButtons color shared.user model.user

@@ -1,38 +1,14 @@
 import {AuthChangeEvent, createClient, Session, SupabaseClient} from "@supabase/supabase-js";
 import {User as SupabaseUser, UserCredentials} from "@supabase/gotrue-js/src/lib/types";
 import {Profile, UserId} from "../types/profile";
-import {SupabaseClientOptions} from "@supabase/supabase-js/src/lib/types";
 import {Project, ProjectId, ProjectInfo} from "../types/project";
 import {StorageApi, StorageKind} from "../storages/api";
-import {Email, Env} from "../types/basics";
+import {Email} from "../types/basics";
 import {SupabaseStorage} from "../storages/supabase";
+import {SupabaseConf} from "../conf";
 
 export class Supabase implements StorageApi {
-    // https://supabase.com/docs/guides/local-development
-    static conf: { [env in Env]: SupabaseConf } = {
-        dev: {
-            backendUrl: 'http://localhost:3000',
-            supabaseUrl: 'http://localhost:54321',
-            // dbUrl: 'postgresql://postgres:postgres@localhost:54322/postgres',
-            // studioUrl: 'http://localhost:54323',
-            // inbucketUrl: 'http://localhost:54324',
-            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24ifQ.625_WdcF3KHqz5amU0x2X5WWHP-OEs_4qj0ssLNHzTs',
-            // serviceRoleKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSJ9.vI9obAHOGyVVKa3pD--kJlyxp-Z2zV9UUMAhKpNLAcU',
-        },
-        staging: {
-            backendUrl: 'https://azimutt-staging.onrender.com',
-            supabaseUrl: 'https://ywieybitcnbtklzsfxgd.supabase.co',
-            supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE',
-        },
-        prod: {
-            backendUrl: '',
-            supabaseUrl: '',
-            supabaseKey: '',
-        }
-    }
-
-    static init(env: Env): Supabase {
-        const {backendUrl, supabaseUrl, supabaseKey, options} = this.conf[env]
+    static init({backendUrl, supabaseUrl, supabaseKey, options}: SupabaseConf): Supabase {
         return new Supabase(createClient(supabaseUrl, supabaseKey, options), backendUrl)
     }
 
@@ -110,12 +86,12 @@ export class Supabase implements StorageApi {
         return this
     }
 
-    // deleteAccount = (): Promise<void> => this.supabase.auth.update({data: {deleted_at: Date.now()}})
+    // FIXME deleteAccount = (): Promise<void> => this.supabase.auth.update({data: {deleted_at: Date.now()}})
 
     kind: StorageKind = 'supabase'
     listProjects = (): Promise<ProjectInfo[]> => this.waitLogin(500, _ => this.store.getProjects(), () => Promise.resolve([]))
     loadProject = (id: ProjectId): Promise<Project> => this.waitLogin(500, _ => this.store.getProject(id))
-    createProject = (p: Project): Promise<Project> => this.waitLogin(500, u => this.store.createProject(p))
+    createProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.createProject(p))
     updateProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.updateProject(p))
     dropProject = (p: ProjectInfo): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(p))
 
@@ -137,13 +113,6 @@ export class Supabase implements StorageApi {
             return failure()
         }
     }
-}
-
-export interface SupabaseConf {
-    backendUrl: string
-    supabaseUrl: string
-    supabaseKey: string
-    options?: SupabaseClientOptions
 }
 
 export type LoginInfo = { kind: 'Github' } | { kind: 'MagicLink', email: Email }

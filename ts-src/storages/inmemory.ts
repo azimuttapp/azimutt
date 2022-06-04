@@ -13,17 +13,14 @@ export class InMemoryStorage implements StorageApi {
         if(this.projects[p.id]) {
             return Promise.reject(`Project ${p.id} already exists in ${this.kind}`)
         } else {
-            const now = Date.now()
-            const prj = {...p, createdAt: now, updatedAt: now}
-            this.projects[p.id] = prj
-            return Promise.resolve(prj)
+            this.projects[p.id] = p
+            return Promise.resolve(p)
         }
     }
     updateProject = (p: Project): Promise<Project> => {
         if(this.projects[p.id]) {
-            const prj = {...p, updatedAt: Date.now()}
-            this.projects[p.id] = prj
-            return Promise.resolve(prj)
+            this.projects[p.id] = p
+            return Promise.resolve(p)
         } else {
             return Promise.reject(`Project ${p.id} doesn't exists in ${this.kind}`)
         }

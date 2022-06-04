@@ -19,32 +19,22 @@ import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
 import {Supabase} from "./services/supabase";
 import {StorageManager} from "./storages/manager";
+import {Conf} from "./conf";
 
-/*
- * TODO:
- *  - embed remote project
- *  - change avatar from profile page
- *  - login/redirect on embed
- *  - remove current layout
- *  - layout origin is center (not top-left)
- *  - bug: what if local and remote project have the same id?
- *  - improvement: when listen JsMsg add toast if msg is not handled (not supported, should never happen)
- *  - improvements: with backend: send notification email on sharing + ask for ownership on not found & logged
- *  - improvement: user rights (owner, write, read)
- */
 const env = Utils.getEnv()
+const conf = Conf.get(env)
 const logger = new ConsoleLogger(env)
-const conf = {enableCloud: !!localStorage.getItem('enable-cloud')}
-const app = ElmApp.init({now: Date.now(), conf}, logger)
-const supabase = Supabase.init(env).onLogin(user => {
+const fs = {enableCloud: !!localStorage.getItem('enable-cloud')}
+const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
+const supabase = Supabase.init(conf.supabase).onLogin(user => {
     app.login(user)
     analytics.login(user)
     listProjects()
 }, err => app.toast('error', err))
-const store = new StorageManager(supabase, conf.enableCloud, logger)
+const store = new StorageManager(supabase, fs.enableCloud, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics() : new LogAnalytics(logger)
-const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger() : new LogErrLogger(logger)
+const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
+const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +

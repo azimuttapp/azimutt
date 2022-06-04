@@ -53,7 +53,7 @@ init shared =
             { title = Just (title shared)
             , description = Just (shared.user |> Maybe.andThen .bio |> Maybe.withDefault Conf.constants.defaultDescription)
             , canonical = Just { route = Route.Profile, query = Dict.empty }
-            , html = Nothing
+            , html = Just ""
             , body = Just "antialiased font-sans bg-gray-100"
             }
         , Ports.trackPage "profile"

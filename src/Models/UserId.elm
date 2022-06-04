@@ -1,8 +1,7 @@
 module Models.UserId exposing (UserId, decode, encode)
 
 import Json.Decode as Decode exposing (Value)
-import Json.Encode as Encode
-import Libs.Models exposing (Uuid)
+import Libs.Models.Uuid as Uuid exposing (Uuid)
 
 
 type alias UserId =
@@ -11,9 +10,9 @@ type alias UserId =
 
 encode : UserId -> Value
 encode value =
-    Encode.string value
+    Uuid.encode value
 
 
 decode : Decode.Decoder UserId
 decode =
-    Decode.string
+    Uuid.decode

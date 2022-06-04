@@ -56,18 +56,16 @@ export class SupabaseStorage {
     }
     createProject = async (p: Project): Promise<Project> => {
         if (isSample(p)) return Promise.reject("Sample projects can't be uploaded!")
-        const now = Date.now()
-        const prj = {...p, createdAt: now, updatedAt: now}
         await this.post(`/projects`, {
             id: p.id,
             name: p.name,
             tables: computeTables(p.sources),
             relations: computeRelations(p.sources),
             layouts: Object.keys(p.layouts).length,
-            project: prj
+            project: p
         })
-        this.projects[p.id] = prj
-        return prj
+        this.projects[p.id] = p
+        return p
     }
     updateProject = async (p: Project): Promise<Project> => {
         const initial = this.projects[p.id]
@@ -82,17 +80,16 @@ export class SupabaseStorage {
                 return Promise.reject("Project has been updated by another user and can't be patched!")
             }
         }
-        const prj = {...p, updatedAt: Date.now()}
         this.put(`/projects/${p.id}`, {
             id: p.id,
             name: p.name,
             tables: computeTables(p.sources),
             relations: computeRelations(p.sources),
             layouts: Object.keys(p.layouts).length,
-            project: prj
+            project: p
         })
-        this.projects[p.id] = prj
-        return prj
+        this.projects[p.id] = p
+        return p
     }
     dropProject = async (p: ProjectInfo): Promise<void> => {
         await this.delete(`/projects/${p.id}`)
