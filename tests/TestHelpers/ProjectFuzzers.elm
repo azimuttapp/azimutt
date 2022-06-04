@@ -46,7 +46,7 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
-import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, zoomLevel)
+import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, uuid, zoomLevel)
 
 
 project : Fuzzer Project
@@ -179,7 +179,7 @@ projectStorage =
 
 projectId : Fuzzer ProjectId
 projectId =
-    identifier
+    uuid
 
 
 projectName : Fuzzer ProjectName
@@ -189,7 +189,7 @@ projectName =
 
 sourceId : Fuzzer SourceId
 sourceId =
-    identifier |> Fuzz.map SourceId.new
+    uuid |> Fuzz.map SourceId.new
 
 
 sourceName : Fuzzer SourceName

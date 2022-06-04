@@ -2,9 +2,9 @@ module PagesComponents.Profile.View exposing (viewProfile)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Gen.Route as Route
-import Html exposing (Html, a, aside, button, div, form, h1, h2, header, img, input, label, main_, nav, p, span, text, textarea)
-import Html.Attributes exposing (action, alt, attribute, class, disabled, for, href, id, method, name, placeholder, rows, src, tabindex, type_, value)
-import Html.Events exposing (onClick, onInput, onSubmit)
+import Html exposing (Html, a, aside, button, div, h1, h2, header, img, input, label, main_, nav, p, span, text, textarea)
+import Html.Attributes exposing (alt, attribute, class, disabled, for, href, id, name, placeholder, rows, src, tabindex, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabelledby, ariaOrientation, css, role, styles)
 import Libs.Maybe as Maybe
@@ -35,7 +35,7 @@ viewProfile shared model =
                             (\user ->
                                 div [ class "divide-y divide-gray-200 lg:grid lg:grid-cols-12 lg:divide-y-0 lg:divide-x" ]
                                     [ asideMenus color
-                                    , form [ class "divide-y divide-gray-200 lg:col-span-9", action "#", method "POST", onSubmit (Noop "submit-form") ]
+                                    , div [ class "divide-y divide-gray-200 lg:col-span-9" ]
                                         [ profileForm color user
                                         , formButtons color shared.user model.user
                                         ]
@@ -150,10 +150,11 @@ navbar color model =
                                 [ Icon.outline Icon.User ""
                                 , span [ class "ml-1" ] [ text "Sign in" ]
                                 ]
-                            , button [ type_ "button", css [ text_200 color, "ml-auto flex-shrink-0 rounded-full p-1", hover [ bg_800 color, "text-white" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ] ]
-                                [ span [ class "sr-only" ] [ text "View notifications" ]
-                                , Icon.outline Bell "ml-1"
-                                ]
+
+                            --, button [ type_ "button", css [ text_200 color, "ml-auto flex-shrink-0 rounded-full p-1", hover [ bg_800 color, "text-white" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ] ]
+                            --    [ span [ class "sr-only" ] [ text "View notifications" ]
+                            --    , Icon.outline Bell "ml-1"
+                            --    ]
                             ]
                         ]
                 )

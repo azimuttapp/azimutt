@@ -72,12 +72,11 @@ export class SupabaseStorage {
         const current = await this.get<Project>(`/projects/${p.id}`)
         if (initial.updatedAt !== current.updatedAt) {
             try {
-                // always erase the current layout
-                const patch = jiff.diff({...initial, layout: p.layout}, p)
-                p = jiff.patch(patch, {...current, layout: p.layout})
+                const patch = jiff.diff(initial, p)
+                p = jiff.patch(patch, current)
             } catch (e) {
                 console.warn('patch failed', e)
-                return Promise.reject("Project has been updated by another user and can't be patched!")
+                return Promise.reject("Project has been updated by another user! Please reload and save again (you will have to do you changes again).")
             }
         }
         this.put(`/projects/${p.id}`, {

@@ -14,8 +14,8 @@ import Models.Username as Username exposing (Username)
 
 type alias User =
     { id : UserId
-    , email : Email
     , username : Username
+    , email : Email
     , name : String
     , avatar : Maybe String
     , bio : Maybe String
@@ -36,8 +36,8 @@ encode : User -> Value
 encode value =
     Encode.notNullObject
         [ ( "id", value.id |> UserId.encode )
-        , ( "email", value.email |> Email.encode )
         , ( "username", value.username |> Username.encode )
+        , ( "email", value.email |> Email.encode )
         , ( "name", value.name |> Encode.string )
         , ( "avatar", value.avatar |> Encode.maybe Encode.string )
         , ( "bio", value.bio |> Encode.maybe Encode.string )
@@ -53,8 +53,8 @@ decode : Decode.Decoder User
 decode =
     Decode.map11 User
         (Decode.field "id" Decode.string)
-        (Decode.field "email" Email.decode)
         (Decode.field "username" Username.decode)
+        (Decode.field "email" Email.decode)
         (Decode.field "name" Decode.string)
         (Decode.maybeField "avatar" Decode.string)
         (Decode.maybeField "bio" Decode.string)

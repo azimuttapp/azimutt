@@ -6,16 +6,14 @@ import Libs.Task as T
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.Source as Source
-import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.TableId as TableId
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
-import Random
 import Services.Lenses exposing (mapRelations)
 import Services.Toasts as Toasts
 import Time
-import UUID
 
 
 addRelation : Time.Posix -> ColumnRef -> ColumnRef -> Erd -> ( Erd, Cmd Msg )
@@ -28,12 +26,8 @@ addRelation now src ref erd =
 
         Nothing ->
             let
-                ( uuid, seed ) =
-                    erd.seed |> Random.step UUID.generator
-
-                sourceId : SourceId
-                sourceId =
-                    uuid |> UUID.toString |> SourceId.new
+                ( sourceId, seed ) =
+                    SourceId.random erd.seed
             in
             ( { erd | seed = seed }
                 |> Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [] now ])

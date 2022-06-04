@@ -11,11 +11,14 @@ import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
+import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
+import Random
 import Time
+import UUID
 
 
 position : Fuzzer Position
@@ -104,6 +107,11 @@ identifier : Fuzzer String
 identifier =
     -- TODO: this should generate valid sql identifiers (letters, digits, _)
     Fuzz.letter |> Fuzz.list |> Fuzz.map String.fromList
+
+
+uuid : Fuzzer Uuid
+uuid =
+    Fuzz.int |> Fuzz.map (Random.initialSeed >> Random.step UUID.generator >> Tuple.first >> UUID.toString)
 
 
 path : Fuzzer String

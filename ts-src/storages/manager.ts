@@ -32,23 +32,19 @@ export class StorageManager implements StorageApi {
     }
     dropProject = (p: ProjectInfo): Promise<void> => p.storage === 'cloud' && this.enableCloud ? this.cloud.dropProject(p) : this.browser.then(s => s.dropProject(p))
 
-    moveProjectTo = async (p: Project, storage: ProjectStorage): Promise<Project> => {
-        if (p.storage === ProjectStorage.cloud) {
-            if (storage === ProjectStorage.browser) {
-                const project = {...p, storage}
-                return await this.browser.then(s => s.createProject(project))
-                    .then(_ => this.cloud.dropProject(projectToInfo(project)))
-                    .then(_ => project)
-            }
-        } else if (p.storage === ProjectStorage.browser || p.storage === undefined) {
-            if (storage === ProjectStorage.cloud) {
-                const project = {...p, storage}
-                return await this.cloud.createProject(project)
-                    .then(_ => this.browser.then(s => s.dropProject(projectToInfo(project))))
-                    .then(_ => project)
-            }
+    moveProjectTo = async ({storage, ...p}: Project, toStorage: ProjectStorage): Promise<Project> => {
+        const prj = {...p, updatedAt: Date.now()}
+        if (storage === ProjectStorage.cloud && toStorage === ProjectStorage.browser) {
+            return await this.browser.then(s => s.createProject(prj))
+                .then(_ => this.cloud.dropProject(projectToInfo(prj)))
+                .then(_ => prj)
+        } else if ((storage === ProjectStorage.browser || storage === undefined) && toStorage === ProjectStorage.cloud) {
+            return await this.cloud.createProject(prj)
+                .then(_ => this.browser.then(s => s.dropProject(projectToInfo(prj))))
+                .then(_ => prj)
+        } else {
+            return Promise.reject(`Unable to move project from ${storage} to ${toStorage}`)
         }
-        return Promise.reject(`Unable to move project from ${p.storage} to ${storage}`)
     }
 
     getUser = (email: Email): Promise<Profile> => this.cloud.getUser(email)
