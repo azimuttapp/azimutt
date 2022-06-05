@@ -24,6 +24,9 @@ export interface ProjectInfo {
     updatedAt: Timestamp
 }
 
+export type ProjectNoStorage = Omit<Project, 'storage'>
+export type ProjectInfoNoStorage = Omit<ProjectInfo, 'storage'>
+
 export interface Source {
     id: SourceId
     name: SourceName

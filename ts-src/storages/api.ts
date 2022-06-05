@@ -1,24 +1,23 @@
-import {Project, ProjectId, ProjectInfo, ProjectStorage, Source} from "../types/project";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage, Source} from "../types/project";
 
 export type StorageKind = 'indexedDb' | 'localStorage' | 'inMemory' | 'supabase' | 'manager'
 
 export interface StorageApi {
     kind: StorageKind
-    listProjects: () => Promise<ProjectInfo[]>
-    loadProject: (id: ProjectId) => Promise<Project>
-    createProject: (p: Project) => Promise<Project>
-    updateProject: (p: Project) => Promise<Project>
-    dropProject: (p: ProjectInfo) => Promise<void>
+    listProjects: () => Promise<ProjectInfoNoStorage[]>
+    loadProject: (id: ProjectId) => Promise<ProjectNoStorage>
+    createProject: (p: ProjectNoStorage) => Promise<ProjectNoStorage>
+    updateProject: (p: ProjectNoStorage) => Promise<ProjectNoStorage>
+    dropProject: (p: ProjectId) => Promise<void>
 }
 
-export function projectToInfo(p: Project): ProjectInfo {
+export function projectToInfo(p: ProjectNoStorage): ProjectInfoNoStorage {
     return {
         id: p.id,
         name: p.name,
         tables: computeTables(p.sources),
         relations: computeRelations(p.sources),
         layouts: Object.keys(p.layouts).length,
-        storage: p.storage || ProjectStorage.browser,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt
     }

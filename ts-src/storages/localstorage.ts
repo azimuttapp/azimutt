@@ -1,4 +1,4 @@
-import {Project, ProjectId, ProjectInfo} from "../types/project";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../types/project";
 import {projectToInfo, StorageApi, StorageKind} from "./api";
 import {Logger} from "../services/logger";
 
@@ -15,15 +15,15 @@ export class LocalStorageStorage implements StorageApi {
     constructor(private storage: Storage, private logger: Logger) {
     }
 
-    listProjects = (): Promise<ProjectInfo[]> => {
+    listProjects = (): Promise<ProjectInfoNoStorage[]> => {
         const projects = Object.keys(this.storage)
             .filter(key => key.startsWith(this.prefix))
-            .flatMap(key => [this.getProject(key)].filter(p => p) as Project[])
+            .flatMap(key => [this.getProject(key)].filter(p => p) as ProjectNoStorage[])
             .map(projectToInfo)
         return Promise.resolve(projects)
     }
-    loadProject = (id: ProjectId): Promise<Project> => Promise.resolve(this.getProject(this.prefix + id)).then(p => p ? p : Promise.reject(`Project ${id} not found`))
-    createProject = (p: Project): Promise<Project> => {
+    loadProject = (id: ProjectId): Promise<ProjectNoStorage> => Promise.resolve(this.getProject(this.prefix + id)).then(p => p ? p : Promise.reject(`Project ${id} not found`))
+    createProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
         const key = this.prefix + p.id
         if (this.storage.getItem(key) === null) {
             return this.setProject(key, p)
@@ -31,7 +31,7 @@ export class LocalStorageStorage implements StorageApi {
             return Promise.reject(`Project ${p.id} already exists in ${this.kind}`)
         }
     }
-    updateProject = (p: Project): Promise<Project> => {
+    updateProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
         const key = this.prefix + p.id
         if (this.storage.getItem(key) === null) {
             return Promise.reject(`Project ${p.id} doesn't exists in ${this.kind}`)
@@ -39,24 +39,24 @@ export class LocalStorageStorage implements StorageApi {
             return this.setProject(key, p)
         }
     }
-    dropProject = (p: ProjectInfo): Promise<void> => {
-        this.storage.removeItem(this.prefix + p.id)
+    dropProject = (id: ProjectId): Promise<void> => {
+        this.storage.removeItem(this.prefix + id)
         return Promise.resolve()
     }
 
-    private getProject = (key: string): Project | undefined => {
+    private getProject = (key: string): ProjectNoStorage | undefined => {
         const value = this.storage.getItem(key)
         if (value === null) {
             return undefined
         }
         try {
-            return JSON.parse(value) as Project
+            return JSON.parse(value) as ProjectNoStorage
         } catch (e) {
             this.logger.warn(`Invalid JSON in localStorage ${key}`)
             return undefined
         }
     }
-    private setProject = (key: string, p: Project): Promise<Project> => {
+    private setProject = (key: string, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
         try {
             this.storage.setItem(key, JSON.stringify(p))
             return Promise.resolve(p)

@@ -9,11 +9,10 @@ export interface ErrLogger {
 
 export class SentryErrLogger implements ErrLogger {
     constructor(conf: SentryConf) {
-        Sentry.init({
-            dsn: conf.dsn,
+        Sentry.init(Object.assign({}, conf, {
             integrations: [new BrowserTracing()],
             tracesSampleRate: 1.0,
-        })
+        }))
     }
 
     trackError = (name: string, details?: object): void => {

@@ -1,13 +1,13 @@
 import {computeRelations, computeTables} from "./api";
 import {SupabaseClient} from "@supabase/supabase-js";
-import {Project, ProjectId, ProjectInfo, ProjectStorage} from "../types/project";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../types/project";
 import {Profile, UserId} from "../types/profile";
 import {User as SupabaseUser} from "@supabase/gotrue-js/src/lib/types";
 import {Email} from "../types/basics";
 import jiff from "jiff";
 
 export class SupabaseStorage {
-    private projects: { [id: ProjectId]: Project } = {}
+    private projects: { [id: ProjectId]: ProjectNoStorage } = {}
 
     constructor(private supabase: SupabaseClient, private baseUrl: string) {
     }
@@ -45,17 +45,14 @@ export class SupabaseStorage {
     getOrCreateProfile = async (user: SupabaseUser): Promise<Profile> => this.getProfile(user.id).catch(_ => this.createProfile(user))
 
 
-    getProjects = (): Promise<ProjectInfo[]> => this.get<ProjectInfo[]>(`/projects`).then(projects => projects.map(project => ({
-        ...project,
-        storage: ProjectStorage.cloud
-    })))
-    getProject = async (id: ProjectId): Promise<Project> => {
-        const project = await this.get<Project>(`/projects/${id}`)
+    getProjects = (): Promise<ProjectInfoNoStorage[]> => this.get<ProjectInfoNoStorage[]>(`/projects`)
+    getProject = async (id: ProjectId): Promise<ProjectNoStorage> => {
+        const project = await this.get<ProjectNoStorage>(`/projects/${id}`)
         this.projects[id] = project
         return project
     }
-    createProject = async (p: Project): Promise<Project> => {
-        if (isSample(p)) return Promise.reject("Sample projects can't be uploaded!")
+    createProject = async (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+        if (isSample(p.id)) return Promise.reject("Sample projects can't be uploaded!")
         await this.post(`/projects`, {
             id: p.id,
             name: p.name,
@@ -67,9 +64,9 @@ export class SupabaseStorage {
         this.projects[p.id] = p
         return p
     }
-    updateProject = async (p: Project): Promise<Project> => {
+    updateProject = async (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
         const initial = this.projects[p.id]
-        const current = await this.get<Project>(`/projects/${p.id}`)
+        const current = await this.get<ProjectNoStorage>(`/projects/${p.id}`)
         if (initial.updatedAt !== current.updatedAt) {
             try {
                 const patch = jiff.diff(initial, p)
@@ -79,7 +76,7 @@ export class SupabaseStorage {
                 return Promise.reject("Project has been updated by another user! Please reload and save again (you will have to do you changes again).")
             }
         }
-        this.put(`/projects/${p.id}`, {
+        await this.put(`/projects/${p.id}`, {
             id: p.id,
             name: p.name,
             tables: computeTables(p.sources),
@@ -90,9 +87,9 @@ export class SupabaseStorage {
         this.projects[p.id] = p
         return p
     }
-    dropProject = async (p: ProjectInfo): Promise<void> => {
-        await this.delete(`/projects/${p.id}`)
-        delete this.projects[p.id]
+    dropProject = async (id: ProjectId): Promise<void> => {
+        await this.delete(`/projects/${id}`)
+        delete this.projects[id]
     }
 
     getOwners = async (id: ProjectId): Promise<Profile[]> => this.get(`/projects/${id}/owners`)
@@ -130,6 +127,6 @@ export class SupabaseStorage {
     }
 }
 
-function isSample(p: Project): boolean {
-    return p.id.startsWith('0000')
+function isSample(id: ProjectId): boolean {
+    return id.startsWith('0000')
 }

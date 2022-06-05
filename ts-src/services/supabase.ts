@@ -1,7 +1,7 @@
 import {AuthChangeEvent, createClient, Session, SupabaseClient} from "@supabase/supabase-js";
 import {User as SupabaseUser, UserCredentials} from "@supabase/gotrue-js/src/lib/types";
 import {Profile, UserId} from "../types/profile";
-import {Project, ProjectId, ProjectInfo} from "../types/project";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../types/project";
 import {StorageApi, StorageKind} from "../storages/api";
 import {Email} from "../types/basics";
 import {SupabaseStorage} from "../storages/supabase";
@@ -89,11 +89,11 @@ export class Supabase implements StorageApi {
     // FIXME deleteAccount = (): Promise<void> => this.supabase.auth.update({data: {deleted_at: Date.now()}})
 
     kind: StorageKind = 'supabase'
-    listProjects = (): Promise<ProjectInfo[]> => this.waitLogin(500, _ => this.store.getProjects(), () => Promise.resolve([]))
-    loadProject = (id: ProjectId): Promise<Project> => this.waitLogin(500, _ => this.store.getProject(id))
-    createProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.createProject(p))
-    updateProject = (p: Project): Promise<Project> => this.waitLogin(500, _ => this.store.updateProject(p))
-    dropProject = (p: ProjectInfo): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(p))
+    listProjects = (): Promise<ProjectInfoNoStorage[]> => this.waitLogin(500, _ => this.store.getProjects(), () => Promise.resolve([]))
+    loadProject = (id: ProjectId): Promise<ProjectNoStorage> => this.waitLogin(500, _ => this.store.getProject(id))
+    createProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => this.waitLogin(500, _ => this.store.createProject(p))
+    updateProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => this.waitLogin(500, _ => this.store.updateProject(p))
+    dropProject = (id: ProjectId): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(id))
 
     getUser = (email: Email): Promise<Profile> => this.store.fetchProfile(email)
     updateUser = (user: Profile): Promise<void> => this.store.updateProfile(user)

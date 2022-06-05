@@ -1,4 +1,4 @@
-import {Project, ProjectId, ProjectInfo} from "../types/project";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../types/project";
 import {projectToInfo, StorageApi, StorageKind} from "./api";
 import {LocalStorageStorage} from "./localstorage";
 import {Logger} from "../services/logger";
@@ -28,10 +28,10 @@ export class IndexedDBStorage implements StorageApi {
     constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
-    listProjects = (): Promise<ProjectInfo[]> => {
+    listProjects = (): Promise<ProjectInfoNoStorage[]> => {
         return this.migrateLegacyProjects().then(_ => this.openStore('readonly')).then(store => {
-            return new Promise<ProjectInfo[]>((resolve, reject) => {
-                const projects: ProjectInfo[] = []
+            return new Promise<ProjectInfoNoStorage[]>((resolve, reject) => {
+                const projects: ProjectInfoNoStorage[] = []
                 store.openCursor().onsuccess = (event: any) => {
                     const cursor = event.target.result
                     if (cursor) {
@@ -45,12 +45,12 @@ export class IndexedDBStorage implements StorageApi {
             })
         })
     }
-    loadProject = (id: ProjectId): Promise<Project> =>
+    loadProject = (id: ProjectId): Promise<ProjectNoStorage> =>
         this.migrateLegacyProjects()
             .then(_ => this.openStore('readonly'))
             .then(store => this.getProject(store, id))
             .then(p => p ? p : Promise.reject(`Not found`))
-    createProject = (p: Project): Promise<Project> => {
+    createProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, p.id).then(project => {
                 if (project) {
@@ -61,7 +61,7 @@ export class IndexedDBStorage implements StorageApi {
             })
         })
     }
-    updateProject = (p: Project): Promise<Project> => {
+    updateProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, p.id).then(project => {
                 if (project) {
@@ -72,16 +72,16 @@ export class IndexedDBStorage implements StorageApi {
             })
         })
     }
-    dropProject = (p: ProjectInfo): Promise<void> => {
-        return this.openStore('readwrite').then(store => reqToPromise(store.delete(p.id)))
+    dropProject = (id: ProjectId): Promise<void> => {
+        return this.openStore('readwrite').then(store => reqToPromise(store.delete(id)))
     }
 
     private openStore(mode: IDBTransactionMode): Promise<IDBObjectStore> {
         return new Promise<IDBObjectStore>(resolve => resolve(this.db.transaction(IndexedDBStorage.dbProjects, mode).objectStore(IndexedDBStorage.dbProjects)))
     }
 
-    private getProject(store: IDBObjectStore, id: ProjectId): Promise<Project | undefined> {
-        return new Promise<Project>((resolve, reject) => {
+    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectNoStorage | undefined> {
+        return new Promise<ProjectNoStorage>((resolve, reject) => {
             store.get(id).onsuccess = (event: any) => resolve(event.target.result);
             (store as any).onerror = (err: any) => reject(`Unable to load project: ${err}`)
         })
@@ -95,7 +95,7 @@ export class IndexedDBStorage implements StorageApi {
                 Promise.all(projectInfos.map(p =>
                     legacyStorage.loadProject(p.id)
                         .then(project => this.createProject(project))
-                        .then(_ => legacyStorage.dropProject(p))
+                        .then(_ => legacyStorage.dropProject(p.id))
                 )).then(_ => undefined)
             )
         )
