@@ -57,7 +57,7 @@ init =
             , body = Just "h-full"
             }
         , Ports.trackPage "pwa-start"
-        , Ports.loadProjects
+        , Ports.listProjects
         ]
     )
 

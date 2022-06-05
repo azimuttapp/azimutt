@@ -1,6 +1,6 @@
 module PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 
-import Components.Organisms.Relation as Relation exposing (RelationConf)
+import Components.Organisms.Relation as Relation exposing (Direction(..), RelationConf)
 import Conf
 import Libs.Bool as B
 import Libs.Models.Position exposing (Position)
@@ -45,7 +45,7 @@ viewRelation conf dragging srcProps refProps relation =
 
             else
                 { left = position.left + size.width, top = positionTop position index collapsed }
-                    |> (\srcPos -> Relation.line relConf srcPos { left = srcPos.left + 20, top = srcPos.top } relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
+                    |> (\srcPos -> Relation.line relConf ( srcPos, Left ) ( { left = srcPos.left + 20, top = srcPos.top }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
 
         ( Nothing, Just { index, position, collapsed } ) ->
             if collapsed then
@@ -53,7 +53,7 @@ viewRelation conf dragging srcProps refProps relation =
 
             else
                 { left = position.left, top = positionTop position index collapsed }
-                    |> (\refPos -> Relation.line relConf { left = refPos.left - 20, top = refPos.top } refPos relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
+                    |> (\refPos -> Relation.line relConf ( { left = refPos.left - 20, top = refPos.top }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
 
         ( Just src, Just ref ) ->
             let

@@ -1,32 +1,42 @@
-module Shared exposing (Confirm, Flags, Model, Msg, Prompt, StoredProjects(..), init, subscriptions, update)
+module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, StoredProjects(..), init, subscriptions, update)
 
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
 import Libs.Tailwind exposing (Color)
-import Models.Project exposing (Project)
+import Models.User exposing (User)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import Ports exposing (JsMsg(..))
 import Request exposing (Request)
 import Task
 import Time
 
 
 type alias Flags =
-    { now : Int }
+    { now : Int, conf : GlobalConf }
+
+
+type alias GlobalConf =
+    { enableCloud : Bool }
 
 
 type alias Model =
     { zone : Time.Zone
     , now : Time.Posix
+    , conf : GlobalConf
+    , user : Maybe User
+    , projects : StoredProjects
     }
 
 
 type Msg
     = ZoneChanged Time.Zone
     | TimeChanged Time.Posix
+    | JsMessage JsMsg
 
 
 type StoredProjects
     = Loading
-    | Loaded (List Project)
+    | Loaded (List ProjectInfo)
 
 
 type alias Confirm msg =
@@ -59,8 +69,11 @@ init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
+      , conf = flags.conf
+      , user = Nothing
+      , projects = Loading
       }
-    , Cmd.batch [ Time.here |> Task.perform ZoneChanged ]
+    , Task.perform ZoneChanged Time.here
     )
 
 
@@ -77,6 +90,18 @@ update _ msg model =
         TimeChanged time ->
             ( { model | now = time }, Cmd.none )
 
+        JsMessage (GotLogin user) ->
+            ( { model | user = Just user }, Cmd.none )
+
+        JsMessage GotLogout ->
+            ( { model | user = Nothing }, Cmd.none )
+
+        JsMessage (GotProjects ( _, projects )) ->
+            ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
+
+        JsMessage _ ->
+            ( model, Cmd.none )
+
 
 
 -- SUBSCRIPTIONS
@@ -84,4 +109,4 @@ update _ msg model =
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ _ =
-    Sub.batch [ Time.every (10 * 1000) TimeChanged ]
+    Sub.batch [ Time.every (10 * 1000) TimeChanged, Ports.onJsMessage JsMessage ]

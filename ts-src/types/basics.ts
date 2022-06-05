@@ -1,5 +1,8 @@
 export type Timestamp = number // date in numerical format
 export type Px = number // number of pixels
+export type Uuid = string
+export type Email = string
+export type Username = string
 export type HtmlId = string
 export type FileUrl = string
 export type FileName = string

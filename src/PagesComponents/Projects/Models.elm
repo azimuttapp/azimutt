@@ -1,7 +1,9 @@
 module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
-import Models.Project exposing (Project)
+import Libs.Models.HtmlId exposing (HtmlId)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
+import Services.Toasts as Toasts exposing (Model, Msg)
 import Shared exposing (Confirm, StoredProjects)
 
 
@@ -13,6 +15,10 @@ type alias Model =
     { selectedMenu : String
     , mobileMenuOpen : Bool
     , projects : StoredProjects
+
+    -- global attrs
+    , openedDropdown : HtmlId
+    , toasts : Toasts.Model
     , confirm : Maybe (Confirm Msg)
     , modalOpened : Bool
     }
@@ -20,11 +26,15 @@ type alias Model =
 
 type Msg
     = SelectMenu String
-    | ToggleMobileMenu
-    | DeleteProject Project
+    | Logout
+    | DeleteProject ProjectInfo
+      -- global messages
+    | DropdownToggle HtmlId
+    | Toast Toasts.Msg
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | ModalOpen
     | ModalClose Msg
     | NavigateTo String
     | JsMessage JsMsg
+    | Noop String

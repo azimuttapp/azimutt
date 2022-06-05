@@ -2,7 +2,6 @@ module PagesComponents.Projects.Id_.Views exposing (title, view)
 
 import Components.Atoms.Loader as Loader
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
-import Components.Molecules.Toast as Toast
 import Components.Slices.NotFound as NotFound
 import Conf
 import Dict
@@ -15,6 +14,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -31,10 +31,10 @@ import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSc
 import PagesComponents.Projects.Id_.Views.Modals.Sharing exposing (viewSharing)
 import PagesComponents.Projects.Id_.Views.Modals.SourceParsing exposing (viewSourceParsing)
 import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
-import PagesComponents.Projects.Id_.Views.Navbar exposing (viewNavbar)
+import PagesComponents.Projects.Id_.Views.Navbar as Navbar exposing (viewNavbar)
 import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
-import Time
 import View exposing (View)
 
 
@@ -43,31 +43,31 @@ title erd =
     erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") Conf.constants.defaultTitle
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
+view : Cmd Msg -> Shared.Model -> Model -> View Msg
+view onDelete shared model =
     { title = model.erd |> title
-    , body = model |> viewProject shared
+    , body = model |> viewProject onDelete shared
     }
 
 
-viewProject : Shared.Model -> Model -> List (Html Msg)
-viewProject shared model =
+viewProject : Cmd Msg -> Shared.Model -> Model -> List (Html Msg)
+viewProject onDelete shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp model "app") (viewNotFound model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp shared model "app") (viewNotFound model.conf)
 
       else
         Loader.fullScreen
-    , Lazy.lazy3 viewModal shared.zone shared.now model
-    , Lazy.lazy viewToasts model.toasts
+    , Lazy.lazy3 viewModal shared model onDelete
+    , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
     ]
 
 
-viewApp : Model -> HtmlId -> Erd -> Html Msg
-viewApp model htmlId erd =
+viewApp : Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
+viewApp shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy6 viewNavbar model.conf model.virtualRelation erd model.navbar (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav"))
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd model.projects model.navbar (Navbar.argsToString (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
 
           else
             div [] []
@@ -109,30 +109,26 @@ viewNotFound conf =
         }
 
 
-viewModal : Time.Zone -> Time.Posix -> Model -> Html Msg
-viewModal zone now model =
+viewModal : Shared.Model -> Model -> Cmd Msg -> Html Msg
+viewModal shared model onDelete =
     Keyed.node "div"
         [ class "az-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
          , model.prompt |> Maybe.map (\m -> ( m.id, viewPrompt (model.openedDialogs |> List.has m.id) m ))
-         , model.newLayout |> Maybe.map (\m -> ( m.id, viewCreateLayout (model.openedDialogs |> List.has m.id) m ))
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, viewCreateLayout (e.layouts |> Dict.keys) (model.openedDialogs |> List.has m.id) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings zone (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload zone now (model.openedDialogs |> List.has m.id) m ))
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadDialogMsg MoveProjectTo (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) shared.user (model.openedDialogs |> List.has m.id) e.project m )) model.erd
+         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.has m.id) e m )) model.erd
+         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload shared.zone shared.now (model.openedDialogs |> List.has m.id) m ))
          , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.has m.id) m ))
          , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> List.has m.id) m ))
          ]
             |> List.filterMap identity
             |> List.sortBy (\( id, _ ) -> model.openedDialogs |> List.indexOf id |> Maybe.withDefault 0 |> negate)
         )
-
-
-viewToasts : List Toast.Model -> Html Msg
-viewToasts toasts =
-    div [ class "az-toasts" ] [ Toast.container toasts ToastHide ]
 
 
 viewContextMenu : Maybe ContextMenu -> Html Msg

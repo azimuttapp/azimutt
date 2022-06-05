@@ -1,18 +1,27 @@
-module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader)
+module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader, viewProfileIcon)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
+import Components.Molecules.Dropdown as Dropdown
+import Components.Molecules.Tooltip as Tooltip
 import Components.Organisms.Footer as Footer
 import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
 import Components.Slices.Newsletter as Newsletter
 import Conf
-import Gen.Route as Route
-import Html exposing (Html, div, footer, h1, header, main_, p, span, text)
-import Html.Attributes exposing (class)
+import Gen.Route as Route exposing (Route)
+import Html exposing (Html, a, button, div, footer, h1, header, img, main_, p, span, text)
+import Html.Attributes exposing (alt, class, height, href, id, src, type_, width)
+import Html.Events exposing (onClick)
 import Libs.Html exposing (extLink)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
+import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
-import Libs.Tailwind exposing (lg, md, sm)
+import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
+import Models.User as User exposing (User)
+import Router
+import Shared exposing (GlobalConf)
 
 
 publicHeader : Html msg
@@ -46,14 +55,23 @@ publicFooter =
 
 
 appShell :
-    (Link -> msg)
+    GlobalConf
+    -> Maybe User
+    -> Route
+    -> (Link -> msg)
+    -> (HtmlId -> msg)
     -> msg
-    -> { x | selectedMenu : String, mobileMenuOpen : Bool }
+    -> { x | selectedMenu : String, mobileMenuOpen : Bool, openedDropdown : HtmlId }
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell onNavigationClick onMobileMenuClick model title content footer =
+appShell gConf maybeUser currentRoute onNavigationClick onProfileClick onLogout model title content footer =
+    let
+        profileDropdown : HtmlId
+        profileDropdown =
+            "shell-profile-dropdown"
+    in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
             { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
@@ -62,13 +80,15 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
                 , onClick = onNavigationClick
                 }
             , search = Nothing
-            , notifications = Nothing
-            , profile = Nothing
-            , mobileMenu = { id = "mobile-menu", onClick = onMobileMenuClick }
+            , rightIcons =
+                if gConf.enableCloud then
+                    [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout ]
+
+                else
+                    []
             }
             { selectedMenu = model.selectedMenu
-            , mobileMenuOpen = model.mobileMenuOpen
-            , profileOpen = False
+            , profileOpen = model.openedDropdown == profileDropdown
             }
         , viewHeader title
         ]
@@ -79,6 +99,36 @@ appShell onNavigationClick onMobileMenuClick model title content footer =
         ]
     ]
         ++ (viewFooter :: footer)
+
+
+viewProfileIcon : Maybe User -> Route -> HtmlId -> HtmlId -> (HtmlId -> msg) -> msg -> Html msg
+viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onLogout =
+    maybeUser
+        |> Maybe.mapOrElse
+            (\user ->
+                Dropdown.dropdown { id = profileDropdown, direction = BottomLeft, isOpen = openedDropdown == profileDropdown }
+                    (\m ->
+                        button [ type_ "button", id m.id, onClick (toggle profileDropdown), css [ "mx-1 flex-shrink-0 p-0.5 rounded-full flex text-sm", hover [ "animate-jello-h" ], focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
+                            [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
+                            , img [ css [ "rounded-full h-7 w-7" ], src (user |> User.avatar), alt user.name, width 28, height 28 ] []
+                            ]
+                            |> Tooltip.bl user.name
+                    )
+                    (\_ ->
+                        div []
+                            [ ContextMenu.link { url = Route.toHref Route.Profile, text = "Your profile" }
+
+                            --, ContextMenu.link { url = "#", text = "Settings" }
+                            , ContextMenu.btn "" onLogout [ text "Logout" ]
+                            ]
+                    )
+            )
+            (a [ href (Router.login currentRoute), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
+                [ span [ class "sr-only" ] [ text "Sign in" ]
+                , Icon.outline Icon.User ""
+                ]
+                |> Tooltip.bl "Sign in"
+            )
 
 
 viewHeader : List (Html msg) -> Html msg

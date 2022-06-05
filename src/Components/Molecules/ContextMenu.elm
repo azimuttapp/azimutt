@@ -1,7 +1,7 @@
-module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, menu, menuStyles)
+module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles)
 
 import Components.Atoms.Kbd as Kbd
-import Html exposing (Html, a, button, div, text)
+import Html exposing (Attribute, Html, a, button, div, text)
 import Html.Attributes exposing (class, href, tabindex, type_)
 import Html.Events exposing (onClick)
 import Libs.Html.Attributes exposing (ariaLabelledby, ariaOrientation, css, role)
@@ -108,7 +108,12 @@ btnSubmenu item =
 
 link : Link -> Html msg
 link l =
-    a [ href l.url, role "menuitem", tabindex -1, css [ "block", itemStyles ] ] [ text l.text ]
+    linkHtml l.url [] [ text l.text ]
+
+
+linkHtml : String -> List (Attribute msg) -> List (Html msg) -> Html msg
+linkHtml url attrs content =
+    a ([ href url, role "menuitem", tabindex -1, css [ "block", itemStyles ] ] ++ attrs) content
 
 
 

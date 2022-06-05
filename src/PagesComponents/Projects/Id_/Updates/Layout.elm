@@ -6,10 +6,11 @@ import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
-import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..), toastError, toastSuccess)
+import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
 import Services.Lenses exposing (mapErdM, mapErdMCmd, mapLayouts, mapNewLayoutM, mapUsedLayout, setCanvas, setName, setNewLayout, setShownTables, setTableProps, setUsedLayout)
+import Services.Toasts as Toasts
 import Time
 import Track
 
@@ -51,11 +52,10 @@ handleLayout now msg model =
 
 createLayout : LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd Msg )
 createLayout name now erd =
-    -- TODO check that layout name does not already exist
-    erd.usedLayout
-        |> Maybe.andThen (\l -> erd.layouts |> Dict.get l)
+    erd.layouts
+        |> Dict.get name
         |> Maybe.mapOrElse
-            (\_ -> ( erd, Cmd.batch [ T.send (toastError ("Layout " ++ name ++ " already exists")) ] ))
+            (\_ -> ( erd, Toasts.error Toast ("Layout " ++ name ++ " already exists") ))
             (let
                 layout : Layout
                 layout =
@@ -104,9 +104,9 @@ updateLayout name now erd =
                 erd
                     |> setUsedLayout (Just name)
                     |> mapLayouts (Dict.insert name newLayout)
-                    |> (\newErd -> ( newErd, Cmd.batch [ T.send (toastSuccess ("Saved to layout " ++ name)), Ports.track (Track.updateLayout newLayout) ] ))
+                    |> (\newErd -> ( newErd, Cmd.batch [ Toasts.success Toast ("Saved to layout " ++ name), Ports.track (Track.updateLayout newLayout) ] ))
             )
-            ( erd, Cmd.batch [ T.send (toastError ("Can't find layout " ++ name)), Ports.track (Track.notFoundLayout name) ] )
+            ( erd, Cmd.batch [ Toasts.error Toast ("Can't find layout " ++ name), Ports.track (Track.notFoundLayout name) ] )
 
 
 deleteLayout : LayoutName -> Erd -> ( Erd, Cmd Msg )

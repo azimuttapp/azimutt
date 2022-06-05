@@ -1,7 +1,9 @@
 module PagesComponents.Projects.Id_.Updates exposing (update)
 
+import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict exposing (Dict)
+import Gen.Route as Route
 import Libs.Area as Area exposing (Area, AreaLike)
 import Libs.Bool as B
 import Libs.Delta as Delta
@@ -13,12 +15,14 @@ import Libs.Models exposing (SizeChange)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T
-import Models.Project as Project exposing (Project)
+import Models.Project as Project
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.TableId as TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), toastError, toastInfo, toastSuccess, toastWarning)
+import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
+import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -38,14 +42,16 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapList, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToasts, mapTop, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setIsOpen, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setToastIdx, setUsedLayout)
+import Request
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Toasts as Toasts
 import Time
 import Track
 
 
-update : Maybe ProjectId -> Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update currentProject currentLayout now msg model =
+update : Request.With params -> Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update req currentLayout now msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -55,7 +61,22 @@ update currentProject currentLayout now msg model =
 
         SaveProject ->
             if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.saveProject p, T.send (toastSuccess "Project saved"), Ports.track (Track.updateProject p) ]) [ T.send (toastWarning "No project to save") ]) )
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ]) [ Toasts.warning Toast "No project to save" ]) )
+
+            else
+                ( model, Cmd.none )
+
+        MoveProjectTo storage ->
+            if model.conf.save then
+                ( model |> mapUploadM (\u -> { u | movingProject = True })
+                , Cmd.batch
+                    (model.erd
+                        |> Maybe.map Erd.unpack
+                        |> Maybe.mapOrElse
+                            (\p -> [ Ports.moveProjectTo p storage ])
+                            [ Toasts.warning Toast "No project to move" ]
+                    )
+                )
 
             else
                 ( model, Cmd.none )
@@ -159,6 +180,9 @@ update currentProject currentLayout now msg model =
         SharingMsg message ->
             model |> handleSharing message
 
+        ProjectUploadDialogMsg message ->
+            model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
+
         ProjectSettingsMsg message ->
             model |> handleProjectSettings message
 
@@ -166,7 +190,7 @@ update currentProject currentLayout now msg model =
             model |> mapSourceParsingMCmd (mapParsingCmd (SqlSourceUpload.update message SourceParsing))
 
         SourceParsed projectId source ->
-            ( model, T.send (JsMessage (GotProjects ( [], [ Project.create projectId source.name source ] ))) )
+            ( model, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -186,11 +210,15 @@ update currentProject currentLayout now msg model =
         Zoom delta ->
             ( model |> mapErdM (mapCanvas (zoomCanvas delta model.screen)), Cmd.none )
 
+        Logout ->
+            B.cond (model.erd |> Maybe.mapOrElse (\e -> e.project.storage /= ProjectStorage.Browser) False) (Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ]) Ports.logout
+                |> (\cmd -> ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Browser) }, cmd ))
+
         Focus id ->
             ( model, Ports.focus id )
 
         DropdownToggle id ->
-            ( model |> mapOpenedDropdown (\d -> B.cond (d == id) "" id), Cmd.none )
+            ( model |> Dropdown.update id, Cmd.none )
 
         PopoverSet id ->
             ( model |> setOpenedPopover id, Cmd.none )
@@ -206,7 +234,7 @@ update currentProject currentLayout now msg model =
 
         DragStart id pos ->
             model.dragging
-                |> Maybe.mapOrElse (\d -> ( model, T.send (toastInfo ("Already dragging " ++ d.id)) ))
+                |> Maybe.mapOrElse (\d -> ( model, Toasts.info Toast ("Already dragging " ++ d.id) ))
                     ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag d False), Cmd.none )
 
         DragMove pos ->
@@ -226,17 +254,8 @@ update currentProject currentLayout now msg model =
         DragCancel ->
             ( model |> setDragging Nothing, Cmd.none )
 
-        ToastAdd millis toast ->
-            model.toastIdx |> String.fromInt |> (\key -> ( model |> setToastIdx (model.toastIdx + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (ToastShow millis key) ))
-
-        ToastShow millis key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> Maybe.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
-
-        ToastHide key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen False)), T.sendAfter 300 (ToastRemove key) )
-
-        ToastRemove key ->
-            ( model |> mapToasts (List.filter (\t -> t.key /= key)), Cmd.none )
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
 
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
@@ -260,7 +279,7 @@ update currentProject currentLayout now msg model =
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
-            model |> handleJsMessage currentProject currentLayout message
+            model |> handleJsMessage currentLayout message
 
         Send cmd ->
             ( model, cmd )
@@ -269,46 +288,87 @@ update currentProject currentLayout now msg model =
             ( model, Cmd.none )
 
 
-handleJsMessage : Maybe ProjectId -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage currentProject currentLayout msg model =
+handleJsMessage : Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage currentLayout msg model =
     case msg of
         GotSizes sizes ->
             model |> updateSizes sizes
 
+        GotLogin _ ->
+            ( model, Cmd.none )
+
+        GotLogout ->
+            ( model, Cmd.none )
+
         GotProjects ( errors, projects ) ->
-            let
-                project : Maybe Project
-                project =
-                    currentProject
-                        |> Maybe.mapOrElse (\id -> projects |> List.find (\p -> p.id == id)) (projects |> List.head)
-                        |> Maybe.map (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
-
-                ( childSeed, newSeed ) =
-                    Random.step (Random.int Random.minInt Random.maxInt) model.seed
-
-                erd : Maybe Erd
-                erd =
-                    model.erd |> Maybe.orElse (project |> Maybe.map (Erd.create (Random.initialSeed childSeed) projects))
-            in
-            ( { model | seed = newSeed, loaded = True, erd = erd }
+            ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }
             , Cmd.batch
-                ((model.erd
-                    |> Maybe.mapOrElse (\_ -> [])
-                        [ Ports.observeSize Conf.ids.erd
-                        , Ports.observeTablesSize (project |> Maybe.mapOrElse (.layout >> .tables) [] |> List.map .id)
-                        , Ports.setMeta { title = Just (Views.title erd), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
-                        ]
-                 )
-                    ++ (errors
-                            |> List.concatMap
-                                (\( name, err ) ->
-                                    [ T.send (toastError ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err))
-                                    , Ports.trackJsonError "decode-project" err
-                                    ]
-                                )
-                       )
+                (errors
+                    |> List.concatMap
+                        (\( name, err ) ->
+                            [ Toasts.error Toast ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err)
+                            , Ports.trackJsonError "decode-project" err
+                            ]
+                        )
                 )
             )
+
+        GotProject res ->
+            case res of
+                Nothing ->
+                    ( { model | loaded = True }, Cmd.none )
+
+                Just (Err err) ->
+                    ( { model | loaded = True }, Cmd.batch [ Toasts.error Toast ("Unable to read project: " ++ Decode.errorToHtml err), Ports.trackJsonError "decode-project" err ] )
+
+                Just (Ok project) ->
+                    let
+                        ( childSeed, newSeed ) =
+                            Random.step (Random.int Random.minInt Random.maxInt) model.seed
+
+                        erd : Erd
+                        erd =
+                            project
+                                |> (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
+                                |> Erd.create (Random.initialSeed childSeed)
+
+                        uploadCmd : List (Cmd msg)
+                        uploadCmd =
+                            if model.upload == Nothing then
+                                []
+
+                            else if project.storage == ProjectStorage.Cloud then
+                                [ Ports.getOwners project.id, Ports.confettiPride ]
+
+                            else
+                                []
+                    in
+                    ( { model | seed = newSeed, loaded = True, erd = Just erd } |> mapUploadM (\u -> { u | movingProject = False })
+                    , Cmd.batch
+                        ([ Ports.observeSize Conf.ids.erd
+                         , Ports.observeTablesSize erd.shownTables
+                         , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
+                         ]
+                            ++ uploadCmd
+                        )
+                    )
+
+        GotUser email user ->
+            if model.upload == Nothing then
+                ( model, Cmd.none )
+
+            else
+                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateShareUser (Just ( email, user ))))) )
+
+        GotOwners _ owners ->
+            if model.upload == Nothing then
+                ( model, Cmd.none )
+
+            else
+                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
+
+        ProjectDropped projectId ->
+            ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
 
         GotLocalFile now projectId sourceId file content ->
             ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
@@ -335,18 +395,7 @@ handleJsMessage currentProject currentLayout msg model =
                 ( model, Cmd.none )
 
         GotToast level message ->
-            case level of
-                "success" ->
-                    ( model, T.send (toastSuccess message) )
-
-                "info" ->
-                    ( model, T.send (toastInfo message) )
-
-                "warning" ->
-                    ( model, T.send (toastWarning message) )
-
-                _ ->
-                    ( model, T.send (toastError message) )
+            ( model, Toasts.create Toast level message )
 
         GotTableShow id hint ->
             ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt)) )
@@ -385,7 +434,7 @@ handleJsMessage currentProject currentLayout msg model =
             ( model, T.send ResetCanvas )
 
         Error err ->
-            ( model, Cmd.batch [ T.send (toastError ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err)), Ports.trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ Toasts.error Toast ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err), Ports.trackJsonError "js-message" err ] )
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )

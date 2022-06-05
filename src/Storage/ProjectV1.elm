@@ -7,9 +7,9 @@ import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
-import Libs.Models exposing (UID)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
+import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
@@ -27,6 +27,7 @@ import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectSettings as ProjectSettings
+import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
@@ -158,7 +159,7 @@ type alias FindPathSettingsV1 =
 
 
 type alias ProjectIdV1 =
-    UID
+    Uuid
 
 
 type alias ProjectNameV1 =
@@ -166,7 +167,7 @@ type alias ProjectNameV1 =
 
 
 type alias ProjectSourceIdV1 =
-    UID
+    Uuid
 
 
 type alias ProjectSourceNameV1 =
@@ -280,6 +281,7 @@ upgrade project =
     , usedLayout = project.currentLayout
     , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)
     , settings = ProjectSettings.init |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
+    , storage = ProjectStorage.Browser
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }

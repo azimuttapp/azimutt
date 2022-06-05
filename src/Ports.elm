@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, downloadFile, dropProject, focus, fullscreen, listenHotkeys, loadProjects, loadRemoteProject, mouseDown, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, saveProject, scrollTo, setMeta, track, trackError, trackJsonError, trackPage)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject, updateUser)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -10,6 +10,7 @@ import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
+import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -20,12 +21,17 @@ import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
+import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
+import Models.User as User exposing (User)
+import Models.UserId as UserId exposing (UserId)
+import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
+import Track
 
 
 click : HtmlId -> Cmd msg
@@ -63,14 +69,29 @@ autofocusWithin id =
     messageToJs (AutofocusWithin id)
 
 
+login : LoginInfo -> Maybe String -> Cmd msg
+login info redirect =
+    messageToJs (Login info redirect)
+
+
+logout : Cmd msg
+logout =
+    messageToJs Logout
+
+
 setMeta : MetaInfos -> Cmd msg
 setMeta payload =
     messageToJs (SetMeta payload)
 
 
-loadProjects : Cmd msg
-loadProjects =
-    messageToJs LoadProjects
+listProjects : Cmd msg
+listProjects =
+    messageToJs ListProjects
+
+
+loadProject : ProjectId -> Cmd msg
+loadProject id =
+    messageToJs (LoadProject id)
 
 
 loadRemoteProject : String -> Cmd msg
@@ -78,9 +99,39 @@ loadRemoteProject projectUrl =
     messageToJs (LoadRemoteProject projectUrl)
 
 
-saveProject : Project -> Cmd msg
-saveProject project =
-    messageToJs (SaveProject project)
+createProject : Project -> Cmd msg
+createProject project =
+    messageToJs (CreateProject project)
+
+
+updateProject : Project -> Cmd msg
+updateProject project =
+    messageToJs (UpdateProject project)
+
+
+moveProjectTo : Project -> ProjectStorage -> Cmd msg
+moveProjectTo project storage =
+    messageToJs (MoveProjectTo project storage)
+
+
+getUser : Email -> Cmd msg
+getUser email =
+    messageToJs (GetUser email)
+
+
+updateUser : User -> Cmd msg
+updateUser user =
+    messageToJs (UpdateUser user)
+
+
+getOwners : ProjectId -> Cmd msg
+getOwners projectId =
+    messageToJs (GetOwners projectId)
+
+
+setOwners : ProjectId -> List UserId -> Cmd msg
+setOwners projectId owners =
+    messageToJs (SetOwners projectId owners)
 
 
 downloadFile : FileName -> FileContent -> Cmd msg
@@ -88,9 +139,9 @@ downloadFile filename content =
     messageToJs (DownloadFile filename content)
 
 
-dropProject : Project -> Cmd msg
+dropProject : ProjectInfo -> Cmd msg
 dropProject project =
-    messageToJs (DropProject project)
+    Cmd.batch [ messageToJs (DropProject project), track (Track.deleteProject project) ]
 
 
 readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> Cmd msg
@@ -130,6 +181,16 @@ observeSizes ids =
 listenHotkeys : Dict String (List Hotkey) -> Cmd msg
 listenHotkeys keys =
     messageToJs (ListenKeys keys)
+
+
+confetti : HtmlId -> Cmd msg
+confetti id =
+    messageToJs (Confetti id)
+
+
+confettiPride : Cmd msg
+confettiPride =
+    messageToJs ConfettiPride
 
 
 track : TrackEvent -> Cmd msg
@@ -174,23 +235,45 @@ type ElmMsg
     | Fullscreen (Maybe HtmlId)
     | SetMeta MetaInfos
     | AutofocusWithin HtmlId
-    | LoadProjects
+    | Login LoginInfo (Maybe String)
+    | Logout
+    | ListProjects
+    | LoadProject ProjectId
     | LoadRemoteProject FileUrl
-    | SaveProject Project
+    | CreateProject Project
+    | UpdateProject Project
+    | MoveProjectTo Project ProjectStorage
+    | GetUser Email
+    | UpdateUser User
+    | GetOwners ProjectId
+    | SetOwners ProjectId (List UserId)
     | DownloadFile FileName FileContent
-    | DropProject Project
+    | DropProject ProjectInfo
     | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
     | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
+    | Confetti HtmlId
+    | ConfettiPride
     | TrackPage String
     | TrackEvent String Value
     | TrackError String Value
 
 
+type LoginInfo
+    = Github
+    | MagicLink Email
+
+
 type JsMsg
     = GotSizes (List SizeChange)
-    | GotProjects ( List ( ProjectId, Decode.Error ), List Project )
+    | GotLogin User
+    | GotLogout
+    | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
+    | GotProject (Maybe (Result Decode.Error Project))
+    | GotUser Email (Maybe User)
+    | GotOwners ProjectId (List User)
+    | ProjectDropped ProjectId
     | GotLocalFile Time.Posix ProjectId SourceId File FileContent
     | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
     | GotHotkey String
@@ -263,20 +346,47 @@ elmEncoder elm =
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
-        LoadProjects ->
-            Encode.object [ ( "kind", "LoadProjects" |> Encode.string ) ]
+        Login info redirect ->
+            Encode.object [ ( "kind", "Login" |> Encode.string ), ( "info", info |> encodeLoginInfo ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
+
+        Logout ->
+            Encode.object [ ( "kind", "Logout" |> Encode.string ) ]
+
+        ListProjects ->
+            Encode.object [ ( "kind", "ListProjects" |> Encode.string ) ]
+
+        LoadProject id ->
+            Encode.object [ ( "kind", "LoadProject" |> Encode.string ), ( "id", id |> ProjectId.encode ) ]
 
         LoadRemoteProject projectUrl ->
             Encode.object [ ( "kind", "LoadRemoteProject" |> Encode.string ), ( "projectUrl", projectUrl |> Encode.string ) ]
 
-        SaveProject project ->
-            Encode.object [ ( "kind", "SaveProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+        CreateProject project ->
+            Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        UpdateProject project ->
+            Encode.object [ ( "kind", "UpdateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        MoveProjectTo project storage ->
+            Encode.object [ ( "kind", "MoveProjectTo" |> Encode.string ), ( "project", project |> Project.encode ), ( "storage", storage |> ProjectStorage.encode ) ]
+
+        GetUser email ->
+            Encode.object [ ( "kind", "GetUser" |> Encode.string ), ( "email", email |> Encode.string ) ]
+
+        UpdateUser user ->
+            Encode.object [ ( "kind", "UpdateUser" |> Encode.string ), ( "user", user |> User.encode ) ]
+
+        GetOwners project ->
+            Encode.object [ ( "kind", "GetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ) ]
+
+        SetOwners project users ->
+            Encode.object [ ( "kind", "SetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ), ( "owners", users |> Encode.list UserId.encode ) ]
 
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]
 
         DropProject project ->
-            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ) ]
 
         GetLocalFile project source file ->
             Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
@@ -289,6 +399,12 @@ elmEncoder elm =
 
         ListenKeys keys ->
             Encode.object [ ( "kind", "ListenKeys" |> Encode.string ), ( "keys", keys |> Encode.dict identity (Encode.list hotkeyEncoder) ) ]
+
+        Confetti id ->
+            Encode.object [ ( "kind", "Confetti" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        ConfettiPride ->
+            Encode.object [ ( "kind", "ConfettiPride" |> Encode.string ) ]
 
         TrackPage name ->
             Encode.object [ ( "kind", "TrackPage" |> Encode.string ), ( "name", name |> Encode.string ) ]
@@ -318,8 +434,30 @@ jsDecoder =
                             )
                         )
 
+                "GotLogin" ->
+                    Decode.map GotLogin (Decode.field "user" User.decode)
+
+                "GotLogout" ->
+                    Decode.succeed GotLogout
+
                 "GotProjects" ->
-                    Decode.map GotProjects (Decode.field "projects" projectsDecoder)
+                    Decode.map GotProjects (Decode.field "projects" projectInfosDecoder)
+
+                "GotProject" ->
+                    Decode.map GotProject (Decode.maybeField "project" projectDecoder)
+
+                "GotUser" ->
+                    Decode.map2 GotUser
+                        (Decode.field "email" Decode.string)
+                        (Decode.maybeField "user" User.decode)
+
+                "GotOwners" ->
+                    Decode.map2 GotOwners
+                        (Decode.field "project" ProjectId.decode)
+                        (Decode.field "owners" (Decode.list User.decode))
+
+                "ProjectDropped" ->
+                    Decode.map ProjectDropped (Decode.field "id" ProjectId.decode)
 
                 "GotLocalFile" ->
                     Decode.map5 GotLocalFile
@@ -390,8 +528,8 @@ jsDecoder =
         )
 
 
-projectsDecoder : Decoder ( List ( ProjectId, Decode.Error ), List Project )
-projectsDecoder =
+projectInfosDecoder : Decoder ( List ( ProjectId, Decode.Error ), List ProjectInfo )
+projectInfosDecoder =
     Decode.list (Decode.tuple Decode.string Decode.value)
         |> Decode.map
             (\list ->
@@ -399,11 +537,26 @@ projectsDecoder =
                     |> List.map
                         (\( k, v ) ->
                             v
-                                |> Decode.decodeValue decodeProject
+                                |> Decode.decodeValue ProjectInfo.decode
                                 |> Result.mapError (\e -> ( k, e ))
                         )
                     |> List.resultCollect
             )
+
+
+projectDecoder : Decoder (Result Decode.Error Project)
+projectDecoder =
+    Decode.map (Decode.decodeValue decodeProject) Decode.value
+
+
+encodeLoginInfo : LoginInfo -> Encode.Value
+encodeLoginInfo info =
+    case info of
+        Github ->
+            Encode.object [ ( "kind", "Github" |> Encode.string ) ]
+
+        MagicLink email ->
+            Encode.object [ ( "kind", "MagicLink" |> Encode.string ), ( "email", email |> Encode.string ) ]
 
 
 port elmToJs : Value -> Cmd msg

@@ -1,4 +1,4 @@
-import {Timestamp} from "./basics";
+import {Timestamp, Uuid} from "./basics";
 
 export interface Project {
     id: ProjectId
@@ -7,9 +7,21 @@ export interface Project {
     layout: Layout
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
+    storage?: ProjectStorage
     createdAt: Timestamp
     updatedAt: Timestamp
     version: number
+}
+
+export interface ProjectInfo {
+    id: ProjectId
+    name: ProjectName
+    tables: number
+    relations: number
+    layouts: number
+    storage: ProjectStorage
+    createdAt: Timestamp
+    updatedAt: Timestamp
 }
 
 export interface Source {
@@ -149,9 +161,16 @@ export interface Settings {
     removedTables?: string
 }
 
-export type ProjectId = string
+export type ProjectStorage = 'browser' | 'cloud'
+
+export const ProjectStorage: {[key in ProjectStorage]: key} = {
+    browser: 'browser',
+    cloud: 'cloud'
+}
+
+export type ProjectId = Uuid
 export type ProjectName = string
-export type SourceId = string
+export type SourceId = Uuid
 export type SourceName = string
 export type SchemaName = string
 export type TableId = string

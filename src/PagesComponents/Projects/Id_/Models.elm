@@ -1,13 +1,12 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, toastError, toastInfo, toastSuccess, toastWarning)
+module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, CursorMode(..), FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
 
 import Components.Atoms.Icon exposing (Icon(..))
-import Components.Molecules.Toast as Toast exposing (Content(..))
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
-import Libs.Models exposing (Millis, ZoomDelta)
+import Libs.Models exposing (ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -20,10 +19,12 @@ import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
+import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -32,9 +33,11 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
 import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Random
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
+import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
 
 
@@ -45,6 +48,7 @@ type alias Model =
     , screen : ScreenProps
     , loaded : Bool
     , erd : Maybe Erd
+    , projects : List ProjectInfo
     , hoverTable : Maybe TableId -- TODO remove?
     , hoverColumn : Maybe ColumnRef -- TODO remove?
     , cursorMode : CursorMode
@@ -55,6 +59,7 @@ type alias Model =
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
     , sharing : Maybe SharingDialog
+    , upload : Maybe ProjectUploadDialog.Model
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe SourceUploadDialog
     , sourceParsing : Maybe SourceParsingDialog
@@ -65,8 +70,7 @@ type alias Model =
     , openedPopover : HtmlId
     , contextMenu : Maybe ContextMenu
     , dragging : Maybe DragState
-    , toastIdx : Int
-    , toasts : List Toast.Model
+    , toasts : Toasts.Model
     , confirm : Maybe ConfirmDialog
     , prompt : Maybe PromptDialog
     , openedDialogs : List HtmlId
@@ -140,6 +144,7 @@ type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | SaveProject
+    | MoveProjectTo ProjectStorage
     | RenameProject ProjectName
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)
@@ -168,6 +173,7 @@ type Msg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
+    | ProjectUploadDialogMsg ProjectUploadDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | SourceParsing SqlSourceUploadMsg
     | SourceParsed ProjectId Source
@@ -178,6 +184,7 @@ type Msg
     | OnWheel WheelEvent
     | Zoom ZoomDelta
       -- global messages
+    | Logout
     | Focus HtmlId
     | DropdownToggle HtmlId
     | PopoverSet HtmlId
@@ -188,10 +195,7 @@ type Msg
     | DragMove Position
     | DragEnd Position
     | DragCancel
-    | ToastAdd (Maybe Millis) Toast.Content
-    | ToastShow (Maybe Millis) String
-    | ToastHide String
-    | ToastRemove String
+    | Toast Toasts.Msg
     | ConfirmOpen (Confirm Msg)
     | ConfirmAnswer Bool (Cmd Msg)
     | PromptOpen (Prompt Msg) String
@@ -280,26 +284,6 @@ type HelpMsg
     = HOpen String
     | HClose
     | HToggle String
-
-
-toastSuccess : String -> Msg
-toastSuccess message =
-    ToastAdd (Just 8000) (Simple { color = Tw.green, icon = CheckCircle, title = message, message = "" })
-
-
-toastInfo : String -> Msg
-toastInfo message =
-    ToastAdd (Just 8000) (Simple { color = Tw.blue, icon = InformationCircle, title = message, message = "" })
-
-
-toastWarning : String -> Msg
-toastWarning message =
-    ToastAdd (Just 8000) (Simple { color = Tw.yellow, icon = ExclamationCircle, title = message, message = "" })
-
-
-toastError : String -> Msg
-toastError message =
-    ToastAdd Nothing (Simple { color = Tw.red, icon = Exclamation, title = message, message = "" })
 
 
 confirm : String -> Html Msg -> Msg -> Msg

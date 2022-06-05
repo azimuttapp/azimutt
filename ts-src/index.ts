@@ -6,28 +6,35 @@ import {
     ListenKeysMsg,
     LoadRemoteProjectMsg,
     ObserveSizesMsg,
-    SaveProjectMsg,
-    SetMetaMsg
+    SetMetaMsg,
+    UpdateProjectMsg
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {Project} from "./types/project";
+import {Project, ProjectId} from "./types/project";
 import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
-import {IndexedDBStorage} from "./storages/indexeddb";
-import {LocalStorageStorage} from "./storages/localstorage";
-import {InMemoryStorage} from "./storages/inmemory";
 import {ConsoleLogger} from "./services/logger";
-import {loadPolyfills} from "./utils/polyphills";
+import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
+import {Supabase} from "./services/supabase";
+import {StorageManager} from "./storages/manager";
+import {Conf} from "./conf";
 
 const env = Utils.getEnv()
+const conf = Conf.get(env)
 const logger = new ConsoleLogger(env)
-const app = ElmApp.init({now: Date.now()}, logger)
+const fs = {enableCloud: !!localStorage.getItem('enable-cloud')}
+const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
+const supabase = Supabase.init(conf.supabase).onLogin(user => {
+    app.login(user)
+    analytics.login(user)
+    listProjects()
+}, err => app.toast('error', err))
+const store = new StorageManager(supabase, fs.enableCloud, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics: Promise<Analytics> = env === 'prod' && !skipAnalytics ? SplitbeeAnalytics.init() : Promise.resolve(new LogAnalytics(logger))
-const errorTracking: Promise<ErrLogger> = env === 'prod' ? SentryErrLogger.init() : Promise.resolve(new LogErrLogger(logger))
-const store = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
+const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
+const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -42,8 +49,8 @@ window.azimutt = new AzimuttApi(app, logger)
 
 if ('serviceWorker' in navigator && env === 'prod') {
     navigator.serviceWorker.register("/service-worker.js")
-        // .then(reg => logger.debug('service-worker registered!', reg))
-        // .catch(err => logger.debug('service-worker failed to register!', err))
+    // .then(reg => logger.debug('service-worker registered!', reg))
+    // .catch(err => logger.debug('service-worker failed to register!', err))
 }
 
 /* Elm ports */
@@ -56,22 +63,39 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
-app.on('LoadProjects', loadProjects)
+app.on('Login', msg => supabase.login(msg.info, msg.redirect).then(user => {
+    app.login(user)
+    analytics.login(user)
+}).then(listProjects).catch(logger.warn))
+app.on('Logout', _ => supabase.logout().then(() => {
+    app.logout()
+    analytics.logout()
+}).then(listProjects).catch(logger.warn))
+app.on('ListProjects', listProjects)
+app.on('LoadProject', msg => loadProject(msg.id))
 app.on('LoadRemoteProject', loadRemoteProject)
-app.on('SaveProject', msg => saveProject(msg, loadProjects))
+app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProject))
+app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
+app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
+app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)).catch(_ => app.gotUser(msg.email, undefined)))
+app.on('UpdateUser', msg => store.updateUser(msg.user).then(_ => app.login(msg.user)))
+app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
+app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners => app.gotOwners(msg.project, owners)))
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
-app.on('DropProject', msg => store.then(s => s.dropProject(msg.project)).then(_ => loadProjects()))
+app.on('DropProject', msg => store.dropProject(msg.project).then(_ => app.dropProject(msg.project.id)))
 app.on('GetLocalFile', getLocalFile)
 app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
-app.on('TrackPage', msg => analytics.then(a => a.trackPage(msg.name)))
-app.on('TrackEvent', msg => analytics.then(a => a.trackEvent(msg.name, msg.details)))
+app.on('Confetti', msg => Utils.launchConfetti(msg.id))
+app.on('ConfettiPride', msg => Utils.launchConfettiPride())
+app.on('TrackPage', msg => analytics.trackPage(msg.name))
+app.on('TrackEvent', msg => analytics.trackEvent(msg.name, msg.details))
 app.on('TrackError', msg => {
-    analytics.then(a => a.trackError(msg.name, msg.details))
-    errorTracking.then(e => e.trackError(msg.name, msg.details))
+    analytics.trackError(msg.name, msg.details)
+    errorTracking.trackError(msg.name, msg.details)
 })
-if(app.noListeners().length > 0) {
+if (app.noListeners().length > 0) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
 
@@ -92,31 +116,44 @@ function setMeta(meta: SetMetaMsg) {
         document.querySelector('meta[property="og:url"]')?.setAttribute('content', meta.canonical)
         document.querySelector('meta[name="twitter:url"]')?.setAttribute('content', meta.canonical)
     }
-    if (typeof meta.html === 'string') { document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html) }
-    if (typeof meta.body === 'string') { document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body) }
+    if (typeof meta.html === 'string') {
+        document.getElementsByTagName('html')[0]?.setAttribute('class', meta.html)
+    }
+    if (typeof meta.body === 'string') {
+        document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body)
+    }
 }
 
 function loadRemoteProject(msg: LoadRemoteProjectMsg) {
     fetch(msg.projectUrl)
         .then(res => res.json())
-        .then((project: Project) => app.loadProjects([project]))
+        .then((project: Project) => app.gotProject(project))
         .catch(err => {
             app.loadProjects([])
             app.toast('error', `Can't load remote project: ${err}`)
         })
 }
 
-function loadProjects() {
-    store.then(s => s.loadProjects()).then((projects: Project[]) => {
-        app.loadProjects(projects)
-        window.azimutt.projects = projects.reduce((acc, p) => ({...acc, [p.id]: p}), {})
-        const [_, id] = window.location.pathname.match(/^\/projects\/([0-9a-f-]{36})/) || []
-        id ? window.azimutt.project = window.azimutt.projects[id] : undefined
+function listProjects() {
+    store.listProjects().then(app.loadProjects).catch(err => {
+        app.loadProjects([])
+        app.toast('error', `Can't list projects: ${err}`)
     })
 }
-function saveProject(msg: SaveProjectMsg, callback: () => void) {
-    store.then(s => s.saveProject(msg.project))
-        .then(_ => callback())
+
+function loadProject(id: ProjectId) {
+    store.loadProject(id).then(app.gotProject).catch(err => {
+        app.gotProject(undefined)
+        app.toast('error', `Can't load project: ${err}`)
+    })
+}
+
+function updateProject(msg: UpdateProjectMsg): Promise<Project> {
+    return store.updateProject(msg.project)
+        .then(p => {
+            app.toast('success', 'Project saved')
+            return p
+        })
         .catch(e => {
             let message
             if (typeof e === 'string') {
@@ -124,13 +161,14 @@ function saveProject(msg: SaveProjectMsg, callback: () => void) {
             } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
                 message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
             } else {
-                message = 'Unknown localStorage error: ' + e.message
+                message = 'Unknown storage error: ' + e.message
             }
             app.toast('error', message)
-            const name = 'local-storage'
+            const name = 'storage'
             const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
-            analytics.then(a => a.trackError(name, details))
-            errorTracking.then(e => e.trackError(name, details))
+            analytics.trackError(name, details)
+            errorTracking.trackError(name, details)
+            return msg.project
         })
 }
 
@@ -165,13 +203,18 @@ const resizeObserver = new ResizeObserver(entries => {
     }))
     app.updateSizes(sizes)
 })
+
 function observeSizes(msg: ObserveSizesMsg) {
     msg.ids.flatMap(Utils.maybeElementById).forEach(elt => resizeObserver.observe(elt))
 }
 
-const hotkeys: {[key: string]: (Hotkey & {id: HotkeyId})[]} = {}
+const hotkeys: { [key: string]: (Hotkey & { id: HotkeyId })[] } = {}
+
 // keydown is needed for preventDefault, also can't use Elm Browser.Events.onKeyUp because of it
-function isInput(elt: Element) { return elt.localName === 'input' || elt.localName === 'textarea' }
+function isInput(elt: Element) {
+    return elt.localName === 'input' || elt.localName === 'textarea'
+}
+
 function keydownHotkey(e: KeyboardEvent) {
     const target = e.target as HTMLElement
     const matches = (hotkeys[e.key] || []).filter(hotkey => {
@@ -186,11 +229,12 @@ function keydownHotkey(e: KeyboardEvent) {
                     (!hotkey.target.tag || hotkey.target.tag === target.localName)))
     })
     matches.map(hotkey => {
-        if (hotkey.preventDefault) { e.preventDefault() }
+        if (hotkey.preventDefault) e.preventDefault()
         app.gotHotkey(hotkey)
     })
-    if(matches.length === 0 && e.key === "Escape" && isInput(target)) { target.blur() }
+    if (matches.length === 0 && e.key === "Escape" && isInput(target)) target.blur()
 }
+
 function listenHotkeys(msg: ListenKeysMsg) {
     Object.keys(hotkeys).forEach(key => hotkeys[key] = [])
     Object.entries(msg.keys).forEach(([id, alternatives]) => {
@@ -206,6 +250,7 @@ function listenHotkeys(msg: ListenKeysMsg) {
 
 // handle key hold
 const holdKeyState = {drag: false}
+
 function keydownHoldKey(e: KeyboardEvent) {
     if (e.code === 'Space') {
         if (!holdKeyState.drag && (e.target as Element).localName !== 'input') {
@@ -214,6 +259,7 @@ function keydownHoldKey(e: KeyboardEvent) {
         holdKeyState.drag = true
     }
 }
+
 function keyupHoldKey(e: KeyboardEvent) {
     if (e.code === 'Space') {
         if (holdKeyState.drag) {
@@ -238,7 +284,7 @@ function trackClick(e: MouseEvent) {
                 details[attr.name.replace('data-track-event-', '')] = attr.value
             }
         }
-        analytics.then(a => a.trackEvent(eventName, details))
+        analytics.trackEvent(eventName, details)
     }
 }
 

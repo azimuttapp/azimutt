@@ -1,9 +1,10 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
+import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileLineContent, TrackEvent)
@@ -11,8 +12,10 @@ import Libs.Result as Result
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
+import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 
 
 
@@ -22,6 +25,11 @@ import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResu
 openAppCta : String -> TrackEvent
 openAppCta source =
     { name = "open-app-cta", details = [ ( "source", source ) ], enabled = True }
+
+
+openProjectUploadDialog : TrackEvent
+openProjectUploadDialog =
+    { name = "open-project-upload-dialog", details = [], enabled = True }
 
 
 openSharing : TrackEvent
@@ -75,26 +83,26 @@ parsedSource =
 
 
 createProject : Project -> TrackEvent
-createProject =
-    projectEvent "create"
+createProject project =
+    projectEvent "create" (ProjectInfo.create project)
 
 
 importProject : Project -> TrackEvent
-importProject =
-    projectEvent "import"
+importProject project =
+    projectEvent "import" (ProjectInfo.create project)
 
 
-loadProject : Project -> TrackEvent
+loadProject : ProjectInfo -> TrackEvent
 loadProject =
     projectEvent "load"
 
 
 updateProject : Project -> TrackEvent
-updateProject =
-    projectEvent "update"
+updateProject project =
+    projectEvent "update" (ProjectInfo.create project)
 
 
-deleteProject : Project -> TrackEvent
+deleteProject : ProjectInfo -> TrackEvent
 deleteProject =
     projectEvent "delete"
 
@@ -182,13 +190,13 @@ parseSQLEvent parser source =
     }
 
 
-projectEvent : String -> Project -> TrackEvent
+projectEvent : String -> ProjectInfo -> TrackEvent
 projectEvent eventName project =
-    { name = eventName ++ (project.sources |> List.concatMap (.fromSample >> Maybe.toList) |> List.head |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-project"
+    { name = eventName ++ Bool.cond (ProjectId.isSample project.id) "-sample" "" ++ "-project"
     , details =
-        [ ( "table-count", project.tables |> Dict.size |> String.fromInt )
-        , ( "relation-count", project.relations |> List.length |> String.fromInt )
-        , ( "layout-count", project.layouts |> Dict.size |> String.fromInt )
+        [ ( "table-count", project.tables |> String.fromInt )
+        , ( "relation-count", project.relations |> String.fromInt )
+        , ( "layout-count", project.layouts |> String.fromInt )
         ]
     , enabled = True
     }

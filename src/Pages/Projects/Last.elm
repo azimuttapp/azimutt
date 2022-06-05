@@ -53,7 +53,7 @@ init =
             , body = Just "h-full"
             }
         , Ports.trackPage "last-project"
-        , Ports.loadProjects
+        , Ports.listProjects
         ]
     )
 

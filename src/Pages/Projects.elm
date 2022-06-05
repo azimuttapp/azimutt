@@ -1,29 +1,33 @@
 module Pages.Projects exposing (Model, Msg, page)
 
 import Browser.Navigation as Navigation
+import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict
 import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Task as T
+import Models.Project.ProjectStorage as ProjectStorage
 import Page
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
 import Ports exposing (JsMsg(..))
 import Request
+import Services.Lenses exposing (mapToastsCmd)
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
-import Track
 import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init
+        { init = init shared
         , update = update req
-        , view = view shared
+        , view = view shared req
         , subscriptions = subscriptions
         }
 
@@ -45,11 +49,13 @@ title =
     Conf.constants.defaultTitle
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Shared.Model -> ( Model, Cmd Msg )
+init shared =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
-      , projects = Loading
+      , projects = shared.projects
+      , openedDropdown = ""
+      , toasts = Toasts.init
       , confirm = Nothing
       , modalOpened = False
       }
@@ -62,7 +68,7 @@ init =
             , body = Just "h-full"
             }
         , Ports.trackPage "dashboard"
-        , Ports.loadProjects
+        , Ports.listProjects
         ]
     )
 
@@ -77,11 +83,17 @@ update req msg model =
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
 
-        ToggleMobileMenu ->
-            ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
+        Logout ->
+            ( model |> mapProjects (List.filter (\p -> p.storage == ProjectStorage.Browser)), Ports.logout )
 
         DeleteProject project ->
-            ( model, Cmd.batch [ Ports.dropProject project, Ports.track (Track.deleteProject project) ] )
+            ( model, Ports.dropProject project )
+
+        DropdownToggle id ->
+            ( model |> Dropdown.update id, Cmd.none )
+
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
 
         ConfirmOpen confirm ->
             ( { model | confirm = Just confirm }, T.sendAfter 1 ModalOpen )
@@ -101,6 +113,9 @@ update req msg model =
         JsMessage message ->
             model |> handleJsMessage message
 
+        Noop _ ->
+            ( model, Cmd.none )
+
 
 handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
@@ -108,8 +123,24 @@ handleJsMessage msg model =
         GotProjects ( _, projects ) ->
             ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
 
+        ProjectDropped projectId ->
+            ( model |> mapProjects (List.filter (\p -> p.id /= projectId)), Cmd.none )
+
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
+
         _ ->
             ( model, Cmd.none )
+
+
+mapProjects : (List ProjectInfo -> List ProjectInfo) -> Model -> Model
+mapProjects f model =
+    case model.projects of
+        Loading ->
+            model
+
+        Loaded projects ->
+            { model | projects = Loaded (f projects) }
 
 
 
@@ -117,14 +148,17 @@ handleJsMessage msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Ports.onJsMessage JsMessage
+subscriptions model =
+    Sub.batch
+        ([ Ports.onJsMessage JsMessage ]
+            ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
+        )
 
 
 
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
-    { title = title, body = model |> viewProjects shared }
+view : Shared.Model -> Request.With Params -> Model -> View Msg
+view shared req model =
+    { title = title, body = model |> viewProjects req.route shared }

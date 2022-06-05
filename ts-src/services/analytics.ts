@@ -1,35 +1,34 @@
 import {Logger} from "./logger";
-import {Splitbee} from "../types/window";
+import splitbee from '@splitbee/web';
+import {Data} from "../types/elm";
+import {Profile} from "../types/profile";
+import {SplitbeeConf} from "../conf";
 
 export interface Analytics {
     trackPage: (name: string) => void
-    trackEvent: (name: string, details: object) => void
-    trackError: (name: string, details: object) => void
+    trackEvent: (name: string, details?: Data) => void
+    trackError: (name: string, details?: Data) => void
+    login: (user: Profile) => void
+    logout: () => void
 }
 
 export class SplitbeeAnalytics implements Analytics {
-    static init(): Promise<SplitbeeAnalytics> {
-        const waitSplitbee = (resolve: (r: SplitbeeAnalytics) => void, reject: (err: Error) => void, timeout: number) => {
-            if (timeout <= 0) {
-                reject(new Error('Splitbee not available'))
-            } else if (window.splitbee) {
-                resolve(new SplitbeeAnalytics(window.splitbee))
-            } else {
-                setTimeout(() => waitSplitbee(resolve, reject, timeout - 100), 100)
-            }
-        }
-        return new Promise<SplitbeeAnalytics>((resolve, reject) => waitSplitbee(resolve, reject, 3000))
-    }
-
-    constructor(private splitbee: Splitbee) {
+    constructor(conf: SplitbeeConf) {
+        splitbee.init(conf)
     }
 
     trackPage = (name: string): void => { /* automatically tracked, do nothing */
     }
-    trackEvent = (name: string, details: object): void => {
-        this.splitbee.track(name, details)
+    trackEvent = (name: string, details?: Data): void => {
+        splitbee.track(name, details)
     }
-    trackError = (name: string, details: object): void => { /* don't track errors in splitbee */
+    trackError = (name: string, details?: Data): void => { /* don't track errors in splitbee */
+    }
+    login = (user: Profile): void => {
+        splitbee.user.set({email: user.email})
+    }
+    logout = (): void => {
+        splitbee.reset()
     }
 }
 
@@ -38,6 +37,8 @@ export class LogAnalytics implements Analytics {
     }
 
     trackPage = (name: string): void => this.logger.debug('analytics.page', name)
-    trackEvent = (name: string, details: object): void => this.logger.debug('analytics.event', name, details)
-    trackError = (name: string, details: object): void => this.logger.debug('analytics.error', name, details)
+    trackEvent = (name: string, details?: Data): void => this.logger.debug('analytics.event', name, details)
+    trackError = (name: string, details?: Data): void => this.logger.debug('analytics.error', name, details)
+    login = (user: Profile): void => this.logger.debug('analytics.login', user)
+    logout = (): void => this.logger.debug('analytics.logout')
 }

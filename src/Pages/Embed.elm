@@ -20,6 +20,7 @@ import Ports
 import Random
 import Request
 import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Toasts as Toasts
 import Shared
 import Time
 
@@ -33,8 +34,8 @@ page shared req =
     in
     Page.element
         { init = init shared.now query
-        , update = Updates.update Nothing query.layout shared.now
-        , view = Views.view shared
+        , update = Updates.update req query.layout shared.now
+        , view = Views.view (Request.pushRoute Route.NotFound req) shared
         , subscriptions = Subscriptions.subscriptions
         }
 
@@ -67,6 +68,7 @@ init now query =
       , screen = ScreenProps.zero
       , loaded = query.projectUrl == Nothing && query.sourceUrl == Nothing
       , erd = Nothing
+      , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
@@ -77,6 +79,7 @@ init now query =
       , findPath = Nothing
       , schemaAnalysis = Nothing
       , sharing = Nothing
+      , upload = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , sourceParsing =
@@ -88,8 +91,7 @@ init now query =
       , openedPopover = ""
       , contextMenu = Nothing
       , dragging = Nothing
-      , toastIdx = 0
-      , toasts = []
+      , toasts = Toasts.init
       , confirm = Nothing
       , prompt = Nothing
       , openedDialogs = []

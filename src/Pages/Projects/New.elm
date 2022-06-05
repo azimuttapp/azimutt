@@ -1,5 +1,6 @@
 module Pages.Projects.New exposing (Model, Msg, page)
 
+import Components.Molecules.Dropdown as Dropdown
 import Conf exposing (SampleSchema)
 import Dict
 import Gen.Params.Projects.New exposing (Params)
@@ -10,14 +11,16 @@ import Libs.Models.FileUrl as FileUrl
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
+import Models.Project.ProjectStorage as ProjectStorage
 import Page
-import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..), toastError)
+import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapList, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapToasts, setConfirm, setIsOpen, setToastIdx)
+import Services.Lenses exposing (mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapToastsCmd, setConfirm)
 import Services.ProjectImport as ProjectImport
 import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Toasts as Toasts
 import Shared
 import Time
 import Track
@@ -29,7 +32,7 @@ page shared req =
     Page.element
         { init = init req
         , update = update req
-        , view = view shared
+        , view = view shared req
         , subscriptions = subscriptions
         }
 
@@ -88,8 +91,8 @@ init req =
       , sqlSourceUpload = Nothing
       , projectImport = Nothing
       , sampleSelection = Nothing
-      , toastIdx = 0
-      , toasts = []
+      , openedDropdown = ""
+      , toasts = Toasts.init
       , confirm = Nothing
       , openedDialogs = []
       }
@@ -103,7 +106,7 @@ init req =
             , body = Just "h-full"
             }
          , Ports.trackPage "new-project"
-         , Ports.loadProjects
+         , Ports.listProjects
          ]
             ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleSelectMsg (ProjectImport.SelectRemoteFile s.url (Just s.key))) ]) [])
         )
@@ -114,7 +117,7 @@ setSelectedTab : Tab -> Model -> Model
 setSelectedTab tab model =
     case tab of
         Schema ->
-            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Nothing Nothing (\_ -> Noop)), projectImport = Nothing, sampleSelection = Nothing }
+            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Nothing Nothing (\_ -> Noop "select-tab-source-upload")), projectImport = Nothing, sampleSelection = Nothing }
 
         Import ->
             { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Just ProjectImport.init, sampleSelection = Nothing }
@@ -133,8 +136,8 @@ update req msg model =
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
 
-        ToggleMobileMenu ->
-            ( { model | mobileMenuOpen = not model.mobileMenuOpen }, Cmd.none )
+        Logout ->
+            ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Browser) }, Ports.logout )
 
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
@@ -143,52 +146,72 @@ update req msg model =
             ( model |> setSelectedTab tab, Cmd.none )
 
         SqlSourceUploadMsg message ->
-            model |> mapSqlSourceUploadMCmd (SqlSourceUpload.update message SqlSourceUploadMsg)
+            model
+                |> mapSqlSourceUploadMCmd (SqlSourceUpload.update message SqlSourceUploadMsg)
+                |> (\( m, cmd ) ->
+                        if message == SqlSourceUpload.BuildSource then
+                            ( m, Cmd.batch [ cmd, Ports.confetti "create-project-btn" ] )
+
+                        else
+                            ( m, cmd )
+                   )
 
         SqlSourceUploadDrop ->
-            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing (\_ -> Noop)), Cmd.none )
+            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing (\_ -> Noop "drop-source-upload")), Cmd.none )
 
         SqlSourceUploadCreate projectId source ->
             Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source
                 |> (\project ->
-                        ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+                        ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
                    )
 
         ProjectImportMsg message ->
-            model |> mapProjectImportMCmd (ProjectImport.update message)
+            model
+                |> mapProjectImportMCmd (ProjectImport.update message)
+                |> (\( m, cmd ) ->
+                        case message of
+                            ProjectImport.FileLoaded _ _ ->
+                                ( m, Cmd.batch [ cmd, Ports.confetti "import-project-btn" ] )
+
+                            _ ->
+                                ( m, cmd )
+                   )
 
         ProjectImportDrop ->
             ( model |> mapProjectImportM (\_ -> ProjectImport.init), Cmd.none )
 
         ProjectImportCreate project ->
-            ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
         ProjectImportCreateNew id project ->
             { project | id = id, name = String.unique (model.projects |> List.map .name) project.name }
                 |> (\p ->
-                        ( model, Cmd.batch [ Ports.saveProject p, Ports.track (Track.importProject p), Request.pushRoute (Route.Projects__Id_ { id = p.id }) req ] )
+                        ( model, Cmd.batch [ Ports.createProject p, Ports.track (Track.importProject p), Request.pushRoute (Route.Projects__Id_ { id = p.id }) req ] )
                    )
 
         SampleSelectMsg message ->
-            model |> mapSampleSelectionMCmd (ProjectImport.update message)
+            model
+                |> mapSampleSelectionMCmd (ProjectImport.update message)
+                |> (\( m, cmd ) ->
+                        case message of
+                            ProjectImport.FileLoaded _ _ ->
+                                ( m, Cmd.batch [ cmd, Ports.confetti "sample-project-btn" ] )
+
+                            _ ->
+                                ( m, cmd )
+                   )
 
         SampleSelectDrop ->
             ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )
 
         SampleSelectCreate project ->
-            ( model, Cmd.batch [ Ports.saveProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
-        ToastAdd millis toast ->
-            model.toastIdx |> String.fromInt |> (\key -> ( model |> setToastIdx (model.toastIdx + 1) |> mapToasts (\t -> { key = key, content = toast, isOpen = False } :: t), T.sendAfter 1 (ToastShow millis key) ))
+        DropdownToggle id ->
+            ( model |> Dropdown.update id, Cmd.none )
 
-        ToastShow millis key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen True)), millis |> Maybe.mapOrElse (\delay -> T.sendAfter delay (ToastHide key)) Cmd.none )
-
-        ToastHide key ->
-            ( model |> mapToasts (mapList .key key (setIsOpen False)), T.sendAfter 300 (ToastRemove key) )
-
-        ToastRemove key ->
-            ( model |> mapToasts (List.filter (\t -> t.key /= key)), Cmd.none )
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
 
         ConfirmOpen confirm ->
             ( model |> setConfirm (Just { id = Conf.ids.confirmDialog, content = confirm }), T.sendAfter 1 (ModalOpen Conf.ids.confirmDialog) )
@@ -205,7 +228,7 @@ update req msg model =
         JsMessage message ->
             model |> handleJsMessage message
 
-        Noop ->
+        Noop _ ->
             ( model, Cmd.none )
 
 
@@ -223,7 +246,7 @@ handleJsMessage msg model =
                 ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> SqlSourceUploadMsg) )
 
             else
-                ( model, T.send (toastError ("File should end with .json or .sql, " ++ file.name ++ " is not handled :(")) )
+                ( model, Toasts.error Toast ("File should end with .json or .sql, " ++ file.name ++ " is not handled :(") )
 
         GotRemoteFile now projectId sourceId url content sample ->
             if url |> FileUrl.filename |> String.endsWith ".json" then
@@ -237,7 +260,10 @@ handleJsMessage msg model =
                 ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> SqlSourceUploadMsg) )
 
             else
-                ( model, T.send (toastError ("File should end with .json or .sql, " ++ url ++ " is not handled :(")) )
+                ( model, Toasts.error Toast ("File should end with .json or .sql, " ++ url ++ " is not handled :(") )
+
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
 
         _ ->
             ( model, Cmd.none )
@@ -248,14 +274,17 @@ handleJsMessage msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Ports.onJsMessage JsMessage
+subscriptions model =
+    Sub.batch
+        ([ Ports.onJsMessage JsMessage ]
+            ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
+        )
 
 
 
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
-    { title = title, body = model |> viewNewProject shared.zone }
+view : Shared.Model -> Request.With Params -> Model -> View Msg
+view shared req model =
+    { title = title, body = model |> viewNewProject shared req.route }

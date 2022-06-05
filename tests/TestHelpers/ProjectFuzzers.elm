@@ -30,6 +30,7 @@ import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings)
+import Models.Project.ProjectStorage as ProjectStrorage exposing (ProjectStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.SampleKey exposing (SampleKey)
@@ -45,12 +46,12 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
-import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, zoomLevel)
+import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, uuid, zoomLevel)
 
 
 project : Fuzzer Project
 project =
-    F.map10 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings posix posix
+    F.map11 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings projectStorage posix posix
 
 
 source : Fuzzer Source
@@ -163,9 +164,22 @@ findHiddenColumns =
     Fuzz.map3 HiddenColumns stringSmall Fuzz.bool Fuzz.bool
 
 
+projectStorage : Fuzzer ProjectStorage
+projectStorage =
+    Fuzz.map
+        (\b ->
+            if b then
+                ProjectStrorage.Browser
+
+            else
+                ProjectStrorage.Cloud
+        )
+        Fuzz.bool
+
+
 projectId : Fuzzer ProjectId
 projectId =
-    identifier
+    uuid
 
 
 projectName : Fuzzer ProjectName
@@ -175,7 +189,7 @@ projectName =
 
 sourceId : Fuzzer SourceId
 sourceId =
-    identifier |> Fuzz.map SourceId.new
+    uuid |> Fuzz.map SourceId.new
 
 
 sourceName : Fuzzer SourceName

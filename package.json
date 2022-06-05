@@ -21,25 +21,39 @@
   "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
   "scripts": {
     "start": "npm install && npm run dev",
-    "dev": "concurrently \"npm run dev:app\" \"npm run dev:ts\" \"npm run dev:tailwind\" \"npm run dev:book\"",
-    "build": "npm run build:tailwind && npm run build:ts && npm run build:app",
-    "dev:app": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
-    "build:app": "npx elm-spa build",
-    "dev:ts": "npx tsc -w",
-    "build:ts": "npx tsc",
+    "dev": "concurrently \"npm run dev:tailwind\" \"npm run dev:ts\" \"npm run dev:elm\"",
+    "build": "npm run build:tailwind && npm run build:ts && npm run build:elm",
+    "dev:elm": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
+    "build:elm": "npx elm-spa build",
+    "dev:ts": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=public/script.js --bundle --watch",
+    "build:ts": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=public/script.js --bundle --minify --sourcemap",
     "dev:tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch",
     "build:tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --minify",
-    "dev:book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js",
-    "upgrade": "npx npm-check-updates -u"
+    "book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js",
+    "upgrade": "npx npm-check-updates -u",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@sentry/browser": "^6.19.7",
+    "@sentry/tracing": "^6.19.7",
+    "@splitbee/web": "^0.3.0",
+    "@supabase/supabase-js": "^1.35.3",
+    "canvas-confetti": "^1.5.1",
+    "jiff": "^0.7.3"
   },
   "devDependencies": {
     "@tailwindcss/forms": "^0.5.0",
     "@tailwindcss/typography": "^0.5.2",
+    "@types/canvas-confetti": "^1.4.2",
+    "@types/jest": "^27.5.1",
     "concurrently": "^7.1.0",
     "elm-coverage": "^0.4.1",
     "elm-review": "^2.7.1",
     "elm-test": "^0.19.1-revision7",
+    "esbuild": "^0.14.39",
+    "jest": "^28.1.0",
     "tailwindcss": "^3.0.24",
+    "ts-jest": "^28.0.3",
     "typescript": "^4.6.4"
   }
 }

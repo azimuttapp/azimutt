@@ -1,11 +1,11 @@
 module PagesComponents.Home_.Models exposing (Model, Msg(..))
 
-import Models.Project exposing (Project)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 
 
 type alias Model =
-    { projects : List Project
+    { projects : List ProjectInfo
     }
 
 

@@ -21,26 +21,42 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectStorage as ProjectStorage
+import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import Shared exposing (GlobalConf)
 
 
-viewNavbarTitle : ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarTitle conf otherProjects project usedLayout layouts htmlId openedDropdown =
+viewNavbarTitle : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarTitle gConf eConf projects project usedLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
-        ([ if conf.projectManagement then
-            Lazy.lazy4 viewProjectsDropdown otherProjects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+        ([ if gConf.enableCloud && eConf.projectManagement then
+            button [ onClick (ProjectUploadDialogMsg ProjectUploadDialog.Open), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
+                [ Icon.outline (B.cond (project.storage == ProjectStorage.Browser) CloudUpload Cloud) ""
+                ]
+                |> Tooltip.b (B.cond (project.storage == ProjectStorage.Browser) "Sync your project" "Sync in Azimutt")
+
+           else
+            div [] []
+         , if eConf.projectManagement then
+            Lazy.lazy4 viewProjectsDropdown projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
          ]
-            ++ viewLayoutsMaybe conf usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
+            ++ viewLayoutsMaybe eConf usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
 
 
 viewProjectsDropdown : List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown otherProjects project htmlId openedDropdown =
+viewProjectsDropdown projects project htmlId openedDropdown =
+    let
+        otherProjects : List ProjectInfo
+        otherProjects =
+            projects |> List.filter (\p -> p.id /= project.id)
+    in
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
@@ -54,7 +70,18 @@ viewProjectsDropdown otherProjects project htmlId openedDropdown =
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
                     ]
                   ]
-                    ++ B.cond (List.isEmpty otherProjects) [] [ otherProjects |> List.map (\p -> ContextMenu.link { url = Route.toHref (Route.Projects__Id_ { id = p.id }), text = p.name }) ]
+                    ++ B.cond (List.isEmpty otherProjects)
+                        []
+                        [ otherProjects
+                            |> List.map
+                                (\p ->
+                                    ContextMenu.linkHtml (Route.toHref (Route.Projects__Id_ { id = p.id }))
+                                        [ class "flex" ]
+                                        [ Icon.outline (ProjectStorage.icon p.storage) "mr-1"
+                                        , text p.name
+                                        ]
+                                )
+                        ]
                     ++ [ [ ContextMenu.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty

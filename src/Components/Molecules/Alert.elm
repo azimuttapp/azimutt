@@ -1,4 +1,4 @@
-module Components.Molecules.Alert exposing (ActionsModel, DescriptionModel, ListModel, doc, withActions, withDescription, withList)
+module Components.Molecules.Alert exposing (ActionsModel, DescriptionModel, ListModel, doc, simple, withActions, withDescription, withList)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
@@ -7,6 +7,14 @@ import Html exposing (Html, div, h3, li, text, ul)
 import Html.Attributes exposing (class)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Tailwind as Tw exposing (Color, bg_50, border_400, text_400, text_700, text_800)
+
+
+simple : Color -> Icon -> List (Html msg) -> Html msg
+simple color icon content =
+    div [ css [ "p-4 flex rounded-md", bg_50 color ] ]
+        [ div [ class "flex-shrink-0" ] [ Icon.solid icon (text_400 color) ]
+        , div [ css [ "ml-3 text-left text-sm", text_700 color ] ] content
+        ]
 
 
 type alias DescriptionModel =
@@ -120,7 +128,8 @@ doc : Chapter x
 doc =
     Chapter.chapter "Alert"
         |> Chapter.renderComponentList
-            [ ( "withDescription", withDescription { color = Tw.yellow, icon = Exclamation, title = "Attention needed" } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." ] )
+            [ ( "simple", simple Tw.blue InformationCircle [ text "A new software update is available. See what’s new in version 2.0.4." ] )
+            , ( "withDescription", withDescription { color = Tw.yellow, icon = Exclamation, title = "Attention needed" } [ text "Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid pariatur, ipsum similique veniam quo totam eius aperiam dolorum." ] )
             , ( "withList", withList { color = Tw.red, icon = XCircle, title = "There were 2 errors with your submission", items = [ "Your password must be at least 8 characters", "Your password must include at least one pro wrestling finishing move" ] } )
             , ( "withActions"
               , withActions

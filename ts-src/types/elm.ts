@@ -1,12 +1,32 @@
-import {File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
-import {Color, ColumnId, Delta, Position, Project, ProjectId, Size, SourceId, TableId} from "./project";
+import {Email, File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
+import {
+    Color,
+    ColumnId,
+    Delta,
+    Position,
+    Project,
+    ProjectId,
+    ProjectInfo,
+    ProjectStorage,
+    Size,
+    SourceId,
+    TableId
+} from "./project";
+import {LoginInfo} from "../services/supabase";
+import {Profile, UserId} from "./profile";
+
+export interface GlobalConf {
+    enableCloud: boolean
+}
 
 export interface ElmFlags {
     now: Timestamp
+    conf: GlobalConf
 }
 
 export interface ElmInit {
     flags: ElmFlags
+    node?: HTMLElement
 }
 
 export interface ElmRuntime {
@@ -27,8 +47,14 @@ export interface OutPort<T> {
 }
 
 export type JsMsg =
-    GotSizes
+    GotLogin
+    | GotLogout
+    | GotSizes
     | GotProjects
+    | GotProject
+    | GotUser
+    | GotOwners
+    | ProjectDropped
     | GotLocalFile
     | GotRemoteFile
     | GotHotkey
@@ -47,8 +73,14 @@ export type JsMsg =
     | GotFitToScreen
     | GotResetCanvas
     | Error
+export type GotLogin = { kind: 'GotLogin', user: Profile }
+export type GotLogout = { kind: 'GotLogout' }
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
-export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, Project][] }
+export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
+export type GotProject = { kind: 'GotProject', project?: Project }
+export type GotUser = { kind: 'GotUser', email: Email, user: Profile | undefined }
+export type GotOwners = { kind: 'GotOwners', project: ProjectId, owners: Profile[] }
+export type ProjectDropped = { kind: 'ProjectDropped', id: ProjectId }
 export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
 export type GotRemoteFile = { kind: 'GotRemoteFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, url: string, content: string, sample?: string }
 export type GotHotkey = { kind: 'GotHotkey', id: string }
@@ -77,15 +109,26 @@ export type ElmMsg =
     | FullscreenMsg
     | SetMetaMsg
     | AutofocusWithinMsg
-    | LoadProjectsMsg
+    | LoginMsg
+    | LogoutMsg
+    | ListProjectsMsg
+    | LoadProjectMsg
     | LoadRemoteProjectMsg
-    | SaveProjectMsg
+    | CreateProjectMsg
+    | UpdateProjectMsg
+    | MoveProjectToMsg
+    | GetUserMsg
+    | UpdateUserMsg
+    | GetOwnersMsg
+    | SetOwnersMsg
     | DownloadFileMsg
     | DropProjectMsg
     | GetLocalFileMsg
     | GetRemoteFileMsg
     | ObserveSizesMsg
     | ListenKeysMsg
+    | ConfettiMsg
+    | ConfettiPrideMsg
     | TrackPageMsg
     | TrackEventMsg
     | TrackErrorMsg
@@ -97,19 +140,32 @@ export type ScrollToMsg = { kind: 'ScrollTo', id: HtmlId, position: ViewPosition
 export type FullscreenMsg = { kind: 'Fullscreen', maybeId?: HtmlId }
 export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string, canonical?: string, html?: string, body?: string }
 export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
-export type LoadProjectsMsg = { kind: 'LoadProjects' }
+export type LoginMsg = { kind: 'Login', info: LoginInfo, redirect?: string }
+export type LogoutMsg = { kind: 'Logout' }
+export type ListProjectsMsg = { kind: 'ListProjects' }
+export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
 export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: FileUrl }
-export type SaveProjectMsg = { kind: 'SaveProject', project: Project }
+export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
+export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
+export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
+export type GetUserMsg = { kind: 'GetUser', email: Email }
+export type UpdateUserMsg = { kind: 'UpdateUser', user: Profile }
+export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
+export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
-export type DropProjectMsg = { kind: 'DropProject', project: Project }
+export type DropProjectMsg = { kind: 'DropProject', project: ProjectInfo }
 export type GetLocalFileMsg = { kind: 'GetLocalFile', project?: ProjectId, source?: SourceId, file: File }
 export type GetRemoteFileMsg = { kind: 'GetRemoteFile', project?: ProjectId, source?: SourceId, url: FileUrl, sample: SampleKey }
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
 export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
+export type ConfettiMsg = { kind: 'Confetti', id: HtmlId }
+export type ConfettiPrideMsg = { kind: 'ConfettiPride' }
 export type TrackPageMsg = { kind: 'TrackPage', name: string }
-export type TrackEventMsg = { kind: 'TrackEvent', name: string, details: object }
-export type TrackErrorMsg = { kind: 'TrackError', name: string, details: object }
+export type TrackEventMsg = { kind: 'TrackEvent', name: string, details?: Data }
+export type TrackErrorMsg = { kind: 'TrackError', name: string, details?: Data }
 
+// from node_modules/@splitbee/web/src/types.ts but not exported :(
+export type Data = { [key: string]: string | number | boolean | undefined | null };
 
 export type SampleKey = string
 

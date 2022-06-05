@@ -1,4 +1,4 @@
-module Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, computeStyles, css, hrefBlank, none, role, track, when)
+module Libs.Html.Attributes exposing (ariaChecked, ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, css, hrefBlank, none, role, styles, track, when)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (attribute, class, classList, href, rel, target)
@@ -10,6 +10,11 @@ import Libs.Tailwind exposing (TwClass)
 
 
 -- sorted alphabetically
+
+
+ariaChecked : Bool -> Attribute msg
+ariaChecked value =
+    attribute "aria-checked" (B.toString value)
 
 
 ariaControls : HtmlId -> Attribute msg
@@ -69,11 +74,11 @@ ariaOrientation text =
 
 css : List TwClass -> Attribute msg
 css values =
-    values |> computeStyles |> class
+    values |> styles |> class
 
 
-computeStyles : List TwClass -> TwClass
-computeStyles values =
+styles : List TwClass -> TwClass
+styles values =
     values
         |> List.concatMap (String.split " ")
         |> List.map String.trim

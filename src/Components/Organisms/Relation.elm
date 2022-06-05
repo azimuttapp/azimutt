@@ -1,10 +1,11 @@
-module Components.Organisms.Relation exposing (Direction(..), RelationConf, curve, doc, line)
+module Components.Organisms.Relation exposing (Direction(..), RelationConf, brokenLines, curve, doc, line)
 
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (div)
-import Html.Attributes as Html
+import ElmBook.Custom exposing (Msg)
+import Html exposing (Html, div)
 import Html.Events exposing (onMouseEnter, onMouseLeave)
+import Libs.Bool as Bool
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
@@ -25,8 +26,8 @@ type Direction
     | None
 
 
-line : RelationConf -> Position -> Position -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-line conf src ref nullable color label index onHover =
+line : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+line conf ( src, _ ) ( ref, _ ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 12 }
         (\origin -> drawLine conf (src |> Position.sub origin) (ref |> Position.sub origin) onHover)
 
@@ -34,7 +35,13 @@ line conf src ref nullable color label index onHover =
 curve : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 curve conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawCurve conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) ( 10, 5 ) onHover)
+        (\origin -> drawCurve conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) onHover)
+
+
+brokenLines : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+brokenLines conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
+    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
+        (\origin -> drawBrokenLines conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) onHover)
 
 
 type alias SvgParams =
@@ -76,8 +83,8 @@ drawLine conf p1 p2 onHover nullable color =
     ]
 
 
-drawCurve : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> ( Float, Float ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawCurve conf ( p1, dir1 ) ( p2, dir2 ) ( arrowLength, arrowWidth ) onHover nullable color =
+drawCurve : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawCurve conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
     let
         strength : Float
         strength =
@@ -86,13 +93,13 @@ drawCurve conf ( p1, dir1 ) ( p2, dir2 ) ( arrowLength, arrowWidth ) onHover nul
         path : List String
         path =
             [ moveTo p1
-            , lineTo (p1 |> add arrowLength dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = negate arrowWidth })
-            , lineTo (p1 |> add arrowLength dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = arrowWidth })
-            , lineTo (p1 |> add arrowLength dir1)
-            , moveTo (p1 |> add arrowLength dir1)
-            , curveTo (p1 |> add (arrowLength + strength) dir1) (p2 |> add strength dir2) p2
+            , lineTo (p1 |> add arrowSize dir1)
+            , moveTo (p1 |> Position.add { left = 0, top = negate (arrowSize / 2) })
+            , lineTo (p1 |> add arrowSize dir1)
+            , moveTo (p1 |> Position.add { left = 0, top = arrowSize / 2 })
+            , lineTo (p1 |> add arrowSize dir1)
+            , moveTo (p1 |> add arrowSize dir1)
+            , curveTo (p1 |> add (arrowSize + strength) dir1) (p2 |> add strength dir2) p2
             ]
 
         hoverAttrs : List (Attribute msg)
@@ -108,17 +115,103 @@ drawCurve conf ( p1, dir1 ) ( p2, dir2 ) ( arrowLength, arrowWidth ) onHover nul
     ]
 
 
+drawBrokenLines : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawBrokenLines conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
+    let
+        break1 : Position
+        break1 =
+            case ( p1.left < p2.left, dir1, dir2 ) of
+                ( True, Right, Left ) ->
+                    p1 |> add ((p2.left - p1.left) / 2) dir1
+
+                ( True, Right, Right ) ->
+                    p1 |> add (p2.left - p1.left + arrowSize * 2) dir1
+
+                ( True, Left, Left ) ->
+                    p1 |> add (arrowSize * 2) dir1
+
+                ( True, Left, Right ) ->
+                    -- FIXME
+                    p1 |> add (arrowSize * 2) dir1
+
+                ( False, Right, Left ) ->
+                    -- FIXME
+                    p1 |> add (arrowSize * 2) dir1
+
+                ( False, Right, Right ) ->
+                    p1 |> add (arrowSize * 2) dir1
+
+                ( False, Left, Left ) ->
+                    p1 |> add (p1.left - p2.left + arrowSize * 2) dir1
+
+                ( False, Left, Right ) ->
+                    p1 |> add ((p1.left - p2.left) / 2) dir1
+
+                _ ->
+                    p1
+
+        ( break1a, break1b ) =
+            ( break1 |> Position.sub { left = arrowSize / 2 * apply dir1, top = 0 }
+            , break1 |> Position.sub { left = 0, top = arrowSize / 2 * Bool.cond (p1.top > p2.top) 1 -1 }
+            )
+
+        break2 : Position
+        break2 =
+            { left = break1.left, top = p2.top }
+
+        ( break2a, break2b ) =
+            ( break2 |> Position.sub { left = 0, top = arrowSize / 2 * Bool.cond (p1.top < p2.top) 1 -1 }
+            , break2 |> Position.sub { left = arrowSize / 2 * apply dir2, top = 0 }
+            )
+
+        path : List String
+        path =
+            [ moveTo (p1 |> Position.add { left = 0, top = negate (arrowSize / 2) })
+            , lineTo (p1 |> add arrowSize dir1)
+            , moveTo (p1 |> Position.add { left = 0, top = arrowSize / 2 })
+            , lineTo (p1 |> add arrowSize dir1)
+            , moveTo p1
+            , lineTo break1a
+            , curveTo break1a break1 break1b
+            , lineTo break2a
+            , curveTo break2a break2 break2b
+            , lineTo p2
+            ]
+
+        hoverAttrs : List (Attribute msg)
+        hoverAttrs =
+            if conf.hover then
+                [ onMouseEnter (onHover True), onMouseLeave (onHover False) ]
+
+            else
+                []
+    in
+    [ Svg.path ([ d (path |> String.join " ") ] ++ hoverAttrs ++ lineAttrs nullable color) []
+    , circle (p2 |> add 2 dir2) 2.5 [ class (color |> Maybe.mapOrElse (\c -> fill_500 c) "fill-default-400") ]
+    ]
+
+
+arrowSize : Float
+arrowSize =
+    10
+
+
 add : Float -> Direction -> Position -> Position
 add strength dir pos =
+    pos |> Position.add { left = strength * apply dir, top = 0 }
+
+
+apply : Direction -> Float
+apply dir =
     case dir of
         Left ->
-            pos |> Position.add { left = negate strength, top = 0 }
+            -1
 
         Right ->
-            pos |> Position.add { left = strength, top = 0 }
+            1
 
         None ->
-            pos |> Position.add { left = 0, top = 0 }
+            0
 
 
 lineAttrs : Bool -> Maybe Color -> List (Attribute msg)
@@ -137,10 +230,40 @@ doc : Chapter x
 doc =
     Chapter.chapter "Relation"
         |> Chapter.renderComponentList
-            ([ ( "line", line { hover = True } Position.zero (Position 50 50) False Nothing "relation" 10 (\_ -> logAction "hover relation") )
-             , ( "curve", curve { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) False Nothing "relation" 10 (\_ -> logAction "hover relation") )
-             , ( "green", line { hover = True } Position.zero (Position 50 50) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") )
-             , ( "nullable", line { hover = True } Position.zero (Position 50 50) True Nothing "relation" 10 (\_ -> logAction "hover relation") )
-             ]
-                |> List.map (Tuple.mapSecond (\component -> div [ Html.style "height" "100px" ] [ component ]))
+            [ ( "line", samples line )
+            , ( "curve", samples curve )
+            , ( "brokenLines", samples brokenLines )
+            , ( "green", div [ class "h-12" ] [ line { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
+            , ( "nullable", div [ class "h-12" ] [ line { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
+            ]
+
+
+samples : (RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
+samples displayRelation =
+    let
+        ( p0, p55 ) =
+            ( Position 0 0, Position 50 50 )
+
+        ( p05, p50 ) =
+            ( Position 0 50, Position 50 0 )
+
+        dirs : List ( Direction, Direction )
+        dirs =
+            [ ( Right, Left )
+            , ( Right, Right )
+            , ( Left, Left )
+            , ( Left, Right )
+            ]
+    in
+    div []
+        [ div [ class "flex flex-row h-12" ]
+            ([ ( p0, p55 ), ( p05, p50 ) ]
+                |> List.concatMap (\( src, ref ) -> dirs |> List.map (\( dir1, dir2 ) -> ( ( src, dir1 ), ( ref, dir2 ) )))
+                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" 10 (\_ -> logAction "hover relation") ])
             )
+        , div [ class "flex flex-row h-12 mt-6" ]
+            ([ ( p55, p0 ), ( p50, p05 ) ]
+                |> List.concatMap (\( src, ref ) -> dirs |> List.map (\( dir1, dir2 ) -> ( ( src, dir1 ), ( ref, dir2 ) )))
+                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" 10 (\_ -> logAction "hover relation") ])
+            )
+        ]

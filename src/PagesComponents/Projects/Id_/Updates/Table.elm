@@ -6,14 +6,13 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
 import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (Model, Msg, toastError, toastInfo)
+import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
@@ -21,6 +20,7 @@ import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposi
 import PagesComponents.Projects.Id_.Models.PositionHint as PositionHint exposing (PositionHint)
 import Ports
 import Services.Lenses exposing (mapRelatedTables, mapShown, mapShownTables, mapTableProps, mapTablePropsCmd, setHoverColumn)
+import Services.Toasts as Toasts
 import Set
 
 
@@ -29,13 +29,13 @@ showTable id hint erd =
     case erd.tables |> Dict.get id of
         Just table ->
             if erd |> Erd.isShown id then
-                ( erd, T.send (toastInfo ("Table " ++ TableId.show id ++ " already shown")) )
+                ( erd, Toasts.info Toast ("Table " ++ TableId.show id ++ " already shown") )
 
             else
                 ( erd |> performShowTable table hint, Cmd.batch [ Ports.observeTableSize id ] )
 
         Nothing ->
-            ( erd, T.send (toastError ("Can't show table " ++ TableId.show id ++ ": not found")) )
+            ( erd, Toasts.error Toast ("Can't show table " ++ TableId.show id ++ ": not found") )
 
 
 showTables : List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
@@ -60,8 +60,8 @@ showTables ids hint erd =
                 ( e
                 , Cmd.batch
                     [ Ports.observeTablesSize found
-                    , B.cond (shown |> List.isEmpty) Cmd.none (T.send (toastInfo ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown")))
-                    , B.cond (notFound |> List.isEmpty) Cmd.none (T.send (toastInfo ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them")))
+                    , B.cond (shown |> List.isEmpty) Cmd.none (Toasts.info Toast ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown"))
+                    , B.cond (notFound |> List.isEmpty) Cmd.none (Toasts.info Toast ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them"))
                     ]
                 )
            )
@@ -265,7 +265,7 @@ mapTablePropOrSelected id transform props =
                 else
                     ( props |> Dict.alter id transform, Cmd.none )
             )
-        |> Maybe.withDefault ( props, T.send (toastInfo ("Table " ++ TableId.show id ++ " not found")) )
+        |> Maybe.withDefault ( props, Toasts.info Toast ("Table " ++ TableId.show id ++ " not found") )
 
 
 getRelations : Maybe ErdTable -> ColumnName -> List ErdColumnRef

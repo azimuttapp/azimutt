@@ -9,12 +9,11 @@ import {
     HotkeyId,
     JsMsg
 } from "../types/elm";
-import {Color, ColumnId, Delta, Position, Project, TableId} from "../types/project";
-import {ToastLevel} from "../types/basics";
+import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
+import {Email, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 import {Utils} from "../utils/utils";
-
-type Callback<key> = (msg: ElmMsg & { kind: key }) => void
+import {Profile} from "../types/profile";
 
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {
@@ -30,9 +29,18 @@ export class ElmApp {
         Fullscreen: [],
         SetMeta: [],
         AutofocusWithin: [],
-        LoadProjects: [],
+        Login: [],
+        Logout: [],
+        ListProjects: [],
+        LoadProject: [],
         LoadRemoteProject: [],
-        SaveProject: [],
+        CreateProject: [],
+        UpdateProject: [],
+        MoveProjectTo: [],
+        GetUser: [],
+        UpdateUser: [],
+        GetOwners: [],
+        SetOwners: [],
         DownloadFile: [],
         DropProject: [],
         GetLocalFile: [],
@@ -40,6 +48,8 @@ export class ElmApp {
         ObserveSizes: [],
         ListenKeys: [],
         TrackPage: [],
+        Confetti: [],
+        ConfettiPride: [],
         TrackEvent: [],
         TrackError: [],
     }
@@ -47,7 +57,7 @@ export class ElmApp {
     constructor(private elm: ElmRuntime, private logger: Logger) {
         this.elm.ports?.elmToJs.subscribe(msg => {
             // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
-            // TODO: use requestAnimationFrame instead!
+            // FIXME: use requestAnimationFrame instead!
             setTimeout(() => {
                 const calls = this.callbacks[msg.kind]
                 if (calls.length > 0) {
@@ -67,31 +77,40 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
 
-    updateSizes = (sizes: ElementSize[]) => this.send({kind: 'GotSizes', sizes})
-    loadProjects = (projects: Project[]): void => this.send({
+    login = (user: Profile): void => this.send({kind: 'GotLogin', user})
+    logout = (): void => this.send({kind: 'GotLogout'})
+    updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
+    loadProjects = (projects: ProjectInfo[]): void => this.send({
         kind: 'GotProjects',
         projects: projects.map(p => [p.id, p])
     })
-    gotLocalFile = (msg: GetLocalFileMsg, content: string) => this.send({
+    gotProject = (project: Project | undefined): void => {
+        window.azimutt.project = project
+        project ? this.send({kind: 'GotProject', project}) : this.send({kind: 'GotProject'})
+    }
+    gotUser = (email: Email, user: Profile | undefined): void => this.send({kind: 'GotUser', email, user})
+    gotOwners = (project: ProjectId, owners: Profile[]): void => this.send({kind: 'GotOwners', project, owners})
+    dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
+    gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
         now: Date.now(),
-        projectId: msg.project || Utils.randomUID(),
-        sourceId: msg.source || Utils.randomUID(),
+        projectId: msg.project || Utils.randomId(),
+        sourceId: msg.source || Utils.randomId(),
         file: msg.file,
         content
     })
-    gotRemoteFile = (msg: GetRemoteFileMsg, content: string) => this.send({
+    gotRemoteFile = (msg: GetRemoteFileMsg, content: string): void => this.send({
         kind: 'GotRemoteFile',
         now: Date.now(),
-        projectId: msg.project || Utils.randomUID(),
-        sourceId: msg.source || Utils.randomUID(),
+        projectId: msg.project || Utils.randomId(),
+        sourceId: msg.source || Utils.randomId(),
         url: msg.url,
         content,
         sample: msg.sample
     })
-    gotHotkey = (hotkey: Hotkey & { id: HotkeyId }) => this.send({kind: 'GotHotkey', id: hotkey.id})
-    gotKeyHold = (key: string, start: boolean) => this.send({kind: 'GotKeyHold', key, start})
-    toast = (level: ToastLevel, message: string) => this.send({kind: 'GotToast', level, message})
+    gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
+    gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})
+    toast = (level: ToastLevel, message: string): void => this.send({kind: 'GotToast', level, message})
     showTable = (id: TableId, position?: Position): void => this.send({kind: 'GotTableShow', id, position})
     hideTable = (id: TableId): void => this.send({kind: 'GotTableHide', id})
     toggleTableColumns = (id: TableId): void => this.send({kind: 'GotTableToggleColumns', id})
@@ -102,10 +121,12 @@ export class ElmApp {
     showColumn = (id: ColumnId): void => this.send({kind: 'GotColumnShow', ref: id})
     hideColumn = (id: ColumnId): void => this.send({kind: 'GotColumnHide', ref: id})
     moveColumn = (id: ColumnId, index: number): void => this.send({kind: 'GotColumnMove', ref: id, index})
-    fitToScreen = () => this.send({kind: 'GotFitToScreen'})
-    resetCanvas = () => this.send({kind: 'GotResetCanvas'})
+    fitToScreen = (): void => this.send({kind: 'GotFitToScreen'})
+    resetCanvas = (): void => this.send({kind: 'GotResetCanvas'})
 
     private send(msg: JsMsg): void {
         this.elm.ports?.jsToElm.send(msg)
     }
 }
+
+type Callback<key> = (msg: ElmMsg & { kind: key }) => void

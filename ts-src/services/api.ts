@@ -6,8 +6,7 @@ import {Logger} from "./logger";
 export class AzimuttApi {
     constructor(private app: ElmApp,
                 private logger: Logger,
-                public project: Project | undefined = undefined,
-                public projects: {[id: string]: Project} | undefined = undefined) {
+                public project: Project | undefined = undefined) {
     }
 
     getAllTables = (): Table[] => {

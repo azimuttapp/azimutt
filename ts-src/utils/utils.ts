@@ -1,4 +1,5 @@
 import {Env, HtmlId} from "../types/basics";
+import confetti from "canvas-confetti";
 
 export const Utils = {
     getEnv(): Env {
@@ -6,8 +7,8 @@ export const Utils = {
             window.location.hostname === 'azimutt.app' ? 'prod' :
                 'staging'
     },
-    randomUID() {
-        return window.uuidv4()
+    randomId() {
+        return crypto.randomUUID()
     },
     getElementById(id: HtmlId): HTMLElement {
         const elem = document.getElementById(id)
@@ -56,14 +57,48 @@ export const Utils = {
 
         document.body.removeChild(element)
     },
-    loadScript(url: string): Promise<Event> {
-        return new Promise<Event>((resolve, reject) => {
-            const script = document.createElement('script')
-            script.src = url
-            script.type = 'text/javascript'
-            script.addEventListener('load', resolve)
-            script.addEventListener('error', reject)
-            document.getElementsByTagName('head')[0].appendChild(script)
-        })
+    launchConfetti(id: string): void {
+        const elt = document.getElementById(id) as HTMLElement
+        if (!elt) {
+            console.warn(`Didn't found ${id} to launch confetti`)
+            return
+        }
+
+        const rect = elt.getBoundingClientRect()
+        const left = (rect.left + rect.right) / 2
+        const top = 50 + (rect.top + rect.bottom) / 2
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: {x: left / window.innerWidth, y: top / window.innerHeight},
+            disableForReducedMotion: true
+        });
     },
+    launchConfettiPride(): void {
+        const end = Date.now() + (3 * 1000);
+        const colors = ['#28BEC9', '#0C4F9C'];
+
+        (function frame() {
+            confetti({
+                particleCount: 2,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: colors,
+                zIndex: 20000
+            });
+            confetti({
+                particleCount: 2,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: colors,
+                zIndex: 20000
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
+    }
 }

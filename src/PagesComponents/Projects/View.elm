@@ -1,43 +1,71 @@
 module PagesComponents.Projects.View exposing (viewProjects)
 
-import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon
+import Components.Atoms.Link as Link
+import Components.Molecules.Alert as Alert
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
-import Gen.Route as Route
+import Gen.Route as Route exposing (Route)
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
+import Html.Lazy as Lazy
 import Libs.DateTime exposing (formatDate)
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
-import Models.Project exposing (Project)
+import Models.Project.ProjectStorage as ProjectStorage
 import PagesComponents.Helpers exposing (appShell)
+import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
+import Router
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
 import Track
 
 
-viewProjects : Shared.Model -> Model -> List (Html Msg)
-viewProjects shared model =
-    appShell (\link -> SelectMenu link.text)
-        ToggleMobileMenu
+viewProjects : Route -> Shared.Model -> Model -> List (Html Msg)
+viewProjects currentRoute shared model =
+    appShell shared.conf
+        shared.user
+        currentRoute
+        (\link -> SelectMenu link.text)
+        DropdownToggle
+        Logout
         model
         [ text model.selectedMenu ]
         [ viewContent shared model ]
-        [ viewModal model ]
+        [ viewModal model
+        , Lazy.lazy2 Toasts.view Toast model.toasts
+        ]
 
 
 viewContent : Shared.Model -> Model -> Html Msg
 viewContent shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
+        , if shared.conf.enableCloud && shared.user == Nothing then
+            div [ class "mt-3" ]
+                [ Alert.withActions
+                    { color = Tw.blue
+                    , icon = Icon.InformationCircle
+                    , title = "You are not signed in"
+                    , actions =
+                        [ Link.secondary3 Tw.blue [ href (Router.login Route.Projects) ] [ text "Sign in now" ]
+                        ]
+                    }
+                    [ text "Sign in to store your projects in your account, access them from anywhere and even share them with your team."
+                    ]
+                ]
+
+          else
+            div [] []
         ]
 
 
@@ -88,7 +116,7 @@ viewNoProjects =
 viewFirstProject : Html msg
 viewFirstProject =
     a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover [ "border-gray-400" ], focus [ "outline-none ring-2 ring-offset-2 ring-primary-500" ] ] ]
-        [ Icon.outline2x DocumentAdd "mx-auto"
+        [ Icon.outline2x Icon.DocumentAdd "mx-auto"
         , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
         ]
 
@@ -104,8 +132,8 @@ viewProjectPlaceholder =
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium" ] ] [ viewTextPlaceholder "w-24 h-3" ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
-                [ li [] [ viewTextPlaceholder "" ]
-                , li [] [ viewTextPlaceholder "" ]
+                [ li [] [ viewTextPlaceholder "w-full" ]
+                , li [] [ viewTextPlaceholder "w-full" ]
                 ]
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
@@ -119,7 +147,7 @@ viewProjectPlaceholder =
 
 viewTextPlaceholder : TwClass -> Html msg
 viewTextPlaceholder styles =
-    span [ css [ "inline-block w-full max-w-full h-2 bg-gray-300 rounded-full", styles ] ] []
+    span [ css [ "inline-block h-2 bg-gray-300 rounded-full", styles ] ] []
 
 
 viewIconPlaceholder : TwClass -> Html msg
@@ -127,31 +155,38 @@ viewIconPlaceholder styles =
     span [ css [ "h-6 w-6 rounded-full bg-gray-300", styles ] ] []
 
 
-viewProjectCard : Time.Zone -> Project -> Html Msg
+viewProjectCard : Time.Zone -> ProjectInfo -> Html Msg
 viewProjectCard zone project =
     li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
-            [ h3 [ css [ "text-lg font-medium" ] ] [ text project.name ]
+            [ h3 [ css [ "text-lg font-medium flex" ] ]
+                [ if project.storage == ProjectStorage.Cloud then
+                    Icon.outline Icon.Cloud "" |> Tooltip.t "Sync in Azimutt"
+
+                  else
+                    Icon.outline Icon.Folder "" |> Tooltip.t "Local project"
+                , span [ class "ml-1" ] [ text project.name ]
+                ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
-                [ li [] [ text ((project.tables |> String.pluralizeD "table") ++ ", " ++ (project.layouts |> String.pluralizeD "layout")) ]
+                [ li [] [ text ((project.tables |> String.pluralize "table") ++ ", " ++ (project.layouts |> String.pluralize "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]
                 ]
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
-                [ Icon.outline Trash "text-gray-400" ]
+                [ Icon.outline Icon.Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
             , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
-                [ Icon.outline ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
+                [ Icon.outline Icon.ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]
 
 
-confirmDeleteProject : Project -> Msg
+confirmDeleteProject : ProjectInfo -> Msg
 confirmDeleteProject project =
     ConfirmOpen
         { color = Tw.red
-        , icon = Trash
+        , icon = Icon.Trash
         , title = "Delete project"
         , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
         , confirm = "Delete " ++ project.name
@@ -164,7 +199,7 @@ viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
         [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Tw.primary ] ]
-            [ Icon.outline2x DocumentAdd "mx-auto"
+            [ Icon.outline2x Icon.DocumentAdd "mx-auto"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]
         ]

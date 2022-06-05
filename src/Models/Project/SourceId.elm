@@ -1,17 +1,22 @@
-module Models.Project.SourceId exposing (SourceId, decode, encode, new, toString)
+module Models.Project.SourceId exposing (SourceId, decode, encode, new, random, toString)
 
-import Json.Decode as Decode
-import Json.Encode as Encode exposing (Value)
-import Libs.Models exposing (UID)
+import Json.Decode as Decode exposing (Value)
+import Libs.Models.Uuid as Uuid exposing (Uuid)
+import Random
 
 
 type SourceId
-    = SourceId UID
+    = SourceId Uuid
 
 
 new : String -> SourceId
 new id =
     SourceId id
+
+
+random : Random.Seed -> ( SourceId, Random.Seed )
+random seed =
+    seed |> Uuid.random |> Tuple.mapFirst new
 
 
 toString : SourceId -> String
@@ -21,9 +26,9 @@ toString (SourceId id) =
 
 encode : SourceId -> Value
 encode value =
-    value |> toString |> Encode.string
+    value |> toString |> Uuid.encode
 
 
 decode : Decode.Decoder SourceId
 decode =
-    Decode.string |> Decode.map new
+    Uuid.decode |> Decode.map new

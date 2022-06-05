@@ -15,6 +15,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports
 import Random
 import Request
+import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
 
@@ -23,8 +24,8 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init shared.now req.params.id
-        , update = Updates.update (Just req.params.id) Nothing shared.now
-        , view = Views.view shared
+        , update = Updates.update req Nothing shared.now
+        , view = Views.view (Request.pushRoute Route.Projects req) shared
         , subscriptions = Subscriptions.subscriptions
         }
 
@@ -49,6 +50,7 @@ init now id =
       , screen = ScreenProps.zero
       , loaded = False
       , erd = Nothing
+      , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorSelect
@@ -59,6 +61,7 @@ init now id =
       , findPath = Nothing
       , schemaAnalysis = Nothing
       , sharing = Nothing
+      , upload = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
       , sourceParsing = Nothing
@@ -67,8 +70,7 @@ init now id =
       , openedPopover = ""
       , contextMenu = Nothing
       , dragging = Nothing
-      , toastIdx = 0
-      , toasts = []
+      , toasts = Toasts.init
       , confirm = Nothing
       , prompt = Nothing
       , openedDialogs = []
@@ -83,6 +85,7 @@ init now id =
             }
         , Ports.trackPage "app"
         , Ports.listenHotkeys Conf.hotkeys
-        , Ports.loadProjects
+        , Ports.loadProject id
+        , Ports.listProjects
         ]
     )

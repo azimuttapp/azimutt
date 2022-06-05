@@ -13,6 +13,7 @@ import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
+import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.Table as Table exposing (Table)
@@ -32,13 +33,14 @@ type alias Project =
     , usedLayout : Maybe LayoutName
     , layouts : Dict LayoutName Layout
     , settings : ProjectSettings
+    , storage : ProjectStorage
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
 
 
-new : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> Time.Posix -> Time.Posix -> Project
-new id name sources notes layout usedLayout layouts settings createdAt updatedAt =
+new : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
+new id name sources notes layout usedLayout layouts settings storage createdAt updatedAt =
     { id = id
     , name = name
     , sources = sources
@@ -49,6 +51,7 @@ new id name sources notes layout usedLayout layouts settings createdAt updatedAt
     , usedLayout = usedLayout
     , layouts = layouts
     , settings = settings
+    , storage = storage
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
@@ -57,7 +60,7 @@ new id name sources notes layout usedLayout layouts settings createdAt updatedAt
 
 create : ProjectId -> ProjectName -> Source -> Project
 create id name source =
-    new id name [ source ] Dict.empty (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init source.createdAt source.updatedAt
+    new id name [ source ] Dict.empty (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init ProjectStorage.Browser source.createdAt source.updatedAt
 
 
 compute : Project -> Project
@@ -132,6 +135,7 @@ encode value =
         , ( "usedLayout", value.usedLayout |> Encode.maybe LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode ProjectSettings.init )
+        , ( "storage", value.storage |> Encode.withDefault ProjectStorage.encode ProjectStorage.Browser )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         , ( "version", currentVersion |> Encode.int )
@@ -140,7 +144,7 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map10 new
+    Decode.map11 new
         (Decode.field "id" ProjectId.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.field "sources" (Decode.list Source.decode))
@@ -149,5 +153,6 @@ decode =
         (Decode.maybeField "usedLayout" LayoutName.decode)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
         (Decode.defaultFieldDeep "settings" ProjectSettings.decode ProjectSettings.init)
+        (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Browser)
         (Decode.defaultField "createdAt" Time.decode (Time.millisToPosix 0))
         (Decode.defaultField "updatedAt" Time.decode (Time.millisToPosix 0))
