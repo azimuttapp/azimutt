@@ -91,7 +91,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
                     [ viewNavbarBrand eConf
-                    , Lazy.lazy6 viewNavbarSearch model.search erd.tables erd.relations erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
+                    , Lazy.lazy7 viewNavbarSearch model.search erd.tables erd.relations erd.notes erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
                 , div [ class "flex-1 flex justify-center px-2" ]

@@ -19,10 +19,11 @@ import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.Notes as Notes exposing (Notes, NotesKey)
 
 
-viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> List TableId -> HtmlId -> HtmlId -> Html Msg
-viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
+viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict NotesKey Notes -> List TableId -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch search tables relations notes shownTables htmlId openedDropdown =
     div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
             [ label [ for htmlId, class "sr-only" ] [ text "Search" ]
@@ -66,7 +67,7 @@ viewNavbarSearch search tables relations shownTables htmlId openedDropdown =
                             ]
 
                     else
-                        performSearch tables relations search.text
+                        performSearch tables relations notes search.text
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
@@ -130,8 +131,8 @@ viewSearchResult searchId shownTables active index res =
                 viewItem (ShowTable relation.src.table Nothing) ExternalLink [ text relation.name ] True
 
 
-performSearch : Dict TableId ErdTable -> List ErdRelation -> String -> List SearchResult
-performSearch tables relations query =
+performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict NotesKey Notes -> String -> List SearchResult
+performSearch tables relations notes query =
     let
         maxResults : Int
         maxResults =
@@ -139,12 +140,12 @@ performSearch tables relations query =
 
         tableResults : List ( Float, SearchResult )
         tableResults =
-            tables |> Dict.values |> List.filterMap (tableMatch query)
+            tables |> Dict.values |> List.filterMap (tableMatch query notes)
 
         columnResults : List ( Float, SearchResult )
         columnResults =
             if (tableResults |> List.length) < maxResults then
-                tables |> Dict.values |> List.concatMap (\table -> table.columns |> Dict.values |> List.filterMap (columnMatch query table))
+                tables |> Dict.values |> List.concatMap (\table -> table.columns |> Dict.values |> List.filterMap (columnMatch query notes table))
 
             else
                 []
@@ -160,8 +161,8 @@ performSearch tables relations query =
     (tableResults ++ columnResults ++ relationResults) |> List.sortBy (\( r, _ ) -> negate r) |> List.take maxResults |> List.map Tuple.second
 
 
-tableMatch : String -> ErdTable -> Maybe ( Float, SearchResult )
-tableMatch query table =
+tableMatch : String -> Dict NotesKey Notes -> ErdTable -> Maybe ( Float, SearchResult )
+tableMatch query notes table =
     if table.name == query then
         Just ( 10, FoundTable table )
 
@@ -177,6 +178,7 @@ tableMatch query table =
             || (table.uniques |> List.any (\u -> (u.name |> String.contains query) || (u.definition |> Maybe.withDefault "" |> String.contains query)))
             || (table.indexes |> List.any (\i -> (i.name |> String.contains query) || (i.definition |> Maybe.withDefault "" |> String.contains query)))
             || (table.checks |> List.any (\c -> (c.name |> String.contains query) || (c.predicate |> Maybe.withDefault "" |> String.contains query)))
+            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (\n -> n |> String.contains query))
     then
         Just ( 7 + shortBonus table.name, FoundTable table )
 
@@ -184,8 +186,8 @@ tableMatch query table =
         Nothing
 
 
-columnMatch : String -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
-columnMatch query table column =
+columnMatch : String -> Dict NotesKey Notes -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
+columnMatch query notes table column =
     if column.name == query then
         Just ( 1, FoundColumn table column )
 
@@ -199,6 +201,7 @@ columnMatch query table column =
         (column.comment |> Maybe.any (.text >> String.contains query))
             || (column.kind |> String.contains query)
             || (column.default |> Maybe.any (String.contains query))
+            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (\n -> n |> String.contains query))
     then
         Just ( 0.7, FoundColumn table column )
 
