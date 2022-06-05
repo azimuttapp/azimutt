@@ -6,9 +6,13 @@ import Dict
 import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
 import Html exposing (Html)
+import Html.Lazy as Lazy
+import Libs.Debug as Debug
 import Page
-import Ports
+import Ports exposing (JsMsg(..))
 import Request exposing (Request)
+import Services.Lenses exposing (mapToastsCmd)
+import Services.Toasts as Toasts
 import Shared
 import View exposing (View)
 
@@ -24,11 +28,14 @@ page _ req =
 
 
 type alias Model =
-    String
+    { url : String
+    , toasts : Toasts.Model
+    }
 
 
-type alias Msg =
-    ()
+type Msg
+    = Toast Toasts.Msg
+    | JsMessage JsMsg
 
 
 
@@ -42,7 +49,9 @@ title =
 
 init : Request -> ( Model, Cmd Msg )
 init req =
-    ( req.url.path |> addPrefixed "?" req.url.query |> addPrefixed "#" req.url.fragment
+    ( { url = req.url.path |> addPrefixed "?" req.url.query |> addPrefixed "#" req.url.fragment
+      , toasts = Toasts.init
+      }
     , Cmd.batch
         [ Ports.setMeta
             { title = Just title
@@ -71,8 +80,23 @@ addPrefixed prefix maybeSegment starter =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update _ model =
-    ( model, Cmd.none )
+update msg model =
+    case msg of
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
+
+        JsMessage message ->
+            model |> handleJsMessage message
+
+
+handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage msg model =
+    case msg of
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
+
+        _ ->
+            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
 
 
 
@@ -81,7 +105,7 @@ update _ model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Ports.onJsMessage JsMessage
 
 
 
@@ -93,8 +117,8 @@ view model =
     { title = title, body = model |> viewNotFound }
 
 
-viewNotFound : Model -> List (Html msg)
-viewNotFound _ =
+viewNotFound : Model -> List (Html Msg)
+viewNotFound model =
     [ NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
@@ -110,4 +134,5 @@ viewNotFound _ =
             , { url = Route.toHref Route.Blog, text = "Blog" }
             ]
         }
+    , Lazy.lazy2 Toasts.view Toast model.toasts
     ]

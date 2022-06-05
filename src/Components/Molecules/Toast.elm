@@ -76,7 +76,7 @@ toast content isOpen =
 
 container : List Model -> (String -> msg) -> Html msg
 container toasts close =
-    div [ ariaLive "assertive", css [ "fixed inset-0 flex items-end px-4 py-6 z-max pointer-events-none", sm [ "p-6 items-end" ] ] ]
+    div [ ariaLive "assertive", css [ "fixed inset-0 flex items-end p-4 z-max pointer-events-none", sm [ "items-end" ] ] ]
         [ Keyed.node "div"
             [ css [ "w-full flex flex-col items-center space-y-4", sm [ "items-start" ] ] ]
             (toasts |> List.map (\t -> render (close t.key) t))

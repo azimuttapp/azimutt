@@ -6,10 +6,12 @@ import Gen.Route as Route
 import Html exposing (Html, a, b, button, div, h1, hr, img, input, nav, p, span, text)
 import Html.Attributes exposing (alt, attribute, class, disabled, href, name, placeholder, required, src, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Html.Lazy as Lazy
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css)
 import PagesComponents.Login.Models exposing (Model, Msg(..))
 import Ports exposing (LoginInfo(..))
+import Services.Toasts as Toasts
 
 
 viewLogin : Model -> List (Html Msg)
@@ -30,6 +32,7 @@ viewLogin model =
                 ]
             ]
         ]
+    , Lazy.lazy2 Toasts.view Toast model.toasts
     ]
 
 

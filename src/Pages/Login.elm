@@ -5,11 +5,14 @@ import Dict
 import Effect exposing (Effect)
 import Gen.Params.Login exposing (Params)
 import Gen.Route as Route
+import Libs.Debug as Debug
 import Page
 import PagesComponents.Login.Models as Models exposing (Msg(..))
 import PagesComponents.Login.View exposing (viewLogin)
-import Ports
+import Ports exposing (JsMsg(..))
 import Request
+import Services.Lenses exposing (mapToastsCmd)
+import Services.Toasts as Toasts
 import Shared
 import View exposing (View)
 
@@ -45,6 +48,7 @@ init : Request.With Params -> ( Model, Effect Msg )
 init req =
     ( { email = ""
       , redirect = req.query |> Dict.get "redirect"
+      , toasts = Toasts.init
       }
     , Effect.fromCmd
         (Cmd.batch
@@ -74,6 +78,22 @@ update msg model =
         Login info ->
             ( model, Effect.fromCmd (Ports.login info model.redirect) )
 
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message) |> Tuple.mapSecond Effect.fromCmd
+
+        JsMessage message ->
+            model |> handleJsMessage message |> Tuple.mapSecond Effect.fromCmd
+
+
+handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage msg model =
+    case msg of
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
+
+        _ ->
+            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
+
 
 
 -- SUBSCRIPTIONS
@@ -81,7 +101,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.none
+    Ports.onJsMessage JsMessage
 
 
 

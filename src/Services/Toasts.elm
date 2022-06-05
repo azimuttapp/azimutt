@@ -11,6 +11,18 @@ import Libs.Task as T
 import Services.Lenses exposing (mapIndex, mapList, mapToasts, setIsOpen)
 
 
+
+{-
+   Add following codes in following places:
+    - Model:  `toasts : Toasts.Model`
+    - Msg:    `Toast Toasts.Msg`
+    - init:   `toasts = Toasts.init`
+    - update: `Toast message -> model |> mapToastsCmd (Toasts.update Toast message)`
+    - js msg: `GotToast level message -> (model, Toasts.create Toast level message)`
+    - view:   `Lazy.lazy2 Toasts.view Toast model.toasts`
+-}
+
+
 type alias Model =
     { index : Int
     , toasts : List Toast.Model

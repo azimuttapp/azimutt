@@ -5,10 +5,14 @@ import Conf
 import Dict
 import Gen.Params.Projects.Last exposing (Params)
 import Gen.Route as Route
+import Html.Lazy as Lazy
+import Libs.Debug as Debug
 import Libs.Maybe as Maybe
 import Page
 import Ports exposing (JsMsg(..))
 import Request
+import Services.Lenses exposing (mapToastsCmd)
+import Services.Toasts as Toasts
 import Shared
 import Time
 import View exposing (View)
@@ -25,11 +29,12 @@ page _ req =
 
 
 type alias Model =
-    {}
+    { toasts : Toasts.Model }
 
 
 type Msg
-    = JsMessage JsMsg
+    = Toast Toasts.Msg
+    | JsMessage JsMsg
 
 
 
@@ -43,7 +48,7 @@ title =
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}
+    ( { toasts = Toasts.init }
     , Cmd.batch
         [ Ports.setMeta
             { title = Just title
@@ -65,7 +70,17 @@ init =
 update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
 update req msg model =
     case msg of
-        JsMessage (GotProjects ( _, projects )) ->
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
+
+        JsMessage message ->
+            model |> handleJsMessage req message
+
+
+handleJsMessage : Request.With Params -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage req msg model =
+    case msg of
+        GotProjects ( _, projects ) ->
             ( model
             , Request.pushRoute
                 (projects
@@ -76,8 +91,11 @@ update req msg model =
                 req
             )
 
-        JsMessage _ ->
-            ( model, Cmd.none )
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
+
+        _ ->
+            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
 
 
 
@@ -94,5 +112,5 @@ subscriptions _ =
 
 
 view : Model -> View Msg
-view _ =
-    { title = title, body = [ Loader.fullScreen ] }
+view model =
+    { title = title, body = [ Loader.fullScreen, Lazy.lazy2 Toasts.view Toast model.toasts ] }

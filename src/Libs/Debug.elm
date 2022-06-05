@@ -1,4 +1,11 @@
-module Libs.Debug exposing (time, timeEnd, timed, timed1, timed2)
+module Libs.Debug exposing (asString, time, timeEnd, timed, timed1, timed2)
+
+-- control where they are used...
+
+
+asString : a -> String
+asString a =
+    Debug.toString a
 
 
 time : String -> a -> a

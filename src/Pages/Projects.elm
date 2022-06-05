@@ -7,6 +7,7 @@ import Dict
 import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
+import Libs.Debug as Debug
 import Libs.Task as T
 import Models.Project.ProjectStorage as ProjectStorage
 import Page
@@ -126,11 +127,19 @@ handleJsMessage msg model =
         ProjectDropped projectId ->
             ( model |> mapProjects (List.filter (\p -> p.id /= projectId)), Cmd.none )
 
+        GotLogin _ ->
+            -- handled in shared update
+            ( model, Cmd.none )
+
+        GotLogout ->
+            -- handled in shared update
+            ( model, Cmd.none )
+
         GotToast level message ->
             ( model, Toasts.create Toast level message )
 
         _ ->
-            ( model, Cmd.none )
+            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
 
 
 mapProjects : (List ProjectInfo -> List ProjectInfo) -> Model -> Model
