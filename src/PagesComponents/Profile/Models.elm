@@ -4,6 +4,7 @@ import Libs.Models.Website exposing (Website)
 import Models.User exposing (User)
 import Models.Username exposing (Username)
 import Ports exposing (JsMsg)
+import Services.Toasts as Toasts
 
 
 type alias Model =
@@ -11,6 +12,7 @@ type alias Model =
     , profileDropdownOpen : Bool
     , user : Maybe User
     , updating : Bool
+    , toasts : Toasts.Model
     }
 
 
@@ -29,5 +31,6 @@ type Msg
     | ResetUser
     | DeleteAccount
     | DoLogout
+    | Toast Toasts.Msg
     | JsMessage JsMsg
     | Noop String

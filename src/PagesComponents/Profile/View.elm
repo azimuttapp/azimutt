@@ -5,6 +5,7 @@ import Gen.Route as Route
 import Html exposing (Html, a, aside, button, div, h1, h2, header, img, input, label, main_, nav, p, span, text, textarea)
 import Html.Attributes exposing (alt, attribute, class, disabled, for, href, id, name, placeholder, rows, src, tabindex, type_, value)
 import Html.Events exposing (onClick, onInput)
+import Html.Lazy as Lazy
 import Libs.Bool as Bool
 import Libs.Html.Attributes exposing (ariaControls, ariaCurrent, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabelledby, ariaOrientation, css, role, styles)
 import Libs.Maybe as Maybe
@@ -12,6 +13,7 @@ import Libs.Tailwind as Tw exposing (Color, TwClass, bg_50, bg_700, bg_800, bg_9
 import Models.User as User exposing (User)
 import PagesComponents.Profile.Models exposing (Model, Msg(..))
 import Router
+import Services.Toasts as Toasts
 import Shared
 
 
@@ -53,6 +55,7 @@ viewProfile shared model =
                 ]
             ]
         ]
+    , Lazy.lazy2 Toasts.view Toast model.toasts
     ]
 
 

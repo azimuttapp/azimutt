@@ -10,7 +10,8 @@ import PagesComponents.Profile.Models as Models exposing (Msg(..))
 import PagesComponents.Profile.View exposing (viewProfile)
 import Ports exposing (JsMsg(..))
 import Request
-import Services.Lenses exposing (mapUserM, setBio, setCompany, setGithub, setLocation, setName, setTwitter, setUsername, setWebsite)
+import Services.Lenses exposing (mapToastsCmd, mapUserM, setBio, setCompany, setGithub, setLocation, setName, setTwitter, setUsername, setWebsite)
+import Services.Toasts as Toasts
 import Shared
 import View exposing (View)
 
@@ -48,6 +49,7 @@ init shared =
       , profileDropdownOpen = False
       , user = shared.user
       , updating = False
+      , toasts = Toasts.init
       }
     , Cmd.batch
         [ Ports.setMeta
@@ -111,6 +113,9 @@ update shared req msg model =
         DoLogout ->
             ( model, Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ] )
 
+        Toast message ->
+            model |> mapToastsCmd (Toasts.update Toast message)
+
         JsMessage message ->
             model |> handleJsMessage message
 
@@ -123,6 +128,9 @@ handleJsMessage msg model =
     case msg of
         GotLogin user ->
             ( { model | user = Just user, updating = False }, Cmd.none )
+
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
 
         _ ->
             ( model, Cmd.none )
