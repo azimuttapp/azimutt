@@ -10,6 +10,7 @@ type alias Model =
     { mobileMenuOpen : Bool
     , profileDropdownOpen : Bool
     , user : Maybe User
+    , updating : Bool
     }
 
 

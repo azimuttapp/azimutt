@@ -37,7 +37,7 @@ viewProfile shared model =
                                     [ asideMenus color
                                     , div [ class "divide-y divide-gray-200 lg:col-span-9" ]
                                         [ profileForm color user
-                                        , formButtons color shared.user model.user
+                                        , formButtons color model.updating shared.user model.user
                                         ]
                                     ]
                             )
@@ -416,15 +416,20 @@ inputText color inputDisabled inputName inputLabel inputPlaceholder inputValue i
 --        ]
 
 
-formButtons : Color -> Maybe User -> Maybe User -> Html Msg
-formButtons color initial current =
+formButtons : Color -> Bool -> Maybe User -> Maybe User -> Html Msg
+formButtons color updating initial current =
     div [ class "mt-4 py-4 px-4 sm:px-6 flex justify-between" ]
         [ button [ type_ "button", onClick DeleteAccount, css [ bg_700 Tw.red, "invisible border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white", hover [ bg_800 Tw.red ], focus [ ring_500 Tw.red, "outline-none ring-2 ring-offset-2" ], Tw.disabled [ "opacity-50" ] ] ]
             [ text "Delete account" ]
         , div [ class " flex justify-end" ]
             [ button [ type_ "button", disabled (initial == current), onClick ResetUser, css [ "bg-white border border-gray-300 rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-gray-700 hover:bg-gray-50", focus [ ring_500 color, "outline-none ring-2 ring-offset-2" ], Tw.disabled [ "opacity-50" ] ] ]
                 [ text "Reset" ]
-            , button [ type_ "button", disabled (initial == current), onClick (current |> Maybe.mapOrElse UpdateUser (Noop "no-user-to-update")), css [ bg_700 color, "ml-5 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white", hover [ bg_800 color ], focus [ ring_500 color, "outline-none ring-2 ring-offset-2" ], Tw.disabled [ "opacity-50" ] ] ]
-                [ text "Save" ]
+            , if updating then
+                button [ type_ "button", disabled True, css [ bg_700 color, "ml-5 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white", hover [ bg_800 color ], focus [ ring_500 color, "outline-none ring-2 ring-offset-2" ], Tw.disabled [ "opacity-50" ] ] ]
+                    [ Icon.loading "animate-spin mr-3", text "Save" ]
+
+              else
+                button [ type_ "button", disabled (initial == current), onClick (current |> Maybe.mapOrElse UpdateUser (Noop "no-user-to-update")), css [ bg_700 color, "ml-5 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white", hover [ bg_800 color ], focus [ ring_500 color, "outline-none ring-2 ring-offset-2" ], Tw.disabled [ "opacity-50" ] ] ]
+                    [ text "Save" ]
             ]
         ]

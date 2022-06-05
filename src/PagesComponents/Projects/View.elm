@@ -50,7 +50,7 @@ viewContent : Shared.Model -> Model -> Html Msg
 viewContent shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
-        , if shared.conf.enableCloud && shared.user == Nothing then
+        , if shared.conf.enableCloud && model.projects /= Loading && shared.user == Nothing then
             div [ class "mt-3" ]
                 [ Alert.withActions
                     { color = Tw.blue

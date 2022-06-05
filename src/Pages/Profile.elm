@@ -47,6 +47,7 @@ init shared =
     ( { mobileMenuOpen = False
       , profileDropdownOpen = False
       , user = shared.user
+      , updating = False
       }
     , Cmd.batch
         [ Ports.setMeta
@@ -99,7 +100,7 @@ update shared req msg model =
             ( model |> mapUserM (setTwitter (Just twitter |> Maybe.filter (\b -> b |> String.isEmpty |> not))), Cmd.none )
 
         UpdateUser user ->
-            ( model, Ports.updateUser user )
+            ( { model | updating = True }, Ports.updateUser user )
 
         ResetUser ->
             ( { model | user = shared.user }, Cmd.none )
@@ -121,7 +122,7 @@ handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
     case msg of
         GotLogin user ->
-            ( { model | user = Just user }, Cmd.none )
+            ( { model | user = Just user, updating = False }, Cmd.none )
 
         _ ->
             ( model, Cmd.none )
