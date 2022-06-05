@@ -15,10 +15,11 @@ import PagesComponents.Profile.Models exposing (Model, Msg(..))
 import Router
 import Services.Toasts as Toasts
 import Shared
+import Url exposing (Url)
 
 
-viewProfile : Shared.Model -> Model -> List (Html Msg)
-viewProfile shared model =
+viewProfile : Url -> Shared.Model -> Model -> List (Html Msg)
+viewProfile currentUrl shared model =
     let
         color : Color
         color =
@@ -26,7 +27,7 @@ viewProfile shared model =
     in
     [ div []
         [ div [ css [ bg_700 color, "relative pb-32 overflow-hidden" ] ]
-            [ navbar color model
+            [ navbar color currentUrl model
             , headerTitle
             ]
         , main_ [ class "relative -mt-32" ]
@@ -46,7 +47,7 @@ viewProfile shared model =
                             (div [ class "py-6 px-4 sm:p-6 lg:pb-8" ]
                                 [ h2 [ class "text-lg leading-6 font-medium text-gray-900" ]
                                     [ text "Needs to be signed in" ]
-                                , a [ href (Router.login Route.Profile), class "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" ]
+                                , a [ href (Router.login currentUrl), class "inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" ]
                                     [ text "Sign in" ]
                                 , div [ class "pb-80" ] []
                                 ]
@@ -72,8 +73,8 @@ type Action
     | Message MsgAction
 
 
-navbar : Color -> Model -> Html Msg
-navbar color model =
+navbar : Color -> Url -> Model -> Html Msg
+navbar color currentUrl model =
     let
         menuLinks : List LinkAction
         menuLinks =
@@ -109,7 +110,7 @@ navbar color model =
                         --    [ span [ class "sr-only" ] [ text "View notifications" ]
                         --    , Icon.outline Bell ""
                         --    ]
-                        [ profileDropdown color model.user profileLinks model.profileDropdownOpen
+                        [ profileDropdown color currentUrl model.user profileLinks model.profileDropdownOpen
                         ]
                     ]
                 ]
@@ -149,7 +150,7 @@ navbar color model =
                             ]
                         )
                         [ div [ class "flex items-center px-4" ]
-                            [ a [ href (Router.login Route.Profile), css [ text_200 color, "flex w-full block rounded-md py-2 px-3 text-base font-medium", hover [ bg_800 color, "text-white" ] ] ]
+                            [ a [ href (Router.login currentUrl), css [ text_200 color, "flex w-full block rounded-md py-2 px-3 text-base font-medium", hover [ bg_800 color, "text-white" ] ] ]
                                 [ Icon.outline Icon.User ""
                                 , span [ class "ml-1" ] [ text "Sign in" ]
                                 ]
@@ -196,8 +197,8 @@ mobileMenuButton color mobileMenuOpen =
         ]
 
 
-profileDropdown : Color -> Maybe User -> List Action -> Bool -> Html Msg
-profileDropdown color user profileLinks profileDropdownOpen =
+profileDropdown : Color -> Url -> Maybe User -> List Action -> Bool -> Html Msg
+profileDropdown color currentUrl user profileLinks profileDropdownOpen =
     user
         |> Maybe.mapOrElse
             (\u ->
@@ -234,7 +235,7 @@ profileDropdown color user profileLinks profileDropdownOpen =
             )
             (div [ class "flex-shrink-0 mx-1" ]
                 [ a
-                    [ href (Router.login Route.Profile), id "user-menu-button", onClick ToggleProfileDropdown, css [ text_200 color, "flex-shrink-0 rounded-full p-1 flex", hover [ bg_800 color, "text-white animate-flip-h" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ], ariaExpanded False, ariaHaspopup True ]
+                    [ href (Router.login currentUrl), id "user-menu-button", onClick ToggleProfileDropdown, css [ text_200 color, "flex-shrink-0 rounded-full p-1 flex", hover [ bg_800 color, "text-white animate-flip-h" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ], ariaExpanded False, ariaHaspopup True ]
                     [ span [ class "sr-only text-sm text-white" ] [ text "Open user menu" ]
                     , Icon.outline Icon.User ""
                     ]

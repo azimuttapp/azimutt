@@ -22,7 +22,7 @@ page shared req =
     Page.element
         { init = init shared
         , update = update shared req
-        , view = view shared
+        , view = view shared req
         , subscriptions = subscriptions
         }
 
@@ -150,8 +150,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : Shared.Model -> Model -> View Msg
-view shared model =
+view : Shared.Model -> Request.With Params -> Model -> View Msg
+view shared req model =
     { title = title shared
-    , body = model |> viewProfile shared
+    , body = model |> viewProfile req.url shared
     }

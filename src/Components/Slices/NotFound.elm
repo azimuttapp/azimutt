@@ -13,7 +13,7 @@ type alias SimpleModel =
     , header : String
     , title : String
     , message : String
-    , link : Link
+    , links : List Link
     , footer : List Link
     }
 
@@ -37,12 +37,11 @@ simple model =
                     [ p [ class "text-sm font-semibold text-primary-600 uppercase tracking-wide" ] [ text model.header ]
                     , h1 [ css [ "mt-2 text-4xl font-extrabold text-gray-900 tracking-tight", sm [ "text-5xl" ] ] ] [ text model.title ]
                     , p [ class "mt-2 text-base text-gray-500" ] [ text model.message ]
-                    , div [ class "mt-6" ]
-                        [ a [ href model.link.url, css [ "text-base font-medium text-primary-600", hover [ "text-primary-500" ] ] ]
-                            [ text model.link.text
-                            , span [ ariaHidden True ] [ text "→" ]
-                            ]
-                        ]
+                    , div [ class "mt-6 flex justify-center space-x-4" ]
+                        (model.links
+                            |> List.map (\link -> a [ href link.url, css [ "text-base font-medium text-primary-600", hover [ "text-primary-500" ] ] ] [ text link.text ])
+                            |> List.intersperse (span [ class "inline-block border-l border-gray-300", ariaHidden True ] [])
+                        )
                     ]
                 ]
             ]
@@ -69,7 +68,7 @@ docModel =
     , header = "404 error"
     , title = "Page not found."
     , message = "Sorry, we couldn't find the page you’re looking for."
-    , link = { url = "#", text = "Go back home" }
+    , links = [ { url = "#", text = "Go back home" } ]
     , footer = [ { url = "#", text = "Contact Support" }, { url = "#", text = "Status" }, { url = "#", text = "Twitter" } ]
     }
 

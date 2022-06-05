@@ -288,4 +288,4 @@ subscriptions model =
 
 view : Shared.Model -> Request.With Params -> Model -> View Msg
 view shared req model =
-    { title = title, body = model |> viewNewProject shared req.route }
+    { title = title, body = model |> viewNewProject req.url shared }

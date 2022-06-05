@@ -8,7 +8,7 @@ import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
-import Gen.Route as Route exposing (Route)
+import Gen.Route as Route
 import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
@@ -28,26 +28,27 @@ import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
 import Track
+import Url exposing (Url)
 
 
-viewProjects : Route -> Shared.Model -> Model -> List (Html Msg)
-viewProjects currentRoute shared model =
+viewProjects : Url -> Shared.Model -> Model -> List (Html Msg)
+viewProjects currentUrl shared model =
     appShell shared.conf
+        currentUrl
         shared.user
-        currentRoute
         (\link -> SelectMenu link.text)
         DropdownToggle
         Logout
         model
         [ text model.selectedMenu ]
-        [ viewContent shared model ]
+        [ viewContent currentUrl shared model ]
         [ viewModal model
         , Lazy.lazy2 Toasts.view Toast model.toasts
         ]
 
 
-viewContent : Shared.Model -> Model -> Html Msg
-viewContent shared model =
+viewContent : Url -> Shared.Model -> Model -> Html Msg
+viewContent currentUrl shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
         , if shared.conf.enableCloud && model.projects /= Loading && shared.user == Nothing then
@@ -57,7 +58,7 @@ viewContent shared model =
                     , icon = Icon.InformationCircle
                     , title = "You are not signed in"
                     , actions =
-                        [ Link.secondary3 Tw.blue [ href (Router.login Route.Projects) ] [ text "Sign in now" ]
+                        [ Link.secondary3 Tw.blue [ href (Router.login currentUrl) ] [ text "Sign in now" ]
                         ]
                     }
                     [ text "Sign in to store your projects in your account, access them from anywhere and even share them with your team."

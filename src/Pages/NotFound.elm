@@ -127,7 +127,7 @@ viewNotFound model =
         , header = "404 error"
         , title = "Page not found."
         , message = "Sorry, we couldn't find the page you’re looking for."
-        , link = { url = Route.toHref Route.Home_, text = "Go back home" }
+        , links = [ { url = Route.toHref Route.Home_, text = "Go back home" } ]
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }

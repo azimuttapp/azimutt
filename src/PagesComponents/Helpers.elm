@@ -9,7 +9,7 @@ import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
 import Components.Slices.Newsletter as Newsletter
 import Conf
-import Gen.Route as Route exposing (Route)
+import Gen.Route as Route
 import Html exposing (Html, a, button, div, footer, h1, header, img, main_, p, span, text)
 import Html.Attributes exposing (alt, class, height, href, id, src, type_, width)
 import Html.Events exposing (onClick)
@@ -22,6 +22,7 @@ import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
 import Models.User as User exposing (User)
 import Router
 import Shared exposing (GlobalConf)
+import Url exposing (Url)
 
 
 publicHeader : Html msg
@@ -56,8 +57,8 @@ publicFooter =
 
 appShell :
     GlobalConf
+    -> Url
     -> Maybe User
-    -> Route
     -> (Link -> msg)
     -> (HtmlId -> msg)
     -> msg
@@ -66,7 +67,7 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell gConf maybeUser currentRoute onNavigationClick onProfileClick onLogout model title content footer =
+appShell gConf currentUrl maybeUser onNavigationClick onProfileClick onLogout model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -82,7 +83,7 @@ appShell gConf maybeUser currentRoute onNavigationClick onProfileClick onLogout 
             , search = Nothing
             , rightIcons =
                 if gConf.enableCloud then
-                    [ viewProfileIcon maybeUser currentRoute profileDropdown model.openedDropdown onProfileClick onLogout ]
+                    [ viewProfileIcon currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick onLogout ]
 
                 else
                     []
@@ -101,8 +102,8 @@ appShell gConf maybeUser currentRoute onNavigationClick onProfileClick onLogout 
         ++ (viewFooter :: footer)
 
 
-viewProfileIcon : Maybe User -> Route -> HtmlId -> HtmlId -> (HtmlId -> msg) -> msg -> Html msg
-viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onLogout =
+viewProfileIcon : Url -> Maybe User -> HtmlId -> HtmlId -> (HtmlId -> msg) -> msg -> Html msg
+viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle onLogout =
     maybeUser
         |> Maybe.mapOrElse
             (\user ->
@@ -123,7 +124,7 @@ viewProfileIcon maybeUser currentRoute profileDropdown openedDropdown toggle onL
                             ]
                     )
             )
-            (a [ href (Router.login currentRoute), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
+            (a [ href (Router.login currentUrl), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
                 [ span [ class "sr-only" ] [ text "Sign in" ]
                 , Icon.outline Icon.User ""
                 ]

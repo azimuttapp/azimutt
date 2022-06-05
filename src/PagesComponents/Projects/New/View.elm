@@ -11,7 +11,7 @@ import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Conf
 import Dict
-import Gen.Route as Route exposing (Route)
+import Gen.Route as Route
 import Html exposing (Html, a, aside, div, form, h2, input, li, nav, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
@@ -32,13 +32,14 @@ import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload)
 import Services.Toasts as Toasts
 import Shared
 import Time
+import Url exposing (Url)
 
 
-viewNewProject : Shared.Model -> Route -> Model -> List (Html Msg)
-viewNewProject shared currentRoute model =
+viewNewProject : Url -> Shared.Model -> Model -> List (Html Msg)
+viewNewProject currentUrl shared model =
     appShell shared.conf
+        currentUrl
         shared.user
-        currentRoute
         (\link -> SelectMenu link.text)
         DropdownToggle
         Logout

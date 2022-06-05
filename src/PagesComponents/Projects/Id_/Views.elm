@@ -14,6 +14,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -33,8 +34,10 @@ import PagesComponents.Projects.Id_.Views.Modals.SourceParsing exposing (viewSou
 import PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
 import PagesComponents.Projects.Id_.Views.Navbar as Navbar exposing (viewNavbar)
 import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
+import Router
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
+import Url exposing (Url)
 import View exposing (View)
 
 
@@ -43,31 +46,31 @@ title erd =
     erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") Conf.constants.defaultTitle
 
 
-view : Cmd Msg -> Shared.Model -> Model -> View Msg
-view onDelete shared model =
+view : Cmd Msg -> Url -> Shared.Model -> Model -> View Msg
+view onDelete currentUrl shared model =
     { title = model.erd |> title
-    , body = model |> viewProject onDelete shared
+    , body = model |> viewProject onDelete currentUrl shared
     }
 
 
-viewProject : Cmd Msg -> Shared.Model -> Model -> List (Html Msg)
-viewProject onDelete shared model =
+viewProject : Cmd Msg -> Url -> Shared.Model -> Model -> List (Html Msg)
+viewProject onDelete currentUrl shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp shared model "app") (viewNotFound model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl shared model "app") (viewNotFound currentUrl shared.user model.conf)
 
       else
         Loader.fullScreen
-    , Lazy.lazy3 viewModal shared model onDelete
+    , Lazy.lazy4 viewModal currentUrl shared model onDelete
     , Lazy.lazy2 Toasts.view Toast model.toasts
     , Lazy.lazy viewContextMenu model.contextMenu
     ]
 
 
-viewApp : Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
-viewApp shared model htmlId erd =
+viewApp : Url -> Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
+viewApp currentUrl shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd model.projects model.navbar (Navbar.argsToString (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd model.projects model.navbar (Navbar.argsToString currentUrl (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
 
           else
             div [] []
@@ -85,8 +88,8 @@ viewApp shared model htmlId erd =
         ]
 
 
-viewNotFound : ErdConf -> Html msg
-viewNotFound conf =
+viewNotFound : Url -> Maybe User -> ErdConf -> Html msg
+viewNotFound currentUrl user conf =
     NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
@@ -95,12 +98,13 @@ viewNotFound conf =
         , header = "404 error"
         , title = "Project not found."
         , message = "Sorry, we couldn't find the project you’re looking for."
-        , link =
+        , links =
             if conf.projectManagement then
-                { url = Route.toHref Route.Projects, text = "Go back to dashboard" }
+                [ { url = Route.toHref Route.Projects, text = "Back to dashboard" } ]
+                    ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Router.login currentUrl, text = "Sign in" } ])
 
             else
-                { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" }
+                [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
@@ -109,8 +113,8 @@ viewNotFound conf =
         }
 
 
-viewModal : Shared.Model -> Model -> Cmd Msg -> Html Msg
-viewModal shared model onDelete =
+viewModal : Url -> Shared.Model -> Model -> Cmd Msg -> Html Msg
+viewModal currentUrl shared model onDelete =
     Keyed.node "div"
         [ class "az-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
@@ -120,7 +124,7 @@ viewModal shared model onDelete =
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadDialogMsg MoveProjectTo (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) shared.user (model.openedDialogs |> List.has m.id) e.project m )) model.erd
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadDialogMsg MoveProjectTo (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) currentUrl shared.user (model.openedDialogs |> List.has m.id) e.project m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.has m.id) e m )) model.erd
          , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload shared.zone shared.now (model.openedDialogs |> List.has m.id) m ))
          , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.has m.id) m ))

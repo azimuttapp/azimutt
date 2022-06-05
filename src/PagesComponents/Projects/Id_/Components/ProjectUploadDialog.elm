@@ -6,7 +6,6 @@ import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
-import Gen.Route as Route
 import Html exposing (Html, br, div, h3, p, text)
 import Html.Attributes exposing (class, disabled, href, id)
 import Html.Events exposing (onClick)
@@ -27,6 +26,7 @@ import Router
 import Services.Lenses exposing (mapMTeamCmd)
 import Shared exposing (Confirm)
 import Track
+import Url exposing (Url)
 
 
 dialogId : HtmlId
@@ -65,8 +65,8 @@ update modalOpen erd msg model =
             model |> mapMTeamCmd (ProjectTeam.update message)
 
 
-view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> msg -> Maybe User -> Bool -> ProjectInfo -> Model -> Html msg
-view confirm onDelete wrap moveProject modalClose user opened project model =
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> msg -> Url -> Maybe User -> Bool -> ProjectInfo -> Model -> Html msg
+view confirm onDelete wrap moveProject modalClose currentUrl user opened project model =
     let
         titleId : HtmlId
         titleId =
@@ -87,12 +87,12 @@ view confirm onDelete wrap moveProject modalClose user opened project model =
                     else
                         cloudModal confirm onDelete wrap moveProject model.id titleId u model.team model.movingProject project
                 )
-                (signInModal modalClose titleId project)
+                (signInModal modalClose currentUrl titleId project)
         ]
 
 
-signInModal : msg -> HtmlId -> ProjectInfo -> Html msg
-signInModal modalClose titleId project =
+signInModal : msg -> Url -> HtmlId -> ProjectInfo -> Html msg
+signInModal modalClose currentUrl titleId project =
     div [ class "px-4 pt-5 pb-4 sm:max-w-md sm:p-6" ]
         [ div []
             [ div [ class "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100" ]
@@ -112,7 +112,7 @@ signInModal modalClose titleId project =
             ]
         , div [ class "mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "No thanks" ]
-            , Link.primary3 Tw.emerald [ href (Router.login (Route.Projects__Id_ { id = project.id })), class "w-full" ] [ text "Sign in to sync" ]
+            , Link.primary3 Tw.emerald [ href (Router.login currentUrl), class "w-full" ] [ text "Sign in to sync" ]
             ]
         ]
 

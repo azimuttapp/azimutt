@@ -23,6 +23,7 @@ import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, hrefBlank
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Url as Url
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.Project.CanvasProps as CanvasProps
@@ -35,6 +36,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Projects.Id_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Shared exposing (GlobalConf)
+import Url exposing (Url)
 
 
 type alias Btn msg =
@@ -45,25 +47,25 @@ type alias NavbarArgs =
     String
 
 
-argsToString : HtmlId -> HtmlId -> NavbarArgs
-argsToString htmlId openedDropdown =
-    htmlId ++ "#" ++ openedDropdown
+argsToString : Url -> HtmlId -> HtmlId -> NavbarArgs
+argsToString currentUrl htmlId openedDropdown =
+    Url.toString currentUrl ++ "~" ++ htmlId ++ "~" ++ openedDropdown
 
 
-stringToArgs : NavbarArgs -> ( HtmlId, HtmlId )
+stringToArgs : NavbarArgs -> ( Url, HtmlId, HtmlId )
 stringToArgs args =
-    case args |> String.split "#" of
-        [ htmlId, openedDropdown ] ->
-            ( htmlId, openedDropdown )
+    case String.split "~" args of
+        [ url, htmlId, openedDropdown ] ->
+            ( url |> Url.fromString |> Maybe.withDefault Url.empty, htmlId, openedDropdown )
 
         _ ->
-            ( "", "" )
+            ( Url.empty, "", "" )
 
 
 viewNavbar : GlobalConf -> Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
 viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
     let
-        ( htmlId, openedDropdown ) =
+        ( currentUrl, htmlId, openedDropdown ) =
             stringToArgs args
 
         features : List (Btn Msg)
@@ -103,7 +105,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
                         , if gConf.enableCloud then
-                            Helpers.viewProfileIcon maybeUser (Route.Projects__Id_ { id = erd.project.id }) (htmlId ++ "-profile") openedDropdown DropdownToggle Logout
+                            Helpers.viewProfileIcon currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle Logout
 
                           else
                             div [] []
