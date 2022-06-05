@@ -8,7 +8,6 @@ import Libs.Delta exposing (Delta)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
 import Libs.Models exposing (ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
-import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position exposing (Position)
 import Libs.Tailwind as Tw exposing (Color)
@@ -26,6 +25,8 @@ import Models.Project.TableId exposing (TableId)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
+import PagesComponents.Projects.Id_.Models.EmbedKind exposing (EmbedKind)
+import PagesComponents.Projects.Id_.Models.EmbedMode exposing (EmbedModeId)
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
@@ -109,7 +110,7 @@ type alias SchemaAnalysisDialog =
 
 
 type alias SharingDialog =
-    { id : HtmlId, url : FileUrl, layout : LayoutName, mode : String }
+    { id : HtmlId, kind : EmbedKind, content : String, layout : LayoutName, mode : EmbedModeId }
 
 
 type alias ProjectSettingsDialog =
@@ -254,9 +255,10 @@ type SchemaAnalysisMsg
 type SharingMsg
     = SOpen
     | SClose
-    | SProjectUrlUpdate FileUrl
+    | SKindUpdate EmbedKind
+    | SContentUpdate String
     | SLayoutUpdate LayoutName
-    | SModeUpdate String
+    | SModeUpdate EmbedModeId
 
 
 type ProjectSettingsMsg

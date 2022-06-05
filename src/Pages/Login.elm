@@ -91,6 +91,10 @@ handleJsMessage msg model =
         GotToast level message ->
             ( model, Toasts.create Toast level message )
 
+        GotSizes _ ->
+            -- useless here
+            ( model, Cmd.none )
+
         _ ->
             ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
 

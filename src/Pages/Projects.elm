@@ -127,6 +127,9 @@ handleJsMessage msg model =
         ProjectDropped projectId ->
             ( model |> mapProjects (List.filter (\p -> p.id /= projectId)), Cmd.none )
 
+        GotToast level message ->
+            ( model, Toasts.create Toast level message )
+
         GotLogin _ ->
             -- handled in shared update
             ( model, Cmd.none )
@@ -135,8 +138,9 @@ handleJsMessage msg model =
             -- handled in shared update
             ( model, Cmd.none )
 
-        GotToast level message ->
-            ( model, Toasts.create Toast level message )
+        GotSizes _ ->
+            -- useless here
+            ( model, Cmd.none )
 
         _ ->
             ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )

@@ -12,13 +12,13 @@ import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Html exposing (extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
-import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.Project as Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SharingDialog, SharingMsg(..))
-import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
+import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
+import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
 import Services.Lenses exposing (mapLayout, mapRelations, mapSources, mapTables, setContent, setHiddenTables, setLayouts, setUsedLayout)
@@ -33,7 +33,7 @@ viewSharing opened erd model =
 
         iframeUrl : String
         iframeUrl =
-            buildIframeUrl model.url model.layout model.mode
+            buildIframeUrl model.kind model.content model.layout model.mode
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = ModalClose (SharingMsg SClose) }
         [ div [ class "flex" ]
@@ -82,9 +82,9 @@ viewBody : Erd -> SharingDialog -> Html Msg
 viewBody erd model =
     div []
         [ viewBodyDownload erd
-        , viewBodyUrlInput (model.id ++ "-url-input") model.url
-        , viewBodyLayoutInput (model.id ++ "-layout-input") model.layout (erd.layouts |> Dict.keys)
-        , viewBodyModeInput (model.id ++ "-mode-input") model.mode
+        , viewBodyKindContentInput (model.id ++ "-input") model.kind model.content
+        , viewBodyLayoutInput (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
+        , viewBodyModeInput (model.id ++ "-input-mode") model.mode
         , viewBodyIframe model
         ]
 
@@ -134,21 +134,21 @@ viewBodyDownload erd =
         ]
 
 
-viewBodyUrlInput : HtmlId -> FileUrl -> Html Msg
-viewBodyUrlInput inputId inputValue =
+viewBodyKindContentInput : HtmlId -> EmbedKind -> String -> Html Msg
+viewBodyKindContentInput inputId kind content =
+    let
+        ( kindInput, contentInput ) =
+            ( inputId ++ "-kind", inputId ++ "-content" )
+    in
     div [ class "mt-3" ]
-        [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Project url" ]
-        , div [ class "mt-1" ]
-            [ input
-                [ type_ "url"
-                , id inputId
-                , name inputId
-                , placeholder "https://azimutt.app/samples/gospeak.azimutt.json"
-                , value inputValue
-                , onInput (SProjectUrlUpdate >> SharingMsg)
-                , css [ "block w-full border border-gray-300 rounded-md shadow-sm", sm [ "text-sm" ], focus [ "border-indigo-500 ring-indigo-500" ] ]
+        [ label [ for contentInput, class "block text-sm font-medium text-gray-700" ] [ text "Embed" ]
+        , div [ class "mt-1 relative rounded-md shadow-sm" ]
+            [ div [ class "absolute inset-y-0 left-0 flex items-center" ]
+                [ label [ for kindInput, class "sr-only" ] [ text "Content kind" ]
+                , select [ id kindInput, name kindInput, onInput (EmbedKind.fromValue >> Maybe.withDefault EmbedKind.EmbedProjectUrl >> SKindUpdate >> SharingMsg), class "h-full py-0 pl-3 pr-7 border-transparent bg-transparent text-gray-500 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ]
+                    (EmbedKind.all |> List.map (\k -> option [ value (EmbedKind.value k), selected (k == kind) ] [ text (EmbedKind.label k) ]))
                 ]
-                []
+            , input [ type_ "text", id contentInput, name contentInput, placeholder ("ex: " ++ EmbedKind.placeholder kind), value content, onInput (SContentUpdate >> SharingMsg), class "block w-full pl-32 border-gray-300 rounded-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500" ] []
             ]
         ]
 
@@ -181,7 +181,7 @@ viewBodyLayoutInput inputId inputValue layouts =
         ]
 
 
-viewBodyModeInput : HtmlId -> String -> Html Msg
+viewBodyModeInput : HtmlId -> EmbedModeId -> Html Msg
 viewBodyModeInput inputId inputValue =
     div [ class "mt-3" ]
         [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Mode" ]
@@ -200,7 +200,7 @@ viewBodyIframe model =
     let
         iframeUrl : String
         iframeUrl =
-            buildIframeUrl model.url model.layout model.mode
+            buildIframeUrl model.kind model.content model.layout model.mode
     in
     if iframeUrl /= "" then
         div [ class "mt-3" ]
@@ -217,10 +217,10 @@ viewBodyIframe model =
         div [] []
 
 
-buildIframeUrl : FileUrl -> LayoutName -> String -> String
-buildIframeUrl projectUrl layout mode =
-    if projectUrl /= "" then
-        Conf.constants.azimuttWebsite ++ "/embed?project-url=" ++ projectUrl ++ Bool.cond (layout /= "") ("&layout=" ++ layout) "" ++ Bool.cond (mode /= "") ("&mode=" ++ mode) ""
+buildIframeUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> String
+buildIframeUrl kind content layout mode =
+    if content /= "" then
+        Conf.constants.azimuttWebsite ++ "/embed?" ++ EmbedKind.value kind ++ "=" ++ content ++ Bool.cond (layout /= "") ("&layout=" ++ layout) "" ++ Bool.cond (mode /= "") ("&mode=" ++ mode) ""
 
     else
         ""

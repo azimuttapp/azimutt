@@ -11,6 +11,7 @@ import Libs.Task as T
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), SourceParsingDialog)
+import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind
 import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
 import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
@@ -41,7 +42,8 @@ page shared req =
 
 
 type alias QueryString =
-    { projectUrl : Maybe String
+    { projectId : Maybe String
+    , projectUrl : Maybe String
     , sourceUrl : Maybe String
     , layout : Maybe String
     , mode : String
@@ -66,7 +68,7 @@ init now query =
       , conf = initConf query.mode
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
-      , loaded = query.projectUrl == Nothing && query.sourceUrl == Nothing
+      , loaded = query.projectId == Nothing && query.projectUrl == Nothing && query.sourceUrl == Nothing
       , erd = Nothing
       , projects = []
       , hoverTable = Nothing
@@ -83,7 +85,8 @@ init now query =
       , settings = Nothing
       , sourceUpload = Nothing
       , sourceParsing =
-            (query.projectUrl |> Maybe.map (\_ -> Nothing))
+            (query.projectId |> Maybe.map (\_ -> Nothing))
+                |> Maybe.orElse (query.projectUrl |> Maybe.map (\_ -> Nothing))
                 |> Maybe.orElse (query.sourceUrl |> Maybe.map (\_ -> Just initSourceParsing))
                 |> Maybe.withDefault Nothing
       , help = Nothing
@@ -107,7 +110,8 @@ init now query =
          , Ports.trackPage "embed"
          , Ports.listenHotkeys Conf.hotkeys
          ]
-            ++ ((query.projectUrl |> Maybe.map (\url -> [ Ports.loadRemoteProject url ]))
+            ++ ((query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
+                    |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Ports.loadRemoteProject url ]))
                     |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (SourceParsing (SqlSourceUpload.SelectRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.withDefault []
                )
@@ -139,8 +143,9 @@ initSourceParsing =
 
 parseQueryString : Dict String String -> QueryString
 parseQueryString query =
-    { projectUrl = query |> Dict.get "project-url" |> Maybe.orElse (query |> Dict.get "project_url")
-    , sourceUrl = query |> Dict.get "source-url"
+    { projectId = query |> Dict.get EmbedKind.projectId
+    , projectUrl = query |> Dict.get EmbedKind.projectUrl
+    , sourceUrl = query |> Dict.get EmbedKind.sourceUrl
     , layout = query |> Dict.get "layout"
     , mode = query |> Dict.getOrElse "mode" EmbedMode.default
     }
@@ -149,8 +154,9 @@ parseQueryString query =
 serializeQueryString : QueryString -> Dict String String
 serializeQueryString query =
     Dict.fromList
-        ([ ( "project-url", query.projectUrl )
-         , ( "source-url", query.sourceUrl )
+        ([ ( EmbedKind.projectId, query.projectId )
+         , ( EmbedKind.projectUrl, query.projectUrl )
+         , ( EmbedKind.sourceUrl, query.sourceUrl )
          , ( "layout", query.layout )
          , ( "mode", Just query.mode )
          ]

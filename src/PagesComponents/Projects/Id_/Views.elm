@@ -99,12 +99,13 @@ viewNotFound currentUrl user conf =
         , title = "Project not found."
         , message = "Sorry, we couldn't find the project you’re looking for."
         , links =
-            if conf.projectManagement then
+            (if conf.projectManagement then
                 [ { url = Route.toHref Route.Projects, text = "Back to dashboard" } ]
-                    ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Router.login currentUrl, text = "Sign in" } ])
 
-            else
+             else
                 [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
+            )
+                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Router.login currentUrl, text = "Sign in" } ])
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
