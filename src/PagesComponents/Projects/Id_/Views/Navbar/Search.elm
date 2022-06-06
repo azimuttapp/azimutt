@@ -67,7 +67,7 @@ viewNavbarSearch search tables relations notes shownTables htmlId openedDropdown
                             ]
 
                     else
-                        performSearch tables relations notes search.text
+                        performSearch tables relations notes (String.toLower search.text)
                             |> (\results ->
                                     if results |> List.isEmpty then
                                         div []
@@ -132,7 +132,7 @@ viewSearchResult searchId shownTables active index res =
 
 
 performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict NotesKey Notes -> String -> List SearchResult
-performSearch tables relations notes query =
+performSearch tables relations notes lQuery =
     let
         maxResults : Int
         maxResults =
@@ -140,12 +140,12 @@ performSearch tables relations notes query =
 
         tableResults : List ( Float, SearchResult )
         tableResults =
-            tables |> Dict.values |> List.filterMap (tableMatch query notes)
+            tables |> Dict.values |> List.filterMap (tableMatch lQuery notes)
 
         columnResults : List ( Float, SearchResult )
         columnResults =
             if (tableResults |> List.length) < maxResults then
-                tables |> Dict.values |> List.concatMap (\table -> table.columns |> Dict.values |> List.filterMap (columnMatch query notes table))
+                tables |> Dict.values |> List.concatMap (\table -> table.columns |> Dict.values |> List.filterMap (columnMatch lQuery notes table))
 
             else
                 []
@@ -153,7 +153,7 @@ performSearch tables relations notes query =
         relationResults : List ( Float, SearchResult )
         relationResults =
             if ((tableResults |> List.length) + (columnResults |> List.length)) < maxResults then
-                relations |> List.filterMap (relationMatch query)
+                relations |> List.filterMap (relationMatch lQuery)
 
             else
                 []
@@ -162,23 +162,23 @@ performSearch tables relations notes query =
 
 
 tableMatch : String -> Dict NotesKey Notes -> ErdTable -> Maybe ( Float, SearchResult )
-tableMatch query notes table =
-    if table.name == query then
+tableMatch lQuery notes table =
+    if String.toLower table.name == lQuery then
         Just ( 10, FoundTable table )
 
-    else if table.name |> String.startsWith query then
+    else if table.name |> String.toLower |> String.startsWith lQuery then
         Just ( 9 + shortBonus table.name, FoundTable table )
 
-    else if table.name |> String.contains query then
+    else if table.name |> match lQuery then
         Just ( 8 + shortBonus table.name, FoundTable table )
 
     else if
-        (table.comment |> Maybe.any (.text >> String.contains query))
-            || (table.primaryKey |> Maybe.any (\pk -> pk |> .name |> Maybe.withDefault "" |> String.contains query))
-            || (table.uniques |> List.any (\u -> (u.name |> String.contains query) || (u.definition |> Maybe.withDefault "" |> String.contains query)))
-            || (table.indexes |> List.any (\i -> (i.name |> String.contains query) || (i.definition |> Maybe.withDefault "" |> String.contains query)))
-            || (table.checks |> List.any (\c -> (c.name |> String.contains query) || (c.predicate |> Maybe.withDefault "" |> String.contains query)))
-            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (\n -> n |> String.contains query))
+        (table.comment |> Maybe.any (.text >> match lQuery))
+            || (table.primaryKey |> Maybe.andThen .name |> Maybe.any (match lQuery))
+            || (table.uniques |> List.any (\u -> (u.name |> match lQuery) || (u.definition |> Maybe.any (match lQuery))))
+            || (table.indexes |> List.any (\i -> (i.name |> match lQuery) || (i.definition |> Maybe.any (match lQuery))))
+            || (table.checks |> List.any (\c -> (c.name |> match lQuery) || (c.predicate |> Maybe.any (match lQuery))))
+            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (match lQuery))
     then
         Just ( 7 + shortBonus table.name, FoundTable table )
 
@@ -187,21 +187,21 @@ tableMatch query notes table =
 
 
 columnMatch : String -> Dict NotesKey Notes -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
-columnMatch query notes table column =
-    if column.name == query then
+columnMatch lQuery notes table column =
+    if String.toLower column.name == lQuery then
         Just ( 1, FoundColumn table column )
 
-    else if column.name |> String.startsWith query then
+    else if column.name |> String.toLower |> String.startsWith lQuery then
         Just ( 0.9, FoundColumn table column )
 
-    else if column.name |> String.contains query then
+    else if column.name |> match lQuery then
         Just ( 0.8, FoundColumn table column )
 
     else if
-        (column.comment |> Maybe.any (.text >> String.contains query))
-            || (column.kind |> String.contains query)
-            || (column.default |> Maybe.any (String.contains query))
-            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (\n -> n |> String.contains query))
+        (column.comment |> Maybe.any (.text >> match lQuery))
+            || (column.kind |> match lQuery)
+            || (column.default |> Maybe.any (match lQuery))
+            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (match lQuery))
     then
         Just ( 0.7, FoundColumn table column )
 
@@ -210,26 +210,31 @@ columnMatch query notes table column =
 
 
 relationMatch : String -> ErdRelation -> Maybe ( Float, SearchResult )
-relationMatch query relation =
-    if relation.name == query then
+relationMatch lQuery relation =
+    if String.toLower relation.name == lQuery then
         Just ( 0.1, FoundRelation relation )
 
-    else if relation.name |> String.startsWith query then
+    else if relation.name |> String.toLower |> String.startsWith lQuery then
         Just ( 0.09, FoundRelation relation )
 
-    else if relation.name |> String.contains query then
+    else if relation.name |> match lQuery then
         Just ( 0.08, FoundRelation relation )
 
     else if
-        (relation.src.column |> String.contains query)
-            || (relation.ref.column |> String.contains query)
-            || (relation.src.table |> Tuple.second |> String.contains query)
-            || (relation.ref.table |> Tuple.second |> String.contains query)
+        (relation.src.column |> match lQuery)
+            || (relation.ref.column |> match lQuery)
+            || (relation.src.table |> Tuple.second |> match lQuery)
+            || (relation.ref.table |> Tuple.second |> match lQuery)
     then
         Just ( 0.07, FoundRelation relation )
 
     else
         Nothing
+
+
+match : String -> String -> Bool
+match lQuery text =
+    text |> String.toLower |> String.contains lQuery
 
 
 shortBonus : String -> Float

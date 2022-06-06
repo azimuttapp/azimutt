@@ -146,6 +146,10 @@ viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
         optionsField : HtmlId
         optionsField =
             fieldId ++ "-options"
+
+        lValue : String
+        lValue =
+            String.toLower selectedValue
     in
     div [ class "relative mt-1" ]
         [ input [ type_ "text", role "combobox", id fieldId, tabindex 1, value selectedValue, onFocus (DropdownOpen fieldId), onInput buildMsg, placeholder "Choose a table", ariaControls optionsField, ariaExpanded False, class "w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-12 shadow-sm sm:text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" ] []
@@ -153,7 +157,7 @@ viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
             ul [ role "listbox", id optionsField, class "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 sm:text-sm focus:outline-none" ]
                 (tables
                     |> Dict.values
-                    |> List.filter (\t -> t.label |> String.contains selectedValue)
+                    |> List.filter (\t -> t.label |> String.toLower |> String.contains lValue)
                     |> List.map
                         (\table ->
                             li [ role "option", onClick (buildMsg table.label), tabindex -1, class "group relative cursor-pointer select-none py-2 pl-3 pr-9 text-gray-900 hover:text-white hover:bg-primary-600" ]

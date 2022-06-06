@@ -91,7 +91,7 @@ app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
-app.on('ConfettiPride', msg => Utils.launchConfettiPride())
+app.on('ConfettiPride', _ => Utils.launchConfettiPride())
 app.on('TrackPage', msg => analytics.trackPage(msg.name))
 app.on('TrackEvent', msg => analytics.trackEvent(msg.name, msg.details))
 app.on('TrackError', msg => {
