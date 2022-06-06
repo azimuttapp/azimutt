@@ -188,6 +188,8 @@ type Msg
     | Logout
     | Focus HtmlId
     | DropdownToggle HtmlId
+    | DropdownOpen HtmlId
+    | DropdownClose
     | PopoverSet HtmlId
     | ContextMenuCreate (Html Msg) PointerEvent
     | ContextMenuShow
@@ -237,8 +239,8 @@ type VirtualRelationMsg
 type FindPathMsg
     = FPOpen (Maybe TableId) (Maybe TableId)
     | FPToggleSettings
-    | FPUpdateFrom (Maybe TableId)
-    | FPUpdateTo (Maybe TableId)
+    | FPUpdateFrom String
+    | FPUpdateTo String
     | FPSearch
     | FPCompute (Dict TableId ErdTable) (List ErdRelation) TableId TableId FindPathSettings
     | FPToggleResult Int

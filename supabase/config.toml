@@ -1,3 +1,5 @@
+# see: https://github.com/supabase/supabase/blob/master/docker/.env.example & https://supabase.com/docs/guides/hosting/overview#configuration
+
 # A string used to distinguish different Supabase projects on the same host. Defaults to the working
 # directory name when running `supabase init`.
 project_id = "azimutt"

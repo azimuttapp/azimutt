@@ -52,7 +52,7 @@ confirm model isOpen =
                     ]
                 ]
             ]
-        , div [ css [ "px-6 py-3 mt-6 bg-gray-50", sm [ "flex items-center flex-row-reverse" ] ] ]
+        , div [ css [ "px-6 py-3 mt-6 bg-gray-50 rounded-b-lg", sm [ "flex items-center flex-row-reverse" ] ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text model.confirm ]
             , Button.white3 Tw.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text model.cancel ]
             ]
@@ -107,7 +107,7 @@ prompt model isOpen =
                     ]
                 ]
             ]
-        , div [ css [ "px-6 py-3 mt-6 bg-gray-50", sm [ "flex items-center flex-row-reverse" ] ] ]
+        , div [ css [ "px-6 py-3 mt-6 bg-gray-50 rounded-b-lg", sm [ "flex items-center flex-row-reverse" ] ] ]
             [ Button.primary3 model.color [ onClick model.onConfirm, autofocus True, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text model.confirm ]
             , Button.white3 Tw.gray [ onClick model.onCancel, css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text model.cancel ]
             ]
@@ -145,7 +145,7 @@ modal model content =
         [ div [ css [ "flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center", sm [ "block p-0" ] ] ]
             [ div [ ariaHidden True, onClick model.onBackgroundClick, css [ "fixed inset-0 bg-gray-500 bg-opacity-75", backgroundOverlay ] ] []
             , {- This element is to trick the browser into centering the modal contents. -} span [ css [ "hidden", sm [ "inline-block align-middle h-screen" ] ], ariaHidden True ] [ text "\u{200B}" ]
-            , div [ id model.id, css [ "inline-block align-middle bg-white rounded-lg text-left overflow-hidden shadow-xl transform", modalPanel, sm [ "my-8 max-w-max w-full" ] ] ] content
+            , div [ id model.id, css [ "inline-block align-middle bg-white rounded-lg text-left shadow-xl transform", modalPanel, sm [ "my-8 max-w-max w-full" ] ] ] content
             ]
         ]
 

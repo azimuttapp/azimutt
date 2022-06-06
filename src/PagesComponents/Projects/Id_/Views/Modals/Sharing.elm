@@ -54,7 +54,7 @@ viewIframe iframeUrl =
             ]
 
     else
-        div [ class "flex items-center" ] [ img [ src "/assets/images/illustrations/education.gif" ] [] ]
+        div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src "/assets/images/illustrations/education.gif" ] [] ]
 
 
 buildIframeHtml : String -> String

@@ -39,8 +39,8 @@ viewNavbarSearch search tables relations notes shownTables htmlId openedDropdown
                             , autocomplete False
                             , value search.text
                             , onInput SearchUpdated
-                            , onFocus (DropdownToggle m.id)
-                            , onBlur (DropdownToggle m.id)
+                            , onFocus (DropdownOpen m.id)
+                            , onBlur DropdownClose
                             , css [ "block w-full pl-10 pr-3 py-2 border border-transparent rounded-md leading-5 bg-primary-500 text-primary-100 placeholder-primary-200", focus [ "outline-none bg-white border-white ring-white text-primary-900 placeholder-primary-400" ], sm [ "text-sm" ] ]
                             ]
                             []

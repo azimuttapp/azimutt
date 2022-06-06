@@ -7,14 +7,13 @@ import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
-import Html exposing (Html, br, button, div, h2, h3, img, input, label, option, p, pre, select, small, span, text)
-import Html.Attributes exposing (alt, class, disabled, for, id, placeholder, selected, src, title, type_, value)
-import Html.Events exposing (onClick, onInput)
+import Html exposing (Html, br, button, div, h2, h3, img, input, label, li, p, pre, small, span, text, ul)
+import Html.Attributes exposing (alt, class, disabled, for, id, placeholder, src, tabindex, title, type_, value)
+import Html.Events exposing (onClick, onFocus, onInput)
 import Libs.Bool as B
 import Libs.Html exposing (bText, extLink)
-import Libs.Html.Attributes exposing (ariaDescribedby, css)
+import Libs.Html.Attributes exposing (ariaControls, ariaDescribedby, ariaExpanded, css, role)
 import Libs.List as List
-import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Nel as Nel
 import Libs.Tailwind as Tw exposing (focus, sm)
@@ -31,8 +30,8 @@ import PagesComponents.Projects.Id_.Models.FindPathStep exposing (FindPathStep)
 import PagesComponents.Projects.Id_.Models.FindPathStepDir exposing (FindPathStepDir(..))
 
 
-viewFindPath : Bool -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
-viewFindPath opened tables settings model =
+viewFindPath : Bool -> HtmlId -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFindPath opened openedDropdown tables settings model =
     let
         titleId : HtmlId
         titleId =
@@ -47,9 +46,9 @@ viewFindPath opened tables settings model =
         [ viewHeader titleId
         , viewAlert
         , viewSettings model.id model.showSettings settings
-        , viewSearchForm model.id tables model.from model.to
-        , viewPaths model
-        , viewFooter settings model
+        , viewSearchForm model.id openedDropdown tables model.from model.to
+        , viewPaths tables model
+        , viewFooter tables settings model
         ]
 
 
@@ -124,41 +123,61 @@ viewSettingsInput fieldId fieldType fieldLabel fieldPlaceholder fieldHelp fieldV
         ]
 
 
-viewSearchForm : HtmlId -> Dict TableId ErdTable -> Maybe TableId -> Maybe TableId -> Html Msg
-viewSearchForm modalId tables from to =
+viewSearchForm : HtmlId -> HtmlId -> Dict TableId ErdTable -> String -> String -> Html Msg
+viewSearchForm modalId openedDropdown tables from to =
     div [ class "px-6 mt-3 flex space-x-3" ]
-        [ viewSelectCard (modalId ++ "-from") "From" "Starting table for the path" from (FPUpdateFrom >> FindPathMsg) tables
-        , viewSelectCard (modalId ++ "-to") "To" "Table you want to go to" to (FPUpdateTo >> FindPathMsg) tables
+        [ viewSelectCard openedDropdown (modalId ++ "-from") "From" "Starting table for the path" from (FPUpdateFrom >> FindPathMsg) tables
+        , viewSelectCard openedDropdown (modalId ++ "-to") "To" "Table you want to go to" to (FPUpdateTo >> FindPathMsg) tables
         ]
 
 
-viewSelectCard : HtmlId -> String -> String -> Maybe TableId -> (Maybe TableId -> Msg) -> Dict TableId ErdTable -> Html Msg
-viewSelectCard fieldId title description selectedValue buildMsg tables =
+viewSelectCard : HtmlId -> HtmlId -> String -> String -> String -> (String -> Msg) -> Dict TableId ErdTable -> Html Msg
+viewSelectCard openedDropdown fieldId title description selectedValue buildMsg tables =
     div [ css [ "flex-grow p-3 border border-gray-300 rounded-md shadow-sm", sm [ "col-span-3" ] ] ]
         [ label [ for fieldId, class "block text-sm font-medium text-gray-700" ] [ text title ]
-        , div [ class "mt-1" ]
-            [ select [ id fieldId, onInput (\id -> Just id |> Maybe.filter (\i -> not (i == "")) |> Maybe.map TableId.fromString |> buildMsg), css [ "block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ]
-                (option [ value "", selected (selectedValue == Nothing) ] [ text "-- Select a table" ]
-                    :: (tables
-                            |> Dict.values
-                            |> List.map
-                                (\t ->
-                                    option
-                                        [ value (TableId.toString t.id)
-                                        , selected (selectedValue |> Maybe.has t.id)
-                                        ]
-                                        [ text (TableId.show t.id) ]
-                                )
-                       )
-                )
-            ]
+        , viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables
         , p [ class "mt-1 text-sm text-gray-500" ] [ text description ]
         ]
 
 
-viewPaths : FindPathDialog -> Html Msg
-viewPaths model =
-    case ( model.from, model.to, model.result ) of
+viewInputComboboxes : HtmlId -> HtmlId -> String -> (String -> Msg) -> Dict TableId ErdTable -> Html Msg
+viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
+    let
+        optionsField : HtmlId
+        optionsField =
+            fieldId ++ "-options"
+    in
+    div [ class "relative mt-1" ]
+        [ input [ type_ "text", role "combobox", id fieldId, tabindex 1, value selectedValue, onFocus (DropdownOpen fieldId), onInput buildMsg, ariaControls optionsField, ariaExpanded False, class "w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-12 shadow-sm sm:text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" ] []
+        , if openedDropdown == fieldId then
+            ul [ role "listbox", id optionsField, class "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 sm:text-sm focus:outline-none" ]
+                (tables
+                    |> Dict.values
+                    |> List.filter (\t -> t.label |> String.contains selectedValue)
+                    |> List.map
+                        (\table ->
+                            li [ role "option", onClick (buildMsg table.label), tabindex -1, class "group relative cursor-pointer select-none py-2 pl-3 pr-9 text-gray-900 hover:text-white hover:bg-primary-600" ]
+                                (if table.label == selectedValue then
+                                    [ span [ class "block truncate font-semibold" ] [ text table.label ]
+                                    , span [ class "absolute inset-y-0 right-0 flex items-center pr-4 text-indigo-600 group-hover:text-white" ] [ Icon.solid Check "" ]
+                                    ]
+
+                                 else
+                                    [ span [ class "block truncate" ] [ text table.label ]
+                                    , span [] []
+                                    ]
+                                )
+                        )
+                )
+
+          else
+            div [] []
+        ]
+
+
+viewPaths : Dict TableId ErdTable -> FindPathDialog -> Html Msg
+viewPaths tables model =
+    case ( model.from |> existingTableId tables, model.to |> existingTableId tables, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
             if result.paths |> List.isEmpty then
                 div [ class "px-6 mt-3 text-center" ]
@@ -237,10 +256,10 @@ buildQuery table joins =
            )
 
 
-viewFooter : FindPathSettings -> FindPathDialog -> Html Msg
-viewFooter settings model =
-    div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
-        (case ( model.from, model.to, model.result ) of
+viewFooter : Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFooter tables settings model =
+    div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
+        (case ( model.from |> existingTableId tables, model.to |> existingTableId tables, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
                     [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
@@ -257,3 +276,8 @@ viewFooter settings model =
             _ ->
                 [ Button.primary3 Tw.primary [ disabled True ] [ text "Search" ] ]
         )
+
+
+existingTableId : Dict TableId ErdTable -> String -> Maybe TableId
+existingTableId tables input =
+    tables |> Dict.get (TableId.parse input) |> Maybe.map .id

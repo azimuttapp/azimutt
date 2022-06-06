@@ -98,7 +98,7 @@ localFileModal zone now titleId source fileName updatedAt model =
                 div [] []
         , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
         , closeBtn
         ]
@@ -128,7 +128,7 @@ remoteFileModal zone now titleId source fileUrl model =
             ]
         , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
         , closeBtn
         ]
@@ -152,7 +152,7 @@ userDefinedModal titleId =
             , text ". What would be useful to fix it is what steps you did to get here."
             ]
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (PSSourceUploadClose |> ProjectSettingsMsg |> ModalClose |> Just) "Close"
         ]
     ]
@@ -189,7 +189,7 @@ newSourceModal titleId model =
             ]
         , SqlSourceUpload.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceAdd >> ProjectSettingsMsg)) "Add source"
         , closeBtn
         ]

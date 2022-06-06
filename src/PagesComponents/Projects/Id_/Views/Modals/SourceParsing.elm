@@ -40,7 +40,7 @@ viewSourceParsing opened model =
         }
         [ h3 [ class "px-6 pt-6 text-lg leading-6 font-medium text-gray-900" ] [ text ("Parsing " ++ sourceName ++ " source...") ]
         , div [ class "px-6" ] [ SqlSourceUpload.viewParsing SourceParsing model.parsing ]
-        , div [ class "px-6 py-3 mt-6 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+        , div [ class "px-6 py-3 mt-6 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
             [ Button.primary3 Tw.primary (result |> Maybe.mapOrElse (\( projectId, source ) -> [ onClick (ModalClose (SourceParsed projectId source)) ]) [ disabled True ]) [ text "Open schema" ]
             ]
         ]

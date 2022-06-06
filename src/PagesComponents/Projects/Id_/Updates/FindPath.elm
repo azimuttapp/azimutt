@@ -10,7 +10,7 @@ import Libs.Task as T
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.ProjectSettings as ProjectSettings
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
@@ -38,7 +38,15 @@ handleFindPath msg model =
     case msg of
         FPOpen from to ->
             ( model
-                |> setFindPath (Just { id = Conf.ids.findPathDialog, from = from, to = to, showSettings = False, result = Empty })
+                |> setFindPath
+                    (Just
+                        { id = Conf.ids.findPathDialog
+                        , from = from |> Maybe.map TableId.show |> Maybe.withDefault ""
+                        , to = to |> Maybe.map TableId.show |> Maybe.withDefault ""
+                        , showSettings = False
+                        , result = Empty
+                        }
+                    )
                 |> mapErdM (mapSettings ProjectSettings.fillFindPath)
             , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ]
             )
@@ -53,9 +61,9 @@ handleFindPath msg model =
             ( model |> mapFindPathM (setTo to), Cmd.none )
 
         FPSearch ->
-            model.findPath
-                |> Maybe.andThen (\fp -> Maybe.zip3 model.erd fp.from fp.to)
-                |> Maybe.mapOrElse (\( e, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute e.tables e.relations from to e.settings.findPath)) ))
+            Maybe.zip model.findPath model.erd
+                |> Maybe.andThen (\( fp, erd ) -> Maybe.zip3 (Just erd) (erd.tables |> Dict.get (TableId.parse fp.from)) (erd.tables |> Dict.get (TableId.parse fp.to)))
+                |> Maybe.mapOrElse (\( erd, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute erd.tables erd.relations from.id to.id erd.settings.findPath)) ))
                     ( model, Cmd.none )
 
         FPCompute tables relations from to settings ->

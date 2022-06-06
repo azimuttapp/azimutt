@@ -59,7 +59,7 @@ tooltip bubble caret value content =
         div [ class "inline-flex" ] [ content ]
 
     else
-        div [ class "group relative inline-flex flex-col items-center align-middle" ]
+        div [ class "group relative inline-flex flex-col items-center" ]
             [ content
             , div [ class ("group-hover:flex hidden absolute flex-col z-max " ++ bubble) ]
                 [ div [ class ("absolute w-3 h-3 bg-black transform rotate-45 " ++ caret) ] []

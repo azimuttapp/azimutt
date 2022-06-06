@@ -56,7 +56,7 @@ viewHelp opened model =
                 , text " to help us make the most out of it."
                 ]
             ]
-        , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50" ]
+        , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
             [ Button.primary3 Tw.primary [ onClick (ModalClose (HelpMsg HClose)) ] [ text "Thanks!" ] ]
         ]
 
