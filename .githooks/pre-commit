@@ -6,4 +6,6 @@ echo "Running elm-review:" &&
  npm test &&
  printf "\nCheck elm-format:\n" &&
  elm-format src tests --validate &&
+ printf "\nCheck build is working:\n" &&
+ npx elm-spa build &&
  echo ""

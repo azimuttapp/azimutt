@@ -6,7 +6,6 @@ import Dict
 import Gen.Params.Projects.Last exposing (Params)
 import Gen.Route as Route
 import Html.Lazy as Lazy
-import Libs.Debug as Debug
 import Libs.Maybe as Maybe
 import Page
 import Ports exposing (JsMsg(..))
@@ -95,7 +94,7 @@ handleJsMessage req msg model =
             ( model, Toasts.create Toast level message )
 
         _ ->
-            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
+            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
 
 
 

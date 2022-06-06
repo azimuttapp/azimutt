@@ -5,7 +5,6 @@ import Dict
 import Effect exposing (Effect)
 import Gen.Params.Login exposing (Params)
 import Gen.Route as Route
-import Libs.Debug as Debug
 import Page
 import PagesComponents.Login.Models as Models exposing (Msg(..))
 import PagesComponents.Login.View exposing (viewLogin)
@@ -96,7 +95,7 @@ handleJsMessage msg model =
             ( model, Cmd.none )
 
         _ ->
-            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
+            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
 
 
 

@@ -148,7 +148,7 @@ viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
             fieldId ++ "-options"
     in
     div [ class "relative mt-1" ]
-        [ input [ type_ "text", role "combobox", id fieldId, tabindex 1, value selectedValue, onFocus (DropdownOpen fieldId), onInput buildMsg, ariaControls optionsField, ariaExpanded False, class "w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-12 shadow-sm sm:text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" ] []
+        [ input [ type_ "text", role "combobox", id fieldId, tabindex 1, value selectedValue, onFocus (DropdownOpen fieldId), onInput buildMsg, placeholder "Choose a table", ariaControls optionsField, ariaExpanded False, class "w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-12 shadow-sm sm:text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" ] []
         , if openedDropdown == fieldId then
             ul [ role "listbox", id optionsField, class "absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 sm:text-sm focus:outline-none" ]
                 (tables

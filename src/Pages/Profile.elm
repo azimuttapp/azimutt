@@ -4,7 +4,6 @@ import Conf
 import Dict
 import Gen.Params.Profile exposing (Params)
 import Gen.Route as Route
-import Libs.Debug as Debug
 import Libs.Maybe as Maybe
 import Page
 import PagesComponents.Profile.Models as Models exposing (Msg(..))
@@ -134,7 +133,7 @@ handleJsMessage msg model =
             ( model, Toasts.create Toast level message )
 
         _ ->
-            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
+            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
 
 
 

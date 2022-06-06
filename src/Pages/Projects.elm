@@ -7,7 +7,6 @@ import Dict
 import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
-import Libs.Debug as Debug
 import Libs.Task as T
 import Models.Project.ProjectStorage as ProjectStorage
 import Page
@@ -143,7 +142,7 @@ handleJsMessage msg model =
             ( model, Cmd.none )
 
         _ ->
-            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
+            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
 
 
 mapProjects : (List ProjectInfo -> List ProjectInfo) -> Model -> Model

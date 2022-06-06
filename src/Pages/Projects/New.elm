@@ -6,7 +6,6 @@ import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
-import Libs.Debug as Debug
 import Libs.Maybe as Maybe
 import Libs.Models.FileUrl as FileUrl
 import Libs.String as String
@@ -267,7 +266,7 @@ handleJsMessage msg model =
             ( model, Toasts.create Toast level message )
 
         _ ->
-            ( model, Toasts.create Toast "warning" ("Unhandled JsMessage: " ++ Debug.asString msg) )
+            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
 
 
 
