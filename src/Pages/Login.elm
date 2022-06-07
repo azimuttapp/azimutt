@@ -95,7 +95,7 @@ handleJsMessage msg model =
             ( model, Cmd.none )
 
         _ ->
-            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
+            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
 
 
 

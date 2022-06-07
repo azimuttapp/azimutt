@@ -9,6 +9,7 @@ import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 import Libs.Result as Result
+import Regex
 
 
 type alias ParsedTable =
@@ -99,21 +100,31 @@ parseCreateTable statement =
 parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn sql =
     case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?$" of
-        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraint :: maybeReference :: maybePrimary :: maybeUnique :: maybeCheck :: maybeGenerated :: [] ->
-            maybeConstraint
+        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraints :: maybeReference :: maybePrimary :: maybeUnique :: maybeCheck :: maybeGenerated :: [] ->
+            maybeConstraints
+                |> Maybe.map (Regex.split (Regex.asRegex " *constraint *"))
                 |> Maybe.map
-                    (\constraint ->
-                        if constraint |> String.toUpper |> String.contains "PRIMARY KEY" then
-                            parseCreateTableColumnPrimaryKey constraint |> Result.map (\pk -> ( Just pk, Nothing, True ))
+                    (\constraints ->
+                        constraints
+                            |> List.foldl
+                                (\constraint acc ->
+                                    acc
+                                        |> Result.andThen
+                                            (\( primary, foreign, null ) ->
+                                                if constraint |> String.toUpper |> String.contains "PRIMARY KEY" then
+                                                    parseCreateTableColumnPrimaryKey constraint |> Result.map (\pk -> ( Just pk, foreign, null ))
 
-                        else if constraint |> String.toUpper |> String.contains "REFERENCES" then
-                            parseCreateTableColumnForeignKey constraint |> Result.map (\fk -> ( Nothing, Just fk, True ))
+                                                else if constraint |> String.toUpper |> String.contains "REFERENCES" then
+                                                    parseCreateTableColumnForeignKey constraint |> Result.map (\fk -> ( primary, Just fk, null ))
 
-                        else if constraint |> String.toUpper |> String.contains "NOT NULL" then
-                            Ok ( Nothing, Nothing, False )
+                                                else if constraint |> String.toUpper |> String.contains "NOT NULL" then
+                                                    Ok ( primary, foreign, False )
 
-                        else
-                            Err ("Constraint not handled: '" ++ constraint ++ "' in create table")
+                                                else
+                                                    Err ("Constraint not handled: '" ++ constraint ++ "' in create table")
+                                            )
+                                )
+                                (Ok ( Nothing, Nothing, True ))
                     )
                 |> Maybe.orElse (maybeReference |> Maybe.map (parseCreateTableColumnForeignKey >> Result.map (\fk -> ( Nothing, Just fk, True ))))
                 |> Maybe.orElse (maybePrimary |> Maybe.map (\_ -> Ok ( Just "", Nothing, True )))

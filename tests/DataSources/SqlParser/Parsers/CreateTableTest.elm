@@ -47,6 +47,9 @@ suite =
                             , { parsedColumn | name = "house_id", kind = "integer", foreignKey = Just ( Nothing, { schema = Nothing, table = "houses", column = Just "id" } ) }
                             ]
                 }
+            , testParse ( parseCreateTable, "with multiple constraints" )
+                "CREATE TABLE t1 (id int constraint t1_pk primary key constraint t1_t2_fk references t2);"
+                { parsedTable | schema = Nothing, table = "t1", columns = Nel { parsedColumn | name = "id", kind = "int", primaryKey = Just "t1_pk", foreignKey = Just ( Just "t1_t2_fk", { schema = Nothing, table = "t2", column = Nothing } ) } [] }
             ]
         , describe "parseCreateTableColumn"
             [ testParseSql ( parseCreateTableColumn, "basic" )

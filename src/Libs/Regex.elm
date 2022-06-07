@@ -1,4 +1,4 @@
-module Libs.Regex exposing (match, matches, replace)
+module Libs.Regex exposing (asRegex, match, matches, replace)
 
 import Regex exposing (Regex)
 

@@ -265,8 +265,12 @@ handleJsMessage msg model =
         GotToast level message ->
             ( model, Toasts.create Toast level message )
 
+        GotLogin _ ->
+            -- handled in shared
+            ( model, Cmd.none )
+
         _ ->
-            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
+            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
 
 
 

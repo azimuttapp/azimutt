@@ -133,7 +133,7 @@ handleJsMessage msg model =
             ( model, Toasts.create Toast level message )
 
         _ ->
-            ( model, Toasts.create Toast "warning" "Unhandled JsMessage" )
+            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
 
 
 

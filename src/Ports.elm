@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -557,6 +557,11 @@ encodeLoginInfo info =
 
         MagicLink email ->
             Encode.object [ ( "kind", "MagicLink" |> Encode.string ), ( "email", email |> Encode.string ) ]
+
+
+unhandledJsMsgError : JsMsg -> String
+unhandledJsMsgError _ =
+    "Unhandled JsMessage"
 
 
 port elmToJs : Value -> Cmd msg
