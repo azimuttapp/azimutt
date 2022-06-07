@@ -112,7 +112,7 @@ handleHotkey model hotkey =
 
 collapseElement : Model -> Cmd Msg
 collapseElement model =
-    (model.hoverTable |> Maybe.map (ToggleColumns >> T.send))
+    (model.hoverTable |> Maybe.orElse (model.erd |> Maybe.andThen (.tableProps >> Dict.values >> List.find .selected >> Maybe.map .id)) |> Maybe.map (ToggleColumns >> T.send))
         |> Maybe.withDefault (Toasts.info Toast "Can't find an element to collapse :(")
 
 
