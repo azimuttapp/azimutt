@@ -11,6 +11,7 @@ import Libs.Regex as Regex
 type TableUpdate
     = AddTableConstraint (Maybe SqlSchemaName) SqlTableName TableConstraint
     | AlterColumn (Maybe SqlSchemaName) SqlTableName ColumnUpdate
+    | DropColumn (Maybe SqlSchemaName) SqlTableName SqlColumnName
     | AddTableOwner (Maybe SqlSchemaName) SqlTableName SqlUser
     | AttachPartition (Maybe SqlSchemaName) SqlTableName
     | DropConstraint (Maybe SqlSchemaName) SqlTableName SqlConstraintName
@@ -50,7 +51,7 @@ type alias SqlUser =
 
 parseAlterTable : SqlStatement -> Result (List ParseError) TableUpdate
 parseAlterTable statement =
-    case statement |> buildSqlLine |> Regex.matches "^ALTER TABLE(?:\\s+ONLY)?(?:\\s+IF EXISTS)?\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+(?<command>.*);$" of
+    case statement |> buildSqlLine |> Regex.matches "^ALTER TABLE(?:\\s+ONLY)?(?:\\s+IF EXISTS)?\\s+(?:(?<schema>[^ .]+)\\.\\s*)?(?<table>[^ .]+)\\s+(?<command>.*);$" of
         schema :: (Just table) :: (Just command) :: [] ->
             -- FIXME manage multiple commands, ex: "ADD PRIMARY KEY (`id`), ADD KEY `IDX_ABC` (`user_id`), ADD KEY `IDX_DEF` (`event_id`)"
             -- TODO try to merge "ADD PRIMARY KEY" with "ADD CONSTRAINT" (make CONSTRAINT optional)
@@ -71,6 +72,9 @@ parseAlterTable statement =
 
             else if command |> String.toUpper |> String.startsWith "ALTER COLUMN " then
                 parseAlterTableAlterColumn command |> Result.map (AlterColumn schemaName tableName)
+
+            else if command |> String.toUpper |> String.startsWith "DROP COLUMN " then
+                parseAlterTableDropColumn command |> Result.map (DropColumn schemaName tableName)
 
             else if command |> String.toUpper |> String.startsWith "OWNER TO " then
                 parseAlterTableOwnerTo command |> Result.map (AddTableOwner schemaName tableName)
@@ -186,16 +190,26 @@ parseAlterTableAlterColumn command =
     case command |> Regex.matches "^ALTER COLUMN\\s+(?<column>[^ .]+)\\s+SET\\s+(?<property>.+)$" of
         (Just column) :: (Just property) :: [] ->
             if property |> String.toUpper |> String.startsWith "DEFAULT" then
-                parseAlterTableAlterColumnDefault property |> Result.map (ColumnDefault column)
+                parseAlterTableAlterColumnDefault property |> Result.map (ColumnDefault (buildColumnName column))
 
             else if property |> String.toUpper |> String.startsWith "STATISTICS" then
-                parseAlterTableAlterColumnStatistics property |> Result.map (ColumnStatistics column)
+                parseAlterTableAlterColumnStatistics property |> Result.map (ColumnStatistics (buildColumnName column))
 
             else
                 Err [ "Column update not handled: '" ++ property ++ "'" ]
 
         _ ->
             Err [ "Can't parse alter column: '" ++ command ++ "'" ]
+
+
+parseAlterTableDropColumn : RawSql -> Result (List ParseError) SqlColumnName
+parseAlterTableDropColumn command =
+    case command |> Regex.matches "^DROP COLUMN\\s+(?<column>[^ .]+)$" of
+        (Just column) :: [] ->
+            Ok (buildColumnName column)
+
+        _ ->
+            Err [ "Can't parse drop column: '" ++ command ++ "'" ]
 
 
 parseAlterTableAlterColumnDefault : RawSql -> Result (List ParseError) SqlColumnValue

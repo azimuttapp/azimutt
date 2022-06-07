@@ -12,6 +12,9 @@ suite =
             [ testParse ( parseTableComment, "basic" )
                 "COMMENT ON TABLE public.table1 IS 'A comment';"
                 { schema = Just "public", table = "table1", comment = ParsedComment "A comment" }
+            , testParse ( parseTableComment, "view" )
+                "COMMENT ON VIEW public.table1 IS 'A comment';"
+                { schema = Just "public", table = "table1", comment = ParsedComment "A comment" }
             , testParse ( parseTableComment, "with quotes" )
                 "COMMENT ON TABLE public.table1 IS 'A ''good'' comment';"
                 { schema = Just "public", table = "table1", comment = ParsedComment "A 'good' comment" }

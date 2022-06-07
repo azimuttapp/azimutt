@@ -19,7 +19,7 @@ type alias ParsedComment =
 
 parseTableComment : SqlStatement -> Result (List ParseError) CommentOnTable
 parseTableComment statement =
-    case statement |> buildSqlLine |> Regex.matches "^COMMENT ON TABLE\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+IS\\s+'(?<comment>(?:[^']|'')+)';$" of
+    case statement |> buildSqlLine |> Regex.matches "^COMMENT ON (?:TABLE|VIEW)\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+IS\\s+'(?<comment>(?:[^']|'')+)';$" of
         schema :: (Just table) :: (Just comment) :: [] ->
             Ok { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, comment = { text = comment |> String.replace "''" "'" } }
 

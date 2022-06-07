@@ -116,10 +116,14 @@ evolve ( statement, command ) tables =
                 id =
                     buildId view.schema view.table
             in
-            tables
-                |> Dict.get id
-                |> Maybe.mapOrElse (\_ -> Err [ "View " ++ id ++ " already exists" ])
-                    (Ok (tables |> Dict.insert id (buildView tables statement view)))
+            if view.replace then
+                Ok (tables |> Dict.insert id (buildView tables statement view))
+
+            else
+                tables
+                    |> Dict.get id
+                    |> Maybe.mapOrElse (\_ -> Err [ "View " ++ id ++ " already exists" ])
+                        (Ok (tables |> Dict.insert id (buildView tables statement view)))
 
         AlterTable (AddTableConstraint schema table (ParsedPrimaryKey constraintName pk)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | primaryKey = Just (SqlPrimaryKey constraintName pk statement) }) tables
@@ -139,6 +143,9 @@ evolve ( statement, command ) tables =
 
         AlterTable (AlterColumn _ _ (ColumnStatistics _ _)) ->
             Ok tables
+
+        AlterTable (DropColumn schema table column) ->
+            deleteColumn statement (buildId schema table) column tables
 
         AlterTable (AddTableOwner _ _ _) ->
             Ok tables
@@ -200,6 +207,27 @@ updateTableColumn column transform table =
                             c
                     )
     }
+
+
+deleteColumn : SqlStatement -> SqlTableId -> SqlColumnName -> SqlSchema -> Result (List SchemaError) SqlSchema
+deleteColumn statement id name tables =
+    updateTable statement
+        id
+        (\table ->
+            table.columns
+                |> Nel.filter (\c -> c.name /= name)
+                |> Nel.fromList
+                |> Result.fromMaybe [ "Can't delete last column (" ++ name ++ ") of table " ++ id ++ " (in '" ++ buildRawSql statement ++ "')" ]
+                |> Result.andThen
+                    (\cols ->
+                        if Nel.length cols == Nel.length table.columns then
+                            Err [ "Can't delete missing column " ++ name ++ " in table " ++ id ++ " (in '" ++ buildRawSql statement ++ "')" ]
+
+                        else
+                            Ok { table | columns = cols }
+                    )
+        )
+        tables
 
 
 buildTable : SqlSchema -> SqlStatement -> ParsedTable -> Result (List SchemaError) SqlTable
@@ -354,13 +382,32 @@ buildStatements lines =
     lines
         |> List.filter
             (\line ->
-                not
-                    (String.isEmpty (String.trim line.text)
-                        || String.startsWith "--" (String.trim line.text)
-                        || String.startsWith "#" (String.trim line.text)
-                        || hasOnlyComment line
-                    )
+                line.text
+                    |> String.trim
+                    |> (\text ->
+                            String.isEmpty text
+                                || String.startsWith "--" text
+                                || String.startsWith "#" text
+                                || Regex.match "^/\\*(.*)\\*/;?$" text
+                       )
+                    |> not
             )
+        |> List.foldr
+            (\line ( result, inComment ) ->
+                if line.text |> String.trim |> String.startsWith "/*" then
+                    ( result, False )
+
+                else if line.text |> String.trim |> String.endsWith "*/" then
+                    ( result, True )
+
+                else if inComment then
+                    ( result, inComment )
+
+                else
+                    ( line :: result, inComment )
+            )
+            ( [], False )
+        |> Tuple.first
         |> List.foldr
             (\line ( currentStatementLines, statements, nestedBlock ) ->
                 case
@@ -398,16 +445,6 @@ buildStatements lines =
 hasKeyword : String -> SqlLine -> Bool
 hasKeyword keyword line =
     (line.text |> Regex.match ("(^|[^A-Z0-9_\"'`])" ++ keyword ++ "([^A-Z0-9_\"'`]|$)")) && not (line.text |> Regex.match ("'.*" ++ keyword ++ ".*'"))
-
-
-hasOnlyComment : SqlLine -> Bool
-hasOnlyComment line =
-    case line.text |> Regex.matches "^/\\*(.*)\\*/;$" of
-        _ :: [] ->
-            True
-
-        _ ->
-            False
 
 
 addStatement : List SqlLine -> List SqlStatement -> List SqlStatement

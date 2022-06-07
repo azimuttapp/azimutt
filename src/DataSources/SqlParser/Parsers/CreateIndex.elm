@@ -1,6 +1,6 @@
 module DataSources.SqlParser.Parsers.CreateIndex exposing (ParsedIndex, parseCreateIndex)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlConstraintName, SqlStatement, SqlTableRef)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
@@ -18,9 +18,9 @@ parseCreateIndex statement =
                 |> Result.andThen (\columns -> Nel.fromList columns |> Result.fromMaybe [ "Index can't have empty columns" ])
                 |> Result.map
                     (\columns ->
-                        { name = name
+                        { name = buildConstraintName name
                         , table = { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName }
-                        , columns = columns
+                        , columns = columns |> Nel.map buildColumnName
                         , definition = definition
                         }
                     )

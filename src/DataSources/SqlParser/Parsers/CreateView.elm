@@ -10,6 +10,7 @@ type alias ParsedView =
     { schema : Maybe SqlSchemaName
     , table : SqlTableName
     , select : SelectInfo
+    , replace : Bool
     , materialized : Bool
     , extra : Maybe String
     }
@@ -17,14 +18,15 @@ type alias ParsedView =
 
 parseView : SqlStatement -> Result (List ParseError) ParsedView
 parseView statement =
-    case statement |> buildSqlLine |> Regex.matches "^CREATE (MATERIALIZED )?VIEW\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ ]+)\\s+AS\\s+(WITH .*)?(?<select>SELECT .+?)(?:\\s+(?<extra>WITH (?:NO )?DATA))?;$" of
-        materialized :: schema :: (Just table) :: _ :: (Just select) :: extra :: [] ->
+    case statement |> buildSqlLine |> Regex.matches "^CREATE( OR REPLACE)?( MATERIALIZED)? VIEW\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ ]+)\\s+AS\\s+(WITH .*)?(?<select>SELECT .+?)(?:\\s+(?<extra>WITH (?:NO )?DATA))?;$" of
+        replace :: materialized :: schema :: (Just table) :: _ :: (Just select) :: extra :: [] ->
             parseSelect select
                 |> Result.map
                     (\parsedSelect ->
                         { schema = schema |> Maybe.map buildSchemaName
                         , table = table |> buildTableName
                         , select = parsedSelect
+                        , replace = not (replace == Nothing)
                         , materialized = not (materialized == Nothing)
                         , extra = extra
                         }

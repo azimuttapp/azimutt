@@ -18,8 +18,12 @@ suite =
                      name character varying(255)
                    );
 
+                   /* comment */
                    COMMENT ON TABLE public.users IS 'A comment ; ''tricky'' one';
 
+                   /*
+                    * comment
+                    */
                    ALTER TABLE ONLY public.users
                      ADD CONSTRAINT users_id_pkey PRIMARY KEY (id);"""
                 [ """CREATE TABLE public.users (

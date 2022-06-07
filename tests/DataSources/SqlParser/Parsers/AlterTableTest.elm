@@ -37,11 +37,23 @@ suite =
             , testParse ( parseAlterTable, "column default" )
                 "ALTER TABLE public.table1 ALTER COLUMN id SET DEFAULT 1;"
                 (AlterColumn (Just "public") "table1" (ColumnDefault "id" "1"))
+            , testParse ( parseAlterTable, "column default with quotes" )
+                "ALTER TABLE public.table1 ALTER COLUMN \"id\" SET DEFAULT 1;"
+                (AlterColumn (Just "public") "table1" (ColumnDefault "id" "1"))
             , testParse ( parseAlterTable, "column statistics" )
                 "ALTER TABLE public.table1 ALTER COLUMN table1_id SET STATISTICS 5000;"
                 (AlterColumn (Just "public") "table1" (ColumnStatistics "table1_id" 5000))
+            , testParse ( parseAlterTable, "column statistics with quotes" )
+                "ALTER TABLE public.table1 ALTER COLUMN \"table1_id\" SET STATISTICS 5000;"
+                (AlterColumn (Just "public") "table1" (ColumnStatistics "table1_id" 5000))
+            , testParse ( parseAlterTable, "drop column" )
+                "ALTER TABLE public.table1 DROP COLUMN admin;"
+                (DropColumn (Just "public") "table1" "admin")
             , testParse ( parseAlterTable, "owner" )
                 "ALTER TABLE public.table1 OWNER TO admin;"
+                (AddTableOwner (Just "public") "table1" "admin")
+            , testParse ( parseAlterTable, "space after schema" )
+                "ALTER TABLE public. \"table1\" OWNER TO admin;"
                 (AddTableOwner (Just "public") "table1" "admin")
             , testParse ( parseAlterTable, "without schema" )
                 "ALTER TABLE t2 ADD CONSTRAINT t2_id_pkey PRIMARY KEY (id);"

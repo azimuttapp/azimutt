@@ -12,7 +12,7 @@ suite =
     describe "CreateView"
         [ describe "parseView"
             [ testParse ( parseView, "basic" )
-                """CREATE MATERIALIZED VIEW public.autocomplete AS
+                """CREATE OR REPLACE VIEW public.autocomplete AS
                     SELECT accounts.id AS account_id,
                            accounts.email
                     FROM public.accounts
@@ -27,7 +27,8 @@ suite =
                     , tables = [ BasicTable { schema = Just "public", table = "accounts", alias = Nothing } ]
                     , whereClause = Just "accounts.deleted_at IS NULL"
                     }
-                , materialized = True
+                , replace = True
+                , materialized = False
                 , extra = Just "WITH NO DATA"
                 }
             , testParse ( parseView, "with data" )
@@ -47,6 +48,7 @@ suite =
                     , tables = [ BasicTable { schema = Just "public", table = "accounts", alias = Nothing } ]
                     , whereClause = Just "accounts.deleted_at IS NULL"
                     }
+                , replace = False
                 , materialized = True
                 , extra = Just "WITH NO DATA"
                 }

@@ -29,163 +29,117 @@ parse statement =
         firstLine =
             statement.head.text |> String.trim |> String.toUpper
     in
-    (if firstLine |> Regex.match "^CREATE( UNLOGGED)? TABLE " then
+    (if firstLine |> startsWith "CREATE( UNLOGGED)? TABLE" then
         parseCreateTable statement |> Result.map CreateTable
 
-     else if firstLine |> String.startsWith "CREATE VIEW " then
-        parseView statement |> Result.map CreateView
-
-     else if firstLine |> String.startsWith "CREATE MATERIALIZED VIEW " then
-        parseView statement |> Result.map CreateView
-
-     else if firstLine |> String.startsWith "ALTER TABLE " then
+     else if firstLine |> startsWith "ALTER TABLE" then
         parseAlterTable statement |> Result.map AlterTable
 
-     else if firstLine |> String.startsWith "CREATE INDEX " then
-        parseCreateIndex statement |> Result.map CreateIndex
+     else if firstLine |> startsWith "CREATE( OR REPLACE)?( MATERIALIZED)? VIEW" then
+        parseView statement |> Result.map CreateView
 
-     else if firstLine |> String.startsWith "CREATE UNIQUE INDEX " then
-        parseCreateUniqueIndex statement |> Result.map CreateUnique
-
-     else if firstLine |> String.startsWith "COMMENT ON TABLE " then
+     else if firstLine |> startsWith "COMMENT ON (TABLE|VIEW)" then
         parseTableComment statement |> Result.map TableComment
 
-     else if firstLine |> String.startsWith "COMMENT ON COLUMN " then
+     else if firstLine |> startsWith "COMMENT ON COLUMN" then
         parseColumnComment statement |> Result.map ColumnComment
+
+     else if firstLine |> startsWith "CREATE INDEX" then
+        parseCreateIndex statement |> Result.map CreateIndex
+
+     else if firstLine |> startsWith "CREATE UNIQUE INDEX" then
+        parseCreateUniqueIndex statement |> Result.map CreateUnique
+
+     else if firstLine |> startsWith "SELECT" then
+        Ok (Ignored statement)
+
+     else if firstLine |> startsWith "INSERT INTO" then
+        Ok (Ignored statement)
+
+     else if firstLine |> startsWith "(CREATE|DROP) DATABASE" then
+        Ok (Ignored statement)
+
+     else if firstLine |> startsWith "(CREATE|ALTER|DROP|COMMENT ON) SCHEMA" then
+        Ok (Ignored statement)
+
+     else if firstLine |> startsWith "DROP TABLE" then
+        Ok (Ignored statement)
 
      else if firstLine |> String.startsWith "ALTER COLUMN " then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "CREATE OR REPLACE VIEW " then
+     else if firstLine |> startsWith "(ALTER|COMMENT ON) INDEX" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "COMMENT ON VIEW " then
+     else if firstLine |> startsWith "(CREATE|ALTER|DROP|COMMENT ON) TYPE" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "ALTER INDEX " then
+     else if firstLine |> startsWith "(CREATE( OR REPLACE)?|ALTER) FUNCTION" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "COMMENT ON INDEX " then
+     else if firstLine |> startsWith "(CREATE|ALTER) OPERATOR" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "CREATE TYPE " then
+     else if firstLine |> startsWith "(CREATE|COMMENT ON) EXTENSION" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "ALTER TYPE " then
+     else if firstLine |> startsWith "(CREATE|ALTER) TEXT SEARCH CONFIGURATION" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "DROP TYPE " then
+     else if firstLine |> startsWith "(CREATE|ALTER) SEQUENCE" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "COMMENT ON TYPE " then
+     else if firstLine |> startsWith "(CREATE|ALTER) AGGREGATE" then
         Ok (Ignored statement)
 
-     else if firstLine |> Regex.match "^CREATE( OR REPLACE)? FUNCTION " then
+     else if firstLine |> startsWith "CREATE TRIGGER" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "ALTER FUNCTION " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "CREATE OPERATOR " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "ALTER OPERATOR " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "CREATE DATABASE " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "DROP DATABASE " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "CREATE SCHEMA " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "ALTER SCHEMA " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "COMMENT ON SCHEMA " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "DROP SCHEMA " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "DROP TABLE " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "LOCK TABLES " then
+     else if firstLine |> startsWith "LOCK TABLES" then
         Ok (Ignored statement)
 
      else if firstLine |> String.startsWith "UNLOCK TABLES;" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "CREATE EXTENSION " then
+     else if firstLine |> startsWith "GRANT" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "COMMENT ON EXTENSION " then
+     else if firstLine |> startsWith "REVOKE" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "CREATE TEXT SEARCH CONFIGURATION " then
+     else if firstLine |> startsWith "START TRANSACTION" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "ALTER TEXT SEARCH CONFIGURATION " then
+     else if firstLine |> startsWith "USE" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "CREATE SEQUENCE " then
+     else if firstLine |> startsWith "PRAGMA" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "ALTER SEQUENCE " then
+     else if firstLine |> startsWith "BEGIN" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "CREATE TRIGGER " then
+     else if firstLine |> startsWith "END" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "GRANT " then
+     else if firstLine |> startsWith "COMMIT" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "REVOKE " then
+     else if firstLine |> startsWith "SET" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "SELECT " then
+     else if firstLine |> startsWith "GO" then
         Ok (Ignored statement)
 
-     else if firstLine |> String.startsWith "INSERT INTO " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "START TRANSACTION" then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "CREATE AGGREGATE " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "ALTER AGGREGATE " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "USE " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "PRAGMA " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "BEGIN" then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "COMMIT" then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "SET " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "GO " then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "END" then
-        Ok (Ignored statement)
-
-     else if firstLine |> String.startsWith "$$" then
+     else if firstLine |> startsWith "$$" then
         Ok (Ignored statement)
 
      else
         Err [ "Statement not handled: '" ++ buildRawSql statement ++ "'" ]
     )
         |> Result.map (\cmd -> ( statement, cmd ))
+
+
+startsWith : String -> String -> Bool
+startsWith token text =
+    text |> Regex.match ("^" ++ token ++ "( |$)")

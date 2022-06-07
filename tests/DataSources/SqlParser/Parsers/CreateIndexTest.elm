@@ -13,6 +13,9 @@ suite =
             [ testParse ( parseCreateIndex, "basic" )
                 "CREATE INDEX unique_email on p.users(email);"
                 { name = "unique_email", table = { schema = Just "p", table = "users" }, columns = Nel "email" [], definition = "(email)" }
+            , testParse ( parseCreateIndex, "basic with quotes" )
+                "CREATE INDEX \"unique_email\" on \"users\" (\"email\");"
+                { name = "unique_email", table = { schema = Nothing, table = "users" }, columns = Nel "email" [], definition = "(\"email\")" }
             , testParse ( parseCreateIndex, "lowercase, no schema, multiple columns, many spaces" )
                 "create index  unique_kind  on  users  (kind_type, kind_id);"
                 { name = "unique_kind", table = { schema = Nothing, table = "users" }, columns = Nel "kind_type" [ "kind_id" ], definition = "(kind_type, kind_id)" }

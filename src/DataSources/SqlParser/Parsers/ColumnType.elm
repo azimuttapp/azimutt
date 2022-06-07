@@ -26,19 +26,19 @@ parse kind =
     if kind |> String.endsWith "[]" then
         Array (parse (kind |> String.dropRight 2))
 
-    else if (kind |> Regex.match "^(tiny|medium|long)?text$") || (kind |> Regex.match "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.match "^varchar ?(\\(\\d+\\))?$") then
+    else if (kind |> Regex.match "^(tiny|medium|long)?text$") || (kind |> Regex.match "^character( varying)? ?(\\(\\d+\\))?$") || (kind |> Regex.match "^(var|n)char ?(\\(\\d+\\))?$") then
         String
 
-    else if kind == "integer" || (kind |> Regex.match "^(small)?serial$") || (kind |> Regex.match "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
+    else if (kind |> Regex.match "integer") || (kind |> Regex.match "number\\(\\d+(\\s*,\\s*0)?\\)") || (kind |> Regex.match "^(small)?serial$") || (kind |> Regex.match "^(tiny|small|big)?int ?(\\(\\d+\\))?( unsigned)?$") then
         Int
 
-    else if kind == "double precision" || (kind |> Regex.match "^numeric ?(\\(\\d+,\\d+\\))?$") then
+    else if (kind |> Regex.match "double precision") || (kind |> Regex.match "number") || (kind |> Regex.match "^numeric ?(\\(\\d+,\\d+\\))?$") then
         Float
 
-    else if kind == "boolean" then
+    else if kind |> Regex.match "boolean" then
         Bool
 
-    else if kind == "date" then
+    else if kind |> Regex.match "date$" then
         Date
 
     else if kind |> Regex.match "^time ?(\\(\\d+\\))?( with(out)? time zone)?$" then
@@ -50,16 +50,16 @@ parse kind =
     else if kind |> Regex.match "^interval ?(\\(\\d+\\))?$" then
         Interval
 
-    else if kind == "uuid" then
+    else if kind |> Regex.match "uuid" then
         Uuid
 
-    else if kind == "cidr" || kind == "inet" then
+    else if (kind |> Regex.match "cidr") || (kind |> Regex.match "inet") then
         Ip
 
     else if kind |> Regex.match "^jsonb?$" then
         Json
 
-    else if kind == "bytea" then
+    else if kind |> Regex.match "bytea" then
         Binary
 
     else
