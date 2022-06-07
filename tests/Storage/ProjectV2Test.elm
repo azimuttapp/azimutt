@@ -111,7 +111,7 @@ project1 =
     , layout = Layout (CanvasProps (Position 10 20) 0.75) [ TableProps ( "public", "users" ) (Position 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201)
     , usedLayout = Nothing
     , layouts = Dict.fromList [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) ) ]
-    , settings = ProjectSettings (FindPathSettings 4 "" "") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True False
+    , settings = ProjectSettings (FindPathSettings 4 "" "") [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty True False
     , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001
@@ -219,7 +219,7 @@ project2 =
             [ ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
             , ( "users", Layout (CanvasProps (Position 120 320) 1.5) [ TableProps ( "public", "users" ) (Position 90 100) Size.zero Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
-    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") [] False "" (HiddenColumns "created_.+, updated_.+" False False) OrderByProperty True False
+    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty True False
     , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001

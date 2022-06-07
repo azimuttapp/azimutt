@@ -277,6 +277,7 @@ type ProjectSettingsMsg
     | PSRemoveViewsToggle
     | PSRemovedTablesUpdate String
     | PSHiddenColumnsListUpdate String
+    | PSHiddenColumnsMaxUpdate String
     | PSHiddenColumnsPropsToggle
     | PSHiddenColumnsRelationsToggle
     | PSColumnOrderUpdate ColumnOrder

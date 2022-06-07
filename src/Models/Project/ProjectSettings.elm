@@ -33,7 +33,7 @@ type alias RemovedTables =
 
 
 type alias HiddenColumns =
-    { list : String, props : Bool, relations : Bool }
+    { list : String, max : Int, props : Bool, relations : Bool }
 
 
 init : ProjectSettings
@@ -42,7 +42,7 @@ init =
     , removedSchemas = []
     , removeViews = False
     , removedTables = ""
-    , hiddenColumns = { list = "created_.+, updated_.+", props = False, relations = False }
+    , hiddenColumns = { list = "created_.+, updated_.+", max = 15, props = False, relations = False }
     , columnOrder = OrderByProperty
     , columnBasicTypes = True
     , collapseTableColumns = False
@@ -128,6 +128,7 @@ encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value
 encodeHiddenColumns default value =
     Encode.notNullObject
         [ ( "list", value.list |> Encode.withDefault Encode.string default.list )
+        , ( "max", value.max |> Encode.withDefault Encode.int default.max )
         , ( "props", value.props |> Encode.withDefault Encode.bool default.props )
         , ( "relations", value.relations |> Encode.withDefault Encode.bool default.relations )
         ]
@@ -136,10 +137,11 @@ encodeHiddenColumns default value =
 decodeHiddenColumns : HiddenColumns -> Decode.Decoder HiddenColumns
 decodeHiddenColumns default =
     Decode.oneOf
-        [ Decode.map3 HiddenColumns
+        [ Decode.map4 HiddenColumns
             (Decode.defaultField "list" Decode.string default.list)
+            (Decode.defaultField "max" Decode.int default.max)
             (Decode.defaultField "props" Decode.bool default.props)
             (Decode.defaultField "relations" Decode.bool default.relations)
-        , Decode.map (\list -> { list = list, props = default.props, relations = default.relations })
+        , Decode.map (\list -> { list = list, max = default.max, props = default.props, relations = default.relations })
             Decode.string
         ]

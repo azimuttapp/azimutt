@@ -7,16 +7,16 @@ import Components.Molecules.Slideover as Slideover
 import Components.Molecules.Tooltip as Tooltip
 import Dict
 import Html exposing (Html, button, div, fieldset, input, label, legend, p, span, text)
-import Html.Attributes exposing (checked, class, for, id, name, type_, value)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (checked, class, for, id, name, placeholder, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (css)
+import Libs.Html.Attributes exposing (ariaDescribedby, css)
 import Libs.List as List
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Libs.Tailwind as Tw exposing (TwClass, focus)
+import Libs.Tailwind as Tw exposing (TwClass, focus, sm)
 import Models.ColumnOrder as ColumnOrder
 import Models.Project as Project exposing (Project)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -158,13 +158,26 @@ viewDisplaySettingsSection htmlId erd =
             "ex: flyway_.+, versions, env"
             erd.settings.removedTables
             (PSRemovedTablesUpdate >> ProjectSettingsMsg)
-        , Input.textWithLabelAndHelp "mt-3"
-            (htmlId ++ "-hide-columns-list")
-            "Hide columns"
-            "Some columns are not interesting, hide them by default."
-            "ex: created_at, updated_.+"
-            erd.settings.hiddenColumns.list
-            (PSHiddenColumnsListUpdate >> ProjectSettingsMsg)
+        , (htmlId ++ "-hide-columns-list")
+            |> (\fieldId ->
+                    div [ class "mt-3" ]
+                        [ label [ for fieldId, class "block" ]
+                            [ span [ class "text-sm font-medium text-gray-700" ] [ text "Hide columns" ]
+                            , p [ id (fieldId ++ "-help"), class "text-sm text-gray-500" ] [ text "Some columns are not interesting, hide them by default." ]
+                            ]
+                        , div [ class "mt-1 -space-y-px" ]
+                            [ div [] [ input [ type_ "text", name fieldId, id fieldId, value erd.settings.hiddenColumns.list, onInput (PSHiddenColumnsListUpdate >> ProjectSettingsMsg), placeholder "ex: created_at, updated_.+", ariaDescribedby (fieldId ++ "-help"), css [ "shadow-sm block w-full border-gray-300 rounded-none rounded-t-md", focus [ "relative z-10 ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] [] ]
+                            , (htmlId ++ "-hide-columns-max")
+                                |> (\fieldIdMax ->
+                                        div [ class "flex shadow-sm" ]
+                                            [ label [ for fieldIdMax, class "sr-only" ] [ text "Max columns" ]
+                                            , span [ css [ "inline-flex items-center px-3 rounded-none rounded-bl-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500", sm [ "text-sm" ] ] ] [ text "Max:" ]
+                                            , input [ type_ "number", name fieldIdMax, id fieldIdMax, value (String.fromInt erd.settings.hiddenColumns.max), onInput (PSHiddenColumnsMaxUpdate >> ProjectSettingsMsg), placeholder "Max columns to show when adding a table", css [ "flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-br-md border-gray-300", sm [ "text-sm" ], focus [ "ring-indigo-500 border-indigo-500" ] ] ] []
+                                            ]
+                                   )
+                            ]
+                        ]
+               )
         , viewCheckbox "mt-1" (htmlId ++ "-hide-columns-props") [ text "Hide columns without special property" ] erd.settings.hiddenColumns.props (PSHiddenColumnsPropsToggle |> ProjectSettingsMsg)
         , viewCheckbox "mt-1" (htmlId ++ "-hide-columns-relation") [ text "Hide columns without relation" ] erd.settings.hiddenColumns.relations (PSHiddenColumnsRelationsToggle |> ProjectSettingsMsg)
         , Input.selectWithLabelAndHelp "mt-3"

@@ -17,7 +17,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setRemovedTables, setSettings, setSourceUpload)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setMax, setRemovedTables, setSettings, setSourceUpload)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Track
@@ -77,6 +77,9 @@ handleProjectSettings msg model =
 
         PSHiddenColumnsListUpdate values ->
             ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setList values) >> ProjectSettings.fillFindPath)) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.notes e.settings.hiddenColumns)), Cmd.none )
+
+        PSHiddenColumnsMaxUpdate value ->
+            ( value |> String.toInt |> Maybe.mapOrElse (\max -> model |> mapErdM (Erd.mapSettings (mapHiddenColumns (setMax max) >> ProjectSettings.fillFindPath)) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.notes e.settings.hiddenColumns))) model, Cmd.none )
 
         PSHiddenColumnsPropsToggle ->
             ( model |> mapErdM (Erd.mapSettings (mapHiddenColumns (mapProps not))) |> mapErdM (\e -> e |> mapTableProps (hideColumns e.tables e.notes e.settings.hiddenColumns)), Cmd.none )

@@ -161,7 +161,7 @@ findPathSettings =
 
 findHiddenColumns : Fuzzer HiddenColumns
 findHiddenColumns =
-    Fuzz.map3 HiddenColumns stringSmall Fuzz.bool Fuzz.bool
+    Fuzz.map4 HiddenColumns stringSmall Fuzz.int Fuzz.bool Fuzz.bool
 
 
 projectStorage : Fuzzer ProjectStorage
