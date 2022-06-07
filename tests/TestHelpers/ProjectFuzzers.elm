@@ -46,6 +46,7 @@ import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
+import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, position, posix, stringSmall, text, uuid, zoomLevel)
 
 
@@ -151,7 +152,7 @@ tableProps =
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    F.map8 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder Fuzz.bool Fuzz.bool
+    F.map9 ProjectSettings findPathSettings (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool
 
 
 findPathSettings : Fuzzer FindPathSettings
@@ -230,6 +231,11 @@ columnValue =
 columnOrder : Fuzzer ColumnOrder
 columnOrder =
     Fuzz.oneOf (ColumnOrder.all |> List.map Fuzz.constant)
+
+
+relationStyle : Fuzzer RelationStyle
+relationStyle =
+    Fuzz.oneOf (RelationStyle.all |> List.map Fuzz.constant)
 
 
 primaryKeyName : Fuzzer PrimaryKeyName

@@ -25,6 +25,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..), VirtualRelation)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
@@ -117,9 +118,9 @@ viewErd conf screen erd cursorMode selectionBox virtualRelation args dragging =
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
             [ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
-            , Lazy.lazy4 viewRelations conf dragging displayedTables displayedRelations
+            , Lazy.lazy5 viewRelations conf dragging erd.settings.relationStyle displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
-            , virtualRelationInfo |> Maybe.mapOrElse viewVirtualRelation viewEmptyRelation
+            , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
         , if tableProps |> Dict.isEmpty then
             viewEmptyState erd.tables
@@ -188,8 +189,8 @@ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging
         )
 
 
-viewRelations : ErdConf -> Maybe DragState -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
-viewRelations conf dragging tableProps relations =
+viewRelations : ErdConf -> Maybe DragState -> RelationStyle -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
+viewRelations conf dragging style tableProps relations =
     let
         getColumnProps : ErdColumnRef -> Maybe ErdColumnProps
         getColumnProps ref =
@@ -201,7 +202,8 @@ viewRelations conf dragging tableProps relations =
             |> List.map
                 (\r ->
                     ( r.name
-                    , Lazy.lazy5 viewRelation
+                    , Lazy.lazy6 viewRelation
+                        style
                         conf
                         (dragging |> Maybe.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
                         (getColumnProps r.src)

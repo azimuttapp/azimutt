@@ -7,6 +7,7 @@ import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnRef as ColumnRef
+import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
@@ -16,8 +17,8 @@ import Svg exposing (Svg, svg)
 import Svg.Attributes exposing (class, height, width)
 
 
-viewRelation : ErdConf -> Bool -> Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg Msg
-viewRelation conf dragging srcProps refProps relation =
+viewRelation : RelationStyle -> ErdConf -> Bool -> Maybe ErdColumnProps -> Maybe ErdColumnProps -> ErdRelation -> Svg Msg
+viewRelation style conf dragging srcProps refProps relation =
     let
         relConf : RelationConf
         relConf =
@@ -45,7 +46,7 @@ viewRelation conf dragging srcProps refProps relation =
 
             else
                 { left = position.left + size.width, top = positionTop position index collapsed }
-                    |> (\srcPos -> Relation.line relConf ( srcPos, Left ) ( { left = srcPos.left + 20, top = srcPos.top }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
+                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( { left = srcPos.left + 20, top = srcPos.top }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
 
         ( Nothing, Just { index, position, collapsed } ) ->
             if collapsed then
@@ -53,7 +54,7 @@ viewRelation conf dragging srcProps refProps relation =
 
             else
                 { left = position.left, top = positionTop position index collapsed }
-                    |> (\refPos -> Relation.line relConf ( { left = refPos.left - 20, top = refPos.top }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
+                    |> (\refPos -> Relation.straight relConf ( { left = refPos.left - 20, top = refPos.top }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + index + B.cond dragging 1000 0) onHover)
 
         ( Just src, Just ref ) ->
             let
@@ -67,11 +68,11 @@ viewRelation conf dragging srcProps refProps relation =
                 zIndex =
                     Conf.canvas.zIndex.tables - 1 + min src.index ref.index
             in
-            Relation.curve relConf ( { left = srcX, top = srcY }, srcDir ) ( { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
+            Relation.show style relConf ( { left = srcX, top = srcY }, srcDir ) ( { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
 
 
-viewVirtualRelation : ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg Msg
-viewVirtualRelation ( ( maybeProps, column ), position ) =
+viewVirtualRelation : RelationStyle -> ( ( Maybe ErdColumnProps, ErdColumn ), Position ) -> Svg Msg
+viewVirtualRelation style ( ( maybeProps, column ), position ) =
     case maybeProps of
         Just props ->
             let
@@ -79,7 +80,7 @@ viewVirtualRelation ( ( maybeProps, column ), position ) =
                 isRight =
                     position.left > props.position.left + props.size.width / 2
             in
-            Relation.curve
+            Relation.show style
                 { hover = False }
                 ( { left = props.position.left + B.cond isRight props.size.width 0, top = positionTop props.position props.index props.collapsed }, B.cond isRight Relation.Right Relation.Left )
                 ( { left = position.left, top = position.top }, B.cond isRight Relation.Left Relation.Right )

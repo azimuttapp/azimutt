@@ -7,11 +7,12 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Regex as Regex
 import Libs.String as String
-import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder(..))
+import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
+import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import Services.Lenses exposing (mapFindPath, setIgnoredColumns, setIgnoredTables)
 
@@ -23,6 +24,7 @@ type alias ProjectSettings =
     , removedTables : RemovedTables
     , hiddenColumns : HiddenColumns
     , columnOrder : ColumnOrder
+    , relationStyle : RelationStyle
     , columnBasicTypes : Bool
     , collapseTableColumns : Bool
     }
@@ -43,7 +45,8 @@ init =
     , removeViews = False
     , removedTables = ""
     , hiddenColumns = { list = "created_.+, updated_.+", max = 15, props = False, relations = False }
-    , columnOrder = OrderByProperty
+    , columnOrder = ColumnOrder.OrderByProperty
+    , relationStyle = RelationStyle.Bezier
     , columnBasicTypes = True
     , collapseTableColumns = False
     }
@@ -106,6 +109,7 @@ encode default value =
         , ( "removedTables", value.removedTables |> Encode.withDefault Encode.string default.removedTables )
         , ( "hiddenColumns", value.hiddenColumns |> Encode.withDefaultDeep encodeHiddenColumns default.hiddenColumns )
         , ( "columnOrder", value.columnOrder |> Encode.withDefault ColumnOrder.encode default.columnOrder )
+        , ( "relationStyle", value.relationStyle |> Encode.withDefault RelationStyle.encode default.relationStyle )
         , ( "columnBasicTypes", value.columnBasicTypes |> Encode.withDefault Encode.bool default.columnBasicTypes )
         , ( "collapseTableColumns", value.collapseTableColumns |> Encode.withDefault Encode.bool default.collapseTableColumns )
         ]
@@ -113,13 +117,14 @@ encode default value =
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
-    Decode.map8 ProjectSettings
+    Decode.map9 ProjectSettings
         (Decode.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
         (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
         (Decode.defaultField "removeViews" Decode.bool default.removeViews)
         (Decode.defaultField "removedTables" Decode.string default.removedTables)
         (Decode.defaultFieldDeep "hiddenColumns" decodeHiddenColumns default.hiddenColumns)
         (Decode.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)
+        (Decode.defaultField "relationStyle" RelationStyle.decode default.relationStyle)
         (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
         (Decode.defaultField "collapseTableColumns" Decode.bool default.collapseTableColumns)
 

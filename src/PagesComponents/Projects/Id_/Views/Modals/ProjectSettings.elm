@@ -25,6 +25,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
+import Models.RelationStyle as RelationStyle
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
@@ -187,6 +188,13 @@ viewDisplaySettingsSection htmlId erd =
             (ColumnOrder.all |> List.map (\o -> ( ColumnOrder.toString o, ColumnOrder.show o )))
             (ColumnOrder.toString erd.settings.columnOrder)
             (ColumnOrder.fromString >> PSColumnOrderUpdate >> ProjectSettingsMsg)
+        , Input.selectWithLabelAndHelp "mt-3"
+            (htmlId ++ "-relation-style")
+            "Relation style"
+            "What relation style fits you best ;)"
+            (RelationStyle.all |> List.map (\s -> ( RelationStyle.toString s, RelationStyle.show s )))
+            (RelationStyle.toString erd.settings.relationStyle)
+            (RelationStyle.fromString >> PSRelationStyleUpdate >> ProjectSettingsMsg)
         , Input.checkboxWithLabelAndHelp "mt-3"
             (htmlId ++ "-basic-types")
             "Column types"

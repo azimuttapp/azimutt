@@ -292,7 +292,7 @@ computeBigTables tables =
     tables
         |> Dict.values
         |> List.filter (\t -> (t.columns |> Dict.size) > 30)
-        |> List.sortBy (\t -> t.columns |> Dict.size)
+        |> List.sortBy (\t -> t.columns |> Dict.size |> negate)
 
 
 viewBigTables : HtmlId -> HtmlId -> List ErdTable -> Html Msg

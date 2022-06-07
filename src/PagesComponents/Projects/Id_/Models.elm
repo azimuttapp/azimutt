@@ -22,6 +22,7 @@ import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.TableId exposing (TableId)
+import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
@@ -281,6 +282,7 @@ type ProjectSettingsMsg
     | PSHiddenColumnsPropsToggle
     | PSHiddenColumnsRelationsToggle
     | PSColumnOrderUpdate ColumnOrder
+    | PSRelationStyleUpdate RelationStyle
     | PSColumnBasicTypesToggle
     | PSCollapseTableOnShowToggle
 

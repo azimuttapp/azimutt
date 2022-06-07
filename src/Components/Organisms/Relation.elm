@@ -1,4 +1,4 @@
-module Components.Organisms.Relation exposing (Direction(..), RelationConf, brokenLines, curve, doc, line)
+module Components.Organisms.Relation exposing (Direction(..), RelationConf, bezier, doc, show, steps, straight)
 
 import ElmBook.Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
@@ -12,6 +12,7 @@ import Libs.Models.Position as Position exposing (Position)
 import Libs.Svg.Attributes as Attributes exposing (css)
 import Libs.Svg.Utils exposing (circle, curveTo, lineTo, moveTo)
 import Libs.Tailwind as Tw exposing (Color, fill_500, stroke_500)
+import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Svg exposing (Attribute, Svg, svg, text)
 import Svg.Attributes exposing (class, d, height, strokeDasharray, style, width, x1, x2, y1, y2)
 
@@ -26,22 +27,35 @@ type Direction
     | None
 
 
-line : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-line conf ( src, _ ) ( ref, _ ) nullable color label index onHover =
+show : RelationStyle -> RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+show style conf src ref nullable color label index onHover =
+    case style of
+        RelationStyle.Bezier ->
+            bezier conf src ref nullable color label index onHover
+
+        RelationStyle.Straight ->
+            straight conf src ref nullable color label index onHover
+
+        RelationStyle.Steps ->
+            steps conf src ref nullable color label index onHover
+
+
+straight : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+straight conf ( src, _ ) ( ref, _ ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 12 }
         (\origin -> drawLine conf (src |> Position.sub origin) (ref |> Position.sub origin) onHover)
 
 
-curve : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-curve conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
+bezier : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+bezier conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
         (\origin -> drawCurve conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) onHover)
 
 
-brokenLines : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-brokenLines conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
+steps : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+steps conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawBrokenLines conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) onHover)
+        (\origin -> drawSteps conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) onHover)
 
 
 type alias SvgParams =
@@ -115,8 +129,8 @@ drawCurve conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
     ]
 
 
-drawBrokenLines : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawBrokenLines conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
+drawSteps : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawSteps conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
     let
         break1 : Position
         break1 =
@@ -230,11 +244,11 @@ doc : Chapter x
 doc =
     Chapter.chapter "Relation"
         |> Chapter.renderComponentList
-            [ ( "line", samples line )
-            , ( "curve", samples curve )
-            , ( "brokenLines", samples brokenLines )
-            , ( "green", div [ class "h-12" ] [ line { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
-            , ( "nullable", div [ class "h-12" ] [ line { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
+            [ ( "straight", samples straight )
+            , ( "bezier", samples bezier )
+            , ( "steps", samples steps )
+            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
+            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
             ]
 
 

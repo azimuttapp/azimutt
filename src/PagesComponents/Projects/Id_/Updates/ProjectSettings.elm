@@ -17,7 +17,7 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setMax, setRemovedTables, setSettings, setSourceUpload)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, mapTableProps, setColumnOrder, setList, setMax, setRelationStyle, setRemovedTables, setSettings, setSourceUpload)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Track
@@ -89,6 +89,9 @@ handleProjectSettings msg model =
 
         PSColumnOrderUpdate order ->
             ( model |> mapErdM (\e -> e |> Erd.mapSettings (setColumnOrder order) |> mapTableProps (sortColumns order e)), Cmd.none )
+
+        PSRelationStyleUpdate style ->
+            ( model |> mapErdM (\e -> e |> Erd.mapSettings (setRelationStyle style)), Cmd.none )
 
         PSColumnBasicTypesToggle ->
             ( model |> mapErdM (Erd.mapSettings (mapColumnBasicTypes not)), Cmd.none )
