@@ -56,6 +56,9 @@ parse statement =
      else if firstLine |> startsWith "INSERT INTO" then
         Ok (Ignored statement)
 
+     else if firstLine |> startsWith "CREATE DOMAIN" then
+        Ok (Ignored statement)
+
      else if firstLine |> startsWith "(CREATE|DROP) DATABASE" then
         Ok (Ignored statement)
 
@@ -125,6 +128,12 @@ parse statement =
      else if firstLine |> startsWith "COMMIT" then
         Ok (Ignored statement)
 
+     else if firstLine |> startsWith "DECLARE" then
+        Ok (Ignored statement)
+
+     else if firstLine |> startsWith "DELIMITER" then
+        Ok (Ignored statement)
+
      else if firstLine |> startsWith "SET" then
         Ok (Ignored statement)
 
@@ -142,4 +151,4 @@ parse statement =
 
 startsWith : String -> String -> Bool
 startsWith token text =
-    text |> Regex.match ("^" ++ token ++ "( |$)")
+    text |> Regex.matchI ("^" ++ token ++ "( |$)")

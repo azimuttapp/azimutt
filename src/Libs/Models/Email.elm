@@ -11,7 +11,7 @@ type alias Email =
 
 isValid : String -> Bool
 isValid value =
-    value |> Regex.match "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
+    value |> Regex.matchI "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
 
 
 encode : Email -> Value

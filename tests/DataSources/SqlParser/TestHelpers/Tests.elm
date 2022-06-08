@@ -56,4 +56,5 @@ parsedColumn =
     , foreignKey = Nothing
     , unique = Nothing
     , check = Nothing
+    , comment = Nothing
     }

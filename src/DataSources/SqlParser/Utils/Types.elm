@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName, SqlTableRef)
+module DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlForeignKeyRef, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName, SqlTableRef)
 
 import Libs.Models exposing (FileLineContent)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
@@ -42,6 +42,10 @@ type alias SqlColumnType =
 
 
 type alias SqlColumnValue =
+    String
+
+
+type alias SqlComment =
     String
 
 

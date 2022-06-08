@@ -85,12 +85,18 @@ suite =
             , testParseSql ( parseCreateTableColumn, "with foreign key having only table" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES users"
                 { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Nothing, table = "users", column = Nothing } ) }
+            , testParseSql ( parseCreateTableColumn, "with foreign key and primary key" )
+                "match_id bigint REFERENCES matches(match_id) ON DELETE CASCADE PRIMARY KEY"
+                { parsedColumn | name = "match_id", kind = "bigint", primaryKey = Just "", foreignKey = Just ( Nothing, { schema = Nothing, table = "matches", column = Just "match_id" } ) }
             , testParseSql ( parseCreateTableColumn, "with unique" )
                 "`email` varchar(255) NOT NULL UNIQUE"
                 { parsedColumn | name = "email", kind = "varchar(255)", nullable = False, unique = Just "UNIQUE" }
             , testParseSql ( parseCreateTableColumn, "with check" )
                 "state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable'))"
                 { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
+            , testParseSql ( parseCreateTableColumn, "with comment" )
+                "order varchar COMMENT 'Possible values: ''asc'',''desc'''"
+                { parsedColumn | name = "order", kind = "varchar", comment = Just "Possible values: 'asc','desc'" }
             , testParseSql ( parseCreateTableColumn, "with collate" )
                 "id nvarchar(32) COLLATE Modern_Spanish_CI_AS NOT NULL"
                 { parsedColumn | name = "id", kind = "nvarchar(32)", nullable = False }

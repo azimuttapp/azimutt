@@ -163,10 +163,10 @@ evolve ( statement, command ) tables =
             updateTable statement (buildId unique.table.schema unique.table.table) (\t -> Ok { t | uniques = t.uniques ++ [ SqlUnique unique.name unique.columns unique.definition statement ] }) tables
 
         TableComment comment ->
-            updateTable statement (buildId comment.schema comment.table) (\table -> Ok { table | comment = Just (SqlComment comment.comment.text statement) }) tables
+            updateTable statement (buildId comment.schema comment.table) (\table -> Ok { table | comment = Just (SqlComment comment.comment statement) }) tables
 
         ColumnComment comment ->
-            updateColumn statement (buildId comment.schema comment.table) comment.column (\column -> Ok { column | comment = Just (SqlComment comment.comment.text statement) }) tables
+            updateColumn statement (buildId comment.schema comment.table) comment.column (\column -> Ok { column | comment = Just (SqlComment comment.comment statement) }) tables
 
         Ignored _ ->
             Ok tables
@@ -388,7 +388,7 @@ buildStatements lines =
                             String.isEmpty text
                                 || String.startsWith "--" text
                                 || String.startsWith "#" text
-                                || Regex.match "^/\\*(.*)\\*/;?$" text
+                                || Regex.matchI "^/\\*(.*)\\*/;?$" text
                                 || String.startsWith "USE" text
                                 || String.startsWith "GO" text
                        )
@@ -396,10 +396,10 @@ buildStatements lines =
             )
         |> List.foldr
             (\line ( result, inComment ) ->
-                if line.text |> String.trim |> String.startsWith "/*" then
+                if line.text |> Regex.match "^\\s*/\\*" then
                     ( result, False )
 
-                else if line.text |> String.trim |> String.endsWith "*/" then
+                else if line.text |> Regex.match "\\*/;?\\s*$" then
                     ( result, True )
 
                 else if inComment then
@@ -446,7 +446,7 @@ buildStatements lines =
 
 hasKeyword : String -> SqlLine -> Bool
 hasKeyword keyword line =
-    (line.text |> Regex.match ("(^|[^A-Z0-9_\"'`])" ++ keyword ++ "([^A-Z0-9_\"'`]|$)")) && not (line.text |> Regex.match ("'.*" ++ keyword ++ ".*'"))
+    (line.text |> Regex.matchI ("(^|[^A-Z0-9_\"'`])" ++ keyword ++ "([^A-Z0-9_\"'`]|$)")) && not (line.text |> Regex.matchI ("'.*" ++ keyword ++ ".*'"))
 
 
 addStatement : List SqlLine -> List SqlStatement -> List SqlStatement

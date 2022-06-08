@@ -70,7 +70,7 @@ removeTable removedTables =
         names =
             removedTables |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    \( _, tableName ) -> names |> List.any (\name -> tableName == name || Regex.match ("^" ++ name ++ "$") tableName)
+    \( _, tableName ) -> names |> List.any (\name -> tableName == name || Regex.matchI ("^" ++ name ++ "$") tableName)
 
 
 removeColumn : String -> ColumnName -> Bool
@@ -80,7 +80,7 @@ removeColumn hiddenColumns =
         names =
             hiddenColumns |> String.split "," |> List.map String.trim |> List.filterNot String.isEmpty
     in
-    \column -> names |> List.any (\name -> column == name || Regex.match ("^" ++ name ++ "$") column)
+    \column -> names |> List.any (\name -> column == name || Regex.matchI ("^" ++ name ++ "$") column)
 
 
 hideColumn : HiddenColumns -> ErdColumn -> Bool

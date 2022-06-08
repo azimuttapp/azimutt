@@ -143,7 +143,7 @@ computeMissingRelations tables =
             (\t ->
                 t.columns
                     |> Dict.values
-                    |> List.filter (\c -> (c.name |> String.toLower |> Regex.match "_ids?$") && not c.isPrimaryKey && (c.inRelations |> List.isEmpty) && (c.outRelations |> List.isEmpty))
+                    |> List.filter (\c -> (c.name |> String.toLower |> Regex.matchI "_ids?$") && not c.isPrimaryKey && (c.inRelations |> List.isEmpty) && (c.outRelations |> List.isEmpty))
                     |> List.map (\c -> { table = t.id, column = c.name, kind = c.kind })
             )
         |> List.map (\src -> ( src, tables |> getRef src ))

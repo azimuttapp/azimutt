@@ -1,6 +1,6 @@
-module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
+module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
 
-import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlComment, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel
 import Libs.Regex as Regex
 
@@ -60,6 +60,11 @@ buildConstraintName name =
     name |> String.trim |> String.split "." |> List.map noEnclosingQuotes |> String.join "."
 
 
+buildComment : String -> SqlComment
+buildComment comment =
+    comment |> String.replace "''" "'"
+
+
 noEnclosingQuotes : String -> String
 noEnclosingQuotes text =
     text |> extract "\"(.*)\"" |> extract "'(.*)'" |> extract "`(.*)`" |> extract "\\[(.*)]"
@@ -77,20 +82,27 @@ extract regex text =
 
 commaSplit : String -> List String
 commaSplit text =
+    -- split on comma but ignore when inside () or ''
     String.foldr
         (\char ( res, cur, open ) ->
-            if char == ',' && open == 0 then
+            if char == ',' && List.isEmpty open then
                 ( (cur |> String.fromList) :: res, [], open )
 
-            else if char == '(' then
-                ( res, char :: cur, open + 1 )
+            else if char == '(' && List.head open == Just ')' then
+                ( res, char :: cur, open |> List.tail |> Maybe.withDefault [] )
 
             else if char == ')' then
-                ( res, char :: cur, open - 1 )
+                ( res, char :: cur, char :: open )
+
+            else if char == '\'' && List.head open == Just '\'' then
+                ( res, char :: cur, open |> List.tail |> Maybe.withDefault [] )
+
+            else if char == '\'' then
+                ( res, char :: cur, char :: open )
 
             else
                 ( res, char :: cur, open )
         )
-        ( [], [], 0 )
+        ( [], [], [] )
         text
         |> (\( res, end, _ ) -> (end |> String.fromList) :: res)
