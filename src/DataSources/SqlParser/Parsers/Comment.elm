@@ -1,7 +1,7 @@
-module DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnTable, parseColumnComment, parseTableComment)
+module DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnConstraint, CommentOnTable, parseColumnComment, parseColumnConstraint, parseTableComment)
 
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildComment, buildRawSql, buildSchemaName, buildSqlLine, buildTableName)
-import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlComment, SqlSchemaName, SqlStatement, SqlTableName)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlColumnName, SqlComment, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Regex as Regex
 
 
@@ -11,6 +11,10 @@ type alias CommentOnTable =
 
 type alias CommentOnColumn =
     { schema : Maybe SqlSchemaName, table : SqlTableName, column : SqlColumnName, comment : SqlComment }
+
+
+type alias CommentOnConstraint =
+    { schema : Maybe SqlSchemaName, table : SqlTableName, constraint : SqlConstraintName, comment : SqlComment }
 
 
 parseTableComment : SqlStatement -> Result (List ParseError) CommentOnTable
@@ -31,3 +35,13 @@ parseColumnComment statement =
 
         _ ->
             Err [ "Can't parse column comment: '" ++ buildRawSql statement ++ "'" ]
+
+
+parseColumnConstraint : SqlStatement -> Result (List ParseError) CommentOnConstraint
+parseColumnConstraint statement =
+    case statement |> buildSqlLine |> Regex.matches "^COMMENT ON CONSTRAINT\\s+(?<constraint>[^ ]+)\\s+ON\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .]+)\\s+IS\\s+'(?<comment>(?:[^']|'')+)';$" of
+        (Just constraint) :: schema :: (Just table) :: (Just comment) :: [] ->
+            Ok { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, constraint = constraint |> buildConstraintName, comment = comment |> buildComment }
+
+        _ ->
+            Err [ "Can't parse constraint comment: '" ++ buildRawSql statement ++ "'" ]

@@ -1,7 +1,7 @@
 module DataSources.SqlParser.StatementParser exposing (Command(..), parse)
 
 import DataSources.SqlParser.Parsers.AlterTable exposing (TableUpdate, parseAlterTable)
-import DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnTable, parseColumnComment, parseTableComment)
+import DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnConstraint, CommentOnTable, parseColumnComment, parseColumnConstraint, parseTableComment)
 import DataSources.SqlParser.Parsers.CreateIndex exposing (ParsedIndex, parseCreateIndex)
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedTable, parseCreateTable)
 import DataSources.SqlParser.Parsers.CreateUnique exposing (ParsedUnique, parseCreateUniqueIndex)
@@ -19,6 +19,7 @@ type Command
     | CreateUnique ParsedUnique
     | TableComment CommentOnTable
     | ColumnComment CommentOnColumn
+    | ConstraintComment CommentOnConstraint
     | Ignored SqlStatement
 
 
@@ -49,6 +50,9 @@ parse statement =
 
      else if firstLine |> startsWith "CREATE UNIQUE INDEX" then
         parseCreateUniqueIndex statement |> Result.map CreateUnique
+
+     else if firstLine |> startsWith "COMMENT ON CONSTRAINT" then
+        parseColumnConstraint statement |> Result.map ConstraintComment
 
      else if firstLine |> startsWith "SELECT" then
         Ok (Ignored statement)
@@ -89,13 +93,13 @@ parse statement =
      else if firstLine |> startsWith "(CREATE|ALTER) TEXT SEARCH CONFIGURATION" then
         Ok (Ignored statement)
 
-     else if firstLine |> startsWith "(CREATE|ALTER) SEQUENCE" then
+     else if firstLine |> startsWith "(CREATE|ALTER|COMMENT ON) SEQUENCE" then
         Ok (Ignored statement)
 
      else if firstLine |> startsWith "(CREATE|ALTER) AGGREGATE" then
         Ok (Ignored statement)
 
-     else if firstLine |> startsWith "CREATE TRIGGER" then
+     else if firstLine |> startsWith "(CREATE|COMMENT ON) TRIGGER" then
         Ok (Ignored statement)
 
      else if firstLine |> startsWith "LOCK TABLES" then

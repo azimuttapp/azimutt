@@ -168,6 +168,9 @@ evolve ( statement, command ) tables =
         ColumnComment comment ->
             updateColumn statement (buildId comment.schema comment.table) comment.column (\column -> Ok { column | comment = Just (SqlComment comment.comment statement) }) tables
 
+        ConstraintComment _ ->
+            Ok tables
+
         Ignored _ ->
             Ok tables
 
