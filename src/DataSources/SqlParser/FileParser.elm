@@ -389,6 +389,8 @@ buildStatements lines =
                                 || String.startsWith "--" text
                                 || String.startsWith "#" text
                                 || Regex.match "^/\\*(.*)\\*/;?$" text
+                                || String.startsWith "USE" text
+                                || String.startsWith "GO" text
                        )
                     |> not
             )

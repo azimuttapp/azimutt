@@ -40,6 +40,9 @@ suite =
             , testParse ( parseAlterTable, "column default with quotes" )
                 "ALTER TABLE public.table1 ALTER COLUMN \"id\" SET DEFAULT 1;"
                 (AlterColumn (Just "public") "table1" (ColumnDefault "id" "1"))
+            , testParse ( parseAlterTable, "column mssql value" )
+                "ALTER TABLE t1 ADD DEFAULT N'gitlab_' + CAST(NEXT VALUE FOR dbo.abuse_id_seq as NVARCHAR(20)) FOR id;"
+                (AlterColumn Nothing "t1" (ColumnDefault "id" "N'gitlab_' + CAST(NEXT VALUE FOR dbo.abuse_id_seq as NVARCHAR(20))"))
             , testParse ( parseAlterTable, "column statistics" )
                 "ALTER TABLE public.table1 ALTER COLUMN table1_id SET STATISTICS 5000;"
                 (AlterColumn (Just "public") "table1" (ColumnStatistics "table1_id" 5000))
@@ -64,6 +67,12 @@ suite =
             , testParse ( parseAlterTable, "primary key with add" )
                 "ALTER TABLE public.t2 ADD PRIMARY KEY (`id`);"
                 (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey Nothing (Nel "id" [])))
+            , testParse ( parseAlterTable, "clustered primary key" )
+                "ALTER TABLE public.t2 ADD PRIMARY KEY CLUSTERED ([AlbumId]);"
+                (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey Nothing (Nel "AlbumId" [])))
+            , testParse ( parseAlterTable, "nonclustered primary key" )
+                "ALTER TABLE public.t2 ADD PRIMARY KEY NONCLUSTERED ([PlaylistId], [TrackId]);"
+                (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey Nothing (Nel "PlaylistId" [ "TrackId" ])))
             , testParse ( parseAlterTable, "if exists" )
                 "alter table if exists t1 \n       drop constraint if exists abc;"
                 (DropConstraint Nothing "t1" "abc")

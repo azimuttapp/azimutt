@@ -102,6 +102,9 @@ suite =
             [ testParseSql ( parseCreateTableForeignKey, "sqlite" )
                 "foreign key(`ulid`) references `tasks`(`ulid`)"
                 { name = Nothing, src = "ulid", ref = { schema = Nothing, table = "tasks", column = Just "ulid" } }
+            , testParseSql ( parseCreateTableForeignKey, "with schema, spaces and triggers" )
+                "FOREIGN KEY (cat_id) REFERENCES dbo.cats (cat_id) ON DELETE CASCADE ON UPDATE CASCADE"
+                { name = Nothing, src = "cat_id", ref = { schema = Just "dbo", table = "cats", column = Just "cat_id" } }
             ]
         , describe "parseCreateTableColumnForeignKey"
             [ testParseSql ( parseCreateTableColumnForeignKey, "references" )

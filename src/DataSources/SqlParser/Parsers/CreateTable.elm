@@ -192,9 +192,9 @@ parseCreateTablePrimaryKey sql =
 
 parseCreateTableForeignKey : RawSql -> Result ParseError ParsedForeignKey
 parseCreateTableForeignKey sql =
-    case sql |> Regex.matches "^FOREIGN KEY\\s*\\((?<src>[^)]+)\\)\\s*REFERENCES\\s+(?<table>[^ .(]+)\\((?<column>[^ .)]+)\\)$" of
-        (Just src) :: (Just table) :: (Just column) :: [] ->
-            Ok { name = Nothing, src = src |> buildColumnName, ref = { schema = Nothing, table = table |> buildTableName, column = Just (column |> buildColumnName) } }
+    case sql |> Regex.matches ("^FOREIGN KEY\\s*\\((?<src>[^)]+)\\)\\s*REFERENCES\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ .(]+)\\s*\\((?<column>[^ .)]+)\\)" ++ sqlTriggers ++ "$") of
+        (Just src) :: schema :: (Just table) :: (Just column) :: [] ->
+            Ok { name = Nothing, src = src |> buildColumnName, ref = { schema = schema |> Maybe.map buildSchemaName, table = table |> buildTableName, column = Just (column |> buildColumnName) } }
 
         _ ->
             Err ("Can't parse table foreign key: '" ++ sql ++ "'")

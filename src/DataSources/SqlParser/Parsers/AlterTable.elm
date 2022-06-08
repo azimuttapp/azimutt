@@ -73,6 +73,9 @@ parseAlterTable statement =
             else if command |> String.toUpper |> String.startsWith "ALTER COLUMN " then
                 parseAlterTableAlterColumn command |> Result.map (AlterColumn schemaName tableName)
 
+            else if command |> String.toUpper |> String.startsWith "ADD DEFAULT " then
+                parseAlterTableColumnDefault command |> Result.map (AlterColumn schemaName tableName)
+
             else if command |> String.toUpper |> String.startsWith "DROP COLUMN " then
                 parseAlterTableDropColumn command |> Result.map (DropColumn schemaName tableName)
 
@@ -117,7 +120,7 @@ parseAlterTableAddConstraint command =
 
 parseAlterTableAddConstraintPrimaryKey : RawSql -> Result (List ParseError) PrimaryKeyInner
 parseAlterTableAddConstraintPrimaryKey constraint =
-    case constraint |> Regex.matches "^PRIMARY KEY\\s*\\((?<columns>[^)]+)\\).*$" of
+    case constraint |> Regex.matches "^PRIMARY KEY(?:\\s+(?:CLUSTERED|NONCLUSTERED))?\\s*\\((?<columns>[^)]+)\\).*$" of
         (Just columns) :: [] ->
             columns |> String.split "," |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Primary key can't have empty columns" ]
 
@@ -200,6 +203,16 @@ parseAlterTableAlterColumn command =
 
         _ ->
             Err [ "Can't parse alter column: '" ++ command ++ "'" ]
+
+
+parseAlterTableColumnDefault : RawSql -> Result (List ParseError) ColumnUpdate
+parseAlterTableColumnDefault command =
+    case command |> Regex.matches "^ADD DEFAULT\\s+(?<value>.*)\\s+FOR\\s+(?<column>[^ .]+)\\s*$" of
+        (Just value) :: (Just column) :: [] ->
+            Ok (ColumnDefault (buildColumnName column) value)
+
+        _ ->
+            Err [ "Can't parse add default: '" ++ command ++ "'" ]
 
 
 parseAlterTableDropColumn : RawSql -> Result (List ParseError) SqlColumnName

@@ -560,8 +560,87 @@ encodeLoginInfo info =
 
 
 unhandledJsMsgError : JsMsg -> String
-unhandledJsMsgError _ =
-    "Unhandled JsMessage"
+unhandledJsMsgError msg =
+    "Unhandled JsMessage: "
+        ++ (case msg of
+                GotSizes _ ->
+                    "GotSizes"
+
+                GotLogin _ ->
+                    "GotLogin"
+
+                GotLogout ->
+                    "GotLogout"
+
+                GotProjects _ ->
+                    "GotProjects"
+
+                GotProject _ ->
+                    "GotProject"
+
+                GotUser _ _ ->
+                    "GotUser"
+
+                GotOwners _ _ ->
+                    "GotOwners"
+
+                ProjectDropped _ ->
+                    "ProjectDropped"
+
+                GotLocalFile _ _ _ _ _ ->
+                    "GotLocalFile"
+
+                GotRemoteFile _ _ _ _ _ _ ->
+                    "GotRemoteFile"
+
+                GotHotkey _ ->
+                    "GotHotkey"
+
+                GotKeyHold _ _ ->
+                    "GotKeyHold"
+
+                GotToast _ _ ->
+                    "GotToast"
+
+                GotTableShow _ _ ->
+                    "GotTableShow"
+
+                GotTableHide _ ->
+                    "GotTableHide"
+
+                GotTableToggleColumns _ ->
+                    "GotTableToggleColumns"
+
+                GotTablePosition _ _ ->
+                    "GotTablePosition"
+
+                GotTableMove _ _ ->
+                    "GotTableMove"
+
+                GotTableSelect _ ->
+                    "GotTableSelect"
+
+                GotTableColor _ _ ->
+                    "GotTableColor"
+
+                GotColumnShow _ ->
+                    "GotColumnShow"
+
+                GotColumnHide _ ->
+                    "GotColumnHide"
+
+                GotColumnMove _ _ ->
+                    "GotColumnMove"
+
+                GotFitToScreen ->
+                    "GotFitToScreen"
+
+                GotResetCanvas ->
+                    "GotResetCanvas"
+
+                Error _ ->
+                    "Error"
+           )
 
 
 port elmToJs : Value -> Cmd msg
