@@ -16,11 +16,13 @@ import Libs.Html.Events exposing (PointerEvent, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Platform exposing (Platform)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Color exposing (bg_500, focus, hover)
 import Models.ColumnOrder as ColumnOrder
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -37,12 +39,12 @@ type alias TableArgs =
 
 argsToString : String -> String -> Bool -> Bool -> Bool -> TableArgs
 argsToString openedDropdown openedPopover dragging virtualRelation useBasicTypes =
-    openedDropdown ++ "#" ++ openedPopover ++ "#" ++ B.cond dragging "Y" "N" ++ "#" ++ B.cond virtualRelation "Y" "N" ++ "#" ++ B.cond useBasicTypes "Y" "N"
+    openedDropdown ++ "~" ++ openedPopover ++ "~" ++ B.cond dragging "Y" "N" ++ "~" ++ B.cond virtualRelation "Y" "N" ++ "~" ++ B.cond useBasicTypes "Y" "N"
 
 
 stringToArgs : TableArgs -> ( ( String, String ), ( Bool, Bool, Bool ) )
 stringToArgs args =
-    case args |> String.split "#" of
+    case args |> String.split "~" of
         [ openedDropdown, openedPopover, dragging, virtualRelation, useBasicTypes ] ->
             ( ( openedDropdown, openedPopover ), ( dragging == "Y", virtualRelation == "Y", useBasicTypes == "Y" ) )
 
@@ -50,8 +52,8 @@ stringToArgs args =
             ( ( "", "" ), ( False, False, False ) )
 
 
-viewTable : ErdConf -> ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
-viewTable conf zoom cursorMode args index props table =
+viewTable : Platform -> ErdConf -> ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
+viewTable platform conf zoom cursorMode args index props table =
     let
         ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation, useBasicTypes ) ) =
             stringToArgs args
@@ -61,7 +63,7 @@ viewTable conf zoom cursorMode args index props table =
 
         drag : List (Attribute Msg)
         drag =
-            B.cond (cursorMode == CursorDrag || not conf.move) [] [ stopPointerDown (handleTablePointerDown table.htmlId) ]
+            B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (handleTablePointerDown table.htmlId) ]
 
         zIndex : Int
         zIndex =
@@ -85,7 +87,7 @@ viewTable conf zoom cursorMode args index props table =
             , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
-                [ Maybe.when conf.layout { label = B.cond props.selected "Hide selected tables" "Hide table", action = Simple { action = HideTable table.id, hotkeys = Conf.hotkeys |> Dict.getOrElse "remove" [] } }
+                [ Maybe.when conf.layout { label = B.cond props.selected "Hide selected tables" "Hide table", action = Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "remove" [] } }
                 , Maybe.when conf.layout
                     { label =
                         if props.collapsed then
@@ -93,9 +95,9 @@ viewTable conf zoom cursorMode args index props table =
 
                         else
                             B.cond props.selected "Collapse selected tables" "Collapse table"
-                    , action = Simple { action = ToggleColumns table.id, hotkeys = Conf.hotkeys |> Dict.getOrElse "collapse" [] }
+                    , action = Simple { action = ToggleColumns table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "collapse" [] }
                     }
-                , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), hotkeys = [] } }
+                , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = [] } }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Set color of selected tables" "Set color"
                     , action =
@@ -117,38 +119,39 @@ viewTable conf zoom cursorMode args index props table =
                                 )
                             )
                     }
-                , Maybe.when conf.layout { label = B.cond props.selected "Sort columns of selected tables" "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkeys = [] })) }
+                , Maybe.when conf.layout { label = B.cond props.selected "Sort columns of selected tables" "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, platform = platform, hotkeys = [] })) }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Hide columns of selected tables" "Hide columns"
                     , action =
                         SubMenu
-                            [ { label = "Without relation", action = HideColumns table.id "relations", hotkeys = [] }
-                            , { label = "Regular ones", action = HideColumns table.id "regular", hotkeys = [] }
-                            , { label = "Nullable ones", action = HideColumns table.id "nullable", hotkeys = [] }
-                            , { label = "All", action = HideColumns table.id "all", hotkeys = [] }
+                            [ { label = "Without relation", action = HideColumns table.id "relations", platform = platform, hotkeys = [] }
+                            , { label = "Regular ones", action = HideColumns table.id "regular", platform = platform, hotkeys = [] }
+                            , { label = "Nullable ones", action = HideColumns table.id "nullable", platform = platform, hotkeys = [] }
+                            , { label = "All", action = HideColumns table.id "all", platform = platform, hotkeys = [] }
                             ]
                     }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Show columns of selected tables" "Show columns"
                     , action =
                         SubMenu
-                            [ { label = "With relations", action = ShowColumns table.id "relations", hotkeys = [] }
-                            , { label = "All", action = ShowColumns table.id "all", hotkeys = [] }
+                            [ { label = "With relations", action = ShowColumns table.id "relations", platform = platform, hotkeys = [] }
+                            , { label = "All", action = ShowColumns table.id "all", platform = platform, hotkeys = [] }
                             ]
                     }
                 , Maybe.when conf.layout
                     { label = "Table order"
                     , action =
                         SubMenu
-                            [ { label = "Bring forward", action = TableOrder table.id (index + 1), hotkeys = Conf.hotkeys |> Dict.getOrElse "move-forward" [] }
-                            , { label = "Send backward", action = TableOrder table.id (index - 1), hotkeys = Conf.hotkeys |> Dict.getOrElse "move-backward" [] }
-                            , { label = "Bring to front", action = TableOrder table.id 1000, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-to-top" [] }
-                            , { label = "Send to back", action = TableOrder table.id 0, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-to-back" [] }
+                            [ { label = "Bring forward", action = TableOrder table.id (index + 1), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-forward" [] }
+                            , { label = "Send backward", action = TableOrder table.id (index - 1), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-backward" [] }
+                            , { label = "Bring to front", action = TableOrder table.id 1000, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-to-top" [] }
+                            , { label = "Send to back", action = TableOrder table.id 0, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-to-back" [] }
                             ]
                     }
-                , Maybe.when conf.findPath { label = "Find path for this table", action = Simple { action = FindPathMsg (FPOpen (Just table.id) Nothing), hotkeys = [] } }
+                , Maybe.when conf.findPath { label = "Find path for this table", action = Simple { action = FindPathMsg (FPOpen (Just table.id) Nothing), platform = platform, hotkeys = [] } }
                 ]
                     |> List.filterMap identity
+            , platform = platform
             , state =
                 { color = props.color
                 , isHover = props.isHover
@@ -166,7 +169,7 @@ viewTable conf zoom cursorMode args index props table =
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
                 , clickNotes = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
-                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu i { table = table.id, column = col } (props.columnProps |> Dict.get col |> Maybe.andThen .notes))
+                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu platform i { table = table.id, column = col } (props.columnProps |> Dict.get col |> Maybe.andThen .notes))
                 , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
                 , clickRelations =
                     \cols isOut ->

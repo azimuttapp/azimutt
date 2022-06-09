@@ -10,7 +10,8 @@ import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg(..), SourceParsingDialog)
+import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), SourceParsingDialog)
+import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind
 import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
 import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
@@ -73,7 +74,7 @@ init now query =
       , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
-      , cursorMode = CursorSelect
+      , cursorMode = CursorMode.Select
       , selectionBox = Nothing
       , newLayout = Nothing
       , editNotes = Nothing

@@ -22,7 +22,8 @@ import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
@@ -392,10 +393,10 @@ handleJsMessage currentLayout msg model =
         GotKeyHold key start ->
             if key == "Space" && model.conf.move then
                 if start then
-                    ( model |> setCursorMode CursorDrag, Cmd.none )
+                    ( model |> setCursorMode CursorMode.Drag, Cmd.none )
 
                 else
-                    ( model |> setCursorMode CursorSelect, Cmd.none )
+                    ( model |> setCursorMode CursorMode.Select, Cmd.none )
 
             else
                 ( model, Cmd.none )

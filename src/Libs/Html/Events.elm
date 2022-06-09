@@ -2,11 +2,12 @@ module Libs.Html.Events exposing (PointerEvent, WheelEvent, onContextMenu, onPoi
 
 import Html exposing (Attribute)
 import Html.Events exposing (preventDefaultOn, stopPropagationOn)
-import Html.Events.Extra.Mouse as Mouse exposing (Button)
-import Html.Events.Extra.Pointer as Pointer
+import Html.Events.Extra.Mouse as Button exposing (Button)
 import Json.Decode as Decode
+import Libs.Bool as B
 import Libs.Delta exposing (Delta)
-import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Platform as Platform exposing (Platform)
+import Libs.Models.Position exposing (Position)
 
 
 
@@ -14,22 +15,22 @@ import Libs.Models.Position as Position exposing (Position)
 
 
 type alias PointerEvent =
-    { position : Position, ctrl : Bool, alt : Bool, shift : Bool, button : Button }
+    { position : Position, ctrl : Bool, alt : Bool, shift : Bool, meta : Bool, button : Button }
 
 
-onContextMenu : (PointerEvent -> msg) -> Attribute msg
-onContextMenu msg =
-    Html.Events.custom "contextmenu" (mouseDecoder |> Decode.map (\e -> { message = msg e, stopPropagation = True, preventDefault = True }))
+onContextMenu : Platform -> (PointerEvent -> msg) -> Attribute msg
+onContextMenu platform msg =
+    Html.Events.custom "contextmenu" (pointerDecoder platform |> Decode.map (\e -> { message = msg e, stopPropagation = True, preventDefault = True }))
 
 
-onPointerDown : (PointerEvent -> msg) -> Attribute msg
-onPointerDown msg =
-    Html.Events.on "pointerdown" (pointerDecoder |> Decode.map msg)
+onPointerDown : Platform -> (PointerEvent -> msg) -> Attribute msg
+onPointerDown platform msg =
+    Html.Events.on "pointerdown" (pointerDecoder platform |> Decode.map msg)
 
 
-onPointerUp : (PointerEvent -> msg) -> Attribute msg
-onPointerUp msg =
-    Html.Events.on "pointerup" (pointerDecoder |> Decode.map msg)
+onPointerUp : Platform -> (PointerEvent -> msg) -> Attribute msg
+onPointerUp platform msg =
+    Html.Events.on "pointerup" (pointerDecoder platform |> Decode.map msg)
 
 
 type alias FileEvent =
@@ -78,19 +79,19 @@ type alias WheelEvent =
     }
 
 
-onWheel : (WheelEvent -> msg) -> Attribute msg
-onWheel callback =
+onWheel : Platform -> (WheelEvent -> msg) -> Attribute msg
+onWheel platform callback =
     let
         preventDefaultAndStopPropagation : msg -> { message : msg, stopPropagation : Bool, preventDefault : Bool }
         preventDefaultAndStopPropagation msg =
             { message = msg, stopPropagation = True, preventDefault = True }
     in
-    Html.Events.custom "wheel" (wheelDecoder |> Decode.map (callback >> preventDefaultAndStopPropagation))
+    Html.Events.custom "wheel" (wheelDecoder platform |> Decode.map (callback >> preventDefaultAndStopPropagation))
 
 
-preventPointerDown : (PointerEvent -> msg) -> Attribute msg
-preventPointerDown msg =
-    preventDefaultOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
+preventPointerDown : Platform -> (PointerEvent -> msg) -> Attribute msg
+preventPointerDown platform msg =
+    preventDefaultOn "pointerdown" (pointerDecoder platform |> Decode.map (\e -> ( msg e, True )))
 
 
 stopClick : msg -> Attribute msg
@@ -98,45 +99,31 @@ stopClick m =
     stopPropagationOn "click" (Decode.succeed ( m, True ))
 
 
-stopPointerDown : (PointerEvent -> msg) -> Attribute msg
-stopPointerDown msg =
-    stopPropagationOn "pointerdown" (pointerDecoder |> Decode.map (\e -> ( msg e, True )))
+stopPointerDown : Platform -> (PointerEvent -> msg) -> Attribute msg
+stopPointerDown platform msg =
+    stopPropagationOn "pointerdown" (pointerDecoder platform |> Decode.map (\e -> ( msg e, True )))
 
 
 
 -- HELPERS
 
 
-mouseDecoder : Decode.Decoder PointerEvent
-mouseDecoder =
-    Mouse.eventDecoder
-        |> Decode.map
-            (\e ->
-                { position = e.pagePos |> Position.fromTuple
-                , ctrl = e.keys.ctrl
-                , alt = e.keys.alt
-                , shift = e.keys.shift
-                , button = e.button
-                }
-            )
+pointerDecoder : Platform -> Decode.Decoder PointerEvent
+pointerDecoder platform =
+    Decode.map6 PointerEvent
+        (Decode.map2 Position
+            (Decode.field "pageX" Decode.float)
+            (Decode.field "pageY" Decode.float)
+        )
+        (Decode.field (B.cond (platform == Platform.Mac) "metaKey" "ctrlKey") Decode.bool)
+        (Decode.field "altKey" Decode.bool)
+        (Decode.field "shiftKey" Decode.bool)
+        (Decode.field "metaKey" Decode.bool)
+        (Decode.field "button" Decode.int |> Decode.map buttonFromId)
 
 
-pointerDecoder : Decode.Decoder PointerEvent
-pointerDecoder =
-    Pointer.eventDecoder
-        |> Decode.map
-            (\e ->
-                { position = e.pointer.pagePos |> Position.fromTuple
-                , ctrl = e.pointer.keys.ctrl
-                , alt = e.pointer.keys.alt
-                , shift = e.pointer.keys.shift
-                , button = e.pointer.button
-                }
-            )
-
-
-wheelDecoder : Decode.Decoder WheelEvent
-wheelDecoder =
+wheelDecoder : Platform -> Decode.Decoder WheelEvent
+wheelDecoder platform =
     Decode.map6 WheelEvent
         (Decode.map2 Position
             (Decode.field "pageX" Decode.float)
@@ -146,7 +133,29 @@ wheelDecoder =
             (Decode.field "deltaX" Decode.float)
             (Decode.field "deltaY" Decode.float)
         )
-        (Decode.field "ctrlKey" Decode.bool)
+        (Decode.field (B.cond (platform == Platform.Mac) "metaKey" "ctrlKey") Decode.bool)
         (Decode.field "altKey" Decode.bool)
         (Decode.field "shiftKey" Decode.bool)
         (Decode.field "metaKey" Decode.bool)
+
+
+buttonFromId : Int -> Button
+buttonFromId id =
+    case id of
+        0 ->
+            Button.MainButton
+
+        1 ->
+            Button.MiddleButton
+
+        2 ->
+            Button.SecondButton
+
+        3 ->
+            Button.BackButton
+
+        4 ->
+            Button.ForwardButton
+
+        _ ->
+            Button.ErrorButton

@@ -14,7 +14,8 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (Msg(..))
+import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 
 
@@ -45,8 +46,8 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
             Html.none
         , if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-                [ button [ type_ "button", onClick (CursorMode CursorSelect), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorSelect) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
-                , button [ type_ "button", onClick (CursorMode CursorDrag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorDrag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
+                [ button [ type_ "button", onClick (CursorMode CursorMode.Select), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorMode.Select) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
+                , button [ type_ "button", onClick (CursorMode CursorMode.Drag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorMode.Drag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
                 ]
 
           else

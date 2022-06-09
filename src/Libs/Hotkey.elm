@@ -3,6 +3,7 @@ module Libs.Hotkey exposing (Hotkey, HotkeyTarget, hotkey, hotkeyEncoder, keys, 
 import Json.Encode as Encode exposing (Value)
 import Libs.Bool as B
 import Libs.Json.Encode as Encode
+import Libs.Models.Platform as Platform exposing (Platform)
 
 
 type alias Hotkey =
@@ -23,9 +24,9 @@ target =
     { id = Nothing, class = Nothing, tag = Nothing }
 
 
-keys : Hotkey -> List String
-keys h =
-    [ B.cond h.ctrl (Just "Ctrl") Nothing
+keys : Platform -> Hotkey -> List String
+keys platform h =
+    [ B.cond h.ctrl (Just (B.cond (platform == Platform.Mac) "Cmd" "Ctrl")) Nothing
     , B.cond h.alt (Just "Alt") Nothing
     , B.cond h.shift (Just "Shift") Nothing
     , B.cond h.meta (Just "Meta") Nothing

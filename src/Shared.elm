@@ -2,6 +2,8 @@ module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, StoredPr
 
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
+import Libs.Models.Env as Env exposing (Env)
+import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Tailwind exposing (Color)
 import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
@@ -12,11 +14,13 @@ import Time
 
 
 type alias Flags =
-    { now : Int, conf : GlobalConf }
+    { now : Int
+    , conf : { env : String, platform : String, enableCloud : Bool }
+    }
 
 
 type alias GlobalConf =
-    { enableCloud : Bool }
+    { env : Env, platform : Platform, enableCloud : Bool }
 
 
 type alias Model =
@@ -69,7 +73,11 @@ init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
-      , conf = flags.conf
+      , conf =
+            { env = Env.fromString flags.conf.env
+            , platform = Platform.fromString flags.conf.platform
+            , enableCloud = flags.conf.enableCloud
+            }
       , user = Nothing
       , projects = Loading
       }

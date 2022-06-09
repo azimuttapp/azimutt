@@ -74,7 +74,7 @@ viewApp currentUrl shared model htmlId erd =
 
           else
             div [] []
-        , Lazy.lazy8 viewErd model.conf model.screen erd model.cursorMode model.selectionBox model.virtualRelation (Erd.argsToString model.openedDropdown model.openedPopover) model.dragging
+        , Lazy.lazy8 viewErd shared.conf.platform model.conf model.screen erd model.selectionBox model.virtualRelation (Erd.argsToString model.cursorMode model.openedDropdown model.openedPopover) model.dragging
         , if model.conf.fullscreen || model.conf.move then
             Lazy.lazy6 viewCommands model.conf model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (erd.tableProps |> Dict.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
 

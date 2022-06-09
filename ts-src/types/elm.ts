@@ -1,4 +1,16 @@
-import {Email, File, FileContent, FileName, FileUrl, HtmlId, Timestamp, ToastLevel, ViewPosition} from "./basics";
+import {
+    Email,
+    Env,
+    File,
+    FileContent,
+    FileName,
+    FileUrl,
+    HtmlId,
+    Platform,
+    Timestamp,
+    ToastLevel,
+    ViewPosition
+} from "./basics";
 import {
     Color,
     ColumnId,
@@ -16,6 +28,8 @@ import {LoginInfo} from "../services/supabase";
 import {Profile, UserId} from "./profile";
 
 export interface GlobalConf {
+    env: Env
+    platform: Platform
     enableCloud: boolean
 }
 

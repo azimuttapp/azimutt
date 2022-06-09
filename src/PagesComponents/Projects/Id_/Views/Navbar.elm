@@ -2,12 +2,10 @@ module PagesComponents.Projects.Id_.Views.Navbar exposing (NavbarArgs, argsToStr
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
-import Components.Atoms.Kbd as Kbd
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
 import Conf
-import Dict
 import Either exposing (Either(..))
 import Gen.Route as Route
 import Html exposing (Attribute, Html, a, button, div, img, nav, span, text)
@@ -17,12 +15,13 @@ import Html.Lazy as Lazy
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Either as Either
-import Libs.Hotkey as Hotkey exposing (Hotkey)
+import Libs.Hotkey exposing (Hotkey)
 import Libs.Html as Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, hrefBlank, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Platform exposing (Platform)
 import Libs.Models.Url as Url
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
@@ -40,7 +39,7 @@ import Url exposing (Url)
 
 
 type alias Btn msg =
-    { action : Either String msg, content : Html msg, hotkey : Maybe Hotkey }
+    { action : Either String msg, content : Html msg, hotkeys : List Hotkey }
 
 
 type alias NavbarArgs =
@@ -70,15 +69,15 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
 
         features : List (Btn Msg)
         features =
-            [ Maybe.when eConf.layoutManagement { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkey = Conf.hotkeys |> Dict.get "save-layout" |> Maybe.andThen List.head }
+            [ Maybe.when eConf.layoutManagement { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkeys = Conf.hotkeys |> Dict.getOrElse "save-layout" [] }
             , Just
                 (virtualRelation
-                    |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head })
-                    |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkey = Conf.hotkeys |> Dict.get "create-virtual-relation" |> Maybe.andThen List.head }
+                    |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] })
+                    |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] }
                 )
-            , Maybe.when eConf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkey = Conf.hotkeys |> Dict.get "find-path" |> Maybe.andThen List.head }
-            , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkey = Nothing }
-            , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkey = Nothing }
+            , Maybe.when eConf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkeys = Conf.hotkeys |> Dict.getOrElse "find-path" [] }
+            , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkeys = [] }
+            , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkeys = [] }
             ]
                 |> List.filterMap identity
 
@@ -101,7 +100,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
                     [ div [ class "flex items-center print:hidden" ]
                         [ viewNavbarResetLayout canResetCanvas
-                        , viewNavbarFeatures features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
+                        , viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
                         , if gConf.enableCloud then
@@ -146,8 +145,8 @@ viewNavbarResetLayout canResetCanvas =
     Button.primary3 Tw.primary [ onClick resetCanvas, css [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
 
 
-viewNavbarFeatures : List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
-viewNavbarFeatures features htmlId openedDropdown =
+viewNavbarFeatures : Platform -> List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
+viewNavbarFeatures platform features htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), css [ "mx-1 flex-shrink-0 flex justify-center items-center bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-bounce" ], focus_ring_offset_600 Tw.primary ] ]
@@ -164,7 +163,7 @@ viewNavbarFeatures features htmlId openedDropdown =
                             btn.action
                                 |> Either.reduce
                                     (\url -> extLink url [ role "menuitem", tabindex -1, css [ "block", ContextMenu.itemStyles ] ] [ btn.content ])
-                                    (\action -> ContextMenu.btn "flex justify-between" action (btn.content :: (btn.hotkey |> Maybe.mapOrElse (\h -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys h) ]) [])))
+                                    (\action -> ContextMenu.btnHotkey "flex justify-between" action [ btn.content ] platform btn.hotkeys)
                         )
                 )
         )

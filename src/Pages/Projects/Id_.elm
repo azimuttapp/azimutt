@@ -7,7 +7,8 @@ import Gen.Route as Route
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (CursorMode(..), Msg)
+import PagesComponents.Projects.Id_.Models as Models exposing (Msg)
+import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf
 import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
@@ -53,7 +54,7 @@ init now id =
       , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
-      , cursorMode = CursorSelect
+      , cursorMode = CursorMode.Select
       , selectionBox = Nothing
       , newLayout = Nothing
       , editNotes = Nothing

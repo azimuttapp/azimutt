@@ -5,15 +5,16 @@ import Conf
 import Html exposing (Html, div, text)
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
+import Libs.Models.Platform exposing (Platform)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), NotesMsg(..))
 import PagesComponents.Projects.Id_.Models.Notes as NoteRef
 
 
-viewColumnContextMenu : Int -> ColumnRef -> Maybe String -> Html Msg
-viewColumnContextMenu index column notes =
+viewColumnContextMenu : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg
+viewColumnContextMenu platform index column notes =
     div []
-        [ ContextMenu.btnHotkey "" (HideColumn column) [ text "Hide column" ] (Conf.hotkeys |> Dict.getOrElse "remove" [])
+        [ ContextMenu.btnHotkey "" (HideColumn column) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "remove" [])
         , ContextMenu.btn "" (NotesMsg (NOpen (NoteRef.fromColumn column))) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ]
         , ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ]
         , ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ]
@@ -22,8 +23,8 @@ viewColumnContextMenu index column notes =
         ]
 
 
-viewHiddenColumnContextMenu : Int -> ColumnRef -> Maybe String -> Html Msg
-viewHiddenColumnContextMenu _ column _ =
+viewHiddenColumnContextMenu : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg
+viewHiddenColumnContextMenu _ _ column _ =
     div []
         [ ContextMenu.btn "" (ShowColumn column) [ text "Show column" ]
         ]

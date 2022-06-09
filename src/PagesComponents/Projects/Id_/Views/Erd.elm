@@ -18,6 +18,7 @@ import Libs.Html.Events exposing (PointerEvent, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Platform exposing (Platform)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
@@ -27,7 +28,8 @@ import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
-import PagesComponents.Projects.Id_.Models exposing (CursorMode(..), Msg(..), VirtualRelation)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), VirtualRelation)
+import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -46,25 +48,25 @@ type alias ErdArgs =
     String
 
 
-argsToString : String -> String -> ErdArgs
-argsToString openedDropdown openedPopover =
-    openedDropdown ++ "#" ++ openedPopover
+argsToString : CursorMode -> String -> String -> ErdArgs
+argsToString cursorMode openedDropdown openedPopover =
+    CursorMode.toString cursorMode ++ "~" ++ openedDropdown ++ "~" ++ openedPopover
 
 
-stringToArgs : ErdArgs -> ( String, String )
+stringToArgs : ErdArgs -> ( CursorMode, String, String )
 stringToArgs args =
-    case args |> String.split "#" of
-        [ openedDropdown, openedPopover ] ->
-            ( openedDropdown, openedPopover )
+    case args |> String.split "~" of
+        [ cursorMode, openedDropdown, openedPopover ] ->
+            ( CursorMode.fromString cursorMode, openedDropdown, openedPopover )
 
         _ ->
-            ( "", "" )
+            ( CursorMode.Select, "", "" )
 
 
-viewErd : ErdConf -> ScreenProps -> Erd -> CursorMode -> Maybe Area -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
-viewErd conf screen erd cursorMode selectionBox virtualRelation args dragging =
+viewErd : Platform -> ErdConf -> ScreenProps -> Erd -> Maybe Area -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
+viewErd platform conf screen erd selectionBox virtualRelation args dragging =
     let
-        ( openedDropdown, openedPopover ) =
+        ( cursorMode, openedDropdown, openedPopover ) =
             stringToArgs args
 
         canvas : CanvasProps
@@ -105,19 +107,19 @@ viewErd conf screen erd cursorMode selectionBox virtualRelation args dragging =
         [ class "az-erd h-full bg-gray-100 overflow-hidden"
         , style "height" (B.cond conf.showNavbar "calc(100% - 64px)" "100%") -- 64px is the header height, we want this component to fill the viewport
         , classList
-            [ ( "cursor-grab-all", cursorMode == CursorDrag && dragging == Nothing && virtualRelation == Nothing )
-            , ( "cursor-grabbing-all", cursorMode == CursorDrag && dragging /= Nothing && virtualRelation == Nothing )
+            [ ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
+            , ( "cursor-grabbing-all", cursorMode == CursorMode.Drag && dragging /= Nothing && virtualRelation == Nothing )
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
-        , Attributes.when (conf.move && not (Dict.isEmpty tableProps)) (onWheel OnWheel)
-        , Attributes.when (conf.move || conf.select) (stopPointerDown (handleErdPointerDown conf cursorMode))
+        , Attributes.when (conf.move && not (Dict.isEmpty tableProps)) (onWheel platform OnWheel)
+        , Attributes.when (conf.move || conf.select) (stopPointerDown platform (handleErdPointerDown conf cursorMode))
         ]
         [ div
             [ class "az-canvas origin-top-left"
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
-            [ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
+            [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
             , Lazy.lazy5 viewRelations conf dragging erd.settings.relationStyle displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
@@ -134,14 +136,14 @@ handleErdPointerDown : ErdConf -> CursorMode -> PointerEvent -> Msg
 handleErdPointerDown conf cursorMode e =
     if e.button == MainButton then
         case cursorMode of
-            CursorDrag ->
+            CursorMode.Drag ->
                 if conf.move then
                     e |> .position |> DragStart Conf.ids.erd
 
                 else
                     Noop "No erd drag"
 
-            CursorSelect ->
+            CursorMode.Select ->
                 if conf.select then
                     e |> .position |> DragStart Conf.ids.selectionBox
 
@@ -159,8 +161,8 @@ handleErdPointerDown conf cursorMode e =
         Noop "No match on erd pointer down"
 
 
-viewTables : ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
-viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging zoom useBasicTypes tableProps tables shownTables =
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
+viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover dragging zoom useBasicTypes tableProps tables shownTables =
     Keyed.node "div"
         [ class "az-tables" ]
         (shownTables
@@ -170,7 +172,8 @@ viewTables conf cursorMode virtualRelation openedDropdown openedPopover dragging
             |> List.map
                 (\( index, table, props ) ->
                     ( TableId.toString table.id
-                    , Lazy.lazy7 viewTable
+                    , Lazy.lazy8 viewTable
+                        platform
                         conf
                         zoom
                         cursorMode

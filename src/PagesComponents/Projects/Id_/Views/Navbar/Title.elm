@@ -18,6 +18,7 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
@@ -43,7 +44,7 @@ viewNavbarTitle gConf eConf projects project usedLayout layouts htmlId openedDro
            else
             div [] []
          , if eConf.projectManagement then
-            Lazy.lazy4 viewProjectsDropdown projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy5 viewProjectsDropdown gConf.platform projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -52,8 +53,8 @@ viewNavbarTitle gConf eConf projects project usedLayout layouts htmlId openedDro
         )
 
 
-viewProjectsDropdown : List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown projects project htmlId openedDropdown =
+viewProjectsDropdown : Platform -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown platform projects project htmlId openedDropdown =
     let
         otherProjects : List ProjectInfo
         otherProjects =
@@ -68,7 +69,7 @@ viewProjectsDropdown projects project htmlId openedDropdown =
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ [ ContextMenu.btnHotkey "" SaveProject [ text "Save project" ] (Conf.hotkeys |> Dict.getOrElse "save" [])
+                (([ [ ContextMenu.btnHotkey "" SaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
                     ]
                   ]

@@ -22,6 +22,7 @@ import Libs.Html.Events exposing (PointerEvent, onContextMenu, onPointerUp)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
@@ -45,6 +46,7 @@ type alias Model msg =
     , actions : Actions msg
     , zoom : ZoomLevel
     , conf : TableConf
+    , platform : Platform
     }
 
 
@@ -177,7 +179,7 @@ viewHeader model =
             ]
         ]
         [ div
-            [ Attributes.when model.conf.select (onPointerUp (\e -> model.actions.clickHeader e.ctrl))
+            [ Attributes.when model.conf.select (onPointerUp model.platform (\e -> model.actions.clickHeader e.ctrl))
             , class "flex-grow text-center"
             ]
             ([ if model.isView then
@@ -282,7 +284,7 @@ viewColumn model styles isLast index column =
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
          , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverColumn column.name True))
          , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverColumn column.name False))
-         , Attributes.when model.conf.layout (onContextMenu (model.actions.contextMenuColumn index column.name))
+         , Attributes.when model.conf.layout (onContextMenu model.platform (model.actions.contextMenuColumn index column.name))
          , Attributes.when model.conf.layout (onDoubleClick (model.actions.dblClickColumn column.name))
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap relative"
@@ -291,7 +293,7 @@ viewColumn model styles isLast index column =
             , Bool.cond isLast "rounded-b-lg" ""
             ]
          ]
-            ++ (model.actions.clickColumn |> Maybe.mapOrElse (\action -> [ onPointerUp (.position >> action column.name) ]) [])
+            ++ (model.actions.clickColumn |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (.position >> action column.name) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
         , viewColumnName model column
@@ -525,15 +527,16 @@ sample =
         ]
     , hiddenColumns = []
     , settings =
-        [ { label = "Menu item 1", action = Simple { action = logAction "menu item 1", hotkeys = [] } }
+        [ { label = "Menu item 1", action = Simple { action = logAction "menu item 1", platform = Platform.PC, hotkeys = [] } }
         , { label = "Menu item 2"
           , action =
                 SubMenu
-                    [ { label = "Menu item 2.1", action = logAction "menu item 2.1", hotkeys = [] }
-                    , { label = "Menu item 2.2", action = logAction "menu item 2.2", hotkeys = [] }
+                    [ { label = "Menu item 2.1", action = logAction "menu item 2.1", platform = Platform.PC, hotkeys = [] }
+                    , { label = "Menu item 2.2", action = logAction "menu item 2.2", platform = Platform.PC, hotkeys = [] }
                     ]
           }
         ]
+    , platform = Platform.PC
     , state =
         { color = Tw.indigo
         , isHover = False

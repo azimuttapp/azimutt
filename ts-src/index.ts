@@ -22,9 +22,10 @@ import {StorageManager} from "./storages/manager";
 import {Conf} from "./conf";
 
 const env = Utils.getEnv()
+const platform = Utils.getPlatform()
 const conf = Conf.get(env)
 const logger = new ConsoleLogger(env)
-const fs = {enableCloud: !!localStorage.getItem('enable-cloud')}
+const fs = {env, platform, enableCloud: !!localStorage.getItem('enable-cloud')}
 const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
 const supabase = Supabase.init(conf.supabase).onLogin(user => {
     app.login(user)
@@ -221,7 +222,7 @@ function isInput(elt: Element) {
 function keydownHotkey(e: KeyboardEvent) {
     const target = e.target as HTMLElement
     const matches = (hotkeys[e.key] || []).filter(hotkey => {
-        return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === 'Mac' && hotkey.ctrl === e.metaKey)) &&
+        return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === 'mac' && hotkey.ctrl === e.metaKey)) &&
             (!hotkey.shift || e.shiftKey) &&
             (hotkey.alt === e.altKey) &&
             (hotkey.meta === e.metaKey) &&
