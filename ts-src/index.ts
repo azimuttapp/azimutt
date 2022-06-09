@@ -221,7 +221,7 @@ function isInput(elt: Element) {
 function keydownHotkey(e: KeyboardEvent) {
     const target = e.target as HTMLElement
     const matches = (hotkeys[e.key] || []).filter(hotkey => {
-        return (hotkey.ctrl === e.ctrlKey) &&
+        return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === 'Mac' && hotkey.ctrl === e.metaKey)) &&
             (!hotkey.shift || e.shiftKey) &&
             (hotkey.alt === e.altKey) &&
             (hotkey.meta === e.metaKey) &&

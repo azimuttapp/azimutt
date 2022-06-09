@@ -31,7 +31,7 @@ const supabase: { [env in Env]: SupabaseConf } = {
         supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl3aWV5Yml0Y25idGtsenNmeGdkIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTE5MjI3MzUsImV4cCI6MTk2NzQ5ODczNX0.ccfB_pVemOqeR4CwhSoGmwfT5bx-FAuY24IbGj7OjiE',
     },
     prod: {
-        backendUrl: 'https://azimutt.onrender.com', // 'https://api.azimutt.app',
+        backendUrl: 'https://api.azimutt.app',
         supabaseUrl: 'https://xkwctrduvpdgjarqzjkc.supabase.co',
         supabaseKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhrd2N0cmR1dnBkZ2phcnF6amtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTIwMjc0OTgsImV4cCI6MTk2NzYwMzQ5OH0.f5W1-tXT64Ih0TG7LDDxyfTJ6Jh9ta4slet8fnkumKo',
     }

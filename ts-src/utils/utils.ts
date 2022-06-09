@@ -1,4 +1,4 @@
-import {Env, HtmlId} from "../types/basics";
+import {Env, HtmlId, Platform} from "../types/basics";
 import confetti from "canvas-confetti";
 
 export const Utils = {
@@ -6,6 +6,10 @@ export const Utils = {
         return window.location.hostname === 'localhost' ? 'dev' :
             window.location.hostname === 'azimutt.app' ? 'prod' :
                 'staging'
+    },
+    getPlatform(): Platform {
+        // return window.navigator.platform.indexOf('Mac') !== -1 ? 'Mac' : 'PC'
+        return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? 'Mac' : 'PC'
     },
     randomId() {
         return crypto.randomUUID()

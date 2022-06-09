@@ -4,6 +4,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
+import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route
 import Html exposing (Html, br, button, div, small, span, text)
@@ -11,6 +12,7 @@ import Html.Attributes exposing (class, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
+import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
@@ -66,7 +68,7 @@ viewProjectsDropdown projects project htmlId openedDropdown =
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ [ ContextMenu.btn "" SaveProject [ text "Save project" ]
+                (([ [ ContextMenu.btnHotkey "" SaveProject [ text "Save project" ] (Conf.hotkeys |> Dict.getOrElse "save" [])
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
                     ]
                   ]

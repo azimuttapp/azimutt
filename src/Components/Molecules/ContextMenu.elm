@@ -4,6 +4,7 @@ import Components.Atoms.Kbd as Kbd
 import Html exposing (Attribute, Html, a, button, div, text)
 import Html.Attributes exposing (class, href, tabindex, type_)
 import Html.Events exposing (onClick)
+import Libs.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Html.Attributes exposing (ariaLabelledby, ariaOrientation, css, role)
 import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
@@ -58,9 +59,9 @@ btn styles message content =
     button [ type_ "button", onClick message, role "menuitem", tabindex -1, css [ "block w-full text-left", focus [ "outline-none" ], itemStyles, styles ] ] content
 
 
-btnHotkey : msg -> String -> Maybe (List String) -> Html msg
-btnHotkey action label hotkey =
-    btn "flex justify-between" action ([ text label ] ++ (hotkey |> Maybe.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] k ]) []))
+btnHotkey : TwClass -> msg -> List (Html msg) -> List Hotkey -> Html msg
+btnHotkey styles action content hotkey =
+    btn (styles ++ " flex justify-between") action (content ++ (hotkey |> List.head |> Maybe.mapOrElse (\k -> [ Kbd.badge [ class "ml-3" ] (Hotkey.keys k) ]) []))
 
 
 btnDisabled : TwClass -> List (Html msg) -> Html msg
@@ -79,24 +80,24 @@ type ItemAction msg
 
 
 type alias Action msg =
-    { action : msg, hotkey : Maybe (List String) }
+    { action : msg, hotkeys : List Hotkey }
 
 
 type alias SubMenuItem msg =
-    { label : String, action : msg, hotkey : Maybe (List String) }
+    { label : String, action : msg, hotkeys : List Hotkey }
 
 
 btnSubmenu : MenuItem msg -> Html msg
 btnSubmenu item =
     case item.action of
-        Simple { action, hotkey } ->
-            btnHotkey action item.label hotkey
+        Simple { action, hotkeys } ->
+            btnHotkey "" action [ text item.label ] hotkeys
 
         SubMenu submenus ->
             div [ css [ "group relative", itemStyles ] ]
                 [ text (item.label ++ " »")
                 , div [ css [ "group-hover:block hidden -top-1 left-full", menuStyles ] ]
-                    (submenus |> List.map (\submenu -> btnHotkey submenu.action submenu.label submenu.hotkey))
+                    (submenus |> List.map (\submenu -> btnHotkey "" submenu.action [ text submenu.label ] submenu.hotkeys))
                 ]
 
         Custom html ->

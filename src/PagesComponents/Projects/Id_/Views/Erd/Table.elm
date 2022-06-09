@@ -10,7 +10,7 @@ import Html.Attributes exposing (style, tabindex, title, type_)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as B
-import Libs.Hotkey as Hotkey
+import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Html.Events exposing (PointerEvent, stopPointerDown)
 import Libs.List as List
@@ -85,7 +85,7 @@ viewTable conf zoom cursorMode args index props table =
             , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
-                [ Maybe.when conf.layout { label = B.cond props.selected "Hide selected tables" "Hide table", action = Simple { action = HideTable table.id, hotkey = Conf.hotkeys |> Dict.get "remove" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys } }
+                [ Maybe.when conf.layout { label = B.cond props.selected "Hide selected tables" "Hide table", action = Simple { action = HideTable table.id, hotkeys = Conf.hotkeys |> Dict.getOrElse "remove" [] } }
                 , Maybe.when conf.layout
                     { label =
                         if props.collapsed then
@@ -93,9 +93,9 @@ viewTable conf zoom cursorMode args index props table =
 
                         else
                             B.cond props.selected "Collapse selected tables" "Collapse table"
-                    , action = Simple { action = ToggleColumns table.id, hotkey = Conf.hotkeys |> Dict.get "collapse" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                    , action = Simple { action = ToggleColumns table.id, hotkeys = Conf.hotkeys |> Dict.getOrElse "collapse" [] }
                     }
-                , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), hotkey = Nothing } }
+                , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), hotkeys = [] } }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Set color of selected tables" "Set color"
                     , action =
@@ -117,36 +117,36 @@ viewTable conf zoom cursorMode args index props table =
                                 )
                             )
                     }
-                , Maybe.when conf.layout { label = B.cond props.selected "Sort columns of selected tables" "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkey = Nothing })) }
+                , Maybe.when conf.layout { label = B.cond props.selected "Sort columns of selected tables" "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, hotkeys = [] })) }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Hide columns of selected tables" "Hide columns"
                     , action =
                         SubMenu
-                            [ { label = "Without relation", action = HideColumns table.id "relations", hotkey = Nothing }
-                            , { label = "Regular ones", action = HideColumns table.id "regular", hotkey = Nothing }
-                            , { label = "Nullable ones", action = HideColumns table.id "nullable", hotkey = Nothing }
-                            , { label = "All", action = HideColumns table.id "all", hotkey = Nothing }
+                            [ { label = "Without relation", action = HideColumns table.id "relations", hotkeys = [] }
+                            , { label = "Regular ones", action = HideColumns table.id "regular", hotkeys = [] }
+                            , { label = "Nullable ones", action = HideColumns table.id "nullable", hotkeys = [] }
+                            , { label = "All", action = HideColumns table.id "all", hotkeys = [] }
                             ]
                     }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Show columns of selected tables" "Show columns"
                     , action =
                         SubMenu
-                            [ { label = "With relations", action = ShowColumns table.id "relations", hotkey = Nothing }
-                            , { label = "All", action = ShowColumns table.id "all", hotkey = Nothing }
+                            [ { label = "With relations", action = ShowColumns table.id "relations", hotkeys = [] }
+                            , { label = "All", action = ShowColumns table.id "all", hotkeys = [] }
                             ]
                     }
                 , Maybe.when conf.layout
                     { label = "Table order"
                     , action =
                         SubMenu
-                            [ { label = "Bring forward", action = TableOrder table.id (index + 1), hotkey = Conf.hotkeys |> Dict.get "move-forward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
-                            , { label = "Send backward", action = TableOrder table.id (index - 1), hotkey = Conf.hotkeys |> Dict.get "move-backward" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
-                            , { label = "Bring to front", action = TableOrder table.id 1000, hotkey = Conf.hotkeys |> Dict.get "move-to-top" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
-                            , { label = "Send to back", action = TableOrder table.id 0, hotkey = Conf.hotkeys |> Dict.get "move-to-back" |> Maybe.andThen List.head |> Maybe.map Hotkey.keys }
+                            [ { label = "Bring forward", action = TableOrder table.id (index + 1), hotkeys = Conf.hotkeys |> Dict.getOrElse "move-forward" [] }
+                            , { label = "Send backward", action = TableOrder table.id (index - 1), hotkeys = Conf.hotkeys |> Dict.getOrElse "move-backward" [] }
+                            , { label = "Bring to front", action = TableOrder table.id 1000, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-to-top" [] }
+                            , { label = "Send to back", action = TableOrder table.id 0, hotkeys = Conf.hotkeys |> Dict.getOrElse "move-to-back" [] }
                             ]
                     }
-                , Maybe.when conf.findPath { label = "Find path for this table", action = Simple { action = FindPathMsg (FPOpen (Just table.id) Nothing), hotkey = Nothing } }
+                , Maybe.when conf.findPath { label = "Find path for this table", action = Simple { action = FindPathMsg (FPOpen (Just table.id) Nothing), hotkeys = [] } }
                 ]
                     |> List.filterMap identity
             , state =

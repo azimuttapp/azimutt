@@ -111,8 +111,8 @@ doc =
                                 [ ContextMenu.btn "" (logAction "btn") [ text "btn" ]
                                 , ContextMenu.btnDisabled "" [ text "btnDisabled" ]
                                 , ContextMenu.link { url = "#", text = "link" }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Right", action = Simple { action = logAction "submenuButton Right", hotkey = Nothing } }
-                                , ContextMenu.btnSubmenu { label = "submenuButton Left", action = SubMenu ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label, hotkey = Nothing })) }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Right", action = Simple { action = logAction "submenuButton Right", hotkeys = [] } }
+                                , ContextMenu.btnSubmenu { label = "submenuButton Left", action = SubMenu ([ "Item 1", "Item 2", "Item 3" ] |> List.map (\label -> { label = label, action = logAction label, hotkeys = [] })) }
                                 ]
                         )
                 )
