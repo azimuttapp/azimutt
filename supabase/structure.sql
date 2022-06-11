@@ -1,6 +1,7 @@
 -- drop everything
 
-delete from storage.buckets where id='avatars';
+delete from storage.buckets where id = 'projects';
+delete from storage.buckets where id = 'avatars';
 drop policy if exists "Users can create avatars" on storage.objects;
 drop policy if exists "Users can delete their avatar" on storage.objects;
 drop policy if exists "Users can update their avatar" on storage.objects;
@@ -26,10 +27,9 @@ create table public.profiles
     created_at timestamptz not null default timezone('utc'::text, now()),
     updated_at timestamptz not null default timezone('utc'::text, now())
 );
+alter table public.profiles enable row level security;
 comment on table public.profiles is 'browsable user information';
 comment on column public.profiles.id is 'references the internal supabase auth user';
-alter table public.profiles
-    enable row level security;
 
 create table public.projects
 (
@@ -45,13 +45,12 @@ create table public.projects
     updated_at timestamptz not null default timezone('utc'::text, now()),
     updated_by uuid        not null default auth.uid() references auth.users
 );
+alter table public.projects enable row level security;
 comment on table public.projects is 'list stored projects';
-alter table public.projects
-    enable row level security;
 
+insert into storage.buckets (id, name) values ('projects', 'projects');
 
-insert into storage.buckets (id, name)
-values ('avatars', 'avatars');
+insert into storage.buckets (id, name) values ('avatars', 'avatars');
 create policy "Users can create avatars" on storage.objects for insert to authenticated with check (bucket_id = 'avatars');
 create policy "Users can delete their avatar" on storage.objects for delete to authenticated using (bucket_id = 'avatars' and auth.uid() = owner);
 create policy "Users can update their avatar" on storage.objects for update to authenticated using (bucket_id = 'avatars' and auth.uid() = owner);
