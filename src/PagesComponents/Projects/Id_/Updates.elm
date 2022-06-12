@@ -20,9 +20,10 @@ import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.TableId as TableId exposing (TableId)
+import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
-import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Models as UserSourceUpdateMsg exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -157,6 +158,9 @@ update req currentLayout now msg model =
         ToggleHoverColumn column on ->
             ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
+        CreateUserSource name ->
+            ( model |> mapErdM (Source.createUserSource now name), Cmd.none )
+
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.addRelation now src ref)
 
@@ -168,6 +172,9 @@ update req currentLayout now msg model =
 
         NotesMsg message ->
             model |> handleNotes message
+
+        AmlSidebarMsg message ->
+            model |> AmlSlidebar.update message
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -203,7 +210,11 @@ update req currentLayout now msg model =
             model |> handleHelp message
 
         CursorMode mode ->
-            ( model |> setCursorMode mode, Cmd.none )
+            if mode == CursorMode.Update then
+                model |> setCursorMode mode |> AmlSlidebar.update UserSourceUpdateMsg.USOpen
+
+            else
+                ( model |> setCursorMode mode, Cmd.none )
 
         FitContent ->
             ( model |> mapErdM (fitCanvas model.screen), Cmd.none )

@@ -151,6 +151,13 @@ handleErdPointerDown conf cursorMode e =
                 else
                     Noop "No selection box"
 
+            CursorMode.Update ->
+                if conf.select then
+                    e |> .position |> DragStart Conf.ids.selectionBox
+
+                else
+                    Noop "No selection box"
+
     else if e.button == MiddleButton then
         if conf.move then
             e |> .position |> DragStart Conf.ids.erd

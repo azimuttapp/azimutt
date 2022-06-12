@@ -1,4 +1,4 @@
-module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, path, same)
+module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, isUser, path, same)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -14,6 +14,16 @@ type SourceKind
     = LocalFile FileName FileSize FileUpdatedAt
     | RemoteFile FileUrl FileSize
     | UserDefined
+
+
+isUser : SourceKind -> Bool
+isUser kind =
+    case kind of
+        UserDefined ->
+            True
+
+        _ ->
+            False
 
 
 path : SourceKind -> String

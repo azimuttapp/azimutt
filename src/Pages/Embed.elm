@@ -78,6 +78,7 @@ init now query =
       , selectionBox = Nothing
       , newLayout = Nothing
       , editNotes = Nothing
+      , amlSidebar = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing

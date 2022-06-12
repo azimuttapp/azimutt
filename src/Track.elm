@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUserSourceUpdate, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.SqlParser.FileParser exposing (SchemaError)
 import DataSources.SqlParser.StatementParser exposing (Command)
@@ -75,6 +75,11 @@ openSaveLayout =
 openEditNotes : TrackEvent
 openEditNotes =
     { name = "open-edit-notes", details = [], enabled = True }
+
+
+openUserSourceUpdate : TrackEvent
+openUserSourceUpdate =
+    { name = "open-user-source-update", details = [], enabled = True }
 
 
 parsedSource : SQLParsing msg -> Source -> TrackEvent

@@ -48,6 +48,11 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (CursorMode CursorMode.Select), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorMode.Select) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
                 , button [ type_ "button", onClick (CursorMode CursorMode.Drag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorMode.Drag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
+                , if conf.update then
+                    button [ type_ "button", onClick (CursorMode CursorMode.Update), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorMode.Update) inverted classic ] ] [ Icon.solid Pencil "" ] |> Tooltip.t "Update tool"
+
+                  else
+                    Html.none
                 ]
 
           else

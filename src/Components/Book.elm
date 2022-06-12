@@ -12,6 +12,7 @@ import Components.Atoms.Markdown as Markdown
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Dropdown as Dropdown
+import Components.Molecules.Editor as Editor
 import Components.Molecules.Feature as Feature
 import Components.Molecules.FileInput as FileInput
 import Components.Molecules.ItemList as ItemList
@@ -83,7 +84,7 @@ main =
             -- sorted alphabetically
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Dots.doc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc, Markdown.doc ] )
-            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Popover.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Editor.doc, Feature.doc, FileInput.doc, ItemList.doc, Modal.doc, Popover.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Organisms", [ Footer.doc, Header.doc, Navbar.doc, Relation.doc, Table.doc ] )
             , ( "Slices", [ Blog.doc, Content.doc, Cta.doc, FeatureGrid.doc, FeatureSideBySide.doc, Hero.doc, Newsletter.doc, NotFound.doc ] )
             ]

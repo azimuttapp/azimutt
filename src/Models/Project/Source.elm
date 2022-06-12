@@ -33,10 +33,10 @@ type alias Source =
     }
 
 
-user : SourceId -> Dict TableId Table -> List Relation -> Time.Posix -> Source
-user id tables relations now =
+user : SourceId -> String -> Dict TableId Table -> List Relation -> Time.Posix -> Source
+user id name tables relations now =
     { id = id
-    , name = "User"
+    , name = name
     , kind = UserDefined
     , content = Array.empty
     , tables = tables

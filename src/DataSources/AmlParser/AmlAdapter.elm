@@ -1,4 +1,4 @@
-module DataSources.AmlParser.SourceAdapter exposing (AmlSchema, AmlSchemaError, buildAmlSource, evolve)
+module DataSources.AmlParser.AmlAdapter exposing (AmlSchema, AmlSchemaError, adapt, buildAmlSource, evolve)
 
 import Array
 import Conf
@@ -8,6 +8,8 @@ import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Nel as Nel exposing (Nel)
+import Libs.Parser as Parser
+import Libs.Result as Result
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -21,6 +23,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.Unique exposing (Unique)
 import Models.SourceInfo exposing (SourceInfo)
+import Parser exposing (DeadEnd)
 
 
 type alias AmlSchema =
@@ -54,6 +57,11 @@ buildAmlSource source statements =
       , updatedAt = source.updatedAt
       }
     )
+
+
+adapt : SourceId -> Result (List DeadEnd) (List AmlStatement) -> AmlSchema
+adapt source result =
+    result |> Result.fold (\err -> AmlSchema Dict.empty [] (err |> List.map Parser.deadEndToString)) (List.foldl (evolve source) (AmlSchema Dict.empty [] []))
 
 
 evolve : SourceId -> AmlStatement -> AmlSchema -> AmlSchema

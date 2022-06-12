@@ -4,6 +4,7 @@ module PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode(..), 
 type CursorMode
     = Drag
     | Select
+    | Update
 
 
 fromString : String -> CursorMode
@@ -14,6 +15,9 @@ fromString value =
 
         "select" ->
             Select
+
+        "update" ->
+            Update
 
         _ ->
             Drag
@@ -27,3 +31,6 @@ toString mode =
 
         Select ->
             "select"
+
+        Update ->
+            "update"

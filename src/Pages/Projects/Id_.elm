@@ -58,6 +58,7 @@ init now id =
       , selectionBox = Nothing
       , newLayout = Nothing
       , editNotes = Nothing
+      , amlSidebar = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing

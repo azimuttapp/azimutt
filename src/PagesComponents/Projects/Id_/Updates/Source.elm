@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Updates.Source exposing (addRelation)
+module PagesComponents.Projects.Id_.Updates.Source exposing (addRelation, createUserSource)
 
 import Dict
 import Libs.List as List
@@ -16,6 +16,16 @@ import Services.Toasts as Toasts
 import Time
 
 
+createUserSource : Time.Posix -> String -> Erd -> Erd
+createUserSource now name erd =
+    let
+        ( sourceId, seed ) =
+            SourceId.random erd.seed
+    in
+    { erd | seed = seed }
+        |> Erd.mapSources (\sources -> sources ++ [ Source.user sourceId name Dict.empty [] now ])
+
+
 addRelation : Time.Posix -> ColumnRef -> ColumnRef -> Erd -> ( Erd, Cmd Msg )
 addRelation now src ref erd =
     case erd.sources |> List.find (\s -> s.kind == UserDefined) of
@@ -25,11 +35,4 @@ addRelation now src ref erd =
             )
 
         Nothing ->
-            let
-                ( sourceId, seed ) =
-                    SourceId.random erd.seed
-            in
-            ( { erd | seed = seed }
-                |> Erd.mapSources (\sources -> sources ++ [ Source.user sourceId Dict.empty [] now ])
-            , Cmd.batch [ Toasts.info Toast "Created a user source to add the relation.", T.send (CreateRelation src ref) ]
-            )
+            ( createUserSource now "User" erd, Cmd.batch [ Toasts.info Toast "Created a user source to add the relation.", T.send (CreateRelation src ref) ] )
