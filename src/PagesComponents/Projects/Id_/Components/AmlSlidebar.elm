@@ -2,15 +2,16 @@ module PagesComponents.Projects.Id_.Components.AmlSlidebar exposing (Model, upda
 
 import Array exposing (Array)
 import Components.Atoms.Button as Button
+import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
-import Components.Molecules.Slideover as Slideover
 import Conf
 import DataSources.AmlParser.AmlAdapter as AmlAdapter exposing (AmlSchema, AmlSchemaError)
 import DataSources.AmlParser.AmlParser as AmlParser
 import Dict
-import Html exposing (Html, div, label, option, p, select, text)
+import Html exposing (Html, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
+import Libs.Bool as Bool
 import Libs.Html exposing (extLink)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -21,10 +22,10 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
-import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
+import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
-import Services.Lenses exposing (mapAmlSidebarM, mapErdM, mapSourcesL, setAmlSidebar, setContent, setCursorMode, setErrors, setRelations, setSelected, setTables)
+import Services.Lenses exposing (mapAmlSidebarM, mapErdM, mapSourcesL, setAmlSidebar, setContent, setErrors, setRelations, setSelected, setTables)
 import Track
 
 
@@ -36,21 +37,30 @@ type alias Model x =
     }
 
 
+init : Model x -> AmlSidebar
+init model =
+    { id = Conf.ids.amlSidebarDialog
+    , selected = model.erd |> Maybe.andThen (.sources >> List.find (.kind >> SourceKind.isUser) >> Maybe.map .id)
+    , errors = []
+    }
+
+
 update : AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update msg model =
     case msg of
-        USOpen ->
-            ( model |> setAmlSidebar (Just { id = Conf.ids.amlSidebarDialog, selected = model.erd |> Maybe.andThen (.sources >> List.find (.kind >> SourceKind.isUser) >> Maybe.map .id), errors = [] })
-            , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.amlSidebarDialog), Ports.track Track.openUserSourceUpdate ]
-            )
+        AOpen ->
+            ( model |> setAmlSidebar (Just (init model)), Ports.track Track.openUserSourceUpdate )
 
-        USClose ->
-            ( model |> setAmlSidebar Nothing |> setCursorMode CursorMode.Select, Cmd.none )
+        AClose ->
+            ( model |> setAmlSidebar Nothing, Cmd.none )
 
-        USChangeSource source ->
+        AToggle ->
+            ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) AOpen AClose)) )
+
+        AChangeSource source ->
             ( model |> mapAmlSidebarM (setSelected source), Cmd.none )
 
-        USUpdateSource id value ->
+        AUpdateSource id value ->
             let
                 content : Array String
                 content =
@@ -79,8 +89,8 @@ update msg model =
                 ( model |> mapErdM (mapSourcesL .id id (setContent content)) |> mapAmlSidebarM (setErrors parsed.errors), Cmd.none )
 
 
-view : Bool -> Erd -> AmlSidebar -> Html Msg
-view opened erd model =
+view : Erd -> AmlSidebar -> Html Msg
+view erd model =
     let
         userSources : List Source
         userSources =
@@ -90,20 +100,26 @@ view opened erd model =
         selectedSource =
             model.selected |> Maybe.andThen (\id -> userSources |> List.find (\s -> s.id == id))
     in
-    Slideover.slideover
-        { id = model.id
-        , title = "User source"
-        , isOpen = opened
-        , onClickClose = ModalClose (AmlSidebarMsg USClose)
-        , onClickOverlay = ModalClose (AmlSidebarMsg USClose)
-        }
-        (div []
+    div []
+        [ viewHeading
+        , div [ class "px-3 py-2" ]
             [ viewChooseSource selectedSource userSources
-            , selectedSource |> Maybe.mapOrElse viewSourceEditor (div [] [])
-            , viewErrors model.errors
-            , viewHelp
+            , selectedSource |> Maybe.mapOrElse (viewSourceEditor model) (div [] [])
             ]
-        )
+        ]
+
+
+viewHeading : Html Msg
+viewHeading =
+    div [ class "px-6 py-5 flex space-x-3 border-b border-gray-200" ]
+        [ div [ class "flex-1" ]
+            [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Update schema" ]
+            , p [ class "mt-1 text-sm text-gray-500" ] [ text "bla bla bla" ]
+            ]
+        , div [ class "flex-shrink-0 self-center flex" ]
+            [ button [ onClick (AmlSidebarMsg AClose), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
+            ]
+        ]
 
 
 viewChooseSource : Maybe Source -> List Source -> Html Msg
@@ -124,7 +140,7 @@ viewChooseSource selectedSource userSources =
             div []
                 [ Button.primary3 Tw.primary [ onClick (simplePrompt "New source name" CreateUserSource) ] [ text "New user source" ]
                 , label [ for selectId, class "block text-sm font-medium text-gray-700" ] [ text "Sources" ]
-                , select [ id selectId, name selectId, onInput (SourceId.fromString >> USChangeSource >> AmlSidebarMsg), class "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" ]
+                , select [ id selectId, name selectId, onInput (SourceId.fromString >> AChangeSource >> AmlSidebarMsg), class "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" ]
                     (option [] [ text "-- select user source to edit" ]
                         :: (userSources |> List.map (\s -> option [ selected (Maybe.map .id selectedSource == Just s.id), value (SourceId.toString s.id) ] [ text s.name ]))
                     )
@@ -132,15 +148,15 @@ viewChooseSource selectedSource userSources =
         ]
 
 
-viewSourceEditor : Source -> Html Msg
-viewSourceEditor source =
+viewSourceEditor : AmlSidebar -> Source -> Html Msg
+viewSourceEditor model source =
     let
         content : String
         content =
             source.content |> Array.toList |> String.join "\n"
     in
     div []
-        [ Editor.basic "source-editor" content (USUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax. Ex:
+        [ Editor.basic "source-editor" content (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax. Ex:
 
 users
   id uuid pk
@@ -154,6 +170,8 @@ credentials
   password varchar(128) nullable
   role varchar(10)=guest
   created_at timestamp"""
+        , viewErrors model.errors
+        , viewHelp
         ]
 
 

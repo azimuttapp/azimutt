@@ -238,10 +238,11 @@ type NotesMsg
 
 
 type AmlSidebarMsg
-    = USOpen
-    | USClose
-    | USChangeSource (Maybe SourceId)
-    | USUpdateSource SourceId String
+    = AOpen
+    | AClose
+    | AToggle
+    | AChangeSource (Maybe SourceId)
+    | AUpdateSource SourceId String
 
 
 type VirtualRelationMsg

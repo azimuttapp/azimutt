@@ -23,7 +23,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
-import PagesComponents.Projects.Id_.Models as UserSourceUpdateMsg exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -210,11 +210,7 @@ update req currentLayout now msg model =
             model |> handleHelp message
 
         CursorMode mode ->
-            if mode == CursorMode.Update then
-                model |> setCursorMode mode |> AmlSlidebar.update UserSourceUpdateMsg.USOpen
-
-            else
-                ( model |> setCursorMode mode, Cmd.none )
+            ( model |> setCursorMode mode, Cmd.none )
 
         FitContent ->
             ( model |> mapErdM (fitCanvas model.screen), Cmd.none )

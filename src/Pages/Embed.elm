@@ -107,7 +107,7 @@ init now query =
             , description = Just Conf.constants.defaultDescription
             , canonical = Just { route = Route.Embed, query = query |> serializeQueryString }
             , html = Just "h-full"
-            , body = Just "h-full"
+            , body = Just "h-full overflow-hidden"
             }
          , Ports.trackPage "embed"
          , Ports.listenHotkeys Conf.hotkeys

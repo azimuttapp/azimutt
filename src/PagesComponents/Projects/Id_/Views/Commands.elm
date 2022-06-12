@@ -14,7 +14,7 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..))
+import PagesComponents.Projects.Id_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 
@@ -37,9 +37,14 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
     div [ class "az-commands absolute bottom-0 right-0 m-3 print:hidden" ]
         [ if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
-                [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ]
-                    [ Icon.solid ArrowsExpand "" ]
-                    |> Tooltip.t "Fit content in view"
+                [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ] |> Tooltip.t "Fit content in view"
+                ]
+
+          else
+            Html.none
+        , if conf.update then
+            span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
+                [ button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ] |> Tooltip.t "Update schema"
                 ]
 
           else
@@ -48,11 +53,6 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
                 [ button [ type_ "button", onClick (CursorMode CursorMode.Select), css [ "rounded-l-md", buttonStyles, B.cond (cursorMode == CursorMode.Select) inverted classic ] ] [ Icon.solid CursorClick "" ] |> Tooltip.t "Select tool"
                 , button [ type_ "button", onClick (CursorMode CursorMode.Drag), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorMode.Drag) inverted classic ] ] [ Icon.solid Hand "" ] |> Tooltip.t "Drag tool"
-                , if conf.update then
-                    button [ type_ "button", onClick (CursorMode CursorMode.Update), css [ "-ml-px rounded-r-md", buttonStyles, B.cond (cursorMode == CursorMode.Update) inverted classic ] ] [ Icon.solid Pencil "" ] |> Tooltip.t "Update tool"
-
-                  else
-                    Html.none
                 ]
 
           else

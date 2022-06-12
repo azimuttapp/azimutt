@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h2, main_, p, text)
+import Html exposing (Html, button, div, h2, p, text)
 import Html.Attributes exposing (class, classList, id, style)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse exposing (Button(..))
@@ -104,9 +104,8 @@ viewErd platform conf screen erd selectionBox virtualRelation args dragging =
                                 )
                     )
     in
-    main_
+    div
         [ class "az-erd h-full bg-gray-100 overflow-hidden"
-        , style "height" (B.cond conf.showNavbar "calc(100% - 64px)" "100%") -- 64px is the header height, we want this component to fill the viewport
         , classList
             [ ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
             , ( "cursor-grabbing-all", cursorMode == CursorMode.Drag && dragging /= Nothing && virtualRelation == Nothing )
@@ -145,13 +144,6 @@ handleErdPointerDown conf cursorMode e =
                     Noop "No erd drag"
 
             CursorMode.Select ->
-                if conf.select then
-                    e |> .position |> DragStart Conf.ids.selectionBox
-
-                else
-                    Noop "No selection box"
-
-            CursorMode.Update ->
                 if conf.select then
                     e |> .position |> DragStart Conf.ids.selectionBox
 

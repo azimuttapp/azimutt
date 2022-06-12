@@ -83,7 +83,7 @@ init now id =
             , description = Just Conf.constants.defaultDescription
             , canonical = Just { route = Route.Projects__Id_ { id = id }, query = Dict.empty }
             , html = Just "h-full"
-            , body = Just "h-full"
+            , body = Just "h-full overflow-hidden"
             }
         , Ports.trackPage "app"
         , Ports.listenHotkeys Conf.hotkeys
