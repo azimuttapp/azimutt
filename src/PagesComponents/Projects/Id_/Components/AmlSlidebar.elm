@@ -21,9 +21,11 @@ import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
+import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import Ports
 import Services.Lenses exposing (mapAmlSidebarM, mapErdM, mapSourcesL, setAmlSidebar, setContent, setErrors, setRelations, setSelected, setTables)
 import Track
@@ -69,6 +71,20 @@ update msg model =
                 parsed : AmlSchema
                 parsed =
                     value ++ "\n" |> AmlParser.parse |> AmlAdapter.adapt id
+
+                shown : List TableId
+                shown =
+                    model.erd |> Maybe.mapOrElse .shownTables []
+
+                toShow : List ( TableId, Maybe PositionHint )
+                toShow =
+                    parsed.tables
+                        |> Dict.keys
+                        |> List.filterNot (\table -> shown |> List.member table)
+                        -- FIXME: try to find if "the table is the same with a different name" to keep its position
+                        -- FIXME: maybe, do not use ShowTable but directly update the model
+                        -- FIXME: for ShowTable, use erd.seed to compute random numbers instead of going to JS
+                        |> List.map (\table -> ( table, Just (PlaceAt { top = 10, left = 10 }) ))
             in
             if List.isEmpty parsed.errors then
                 ( model
@@ -82,7 +98,7 @@ update msg model =
                         )
                     |> mapAmlSidebarM (setErrors parsed.errors)
                   -- FIXME: problem with show/hide and table name change
-                , T.send (ShowTables (parsed.tables |> Dict.keys) Nothing)
+                , Cmd.batch (toShow |> List.map (\( table, pos ) -> T.send (ShowTable table pos)))
                 )
 
             else
@@ -120,7 +136,11 @@ viewHeading =
                 [ button [ onClick (AmlSidebarMsg AClose), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
                 ]
             ]
-        , p [ class "mt-1 text-sm text-gray-500" ] [ text "In Azimutt your schema is the union of enabled sources. Create or update one with AML syntax to extend it." ]
+        , p [ class "mt-1 text-sm text-gray-500" ]
+            [ text "In Azimutt your schema is the union of enabled sources. Create or update one with "
+            , extLink "https://azimutt.app/blog/aml-a-language-to-define-your-database-schema" [ class "link" ] [ text "AML syntax" ]
+            , text " to extend it."
+            ]
         ]
 
 
