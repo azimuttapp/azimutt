@@ -15,7 +15,7 @@ viewColumnContextMenu : Platform -> Int -> ColumnRef -> Maybe String -> Html Msg
 viewColumnContextMenu platform index column notes =
     div []
         [ ContextMenu.btnHotkey "" (HideColumn column) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "remove" [])
-        , ContextMenu.btn "" (NotesMsg (NOpen (NoteRef.fromColumn column))) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ]
+        , ContextMenu.btnHotkey "" (NotesMsg (NOpen (NoteRef.fromColumn column))) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
         , ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ]
         , ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ]
         , ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ]

@@ -148,6 +148,8 @@ type Msg
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables
     | HideTable TableId
+    | ShowRelatedTables TableId
+    | HideRelatedTables TableId
     | ToggleColumns TableId
     | ShowColumn ColumnRef
     | HideColumn ColumnRef

@@ -38,13 +38,13 @@ import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
+import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Time
@@ -95,7 +95,13 @@ update req currentLayout now msg model =
             model |> mapErdMCmd showAllTables
 
         HideTable id ->
-            ( model |> mapErdM (hideTable id), Cmd.none )
+            ( model |> mapErdM (hideTable id) |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h), Cmd.none )
+
+        ShowRelatedTables id ->
+            model |> mapErdMCmd (showRelatedTables id)
+
+        HideRelatedTables id ->
+            model |> mapErdMCmd (hideRelatedTables id)
 
         ToggleColumns id ->
             let
@@ -146,10 +152,10 @@ update req currentLayout now msg model =
             ( model |> mapErdM (\erd -> erd |> mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position) erd.notes))), Cmd.none )
 
         ToggleHoverTable table on ->
-            ( { model | hoverTable = B.cond on (Just table) Nothing } |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
+            ( model |> setHoverTable (B.cond on (Just table) Nothing) |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
 
         ToggleHoverColumn column on ->
-            ( { model | hoverColumn = B.cond on (Just column) Nothing } |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
+            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.addRelation now src ref)

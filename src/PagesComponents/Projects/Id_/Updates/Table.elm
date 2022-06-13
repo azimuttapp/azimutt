@@ -1,11 +1,13 @@
-module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showTable, showTables, sortColumns)
+module PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
 
 import Conf
 import Dict exposing (Dict)
 import Libs.Bool as B
+import Libs.Delta exposing (Delta)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -16,8 +18,8 @@ import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
-import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
-import PagesComponents.Projects.Id_.Models.PositionHint as PositionHint exposing (PositionHint)
+import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps, mapSelected)
+import PagesComponents.Projects.Id_.Models.PositionHint as PositionHint exposing (PositionHint(..))
 import Ports
 import Services.Lenses exposing (mapRelatedTables, mapShown, mapShownTables, mapTableProps, mapTablePropsCmd, setHoverColumn)
 import Services.Toasts as Toasts
@@ -70,19 +72,31 @@ showTables ids hint erd =
 showAllTables : Erd -> ( Erd, Cmd Msg )
 showAllTables erd =
     let
-        tablesToInit : Dict TableId ErdTableProps
+        tablesToInit : Dict TableId ErdTable
         tablesToInit =
-            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id) |> Dict.map (\_ -> ErdTableProps.init erd.settings erd.relations erd.shownTables Nothing erd.notes)
+            erd.tables |> Dict.filter (\id _ -> erd.tableProps |> Dict.notMember id)
+
+        collapsed : Bool
+        collapsed =
+            if Dict.size tablesToInit > 30 then
+                True
+
+            else
+                erd.settings.collapseTableColumns
+
+        tablePropsToInit : Dict TableId ErdTableProps
+        tablePropsToInit =
+            tablesToInit |> Dict.map (\_ -> ErdTableProps.init erd.settings erd.relations erd.shownTables collapsed Nothing erd.notes)
 
         tablesHidden : List TableId
         tablesHidden =
             erd.tables |> Dict.keys |> List.filter (\id -> (erd.tableProps |> Dict.member id) && (erd.shownTables |> List.notMember id))
     in
     ( erd
-        |> mapTableProps (tablesToInit |> Dict.union)
+        |> mapTableProps (tablePropsToInit |> Dict.union)
         |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.map (\_ -> mapShown (\_ -> True)))))
-        |> mapShownTables (\tables -> (tablesToInit |> Dict.keys) ++ tablesHidden ++ tables)
-    , Cmd.batch [ Ports.observeTablesSize ((tablesToInit |> Dict.keys) ++ tablesHidden) ]
+        |> mapShownTables (\tables -> (tablePropsToInit |> Dict.keys) ++ tablesHidden ++ tables)
+    , Cmd.batch [ Ports.observeTablesSize ((tablePropsToInit |> Dict.keys) ++ tablesHidden) ]
     )
 
 
@@ -95,11 +109,87 @@ hideTable id erd =
         hideTableReal id erd
 
 
+showRelatedTables : TableId -> Erd -> ( Erd, Cmd Msg )
+showRelatedTables id erd =
+    erd.tableProps
+        |> Dict.get id
+        |> Maybe.mapOrElse
+            (\table ->
+                let
+                    related : List TableId
+                    related =
+                        erd.relationsByTable
+                            |> Dict.getOrElse id []
+                            |> List.map
+                                (\r ->
+                                    if r.src.table == id then
+                                        r.ref.table
+
+                                    else
+                                        r.src.table
+                                )
+                            |> List.unique
+
+                    toShow : List ( TableId, Float )
+                    toShow =
+                        related |> List.filterNot (\t -> erd.shownTables |> List.member t) |> List.map (\t -> ( t, guessHeight t erd ))
+
+                    padding : Delta
+                    padding =
+                        { dx = 50, dy = 20 }
+
+                    left : Float
+                    left =
+                        table.position.left + table.size.width + padding.dx
+
+                    height : Float
+                    height =
+                        toShow |> List.map (\( _, h ) -> h) |> List.intersperse padding.dy |> List.foldl (\h acc -> h + acc) 0
+
+                    top : Float
+                    top =
+                        table.position.top + (table.size.height / 2) - (height / 2)
+
+                    shows : List ( TableId, Maybe PositionHint )
+                    shows =
+                        toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt { top = cur, left = left }) ) :: res )) ( top, [] ) |> Tuple.second
+                in
+                ( erd, Cmd.batch (shows |> List.map (\( t, hint ) -> T.send (ShowTable t hint))) )
+            )
+            ( erd, Cmd.none )
+
+
+guessHeight : TableId -> Erd -> Float
+guessHeight id erd =
+    (erd.tableProps |> Dict.get id |> Maybe.map (\p -> Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (p.shownColumns |> List.length |> toFloat))))
+        |> Maybe.orElse (erd.tables |> Dict.get id |> Maybe.map (\t -> Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (t.columns |> Dict.size |> toFloat |> min 15))))
+        |> Maybe.withDefault 200
+
+
+hideRelatedTables : TableId -> Erd -> ( Erd, Cmd Msg )
+hideRelatedTables id erd =
+    let
+        related : List TableId
+        related =
+            erd.relationsByTable
+                |> Dict.getOrElse id []
+                |> List.map
+                    (\r ->
+                        if r.src.table == id then
+                            r.ref.table
+
+                        else
+                            r.src.table
+                    )
+    in
+    ( erd, Cmd.batch (related |> List.map (\t -> T.send (HideTable t))) )
+
+
 hideTableReal : TableId -> Erd -> Erd
-hideTableReal id erd =
+hideTableReal table erd =
     erd
-        |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.alter id (mapShown (\_ -> False)))))
-        |> mapShownTables (List.filter (\t -> t /= id))
+        |> mapTableProps (Dict.map (\id -> mapSelected (\s -> B.cond (id == table) False s) >> mapRelatedTables (Dict.alter table (mapShown (\_ -> False)))))
+        |> mapShownTables (List.filter (\t -> t /= table))
 
 
 showColumn : TableId -> ColumnName -> Erd -> Erd
@@ -276,7 +366,7 @@ getRelations table name =
 performShowTable : ErdTable -> Maybe PositionHint -> Erd -> Erd
 performShowTable table hint erd =
     erd
-        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (ErdTableProps.init erd.settings erd.relations erd.shownTables hint erd.notes table))))
+        |> mapTableProps (Dict.update table.id (Maybe.orElse (Just (ErdTableProps.init erd.settings erd.relations erd.shownTables erd.settings.collapseTableColumns hint erd.notes table))))
         |> mapTableProps (Dict.map (\_ -> mapRelatedTables (Dict.update table.id (Maybe.map (mapShown (\_ -> True))))))
         |> mapShownTables (\t -> B.cond (t |> List.member table.id) t (table.id :: t))
 

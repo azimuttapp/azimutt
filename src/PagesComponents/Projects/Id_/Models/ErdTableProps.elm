@@ -100,8 +100,8 @@ unpack props =
     }
 
 
-init : ProjectSettings -> List ErdRelation -> List TableId -> Maybe PositionHint -> Dict NotesKey Notes -> ErdTable -> ErdTableProps
-init settings erdRelations shownTables hint notes table =
+init : ProjectSettings -> List ErdRelation -> List TableId -> Bool -> Maybe PositionHint -> Dict NotesKey Notes -> ErdTable -> ErdTableProps
+init settings erdRelations shownTables collapsed hint notes table =
     let
         relations : List Relation
         relations =
@@ -113,7 +113,7 @@ init settings erdRelations shownTables hint notes table =
     , color = computeColor table.id
     , columns = table.columns |> Dict.values |> List.map .name |> computeColumns settings relations table |> List.take settings.hiddenColumns.max
     , selected = False
-    , collapsed = settings.collapseTableColumns
+    , collapsed = collapsed
     , hiddenColumns = False
     }
         |> create relations shownTables hint notes

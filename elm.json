@@ -8,6 +8,7 @@
     "elm-version": "0.19.1",
     "dependencies": {
         "direct": {
+            "NoRedInk/elm-simple-fuzzy": "1.0.3",
             "TSFoster/elm-uuid": "4.1.0",
             "dtwrks/elm-book": "1.4.0",
             "elm/browser": "1.0.2",

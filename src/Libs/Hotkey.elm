@@ -30,7 +30,23 @@ keys platform h =
     , B.cond h.alt (Just "Alt") Nothing
     , B.cond h.shift (Just "Shift") Nothing
     , B.cond h.meta (Just "Meta") Nothing
-    , Just h.key
+    , Just
+        (case h.key of
+            "ArrowUp" ->
+                "↑"
+
+            "ArrowDown" ->
+                "↓"
+
+            "ArrowLeft" ->
+                "←"
+
+            "ArrowRight" ->
+                "→"
+
+            _ ->
+                h.key
+        )
     ]
         |> List.filterMap identity
 

@@ -9,7 +9,7 @@ export const Utils = {
     },
     getPlatform(): Platform {
         // return window.navigator.platform.indexOf('Mac') !== -1 ? 'Mac' : 'PC'
-        return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? 'Mac' : 'PC'
+        return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? 'mac' : 'pc'
     },
     randomId() {
         return crypto.randomUUID()

@@ -172,7 +172,7 @@ viewDisplaySettingsSection htmlId erd =
                                 |> (\fieldIdMax ->
                                         div [ class "flex shadow-sm" ]
                                             [ label [ for fieldIdMax, class "sr-only" ] [ text "Max columns" ]
-                                            , span [ css [ "inline-flex items-center px-3 rounded-none rounded-bl-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500", sm [ "text-sm" ] ] ] [ text "Max:" ]
+                                            , span [ css [ "inline-flex items-center px-3 rounded-none rounded-bl-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500", sm [ "text-sm" ] ] ] [ text "Show max:" |> Tooltip.br "Maximum default column shown when show a table" ]
                                             , input [ type_ "number", name fieldIdMax, id fieldIdMax, value (String.fromInt erd.settings.hiddenColumns.max), onInput (PSHiddenColumnsMaxUpdate >> ProjectSettingsMsg), placeholder "Max columns to show when adding a table", css [ "flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-br-md border-gray-300", sm [ "text-sm" ], focus [ "ring-indigo-500 border-indigo-500" ] ] ] []
                                             ]
                                    )

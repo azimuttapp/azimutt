@@ -1,11 +1,11 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, createLayout, getColumn, getColumnProps, isShown, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, unpackLayout)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, canResetCanvas, create, createLayout, getColumn, getColumnProps, isShown, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, unpackLayout)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Models.Project as Project exposing (Project)
-import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -121,6 +121,11 @@ unpackLayout canvas tableProps shownTables createdAt updatedAt =
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
+
+
+canResetCanvas : Erd -> Bool
+canResetCanvas erd =
+    erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
 
 
 getColumn : TableId -> ColumnName -> Erd -> Maybe ErdColumn

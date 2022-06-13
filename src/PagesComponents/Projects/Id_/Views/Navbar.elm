@@ -25,11 +25,10 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.Models.Url as Url
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
-import Models.Project.CanvasProps as CanvasProps
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
-import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Views.Navbar.Search exposing (viewNavbarSearch)
@@ -83,7 +82,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
 
         canResetCanvas : Bool
         canResetCanvas =
-            erd.canvas /= CanvasProps.zero || Dict.nonEmpty erd.tableProps || erd.usedLayout /= Nothing
+            erd |> Erd.canResetCanvas
     in
     nav [ css [ "az-navbar relative z-max bg-primary-600" ] ]
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]

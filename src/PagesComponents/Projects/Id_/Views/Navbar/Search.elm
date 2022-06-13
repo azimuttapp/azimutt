@@ -15,11 +15,12 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (TwClass, focus, lg, sm)
 import Models.Project.TableId as TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel, confirm)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.Notes as Notes exposing (Notes, NotesKey)
+import Simple.Fuzzy
 
 
 viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict NotesKey Notes -> List TableId -> HtmlId -> HtmlId -> Html Msg
@@ -62,7 +63,13 @@ viewNavbarSearch search tables relations notes shownTables htmlId openedDropdown
                         div []
                             [ span [ role "menuitem", tabindex -1, css [ "flex w-full items-center", ContextMenu.itemDisabledStyles ] ]
                                 [ text "Type to search into tables (", Icon.solid Icon.Table "", text "), columns (", Icon.solid Tag "", text ") and relations (", Icon.solid ExternalLink "", text ")" ]
-                            , button [ type_ "button", onMouseDown ShowAllTables, role "menuitem", tabindex -1, css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ] ]
+                            , button
+                                [ type_ "button"
+                                , onMouseDown (B.cond (Dict.size tables < 30) ShowAllTables (confirm "Show all tables" (text "You are about to add a lot of tables, it may show down your computer. Continue?") ShowAllTables))
+                                , role "menuitem"
+                                , tabindex -1
+                                , css [ "flex w-full items-center", focus [ "outline-none" ], ContextMenu.itemStyles ]
+                                ]
                                 [ text ("Show all tables (" ++ (tables |> Dict.size |> String.fromInt) ++ ")") ]
                             ]
 
@@ -164,23 +171,32 @@ performSearch tables relations notes lQuery =
 tableMatch : String -> Dict NotesKey Notes -> ErdTable -> Maybe ( Float, SearchResult )
 tableMatch lQuery notes table =
     if String.toLower table.name == lQuery then
-        Just ( 10, FoundTable table )
+        Just ( 9, FoundTable table )
 
     else if table.name |> String.toLower |> String.startsWith lQuery then
-        Just ( 9 + shortBonus table.name, FoundTable table )
+        Just ( 8 + shortBonus table.name, FoundTable table )
 
     else if table.name |> match lQuery then
-        Just ( 8 + shortBonus table.name, FoundTable table )
+        Just ( 7 + shortBonus table.name, FoundTable table )
+
+    else if table.name |> fuzzy lQuery then
+        Just ( 6 + shortBonus table.name, FoundTable table )
 
     else if
         (table.comment |> Maybe.any (.text >> match lQuery))
+            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (match lQuery))
             || (table.primaryKey |> Maybe.andThen .name |> Maybe.any (match lQuery))
             || (table.uniques |> List.any (\u -> (u.name |> match lQuery) || (u.definition |> Maybe.any (match lQuery))))
             || (table.indexes |> List.any (\i -> (i.name |> match lQuery) || (i.definition |> Maybe.any (match lQuery))))
             || (table.checks |> List.any (\c -> (c.name |> match lQuery) || (c.predicate |> Maybe.any (match lQuery))))
-            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (match lQuery))
     then
-        Just ( 7 + shortBonus table.name, FoundTable table )
+        Just ( 5 + shortBonus table.name, FoundTable table )
+
+    else if
+        (table.comment |> Maybe.any (.text >> fuzzy lQuery))
+            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (fuzzy lQuery))
+    then
+        Just ( 4 + shortBonus table.name, FoundTable table )
 
     else
         Nothing
@@ -189,21 +205,30 @@ tableMatch lQuery notes table =
 columnMatch : String -> Dict NotesKey Notes -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
 columnMatch lQuery notes table column =
     if String.toLower column.name == lQuery then
-        Just ( 1, FoundColumn table column )
-
-    else if column.name |> String.toLower |> String.startsWith lQuery then
         Just ( 0.9, FoundColumn table column )
 
-    else if column.name |> match lQuery then
+    else if column.name |> String.toLower |> String.startsWith lQuery then
         Just ( 0.8, FoundColumn table column )
+
+    else if column.name |> match lQuery then
+        Just ( 0.7, FoundColumn table column )
+
+    else if column.name |> fuzzy lQuery then
+        Just ( 0.6, FoundColumn table column )
 
     else if
         (column.comment |> Maybe.any (.text >> match lQuery))
+            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (match lQuery))
             || (column.kind |> match lQuery)
             || (column.default |> Maybe.any (match lQuery))
-            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (match lQuery))
     then
-        Just ( 0.7, FoundColumn table column )
+        Just ( 0.5, FoundColumn table column )
+
+    else if
+        (column.comment |> Maybe.any (.text >> fuzzy lQuery))
+            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (fuzzy lQuery))
+    then
+        Just ( 0.4, FoundColumn table column )
 
     else
         Nothing
@@ -212,13 +237,16 @@ columnMatch lQuery notes table column =
 relationMatch : String -> ErdRelation -> Maybe ( Float, SearchResult )
 relationMatch lQuery relation =
     if String.toLower relation.name == lQuery then
-        Just ( 0.1, FoundRelation relation )
-
-    else if relation.name |> String.toLower |> String.startsWith lQuery then
         Just ( 0.09, FoundRelation relation )
 
-    else if relation.name |> match lQuery then
+    else if relation.name |> String.toLower |> String.startsWith lQuery then
         Just ( 0.08, FoundRelation relation )
+
+    else if relation.name |> match lQuery then
+        Just ( 0.07, FoundRelation relation )
+
+    else if relation.name |> fuzzy lQuery then
+        Just ( 0.06, FoundRelation relation )
 
     else if
         (relation.src.column |> match lQuery)
@@ -226,7 +254,7 @@ relationMatch lQuery relation =
             || (relation.src.table |> Tuple.second |> match lQuery)
             || (relation.ref.table |> Tuple.second |> match lQuery)
     then
-        Just ( 0.07, FoundRelation relation )
+        Just ( 0.05, FoundRelation relation )
 
     else
         Nothing
@@ -235,6 +263,11 @@ relationMatch lQuery relation =
 match : String -> String -> Bool
 match lQuery text =
     text |> String.toLower |> String.contains lQuery
+
+
+fuzzy : String -> String -> Bool
+fuzzy lQuery text =
+    text |> Simple.Fuzzy.match lQuery
 
 
 shortBonus : String -> Float

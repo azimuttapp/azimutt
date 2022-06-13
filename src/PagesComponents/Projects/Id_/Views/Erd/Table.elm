@@ -97,7 +97,9 @@ viewTable platform conf zoom cursorMode args index props table =
                             B.cond props.selected "Collapse selected tables" "Collapse table"
                     , action = Simple { action = ToggleColumns table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "collapse" [] }
                     }
-                , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = [] } }
+                , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
+                , Maybe.when conf.layout { label = "Show related", action = Simple { action = ShowRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "expand" [] } }
+                , Maybe.when conf.layout { label = "Hide related", action = Simple { action = HideRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "shrink" [] } }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Set color of selected tables" "Set color"
                     , action =

@@ -179,7 +179,7 @@ viewHeader model =
             ]
         ]
         [ div
-            [ Attributes.when model.conf.select (onPointerUp model.platform (\e -> model.actions.clickHeader e.ctrl))
+            [ Attributes.when model.conf.select (onPointerUp model.platform (\e -> model.actions.clickHeader (e.ctrl || e.shift)))
             , class "flex-grow text-center"
             ]
             ([ if model.isView then

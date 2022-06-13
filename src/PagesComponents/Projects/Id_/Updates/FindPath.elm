@@ -55,10 +55,10 @@ handleFindPath msg model =
             ( model |> mapFindPathM (mapShowSettings not), Cmd.none )
 
         FPUpdateFrom from ->
-            ( model |> mapFindPathM (setFrom from), Cmd.none )
+            ( model |> mapFindPathM (setFrom from >> setResult Empty), Cmd.none )
 
         FPUpdateTo to ->
-            ( model |> mapFindPathM (setTo to), Cmd.none )
+            ( model |> mapFindPathM (setTo to >> setResult Empty), Cmd.none )
 
         FPSearch ->
             Maybe.zip model.findPath model.erd

@@ -6,9 +6,13 @@ import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas)
+import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.Notes as NoteRef
 import Ports
 import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapSearch, mapTableProps)
 import Services.Toasts as Toasts
@@ -29,8 +33,17 @@ handleHotkey model hotkey =
         "search-confirm" ->
             ( model, Cmd.batch [ Ports.mouseDown (Conf.ids.searchInput ++ "-active-item"), Ports.blur Conf.ids.searchInput ] )
 
+        "notes" ->
+            ( model, notesElement model )
+
         "collapse" ->
             ( model, collapseElement model )
+
+        "expand" ->
+            ( model, expandElement model )
+
+        "shrink" ->
+            ( model, shrinkElement model )
 
         "remove" ->
             ( model, removeElement model )
@@ -110,18 +123,47 @@ handleHotkey model hotkey =
             ( model, Toasts.warning Toast ("Unhandled hotkey '" ++ hotkey ++ "'") )
 
 
+notesElement : Model -> Cmd Msg
+notesElement model =
+    (model |> currentColumn |> Maybe.map (NoteRef.fromColumn >> NOpen >> NotesMsg >> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (NoteRef.fromTable >> NOpen >> NotesMsg >> T.send))
+        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to collapse :(")
+
+
 collapseElement : Model -> Cmd Msg
 collapseElement model =
-    (model.hoverTable |> Maybe.orElse (model.erd |> Maybe.andThen (.tableProps >> Dict.values >> List.find .selected >> Maybe.map .id)) |> Maybe.map (ToggleColumns >> T.send))
+    (model |> currentTable |> Maybe.map (ToggleColumns >> T.send))
         |> Maybe.withDefault (Toasts.info Toast "Can't find an element to collapse :(")
+
+
+expandElement : Model -> Cmd Msg
+expandElement model =
+    (model |> currentTable |> Maybe.map (ShowRelatedTables >> T.send))
+        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to expand :(")
+
+
+shrinkElement : Model -> Cmd Msg
+shrinkElement model =
+    (model |> currentTable |> Maybe.map (HideRelatedTables >> T.send))
+        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to shrink :(")
 
 
 removeElement : Model -> Cmd Msg
 removeElement model =
-    (model.hoverColumn |> Maybe.map (HideColumn >> T.send))
-        |> Maybe.orElse (model.hoverTable |> Maybe.map (HideTable >> T.send))
-        |> Maybe.orElse (model.erd |> Maybe.filter (\e -> e.shownTables |> List.nonEmpty) |> Maybe.map (\_ -> resetCanvas |> T.send))
+    (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
+        |> Maybe.orElse (model.erd |> Maybe.filter Erd.canResetCanvas |> Maybe.map (\_ -> resetCanvas |> T.send))
         |> Maybe.withDefault (Toasts.info Toast "Can't find an element to remove :(")
+
+
+currentTable : Model -> Maybe TableId
+currentTable model =
+    model.hoverTable |> Maybe.orElse (model.erd |> Maybe.andThen (.tableProps >> Dict.values >> List.find .selected >> Maybe.map .id))
+
+
+currentColumn : Model -> Maybe ColumnRef
+currentColumn model =
+    model.hoverColumn
 
 
 cancelElement : Model -> Cmd Msg
@@ -149,7 +191,7 @@ moveTables delta model =
     let
         selectedTables : List ErdTableProps
         selectedTables =
-            model.erd |> Maybe.mapOrElse (\e -> e.shownTables |> List.filterMap (\id -> e.tableProps |> Dict.get id) |> List.filter .selected) []
+            model.erd |> Maybe.mapOrElse (\e -> e.shownTables |> List.filterMap (\id -> e.tableProps |> Dict.get id)) [] |> List.filter .selected
     in
     if List.nonEmpty selectedTables then
         Cmd.batch (selectedTables |> List.map (\t -> T.send (TableMove t.id delta)))
