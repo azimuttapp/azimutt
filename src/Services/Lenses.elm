@@ -82,6 +82,7 @@ module Services.Lenses exposing
     , mapSourceUploadM
     , mapSourceUploadMCmd
     , mapSources
+    , mapSourcesL
     , mapSqlSourceUploadCmd
     , mapSqlSourceUploadM
     , mapSqlSourceUploadMCmd
@@ -126,6 +127,7 @@ module Services.Lenses exposing
     , setEditNotes
     , setEnabled
     , setErd
+    , setErrors
     , setFindPath
     , setFrom
     , setGithub

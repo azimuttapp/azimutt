@@ -1,7 +1,6 @@
 module PagesComponents.Projects.Id_.Components.AmlSlidebar exposing (Model, update, view)
 
 import Array exposing (Array)
-import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Conf
@@ -9,14 +8,15 @@ import DataSources.AmlParser.AmlAdapter as AmlAdapter exposing (AmlSchema, AmlSc
 import DataSources.AmlParser.AmlParser as AmlParser
 import Dict
 import Html exposing (Html, button, div, h3, label, option, p, select, text)
-import Html.Attributes exposing (class, for, id, name, selected, value)
+import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Html exposing (extLink)
+import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Tailwind as Tw
+import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
@@ -40,7 +40,7 @@ type alias Model x =
 init : Model x -> AmlSidebar
 init model =
     { id = Conf.ids.amlSidebarDialog
-    , selected = model.erd |> Maybe.andThen (.sources >> List.find (.kind >> SourceKind.isUser) >> Maybe.map .id)
+    , selected = model.erd |> Maybe.andThen (.sources >> List.filter .enabled >> List.find (.kind >> SourceKind.isUser) >> Maybe.map .id)
     , errors = []
     }
 
@@ -111,14 +111,16 @@ view erd model =
 
 viewHeading : Html Msg
 viewHeading =
-    div [ class "px-6 py-5 flex space-x-3 border-b border-gray-200" ]
-        [ div [ class "flex-1" ]
-            [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Update schema" ]
-            , p [ class "mt-1 text-sm text-gray-500" ] [ text "bla bla bla" ]
+    div [ class "px-6 py-5 border-b border-gray-200" ]
+        [ div [ class "flex space-x-3" ]
+            [ div [ class "flex-1" ]
+                [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Update schema" ]
+                ]
+            , div [ class "flex-shrink-0 self-center flex" ]
+                [ button [ onClick (AmlSidebarMsg AClose), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
+                ]
             ]
-        , div [ class "flex-shrink-0 self-center flex" ]
-            [ button [ onClick (AmlSidebarMsg AClose), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
-            ]
+        , p [ class "mt-1 text-sm text-gray-500" ] [ text "In Azimutt your schema is the union of enabled sources. Create or update one with AML syntax to extend it." ]
         ]
 
 
@@ -130,21 +132,18 @@ viewChooseSource selectedSource userSources =
             "sources"
     in
     div []
-        [ if userSources |> List.isEmpty then
-            div []
-                [ p [] [ text "no sources" ]
-                , Button.primary3 Tw.primary [ onClick (simplePrompt "New source name" CreateUserSource) ] [ text "New user source" ]
-                ]
-
-          else
-            div []
-                [ Button.primary3 Tw.primary [ onClick (simplePrompt "New source name" CreateUserSource) ] [ text "New user source" ]
-                , label [ for selectId, class "block text-sm font-medium text-gray-700" ] [ text "Sources" ]
-                , select [ id selectId, name selectId, onInput (SourceId.fromString >> AChangeSource >> AmlSidebarMsg), class "mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md" ]
-                    (option [] [ text "-- select user source to edit" ]
+        [ label [ for selectId, class "block text-sm font-medium text-gray-700 sr-only" ] [ text "Sources" ]
+        , div [ class "mt-1 flex rounded-md shadow-sm" ]
+            [ div [ class "relative flex items-stretch flex-grow focus-within:z-10" ]
+                [ select [ id selectId, name selectId, onInput (SourceId.fromString >> AChangeSource >> AmlSidebarMsg), disabled (List.isEmpty userSources), css [ "block w-full text-sm border-gray-300 rounded-none rounded-l-md", focus [ "ring-indigo-500 border-indigo-500" ], Tw.disabled [ "bg-slate-50 text-slate-500 shadow-none" ] ] ]
+                    (option [] [ text "-- select a source to edit" ]
                         :: (userSources |> List.map (\s -> option [ selected (Maybe.map .id selectedSource == Just s.id), value (SourceId.toString s.id) ] [ text s.name ]))
                     )
                 ]
+            , button [ onClick (simplePrompt "New source name" CreateUserSource), class "-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" ]
+                [ text "Create source"
+                ]
+            ]
         ]
 
 
@@ -155,7 +154,7 @@ viewSourceEditor model source =
         content =
             source.content |> Array.toList |> String.join "\n"
     in
-    div []
+    div [ class "mt-3" ]
         [ Editor.basic "source-editor" content (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax. Ex:
 
 users

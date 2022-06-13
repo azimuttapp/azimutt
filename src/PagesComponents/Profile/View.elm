@@ -395,7 +395,7 @@ inputText : Color -> Bool -> String -> String -> String -> String -> (String -> 
 inputText color inputDisabled inputName inputLabel inputPlaceholder inputValue inputUpdate styles =
     div [ class styles ]
         [ label [ for inputName, class "block text-sm font-medium text-gray-700" ] [ text inputLabel ]
-        , input [ type_ "text", name inputName, id inputName, placeholder inputPlaceholder, value inputValue, onInput inputUpdate, disabled inputDisabled, attribute "autocomplete" inputName, css [ "mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm", focus [ ring_500 color, border_500 color, "outline-none" ], "disabled:bg-slate-50 disabled:text-slate-500 disabled:border-slate-200 disabled:shadow-none" ] ] []
+        , input [ type_ "text", name inputName, id inputName, placeholder inputPlaceholder, value inputValue, onInput inputUpdate, disabled inputDisabled, attribute "autocomplete" inputName, css [ "mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 sm:text-sm", focus [ ring_500 color, border_500 color, "outline-none" ], Tw.disabled [ "bg-slate-50 text-slate-500 border-slate-200 shadow-none" ] ] ] []
         ]
 
 
