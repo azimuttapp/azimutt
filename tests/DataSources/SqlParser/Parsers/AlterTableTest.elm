@@ -15,19 +15,22 @@ suite =
                 (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey (Just "t2_id_pkey") (Nel "id" [])))
             , testParse ( parseAlterTable, "foreign key" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES p.t1 (id);"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } } [])))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey (Just "t2_t1_id_fk") (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } } [])))
+            , testParse ( parseAlterTable, "foreign key without constraint" )
+                "ALTER TABLE p.t2 ADD FOREIGN KEY (t1_id) REFERENCES p.t1(id);"
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey Nothing (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } } [])))
             , testParse ( parseAlterTable, "foreign key without schema" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES t1 (id);"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Just "id" } } [])))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey (Just "t2_t1_id_fk") (Nel { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Just "id" } } [])))
             , testParse ( parseAlterTable, "foreign key without column" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES p.t1;"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Nothing } } [])))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey (Just "t2_t1_id_fk") (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Nothing } } [])))
             , testParse ( parseAlterTable, "foreign key without schema & column" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES t1;"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Nothing } } [])))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey (Just "t2_t1_id_fk") (Nel { column = "t1_id", ref = { schema = Nothing, table = "t1", column = Nothing } } [])))
             , testParse ( parseAlterTable, "foreign key not valid" )
                 "ALTER TABLE p.t2 ADD CONSTRAINT t2_t1_id_fk FOREIGN KEY (t1_id) REFERENCES p.t1 (id) NOT VALID;"
-                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey "t2_t1_id_fk" (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } } [])))
+                (AddTableConstraint (Just "p") "t2" (ParsedForeignKey (Just "t2_t1_id_fk") (Nel { column = "t1_id", ref = { schema = Just "p", table = "t1", column = Just "id" } } [])))
             , testParse ( parseAlterTable, "unique" )
                 "ALTER TABLE p.t1 ADD CONSTRAINT name_unique UNIQUE (first_name, last_name);"
                 (AddTableConstraint (Just "p") "t1" (ParsedUnique "name_unique" { columns = Nel "first_name" [ "last_name" ], definition = "(first_name, last_name)" }))

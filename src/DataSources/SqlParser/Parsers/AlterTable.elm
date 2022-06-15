@@ -19,7 +19,7 @@ type TableUpdate
 
 type TableConstraint
     = ParsedPrimaryKey (Maybe SqlConstraintName) PrimaryKeyInner
-    | ParsedForeignKey SqlConstraintName (Nel ForeignKeyInner)
+    | ParsedForeignKey (Maybe SqlConstraintName) (Nel ForeignKeyInner)
     | ParsedUnique SqlConstraintName UniqueInner
     | ParsedCheck SqlConstraintName CheckInner
 
@@ -70,6 +70,9 @@ parseAlterTable statement =
             else if command |> String.toUpper |> String.startsWith "ADD CONSTRAINT " then
                 parseAlterTableAddConstraint command |> Result.map (AddTableConstraint schemaName tableName)
 
+            else if command |> String.toUpper |> String.startsWith "ADD FOREIGN KEY " then
+                command |> String.dropLeft 4 |> parseAlterTableAddConstraintForeignKey |> Result.map (ParsedForeignKey Nothing) |> Result.map (AddTableConstraint schemaName tableName)
+
             else if command |> String.toUpper |> String.startsWith "ALTER COLUMN " then
                 parseAlterTableAlterColumn command |> Result.map (AlterColumn schemaName tableName)
 
@@ -103,7 +106,7 @@ parseAlterTableAddConstraint command =
                 parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey (Just (name |> buildConstraintName)))
 
             else if constraint |> String.toUpper |> String.startsWith "FOREIGN KEY" then
-                parseAlterTableAddConstraintForeignKey constraint |> Result.map (ParsedForeignKey (name |> buildConstraintName))
+                parseAlterTableAddConstraintForeignKey constraint |> Result.map (ParsedForeignKey (name |> buildConstraintName |> Just))
 
             else if constraint |> String.toUpper |> String.startsWith "UNIQUE" then
                 parseAlterTableAddConstraintUnique constraint |> Result.map (ParsedUnique (name |> buildConstraintName))

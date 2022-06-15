@@ -130,7 +130,7 @@ evolve ( statement, command ) tables =
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fks)) ->
             -- FIXME: handle multi-column foreign key!
-            updateColumn statement (buildId schema table) fks.head.column (\c -> buildFk tables statement table fks.head.column (Just constraint) fks.head.ref.schema fks.head.ref.table fks.head.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
+            updateColumn statement (buildId schema table) fks.head.column (\c -> buildFk tables statement table fks.head.column constraint fks.head.ref.schema fks.head.ref.table fks.head.ref.column |> Result.map (\r -> { c | foreignKey = Just r }) |> Result.mapError (\e -> [ e ])) tables
 
         AlterTable (AddTableConstraint schema table (ParsedUnique constraint unique)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | uniques = t.uniques ++ [ SqlUnique constraint unique.columns unique.definition statement ] }) tables

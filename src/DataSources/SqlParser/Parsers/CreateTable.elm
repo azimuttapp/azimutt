@@ -268,7 +268,7 @@ foreignKeyConstraints constraint =
     case constraint of
         AlterTable.ParsedForeignKey name fks ->
             -- FIXME: handle multi-column foreign key!
-            Just { name = Just name, src = fks.head.column, ref = fks.head.ref }
+            Just { name = name, src = fks.head.column, ref = fks.head.ref }
 
         _ ->
             Nothing
