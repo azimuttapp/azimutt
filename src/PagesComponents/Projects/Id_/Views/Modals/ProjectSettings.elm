@@ -132,7 +132,7 @@ viewSchema htmlId removedSchemas ( schema, tables ) =
         ( views, realTables ) =
             tables |> List.partition .view
     in
-    viewCheckbox "mt-3" (htmlId ++ "-" ++ schema) [ bText schema, text (" (" ++ (realTables |> String.pluralizeL "table") ++ " & " ++ (views |> String.pluralizeL "views") ++ ")") ] (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSSchemaToggle schema))
+    viewCheckbox "mt-3" (htmlId ++ "-" ++ schema) [ bText schema, text (" (" ++ (realTables |> String.pluralizeL "table") ++ " & " ++ (views |> String.pluralizeL "view") ++ ")") ] (removedSchemas |> List.member schema |> not) (ProjectSettingsMsg (PSSchemaToggle schema))
 
 
 viewDisplaySettingsSection : HtmlId -> Erd -> Html Msg

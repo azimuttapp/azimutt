@@ -12,7 +12,7 @@ type alias ParsedUnique =
 
 parseCreateUniqueIndex : SqlStatement -> Result (List ParseError) ParsedUnique
 parseCreateUniqueIndex statement =
-    case statement |> buildSqlLine |> Regex.matches "^CREATE UNIQUE INDEX\\s+(?<name>[^ ]+)\\s+ON\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ (]+)\\s*(?<definition>.+);$" of
+    case statement |> buildSqlLine |> Regex.matches "^CREATE UNIQUE INDEX\\s+(?<name>[^ ]+)\\s+ON(?:\\s+ONLY)?\\s+(?:(?<schema>[^ .]+)\\.)?(?<table>[^ (]+)\\s*(?<definition>.+);$" of
         (Just name) :: schema :: (Just table) :: (Just definition) :: [] ->
             parseIndexDefinition definition
                 |> Result.andThen (\columns -> columns |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Unique index can't have empty columns" ])

@@ -22,6 +22,7 @@ type TableConstraint
     | ParsedForeignKey (Maybe SqlConstraintName) (Nel ForeignKeyInner)
     | ParsedUnique SqlConstraintName UniqueInner
     | ParsedCheck SqlConstraintName CheckInner
+    | IgnoredConstraint
 
 
 type alias PrimaryKeyInner =
@@ -113,6 +114,9 @@ parseAlterTableAddConstraint command =
 
             else if constraint |> String.toUpper |> String.startsWith "CHECK" then
                 parseAlterTableAddConstraintCheck constraint |> Result.map (ParsedCheck (name |> buildConstraintName))
+
+            else if constraint |> String.toUpper |> String.startsWith "EXCLUDE USING" then
+                Ok IgnoredConstraint
 
             else
                 Err [ "Constraint not handled: '" ++ constraint ++ "'" ]

@@ -2,6 +2,7 @@ module PagesComponents.Projects.Id_.Views.Erd exposing (ErdArgs, argsToString, s
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Icon as Icon exposing (Icon(..))
+import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h2, main_, p, text)
@@ -265,7 +266,7 @@ viewEmptyState tables =
                     [ text "Your project has "
                     , bText (tables |> String.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ]))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ❤️ Azimutt, "

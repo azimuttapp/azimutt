@@ -19,5 +19,8 @@ suite =
             , testParse ( parseCreateUniqueIndex, "complex" )
                 "CREATE UNIQUE INDEX kpi_index ON public.statistics USING btree (kpi_id, source_type, source_id);"
                 { name = "kpi_index", table = { schema = Just "public", table = "statistics" }, columns = Nel "kpi_id" [ "source_type", "source_id" ], definition = "USING btree (kpi_id, source_type, source_id)" }
+            , testParse ( parseCreateUniqueIndex, "with only" )
+                "CREATE UNIQUE INDEX index_id_code ON ONLY codes USING btree (id_code, phone);"
+                { name = "index_id_code", table = { schema = Nothing, table = "codes" }, columns = Nel "id_code" [ "phone" ], definition = "USING btree (id_code, phone)" }
             ]
         ]

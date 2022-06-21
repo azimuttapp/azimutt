@@ -2,7 +2,6 @@ module PagesComponents.Projects.Id_.Views.Modals.FindPath exposing (viewFindPath
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.Alert as Alert
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
@@ -44,7 +43,6 @@ viewFindPath opened openedDropdown tables settings model =
         , onBackgroundClick = ModalClose (FindPathMsg FPClose)
         }
         [ viewHeader titleId
-        , viewAlert
         , viewSettings model.id model.showSettings settings
         , viewSearchForm model.id openedDropdown tables model.from model.to
         , viewPaths tables model
@@ -62,19 +60,6 @@ viewHeader titleId =
             [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ] [ text "Find a path between tables" ]
             , p [ class "text-sm text-gray-500" ]
                 [ text "Use relations to find a path between two tables. Useful when you don't know how tables are connected but you want to query their data together." ]
-            ]
-        ]
-
-
-viewAlert : Html msg
-viewAlert =
-    div [ class "px-6 mt-3" ]
-        [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Experimental feature" }
-            [ text "This feature is experimental to see if and how it's useful and "
-            , extLink Conf.constants.azimuttDiscussionFindPath [ class "link" ] [ text "gather some feedback" ]
-            , text "."
-            , br [] []
-            , text "Please, be indulgent with the UX and share your thoughts on it (useful or not, how to improve...)."
             ]
         ]
 

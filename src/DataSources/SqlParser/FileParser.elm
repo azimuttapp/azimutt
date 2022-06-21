@@ -138,6 +138,9 @@ evolve ( statement, command ) tables =
         AlterTable (AddTableConstraint schema table (ParsedCheck constraint check)) ->
             updateTable statement (buildId schema table) (\t -> Ok { t | checks = t.checks ++ [ SqlCheck constraint check.columns check.predicate statement ] }) tables
 
+        AlterTable (AddTableConstraint _ _ IgnoredConstraint) ->
+            Ok tables
+
         AlterTable (AlterColumn schema table (ColumnDefault column default)) ->
             updateColumn statement (buildId schema table) column (\c -> Ok { c | default = Just default }) tables
 
