@@ -1,4 +1,4 @@
-module DataSources.Helpers exposing (defaultCheckName, defaultIndexName, defaultPkName, defaultRelName, defaultUniqueName)
+module DataSources.Helpers exposing (Line, SourceLine, defaultCheckName, defaultIndexName, defaultPkName, defaultRelName, defaultUniqueName)
 
 import Models.Project.CheckName exposing (CheckName)
 import Models.Project.ColumnName exposing (ColumnName)
@@ -7,6 +7,14 @@ import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.RelationName exposing (RelationName)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.UniqueName exposing (UniqueName)
+
+
+type alias SourceLine =
+    { index : Int, text : Line }
+
+
+type alias Line =
+    String
 
 
 defaultPkName : TableName -> PrimaryKeyName

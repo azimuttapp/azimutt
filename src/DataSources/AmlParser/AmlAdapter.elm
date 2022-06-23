@@ -67,21 +67,21 @@ adapt source result =
 evolve : SourceId -> AmlStatement -> AmlSchema -> AmlSchema
 evolve source statement schema =
     case statement of
-        AmlTableStatement aml ->
+        AmlTableStatement amlTable ->
             let
                 ( table, relations ) =
-                    aml |> buildTable source
+                    createTable source amlTable
             in
             schema.tables
                 |> Dict.get table.id
                 |> Maybe.map (\_ -> { schema | errors = ("Table '" ++ TableId.show table.id ++ "' is already defined") :: schema.errors })
                 |> Maybe.withDefault { schema | tables = schema.tables |> Dict.insert table.id table, relations = relations ++ schema.relations }
 
-        AmlRelationStatement aml ->
+        AmlRelationStatement amlRelation ->
             let
                 relation : Relation
                 relation =
-                    buildRelation source aml.from aml.to
+                    createRelation source amlRelation.from amlRelation.to
             in
             { schema | relations = relation :: schema.relations }
 
@@ -89,40 +89,38 @@ evolve source statement schema =
             schema
 
 
-buildTable : SourceId -> AmlTable -> ( Table, List Relation )
-buildTable source table =
+createTable : SourceId -> AmlTable -> ( Table, List Relation )
+createTable source table =
     ( { id = ( table.schema |> Maybe.withDefault Conf.schema.default, table.table )
       , schema = table.schema |> Maybe.withDefault Conf.schema.default
       , name = table.table
       , view = table.isView
-      , columns = table.columns |> List.indexedMap (buildColumn source) |> Dict.fromListMap .name
-      , primaryKey = table.columns |> buildPrimaryKey source
-      , uniques = table.columns |> buildConstraint .unique (defaultUniqueName table.table) |> List.map (\( name, cols ) -> Unique name cols Nothing [ { id = source, lines = [] } ])
-      , indexes = table.columns |> buildConstraint .index (defaultIndexName table.table) |> List.map (\( name, cols ) -> Index name cols Nothing [ { id = source, lines = [] } ])
-      , checks = table.columns |> buildConstraint .check (defaultCheckName table.table) |> List.map (\( name, cols ) -> Check name (Nel.toList cols) Nothing [ { id = source, lines = [] } ])
-      , comment = table.notes |> Maybe.map (buildComment source)
+      , columns = table.columns |> List.indexedMap (createColumn source) |> Dict.fromListMap .name
+      , primaryKey = table.columns |> createPrimaryKey source
+      , uniques = table.columns |> createConstraint .unique (defaultUniqueName table.table) |> List.map (\( name, cols ) -> Unique name cols Nothing [ { id = source, lines = [] } ])
+      , indexes = table.columns |> createConstraint .index (defaultIndexName table.table) |> List.map (\( name, cols ) -> Index name cols Nothing [ { id = source, lines = [] } ])
+      , checks = table.columns |> createConstraint .check (defaultCheckName table.table) |> List.map (\( name, cols ) -> Check name (Nel.toList cols) Nothing [ { id = source, lines = [] } ])
+      , comment = table.notes |> Maybe.map (createComment source)
       , origins = [ { id = source, lines = [] } ]
       }
-    , table.columns
-        |> List.filterMap (\c -> c.foreignKey |> Maybe.map (\fk -> ( c, fk )))
-        |> List.map (\( c, fk ) -> buildRelation source { schema = table.schema, table = table.table, column = c.name } fk)
+    , table.columns |> List.filterMap (\c -> c.foreignKey |> Maybe.map (\fk -> createRelation source { schema = table.schema, table = table.table, column = c.name } fk))
     )
 
 
-buildColumn : SourceId -> Int -> AmlColumn -> Column
-buildColumn source index column =
+createColumn : SourceId -> Int -> AmlColumn -> Column
+createColumn source index column =
     { index = index
     , name = column.name
     , kind = column.kind |> Maybe.withDefault Conf.schema.column.unknownType
     , nullable = column.nullable
     , default = column.default
-    , comment = column.notes |> Maybe.map (buildComment source)
+    , comment = column.notes |> Maybe.map (createComment source)
     , origins = [ { id = source, lines = [] } ]
     }
 
 
-buildPrimaryKey : SourceId -> List AmlColumn -> Maybe PrimaryKey
-buildPrimaryKey source columns =
+createPrimaryKey : SourceId -> List AmlColumn -> Maybe PrimaryKey
+createPrimaryKey source columns =
     columns
         |> List.filter .primaryKey
         |> List.map .name
@@ -136,8 +134,8 @@ buildPrimaryKey source columns =
             )
 
 
-buildConstraint : (AmlColumn -> Maybe String) -> (AmlColumnName -> String) -> List AmlColumn -> List ( String, Nel ColumnName )
-buildConstraint get defaultName columns =
+createConstraint : (AmlColumn -> Maybe String) -> (AmlColumnName -> String) -> List AmlColumn -> List ( String, Nel ColumnName )
+createConstraint get defaultName columns =
     columns
         |> List.filter (\c -> get c /= Nothing)
         |> List.groupBy (\c -> c |> get |> Maybe.withDefault "")
@@ -153,15 +151,15 @@ buildConstraint get defaultName columns =
             []
 
 
-buildComment : SourceId -> AmlNotes -> Comment
-buildComment source notes =
+createComment : SourceId -> AmlNotes -> Comment
+createComment source notes =
     { text = notes
     , origins = [ { id = source, lines = [] } ]
     }
 
 
-buildRelation : SourceId -> AmlColumnRef -> AmlColumnRef -> Relation
-buildRelation source from to =
+createRelation : SourceId -> AmlColumnRef -> AmlColumnRef -> Relation
+createRelation source from to =
     let
         fromId : TableId
         fromId =

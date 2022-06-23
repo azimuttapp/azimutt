@@ -1,25 +1,19 @@
-module DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParse, testParseSql, testParseStatement)
+module DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testSql, testStatement)
 
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedColumn, ParsedTable)
-import DataSources.SqlParser.StatementParser exposing (Command, parse)
 import DataSources.SqlParser.Utils.Types exposing (RawSql, SqlStatement)
 import Expect
 import Libs.Nel as Nel exposing (Nel)
 import Test exposing (Test, test)
 
 
-testParseStatement : String -> RawSql -> Command -> Test
-testParseStatement name sql command =
-    test name (\_ -> sql |> asStatement |> parse |> Result.map Tuple.second |> Expect.equal (Ok command))
-
-
-testParse : ( SqlStatement -> Result e a, String ) -> RawSql -> a -> Test
-testParse ( parse, name ) sql result =
+testStatement : ( SqlStatement -> Result e a, String ) -> RawSql -> a -> Test
+testStatement ( parse, name ) sql result =
     test name (\_ -> sql |> asStatement |> parse |> Expect.equal (Ok result))
 
 
-testParseSql : ( RawSql -> Result e a, String ) -> RawSql -> a -> Test
-testParseSql ( parse, name ) sql result =
+testSql : ( RawSql -> Result e a, String ) -> RawSql -> a -> Test
+testSql ( parse, name ) sql result =
     test name (\_ -> sql |> parse |> Expect.equal (Ok result))
 
 
@@ -28,9 +22,9 @@ asStatement sql =
     sql
         |> String.trim
         |> String.split "\n"
-        |> List.indexedMap (\i l -> { line = i, text = l })
+        |> List.indexedMap (\i l -> { index = i, text = l })
         |> Nel.fromList
-        |> Maybe.withDefault { head = { line = 0, text = sql |> String.trim }, tail = [] }
+        |> Maybe.withDefault { head = { index = 0, text = sql |> String.trim }, tail = [] }
 
 
 parsedTable : ParsedTable

@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Dialects.JdeTest exposing (..)
 
-import DataSources.SqlParser.StatementParser exposing (Command(..))
-import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParseStatement)
+import DataSources.SqlParser.SqlParser exposing (Command(..), parseCommand)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -10,7 +10,7 @@ suite : Test
 suite =
     describe "SQL Server"
         [ describe "CREATE TABLE"
-            [ testParseStatement "with big primary key"
+            [ testStatement ( parseCommand, "with big primary key" )
                 """CREATE TABLE "CRPDTA"."F0000194" 
                       (\t"SYEDUS" NCHAR(10), 
                    \t"SYEDBT" NCHAR(15), 
@@ -47,7 +47,7 @@ suite =
                 )
             ]
         , describe "CREATE INDEX"
-            [ testParseStatement "index"
+            [ testStatement ( parseCommand, "index" )
                 """CREATE UNIQUE INDEX "CRPDTA"."F0000194_0" ON "CRPDTA"."F0000194" ("SYEDUS", "SYEDBT", "SYEDTN", "SYEDLN")
                          PCTFREE 10 INITRANS 2 MAXTRANS 255 COMPUTE STATISTICS
                          STORAGE(INITIAL 65536 NEXT 1048576 MINEXTENTS 1 MAXEXTENTS 2147483645

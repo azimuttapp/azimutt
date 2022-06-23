@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Dialects.PostgresqlTest exposing (..)
 
-import DataSources.SqlParser.StatementParser exposing (Command(..))
-import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParseStatement)
+import DataSources.SqlParser.SqlParser exposing (Command(..), parseCommand)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -11,7 +11,7 @@ suite =
     describe "PostgreSQL"
         [ describe "CREATE TABLE"
             -- https://www.postgresql.org/docs/9.1/sql-createtable.html
-            [ testParseStatement "with primary key"
+            [ testStatement ( parseCommand, "with primary key" )
                 """CREATE TABLE films (
                        code        char(5),
                        title       varchar(40),

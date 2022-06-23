@@ -1,13 +1,14 @@
 module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUserSourceUpdate, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
-import DataSources.SqlParser.FileParser exposing (SchemaError)
-import DataSources.SqlParser.StatementParser exposing (Command)
+import DataSources.Helpers exposing (SourceLine)
+import DataSources.SqlParser.SqlAdapter exposing (SqlSchema)
+import DataSources.SqlParser.SqlParser exposing (Command)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Maybe as Maybe
-import Libs.Models exposing (FileLineContent, TrackEvent)
+import Libs.Models exposing (TrackEvent)
 import Libs.Result as Result
 import Models.Project exposing (Project)
 import Models.Project.Layout exposing (Layout)
@@ -173,10 +174,10 @@ findPathResult =
 
 type alias SQLParsing x =
     { x
-        | lines : Maybe (List FileLineContent)
+        | lines : Maybe (List SourceLine)
         , statements : Maybe (Dict Int SqlStatement)
         , commands : Maybe (Dict Int ( SqlStatement, Result (List ParseError) Command ))
-        , schemaErrors : List (List SchemaError)
+        , schema : Maybe SqlSchema
     }
 
 
@@ -189,7 +190,7 @@ parseSQLEvent parser source =
         , ( "table-count", source.tables |> Dict.size |> String.fromInt )
         , ( "relation-count", source.relations |> List.length |> String.fromInt )
         , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> String.fromInt )
-        , ( "schema-errors", parser.schemaErrors |> List.length |> String.fromInt )
+        , ( "schema-errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> String.fromInt )
         ]
     , enabled = True
     }
