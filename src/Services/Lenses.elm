@@ -106,6 +106,7 @@ module Services.Lenses exposing
     , mapUsername
     , mapVirtualRelationM
     , setActive
+    , setAmlSidebar
     , setBio
     , setCanvas
     , setChecks
@@ -188,6 +189,7 @@ module Services.Lenses exposing
     , setSettings
     , setSharing
     , setShow
+    , setShowHiddenColumns
     , setShowSettings
     , setShown
     , setShownColumns
