@@ -45,7 +45,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Time
@@ -159,7 +159,7 @@ update req currentLayout now msg model =
             ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
 
         CreateUserSource name ->
-            ( model |> mapErdM (Source.createUserSource now name), Cmd.none )
+            ( model |> mapErdM (Source.createUserSource now name) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.addRelation now src ref)
@@ -174,7 +174,7 @@ update req currentLayout now msg model =
             model |> handleNotes message
 
         AmlSidebarMsg message ->
-            model |> AmlSlidebar.update message
+            model |> AmlSlidebar.update now message
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message

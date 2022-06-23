@@ -15,8 +15,8 @@ suite =
             [ testParse ( "empty", parse ) "" []
             ]
         , describe "aml"
-            [ parserTest ( "empty", AmlParser.aml ) "" []
-            , parserTest ( "script", AmlParser.aml )
+            [ parserTest ( "empty", AmlParser.parser ) "" []
+            , parserTest ( "script", AmlParser.parser )
                 ("\n"
                     ++ "users\n"
                     ++ "  id int\n"
@@ -49,7 +49,7 @@ suite =
                     }
                 , AmlEmptyStatement { comment = Nothing }
                 ]
-            , parserTest ( "multiline", AmlParser.aml )
+            , parserTest ( "multiline", AmlParser.parser )
                 """
 emails
   email varchar

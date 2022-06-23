@@ -212,6 +212,7 @@ module Services.Lenses exposing
     , setTop
     , setTwitter
     , setUniques
+    , setUpdatedAt
     , setUpload
     , setUsedLayout
     , setUser
@@ -1226,6 +1227,11 @@ setUniques =
 mapUniques : (v -> v) -> { item | uniques : v } -> { item | uniques : v }
 mapUniques =
     map .uniques setUniques
+
+
+setUpdatedAt : v -> { item | updatedAt : v } -> { item | updatedAt : v }
+setUpdatedAt =
+    set .updatedAt (\value item -> { item | updatedAt = value })
 
 
 setUpload : v -> { item | upload : v } -> { item | upload : v }

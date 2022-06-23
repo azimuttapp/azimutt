@@ -102,7 +102,7 @@ type alias NotesDialog =
 
 
 type alias AmlSidebar =
-    { id : HtmlId, selected : Maybe SourceId, errors : List AmlSchemaError }
+    { id : HtmlId, selected : Maybe SourceId, input : String, errors : List AmlSchemaError }
 
 
 type alias VirtualRelation =
@@ -340,8 +340,8 @@ simplePrompt label message =
     PromptOpen
         { color = Tw.blue
         , icon = QuestionMarkCircle
-        , title = ""
-        , message = text label
+        , title = label
+        , message = text ""
         , confirm = "Ok"
         , cancel = "Cancel"
         , onConfirm = message >> T.send

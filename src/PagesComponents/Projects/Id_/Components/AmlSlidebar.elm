@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Components.AmlSlidebar exposing (Model, update, view)
+module PagesComponents.Projects.Id_.Components.AmlSlidebar exposing (Model, setSource, update, view)
 
 import Array exposing (Array)
 import Components.Atoms.Icon as Icon
@@ -6,10 +6,11 @@ import Components.Molecules.Editor as Editor
 import Conf
 import DataSources.AmlParser.AmlAdapter as AmlAdapter exposing (AmlSchema, AmlSchemaError)
 import DataSources.AmlParser.AmlParser as AmlParser
-import Dict
+import Dict exposing (Dict)
 import Html exposing (Html, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
+import Libs.Basics exposing (tupled)
 import Libs.Bool as Bool
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
@@ -19,15 +20,19 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId
+import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
+import Models.Project.SourceLine exposing (SourceLine)
+import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import Ports
-import Services.Lenses exposing (mapAmlSidebarM, mapErdM, mapSourcesL, setAmlSidebar, setContent, setErrors, setRelations, setSelected, setTables)
+import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setInput, setRelations, setSelected, setTables, setUpdatedAt)
+import Time
 import Track
 
 
@@ -39,16 +44,30 @@ type alias Model x =
     }
 
 
+
+-- INIT
+
+
 init : Model x -> AmlSidebar
 init model =
+    let
+        source : Maybe Source
+        source =
+            model.erd |> Maybe.andThen (.sources >> List.filter .enabled >> List.find (.kind >> SourceKind.isUser))
+    in
     { id = Conf.ids.amlSidebarDialog
-    , selected = model.erd |> Maybe.andThen (.sources >> List.filter .enabled >> List.find (.kind >> SourceKind.isUser) >> Maybe.map .id)
+    , selected = source |> Maybe.map .id
+    , input = source |> Maybe.mapOrElse contentStr ""
     , errors = []
     }
 
 
-update : AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
-update msg model =
+
+-- UPDATE
+
+
+update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
+update now msg model =
     case msg of
         AOpen ->
             ( model |> setAmlSidebar (Just (init model)), Ports.track Track.openUserSourceUpdate )
@@ -60,49 +79,101 @@ update msg model =
             ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) AOpen AClose)) )
 
         AChangeSource source ->
-            ( model |> mapAmlSidebarM (setSelected source), Cmd.none )
+            ( model |> mapAmlSidebarM (setSelected source >> setInput (model.erd |> Maybe.andThen (.sources >> List.find (\s -> source == Just s.id)) |> Maybe.mapOrElse contentStr "")), Cmd.none )
 
         AUpdateSource id value ->
-            let
-                content : Array String
-                content =
-                    value |> String.split "\n" |> Array.fromList
+            updateSource now id value model
 
-                parsed : AmlSchema
-                parsed =
-                    value ++ "\n" |> AmlParser.parse |> AmlAdapter.adapt id
 
-                shown : List TableId
-                shown =
-                    model.erd |> Maybe.mapOrElse .shownTables []
+updateSource : Time.Posix -> SourceId -> String -> Model x -> ( Model x, Cmd Msg )
+updateSource now sourceId input model =
+    let
+        currentTables : Dict TableId Table
+        currentTables =
+            model.erd |> Maybe.andThen (.sources >> List.find (\s -> s.id == sourceId)) |> Maybe.mapOrElse .tables Dict.empty
 
-                toShow : List ( TableId, Maybe PositionHint )
-                toShow =
-                    parsed.tables
-                        |> Dict.keys
-                        |> List.filterNot (\table -> shown |> List.member table)
-                        -- FIXME: try to find if "the table is the same with a different name" to keep its position
-                        -- FIXME: maybe, do not use ShowTable but directly update the model
-                        -- FIXME: for ShowTable, use erd.seed to compute random numbers instead of going to JS
-                        |> List.map (\table -> ( table, Just (PlaceAt { top = 10, left = 10 }) ))
-            in
-            if List.isEmpty parsed.errors then
-                ( model
-                    |> mapErdM
-                        (Erd.mapSource
-                            id
-                            (setContent content
-                                >> setTables parsed.tables
-                                >> setRelations parsed.relations
-                            )
-                        )
-                    |> mapAmlSidebarM (setErrors parsed.errors)
-                  -- FIXME: problem with show/hide and table name change
-                , Cmd.batch (toShow |> List.map (\( table, pos ) -> T.send (ShowTable table pos)))
+        tableProps : Dict TableId ErdTableProps
+        tableProps =
+            model.erd |> Maybe.mapOrElse .tableProps Dict.empty
+
+        content : Array String
+        content =
+            contentSplit input
+
+        parsed : AmlSchema
+        parsed =
+            String.trim input ++ "\n" |> AmlParser.parse |> AmlAdapter.adapt sourceId
+
+        ( removed, bothPresent, added ) =
+            List.diff .id (currentTables |> Dict.values) (parsed.tables |> Dict.values)
+
+        toHide : List TableId
+        toHide =
+            removed |> List.map .id
+
+        updated : List TableId
+        updated =
+            bothPresent |> List.filter (\( t1, t2 ) -> t1 /= t2) |> List.map (Tuple.first >> .id)
+
+        toShow : List ( TableId, Maybe PositionHint )
+        toShow =
+            added
+                |> associateTables removed
+                |> List.map (\( table, previous ) -> ( table.id, previous |> Maybe.andThen (\t -> tableProps |> Dict.get t.id) |> Maybe.map (.position >> PlaceAt) ))
+
+        -- FIXME: double error in parser
+        -- FIXME: bad relation position when create a fk
+        -- FIXME: show all columns but only from the edited source (useful when merging tables with other sources)
+        -- FIXME: migrate virtual relations to aml
+        -- TODO: enum for ShowColumns, HideColumns
+        -- TODO: better select with enabled indicator and disabled non user sources
+    in
+    if List.isEmpty parsed.errors then
+        ( model |> mapErdM (mapErdSource now sourceId content parsed) |> mapAmlSidebarM (setInput input >> setErrors [])
+        , Cmd.batch
+            (List.map T.send
+                ((toShow |> List.map (tupled ShowTable))
+                    ++ (toHide |> List.map HideTable)
+                    ++ (updated |> List.map (\id -> ShowColumns id "all"))
                 )
+            )
+        )
 
-            else
-                ( model |> mapErdM (mapSourcesL .id id (setContent content)) |> mapAmlSidebarM (setErrors parsed.errors), Cmd.none )
+    else
+        ( model |> mapAmlSidebarM (setInput input >> setErrors parsed.errors), Cmd.none )
+
+
+associateTables : List Table -> List Table -> List ( Table, Maybe Table )
+associateTables removed added =
+    if List.length added == 1 && List.length removed == 1 then
+        added |> List.map (\t -> ( t, removed |> List.head ))
+
+    else
+        added |> List.map (\table -> ( table, Nothing ))
+
+
+mapErdSource : Time.Posix -> SourceId -> Array SourceLine -> AmlSchema -> Erd -> Erd
+mapErdSource now sourceId content parsed erd =
+    erd |> Erd.mapSource sourceId (setContent content >> setTables parsed.tables >> setRelations parsed.relations >> setUpdatedAt now)
+
+
+setSource : Maybe Source -> AmlSidebar -> AmlSidebar
+setSource source model =
+    model |> setSelected (source |> Maybe.map .id) |> setInput (source |> Maybe.mapOrElse contentStr "")
+
+
+contentSplit : String -> Array String
+contentSplit input =
+    input |> String.split "\n" |> Array.fromList
+
+
+contentStr : Source -> String
+contentStr source =
+    source.content |> Array.toList |> String.join "\n"
+
+
+
+-- VIEW
 
 
 view : Erd -> AmlSidebar -> Html Msg
@@ -156,12 +227,12 @@ viewChooseSource selectedSource userSources =
         , div [ class "mt-1 flex rounded-md shadow-sm" ]
             [ div [ class "relative flex items-stretch flex-grow focus-within:z-10" ]
                 [ select [ id selectId, name selectId, onInput (SourceId.fromString >> AChangeSource >> AmlSidebarMsg), disabled (List.isEmpty userSources), css [ "block w-full text-sm border-gray-300 rounded-none rounded-l-md", focus [ "ring-indigo-500 border-indigo-500" ], Tw.disabled [ "bg-slate-50 text-slate-500 shadow-none" ] ] ]
-                    (option [] [ text "-- select a source to edit" ]
+                    (option [] [ text (Bool.cond (List.isEmpty userSources) "-- no edit source, create one →" "-- select a source to edit") ]
                         :: (userSources |> List.map (\s -> option [ selected (Maybe.map .id selectedSource == Just s.id), value (SourceId.toString s.id) ] [ text s.name ]))
                     )
                 ]
             , button [ onClick (simplePrompt "New source name" CreateUserSource), class "-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" ]
-                [ text "Create source"
+                [ text "New source"
                 ]
             ]
         ]
@@ -169,13 +240,10 @@ viewChooseSource selectedSource userSources =
 
 viewSourceEditor : AmlSidebar -> Source -> Html Msg
 viewSourceEditor model source =
-    let
-        content : String
-        content =
-            source.content |> Array.toList |> String.join "\n"
-    in
     div [ class "mt-3" ]
-        [ Editor.basic "source-editor" content (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax. Ex:
+        [ Editor.basic "source-editor" model.input (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax
+
+Ex:
 
 users
   id uuid pk
@@ -188,7 +256,7 @@ credentials
   login varchar(128) unique
   password varchar(128) nullable
   role varchar(10)=guest
-  created_at timestamp"""
+  created_at timestamp""" 30 (List.nonEmpty model.errors)
         , viewErrors model.errors
         , viewHelp
         ]
