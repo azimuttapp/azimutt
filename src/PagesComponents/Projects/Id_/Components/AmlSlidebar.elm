@@ -20,6 +20,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
+import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
@@ -31,6 +32,7 @@ import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
+import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns
 import Ports
 import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setInput, setRelations, setSelected, setTables, setUpdatedAt)
 import Time
@@ -112,9 +114,9 @@ updateSource now sourceId input model =
         toHide =
             removed |> List.map .id
 
-        updated : List TableId
+        updated : List ( TableId, List ColumnName )
         updated =
-            bothPresent |> List.filter (\( t1, t2 ) -> t1 /= t2) |> List.map (Tuple.first >> .id)
+            bothPresent |> List.filter (\( t1, t2 ) -> t1 /= t2) |> List.map (\( _, t ) -> ( t.id, t.columns |> Dict.keys ))
 
         toShow : List ( TableId, Maybe PositionHint )
         toShow =
@@ -131,9 +133,7 @@ updateSource now sourceId input model =
                         )
                     )
 
-        -- FIXME: show all columns but only from the edited source (useful when merging tables with other sources)
         -- FIXME: migrate virtual relations to aml
-        -- TODO: enum for ShowColumns, HideColumns
         -- TODO: better select with enabled indicator and disabled non user sources
     in
     if List.isEmpty parsed.errors then
@@ -142,7 +142,7 @@ updateSource now sourceId input model =
             (List.map T.send
                 ((toShow |> List.map (tupled ShowTable))
                     ++ (toHide |> List.map HideTable)
-                    ++ (updated |> List.map (\id -> ShowColumns id "all"))
+                    ++ (updated |> List.map (\( id, cols ) -> ShowColumns id (ShowColumns.List cols)))
                 )
             )
         )

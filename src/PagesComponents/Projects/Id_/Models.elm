@@ -36,9 +36,11 @@ import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
+import PagesComponents.Projects.Id_.Models.HideColumns exposing (HideColumns)
 import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
 import Random
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
@@ -160,8 +162,8 @@ type Msg
     | ToggleColumns TableId
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
-    | ShowColumns TableId String
-    | HideColumns TableId String
+    | ShowColumns TableId ShowColumns
+    | HideColumns TableId HideColumns
     | SortColumns TableId ColumnOrder
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool

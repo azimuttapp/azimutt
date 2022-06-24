@@ -28,8 +28,10 @@ import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.HideColumns as HideColumns
 import PagesComponents.Projects.Id_.Models.Notes as NoteRef
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
+import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns
 import PagesComponents.Projects.Id_.Views.Modals.ColumnContextMenu exposing (viewColumnContextMenu, viewHiddenColumnContextMenu)
 
 
@@ -126,18 +128,18 @@ viewTable platform conf zoom cursorMode args index props table =
                     { label = B.cond props.selected "Hide columns of selected tables" "Hide columns"
                     , action =
                         SubMenu
-                            [ { label = "Without relation", action = HideColumns table.id "relations", platform = platform, hotkeys = [] }
-                            , { label = "Regular ones", action = HideColumns table.id "regular", platform = platform, hotkeys = [] }
-                            , { label = "Nullable ones", action = HideColumns table.id "nullable", platform = platform, hotkeys = [] }
-                            , { label = "All", action = HideColumns table.id "all", platform = platform, hotkeys = [] }
+                            [ { label = "Without relation", action = HideColumns table.id HideColumns.Relations, platform = platform, hotkeys = [] }
+                            , { label = "Regular ones", action = HideColumns table.id HideColumns.Regular, platform = platform, hotkeys = [] }
+                            , { label = "Nullable ones", action = HideColumns table.id HideColumns.Nullable, platform = platform, hotkeys = [] }
+                            , { label = "All", action = HideColumns table.id HideColumns.All, platform = platform, hotkeys = [] }
                             ]
                     }
                 , Maybe.when conf.layout
                     { label = B.cond props.selected "Show columns of selected tables" "Show columns"
                     , action =
                         SubMenu
-                            [ { label = "With relations", action = ShowColumns table.id "relations", platform = platform, hotkeys = [] }
-                            , { label = "All", action = ShowColumns table.id "all", platform = platform, hotkeys = [] }
+                            [ { label = "With relations", action = ShowColumns table.id ShowColumns.Relations, platform = platform, hotkeys = [] }
+                            , { label = "All", action = ShowColumns table.id ShowColumns.All, platform = platform, hotkeys = [] }
                             ]
                     }
                 , Maybe.when conf.layout
