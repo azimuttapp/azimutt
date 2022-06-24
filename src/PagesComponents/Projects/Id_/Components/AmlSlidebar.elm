@@ -131,7 +131,7 @@ updateSource now sourceId input model =
                         )
                     )
 
-        -- TODO: better select with enabled indicator and disabled non user sources
+        -- FIXME: sort issues :(
     in
     if List.nonEmpty parsed.errors then
         ( model |> mapErdM (Erd.mapSource sourceId (setContent content >> setUpdatedAt now)) |> mapAmlSidebarM (setErrors parsed.errors), Cmd.none )
@@ -208,7 +208,7 @@ viewHeading =
                 ]
             ]
         , p [ class "mt-1 text-sm text-gray-500" ]
-            [ text "In Azimutt your schema is the union of enabled sources. Create or update one with "
+            [ text "In Azimutt your schema is the union of all active sources. Create or update one with "
             , extLink "https://azimutt.app/blog/aml-a-language-to-define-your-database-schema" [ class "link" ] [ text "AML syntax" ]
             , text " to extend it."
             ]
@@ -251,12 +251,18 @@ users
   last_name varchar(128)
   email varchar(128) nullable
 
-credentials
+credentials | used to authenticate users
   user_id pk fk users.id
   login varchar(128) unique
   password varchar(128) nullable
-  role varchar(10)=guest
-  created_at timestamp""" 30 (List.nonEmpty model.errors)
+  role varchar(10)=guest index | possible values: admin or guest
+  created_at timestamp
+
+roles
+  slug varchar(10)
+
+# define a standalone relation
+fk credentials.role -> roles.slug""" 30 (List.nonEmpty model.errors)
         , viewErrors model.errors
         , viewHelp
         ]
