@@ -422,17 +422,16 @@ quoted first last =
         |. chompIf (\c -> c == last)
 
 
-until : List Char -> Parser String
-until stop =
-    chompWhile (\c -> stop |> List.all (\s -> s /= c))
-        |> getChompedString
-
-
 untilNonEmpty : List Char -> Parser String
 untilNonEmpty stop =
     succeed (\first others -> first ++ others)
-        |= (chompIf (\c -> stop |> List.all (\s -> s /= c)) |> getChompedString)
-        |= (chompWhile (\c -> stop |> List.all (\s -> s /= c)) |> getChompedString)
+        |= (chompIf (\c -> stop |> List.member c |> not) |> getChompedString)
+        |= until stop
+
+
+until : List Char -> Parser String
+until stop =
+    chompWhile (\c -> stop |> List.member c |> not) |> getChompedString
 
 
 maybe : Parser a -> Parser (Maybe a)

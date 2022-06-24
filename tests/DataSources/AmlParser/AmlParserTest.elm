@@ -113,6 +113,8 @@ fk admins.id -> users.id
                 , AmlRelationStatement { from = { schema = Nothing, table = "admins", column = "id" }, to = { schema = Nothing, table = "users", column = "id" }, comment = Nothing }
                 , AmlEmptyStatement { comment = Nothing }
                 ]
+            , parserFail ( "ExpectingSymbol", AmlParser.parser ) "users\n  id fk bad\n" [ { row = 2, col = 12, problem = ExpectingSymbol "." } ]
+            , parserFail ( "UnexpectedChar", AmlParser.parser ) "users\n  id fk bad.\n" [ { row = 2, col = 13, problem = UnexpectedChar }, { row = 2, col = 13, problem = UnexpectedChar } ]
             ]
         , describe "statement"
             [ parserTest ( "table", AmlParser.statement ) "users\n  id int\n" (AmlTableStatement { table | table = "users", columns = [ { column | name = "id", kind = Just "int" } ] })
@@ -162,6 +164,7 @@ fk admins.id -> users.id
             , parserTest ( "with comment", AmlParser.column ) "  id # comment\n" { column | name = "id", comment = Just "comment" }
             , parserTest ( "with type & comment", AmlParser.column ) "  id int # comment\n" { column | name = "id", kind = Just "int", comment = Just "comment" }
             , parserTest ( "with all", AmlParser.column ) "  id int=0 nullable pk index unique=main check fk public.logins.id {hidden} | a note # a comment\n" { name = "id", kind = Just "int", default = Just "0", nullable = True, primaryKey = True, index = Just "", unique = Just "main", check = Just "", foreignKey = Just { schema = Just "public", table = "logins", column = "id" }, props = Just { hidden = True }, notes = Just "a note", comment = Just "a comment" }
+            , parserFail ( "UnexpectedChar", AmlParser.column ) "  id fk bad.\n" [ { row = 1, col = 13, problem = UnexpectedChar }, { row = 1, col = 13, problem = UnexpectedChar } ]
             ]
         , describe "constraint"
             [ parserTest ( "lowercase", AmlParser.constraint "index" ) "index" ""
@@ -210,6 +213,7 @@ fk admins.id -> users.id
             [ parserTest ( "column, table and schema", AmlParser.columnRef ) "public.users.id" { schema = Just "public", table = "users", column = "id" }
             , parserTest ( "column and table", AmlParser.columnRef ) "users.id" { schema = Nothing, table = "users", column = "id" }
             , parserTest ( "with spaces", AmlParser.columnRef ) "\"a schema\".\"a table\".\"a column\"" { schema = Just "a schema", table = "a table", column = "a column" }
+            , parserFail ( "UnexpectedChar", AmlParser.columnRef ) "bad." [ { row = 1, col = 5, problem = UnexpectedChar }, { row = 1, col = 5, problem = UnexpectedChar } ]
             ]
         , describe "schemaName"
             [ parserTest ( "basic", AmlParser.schemaName ) "public" "public"
@@ -219,6 +223,7 @@ fk admins.id -> users.id
         , describe "tableName"
             [ parserTest ( "basic", AmlParser.tableName ) "users" "users"
             , parserTest ( "with spaces", AmlParser.tableName ) "\"a table\"" "a table"
+            , parserFail ( "UnexpectedChar", AmlParser.tableName ) "" [ { row = 1, col = 1, problem = UnexpectedChar }, { row = 1, col = 1, problem = UnexpectedChar } ]
             ]
         , describe "columnName"
             [ parserTest ( "basic", AmlParser.columnName ) "id" "id"

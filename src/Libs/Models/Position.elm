@@ -1,4 +1,4 @@
-module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, stepBy, sub, toTuple, zero)
+module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, stepBy, sub, toString, toStringRound, toTuple, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -67,6 +67,16 @@ diff to from =
 distance : Position -> Position -> Float
 distance to from =
     diff to from |> (\( dx, dy ) -> sqrt (dx * dx + dy * dy))
+
+
+toString : Position -> String
+toString pos =
+    "(" ++ String.fromFloat pos.left ++ ", " ++ String.fromFloat pos.top ++ ")"
+
+
+toStringRound : Position -> String
+toStringRound pos =
+    "(" ++ String.fromInt (round pos.left) ++ ", " ++ String.fromInt (round pos.top) ++ ")"
 
 
 encode : Position -> Value

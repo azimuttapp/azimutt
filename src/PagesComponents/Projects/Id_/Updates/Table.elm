@@ -382,7 +382,7 @@ mapTablePropsOrSelectedColumns id transform erd =
                             (\cols ->
                                 erd.tables
                                     |> Dict.get p.id
-                                    |> Maybe.map (\table -> transform table cols)
+                                    |> Maybe.map (\table -> transform table cols |> List.filter (\c -> table.columns |> Dict.member c))
                                     |> Maybe.withDefault cols
                             )
                             erd.notes

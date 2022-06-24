@@ -17,6 +17,7 @@ import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Position as Position
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
@@ -119,10 +120,17 @@ updateSource now sourceId input model =
         toShow =
             added
                 |> associateTables removed
-                |> List.map (\( table, previous ) -> ( table.id, previous |> Maybe.andThen (\t -> tableProps |> Dict.get t.id) |> Maybe.map (.position >> PlaceAt) ))
+                |> List.map
+                    (\( table, previous ) ->
+                        ( table.id
+                        , previous
+                            |> Maybe.andThen (\t -> tableProps |> Dict.get t.id)
+                            |> Maybe.map .position
+                            |> Maybe.filter (\p -> p /= Position.zero)
+                            |> Maybe.map PlaceAt
+                        )
+                    )
 
-        -- FIXME: double error in parser
-        -- FIXME: bad relation position when create a fk
         -- FIXME: show all columns but only from the edited source (useful when merging tables with other sources)
         -- FIXME: migrate virtual relations to aml
         -- TODO: enum for ShowColumns, HideColumns
@@ -264,7 +272,17 @@ credentials
 
 viewErrors : List AmlSchemaError -> Html msg
 viewErrors errors =
-    div [] (errors |> List.map (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]))
+    div []
+        (errors
+            |> List.map (\err -> err.problem ++ " at line " ++ String.fromInt err.row ++ ", column " ++ String.fromInt err.col)
+            |> List.unique
+            |> List.map
+                (\err ->
+                    p [ class "mt-2 text-sm text-red-600" ]
+                        [ text err
+                        ]
+                )
+        )
 
 
 viewHelp : Html msg

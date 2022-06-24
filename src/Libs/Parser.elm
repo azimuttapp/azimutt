@@ -1,4 +1,4 @@
-module Libs.Parser exposing (deadEndToString)
+module Libs.Parser exposing (deadEndToString, problemToString)
 
 import Parser exposing (DeadEnd, Problem(..))
 
@@ -12,7 +12,7 @@ problemToString : Problem -> String
 problemToString problem =
     case problem of
         Expecting token ->
-            "Expecting " ++ token
+            "Expecting '" ++ token ++ "'"
 
         ExpectingInt ->
             "ExpectingInt"
@@ -36,10 +36,10 @@ problemToString problem =
             "ExpectingVariable"
 
         ExpectingSymbol symbol ->
-            "ExpectingSymbol " ++ symbol
+            "ExpectingSymbol '" ++ symbol ++ "'"
 
         ExpectingKeyword keywork ->
-            "ExpectingKeyword " ++ keywork
+            "ExpectingKeyword '" ++ keywork ++ "'"
 
         ExpectingEnd ->
             "ExpectingEnd"
@@ -48,7 +48,7 @@ problemToString problem =
             "UnexpectedChar"
 
         Problem err ->
-            "Problem " ++ err
+            "Problem: '" ++ err ++ "'"
 
         BadRepeat ->
             "BadRepeat"

@@ -34,7 +34,10 @@ type alias AmlSchema =
 
 
 type alias AmlSchemaError =
-    String
+    { row : Int
+    , col : Int
+    , problem : String
+    }
 
 
 buildAmlSource : SourceInfo -> List AmlStatement -> ( List AmlSchemaError, Source )
@@ -61,7 +64,10 @@ buildAmlSource source statements =
 
 adapt : SourceId -> Result (List DeadEnd) (List AmlStatement) -> AmlSchema
 adapt source result =
-    result |> Result.fold (\err -> AmlSchema Dict.empty [] (err |> List.map Parser.deadEndToString)) (List.foldl (evolve source) (AmlSchema Dict.empty [] []))
+    result
+        |> Result.fold
+            (\err -> AmlSchema Dict.empty [] (err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem })))
+            (List.foldl (evolve source) (AmlSchema Dict.empty [] []))
 
 
 evolve : SourceId -> AmlStatement -> AmlSchema -> AmlSchema
@@ -74,7 +80,7 @@ evolve source statement schema =
             in
             schema.tables
                 |> Dict.get table.id
-                |> Maybe.map (\_ -> { schema | errors = ("Table '" ++ TableId.show table.id ++ "' is already defined") :: schema.errors })
+                |> Maybe.map (\_ -> { schema | errors = AmlSchemaError 0 0 ("Table '" ++ TableId.show table.id ++ "' is already defined") :: schema.errors })
                 |> Maybe.withDefault { schema | tables = schema.tables |> Dict.insert table.id table, relations = relations ++ schema.relations }
 
         AmlRelationStatement amlRelation ->

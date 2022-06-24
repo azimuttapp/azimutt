@@ -32,7 +32,7 @@ suite =
                 (\_ ->
                     { schema | tables = Dict.fromListMap .id [ users ] }
                         |> evolve source (AmlTableStatement usersAml)
-                        |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ "Table 'users' is already defined" ] }
+                        |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ { row = 0, col = 0, problem = "Table 'users' is already defined" } ] }
                 )
             , test "add a relation"
                 (\_ ->
