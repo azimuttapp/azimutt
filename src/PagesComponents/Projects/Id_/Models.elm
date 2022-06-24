@@ -104,7 +104,7 @@ type alias NotesDialog =
 
 
 type alias AmlSidebar =
-    { id : HtmlId, selected : Maybe SourceId, input : String, errors : List AmlSchemaError }
+    { id : HtmlId, selected : Maybe SourceId, errors : List AmlSchemaError }
 
 
 type alias VirtualRelation =

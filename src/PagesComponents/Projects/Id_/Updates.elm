@@ -162,7 +162,7 @@ update req currentLayout now msg model =
             ( model |> mapErdM (Source.createUserSource now name) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
 
         CreateRelation src ref ->
-            model |> mapErdMCmd (Source.addRelation now src ref)
+            model |> mapErdMCmd (Source.createRelation now src ref)
 
         ResetCanvas ->
             ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )

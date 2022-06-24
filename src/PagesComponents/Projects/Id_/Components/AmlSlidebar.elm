@@ -24,7 +24,6 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
-import Models.Project.SourceLine exposing (SourceLine)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
@@ -34,7 +33,7 @@ import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns
 import Ports
-import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setInput, setRelations, setSelected, setTables, setUpdatedAt)
+import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setRelations, setSelected, setTables, setUpdatedAt)
 import Time
 import Track
 
@@ -60,7 +59,6 @@ init model =
     in
     { id = Conf.ids.amlSidebarDialog
     , selected = source |> Maybe.map .id
-    , input = source |> Maybe.mapOrElse contentStr ""
     , errors = []
     }
 
@@ -82,7 +80,7 @@ update now msg model =
             ( model, T.send (AmlSidebarMsg (Bool.cond (model.amlSidebar == Nothing) AOpen AClose)) )
 
         AChangeSource source ->
-            ( model |> mapAmlSidebarM (setSelected source >> setInput (model.erd |> Maybe.andThen (.sources >> List.find (\s -> source == Just s.id)) |> Maybe.mapOrElse contentStr "")), Cmd.none )
+            ( model |> mapAmlSidebarM (setSelected source), Cmd.none )
 
         AUpdateSource id value ->
             updateSource now id value model
@@ -133,11 +131,13 @@ updateSource now sourceId input model =
                         )
                     )
 
-        -- FIXME: migrate virtual relations to aml
         -- TODO: better select with enabled indicator and disabled non user sources
     in
-    if List.isEmpty parsed.errors then
-        ( model |> mapErdM (mapErdSource now sourceId content parsed) |> mapAmlSidebarM (setInput input >> setErrors [])
+    if List.nonEmpty parsed.errors then
+        ( model |> mapErdM (Erd.mapSource sourceId (setContent content >> setUpdatedAt now)) |> mapAmlSidebarM (setErrors parsed.errors), Cmd.none )
+
+    else
+        ( model |> mapErdM (Erd.mapSource sourceId (setContent content >> setUpdatedAt now >> setTables parsed.tables >> setRelations parsed.relations)) |> mapAmlSidebarM (setErrors [])
         , Cmd.batch
             (List.map T.send
                 ((toShow |> List.map (tupled ShowTable))
@@ -146,9 +146,6 @@ updateSource now sourceId input model =
                 )
             )
         )
-
-    else
-        ( model |> mapAmlSidebarM (setInput input >> setErrors parsed.errors), Cmd.none )
 
 
 associateTables : List Table -> List Table -> List ( Table, Maybe Table )
@@ -160,14 +157,9 @@ associateTables removed added =
         added |> List.map (\table -> ( table, Nothing ))
 
 
-mapErdSource : Time.Posix -> SourceId -> Array SourceLine -> AmlSchema -> Erd -> Erd
-mapErdSource now sourceId content parsed erd =
-    erd |> Erd.mapSource sourceId (setContent content >> setTables parsed.tables >> setRelations parsed.relations >> setUpdatedAt now)
-
-
 setSource : Maybe Source -> AmlSidebar -> AmlSidebar
 setSource source model =
-    model |> setSelected (source |> Maybe.map .id) |> setInput (source |> Maybe.mapOrElse contentStr "")
+    model |> setSelected (source |> Maybe.map .id)
 
 
 contentSplit : String -> Array String
@@ -249,7 +241,7 @@ viewChooseSource selectedSource userSources =
 viewSourceEditor : AmlSidebar -> Source -> Html Msg
 viewSourceEditor model source =
     div [ class "mt-3" ]
-        [ Editor.basic "source-editor" model.input (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax
+        [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax
 
 Ex:
 

@@ -20,7 +20,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as String
@@ -98,7 +98,7 @@ viewErd platform conf screen erd selectionBox virtualRelation args dragging =
                                         |> Maybe.map
                                             (\ref ->
                                                 ( ( erd |> Erd.getColumnProps src.table src.column, ref )
-                                                , vr.mouse |> CanvasProps.adapt screen canvas
+                                                , vr.mouse |> Position.sub { left = 0, top = Conf.ui.navbarHeight } |> CanvasProps.adapt screen canvas
                                                 )
                                             )
                                 )

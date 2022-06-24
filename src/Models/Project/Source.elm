@@ -1,13 +1,18 @@
-module Models.Project.Source exposing (Source, decode, encode, refreshWith, user)
+module Models.Project.Source exposing (Source, addRelation, decode, encode, refreshWith, user)
 
 import Array exposing (Array)
+import Conf
+import DataSources.AmlParser.AmlGenerator as AmlGenerator
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.List as List
 import Libs.Time as Time
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleKey as SampleKey exposing (SampleKey)
 import Models.Project.SourceId as SourceId exposing (SourceId)
@@ -16,6 +21,7 @@ import Models.Project.SourceLine as SourceLine exposing (SourceLine)
 import Models.Project.SourceName as SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Services.Lenses exposing (mapContent, mapRelations, setUpdatedAt)
 import Time
 
 
@@ -57,6 +63,14 @@ refreshWith new current =
         current
 
 
+addRelation : Time.Posix -> ColumnRef -> ColumnRef -> Source -> Source
+addRelation now src ref source =
+    source
+        |> mapContent (Array.push (AmlGenerator.relation src ref))
+        |> mapRelations (\r -> r ++ [ Relation.virtual src ref (Origin source.id [ Array.length source.content + 1 ]) ])
+        |> setUpdatedAt now
+
+
 encode : Source -> Value
 encode value =
     Encode.notNullObject
@@ -75,7 +89,7 @@ encode value =
 
 decode : Decode.Decoder Source
 decode =
-    Decode.map10 Source
+    Decode.map10 decodeSource
         (Decode.field "id" SourceId.decode)
         (Decode.field "name" SourceName.decode)
         (Decode.field "kind" SourceKind.decode)
@@ -86,3 +100,29 @@ decode =
         (Decode.maybeField "fromSample" SampleKey.decode)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
+
+
+decodeSource : SourceId -> SourceName -> SourceKind -> Array SourceLine -> Dict TableId Table -> List Relation -> Bool -> Maybe SampleKey -> Time.Posix -> Time.Posix -> Source
+decodeSource id name kind content tables relations enabled fromSample createdAt updatedAt =
+    let
+        ( n, c ) =
+            if kind == UserDefined && Array.isEmpty content && Dict.isEmpty tables && List.nonEmpty relations then
+                -- migration from previous: no content, only relations and bad name for virtual relations
+                ( Conf.constants.virtualRelationSourceName
+                , Array.fromList (relations |> List.map (\r -> AmlGenerator.relation r.src r.ref))
+                )
+
+            else
+                ( name, content )
+    in
+    { id = id
+    , name = n
+    , kind = kind
+    , content = c
+    , tables = tables
+    , relations = relations
+    , enabled = enabled
+    , fromSample = fromSample
+    , createdAt = createdAt
+    , updatedAt = updatedAt
+    }

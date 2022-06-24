@@ -9,7 +9,6 @@ import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.RelationId as RelationId exposing (RelationId)
 import Models.Project.RelationName as RelationName exposing (RelationName)
-import Models.Project.SourceId exposing (SourceId)
 import Models.Project.TableId exposing (TableId)
 import Services.Lenses exposing (setOrigins)
 
@@ -38,9 +37,9 @@ new name src ref origins =
     Relation (RelationId.new src ref) name src ref origins
 
 
-virtual : ColumnRef -> ColumnRef -> SourceId -> Relation
-virtual src ref source =
-    new "virtual relation" src ref [ Origin source [] ]
+virtual : ColumnRef -> ColumnRef -> Origin -> Relation
+virtual src ref origin =
+    new "virtual relation" src ref [ origin ]
 
 
 inOutRelation : List (RelationLike x y) -> ColumnName -> List (RelationLike x y)

@@ -10,6 +10,7 @@ module Services.Lenses exposing
     , mapComment
     , mapCommentM
     , mapConf
+    , mapContent
     , mapContextMenuM
     , mapEachProjectMLayoutTables
     , mapEachTable
@@ -372,6 +373,11 @@ setConfirm =
 setContent : v -> { item | content : v } -> { item | content : v }
 setContent =
     set .content (\value item -> { item | content = value })
+
+
+mapContent : (v -> v) -> { item | content : v } -> { item | content : v }
+mapContent =
+    map .content setContent
 
 
 setContextMenu : v -> { item | contextMenu : v } -> { item | contextMenu : v }
