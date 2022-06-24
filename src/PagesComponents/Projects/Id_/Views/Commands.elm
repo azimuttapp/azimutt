@@ -66,7 +66,7 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
                 [ button [ type_ "button", onClick (Zoom (-canvasZoom / 10)), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Minus "" ]
                 , Dropdown.dropdown { id = htmlId ++ "-zoom-level", direction = TopLeft, isOpen = openedDropdown == htmlId ++ "-zoom-level" }
                     (\m ->
-                        button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup True, css [ "-ml-px", buttonStyles, classic ] ]
+                        button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup "true", css [ "-ml-px", buttonStyles, classic ] ]
                             [ text (String.fromInt (round (canvasZoom * 100)) ++ " %") ]
                     )
                     (\_ ->

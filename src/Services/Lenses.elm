@@ -135,6 +135,7 @@ module Services.Lenses exposing
     , setGithub
     , setHiddenColumns
     , setHiddenTables
+    , setHighlight
     , setHighlighted
     , setHover
     , setHoverColumn
@@ -218,6 +219,7 @@ module Services.Lenses exposing
     , setUsedLayout
     , setUser
     , setUsername
+    , setValue
     , setVirtualRelation
     , setWebsite
     , setZone
@@ -488,6 +490,11 @@ setHiddenTables =
 mapHiddenTables : (v -> v) -> { item | hiddenTables : v } -> { item | hiddenTables : v }
 mapHiddenTables =
     map .hiddenTables setHiddenTables
+
+
+setHighlight : v -> { item | highlight : v } -> { item | highlight : v }
+setHighlight =
+    set .highlight (\value item -> { item | highlight = value })
 
 
 setHighlighted : v -> { item | highlighted : v } -> { item | highlighted : v }
@@ -1293,6 +1300,11 @@ setUsername =
 mapUsername : (v -> v) -> { item | username : v } -> { item | username : v }
 mapUsername =
     map .username setUsername
+
+
+setValue : v -> { item | value : v } -> { item | value : v }
+setValue =
+    set .value (\value item -> { item | value = value })
 
 
 setVirtualRelation : v -> { item | virtualRelation : v } -> { item | virtualRelation : v }

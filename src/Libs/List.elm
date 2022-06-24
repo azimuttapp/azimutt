@@ -1,4 +1,50 @@
-module Libs.List exposing (addAt, appendIf, appendOn, diff, dropRight, dropUntil, dropWhile, filterNot, filterZip, find, findBy, findIndex, findIndexBy, get, groupBy, has, hasNot, indexOf, indexedFilter, last, memberBy, merge, mergeMaybe, move, moveBy, moveByRel, moveIndex, nonEmpty, notMember, prependIf, prependOn, remove, removeAt, removeBy, replaceOrAppend, resultCollect, resultSeq, toggle, unique, uniqueBy, updateBy, zip, zipBy, zipWith, zipWithIndex)
+module Libs.List exposing
+    ( addAt
+    , appendIf
+    , appendOn
+    , diff
+    , dropRight
+    , dropUntil
+    , dropWhile
+    , filterNot
+    , filterZip
+    , find
+    , findBy
+    , findIndex
+    , findIndexBy
+    , get
+    , groupBy
+    , has
+    , hasNot
+    , indexOf
+    , indexedFilter
+    , last
+    , memberBy
+    , merge
+    , mergeMaybe
+    , move
+    , moveBy
+    , moveByRel
+    , moveIndex
+    , nonEmpty
+    , notMember
+    , prependIf
+    , prependOn
+    , remove
+    , removeAt
+    , removeBy
+    , replaceOrAppend
+    , resultCollect
+    , resultSeq
+    , toggle
+    , unique
+    , uniqueBy
+    , updateBy
+    , zip
+    , zipBy
+    , zipWith
+    , zipWithIndex
+    )
 
 import Dict exposing (Dict)
 import Libs.Bool as B

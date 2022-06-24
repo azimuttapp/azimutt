@@ -204,7 +204,7 @@ profileDropdown color currentUrl user profileLinks profileDropdownOpen =
             (\u ->
                 div [ class "relative flex-shrink-0 mx-1" ]
                     [ button
-                        [ type_ "button", id "user-menu-button", onClick ToggleProfileDropdown, css [ text_200 color, "flex-shrink-0 rounded-full flex", hover [ bg_800 color, "text-white animate-jello-h" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ], ariaExpanded False, ariaHaspopup True ]
+                        [ type_ "button", id "user-menu-button", onClick ToggleProfileDropdown, css [ text_200 color, "flex-shrink-0 rounded-full flex", hover [ bg_800 color, "text-white animate-jello-h" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ], ariaExpanded False, ariaHaspopup "true" ]
                         [ span [ class "sr-only text-sm text-white" ] [ text "Open user menu" ]
                         , img [ src (u |> User.avatar), alt u.name, css [ "rounded-full h-8 w-8" ] ] []
                         ]
@@ -235,7 +235,7 @@ profileDropdown color currentUrl user profileLinks profileDropdownOpen =
             )
             (div [ class "flex-shrink-0 mx-1" ]
                 [ a
-                    [ href (Router.login currentUrl), id "user-menu-button", onClick ToggleProfileDropdown, css [ text_200 color, "flex-shrink-0 rounded-full p-1 flex", hover [ bg_800 color, "text-white animate-flip-h" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ], ariaExpanded False, ariaHaspopup True ]
+                    [ href (Router.login currentUrl), id "user-menu-button", onClick ToggleProfileDropdown, css [ text_200 color, "flex-shrink-0 rounded-full p-1 flex", hover [ bg_800 color, "text-white animate-flip-h" ], focus [ bg_900 color, ring_offset_900 color, "outline-none ring-2 ring-offset-2 ring-white" ] ], ariaExpanded False, ariaHaspopup "true" ]
                     [ span [ class "sr-only text-sm text-white" ] [ text "Open user menu" ]
                     , Icon.outline Icon.User ""
                     ]

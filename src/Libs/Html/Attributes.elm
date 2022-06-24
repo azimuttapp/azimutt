@@ -1,4 +1,4 @@
-module Libs.Html.Attributes exposing (ariaChecked, ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, css, hrefBlank, none, role, styles, track, when)
+module Libs.Html.Attributes exposing (ariaActivedescendant, ariaChecked, ariaControls, ariaCurrent, ariaDescribedby, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, ariaLive, ariaModal, ariaOrientation, css, hrefBlank, none, role, styles, track, when)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (attribute, class, classList, href, rel, target)
@@ -10,6 +10,11 @@ import Libs.Tailwind exposing (TwClass)
 
 
 -- sorted alphabetically
+
+
+ariaActivedescendant : HtmlId -> Attribute msg
+ariaActivedescendant targetId =
+    attribute "aria-activedescendant" targetId
 
 
 ariaChecked : Bool -> Attribute msg
@@ -37,9 +42,9 @@ ariaExpanded value =
     attribute "aria-expanded" (B.toString value)
 
 
-ariaHaspopup : Bool -> Attribute msg
+ariaHaspopup : String -> Attribute msg
 ariaHaspopup value =
-    attribute "aria-haspopup" (B.toString value)
+    attribute "aria-haspopup" value
 
 
 ariaHidden : Bool -> Attribute msg
