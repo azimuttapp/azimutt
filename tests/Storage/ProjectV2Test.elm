@@ -75,7 +75,7 @@ project0 : Project
 project0 =
     { id = "00000000-0000-0000-0000-000000000000"
     , name = "Project 0"
-    , sources = [ Source src1 "source 1" (LocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlFileLocal "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
     , tables = Dict.empty
     , relations = []
     , notes = Dict.empty
@@ -105,7 +105,7 @@ project1 : Project
 project1 =
     { id = "00000000-0000-0000-0000-000000000000"
     , name = "Project 0"
-    , sources = [ Source src1 "source 1" (LocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlFileLocal "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
     , tables = tables1
     , relations = []
     , notes = Dict.empty
@@ -180,7 +180,7 @@ project2 =
     , sources =
         [ Source src1
             "source 1"
-            (LocalFile "structure.sql" 10000 (time 200))
+            (SqlFileLocal "structure.sql" 10000 (time 200))
             (Array.fromList
                 [ ""
                 , ""

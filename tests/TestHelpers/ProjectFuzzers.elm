@@ -62,7 +62,7 @@ source =
 
 sourceKind : Fuzzer SourceKind
 sourceKind =
-    Fuzz.oneOf [ Fuzz.map3 LocalFile fileName fileSize fileModified, Fuzz.map2 RemoteFile fileUrl fileSize ]
+    Fuzz.oneOf [ Fuzz.map3 SqlFileLocal fileName fileSize fileModified, Fuzz.map2 SqlFileRemote fileUrl fileSize, Fuzz.constant AmlEditor ]
 
 
 sourceLines : Fuzzer (Array SourceLine)

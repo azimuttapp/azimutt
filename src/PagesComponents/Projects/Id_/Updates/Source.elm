@@ -27,14 +27,14 @@ addUserSource now name erd =
 
         source : Source
         source =
-            Source.user sourceId name Dict.empty [] now
+            Source.amlEditor sourceId name Dict.empty [] now
     in
     ( { erd | seed = seed } |> Erd.mapSources (\sources -> sources ++ [ source ]), source )
 
 
 createRelation : Time.Posix -> ColumnRef -> ColumnRef -> Erd -> ( Erd, Cmd Msg )
 createRelation now src ref erd =
-    case erd.sources |> List.find (\s -> s.kind == UserDefined && s.name == Conf.constants.virtualRelationSourceName) of
+    case erd.sources |> List.find (\s -> s.kind == AmlEditor && s.name == Conf.constants.virtualRelationSourceName) of
         Just source ->
             ( erd |> addRelation now source src ref
             , Toasts.info Toast ("Relation " ++ TableId.show src.table ++ " → " ++ TableId.show ref.table ++ " added to " ++ source.name ++ " source.")

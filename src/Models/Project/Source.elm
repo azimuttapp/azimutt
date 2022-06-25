@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelation, decode, encode, refreshWith, user)
+module Models.Project.Source exposing (Source, addRelation, amlEditor, decode, encode, refreshWith)
 
 import Array exposing (Array)
 import Conf
@@ -39,11 +39,11 @@ type alias Source =
     }
 
 
-user : SourceId -> String -> Dict TableId Table -> List Relation -> Time.Posix -> Source
-user id name tables relations now =
+amlEditor : SourceId -> String -> Dict TableId Table -> List Relation -> Time.Posix -> Source
+amlEditor id name tables relations now =
     { id = id
     , name = name
-    , kind = UserDefined
+    , kind = AmlEditor
     , content = Array.empty
     , tables = tables
     , relations = relations
@@ -106,7 +106,7 @@ decodeSource : SourceId -> SourceName -> SourceKind -> Array SourceLine -> Dict 
 decodeSource id name kind content tables relations enabled fromSample createdAt updatedAt =
     let
         ( n, c ) =
-            if kind == UserDefined && Array.isEmpty content && Dict.isEmpty tables && List.nonEmpty relations then
+            if kind == AmlEditor && Array.isEmpty content && Dict.isEmpty tables && List.nonEmpty relations then
                 -- migration from previous: no content, only relations and bad name for virtual relations
                 ( Conf.constants.virtualRelationSourceName
                 , Array.fromList (relations |> List.map (\r -> AmlGenerator.relation r.src r.ref))

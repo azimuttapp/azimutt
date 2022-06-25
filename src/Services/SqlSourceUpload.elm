@@ -251,12 +251,12 @@ gotRemoteFile now projectId sourceId url content sample =
 
 localSource : File -> SourceKind
 localSource file =
-    LocalFile file.name file.size file.lastModified
+    SqlFileLocal file.name file.size file.lastModified
 
 
 remoteSource : FileUrl -> FileContent -> SourceKind
 remoteSource url content =
-    RemoteFile url (String.length content)
+    SqlFileRemote url (String.length content)
 
 
 

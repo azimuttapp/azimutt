@@ -4,7 +4,7 @@ import Array exposing (Array)
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Conf
-import DataSources.AmlParser.AmlAdapter as AmlAdapter exposing (AmlSchema, AmlSchemaError)
+import DataSources.AmlParser.AmlAdapter as AmlAdapter exposing (AmlSchema)
 import DataSources.AmlParser.AmlParser as AmlParser
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h3, label, option, p, select, text)
@@ -20,12 +20,13 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
+import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -186,12 +187,31 @@ view erd model =
         selectedSource : Maybe Source
         selectedSource =
             model.selected |> Maybe.andThen (\id -> userSources |> List.find (\s -> s.id == id))
+
+        warnings : List String
+        warnings =
+            selectedSource
+                |> Maybe.mapOrElse .relations []
+                |> List.concatMap (\r -> [ ColumnId.from r.src, ColumnId.from r.ref ])
+                |> List.unique
+                |> List.filterMap
+                    (\( table, column ) ->
+                        case erd.tables |> Dict.get table |> Maybe.map (\t -> t.columns |> Dict.get column) of
+                            Just (Just _) ->
+                                Nothing
+
+                            Just Nothing ->
+                                Just ("Column '" ++ column ++ "' not found in table '" ++ TableId.show table ++ "'")
+
+                            Nothing ->
+                                Just ("Table '" ++ TableId.show table ++ "' not found")
+                    )
     in
     div []
         [ viewHeading
         , div [ class "px-3 py-2" ]
             [ viewChooseSource selectedSource userSources
-            , selectedSource |> Maybe.mapOrElse (viewSourceEditor model) (div [] [])
+            , selectedSource |> Maybe.mapOrElse (viewSourceEditor model warnings) (div [] [])
             ]
         ]
 
@@ -238,8 +258,8 @@ viewChooseSource selectedSource userSources =
         ]
 
 
-viewSourceEditor : AmlSidebar -> Source -> Html Msg
-viewSourceEditor model source =
+viewSourceEditor : AmlSidebar -> List String -> Source -> Html Msg
+viewSourceEditor model warnings source =
     div [ class "mt-3" ]
         [ Editor.basic "source-editor" (contentStr source) (AUpdateSource source.id >> AmlSidebarMsg) """Write your schema using AML syntax
 
@@ -263,24 +283,21 @@ roles
 
 # define a standalone relation
 fk credentials.role -> roles.slug""" 30 (List.nonEmpty model.errors)
-        , viewErrors model.errors
+        , viewErrors (model.errors |> List.map (\err -> err.problem ++ " at line " ++ String.fromInt err.row ++ ", column " ++ String.fromInt err.col) |> List.unique)
+        , viewWarnings (warnings |> List.unique)
         , viewHelp
         ]
 
 
-viewErrors : List AmlSchemaError -> Html msg
+viewErrors : List String -> Html msg
 viewErrors errors =
     div []
-        (errors
-            |> List.map (\err -> err.problem ++ " at line " ++ String.fromInt err.row ++ ", column " ++ String.fromInt err.col)
-            |> List.unique
-            |> List.map
-                (\err ->
-                    p [ class "mt-2 text-sm text-red-600" ]
-                        [ text err
-                        ]
-                )
-        )
+        (errors |> List.map (\err -> p [ class "mt-2 text-sm text-red-600" ] [ text err ]))
+
+
+viewWarnings : List String -> Html msg
+viewWarnings warnings =
+    div [] (warnings |> List.map (\warning -> p [ class "mt-2 text-sm text-yellow-600" ] [ text warning ]))
 
 
 viewHelp : Html msg
