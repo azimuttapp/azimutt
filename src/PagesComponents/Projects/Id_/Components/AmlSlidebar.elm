@@ -72,7 +72,7 @@ update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update now msg model =
     case msg of
         AOpen ->
-            ( model |> setAmlSidebar (Just (init model)), Ports.track Track.openUserSourceUpdate )
+            ( model |> setAmlSidebar (Just (init model)), Ports.track Track.openUpdateSchema )
 
         AClose ->
             ( model |> setAmlSidebar Nothing, Cmd.none )
@@ -131,8 +131,6 @@ updateSource now sourceId input model =
                             |> Maybe.map PlaceAt
                         )
                     )
-
-        -- FIXME: sort issues :(
     in
     if List.nonEmpty parsed.errors then
         ( model |> mapErdM (Erd.mapSource sourceId (setContent content >> setUpdatedAt now)) |> mapAmlSidebarM (setErrors parsed.errors), Cmd.none )

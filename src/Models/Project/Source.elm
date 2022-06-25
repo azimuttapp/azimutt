@@ -39,7 +39,7 @@ type alias Source =
     }
 
 
-amlEditor : SourceId -> String -> Dict TableId Table -> List Relation -> Time.Posix -> Source
+amlEditor : SourceId -> SourceName -> Dict TableId Table -> List Relation -> Time.Posix -> Source
 amlEditor id name tables relations now =
     { id = id
     , name = name

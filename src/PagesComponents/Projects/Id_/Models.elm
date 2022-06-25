@@ -23,6 +23,7 @@ import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
+import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
@@ -174,7 +175,7 @@ type Msg
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
-    | CreateUserSource String
+    | CreateUserSource SourceName
     | CreateRelation ColumnRef ColumnRef
     | ResetCanvas
     | LayoutMsg LayoutMsg

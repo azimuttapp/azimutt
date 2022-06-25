@@ -7,6 +7,7 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
+import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -14,12 +15,12 @@ import Services.Toasts as Toasts
 import Time
 
 
-createUserSource : Time.Posix -> String -> Erd -> Erd
+createUserSource : Time.Posix -> SourceName -> Erd -> Erd
 createUserSource now name erd =
     addUserSource now name erd |> Tuple.first
 
 
-addUserSource : Time.Posix -> String -> Erd -> ( Erd, Source )
+addUserSource : Time.Posix -> SourceName -> Erd -> ( Erd, Source )
 addUserSource now name erd =
     let
         ( sourceId, seed ) =
