@@ -1,4 +1,4 @@
-module Libs.Basics exposing (convertBase, fromDec, inside, toDec, toHex, toOct)
+module Libs.Basics exposing (convertBase, fromDec, inside, toDec, toHex, toOct, tupled)
 
 import Array exposing (Array)
 import Dict exposing (Dict)
@@ -136,3 +136,8 @@ fromDecInner base dict suffix value =
 inside : comparable -> comparable -> comparable -> comparable
 inside minValue maxValue value =
     value |> min maxValue |> max minValue
+
+
+tupled : (a -> b -> c) -> (( a, b ) -> c)
+tupled f ( a, b ) =
+    f a b

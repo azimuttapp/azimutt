@@ -84,5 +84,5 @@ move drag zoom position =
 buildSelectionArea : ScreenProps -> CanvasProps -> DragState -> Area
 buildSelectionArea screen canvas dragState =
     Area.from dragState.init dragState.last
-        |> Area.move (screen.position |> Position.add canvas.position |> Position.negate)
+        |> Area.move (screen.position |> Position.add { left = 0, top = Conf.ui.navbarHeight } |> Position.add canvas.position |> Position.negate)
         |> Area.div canvas.zoom

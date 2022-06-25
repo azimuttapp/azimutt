@@ -19,7 +19,9 @@ import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps, mapSelected)
+import PagesComponents.Projects.Id_.Models.HideColumns as HideColumns exposing (HideColumns)
 import PagesComponents.Projects.Id_.Models.PositionHint as PositionHint exposing (PositionHint(..))
+import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns exposing (ShowColumns)
 import Ports
 import Services.Lenses exposing (mapRelatedTables, mapShown, mapShownTables, mapTableProps, mapTablePropsCmd, setHoverColumn)
 import Services.Toasts as Toasts
@@ -214,7 +216,7 @@ hoverNextColumn table column model =
     model |> setHoverColumn (nextColumn |> Maybe.map (ColumnRef table))
 
 
-showColumns : TableId -> String -> Erd -> ( Erd, Cmd Msg )
+showColumns : TableId -> ShowColumns -> Erd -> ( Erd, Cmd Msg )
 showColumns id kind erd =
     mapTablePropsOrSelectedColumns id
         (\table columns ->
@@ -228,14 +230,14 @@ showColumns id kind erd =
                                     |> List.filter
                                         (\column ->
                                             case kind of
-                                                "all" ->
+                                                ShowColumns.All ->
                                                     True
 
-                                                "relations" ->
+                                                ShowColumns.Relations ->
                                                     tableRelations |> Relation.withLink id column.name |> List.nonEmpty
 
-                                                _ ->
-                                                    False
+                                                ShowColumns.List cols ->
+                                                    cols |> List.member column.name
                                         )
                                     |> List.map .name
                                )
@@ -244,7 +246,7 @@ showColumns id kind erd =
         erd
 
 
-hideColumns : TableId -> String -> Erd -> ( Erd, Cmd Msg )
+hideColumns : TableId -> HideColumns -> Erd -> ( Erd, Cmd Msg )
 hideColumns id kind erd =
     mapTablePropsOrSelectedColumns id
         (\table columns ->
@@ -256,19 +258,19 @@ hideColumns id kind erd =
                             |> List.filter
                                 (\( name, col ) ->
                                     case ( kind, col ) of
-                                        ( "relations", Just _ ) ->
+                                        ( HideColumns.Relations, Just _ ) ->
                                             tableRelations |> Relation.withLink id name |> List.nonEmpty
 
-                                        ( "regular", Just _ ) ->
+                                        ( HideColumns.Regular, Just _ ) ->
                                             (name |> Table.inPrimaryKey table |> Maybe.isJust)
                                                 || (tableRelations |> Relation.withLink id name |> List.nonEmpty)
                                                 || (name |> Table.inUniques table |> List.nonEmpty)
                                                 || (name |> Table.inIndexes table |> List.nonEmpty)
 
-                                        ( "nullable", Just c ) ->
+                                        ( HideColumns.Nullable, Just c ) ->
                                             not c.nullable
 
-                                        ( "all", _ ) ->
+                                        ( HideColumns.All, _ ) ->
                                             False
 
                                         _ ->
@@ -382,7 +384,7 @@ mapTablePropsOrSelectedColumns id transform erd =
                             (\cols ->
                                 erd.tables
                                     |> Dict.get p.id
-                                    |> Maybe.map (\table -> transform table cols)
+                                    |> Maybe.map (\table -> transform table cols |> List.filter (\c -> table.columns |> Dict.member c))
                                     |> Maybe.withDefault cols
                             )
                             erd.notes

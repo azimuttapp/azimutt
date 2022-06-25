@@ -1,16 +1,7 @@
-module DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlForeignKeyRef, SqlLine, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName, SqlTableRef)
+module DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName, SqlTableRef)
 
-import Libs.Models exposing (FileLineContent)
-import Libs.Models.FileLineIndex exposing (FileLineIndex)
+import DataSources.Helpers exposing (SourceLine)
 import Libs.Nel exposing (Nel)
-
-
-type alias SqlLine =
-    { line : FileLineIndex, text : FileLineContent }
-
-
-type alias SqlStatement =
-    Nel SqlLine
 
 
 type alias RawSql =
@@ -21,8 +12,8 @@ type alias ParseError =
     String
 
 
-type alias SqlConstraintName =
-    String
+type alias SqlStatement =
+    Nel SourceLine
 
 
 type alias SqlSchemaName =
@@ -46,6 +37,10 @@ type alias SqlColumnValue =
 
 
 type alias SqlComment =
+    String
+
+
+type alias SqlConstraintName =
     String
 
 

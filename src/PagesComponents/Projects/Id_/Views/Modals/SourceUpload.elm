@@ -43,13 +43,13 @@ viewSourceUpload zone now opened model =
             |> Maybe.mapOrElse
                 (\source ->
                     case source.kind of
-                        LocalFile filename _ updatedAt ->
+                        SqlFileLocal filename _ updatedAt ->
                             localFileModal zone now titleId source filename updatedAt model.parsing
 
-                        RemoteFile url _ ->
+                        SqlFileRemote url _ ->
                             remoteFileModal zone now titleId source url model.parsing
 
-                        UserDefined ->
+                        AmlEditor ->
                             userDefinedModal titleId
                 )
                 (newSourceModal titleId model.parsing)
@@ -76,7 +76,7 @@ localFileModal zone now titleId source fileName updatedAt model =
             ]
         , div [ class "mt-3" ] [ FileInput.schemaFile "file-upload" (SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "update-source-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( _, s, _ ) -> s.kind) ) of
-            ( LocalFile name1 _ updated1, Just (LocalFile name2 _ updated2) ) ->
+            ( SqlFileLocal name1 _ updated1, Just (SqlFileLocal name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
                 , Just [ text "You file is ", bText "older", text " than the previous one" ] |> Maybe.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
                 ]

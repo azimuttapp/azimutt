@@ -9,8 +9,8 @@
     "dependencies": {
         "direct": {
             "NoRedInk/elm-simple-fuzzy": "1.0.3",
-            "TSFoster/elm-uuid": "4.1.0",
-            "dtwrks/elm-book": "1.4.0",
+            "TSFoster/elm-uuid": "4.2.0",
+            "dtwrks/elm-book": "1.4.1",
             "elm/browser": "1.0.2",
             "elm/core": "1.0.5",
             "elm/html": "1.0.0",
@@ -38,7 +38,7 @@
             "dillonkearns/elm-markdown": "7.0.0",
             "elm/bytes": "1.0.8",
             "elm/file": "1.0.5",
-            "elm/virtual-dom": "1.0.2",
+            "elm/virtual-dom": "1.0.3",
             "pablohirafuji/elm-syntax-highlight": "3.4.1",
             "rtfeldman/elm-hex": "1.0.0",
             "zwilias/elm-utf-tools": "2.0.1"

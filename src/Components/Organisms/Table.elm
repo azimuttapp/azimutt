@@ -169,7 +169,7 @@ viewHeader model =
         [ title model.label
         , css
             [ "flex items-center justify-items-center px-3 py-1 border-t-8 border-b border-b-default-200"
-            , if model.state.collapsed then
+            , if model.state.collapsed || (List.isEmpty model.columns && List.isEmpty model.hiddenColumns) then
                 "rounded-lg"
 
               else
@@ -199,7 +199,7 @@ viewHeader model =
                          , id m.id
                          , onClick (model.actions.clickDropdown m.id)
                          , ariaExpanded m.isOpen
-                         , ariaHaspopup True
+                         , ariaHaspopup "true"
                          , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
                          ]
                             ++ track Track.openTableSettings
@@ -362,7 +362,7 @@ viewColumnIconDropdown model column icon =
                      , id m.id
                      , onClick (model.actions.clickDropdown m.id)
                      , ariaExpanded m.isOpen
-                     , ariaHaspopup True
+                     , ariaHaspopup "true"
                      , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
                      ]
                         ++ track Track.openIncomingRelationsDropdown

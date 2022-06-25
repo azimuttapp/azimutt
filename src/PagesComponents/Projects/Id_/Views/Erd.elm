@@ -5,7 +5,7 @@ import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict exposing (Dict)
-import Html exposing (Html, button, div, h2, main_, p, text)
+import Html exposing (Html, button, div, h2, p, text)
 import Html.Attributes exposing (class, classList, id, style)
 import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse exposing (Button(..))
@@ -20,7 +20,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as String
@@ -98,15 +98,14 @@ viewErd platform conf screen erd selectionBox virtualRelation args dragging =
                                         |> Maybe.map
                                             (\ref ->
                                                 ( ( erd |> Erd.getColumnProps src.table src.column, ref )
-                                                , vr.mouse |> CanvasProps.adapt screen canvas
+                                                , vr.mouse |> Position.sub { left = 0, top = Conf.ui.navbarHeight } |> CanvasProps.adapt screen canvas
                                                 )
                                             )
                                 )
                     )
     in
-    main_
+    div
         [ class "az-erd h-full bg-gray-100 overflow-hidden"
-        , style "height" (B.cond conf.showNavbar "calc(100% - 64px)" "100%") -- 64px is the header height, we want this component to fill the viewport
         , classList
             [ ( "cursor-grab-all", cursorMode == CursorMode.Drag && dragging == Nothing && virtualRelation == Nothing )
             , ( "cursor-grabbing-all", cursorMode == CursorMode.Drag && dragging /= Nothing && virtualRelation == Nothing )

@@ -1,4 +1,231 @@
-module Services.Lenses exposing (mapActive, mapCanvas, mapChecks, mapCollapseTableColumns, mapColumnBasicTypes, mapColumnProps, mapColumns, mapComment, mapCommentM, mapConf, mapContextMenuM, mapEachProjectMLayoutTables, mapEachTable, mapEditNotesM, mapEnabled, mapErdM, mapErdMCmd, mapFindPath, mapFindPathM, mapHiddenColumns, mapHiddenTables, mapHover, mapHoverColumn, mapHoverTable, mapIndex, mapIndexes, mapLayout, mapLayouts, mapList, mapMTeamCmd, mapMobileMenuOpen, mapNavbar, mapNewLayoutM, mapNotes, mapOpened, mapOpenedDialogs, mapOpenedDropdown, mapOpenedPopover, mapParsedSchema, mapParsedSchemaM, mapParsing, mapParsingCmd, mapPosition, mapPrimaryKey, mapPrimaryKeyM, mapProject, mapProjectImportCmd, mapProjectImportM, mapProjectImportMCmd, mapProjectM, mapProjectMCmd, mapProjectMLayout, mapProjectMLayoutTable, mapProjectMLayoutTables, mapPrompt, mapPromptM, mapProps, mapRelatedTables, mapRelations, mapRemoveViews, mapRemovedSchemas, mapResult, mapSampleSelectionM, mapSampleSelectionMCmd, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapSelectionBox, mapSettings, mapSharing, mapSharingM, mapShow, mapShowHiddenColumns, mapShowSettings, mapShown, mapShownColumns, mapShownTables, mapSourceParsingMCmd, mapSourceUploadM, mapSourceUploadMCmd, mapSources, mapSqlSourceUploadCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapSwitch, mapTableInList, mapTableProps, mapTablePropsCmd, mapTables, mapTeamCmd, mapTime, mapToasts, mapToastsCmd, mapTop, mapUniques, mapUpload, mapUploadCmd, mapUploadM, mapUsedLayout, mapUser, mapUserM, mapUsername, mapVirtualRelationM, setActive, setBio, setCanvas, setChecks, setCollapseTableColumns, setColumn, setColumnBasicTypes, setColumnOrder, setColumnProps, setColumns, setComment, setCompany, setConf, setConfirm, setContent, setContextMenu, setCursorMode, setDragState, setDragging, setEditNotes, setEnabled, setErd, setFindPath, setFrom, setGithub, setHiddenColumns, setHiddenTables, setHighlighted, setHover, setHoverColumn, setHoverTable, setIgnoredColumns, setIgnoredTables, setIndex, setIndexes, setInput, setIsOpen, setLast, setLayout, setLayouts, setList, setLoading, setLocation, setMax, setMobileMenuOpen, setMouse, setName, setNavbar, setNewLayout, setNotes, setNow, setOpened, setOpenedDialogs, setOpenedDropdown, setOpenedPopover, setOrigins, setParsedSchema, setParsing, setPopover, setPosition, setPrimaryKey, setProject, setProjectImport, setPrompt, setProps, setRelatedTables, setRelationStyle, setRelations, setRemoveViews, setRemovedSchemas, setRemovedTables, setResult, setSampleSelection, setSchemaAnalysis, setScreen, setSearch, setSelected, setSelection, setSelectionBox, setSettings, setSharing, setShow, setShowSettings, setShown, setShownColumns, setShownTables, setSize, setSourceParsing, setSourceUpload, setSources, setSqlSourceUpload, setSwitch, setTable, setTableProps, setTables, setTeam, setText, setTime, setTo, setToastIdx, setToasts, setTop, setTwitter, setUniques, setUpload, setUsedLayout, setUser, setUsername, setVirtualRelation, setWebsite, setZone, setZoom, updatePosition)
+module Services.Lenses exposing
+    ( mapActive
+    , mapAmlSidebarM
+    , mapCanvas
+    , mapChecks
+    , mapCollapseTableColumns
+    , mapColumnBasicTypes
+    , mapColumnProps
+    , mapColumns
+    , mapComment
+    , mapCommentM
+    , mapConf
+    , mapContent
+    , mapContextMenuM
+    , mapEachProjectMLayoutTables
+    , mapEachTable
+    , mapEditNotesM
+    , mapEnabled
+    , mapErdM
+    , mapErdMCmd
+    , mapFindPath
+    , mapFindPathM
+    , mapHiddenColumns
+    , mapHiddenTables
+    , mapHover
+    , mapHoverColumn
+    , mapHoverTable
+    , mapIndex
+    , mapIndexes
+    , mapLayout
+    , mapLayouts
+    , mapList
+    , mapMTeamCmd
+    , mapMobileMenuOpen
+    , mapNavbar
+    , mapNewLayoutM
+    , mapNotes
+    , mapOpened
+    , mapOpenedDialogs
+    , mapOpenedDropdown
+    , mapOpenedPopover
+    , mapParsedSchema
+    , mapParsedSchemaM
+    , mapParsing
+    , mapParsingCmd
+    , mapPosition
+    , mapPrimaryKey
+    , mapPrimaryKeyM
+    , mapProject
+    , mapProjectImportCmd
+    , mapProjectImportM
+    , mapProjectImportMCmd
+    , mapProjectM
+    , mapProjectMCmd
+    , mapProjectMLayout
+    , mapProjectMLayoutTable
+    , mapProjectMLayoutTables
+    , mapPrompt
+    , mapPromptM
+    , mapProps
+    , mapRelatedTables
+    , mapRelations
+    , mapRemoveViews
+    , mapRemovedSchemas
+    , mapResult
+    , mapSampleSelectionM
+    , mapSampleSelectionMCmd
+    , mapSchemaAnalysisM
+    , mapScreen
+    , mapSearch
+    , mapSelected
+    , mapSelectionBox
+    , mapSettings
+    , mapSharing
+    , mapSharingM
+    , mapShow
+    , mapShowHiddenColumns
+    , mapShowSettings
+    , mapShown
+    , mapShownColumns
+    , mapShownTables
+    , mapSourceParsingMCmd
+    , mapSourceUploadM
+    , mapSourceUploadMCmd
+    , mapSources
+    , mapSourcesL
+    , mapSqlSourceUploadCmd
+    , mapSqlSourceUploadM
+    , mapSqlSourceUploadMCmd
+    , mapSwitch
+    , mapTableInList
+    , mapTableProps
+    , mapTablePropsCmd
+    , mapTables
+    , mapTeamCmd
+    , mapTime
+    , mapToasts
+    , mapToastsCmd
+    , mapTop
+    , mapUniques
+    , mapUpload
+    , mapUploadCmd
+    , mapUploadM
+    , mapUsedLayout
+    , mapUser
+    , mapUserM
+    , mapUsername
+    , mapVirtualRelationM
+    , setActive
+    , setAmlSidebar
+    , setBio
+    , setCanvas
+    , setChecks
+    , setCollapseTableColumns
+    , setColumn
+    , setColumnBasicTypes
+    , setColumnOrder
+    , setColumnProps
+    , setColumns
+    , setComment
+    , setCompany
+    , setConf
+    , setConfirm
+    , setContent
+    , setContextMenu
+    , setCursorMode
+    , setDragState
+    , setDragging
+    , setEditNotes
+    , setEnabled
+    , setErd
+    , setErrors
+    , setFindPath
+    , setFrom
+    , setGithub
+    , setHiddenColumns
+    , setHiddenTables
+    , setHighlight
+    , setHighlighted
+    , setHover
+    , setHoverColumn
+    , setHoverTable
+    , setIgnoredColumns
+    , setIgnoredTables
+    , setIndex
+    , setIndexes
+    , setInput
+    , setIsOpen
+    , setLast
+    , setLayout
+    , setLayouts
+    , setList
+    , setLoading
+    , setLocation
+    , setMax
+    , setMobileMenuOpen
+    , setMouse
+    , setName
+    , setNavbar
+    , setNewLayout
+    , setNotes
+    , setNow
+    , setOpened
+    , setOpenedDialogs
+    , setOpenedDropdown
+    , setOpenedPopover
+    , setOrigins
+    , setParsedSchema
+    , setParsing
+    , setPopover
+    , setPosition
+    , setPrimaryKey
+    , setProject
+    , setProjectImport
+    , setPrompt
+    , setProps
+    , setRelatedTables
+    , setRelationStyle
+    , setRelations
+    , setRemoveViews
+    , setRemovedSchemas
+    , setRemovedTables
+    , setResult
+    , setSampleSelection
+    , setSchemaAnalysis
+    , setScreen
+    , setSearch
+    , setSelected
+    , setSelection
+    , setSelectionBox
+    , setSettings
+    , setSharing
+    , setShow
+    , setShowHiddenColumns
+    , setShowSettings
+    , setShown
+    , setShownColumns
+    , setShownTables
+    , setSize
+    , setSourceParsing
+    , setSourceUpload
+    , setSources
+    , setSqlSourceUpload
+    , setSwitch
+    , setTable
+    , setTableProps
+    , setTables
+    , setTeam
+    , setText
+    , setTime
+    , setTo
+    , setToastIdx
+    , setToasts
+    , setTop
+    , setTwitter
+    , setUniques
+    , setUpdatedAt
+    , setUpload
+    , setUsedLayout
+    , setUser
+    , setUsername
+    , setValue
+    , setVirtualRelation
+    , setWebsite
+    , setZone
+    , setZoom
+    , updatePosition
+    )
 
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
@@ -23,6 +250,16 @@ setActive =
 mapActive : (v -> v) -> { item | active : v } -> { item | active : v }
 mapActive =
     map .active setActive
+
+
+setAmlSidebar : v -> { item | amlSidebar : v } -> { item | amlSidebar : v }
+setAmlSidebar =
+    set .amlSidebar (\value item -> { item | amlSidebar = value })
+
+
+mapAmlSidebarM : (v -> v) -> { item | amlSidebar : Maybe v } -> { item | amlSidebar : Maybe v }
+mapAmlSidebarM =
+    mapM .amlSidebar setAmlSidebar
 
 
 setBio : v -> { item | bio : v } -> { item | bio : v }
@@ -140,6 +377,11 @@ setContent =
     set .content (\value item -> { item | content = value })
 
 
+mapContent : (v -> v) -> { item | content : v } -> { item | content : v }
+mapContent =
+    map .content setContent
+
+
 setContextMenu : v -> { item | contextMenu : v } -> { item | contextMenu : v }
 setContextMenu =
     set .contextMenu (\value item -> { item | contextMenu = value })
@@ -200,6 +442,11 @@ mapErdMCmd =
     mapMCmd .erd setErd
 
 
+setErrors : v -> { item | errors : v } -> { item | errors : v }
+setErrors =
+    set .errors (\value item -> { item | errors = value })
+
+
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
 setFindPath =
     set .findPath (\value item -> { item | findPath = value })
@@ -243,6 +490,11 @@ setHiddenTables =
 mapHiddenTables : (v -> v) -> { item | hiddenTables : v } -> { item | hiddenTables : v }
 mapHiddenTables =
     map .hiddenTables setHiddenTables
+
+
+setHighlight : v -> { item | highlight : v } -> { item | highlight : v }
+setHighlight =
+    set .highlight (\value item -> { item | highlight = value })
 
 
 setHighlighted : v -> { item | highlighted : v } -> { item | highlighted : v }
@@ -820,6 +1072,11 @@ mapSources =
     map .sources setSources
 
 
+mapSourcesL : (v -> k) -> k -> (v -> v) -> { item | sources : List v } -> { item | sources : List v }
+mapSourcesL =
+    mapL .sources setSources
+
+
 setSourceParsing : v -> { item | sourceParsing : v } -> { item | sourceParsing : v }
 setSourceParsing =
     set .sourceParsing (\value item -> { item | sourceParsing = value })
@@ -985,6 +1242,11 @@ mapUniques =
     map .uniques setUniques
 
 
+setUpdatedAt : v -> { item | updatedAt : v } -> { item | updatedAt : v }
+setUpdatedAt =
+    set .updatedAt (\value item -> { item | updatedAt = value })
+
+
 setUpload : v -> { item | upload : v } -> { item | upload : v }
 setUpload =
     set .upload (\value item -> { item | upload = value })
@@ -1040,6 +1302,11 @@ mapUsername =
     map .username setUsername
 
 
+setValue : v -> { item | value : v } -> { item | value : v }
+setValue =
+    set .value (\value item -> { item | value = value })
+
+
 setVirtualRelation : v -> { item | virtualRelation : v } -> { item | virtualRelation : v }
 setVirtualRelation =
     set .virtualRelation (\value item -> { item | virtualRelation = value })
@@ -1092,6 +1359,23 @@ mapCmd get update transform item =
 mapMCmd : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
 mapMCmd get update transform item =
     item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> update (Just value) item)) ( item, Cmd.none )
+
+
+mapL : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> v) -> item -> item
+mapL get update getKey key transform item =
+    update
+        (item
+            |> get
+            |> List.map
+                (\v ->
+                    if getKey v == key then
+                        transform v
+
+                    else
+                        v
+                )
+        )
+        item
 
 
 

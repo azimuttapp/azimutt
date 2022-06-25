@@ -124,7 +124,7 @@ adminProfile : Bool -> AdminProfile msg -> Html msg
 adminProfile isOpen profile =
     Dropdown.dropdown { id = profile.id, direction = BottomLeft, isOpen = isOpen }
         (\m ->
-            button [ type_ "button", id m.id, onClick profile.onClick, css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
+            button [ type_ "button", id m.id, onClick profile.onClick, css [ "ml-3 rounded-full flex text-sm text-white bg-primary-600", focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup "true" ]
                 [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
                 , img [ css [ "rounded-full h-8 w-8" ], src profile.avatar, alt "Your avatar", width 32, height 32 ] []
                 ]

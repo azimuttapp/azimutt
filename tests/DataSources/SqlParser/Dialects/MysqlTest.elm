@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Dialects.MysqlTest exposing (..)
 
-import DataSources.SqlParser.StatementParser exposing (Command(..))
-import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParseStatement)
+import DataSources.SqlParser.SqlParser exposing (Command(..), parseCommand)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -11,7 +11,7 @@ suite =
     describe "MySQL"
         [ describe "CREATE TABLE"
             -- https://dev.mysql.com/doc/refman/8.0/en/create-table.html
-            [ testParseStatement "with primary key"
+            [ testStatement ( parseCommand, "with primary key" )
                 """CREATE TABLE t1 (
                        c1 INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                        c2 VARCHAR(100),

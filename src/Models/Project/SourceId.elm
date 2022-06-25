@@ -1,4 +1,4 @@
-module Models.Project.SourceId exposing (SourceId, decode, encode, new, random, toString)
+module Models.Project.SourceId exposing (SourceId, decode, encode, fromString, new, random, toString)
 
 import Json.Decode as Decode exposing (Value)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
@@ -22,6 +22,15 @@ random seed =
 toString : SourceId -> String
 toString (SourceId id) =
     id
+
+
+fromString : String -> Maybe SourceId
+fromString value =
+    if Uuid.isValid value then
+        Just (new value)
+
+    else
+        Nothing
 
 
 encode : SourceId -> Value

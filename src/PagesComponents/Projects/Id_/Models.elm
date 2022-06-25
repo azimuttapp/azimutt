@@ -1,6 +1,7 @@
-module PagesComponents.Projects.Id_.Models exposing (ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas)
+module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
+import DataSources.AmlParser.AmlAdapter exposing (AmlSchemaError)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
 import Libs.Area exposing (Area)
@@ -21,6 +22,8 @@ import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId)
+import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
@@ -34,9 +37,11 @@ import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
+import PagesComponents.Projects.Id_.Models.HideColumns exposing (HideColumns)
 import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
 import Random
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
@@ -58,6 +63,7 @@ type alias Model =
     , selectionBox : Maybe Area
     , newLayout : Maybe LayoutDialog
     , editNotes : Maybe NotesDialog
+    , amlSidebar : Maybe AmlSidebar
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
@@ -96,6 +102,10 @@ type alias LayoutDialog =
 
 type alias NotesDialog =
     { id : HtmlId, ref : NotesRef, notes : Notes }
+
+
+type alias AmlSidebar =
+    { id : HtmlId, selected : Maybe SourceId, errors : List AmlSchemaError }
 
 
 type alias VirtualRelation =
@@ -153,8 +163,8 @@ type Msg
     | ToggleColumns TableId
     | ShowColumn ColumnRef
     | HideColumn ColumnRef
-    | ShowColumns TableId String
-    | HideColumns TableId String
+    | ShowColumns TableId ShowColumns
+    | HideColumns TableId HideColumns
     | SortColumns TableId ColumnOrder
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
@@ -165,10 +175,12 @@ type Msg
     | MoveColumn ColumnRef Int
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
+    | CreateUserSource SourceName
     | CreateRelation ColumnRef ColumnRef
     | ResetCanvas
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
+    | AmlSidebarMsg AmlSidebarMsg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
@@ -226,6 +238,14 @@ type NotesMsg
     | NEdit Notes
     | NSave NotesRef Notes
     | NCancel
+
+
+type AmlSidebarMsg
+    = AOpen
+    | AClose
+    | AToggle
+    | AChangeSource (Maybe SourceId)
+    | AUpdateSource SourceId String
 
 
 type VirtualRelationMsg
@@ -316,6 +336,20 @@ prompt title content input message =
         , onConfirm = message >> T.send
         }
         input
+
+
+simplePrompt : String -> (String -> Msg) -> Msg
+simplePrompt label message =
+    PromptOpen
+        { color = Tw.blue
+        , icon = QuestionMarkCircle
+        , title = label
+        , message = text ""
+        , confirm = "Ok"
+        , cancel = "Cancel"
+        , onConfirm = message >> T.send
+        }
+        ""
 
 
 resetCanvas : Msg

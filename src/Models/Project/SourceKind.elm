@@ -1,4 +1,4 @@
-module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, path, same)
+module Models.Project.SourceKind exposing (SourceKind(..), decode, encode, isUser, path, same)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -11,34 +11,44 @@ import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 
 
 type SourceKind
-    = LocalFile FileName FileSize FileUpdatedAt
-    | RemoteFile FileUrl FileSize
-    | UserDefined
+    = SqlFileLocal FileName FileSize FileUpdatedAt
+    | SqlFileRemote FileUrl FileSize
+    | AmlEditor
+
+
+isUser : SourceKind -> Bool
+isUser kind =
+    case kind of
+        AmlEditor ->
+            True
+
+        _ ->
+            False
 
 
 path : SourceKind -> String
 path sourceContent =
     case sourceContent of
-        LocalFile name _ _ ->
+        SqlFileLocal name _ _ ->
             name
 
-        RemoteFile url _ ->
+        SqlFileRemote url _ ->
             url
 
-        UserDefined ->
+        AmlEditor ->
             ""
 
 
 same : SourceKind -> SourceKind -> Bool
 same k2 k1 =
     case ( k1, k2 ) of
-        ( LocalFile _ _ _, LocalFile _ _ _ ) ->
+        ( SqlFileLocal _ _ _, SqlFileLocal _ _ _ ) ->
             True
 
-        ( RemoteFile _ _, RemoteFile _ _ ) ->
+        ( SqlFileRemote _ _, SqlFileRemote _ _ ) ->
             True
 
-        ( UserDefined, UserDefined ) ->
+        ( AmlEditor, AmlEditor ) ->
             True
 
         _ ->
@@ -48,7 +58,7 @@ same k2 k1 =
 encode : SourceKind -> Value
 encode value =
     case value of
-        LocalFile name size modified ->
+        SqlFileLocal name size modified ->
             Encode.notNullObject
                 [ ( "kind", "LocalFile" |> Encode.string )
                 , ( "name", name |> FileName.encode )
@@ -56,14 +66,14 @@ encode value =
                 , ( "modified", modified |> FileUpdatedAt.encode )
                 ]
 
-        RemoteFile name size ->
+        SqlFileRemote name size ->
             Encode.notNullObject
                 [ ( "kind", "RemoteFile" |> Encode.string )
                 , ( "url", name |> FileUrl.encode )
                 , ( "size", size |> FileSize.encode )
                 ]
 
-        UserDefined ->
+        AmlEditor ->
             Encode.notNullObject [ ( "kind", "UserDefined" |> Encode.string ) ]
 
 
@@ -72,20 +82,45 @@ decode =
     Decode.matchOn "kind"
         (\kind ->
             case kind of
+                "SqlFileLocal" ->
+                    decodeSqlFileLocal
+
+                "SqlFileRemote" ->
+                    decodeSqlFileRemote
+
+                "AmlEditor" ->
+                    decodeAmlEditor
+
+                -- legacy names:
                 "LocalFile" ->
-                    Decode.map3 LocalFile
-                        (Decode.field "name" FileName.decode)
-                        (Decode.field "size" FileSize.decode)
-                        (Decode.field "modified" FileUpdatedAt.decode)
+                    decodeSqlFileLocal
 
                 "RemoteFile" ->
-                    Decode.map2 RemoteFile
-                        (Decode.field "url" FileUrl.decode)
-                        (Decode.field "size" FileSize.decode)
+                    decodeSqlFileRemote
 
                 "UserDefined" ->
-                    Decode.succeed UserDefined
+                    decodeAmlEditor
 
                 other ->
                     Decode.fail ("Not supported kind of SourceKind '" ++ other ++ "'")
         )
+
+
+decodeSqlFileLocal : Decode.Decoder SourceKind
+decodeSqlFileLocal =
+    Decode.map3 SqlFileLocal
+        (Decode.field "name" FileName.decode)
+        (Decode.field "size" FileSize.decode)
+        (Decode.field "modified" FileUpdatedAt.decode)
+
+
+decodeSqlFileRemote : Decode.Decoder SourceKind
+decodeSqlFileRemote =
+    Decode.map2 SqlFileRemote
+        (Decode.field "url" FileUrl.decode)
+        (Decode.field "size" FileSize.decode)
+
+
+decodeAmlEditor : Decode.Decoder SourceKind
+decodeAmlEditor =
+    Decode.succeed AmlEditor

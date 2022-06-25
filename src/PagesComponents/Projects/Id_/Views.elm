@@ -6,15 +6,18 @@ import Components.Slices.NotFound as NotFound
 import Conf
 import Dict
 import Gen.Route as Route
-import Html exposing (Html, div)
+import Html exposing (Html, aside, div, main_, section)
 import Html.Attributes exposing (class, style)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
+import Libs.Bool as B
+import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.User exposing (User)
+import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
@@ -74,44 +77,40 @@ viewApp currentUrl shared model htmlId erd =
 
           else
             div [] []
-        , Lazy.lazy8 viewErd shared.conf.platform model.conf model.screen erd model.selectionBox model.virtualRelation (Erd.argsToString model.cursorMode model.openedDropdown model.openedPopover) model.dragging
-        , if model.conf.fullscreen || model.conf.move then
-            Lazy.lazy6 viewCommands model.conf model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (erd.tableProps |> Dict.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+        , main_
+            [ class "flex-1 flex overflow-hidden"
+            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ String.fromFloat Conf.ui.navbarHeight ++ "px)") "100%")
+            ]
+            [ section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
+                [ Lazy.lazy8 viewErd shared.conf.platform model.conf model.screen erd model.selectionBox model.virtualRelation (Erd.argsToString model.cursorMode model.openedDropdown model.openedPopover) model.dragging
+                , if model.conf.fullscreen || model.conf.move then
+                    Lazy.lazy6 viewCommands model.conf model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (erd.tableProps |> Dict.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
 
-          else
-            div [] []
-        , if not model.conf.showNavbar then
-            viewWatermark
+                  else
+                    div [] []
+                , if not model.conf.showNavbar then
+                    viewWatermark
 
-          else
-            div [] []
+                  else
+                    div [] []
+                ]
+            , viewRightSidebar model
+            ]
         ]
 
 
-viewNotFound : Url -> Maybe User -> ErdConf -> Html msg
-viewNotFound currentUrl user conf =
-    NotFound.simple
-        { brand =
-            { img = { src = "/logo.png", alt = "Azimutt" }
-            , link = { url = Route.toHref Route.Home_, text = "Azimutt" }
-            }
-        , header = "404 error"
-        , title = "Project not found."
-        , message = "Sorry, we couldn't find the project you’re looking for."
-        , links =
-            (if conf.projectManagement then
-                [ { url = Route.toHref Route.Projects, text = "Back to dashboard" } ]
-
-             else
-                [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
-            )
-                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Router.login currentUrl, text = "Sign in" } ])
-        , footer =
-            [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
-            , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
-            , { url = Route.toHref Route.Blog, text = "Blog" }
+viewRightSidebar : Model -> Html Msg
+viewRightSidebar model =
+    let
+        content : Maybe (Html Msg)
+        content =
+            Maybe.map2 AmlSlidebar.view model.erd model.amlSidebar
+    in
+    aside [ css [ "block flex-shrink-0 order-last" ] ]
+        [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
+            [ content |> Maybe.withDefault (div [] [])
             ]
-        }
+        ]
 
 
 viewModal : Url -> Shared.Model -> Model -> Cmd Msg -> Html Msg
@@ -149,3 +148,29 @@ viewContextMenu menu =
                     [ ContextMenu.menu "" BottomRight 0 m.show m.content ]
             )
             (div [ class "az-context-menu" ] [])
+
+
+viewNotFound : Url -> Maybe User -> ErdConf -> Html msg
+viewNotFound currentUrl user conf =
+    NotFound.simple
+        { brand =
+            { img = { src = "/logo.png", alt = "Azimutt" }
+            , link = { url = Route.toHref Route.Home_, text = "Azimutt" }
+            }
+        , header = "404 error"
+        , title = "Project not found."
+        , message = "Sorry, we couldn't find the project you’re looking for."
+        , links =
+            (if conf.projectManagement then
+                [ { url = Route.toHref Route.Projects, text = "Back to dashboard" } ]
+
+             else
+                [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
+            )
+                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Router.login currentUrl, text = "Sign in" } ])
+        , footer =
+            [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
+            , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
+            , { url = Route.toHref Route.Blog, text = "Blog" }
+            ]
+        }

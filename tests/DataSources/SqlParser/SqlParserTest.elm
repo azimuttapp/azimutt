@@ -1,14 +1,16 @@
-module DataSources.SqlParser.FileParserTest exposing (..)
+module DataSources.SqlParser.SqlParserTest exposing (..)
 
-import DataSources.SqlParser.FileParser exposing (buildSqlLines, buildStatements, hasKeyword, parseLines)
+import DataSources.SqlParser.Parsers.AlterTable exposing (TableConstraint(..), TableUpdate(..))
+import DataSources.SqlParser.SqlParser exposing (Command(..), buildStatements, hasKeyword, parseCommand, splitLines)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testStatement)
 import Expect
-import Libs.Nel as Nel
+import Libs.Nel as Nel exposing (Nel)
 import Test exposing (Test, describe, test)
 
 
 suite : Test
 suite =
-    describe "FileParser"
+    describe "SqlParser"
         [ describe "buildStatements"
             [ testBuildStatements "basic"
                 """-- a comment
@@ -172,16 +174,36 @@ suite =
                      end;"""
                 ]
             ]
+        , describe "parseCommand"
+            [ testStatement ( parseCommand, "parse create table" )
+                "CREATE TABLE aaa.bbb (ccc int);"
+                (CreateTable { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] })
+            , testStatement ( parseCommand, "parse alter table" )
+                "ALTER TABLE ONLY public.t2 ADD CONSTRAINT t2_id_pkey PRIMARY KEY (id);"
+                (AlterTable (AddTableConstraint (Just "public") "t2" (ParsedPrimaryKey (Just "t2_id_pkey") (Nel "id" []))))
+            , testStatement ( parseCommand, "parse table comment" )
+                "COMMENT ON TABLE public.table1 IS 'A comment';"
+                (TableComment { schema = Just "public", table = "table1", comment = "A comment" })
+            , testStatement ( parseCommand, "parse column comment" )
+                "COMMENT ON COLUMN public.table1.col IS 'A comment';"
+                (ColumnComment { schema = Just "public", table = "table1", column = "col", comment = "A comment" })
+            , testStatement ( parseCommand, "parse lowercase" )
+                "comment on column public.table1.col is 'A comment';"
+                (ColumnComment { schema = Just "public", table = "table1", column = "col", comment = "A comment" })
+            , testStatement ( parseCommand, "ignore GO" )
+                "GO /****** Object:  Schema [api]    Script Date: 6-9-2021 13:53:38 ******/ CREATE SCHEMA [api] ;"
+                (Ignored (Nel { index = 0, text = "GO /****** Object:  Schema [api]    Script Date: 6-9-2021 13:53:38 ******/ CREATE SCHEMA [api] ;" } []))
+            ]
         , describe "hasKeyword"
-            [ test "keyword" (\_ -> { line = 0, text = "  END" } |> hasKeyword "END" |> Expect.equal True)
-            , test "lowercase at the end" (\_ -> { line = 0, text = "  end;" } |> hasKeyword "END" |> Expect.equal True)
-            , test "column name" (\_ -> { line = 0, text = "  `end` timestamp," } |> hasKeyword "END" |> Expect.equal False)
-            , test "inside column name" (\_ -> { line = 0, text = "  pending bool," } |> hasKeyword "END" |> Expect.equal False)
-            , test "start column name" (\_ -> { line = 0, text = "  end_at timestamp," } |> hasKeyword "END" |> Expect.equal False)
-            , test "with numbers" (\_ -> { line = 0, text = "CREATE TABLE 0end1 (" } |> hasKeyword "END" |> Expect.equal False)
-            , test "inside name" (\_ -> { line = 0, text = "CREATE TABLE job_end (" } |> hasKeyword "END" |> Expect.equal False)
-            , test "inside string" (\_ -> { line = 0, text = "COMMENT ON COLUMN public.t1.c1 IS 'Item end date'" } |> hasKeyword "END" |> Expect.equal False)
-            , test "$$ separator" (\_ -> { line = 0, text = "$$;" } |> hasKeyword "\\$\\$;" |> Expect.equal True)
+            [ test "keyword" (\_ -> "  END" |> hasKeyword "END" |> Expect.equal True)
+            , test "lowercase at the end" (\_ -> "  end;" |> hasKeyword "END" |> Expect.equal True)
+            , test "column name" (\_ -> "  `end` timestamp," |> hasKeyword "END" |> Expect.equal False)
+            , test "inside column name" (\_ -> "  pending bool," |> hasKeyword "END" |> Expect.equal False)
+            , test "start column name" (\_ -> "  end_at timestamp," |> hasKeyword "END" |> Expect.equal False)
+            , test "with numbers" (\_ -> "CREATE TABLE 0end1 (" |> hasKeyword "END" |> Expect.equal False)
+            , test "inside name" (\_ -> "CREATE TABLE job_end (" |> hasKeyword "END" |> Expect.equal False)
+            , test "inside string" (\_ -> "COMMENT ON COLUMN public.t1.c1 IS 'Item end date'" |> hasKeyword "END" |> Expect.equal False)
+            , test "$$ separator" (\_ -> "$$;" |> hasKeyword "\\$\\$;" |> Expect.equal True)
             ]
         ]
 
@@ -191,8 +213,7 @@ testBuildStatements name content statements =
     test name
         (\_ ->
             content
-                |> parseLines
-                |> buildSqlLines
+                |> splitLines
                 |> buildStatements
                 |> List.map (\s -> s |> Nel.toList |> List.map .text |> List.map String.trim)
                 |> Expect.equal (statements |> List.map (\s -> s |> String.split "\n" |> List.map String.trim))

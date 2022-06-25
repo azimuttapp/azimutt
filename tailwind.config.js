@@ -30,6 +30,7 @@ module.exports = {
     theme: {
         extend: {
             maxHeight: {'128': '32rem', '192': '48rem', '256': '64rem'},
+            spacing: {'112': '28rem', '128': '32rem', '192': '48rem', '256': '64rem'},
             strokeWidth: {'3': '3'},
             zIndex: {'max': '10000'}
         },

@@ -109,7 +109,7 @@ viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle onLog
             (\user ->
                 Dropdown.dropdown { id = profileDropdown, direction = BottomLeft, isOpen = openedDropdown == profileDropdown }
                     (\m ->
-                        button [ type_ "button", id m.id, onClick (toggle profileDropdown), css [ "mx-1 flex-shrink-0 p-0.5 rounded-full flex text-sm", hover [ "animate-jello-h" ], focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup True ]
+                        button [ type_ "button", id m.id, onClick (toggle profileDropdown), css [ "mx-1 flex-shrink-0 p-0.5 rounded-full flex text-sm", hover [ "animate-jello-h" ], focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup "true" ]
                             [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
                             , img [ css [ "rounded-full h-7 w-7" ], src (user |> User.avatar), alt user.name, width 28, height 28 ] []
                             ]

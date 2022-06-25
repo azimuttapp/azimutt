@@ -6,9 +6,9 @@ import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Tooltip as Tooltip
 import Conf
-import DataSources.SqlParser.FileParser as FileParser exposing (SchemaError, SqlSchema)
-import DataSources.SqlParser.ProjectAdapter as ProjectAdapter
-import DataSources.SqlParser.StatementParser exposing (Command)
+import DataSources.Helpers exposing (SourceLine)
+import DataSources.SqlParser.SqlAdapter as SqlAdapter exposing (SqlSchema, SqlSchemaError)
+import DataSources.SqlParser.SqlParser as SqlParser exposing (Command)
 import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
@@ -21,7 +21,7 @@ import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models exposing (FileContent, FileLineContent)
+import Libs.Models exposing (FileContent)
 import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
@@ -60,11 +60,10 @@ type alias SqlSourceUpload msg =
 type alias SqlParsing msg =
     { cpt : Int
     , fileContent : FileContent
-    , lines : Maybe (List FileLineContent)
+    , lines : Maybe (List SourceLine)
     , statements : Maybe (Dict Int SqlStatement)
     , commands : Maybe (Dict Int ( SqlStatement, Result (List ParseError) Command ))
     , schemaIndex : Int
-    , schemaErrors : List (List SchemaError)
     , schema : Maybe SqlSchema
     , show : HtmlId
     , buildMsg : ParsingMsg -> msg
@@ -118,7 +117,6 @@ parsingInit fileContent buildMsg buildProject =
     , statements = Nothing
     , commands = Nothing
     , schemaIndex = 0
-    , schemaErrors = []
     , schema = Nothing
     , show = ""
     , buildMsg = buildMsg
@@ -155,19 +153,20 @@ update msg wrap model =
             )
 
         ParseMsg parseMsg ->
-            model.parsedSchema
-                |> Maybe.map
-                    (\p ->
-                        p
-                            |> parsingUpdate parseMsg
-                            |> (\( parsed, message ) ->
-                                    ( { model | parsedSchema = Just parsed }
-                                      -- 342 is an arbitrary number to break Elm message batching
-                                      -- not too often to not increase compute time too much, not too scarce to not freeze the browser
-                                    , B.cond ((parsed.cpt |> modBy 342) == 1) (T.sendAfter 1 message) (T.send message)
-                                    )
-                               )
-                    )
+            Maybe.map2
+                (\p ( _, sourceInfo, _ ) ->
+                    p
+                        |> parsingUpdate sourceInfo.id parseMsg
+                        |> (\( parsed, message ) ->
+                                ( { model | parsedSchema = Just parsed }
+                                  -- 342 is an arbitrary number to break Elm message batching
+                                  -- not too often to not increase compute time too much, not too scarce to not freeze the browser
+                                , B.cond ((parsed.cpt |> modBy 342) == 1) (T.sendAfter 1 message) (T.send message)
+                                )
+                           )
+                )
+                model.parsedSchema
+                model.loadedFile
                 |> Maybe.withDefault ( model, Cmd.none )
 
         UiMsg (Toggle htmlId) ->
@@ -178,7 +177,7 @@ update msg wrap model =
                 |> Maybe.andThen
                     (\parsedSchema ->
                         parsedSchema.schema
-                            |> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, parsedSchema, ProjectAdapter.buildSourceFromSql sourceInfo lines schema ))
+                            |> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, parsedSchema, SqlAdapter.buildSqlSource sourceInfo lines schema ))
                                 model.loadedFile
                                 parsedSchema.lines
                     )
@@ -191,14 +190,14 @@ update msg wrap model =
                 |> Maybe.withDefault ( model, Cmd.none )
 
 
-parsingUpdate : ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )
-parsingUpdate msg model =
+parsingUpdate : SourceId -> ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )
+parsingUpdate sourceId msg model =
     (case msg of
         BuildLines ->
-            ( { model | lines = model.fileContent |> FileParser.parseLines |> Just }, model.buildMsg BuildStatements )
+            ( { model | lines = model.fileContent |> SqlParser.splitLines |> Just }, model.buildMsg BuildStatements )
 
         BuildStatements ->
-            model.lines |> Maybe.mapOrElse (\l -> l |> FileParser.parseStatements |> (\statements -> ( { model | statements = statements |> Dict.fromIndexedList |> Just }, model.buildMsg BuildCommand ))) ( model, model.buildMsg BuildStatements )
+            model.lines |> Maybe.mapOrElse (\l -> l |> SqlParser.buildStatements |> (\statements -> ( { model | statements = statements |> Dict.fromIndexedList |> Just }, model.buildMsg BuildCommand ))) ( model, model.buildMsg BuildStatements )
 
         BuildCommand ->
             let
@@ -209,23 +208,19 @@ parsingUpdate msg model =
             model.statements
                 |> Maybe.withDefault Dict.empty
                 |> Dict.get index
-                |> Maybe.map (\s -> ( { model | commands = model.commands |> Maybe.withDefault Dict.empty |> Dict.insert index ( s, s |> FileParser.parseCommand ) |> Just }, model.buildMsg BuildCommand ))
+                |> Maybe.map (\s -> ( { model | commands = model.commands |> Maybe.withDefault Dict.empty |> Dict.insert index ( s, s |> SqlParser.parseCommand ) |> Just }, model.buildMsg BuildCommand ))
                 |> Maybe.withDefault ( model, model.buildMsg EvolveSchema )
 
         EvolveSchema ->
-            model.commands
-                |> Maybe.withDefault Dict.empty
-                |> Dict.get model.schemaIndex
+            (model.commands |> Maybe.withDefault Dict.empty |> Dict.get model.schemaIndex)
                 |> Maybe.map
-                    (\( s, c ) ->
-                        case c of
+                    (\( statement, command ) ->
+                        case command of
                             Ok cmd ->
-                                case model.schema |> Maybe.withDefault Dict.empty |> FileParser.evolve ( s, cmd ) of
-                                    Ok schema ->
-                                        ( { model | schemaIndex = model.schemaIndex + 1, schema = Just schema }, model.buildMsg EvolveSchema )
-
-                                    Err errors ->
-                                        ( { model | schemaIndex = model.schemaIndex + 1, schemaErrors = errors :: model.schemaErrors }, model.buildMsg EvolveSchema )
+                                model.schema
+                                    |> Maybe.withDefault SqlAdapter.initSchema
+                                    |> SqlAdapter.evolve sourceId ( statement, cmd )
+                                    |> (\schema -> ( { model | schemaIndex = model.schemaIndex + 1, schema = Just schema }, model.buildMsg EvolveSchema ))
 
                             Err _ ->
                                 ( { model | schemaIndex = model.schemaIndex + 1 }, model.buildMsg EvolveSchema )
@@ -256,12 +251,12 @@ gotRemoteFile now projectId sourceId url content sample =
 
 localSource : File -> SourceKind
 localSource file =
-    LocalFile file.name file.size file.lastModified
+    SqlFileLocal file.name file.size file.lastModified
 
 
 remoteSource : FileUrl -> FileContent -> SourceKind
 remoteSource url content =
-    RemoteFile url (String.length content)
+    SqlFileRemote url (String.length content)
 
 
 
@@ -293,7 +288,7 @@ viewLogs wrap filename model =
         , model.lines |> Maybe.mapOrElse (viewLogsLines wrap model.show) (div [] [])
         , model.statements |> Maybe.mapOrElse (viewLogsStatements wrap model.show) (div [] [])
         , model.commands |> Maybe.mapOrElse (viewLogsCommands model.statements) (div [] [])
-        , viewLogsErrors model.schemaErrors
+        , viewLogsErrors (model.schema |> Maybe.mapOrElse .errors [])
         , model.schema |> Maybe.mapOrElse (viewLogsSchema wrap model.show) (div [] [])
         ]
 
@@ -310,7 +305,7 @@ viewLogsFile wrap show filename content =
         ]
 
 
-viewLogsLines : (SqlSourceUploadMsg -> msg) -> HtmlId -> List FileLineContent -> Html msg
+viewLogsLines : (SqlSourceUploadMsg -> msg) -> HtmlId -> List SourceLine -> Html msg
 viewLogsLines wrap show lines =
     let
         count : Int
@@ -331,11 +326,11 @@ viewLogsLines wrap show lines =
         , if show == "lines" then
             div []
                 (lines
-                    |> List.indexedMap
-                        (\i l ->
+                    |> List.map
+                        (\line ->
                             div [ class "flex items-start" ]
-                                [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
-                                , pre [ class "whitespace-pre font-mono" ] [ text l ]
+                                [ pre [ class "select-none" ] [ text (pad (line.index + 1) ++ ". ") ]
+                                , pre [ class "whitespace-pre font-mono" ] [ text line.text ]
                                 ]
                         )
                 )
@@ -404,7 +399,7 @@ viewLogsCommands statements commands =
         )
 
 
-viewLogsErrors : List (List SchemaError) -> Html msg
+viewLogsErrors : List (List SqlSchemaError) -> Html msg
 viewLogsErrors schemaErrors =
     if schemaErrors |> List.isEmpty then
         div [] []
@@ -421,7 +416,7 @@ viewLogsSchema wrap show schema =
     let
         count : Int
         count =
-            schema |> Dict.size
+            schema.tables |> Dict.size
 
         pad : Int -> String
         pad =
@@ -436,14 +431,14 @@ viewLogsSchema wrap show schema =
         [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "tables"))) ] [ text ("Schema built with " ++ (count |> String.pluralize "table") ++ ".") ]
         , if show == "tables" then
             div []
-                (schema
+                (schema.tables
                     |> Dict.values
-                    |> List.sortBy (\t -> t.schema ++ "." ++ t.table)
+                    |> List.sortBy (\t -> TableId.show t.id)
                     |> List.indexedMap
                         (\i t ->
                             div [ class "flex items-start" ]
                                 [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
-                                , pre [ class "whitespace-pre font-mono" ] [ text (t.schema ++ "." ++ t.table) ]
+                                , pre [ class "whitespace-pre font-mono" ] [ text (TableId.show t.id) ]
                                 ]
                         )
                 )
@@ -456,12 +451,12 @@ viewLogsSchema wrap show schema =
 viewParseError : SqlStatement -> List ParseError -> Html msg
 viewParseError statement errors =
     div [ class "text-red-500" ]
-        (div [] [ text ("Parsing error line " ++ (1 + statement.head.line |> String.fromInt) ++ ":") ]
+        (div [] [ text ("Parsing error line " ++ (1 + statement.head.index |> String.fromInt) ++ ":") ]
             :: (errors |> List.map (\error -> div [ class "pl-3" ] [ text error ]))
         )
 
 
-viewSchemaError : List SchemaError -> Html msg
+viewSchemaError : List SqlSchemaError -> Html msg
 viewSchemaError errors =
     div [ class "text-red-500" ]
         (div [] [ text "Schema error:" ]
@@ -475,8 +470,12 @@ viewErrorAlert model =
         parseErrors : List (List ParseError)
         parseErrors =
             model.commands |> Maybe.map (Dict.values >> List.filterMap (\( _, r ) -> r |> Result.toErrMaybe)) |> Maybe.withDefault []
+
+        schemaErrors : List (List SqlSchemaError)
+        schemaErrors =
+            model.schema |> Maybe.mapOrElse .errors []
     in
-    if (parseErrors |> List.isEmpty) && (model.schemaErrors |> List.isEmpty) then
+    if (parseErrors |> List.isEmpty) && (schemaErrors |> List.isEmpty) then
         div [] []
 
     else
@@ -484,8 +483,8 @@ viewErrorAlert model =
             [ Alert.withActions
                 { color = Tw.red
                 , icon = XCircle
-                , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (model.schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
-                , actions = [ Link.light2 Tw.red [ href (sendErrorReport parseErrors model.schemaErrors) ] [ text "Send error report" ] ]
+                , title = "Oh no! We had " ++ (((parseErrors |> List.length) + (schemaErrors |> List.length)) |> String.fromInt) ++ " errors."
+                , actions = [ Link.light2 Tw.red [ href (sendErrorReport parseErrors schemaErrors) ] [ text "Send error report" ] ]
                 }
                 [ p []
                     [ text "Parsing every SQL dialect is not a trivial task. But every error report allows to improve it. "
@@ -497,7 +496,7 @@ viewErrorAlert model =
             ]
 
 
-sendErrorReport : List (List ParseError) -> List (List SchemaError) -> String
+sendErrorReport : List (List ParseError) -> List (List SqlSchemaError) -> String
 sendErrorReport parseErrors schemaErrors =
     let
         email : String
@@ -582,7 +581,7 @@ viewSourceDiffItem label items =
 
 hasErrors : SqlParsing msg -> Bool
 hasErrors parser =
-    (parser.commands |> Maybe.any (Dict.values >> List.any (\( _, r ) -> r |> Result.isErr))) || (parser.schemaErrors |> List.nonEmpty)
+    (parser.commands |> Maybe.any (Dict.values >> List.any (\( _, r ) -> r |> Result.isErr))) || (parser.schema |> Maybe.mapOrElse .errors [] |> List.nonEmpty)
 
 
 tableDiff : Table -> Table -> Maybe String

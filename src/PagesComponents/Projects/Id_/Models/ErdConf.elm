@@ -9,6 +9,7 @@ type alias ErdConf =
     , select : Bool
     , move : Bool
     , layout : Bool
+    , update : Bool
     , showNavbar : Bool
     , dashboardLink : Bool
     , findPath : Bool
@@ -28,6 +29,7 @@ default =
     , select = True
     , move = True
     , layout = True
+    , update = True
     , showNavbar = True
     , dashboardLink = True
     , findPath = True
@@ -47,6 +49,7 @@ embedDefault =
     , select = False
     , move = False
     , layout = False
+    , update = False
     , showNavbar = False
     , dashboardLink = False
     , findPath = False

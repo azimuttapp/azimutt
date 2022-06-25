@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Dialects.OracleTest exposing (..)
 
-import DataSources.SqlParser.StatementParser exposing (Command(..))
-import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParseStatement)
+import DataSources.SqlParser.SqlParser exposing (Command(..), parseCommand)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -11,7 +11,7 @@ suite =
     describe "Oracle"
         [ describe "CREATE TABLE"
             -- https://docs.oracle.com/cd/B28359_01/server.111/b28286/statements_7002.htm
-            [ testParseStatement "with primary key"
+            [ testStatement ( parseCommand, "with primary key" )
                 """CREATE TABLE employees_demo
                        ( employee_id    NUMBER(6)
                        , name           VARCHAR2(20)

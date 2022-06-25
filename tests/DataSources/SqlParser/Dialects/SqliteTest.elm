@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Dialects.SqliteTest exposing (..)
 
-import DataSources.SqlParser.StatementParser exposing (Command(..))
-import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParseStatement)
+import DataSources.SqlParser.SqlParser exposing (Command(..), parseCommand)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -11,7 +11,7 @@ suite =
     describe "SQLite"
         [ describe "CREATE TABLE"
             -- https://www.sqlite.org/lang_createtable.html
-            [ testParseStatement "with primary key"
+            [ testStatement ( parseCommand, "with primary key" )
                 """CREATE TABLE artist(
                      artistid    INTEGER,
                      artistname  TEXT
@@ -25,7 +25,7 @@ suite =
                                 ]
                     }
                 )
-            , testParseStatement "with foreign key"
+            , testStatement ( parseCommand, "with foreign key" )
                 """CREATE TABLE public.track (
                      trackid     INTEGER PRIMARY KEY,
                      trackname   TEXT,
@@ -44,7 +44,7 @@ suite =
                         , foreignKeys = [ { name = Nothing, src = "trackartist", ref = { schema = Nothing, table = "artist", column = Just "artistid" } } ]
                     }
                 )
-            , testParseStatement "test"
+            , testStatement ( parseCommand, "test" )
                 """CREATE TABLE IF NOT EXISTS "tasks" (
                      ulid text not null primary key,
                      state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable')),

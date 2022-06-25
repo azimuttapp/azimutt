@@ -1,4 +1,4 @@
-module DataSources.AmlParser.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnProps, AmlColumnRef, AmlColumnType, AmlColumnValue, AmlComment, AmlEmpty, AmlNotes, AmlRelation, AmlSchemaName, AmlStatement(..), AmlTable, AmlTableName, AmlTableProps, AmlTableRef, aml, column, columnName, columnProps, columnRef, columnType, columnValue, comment, constraint, empty, notes, parse, properties, property, relation, schemaName, statement, table, tableName, tableProps, tableRef)
+module DataSources.AmlParser.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnProps, AmlColumnRef, AmlColumnType, AmlColumnValue, AmlComment, AmlEmpty, AmlNotes, AmlRelation, AmlSchemaName, AmlStatement(..), AmlTable, AmlTableName, AmlTableProps, AmlTableRef, column, columnName, columnProps, columnRef, columnType, columnValue, comment, constraint, empty, notes, parse, parser, properties, property, relation, schemaName, statement, table, tableName, tableProps, tableRef)
 
 import Dict exposing (Dict)
 import Libs.Models.Position exposing (Position)
@@ -98,11 +98,11 @@ type alias AmlComment =
 
 parse : String -> Result (List DeadEnd) (List AmlStatement)
 parse input =
-    input |> Parser.run aml
+    input |> Parser.run parser
 
 
-aml : Parser (List AmlStatement)
-aml =
+parser : Parser (List AmlStatement)
+parser =
     succeed identity
         |= list statement
         |. end
@@ -422,17 +422,16 @@ quoted first last =
         |. chompIf (\c -> c == last)
 
 
-until : List Char -> Parser String
-until stop =
-    chompWhile (\c -> stop |> List.all (\s -> s /= c))
-        |> getChompedString
-
-
 untilNonEmpty : List Char -> Parser String
 untilNonEmpty stop =
     succeed (\first others -> first ++ others)
-        |= (chompIf (\c -> stop |> List.all (\s -> s /= c)) |> getChompedString)
-        |= (chompWhile (\c -> stop |> List.all (\s -> s /= c)) |> getChompedString)
+        |= (chompIf (\c -> stop |> List.member c |> not) |> getChompedString)
+        |= until stop
+
+
+until : List Char -> Parser String
+until stop =
+    chompWhile (\c -> stop |> List.member c |> not) |> getChompedString
 
 
 maybe : Parser a -> Parser (Maybe a)

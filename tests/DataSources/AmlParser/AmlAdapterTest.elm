@@ -1,8 +1,8 @@
-module DataSources.AmlParser.SourceAdapterTest exposing (..)
+module DataSources.AmlParser.AmlAdapterTest exposing (..)
 
 import Conf
+import DataSources.AmlParser.AmlAdapter exposing (AmlSchema, evolve)
 import DataSources.AmlParser.AmlParser exposing (AmlColumn, AmlRelation, AmlStatement(..), AmlTable)
-import DataSources.AmlParser.SourceAdapter exposing (AmlSchema, evolve)
 import Dict
 import Expect
 import Libs.Dict as Dict
@@ -32,7 +32,7 @@ suite =
                 (\_ ->
                     { schema | tables = Dict.fromListMap .id [ users ] }
                         |> evolve source (AmlTableStatement usersAml)
-                        |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ "Table 'users' is already defined" ] }
+                        |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ { row = 0, col = 0, problem = "Table 'users' is already defined" } ] }
                 )
             , test "add a relation"
                 (\_ ->

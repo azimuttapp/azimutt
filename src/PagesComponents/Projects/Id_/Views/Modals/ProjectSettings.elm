@@ -77,7 +77,7 @@ viewSource htmlId _ zone source =
                             source.enabled
                             (ProjectSettingsMsg (PSSourceToggle source))
                         , div []
-                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ focus [ "outline-none" ], B.cond (source.kind == UserDefined || source.fromSample /= Nothing) "hidden" "" ] ]
+                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor || source.fromSample /= Nothing) "hidden" "" ] ]
                                 [ Icon.solid Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
                             , button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceDelete source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
@@ -92,13 +92,13 @@ viewSource htmlId _ zone source =
                     ]
     in
     case source.kind of
-        LocalFile path _ modified ->
+        SqlFileLocal path _ modified ->
             view DocumentText "File last modified on " modified (path ++ " file")
 
-        RemoteFile url _ ->
+        SqlFileRemote url _ ->
             view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
 
-        UserDefined ->
+        AmlEditor ->
             view User "Last edited on " source.updatedAt "Created by you"
 
 

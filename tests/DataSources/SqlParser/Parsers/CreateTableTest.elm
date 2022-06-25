@@ -1,7 +1,7 @@
 module DataSources.SqlParser.Parsers.CreateTableTest exposing (..)
 
 import DataSources.SqlParser.Parsers.CreateTable exposing (parseCreateTable, parseCreateTableColumn, parseCreateTableColumnForeignKey, parseCreateTableForeignKey, parseCreateTableKey)
-import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testParse, testParseSql)
+import DataSources.SqlParser.TestHelpers.Tests exposing (parsedColumn, parsedTable, testSql, testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
 
@@ -10,13 +10,13 @@ suite : Test
 suite =
     describe "CreateTable"
         [ describe "parseCreateTable"
-            [ testParse ( parseCreateTable, "basic" )
+            [ testStatement ( parseCreateTable, "basic" )
                 "CREATE TABLE aaa.bbb (ccc int);"
                 { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] }
-            , testParse ( parseCreateTable, "if not exists" )
+            , testStatement ( parseCreateTable, "if not exists" )
                 "CREATE TABLE IF NOT EXISTS aaa.bbb (ccc int);"
                 { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] }
-            , testParse ( parseCreateTable, "complex" )
+            , testStatement ( parseCreateTable, "complex" )
                 "CREATE TABLE public.users (id bigint NOT NULL, name character varying(255), price numeric(8,2)) WITH (autovacuum_enabled='false');"
                 { parsedTable
                     | schema = Just "public"
@@ -27,16 +27,16 @@ suite =
                             , { parsedColumn | name = "price", kind = "numeric(8,2)" }
                             ]
                 }
-            , testParse ( parseCreateTable, "with options" )
+            , testStatement ( parseCreateTable, "with options" )
                 "CREATE TABLE p.table (id bigint NOT NULL)    WITH (autovacuum_analyze_threshold='100000');"
                 { parsedTable | schema = Just "p", table = "table", columns = Nel { parsedColumn | name = "id", kind = "bigint", nullable = False } [] }
-            , testParse ( parseCreateTable, "without schema, lowercase and no space before body" )
+            , testStatement ( parseCreateTable, "without schema, lowercase and no space before body" )
                 "create table migrations(version varchar not null);"
                 { parsedTable | table = "migrations", columns = Nel { parsedColumn | name = "version", kind = "varchar", nullable = False } [] }
-            , testParse ( parseCreateTable, "with db" )
+            , testStatement ( parseCreateTable, "with db" )
                 "CREATE TABLE db.schema.table (column int);"
                 { parsedTable | schema = Just "schema", table = "table", columns = Nel { parsedColumn | name = "column", kind = "int" } [] }
-            , testParse ( parseCreateTable, "with references" )
+            , testStatement ( parseCreateTable, "with references" )
                 "create table students (id serial primary key, name varchar(50) not null, year integer not null, house_id integer references houses(id));"
                 { parsedTable
                     | table = "students"
@@ -47,84 +47,84 @@ suite =
                             , { parsedColumn | name = "house_id", kind = "integer", foreignKey = Just ( Nothing, { schema = Nothing, table = "houses", column = Just "id" } ) }
                             ]
                 }
-            , testParse ( parseCreateTable, "with multiple constraints" )
+            , testStatement ( parseCreateTable, "with multiple constraints" )
                 "CREATE TABLE t1 (id int constraint t1_pk primary key constraint t1_t2_fk references t2);"
                 { parsedTable | schema = Nothing, table = "t1", columns = Nel { parsedColumn | name = "id", kind = "int", primaryKey = Just "t1_pk", foreignKey = Just ( Just "t1_t2_fk", { schema = Nothing, table = "t2", column = Nothing } ) } [] }
             ]
         , describe "parseCreateTableColumn"
-            [ testParseSql ( parseCreateTableColumn, "basic" )
+            [ testSql ( parseCreateTableColumn, "basic" )
                 "id bigint NOT NULL"
                 { parsedColumn | name = "id", kind = "bigint", nullable = False }
-            , testParseSql ( parseCreateTableColumn, "nullable" )
+            , testSql ( parseCreateTableColumn, "nullable" )
                 "id bigint"
                 { parsedColumn | name = "id", kind = "bigint" }
-            , testParseSql ( parseCreateTableColumn, "with default" )
+            , testSql ( parseCreateTableColumn, "with default" )
                 "status character varying(255) DEFAULT 'done'::character varying"
                 { parsedColumn | name = "status", kind = "character varying(255)", default = Just "'done'::character varying" }
-            , testParseSql ( parseCreateTableColumn, "with comma in type" )
+            , testSql ( parseCreateTableColumn, "with comma in type" )
                 "price numeric(8,2)"
                 { parsedColumn | name = "price", kind = "numeric(8,2)" }
-            , testParseSql ( parseCreateTableColumn, "with enclosing quotes" )
+            , testSql ( parseCreateTableColumn, "with enclosing quotes" )
                 "\"id\" bigint"
                 { parsedColumn | name = "id", kind = "bigint" }
-            , testParseSql ( parseCreateTableColumn, "with primary key" )
+            , testSql ( parseCreateTableColumn, "with primary key" )
                 "id bigint PRIMARY KEY"
                 { parsedColumn | name = "id", kind = "bigint", primaryKey = Just "" }
-            , testParseSql ( parseCreateTableColumn, "with primary key constraint" )
+            , testSql ( parseCreateTableColumn, "with primary key constraint" )
                 "id bigint NOT NULL CONSTRAINT users_pk PRIMARY KEY"
                 { parsedColumn | name = "id", kind = "bigint", nullable = False, primaryKey = Just "users_pk" }
-            , testParseSql ( parseCreateTableColumn, "with foreign key having schema, table & column" )
+            , testSql ( parseCreateTableColumn, "with foreign key having schema, table & column" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES public.users.id"
                 { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Just "public", table = "users", column = Just "id" } ) }
-            , testParseSql ( parseCreateTableColumn, "with foreign key having table & column" )
+            , testSql ( parseCreateTableColumn, "with foreign key having table & column" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES users.id"
                 { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Nothing, table = "users", column = Just "id" } ) }
-            , testParseSql ( parseCreateTableColumn, "with foreign key having table & column in parenthesis" )
+            , testSql ( parseCreateTableColumn, "with foreign key having table & column in parenthesis" )
                 "user_id bigint references users(id)"
                 { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Nothing, { schema = Nothing, table = "users", column = Just "id" } ) }
-            , testParseSql ( parseCreateTableColumn, "with foreign key having only table" )
+            , testSql ( parseCreateTableColumn, "with foreign key having only table" )
                 "user_id bigint CONSTRAINT users_fk REFERENCES users"
                 { parsedColumn | name = "user_id", kind = "bigint", foreignKey = Just ( Just "users_fk", { schema = Nothing, table = "users", column = Nothing } ) }
-            , testParseSql ( parseCreateTableColumn, "with foreign key and primary key" )
+            , testSql ( parseCreateTableColumn, "with foreign key and primary key" )
                 "match_id bigint REFERENCES matches(match_id) ON DELETE CASCADE PRIMARY KEY"
                 { parsedColumn | name = "match_id", kind = "bigint", primaryKey = Just "", foreignKey = Just ( Nothing, { schema = Nothing, table = "matches", column = Just "match_id" } ) }
-            , testParseSql ( parseCreateTableColumn, "with unique" )
+            , testSql ( parseCreateTableColumn, "with unique" )
                 "`email` varchar(255) NOT NULL UNIQUE"
                 { parsedColumn | name = "email", kind = "varchar(255)", nullable = False, unique = Just "UNIQUE" }
-            , testParseSql ( parseCreateTableColumn, "with check" )
+            , testSql ( parseCreateTableColumn, "with check" )
                 "state text check(state in (NULL, 'Done', 'Obsolete', 'Deletable'))"
                 { parsedColumn | name = "state", kind = "text", check = Just "state in (NULL, 'Done', 'Obsolete', 'Deletable')" }
-            , testParseSql ( parseCreateTableColumn, "with comment" )
+            , testSql ( parseCreateTableColumn, "with comment" )
                 "order varchar COMMENT 'Possible values: ''asc'',''desc'''"
                 { parsedColumn | name = "order", kind = "varchar", comment = Just "Possible values: 'asc','desc'" }
-            , testParseSql ( parseCreateTableColumn, "with collate" )
+            , testSql ( parseCreateTableColumn, "with collate" )
                 "id nvarchar(32) COLLATE Modern_Spanish_CI_AS NOT NULL"
                 { parsedColumn | name = "id", kind = "nvarchar(32)", nullable = False }
-            , testParseSql ( parseCreateTableColumn, "with generated" )
+            , testSql ( parseCreateTableColumn, "with generated" )
                 "event_name text not null generated always as ((((service__name || '.'::text) || resource_type__name) || '.'::text) || verb__name) stored"
                 { parsedColumn | name = "event_name", kind = "text", nullable = False, default = Just "generated always as ((((service__name || '.'::text) || resource_type__name) || '.'::text) || verb__name) stored" }
             ]
         , describe "parseCreateTableForeignKey"
-            [ testParseSql ( parseCreateTableForeignKey, "sqlite" )
+            [ testSql ( parseCreateTableForeignKey, "sqlite" )
                 "foreign key(`ulid`) references `tasks`(`ulid`)"
                 { name = Nothing, src = "ulid", ref = { schema = Nothing, table = "tasks", column = Just "ulid" } }
-            , testParseSql ( parseCreateTableForeignKey, "with schema, spaces and triggers" )
+            , testSql ( parseCreateTableForeignKey, "with schema, spaces and triggers" )
                 "FOREIGN KEY (cat_id) REFERENCES dbo.cats (cat_id) ON DELETE CASCADE ON UPDATE CASCADE"
                 { name = Nothing, src = "cat_id", ref = { schema = Just "dbo", table = "cats", column = Just "cat_id" } }
             ]
         , describe "parseCreateTableColumnForeignKey"
-            [ testParseSql ( parseCreateTableColumnForeignKey, "references" )
+            [ testSql ( parseCreateTableColumnForeignKey, "references" )
                 "REFERENCES `t_house` (`id`)"
                 ( Nothing, { schema = Nothing, table = "t_house", column = Just "id" } )
-            , testParseSql ( parseCreateTableColumnForeignKey, "references with triggers" )
+            , testSql ( parseCreateTableColumnForeignKey, "references with triggers" )
                 "REFERENCES `t_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE"
                 ( Nothing, { schema = Nothing, table = "t_user", column = Just "id" } )
             ]
         , describe "parseCreateTableKey"
-            [ testParseSql ( parseCreateTableKey, "using" )
+            [ testSql ( parseCreateTableKey, "using" )
                 "KEY `fk_user_id` (`user_id`) USING BTREE"
                 { name = "fk_user_id", columns = Nel "user_id" [], definition = "KEY `fk_user_id` (`user_id`) USING BTREE" }
-            , testParseSql ( parseCreateTableKey, "nested parenthesis" )
+            , testSql ( parseCreateTableKey, "nested parenthesis" )
                 "KEY `ResourceId` (`ResourceId`(333))"
                 { name = "ResourceId", columns = Nel "ResourceId" [], definition = "KEY `ResourceId` (`ResourceId`(333))" }
             ]

@@ -1,4 +1,4 @@
-module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, sub, toTuple, zero)
+module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, sub, toString, toStringRound, toTuple, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -42,6 +42,16 @@ sub amount size =
 ratio : Size -> Size -> Size
 ratio a b =
     Size (b.width / a.width) (b.height / a.height)
+
+
+toString : Size -> String
+toString size =
+    String.fromFloat size.width ++ " x " ++ String.fromFloat size.height
+
+
+toStringRound : Size -> String
+toStringRound size =
+    String.fromInt (round size.width) ++ " x " ++ String.fromInt (round size.height)
 
 
 encode : Size -> Value
