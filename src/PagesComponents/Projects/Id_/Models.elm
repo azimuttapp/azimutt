@@ -57,7 +57,7 @@ type alias Model =
     , loaded : Bool
     , erd : Maybe Erd
     , projects : List ProjectInfo
-    , hoverTable : Maybe TableId -- TODO remove?
+    , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef -- TODO remove?
     , cursorMode : CursorMode
     , selectionBox : Maybe Area
@@ -228,8 +228,6 @@ type LayoutMsg
     | LCreate LayoutName
     | LCancel
     | LLoad LayoutName
-    | LUnload
-    | LUpdate LayoutName
     | LDelete LayoutName
 
 

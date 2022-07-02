@@ -7,6 +7,7 @@ module Services.Lenses exposing
     , mapColumnBasicTypes
     , mapColumnProps
     , mapColumns
+    , mapColumnsD
     , mapComment
     , mapCommentM
     , mapConf
@@ -22,6 +23,7 @@ module Services.Lenses exposing
     , mapFindPathM
     , mapHiddenColumns
     , mapHiddenTables
+    , mapHighlighted
     , mapHover
     , mapHoverColumn
     , mapHoverTable
@@ -29,6 +31,8 @@ module Services.Lenses exposing
     , mapIndexes
     , mapLayout
     , mapLayouts
+    , mapLayoutsD
+    , mapLayoutsDCmd
     , mapList
     , mapMTeamCmd
     , mapMobileMenuOpen
@@ -92,6 +96,8 @@ module Services.Lenses exposing
     , mapTableProps
     , mapTablePropsCmd
     , mapTables
+    , mapTablesCmd
+    , mapTablesL
     , mapTeamCmd
     , mapTime
     , mapToasts
@@ -112,6 +118,8 @@ module Services.Lenses exposing
     , setCanvas
     , setChecks
     , setCollapseTableColumns
+    , setCollapsed
+    , setColor
     , setColumn
     , setColumnBasicTypes
     , setColumnOrder
@@ -123,6 +131,7 @@ module Services.Lenses exposing
     , setConfirm
     , setContent
     , setContextMenu
+    , setCurrentLayout
     , setCursorMode
     , setDragState
     , setDragging
@@ -227,6 +236,7 @@ module Services.Lenses exposing
     , updatePosition
     )
 
+import Dict exposing (Dict)
 import Libs.Bool as B
 import Libs.Delta exposing (Delta)
 import Libs.Maybe as Maybe
@@ -287,6 +297,11 @@ mapChecks =
     map .checks setChecks
 
 
+setCollapsed : v -> { item | collapsed : v } -> { item | collapsed : v }
+setCollapsed =
+    set .collapsed (\value item -> { item | collapsed = value })
+
+
 setCollapseTableColumns : v -> { item | collapseTableColumns : v } -> { item | collapseTableColumns : v }
 setCollapseTableColumns =
     set .collapseTableColumns (\value item -> { item | collapseTableColumns = value })
@@ -295,6 +310,11 @@ setCollapseTableColumns =
 mapCollapseTableColumns : (v -> v) -> { item | collapseTableColumns : v } -> { item | collapseTableColumns : v }
 mapCollapseTableColumns =
     map .collapseTableColumns setCollapseTableColumns
+
+
+setColor : v -> { item | color : v } -> { item | color : v }
+setColor =
+    set .color (\value item -> { item | color = value })
 
 
 setColumn : v -> { item | column : v } -> { item | column : v }
@@ -310,6 +330,11 @@ setColumns =
 mapColumns : (v -> v) -> { item | columns : v } -> { item | columns : v }
 mapColumns =
     map .columns setColumns
+
+
+mapColumnsD : comparable -> (v -> v) -> { item | columns : Dict comparable v } -> { item | columns : Dict comparable v }
+mapColumnsD =
+    mapD .columns setColumns
 
 
 setColumnBasicTypes : v -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
@@ -390,6 +415,11 @@ setContextMenu =
 mapContextMenuM : (v -> v) -> { item | contextMenu : Maybe v } -> { item | contextMenu : Maybe v }
 mapContextMenuM =
     mapM .contextMenu setContextMenu
+
+
+setCurrentLayout : v -> { item | currentLayout : v } -> { item | currentLayout : v }
+setCurrentLayout =
+    set .currentLayout (\value item -> { item | currentLayout = value })
 
 
 setCursorMode : v -> { item | cursorMode : v } -> { item | cursorMode : v }
@@ -502,6 +532,11 @@ setHighlighted =
     set .highlighted (\value item -> { item | highlighted = value })
 
 
+mapHighlighted : (v -> v) -> { item | highlighted : v } -> { item | highlighted : v }
+mapHighlighted =
+    map .highlighted setHighlighted
+
+
 setHover : v -> { item | hover : v } -> { item | hover : v }
 setHover =
     set .hover (\value item -> { item | hover = value })
@@ -595,6 +630,16 @@ setLayouts =
 mapLayouts : (v -> v) -> { item | layouts : v } -> { item | layouts : v }
 mapLayouts =
     map .layouts setLayouts
+
+
+mapLayoutsD : comparable -> (v -> v) -> { item | layouts : Dict comparable v } -> { item | layouts : Dict comparable v }
+mapLayoutsD =
+    mapD .layouts setLayouts
+
+
+mapLayoutsDCmd : comparable -> (v -> ( v, Cmd msg )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Cmd msg )
+mapLayoutsDCmd =
+    mapDCmd .layouts setLayouts
 
 
 setList : v -> { item | list : v } -> { item | list : v }
@@ -1147,6 +1192,16 @@ mapTables =
     map .tables setTables
 
 
+mapTablesL : (v -> k) -> k -> (v -> v) -> { item | tables : List v } -> { item | tables : List v }
+mapTablesL =
+    mapL .tables setTables
+
+
+mapTablesCmd : (v -> ( v, Cmd msg )) -> { item | tables : v } -> ( { item | tables : v }, Cmd msg )
+mapTablesCmd =
+    mapCmd .tables setTables
+
+
 setTableProps : v -> { item | tableProps : v } -> { item | tableProps : v }
 setTableProps =
     set .tableProps (\value item -> { item | tableProps = value })
@@ -1351,16 +1406,6 @@ mapM get update transform item =
     update (item |> get |> Maybe.map transform) item
 
 
-mapCmd : (item -> v) -> (v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapCmd get update transform item =
-    item |> get |> transform |> Tuple.mapFirst (\value -> update value item)
-
-
-mapMCmd : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapMCmd get update transform item =
-    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> update (Just value) item)) ( item, Cmd.none )
-
-
 mapL : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> v) -> item -> item
 mapL get update getKey key transform item =
     update
@@ -1376,6 +1421,26 @@ mapL get update getKey key transform item =
                 )
         )
         item
+
+
+mapD : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> v) -> item -> item
+mapD get update key transform item =
+    update (item |> get |> Dict.update key (Maybe.map transform)) item
+
+
+mapCmd : (item -> v) -> (v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
+mapCmd get update transform item =
+    item |> get |> transform |> Tuple.mapFirst (\value -> update value item)
+
+
+mapMCmd : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
+mapMCmd get update transform item =
+    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> update (Just value) item)) ( item, Cmd.none )
+
+
+mapDCmd : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
+mapDCmd get update key transform item =
+    item |> get |> Dict.get key |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\n -> mapD get update key (\_ -> n) item)) ( item, Cmd.none )
 
 
 

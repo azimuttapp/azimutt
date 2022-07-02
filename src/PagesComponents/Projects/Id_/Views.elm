@@ -20,8 +20,9 @@ import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..))
-import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Projects.Id_.Views.Commands exposing (viewCommands)
 import PagesComponents.Projects.Id_.Views.Erd as Erd exposing (viewErd)
 import PagesComponents.Projects.Id_.Views.Modals.Confirm exposing (viewConfirm)
@@ -82,9 +83,14 @@ viewApp currentUrl shared model htmlId erd =
             , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ String.fromFloat Conf.ui.navbarHeight ++ "px)") "100%")
             ]
             [ section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
-                [ Lazy.lazy8 viewErd shared.conf.platform model.conf model.screen erd model.selectionBox model.virtualRelation (Erd.argsToString model.cursorMode model.openedDropdown model.openedPopover) model.dragging
+                [ Lazy.lazy8 viewErd model.conf model.screen model.hoverTable erd model.selectionBox model.virtualRelation (Erd.argsToString shared.conf.platform model.cursorMode model.openedDropdown model.openedPopover) model.dragging
                 , if model.conf.fullscreen || model.conf.move then
-                    Lazy.lazy6 viewCommands model.conf model.cursorMode erd.canvas.zoom (htmlId ++ "-commands") (erd.tableProps |> Dict.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
+                    let
+                        layout : ErdLayout
+                        layout =
+                            erd |> Erd.currentLayout
+                    in
+                    Lazy.lazy6 viewCommands model.conf model.cursorMode layout.canvas.zoom (htmlId ++ "-commands") (layout.tables |> List.isEmpty |> not) (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-commands"))
 
                   else
                     div [] []
@@ -117,18 +123,18 @@ viewModal : Url -> Shared.Model -> Model -> Cmd Msg -> Html Msg
 viewModal currentUrl shared model onDelete =
     Keyed.node "div"
         [ class "az-modals" ]
-        ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
-         , model.prompt |> Maybe.map (\m -> ( m.id, viewPrompt (model.openedDialogs |> List.has m.id) m ))
-         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, viewCreateLayout (e.layouts |> Dict.keys) (model.openedDialogs |> List.has m.id) m )) model.erd
-         , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.has m.id) model.openedDropdown e.tables e.settings.findPath m )) model.erd
-         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.has m.id) e.tables m )) model.erd
-         , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadDialogMsg MoveProjectTo (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) currentUrl shared.user (model.openedDialogs |> List.has m.id) e.project m )) model.erd
-         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.has m.id) e m )) model.erd
-         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload shared.zone shared.now (model.openedDialogs |> List.has m.id) m ))
-         , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.has m.id) m ))
-         , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> List.has m.id) m ))
+        ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.member m.id) m ))
+         , model.prompt |> Maybe.map (\m -> ( m.id, viewPrompt (model.openedDialogs |> List.member m.id) m ))
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, viewCreateLayout (e.layouts |> Dict.keys) (model.openedDialogs |> List.member m.id) m )) model.erd
+         , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
+         , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.tables e.settings.findPath m )) model.erd
+         , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.member m.id) e.tables m )) model.erd
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.member m.id) e m )) model.erd
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadDialogMsg MoveProjectTo (ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)) currentUrl shared.user (model.openedDialogs |> List.member m.id) e.project m )) model.erd
+         , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
+         , model.sourceUpload |> Maybe.map (\m -> ( m.id, viewSourceUpload shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))
+         , model.sourceParsing |> Maybe.map (\m -> ( m.id, viewSourceParsing (model.openedDialogs |> List.member m.id) m ))
+         , model.help |> Maybe.map (\m -> ( m.id, viewHelp (model.openedDialogs |> List.member m.id) m ))
          ]
             |> List.filterMap identity
             |> List.sortBy (\( id, _ ) -> model.openedDialogs |> List.indexOf id |> Maybe.withDefault 0 |> negate)

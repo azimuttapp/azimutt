@@ -16,24 +16,23 @@ import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
-import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
-import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (LayoutMsg(..), Msg(..), prompt)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Shared exposing (GlobalConf)
 
 
-viewNavbarTitle : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarTitle gConf eConf projects project usedLayout layouts htmlId openedDropdown =
+viewNavbarTitle : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
         ([ if gConf.enableCloud && eConf.projectManagement then
             button [ onClick (ProjectUploadDialogMsg ProjectUploadDialog.Open), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
@@ -49,7 +48,7 @@ viewNavbarTitle gConf eConf projects project usedLayout layouts htmlId openedDro
            else
             div [] [ text project.name ]
          ]
-            ++ viewLayoutsMaybe eConf usedLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
+            ++ viewLayoutsMaybe eConf currentLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
 
 
@@ -93,52 +92,43 @@ viewProjectsDropdown platform projects project htmlId openedDropdown =
         )
 
 
-viewLayoutsMaybe : ErdConf -> Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> List (Html Msg)
-viewLayoutsMaybe conf usedLayout layouts htmlId openedDropdown =
+viewLayoutsMaybe : ErdConf -> LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> List (Html Msg)
+viewLayoutsMaybe conf currentLayout layouts htmlId openedDropdown =
     if layouts |> Dict.isEmpty then
         []
 
     else if conf.layoutManagement then
         [ Icon.slash "text-primary-300"
-        , Lazy.lazy4 viewLayouts usedLayout layouts htmlId openedDropdown
+        , Lazy.lazy4 viewLayouts currentLayout layouts htmlId openedDropdown
         ]
 
     else
-        usedLayout |> Maybe.mapOrElse (\l -> [ Icon.slash "text-primary-300", text l ]) []
+        [ Icon.slash "text-primary-300", text currentLayout ]
 
 
-viewLayouts : Maybe LayoutName -> Dict LayoutName Layout -> HtmlId -> HtmlId -> Html Msg
-viewLayouts usedLayout layouts htmlId openedDropdown =
+viewLayouts : LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> Html Msg
+viewLayouts currentLayout layouts htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup "true", css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
-                [ span [] [ text (usedLayout |> Maybe.mapOrElse (\l -> l) "layouts") ]
+                [ span [] [ text currentLayout ]
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
         )
         (\_ ->
             div [ class "min-w-max divide-y divide-gray-100" ]
-                (List.prependOn usedLayout
-                    (\l ->
-                        div [ role "none", class "py-1" ]
-                            [ ContextMenu.btn "" (l |> LUpdate |> LayoutMsg) [ text "Update ", bText l, text " with current layout" ]
-                            , ContextMenu.btn "" (LUnload |> LayoutMsg) [ text "Stop using ", bText l, text " layout" ]
-                            ]
-                    )
-                    [ div [ role "none", class "py-1" ]
-                        [ ContextMenu.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
-                    , div [ role "none", class "py-1" ]
-                        (layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
-                    ]
-                )
+                [ div [ role "none", class "py-1" ]
+                    [ ContextMenu.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
+                , div [ role "none", class "py-1" ]
+                    (layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
+                ]
         )
 
 
-viewLayoutItem : LayoutName -> Layout -> Html Msg
+viewLayoutItem : LayoutName -> ErdLayout -> Html Msg
 viewLayoutItem name layout =
     span [ role "menuitem", tabindex -1, css [ "flex", ContextMenu.itemStyles ] ]
         [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ focus [ "outline-none" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
-        , button [ type_ "button", onClick (name |> LUpdate |> LayoutMsg), css [ "mx-2", focus [ "outline-none" ] ] ] [ Icon.solid Pencil "inline-block" ] |> Tooltip.t "Update layout with current one"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left", focus [ "outline-none" ] ] ]
             [ text name
             , text " "
@@ -147,7 +137,7 @@ viewLayoutItem name layout =
         ]
 
 
-confirmDeleteLayout : Layout -> LayoutName -> Msg
+confirmDeleteLayout : ErdLayout -> LayoutName -> Msg
 confirmDeleteLayout layout name =
     ConfirmOpen
         { color = Tw.red

@@ -3,6 +3,7 @@ module Libs.DateTime exposing (format, formatDate, formatDatetime, formatTime, f
 import Iso8601
 import Libs.Duration as Duration exposing (Duration)
 import Libs.String as String
+import Libs.Time as Time
 import Time
 
 
@@ -18,7 +19,7 @@ greaterThan b a =
 
 unsafeParse : String -> Time.Posix
 unsafeParse date =
-    date |> parse |> Result.withDefault (Time.millisToPosix 0)
+    date |> parse |> Result.withDefault Time.zero
 
 
 parse : String -> Result String Time.Posix

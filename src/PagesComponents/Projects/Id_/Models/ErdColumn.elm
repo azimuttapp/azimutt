@@ -1,7 +1,6 @@
 module PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn, create, unpack)
 
 import Dict exposing (Dict)
-import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Nel as Nel
 import Models.Project.CheckName exposing (CheckName)
@@ -48,9 +47,9 @@ create tables columnRelations table column =
     , isPrimaryKey = column.name |> Table.inPrimaryKey table |> Maybe.isJust
     , inRelations = columnRelations |> List.filter (\r -> r.ref.table == table.id && r.ref.column == column.name) |> List.map .src |> List.map (ErdColumnRef.create tables)
     , outRelations = columnRelations |> List.filter (\r -> r.src.table == table.id && r.src.column == column.name) |> List.map .ref |> List.map (ErdColumnRef.create tables)
-    , uniques = table.uniques |> List.filter (\u -> u.columns |> Nel.has column.name) |> List.map (\u -> u.name)
-    , indexes = table.indexes |> List.filter (\i -> i.columns |> Nel.has column.name) |> List.map (\i -> i.name)
-    , checks = table.checks |> List.filter (\c -> c.columns |> List.has column.name) |> List.map (\c -> c.name)
+    , uniques = table.uniques |> List.filter (.columns >> Nel.member column.name) |> List.map .name
+    , indexes = table.indexes |> List.filter (.columns >> Nel.member column.name) |> List.map .name
+    , checks = table.checks |> List.filter (.columns >> List.member column.name) |> List.map .name
     , origins = table.origins
     }
 

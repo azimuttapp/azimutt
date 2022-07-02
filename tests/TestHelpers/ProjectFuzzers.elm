@@ -52,7 +52,7 @@ import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModifi
 
 project : Fuzzer Project
 project =
-    F.map11 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layout (Fuzz.maybe layoutName) (dictSmall layoutName layout) projectSettings projectStorage posix posix
+    F.map10 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
 
 
 source : Fuzzer Source

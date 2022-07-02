@@ -10,18 +10,21 @@ import Html exposing (Html, datalist, div, h3, iframe, img, input, label, option
 import Html.Attributes exposing (attribute, class, for, height, id, list, name, placeholder, selected, src, style, title, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
+import Libs.Dict as Dict
 import Libs.Html exposing (extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
+import Libs.Time as Time
 import Models.Project as Project exposing (Project)
+import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SharingDialog, SharingMsg(..))
 import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind exposing (EmbedKind)
 import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
-import Services.Lenses exposing (mapLayout, mapRelations, mapSources, mapTables, setContent, setHiddenTables, setLayouts, setUsedLayout)
+import Services.Lenses exposing (mapRelations, mapSources, mapTables, setContent, setLayouts)
 
 
 viewSharing : Bool -> Erd -> SharingDialog -> Html Msg
@@ -100,19 +103,21 @@ viewBodyDownload erd =
         filename =
             project |> Project.downloadFilename
 
+        currentLayout : Layout
+        currentLayout =
+            project.layouts |> Dict.getOrElse erd.currentLayout (Layout.empty Time.zero)
+
         smallProject : Project
         smallProject =
             project
-                |> setUsedLayout Nothing
-                |> setLayouts Dict.empty
-                |> mapLayout (setHiddenTables [])
+                |> setLayouts (Dict.fromList [ ( erd.currentLayout, currentLayout ) ])
                 |> mapSources
                     (List.map
                         (\s ->
                             s
                                 |> setContent Array.empty
-                                |> mapTables (Dict.filter (\id _ -> project.layout.tables |> List.any (\p -> p.id == id)))
-                                |> mapRelations (List.filter (\r -> project.layout.tables |> List.any (\p -> p.id == r.src.table || p.id == r.ref.table)))
+                                |> mapTables (Dict.filter (\id _ -> currentLayout.tables |> List.any (\p -> p.id == id)))
+                                |> mapRelations (List.filter (\r -> currentLayout.tables |> List.any (\p -> p.id == r.src.table || p.id == r.ref.table)))
                         )
                     )
     in

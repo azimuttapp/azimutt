@@ -14,7 +14,7 @@ import TestHelpers.ProjectFuzzers exposing (canvasProps)
 
 suite : Test
 suite =
-    describe "PagesComponents.App.Updates.Canvas"
+    describe "PagesComponents.Projects.Id_.Updates.Canvas"
         [ describe "performZoom"
             [ fuzz (tuple ( position, canvasProps )) "no change" (\( pos, props ) -> props |> performZoom 0 pos |> Expect.equal props)
 

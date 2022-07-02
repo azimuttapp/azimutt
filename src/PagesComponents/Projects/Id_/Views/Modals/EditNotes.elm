@@ -56,6 +56,9 @@ viewEditNotes opened erd model =
 refAsName : Erd -> NotesRef -> Html msg
 refAsName erd ref =
     case ref of
+        Invalid v ->
+            text ("invalid ref " ++ v)
+
         TableNote table ->
             erd.tables
                 |> Dict.get table

@@ -22,7 +22,7 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "PagesComponents.App.Updates.FindPath"
+    describe "PagesComponents.Projects.Id_.Updates.FindPath"
         [ describe "computeFindPath"
             [ test "empty" (\_ -> computeFindPath basicTables [] (tableId "users") (tableId "roles") settings |> .paths |> Expect.equal [])
             , test "same from & to" (\_ -> computeFindPath basicTables [] (tableId "users") (tableId "users") settings |> .paths |> Expect.equal [])

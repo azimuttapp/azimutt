@@ -1,4 +1,4 @@
-module Models.Project.Layout exposing (Layout, decode, encode, init)
+module Models.Project.Layout exposing (Layout, decode, empty, encode)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -19,9 +19,9 @@ type alias Layout =
     }
 
 
-init : Time.Posix -> Layout
-init now =
-    { canvas = CanvasProps.zero, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
+empty : Time.Posix -> Layout
+empty now =
+    { canvas = CanvasProps.empty, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 encode : Layout -> Value

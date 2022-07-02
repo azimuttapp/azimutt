@@ -1,4 +1,4 @@
-module Libs.String exposing (filterStartsWith, hashCode, inflect, nonEmpty, nonEmptyMaybe, orElse, plural, pluralize, pluralizeD, pluralizeL, stripRight, unique, wordSplit)
+module Libs.String exposing (filterStartsWith, hashCode, inflect, maybeNonEmpty, nonEmpty, orElse, plural, pluralize, pluralizeD, pluralizeL, stripRight, unique, wordSplit)
 
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
@@ -11,8 +11,8 @@ nonEmpty string =
     string /= ""
 
 
-nonEmptyMaybe : String -> Maybe String
-nonEmptyMaybe str =
+maybeNonEmpty : String -> Maybe String
+maybeNonEmpty str =
     if str == "" then
         Nothing
 

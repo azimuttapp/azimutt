@@ -1,25 +1,26 @@
 module PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 
 import Conf
-import Dict
 import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
+import Libs.Tuple as Tuple
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas)
 import PagesComponents.Projects.Id_.Models.Erd as Erd
-import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Projects.Id_.Models.Notes as NoteRef
 import Ports
-import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapSearch, mapTableProps)
+import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapProps, mapSearch, mapTables, setSelected)
 import Services.Toasts as Toasts
+import Time
 
 
-handleHotkey : Model -> String -> ( Model, Cmd Msg )
-handleHotkey model hotkey =
+handleHotkey : Time.Posix -> Model -> String -> ( Model, Cmd Msg )
+handleHotkey now model hotkey =
     case hotkey of
         "search-open" ->
             ( model, Ports.focus Conf.ids.searchInput )
@@ -88,7 +89,7 @@ handleHotkey model hotkey =
             ( model, moveTablesOrder -1000 model )
 
         "select-all" ->
-            ( model |> mapErdM (mapTableProps (Dict.map (\_ -> ErdTableProps.setSelected True))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (mapProps (setSelected True))))), Cmd.none )
 
         "save-layout" ->
             ( model, T.send (LayoutMsg LOpen) )
@@ -100,7 +101,7 @@ handleHotkey model hotkey =
             ( model, T.send (FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen model.hoverTable Nothing))) )
 
         "reset-zoom" ->
-            ( model, T.send (Zoom (1 - (model.erd |> Maybe.mapOrElse (\erd -> erd.canvas.zoom) 0))) )
+            ( model, T.send (Zoom (1 - (model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> .zoom) 0))) )
 
         "fit-to-screen" ->
             ( model, T.send FitContent )
@@ -158,7 +159,7 @@ removeElement model =
 
 currentTable : Model -> Maybe TableId
 currentTable model =
-    model.hoverTable |> Maybe.orElse (model.erd |> Maybe.andThen (.tableProps >> Dict.values >> List.find .selected >> Maybe.map .id))
+    model.hoverTable |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected) >> Maybe.map .id))
 
 
 currentColumn : Model -> Maybe ColumnRef
@@ -183,7 +184,7 @@ cancelElement model =
         |> Maybe.orElse (model.upload |> Maybe.map (\_ -> ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)))
         |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
-        |> Maybe.orElse (model.erd |> Maybe.andThen (\e -> e.tableProps |> Dict.values |> List.find (\p -> p.selected)) |> Maybe.map (\p -> SelectTable p.id False))
+        |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\p -> SelectTable p.id False))
         |> Maybe.map T.send
         |> Maybe.withDefault (Toasts.info Toast "Nothing to cancel")
 
@@ -191,9 +192,9 @@ cancelElement model =
 moveTables : Delta -> Model -> Cmd Msg
 moveTables delta model =
     let
-        selectedTables : List ErdTableProps
+        selectedTables : List ErdTableLayout
         selectedTables =
-            model.erd |> Maybe.mapOrElse (\e -> e.shownTables |> List.filterMap (\id -> e.tableProps |> Dict.get id)) [] |> List.filter .selected
+            model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables >> List.filter (.props >> .selected)) []
     in
     if List.nonEmpty selectedTables then
         Cmd.batch (selectedTables |> List.map (\t -> T.send (TableMove t.id delta)))
@@ -205,13 +206,13 @@ moveTables delta model =
 moveTablesOrder : Int -> Model -> Cmd Msg
 moveTablesOrder delta model =
     let
-        tables : List ErdTableProps
+        tables : List ErdTableLayout
         tables =
-            model.erd |> Maybe.mapOrElse (\e -> e.shownTables |> List.filterMap (\id -> e.tableProps |> Dict.get id)) []
+            model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) []
 
-        selectedTables : List ( Int, ErdTableProps )
+        selectedTables : List ( Int, ErdTableLayout )
         selectedTables =
-            tables |> List.indexedMap (\i t -> ( i, t )) |> List.filter (\( _, t ) -> t.selected)
+            tables |> List.indexedMap Tuple.new |> List.filter (\( _, t ) -> t.props.selected)
     in
     if List.nonEmpty selectedTables then
         Cmd.batch (selectedTables |> List.map (\( i, t ) -> T.send (TableOrder t.id (List.length tables - 1 - i + delta))))

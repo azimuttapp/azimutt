@@ -89,11 +89,11 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
                     [ viewNavbarBrand eConf
-                    , Lazy.lazy7 viewNavbarSearch model.search erd.tables erd.relations erd.notes erd.shownTables (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
+                    , Lazy.lazy7 viewNavbarSearch model.search erd.tables erd.relations erd.notes (erd |> Erd.currentLayout |> .tables) (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
                 , div [ class "flex-1 flex justify-center px-2" ]
-                    [ Lazy.lazy8 viewNavbarTitle gConf eConf projects erd.project erd.usedLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
+                    [ Lazy.lazy8 viewNavbarTitle gConf eConf projects erd.project erd.currentLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]

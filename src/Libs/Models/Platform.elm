@@ -1,4 +1,4 @@
-module Libs.Models.Platform exposing (Platform(..), fromString)
+module Libs.Models.Platform exposing (Platform(..), fromString, toString)
 
 
 type Platform
@@ -17,3 +17,13 @@ fromString value =
 
         _ ->
             PC
+
+
+toString : Platform -> String
+toString value =
+    case value of
+        PC ->
+            "pc"
+
+        Mac ->
+            "mac"

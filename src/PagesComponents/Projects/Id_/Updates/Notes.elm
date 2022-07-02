@@ -1,15 +1,13 @@
 module PagesComponents.Projects.Id_.Updates.Notes exposing (Model, handleNotes)
 
 import Conf
-import Dict
-import Libs.Dict as Dict
-import Libs.Maybe as Maybe
+import Libs.String as String
 import Libs.Task as T
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), NotesDialog, NotesMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
-import PagesComponents.Projects.Id_.Models.Notes as NoteRef exposing (NotesRef(..))
+import PagesComponents.Projects.Id_.Models.ErdTableNotes as ErdTableNotes
 import Ports
-import Services.Lenses exposing (mapColumnProps, mapEditNotesM, mapErdMCmd, mapNotes, mapTableProps, setEditNotes, setNotes)
+import Services.Lenses exposing (mapEditNotesM, mapErdM, mapNotes, setEditNotes, setNotes)
 import Track
 
 
@@ -29,7 +27,7 @@ handleNotes msg model =
                     (Just
                         { id = Conf.ids.editNotesDialog
                         , ref = ref
-                        , notes = model.erd |> Maybe.andThen (\erd -> erd.notes |> Dict.get (ref |> NoteRef.asKey)) |> Maybe.withDefault ""
+                        , notes = model.erd |> Maybe.andThen (.notes >> ErdTableNotes.get ref) |> Maybe.withDefault ""
                         }
                     )
             , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.editNotesDialog), Ports.track Track.openEditNotes ]
@@ -38,26 +36,8 @@ handleNotes msg model =
         NEdit notes ->
             ( model |> mapEditNotesM (setNotes notes), Cmd.none )
 
-        NSave key notes ->
-            model |> setEditNotes Nothing |> mapErdMCmd (updateNotes key (Just notes |> Maybe.filter (\n -> n /= "")))
+        NSave ref notes ->
+            ( model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdTableNotes.set ref (String.maybeNonEmpty notes))), Cmd.none )
 
         NCancel ->
             ( model |> setEditNotes Nothing, Cmd.none )
-
-
-updateNotes : NotesRef -> Maybe String -> Erd -> ( Erd, Cmd Msg )
-updateNotes ref notes erd =
-    case ref of
-        TableNote t ->
-            ( erd
-                |> mapNotes (Dict.set (ref |> NoteRef.asKey) notes)
-                |> mapTableProps (Dict.alter t (setNotes notes))
-            , Cmd.none
-            )
-
-        ColumnNote c ->
-            ( erd
-                |> mapNotes (Dict.set (ref |> NoteRef.asKey) notes)
-                |> mapTableProps (Dict.alter c.table (mapColumnProps (Dict.alter c.column (setNotes notes))))
-            , Cmd.none
-            )

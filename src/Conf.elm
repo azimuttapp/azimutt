@@ -8,6 +8,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceName exposing (SourceName)
 
@@ -28,6 +29,7 @@ constants :
     , defaultDescription : String
     , cheeringTweet : String
     , sharingTweet : String
+    , defaultLayout : LayoutName
     , virtualRelationSourceName : SourceName
     , externalAssets : String
     }
@@ -47,6 +49,7 @@ constants =
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
+    , defaultLayout = "default"
     , virtualRelationSourceName = "default"
     , externalAssets = "https://xkwctrduvpdgjarqzjkc.supabase.co/storage/v1/object/public/assets"
     }

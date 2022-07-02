@@ -281,7 +281,7 @@ viewModal : Model -> Html Msg
 viewModal model =
     Keyed.node "div"
         [ class "az-modals" ]
-        ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.has m.id) m ))
+        ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.member m.id) m ))
          ]
             |> List.filterMap identity
             |> List.sortBy (\( id, _ ) -> model.openedDialogs |> List.indexOf id |> Maybe.withDefault 0 |> negate)

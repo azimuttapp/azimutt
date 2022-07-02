@@ -11,10 +11,10 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (TrackEvent)
 import Libs.Result as Result
 import Models.Project exposing (Project)
-import Models.Project.Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
+import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 
@@ -123,22 +123,22 @@ refreshSource =
     sourceEvent "refresh"
 
 
-createLayout : Layout -> TrackEvent
+createLayout : ErdLayout -> TrackEvent
 createLayout =
     layoutEvent "create"
 
 
-loadLayout : Layout -> TrackEvent
+loadLayout : ErdLayout -> TrackEvent
 loadLayout =
     layoutEvent "load"
 
 
-updateLayout : Layout -> TrackEvent
+updateLayout : ErdLayout -> TrackEvent
 updateLayout =
     layoutEvent "update"
 
 
-deleteLayout : Layout -> TrackEvent
+deleteLayout : ErdLayout -> TrackEvent
 deleteLayout =
     layoutEvent "delete"
 
@@ -219,7 +219,7 @@ sourceEvent eventName source =
     }
 
 
-layoutEvent : String -> Layout -> TrackEvent
+layoutEvent : String -> ErdLayout -> TrackEvent
 layoutEvent eventName layout =
     { name = eventName ++ "-layout", details = [ ( "table-count", layout.tables |> List.length |> String.fromInt ) ], enabled = True }
 
