@@ -633,75 +633,93 @@
       "updatedAt": 1649492400000
     }
   ],
-  "layout": {
-    "canvas": {
-      "position": {
-        "left": 0,
-        "top": 0
-      },
-      "zoom": 1
-    },
-    "tables": [
-      {
-        "id": "public.credentials",
+  "usedLayout": "default",
+  "layouts": {
+    "default": {
+      "canvas": {
         "position": {
-          "left": 930,
-          "top": 620
+          "left": 0,
+          "top": 0
         },
-        "color": "orange",
-        "columns": [
-          "user_id",
-          "login",
-          "password"
-        ]
+        "zoom": 1
       },
-      {
-        "id": "public.role_user",
-        "position": {
-          "left": 890,
-          "top": 280
+      "tables": [
+        {
+          "id": "public.credentials",
+          "position": {
+            "left": 930,
+            "top": 620
+          },
+          "size": {
+            "width": 159.38333129882812,
+            "height": 117
+          },
+          "color": "orange",
+          "columns": [
+            "user_id",
+            "login",
+            "password"
+          ]
         },
-        "color": "rose",
-        "columns": [
-          "id",
-          "role_id",
-          "user_id"
-        ]
-      },
-      {
-        "id": "public.roles",
-        "position": {
-          "left": 1140,
-          "top": 300
+        {
+          "id": "public.role_user",
+          "position": {
+            "left": 890,
+            "top": 280
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 141
+          },
+          "color": "rose",
+          "columns": [
+            "id",
+            "role_id",
+            "user_id"
+          ]
         },
-        "color": "blue",
-        "columns": [
-          "id",
-          "name",
-          "slug",
-          "description"
-        ]
-      },
-      {
-        "id": "public.users",
-        "position": {
-          "left": 600,
-          "top": 470
+        {
+          "id": "public.roles",
+          "position": {
+            "left": 1140,
+            "top": 300
+          },
+          "size": {
+            "width": 171.76666259765625,
+            "height": 165
+          },
+          "color": "blue",
+          "columns": [
+            "id",
+            "name",
+            "slug",
+            "description"
+          ]
         },
-        "color": "yellow",
-        "columns": [
-          "id",
-          "email",
-          "first_name",
-          "last_name",
-          "external_id"
-        ]
-      }
-    ],
-    "createdAt": 0,
-    "updatedAt": 0
+        {
+          "id": "public.users",
+          "position": {
+            "left": 600,
+            "top": 470
+          },
+          "size": {
+            "width": 168.25,
+            "height": 167.5
+          },
+          "color": "yellow",
+          "columns": [
+            "id",
+            "email",
+            "first_name",
+            "last_name",
+            "external_id"
+          ]
+        }
+      ],
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
+    }
   },
-  "layouts": {},
   "createdAt": 1649492400000,
   "updatedAt": 1649492400000,
   "version": 2

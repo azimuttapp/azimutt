@@ -5248,390 +5248,476 @@
       "updatedAt": 1649492400000
     }
   ],
-  "layout": {
-    "canvas": {
-      "position": {
-        "left": 0,
-        "top": 0
-      },
-      "zoom": 0.78
-    },
-    "tables": [
-      {
-        "id": "public.t_area",
+  "usedLayout": "default",
+  "layouts": {
+    "default": {
+      "canvas": {
         "position": {
-          "left": 430,
-          "top": 810
+          "left": 0,
+          "top": 0
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "name",
-          "selector",
-          "color",
-          "latitude",
-          "longitude",
-          "radius"
-        ]
+        "zoom": 0.78
       },
-      {
-        "id": "public.t_calendar",
-        "position": {
-          "left": 1180,
-          "top": 370
+      "tables": [
+        {
+          "id": "public.t_area",
+          "position": {
+            "left": 430,
+            "top": 810
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 237
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "name",
+            "selector",
+            "color",
+            "latitude",
+            "longitude",
+            "radius"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "service_id",
-          "user_id",
-          "selector",
-          "external_id",
-          "description",
-          "name",
-          "notify",
-          "shared",
-          "sync",
-          "color",
-          "ctag",
-          "sync_token"
-        ]
-      },
-      {
-        "id": "public.t_calendar_event",
-        "position": {
-          "left": 930,
-          "top": 370
+        {
+          "id": "public.t_calendar",
+          "position": {
+            "left": 1180,
+            "top": 370
+          },
+          "size": {
+            "width": 171.85000610351562,
+            "height": 381
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "service_id",
+            "user_id",
+            "selector",
+            "external_id",
+            "description",
+            "name",
+            "notify",
+            "shared",
+            "sync",
+            "color",
+            "ctag",
+            "sync_token"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "calendar_id",
-          "selector",
-          "external_id",
-          "full_day",
-          "name",
-          "start",
-          "end",
-          "location",
-          "url"
-        ]
-      },
-      {
-        "id": "public.t_dashboard",
-        "position": {
-          "left": 1990,
-          "top": 500
+        {
+          "id": "public.t_calendar_event",
+          "position": {
+            "left": 930,
+            "top": 370
+          },
+          "size": {
+            "width": 201.14999389648438,
+            "height": 309
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "calendar_id",
+            "selector",
+            "external_id",
+            "full_day",
+            "name",
+            "start",
+            "end",
+            "location",
+            "url"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "user_id",
-          "name",
-          "selector",
-          "boxes",
-          "type"
-        ]
-      },
-      {
-        "id": "public.t_device",
-        "position": {
-          "left": 860,
-          "top": 20
+        {
+          "id": "public.t_dashboard",
+          "position": {
+            "left": 1990,
+            "top": 500
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 213
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "user_id",
+            "name",
+            "selector",
+            "boxes",
+            "type"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "room_id",
-          "service_id",
-          "external_id",
-          "selector",
-          "name",
-          "should_poll",
-          "model",
-          "poll_frequency"
-        ]
-      },
-      {
-        "id": "public.t_device_feature",
-        "position": {
-          "left": 490,
-          "top": 210
+        {
+          "id": "public.t_device",
+          "position": {
+            "left": 860,
+            "top": 20
+          },
+          "size": {
+            "width": 175.4499969482422,
+            "height": 285
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "room_id",
+            "service_id",
+            "external_id",
+            "selector",
+            "name",
+            "should_poll",
+            "model",
+            "poll_frequency"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "device_id",
-          "external_id",
-          "selector",
-          "category",
-          "has_feedback",
-          "keep_history",
-          "max",
-          "min",
-          "name",
-          "read_only",
-          "type",
-          "last_daily_aggregate",
-          "last_hourly_aggregate",
-          "last_monthly_aggregate",
-          "last_value",
-          "last_value_changed",
-          "last_value_string",
-          "unit"
-        ]
-      },
-      {
-        "id": "public.t_device_feature_state",
-        "position": {
-          "left": 170,
-          "top": 390
+        {
+          "id": "public.t_device_feature",
+          "position": {
+            "left": 490,
+            "top": 210
+          },
+          "size": {
+            "width": 294.1333312988281,
+            "height": 525
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "device_id",
+            "external_id",
+            "selector",
+            "category",
+            "has_feedback",
+            "keep_history",
+            "max",
+            "min",
+            "name",
+            "read_only",
+            "type",
+            "last_daily_aggregate",
+            "last_hourly_aggregate",
+            "last_monthly_aggregate",
+            "last_value",
+            "last_value_changed",
+            "last_value_string",
+            "unit"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "device_feature_id",
-          "value"
-        ]
-      },
-      {
-        "id": "public.t_device_feature_state_aggregate",
-        "position": {
-          "left": 70,
-          "top": 210
+        {
+          "id": "public.t_device_feature_state",
+          "position": {
+            "left": 170,
+            "top": 390
+          },
+          "size": {
+            "width": 254.23333740234375,
+            "height": 141
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "device_feature_id",
+            "value"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "device_feature_id",
-          "type",
-          "value"
-        ]
-      },
-      {
-        "id": "public.t_device_param",
-        "position": {
-          "left": 600,
-          "top": 20
+        {
+          "id": "public.t_device_feature_state_aggregate",
+          "position": {
+            "left": 70,
+            "top": 210
+          },
+          "size": {
+            "width": 357.54998779296875,
+            "height": 165
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "device_feature_id",
+            "type",
+            "value"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "device_id",
-          "name",
-          "value"
-        ]
-      },
-      {
-        "id": "public.t_house",
-        "position": {
-          "left": 1940,
-          "top": 60
+        {
+          "id": "public.t_device_param",
+          "position": {
+            "left": 600,
+            "top": 20
+          },
+          "size": {
+            "width": 187.8333282470703,
+            "height": 165
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "device_id",
+            "name",
+            "value"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "name",
-          "selector",
-          "latitude",
-          "longitude"
-        ]
-      },
-      {
-        "id": "public.t_job",
-        "position": {
-          "left": 630,
-          "top": 810
+        {
+          "id": "public.t_house",
+          "position": {
+            "left": 1940,
+            "top": 60
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 189
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "name",
+            "selector",
+            "latitude",
+            "longitude"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "data",
-          "progress",
-          "status",
-          "type"
-        ]
-      },
-      {
-        "id": "public.t_location",
-        "position": {
-          "left": 1870,
-          "top": 830
+        {
+          "id": "public.t_job",
+          "position": {
+            "left": 630,
+            "top": 810
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 189
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "data",
+            "progress",
+            "status",
+            "type"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "user_id",
-          "latitude",
-          "longitude",
-          "accuracy",
-          "altitude"
-        ]
-      },
-      {
-        "id": "public.t_message",
-        "position": {
-          "left": 2110,
-          "top": 740
+        {
+          "id": "public.t_location",
+          "position": {
+            "left": 1870,
+            "top": 830
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 213
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "user_id",
+            "latitude",
+            "longitude",
+            "accuracy",
+            "altitude"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "receiver_id",
-          "sender_id",
-          "conversation_id",
-          "is_read",
-          "text",
-          "file"
-        ]
-      },
-      {
-        "id": "public.t_pod",
-        "position": {
-          "left": 1280,
-          "top": 100
+        {
+          "id": "public.t_message",
+          "position": {
+            "left": 2110,
+            "top": 740
+          },
+          "size": {
+            "width": 194.56666564941406,
+            "height": 237
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "receiver_id",
+            "sender_id",
+            "conversation_id",
+            "is_read",
+            "text",
+            "file"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "room_id",
-          "selector",
-          "name"
-        ]
-      },
-      {
-        "id": "public.t_room",
-        "position": {
-          "left": 1630,
-          "top": 30
+        {
+          "id": "public.t_pod",
+          "position": {
+            "left": 1280,
+            "top": 100
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 165
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "room_id",
+            "selector",
+            "name"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "house_id",
-          "name",
-          "selector"
-        ]
-      },
-      {
-        "id": "public.t_scene",
-        "position": {
-          "left": 180,
-          "top": 810
+        {
+          "id": "public.t_room",
+          "position": {
+            "left": 1630,
+            "top": 30
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 165
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "house_id",
+            "name",
+            "selector"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "selector",
-          "actions",
-          "active",
-          "icon",
-          "name",
-          "last_executed",
-          "triggers"
-        ]
-      },
-      {
-        "id": "public.t_script",
-        "position": {
-          "left": 830,
-          "top": 810
+        {
+          "id": "public.t_scene",
+          "position": {
+            "left": 180,
+            "top": 810
+          },
+          "size": {
+            "width": 218.1666717529297,
+            "height": 261
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "selector",
+            "actions",
+            "active",
+            "icon",
+            "name",
+            "last_executed",
+            "triggers"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "name",
-          "selector",
-          "code"
-        ]
-      },
-      {
-        "id": "public.t_service",
-        "position": {
-          "left": 1540,
-          "top": 250
+        {
+          "id": "public.t_script",
+          "position": {
+            "left": 830,
+            "top": 810
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 165
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "name",
+            "selector",
+            "code"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "pod_id",
-          "selector",
-          "enabled",
-          "has_message_feature",
-          "name",
-          "status",
-          "version"
-        ]
-      },
-      {
-        "id": "public.t_session",
-        "position": {
-          "left": 1120,
-          "top": 790
+        {
+          "id": "public.t_service",
+          "position": {
+            "left": 1540,
+            "top": 250
+          },
+          "size": {
+            "width": 224.51666259765625,
+            "height": 261
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "pod_id",
+            "selector",
+            "enabled",
+            "has_message_feature",
+            "name",
+            "status",
+            "version"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "user_id",
-          "revoked",
-          "scope",
-          "token_hash",
-          "token_type",
-          "last_seen",
-          "useragent",
-          "valid_until"
-        ]
-      },
-      {
-        "id": "public.t_user",
-        "position": {
-          "left": 1500,
-          "top": 540
+        {
+          "id": "public.t_session",
+          "position": {
+            "left": 1120,
+            "top": 790
+          },
+          "size": {
+            "width": 192.3333282470703,
+            "height": 285
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "user_id",
+            "revoked",
+            "scope",
+            "token_hash",
+            "token_type",
+            "last_seen",
+            "useragent",
+            "valid_until"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "current_house_id",
-          "email",
-          "selector",
-          "telegram_user_id",
-          "birthdate",
-          "distance_unit_preference",
-          "firstname",
-          "language",
-          "lastname",
-          "password",
-          "role",
-          "temperature_unit_preference",
-          "last_accuracy",
-          "last_altitude",
-          "last_house_changed",
-          "last_latitude",
-          "last_location_changed",
-          "last_longitude",
-          "picture"
-        ]
-      },
-      {
-        "id": "public.t_variable",
-        "position": {
-          "left": 1990,
-          "top": 290
+        {
+          "id": "public.t_user",
+          "position": {
+            "left": 1500,
+            "top": 540
+          },
+          "size": {
+            "width": 307.70001220703125,
+            "height": 549
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "current_house_id",
+            "email",
+            "selector",
+            "telegram_user_id",
+            "birthdate",
+            "distance_unit_preference",
+            "firstname",
+            "language",
+            "lastname",
+            "password",
+            "role",
+            "temperature_unit_preference",
+            "last_accuracy",
+            "last_altitude",
+            "last_house_changed",
+            "last_latitude",
+            "last_location_changed",
+            "last_longitude",
+            "picture"
+          ]
         },
-        "color": "emerald",
-        "columns": [
-          "id",
-          "service_id",
-          "user_id",
-          "name",
-          "value"
-        ]
-      }
-    ],
-    "createdAt": 0,
-    "updatedAt": 0
+        {
+          "id": "public.t_variable",
+          "position": {
+            "left": 1990,
+            "top": 290
+          },
+          "size": {
+            "width": 166.5833282470703,
+            "height": 189
+          },
+          "color": "emerald",
+          "columns": [
+            "id",
+            "service_id",
+            "user_id",
+            "name",
+            "value"
+          ]
+        }
+      ],
+      "createdAt": 1649492400000,
+      "updatedAt": 1649492400000
+    }
   },
-  "layouts": {},
   "createdAt": 1649492400000,
   "updatedAt": 1649492400000,
   "version": 2

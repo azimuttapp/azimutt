@@ -8607,11 +8607,16 @@
     },
     {
       "id": "21a1500a-8b3b-452f-b077-32574d6fed63",
-      "name": "User",
+      "name": "default",
       "kind": {
         "kind": "UserDefined"
       },
-      "content": [],
+      "content": [
+        "fk talks.speakers -> users.id",
+        "fk external_proposals.speakers -> users.id",
+        "fk proposals.speakers -> users.id",
+        "fk groups.owners -> users.id"
+      ],
       "tables": [],
       "relations": [
         {
@@ -8687,459 +8692,7 @@
       "updatedAt": 1649492400000
     }
   ],
-  "layout": {
-    "canvas": {
-      "position": {
-        "left": 0,
-        "top": 0
-      },
-      "zoom": 0.8501157791617977
-    },
-    "tables": [
-      {
-        "id": "public.cfps",
-        "position": {
-          "left": 940,
-          "top": 610
-        },
-        "color": "purple",
-        "columns": [
-          "id",
-          "group_id",
-          "slug",
-          "description",
-          "name",
-          "tags",
-          "begin",
-          "close"
-        ]
-      },
-      {
-        "id": "public.comments",
-        "position": {
-          "left": 970,
-          "top": 920
-        },
-        "color": "purple",
-        "columns": [
-          "id",
-          "answers",
-          "event_id",
-          "proposal_id",
-          "kind",
-          "text"
-        ]
-      },
-      {
-        "id": "public.contacts",
-        "position": {
-          "left": 60,
-          "top": 400
-        },
-        "color": "rose",
-        "columns": [
-          "id",
-          "partner_id",
-          "email",
-          "first_name",
-          "last_name",
-          "notes"
-        ]
-      },
-      {
-        "id": "public.credentials",
-        "position": {
-          "left": 1510,
-          "top": 210
-        },
-        "color": "orange",
-        "columns": [
-          "provider_id",
-          "provider_key",
-          "hasher",
-          "password",
-          "salt"
-        ]
-      },
-      {
-        "id": "public.event_rsvps",
-        "position": {
-          "left": 1060,
-          "top": 410
-        },
-        "color": "violet",
-        "columns": [
-          "event_id",
-          "user_id",
-          "answer",
-          "answered_at"
-        ]
-      },
-      {
-        "id": "public.events",
-        "position": {
-          "left": 720,
-          "top": 610
-        },
-        "color": "purple",
-        "columns": [
-          "id",
-          "group_id",
-          "cfp_id",
-          "venue",
-          "slug",
-          "allow_rsvp",
-          "description",
-          "kind",
-          "name",
-          "orga_notes",
-          "start",
-          "tags",
-          "talks",
-          "max_attendee",
-          "meetupevent",
-          "meetupgroup",
-          "published"
-        ]
-      },
-      {
-        "id": "public.external_cfps",
-        "position": {
-          "left": 2040,
-          "top": 560
-        },
-        "color": "green",
-        "columns": [
-          "id",
-          "event_id",
-          "close",
-          "description",
-          "url",
-          "begin"
-        ]
-      },
-      {
-        "id": "public.external_events",
-        "position": {
-          "left": 1810,
-          "top": 560
-        },
-        "color": "green",
-        "columns": [
-          "id",
-          "name",
-          "start",
-          "description",
-          "kind",
-          "tags",
-          "finish",
-          "location",
-          "logo",
-          "tickets_url",
-          "twitter_account",
-          "twitter_hashtag",
-          "url",
-          "videos_url"
-        ]
-      },
-      {
-        "id": "public.external_proposals",
-        "position": {
-          "left": 1570,
-          "top": 560
-        },
-        "color": "green",
-        "columns": [
-          "id",
-          "event_id",
-          "talk_id",
-          "status",
-          "description",
-          "duration",
-          "message",
-          "speakers",
-          "tags",
-          "title",
-          "slides",
-          "url",
-          "video"
-        ]
-      },
-      {
-        "id": "public.group_members",
-        "position": {
-          "left": 1040,
-          "top": 160
-        },
-        "color": "indigo",
-        "columns": [
-          "group_id",
-          "user_id",
-          "joined_at",
-          "role",
-          "leaved_at",
-          "presentation"
-        ]
-      },
-      {
-        "id": "public.group_settings",
-        "position": {
-          "left": 730,
-          "top": 160
-        },
-        "color": "indigo",
-        "columns": [
-          "group_id",
-          "actions",
-          "event_description",
-          "event_templates",
-          "proposal_tweet",
-          "meetup_access_token",
-          "meetup_group_slug",
-          "meetup_logged_user_id",
-          "meetup_logged_user_name",
-          "meetup_refresh_token",
-          "slack_bot_avatar",
-          "slack_bot_name",
-          "slack_token"
-        ]
-      },
-      {
-        "id": "public.groups",
-        "position": {
-          "left": 520,
-          "top": 380
-        },
-        "color": "violet",
-        "columns": [
-          "id",
-          "slug",
-          "description",
-          "name",
-          "owners",
-          "status",
-          "tags",
-          "banner",
-          "contact",
-          "location",
-          "logo",
-          "website"
-        ]
-      },
-      {
-        "id": "public.logins",
-        "position": {
-          "left": 1510,
-          "top": 70
-        },
-        "color": "purple",
-        "columns": [
-          "provider_id",
-          "provider_key",
-          "user_id"
-        ]
-      },
-      {
-        "id": "public.partners",
-        "position": {
-          "left": 290,
-          "top": 390
-        },
-        "color": "indigo",
-        "columns": [
-          "id",
-          "group_id",
-          "slug",
-          "logo",
-          "name",
-          "notes",
-          "description"
-        ]
-      },
-      {
-        "id": "public.proposal_ratings",
-        "position": {
-          "left": 1360,
-          "top": 990
-        },
-        "color": "green",
-        "columns": [
-          "proposal_id",
-          "grade"
-        ]
-      },
-      {
-        "id": "public.proposals",
-        "position": {
-          "left": 1170,
-          "top": 590
-        },
-        "color": "orange",
-        "columns": [
-          "id",
-          "cfp_id",
-          "talk_id",
-          "event_id",
-          "status",
-          "description",
-          "duration",
-          "message",
-          "orga_tags",
-          "speakers",
-          "tags",
-          "title",
-          "slides",
-          "video"
-        ]
-      },
-      {
-        "id": "public.sponsor_packs",
-        "position": {
-          "left": 260,
-          "top": 50
-        },
-        "color": "fuchsia",
-        "columns": [
-          "id",
-          "group_id",
-          "slug",
-          "active",
-          "currency",
-          "description",
-          "duration",
-          "name",
-          "price"
-        ]
-      },
-      {
-        "id": "public.sponsors",
-        "position": {
-          "left": 20,
-          "top": 50
-        },
-        "color": "pink",
-        "columns": [
-          "id",
-          "group_id",
-          "partner_id",
-          "sponsor_pack_id",
-          "contact_id",
-          "currency",
-          "finish",
-          "price",
-          "start",
-          "paid"
-        ]
-      },
-      {
-        "id": "public.talks",
-        "position": {
-          "left": 1370,
-          "top": 580
-        },
-        "color": "purple",
-        "columns": [
-          "id",
-          "slug",
-          "status",
-          "description",
-          "duration",
-          "message",
-          "speakers",
-          "tags",
-          "title",
-          "slides",
-          "video"
-        ]
-      },
-      {
-        "id": "public.users",
-        "position": {
-          "left": 1310,
-          "top": 70
-        },
-        "color": "yellow",
-        "columns": [
-          "id",
-          "email",
-          "slug",
-          "avatar",
-          "first_name",
-          "last_name",
-          "status",
-          "bio",
-          "company",
-          "location",
-          "mentoring",
-          "phone",
-          "title",
-          "website"
-        ]
-      },
-      {
-        "id": "public.venues",
-        "position": {
-          "left": 60,
-          "top": 660
-        },
-        "color": "amber",
-        "columns": [
-          "id",
-          "partner_id",
-          "contact_id",
-          "address",
-          "notes",
-          "meetupgroup",
-          "meetupvenue",
-          "room_size"
-        ]
-      },
-      {
-        "id": "public.video_sources",
-        "position": {
-          "left": 1990,
-          "top": 30
-        },
-        "color": "cyan",
-        "columns": [
-          "video_id",
-          "external_event_id",
-          "external_proposal_id",
-          "proposal_id",
-          "talk_id"
-        ]
-      },
-      {
-        "id": "public.videos",
-        "position": {
-          "left": 1750,
-          "top": 30
-        },
-        "color": "sky",
-        "columns": [
-          "id",
-          "url",
-          "channel_id",
-          "channel_name",
-          "title",
-          "playlist_id",
-          "playlist_name",
-          "comments",
-          "description",
-          "dislikes",
-          "duration",
-          "lang",
-          "likes",
-          "platform",
-          "published_at",
-          "tags",
-          "views"
-        ]
-      }
-    ],
-    "createdAt": 0,
-    "updatedAt": 0
-  },
+  "usedLayout": "overview",
   "layouts": {
     "overview": {
       "canvas": {
@@ -9155,6 +8708,10 @@
           "position": {
             "left": 940,
             "top": 610
+          },
+          "size": {
+            "width": 171.76666259765625,
+            "height": 261
           },
           "color": "purple",
           "columns": [
@@ -9174,6 +8731,10 @@
             "left": 970,
             "top": 920
           },
+          "size": {
+            "width": 175.14999389648438,
+            "height": 213
+          },
           "color": "purple",
           "columns": [
             "id",
@@ -9189,6 +8750,10 @@
           "position": {
             "left": 60,
             "top": 400
+          },
+          "size": {
+            "width": 168.25,
+            "height": 213
           },
           "color": "rose",
           "columns": [
@@ -9206,6 +8771,10 @@
             "left": 1510,
             "top": 210
           },
+          "size": {
+            "width": 189.8000030517578,
+            "height": 165
+          },
           "color": "orange",
           "columns": [
             "provider_id",
@@ -9221,6 +8790,10 @@
             "left": 1060,
             "top": 410
           },
+          "size": {
+            "width": 210.28334045410156,
+            "height": 141
+          },
           "color": "violet",
           "columns": [
             "event_id",
@@ -9234,6 +8807,10 @@
           "position": {
             "left": 720,
             "top": 610
+          },
+          "size": {
+            "width": 190.26666259765625,
+            "height": 477
           },
           "color": "purple",
           "columns": [
@@ -9262,6 +8839,10 @@
             "left": 2040,
             "top": 560
           },
+          "size": {
+            "width": 171.76666259765625,
+            "height": 213
+          },
           "color": "green",
           "columns": [
             "id",
@@ -9277,6 +8858,10 @@
           "position": {
             "left": 1810,
             "top": 560
+          },
+          "size": {
+            "width": 206.48333740234375,
+            "height": 405
           },
           "color": "green",
           "columns": [
@@ -9302,6 +8887,10 @@
             "left": 1570,
             "top": 560
           },
+          "size": {
+            "width": 217.96665954589844,
+            "height": 381
+          },
           "color": "green",
           "columns": [
             "id",
@@ -9325,6 +8914,10 @@
             "left": 1040,
             "top": 160
           },
+          "size": {
+            "width": 193.39999389648438,
+            "height": 189
+          },
           "color": "indigo",
           "columns": [
             "group_id",
@@ -9340,6 +8933,10 @@
           "position": {
             "left": 730,
             "top": 160
+          },
+          "size": {
+            "width": 292.7833251953125,
+            "height": 381
           },
           "color": "indigo",
           "columns": [
@@ -9364,6 +8961,10 @@
             "left": 520,
             "top": 380
           },
+          "size": {
+            "width": 175.60000610351562,
+            "height": 357
+          },
           "color": "violet",
           "columns": [
             "id",
@@ -9386,6 +8987,10 @@
             "left": 1510,
             "top": 70
           },
+          "size": {
+            "width": 189.8000030517578,
+            "height": 117
+          },
           "color": "purple",
           "columns": [
             "provider_id",
@@ -9398,6 +9003,10 @@
           "position": {
             "left": 290,
             "top": 390
+          },
+          "size": {
+            "width": 175.60000610351562,
+            "height": 237
           },
           "color": "indigo",
           "columns": [
@@ -9416,6 +9025,10 @@
             "left": 1360,
             "top": 990
           },
+          "size": {
+            "width": 196.75,
+            "height": 117
+          },
           "color": "green",
           "columns": [
             "proposal_id",
@@ -9427,6 +9040,10 @@
           "position": {
             "left": 1170,
             "top": 590
+          },
+          "size": {
+            "width": 171.76666259765625,
+            "height": 405
           },
           "color": "orange",
           "columns": [
@@ -9452,6 +9069,10 @@
             "left": 260,
             "top": 50
           },
+          "size": {
+            "width": 177.11666870117188,
+            "height": 285
+          },
           "color": "fuchsia",
           "columns": [
             "id",
@@ -9470,6 +9091,10 @@
           "position": {
             "left": 20,
             "top": 50
+          },
+          "size": {
+            "width": 210.75,
+            "height": 309
           },
           "color": "pink",
           "columns": [
@@ -9491,6 +9116,10 @@
             "left": 1370,
             "top": 580
           },
+          "size": {
+            "width": 171.76666259765625,
+            "height": 333
+          },
           "color": "purple",
           "columns": [
             "id",
@@ -9511,6 +9140,10 @@
           "position": {
             "left": 1310,
             "top": 70
+          },
+          "size": {
+            "width": 175.60000610351562,
+            "height": 405
           },
           "color": "yellow",
           "columns": [
@@ -9536,6 +9169,10 @@
             "left": 60,
             "top": 660
           },
+          "size": {
+            "width": 190.26666259765625,
+            "height": 261
+          },
           "color": "amber",
           "columns": [
             "id",
@@ -9554,6 +9191,10 @@
             "left": 1990,
             "top": 30
           },
+          "size": {
+            "width": 243.4499969482422,
+            "height": 165
+          },
           "color": "cyan",
           "columns": [
             "video_id",
@@ -9568,6 +9209,10 @@
           "position": {
             "left": 1750,
             "top": 30
+          },
+          "size": {
+            "width": 210.75,
+            "height": 477
           },
           "color": "sky",
           "columns": [
@@ -9609,6 +9254,10 @@
             "left": 950,
             "top": 410
           },
+          "size": {
+            "width": 168.25,
+            "height": 213
+          },
           "color": "rose",
           "columns": [
             "id",
@@ -9624,6 +9273,10 @@
           "position": {
             "left": 130,
             "top": 280
+          },
+          "size": {
+            "width": 190.26666259765625,
+            "height": 477
           },
           "color": "purple",
           "columns": [
@@ -9652,6 +9305,10 @@
             "left": 450,
             "top": 420
           },
+          "size": {
+            "width": 175.60000610351562,
+            "height": 357
+          },
           "color": "violet",
           "columns": [
             "id",
@@ -9674,6 +9331,10 @@
             "left": 720,
             "top": 420
           },
+          "size": {
+            "width": 175.60000610351562,
+            "height": 237
+          },
           "color": "indigo",
           "columns": [
             "id",
@@ -9690,6 +9351,10 @@
           "position": {
             "left": 960,
             "top": 50
+          },
+          "size": {
+            "width": 177.11666870117188,
+            "height": 285
           },
           "color": "fuchsia",
           "columns": [
@@ -9710,6 +9375,10 @@
             "left": 1160,
             "top": 50
           },
+          "size": {
+            "width": 210.75,
+            "height": 309
+          },
           "color": "pink",
           "columns": [
             "id",
@@ -9729,6 +9398,10 @@
           "position": {
             "left": 430,
             "top": 90
+          },
+          "size": {
+            "width": 190.26666259765625,
+            "height": 261
           },
           "color": "amber",
           "columns": [
@@ -9761,6 +9434,10 @@
             "left": 1050,
             "top": 550
           },
+          "size": {
+            "width": 210.28334045410156,
+            "height": 141
+          },
           "color": "violet",
           "columns": [
             "event_id",
@@ -9774,6 +9451,10 @@
           "position": {
             "left": 1360,
             "top": 300
+          },
+          "size": {
+            "width": 190.26666259765625,
+            "height": 477
           },
           "color": "purple",
           "columns": [
@@ -9802,6 +9483,10 @@
             "left": 60,
             "top": 70
           },
+          "size": {
+            "width": 206.48333740234375,
+            "height": 405
+          },
           "color": "green",
           "columns": [
             "id",
@@ -9826,6 +9511,10 @@
             "left": 300,
             "top": 70
           },
+          "size": {
+            "width": 217.96665954589844,
+            "height": 381
+          },
           "color": "green",
           "columns": [
             "id",
@@ -9848,6 +9537,10 @@
           "position": {
             "left": 1050,
             "top": 80
+          },
+          "size": {
+            "width": 171.76666259765625,
+            "height": 405
           },
           "color": "orange",
           "columns": [
@@ -9873,6 +9566,10 @@
             "left": 700,
             "top": 30
           },
+          "size": {
+            "width": 171.76666259765625,
+            "height": 333
+          },
           "color": "purple",
           "columns": [
             "id",
@@ -9893,6 +9590,10 @@
           "position": {
             "left": 640,
             "top": 420
+          },
+          "size": {
+            "width": 300.1499938964844,
+            "height": 453
           },
           "color": "yellow",
           "columns": [
