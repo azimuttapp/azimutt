@@ -290,7 +290,6 @@ type JsMsg
     | GotColumnHide ColumnRef
     | GotColumnMove ColumnRef Int
     | GotFitToScreen
-    | GotResetCanvas
     | Error Decode.Error
 
 
@@ -520,9 +519,6 @@ jsDecoder =
                 "GotFitToScreen" ->
                     Decode.succeed GotFitToScreen
 
-                "GotResetCanvas" ->
-                    Decode.succeed GotResetCanvas
-
                 other ->
                     Decode.fail ("Not supported kind of JsMsg '" ++ other ++ "'")
         )
@@ -634,9 +630,6 @@ unhandledJsMsgError msg =
 
                 GotFitToScreen ->
                     "GotFitToScreen"
-
-                GotResetCanvas ->
-                    "GotResetCanvas"
 
                 Error _ ->
                     "Error"

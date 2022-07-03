@@ -42,7 +42,7 @@ sortBy order table relations columns =
     let
         tableRelations : List (RelationLike c d)
         tableRelations =
-            relations |> Relation.withTableSrc table.id
+            relations |> List.filter (\r -> r.src.table == table.id)
     in
     case order of
         OrderByIndex ->

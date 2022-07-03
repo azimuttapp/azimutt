@@ -32,7 +32,6 @@ export class AzimuttApi {
     hideColumn = (id: ColumnId): void => this.app.hideColumn(id)
     moveColumn = (id: ColumnId, index: number): void => this.app.moveColumn(id, index)
     fitToScreen = (): void => this.app.fitToScreen()
-    resetCanvas = (): void => this.app.resetCanvas()
     help = (): void => this.logger.info('Hi! Welcome in the hackable world! 💻️🤓\n' +
         'We are just trying out this, so if you use it and it\'s helpful, please let us know. Also, if you need more feature like this, don\'t hesitate to ask.\n\n' +
         'Here are a few tips:\n' +

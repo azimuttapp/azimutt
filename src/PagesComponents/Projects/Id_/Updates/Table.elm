@@ -216,7 +216,7 @@ showColumns now id kind erd =
         id
         (\table columns ->
             erd.relations
-                |> Relation.withTableLink id
+                |> List.filter (Relation.linkedToTable id)
                 |> (\tableRelations ->
                         columns
                             ++ (table.columns
@@ -229,7 +229,7 @@ showColumns now id kind erd =
                                                     True
 
                                                 ShowColumns.Relations ->
-                                                    tableRelations |> Relation.withLink id column.name |> List.nonEmpty
+                                                    tableRelations |> List.filter (Relation.linkedTo ( id, column.name )) |> List.nonEmpty
 
                                                 ShowColumns.List cols ->
                                                     cols |> List.member column.name
@@ -249,7 +249,7 @@ hideColumns now id kind erd =
         id
         (\table columns ->
             erd.relations
-                |> Relation.withTableLink id
+                |> List.filter (Relation.linkedToTable id)
                 |> (\tableRelations ->
                         columns
                             |> List.zipWith (\props -> table.columns |> Dict.get props.name)
@@ -257,11 +257,11 @@ hideColumns now id kind erd =
                                 (\( props, col ) ->
                                     case ( kind, col ) of
                                         ( HideColumns.Relations, Just _ ) ->
-                                            tableRelations |> Relation.withLink id props.name |> List.nonEmpty
+                                            tableRelations |> List.filter (Relation.linkedTo ( id, props.name )) |> List.nonEmpty
 
                                         ( HideColumns.Regular, Just _ ) ->
                                             (props.name |> Table.inPrimaryKey table |> Maybe.isJust)
-                                                || (tableRelations |> Relation.withLink id props.name |> List.nonEmpty)
+                                                || (tableRelations |> List.filter (Relation.linkedTo ( id, props.name )) |> List.nonEmpty)
                                                 || (props.name |> Table.inUniques table |> List.nonEmpty)
                                                 || (props.name |> Table.inIndexes table |> List.nonEmpty)
 
@@ -299,26 +299,26 @@ sortColumns now id kind erd =
 
 
 hoverColumn : ColumnRef -> Bool -> Erd -> List ErdTableLayout -> List ErdTableLayout
-hoverColumn column enter erd tableLayouts =
+hoverColumn column enter erd tables =
     let
-        linkedColumns : Set ColumnId
-        linkedColumns =
+        columnId : ColumnId
+        columnId =
+            ( column.table, column.column )
+
+        highlightedColumns : Set ColumnId
+        highlightedColumns =
             if enter then
                 erd.relationsByTable
                     |> Dict.getOrElse column.table []
-                    |> Relation.withLink column.table column.column
+                    |> List.filter (Relation.linkedTo columnId)
                     |> List.concatMap (\r -> [ ( r.src.table, r.src.column ), ( r.ref.table, r.ref.column ) ])
                     |> Set.fromList
-                    |> Set.insert ( column.table, column.column )
+                    |> Set.insert columnId
 
             else
                 Set.empty
     in
-    tableLayouts
-        |> List.map
-            (\tableLayout ->
-                tableLayout |> mapColumns (List.map (\c -> c |> setHighlighted (linkedColumns |> Set.member ( tableLayout.id, c.name ))))
-            )
+    tables |> List.map (\t -> t |> mapColumns (List.map (\c -> c |> setHighlighted (highlightedColumns |> Set.member ( t.id, c.name )))))
 
 
 performHideTable : Time.Posix -> TableId -> Erd -> Erd

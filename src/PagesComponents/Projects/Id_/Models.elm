@@ -58,7 +58,7 @@ type alias Model =
     , erd : Maybe Erd
     , projects : List ProjectInfo
     , hoverTable : Maybe TableId
-    , hoverColumn : Maybe ColumnRef -- TODO remove?
+    , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
     , selectionBox : Maybe Area
     , newLayout : Maybe LayoutDialog
@@ -177,7 +177,6 @@ type Msg
     | ToggleHoverColumn ColumnRef Bool
     | CreateUserSource SourceName
     | CreateRelation ColumnRef ColumnRef
-    | ResetCanvas
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
     | AmlSidebarMsg AmlSidebarMsg

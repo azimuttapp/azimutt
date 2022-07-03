@@ -5,7 +5,7 @@ import Libs.List as List
 import Models.ColumnOrder as ColumnOrder
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
-import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.Relation exposing (Relation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 
 
@@ -27,7 +27,7 @@ initAll settings relations table =
     let
         tableRelations : List Relation
         tableRelations =
-            relations |> Relation.withTableSrc table.id
+            relations |> List.filter (\r -> r.src.table == table.id)
     in
     table.columns
         |> Dict.values

@@ -43,7 +43,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setTables, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Time
@@ -161,9 +161,6 @@ update req currentLayout now msg model =
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.createRelation now src ref)
-
-        ResetCanvas ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (setCanvas CanvasProps.empty >> setTables [])), Cmd.none )
 
         LayoutMsg message ->
             model |> handleLayout now message
@@ -447,9 +444,6 @@ handleJsMessage now currentLayout msg model =
 
         GotFitToScreen ->
             ( model, T.send FitContent )
-
-        GotResetCanvas ->
-            ( model, T.send ResetCanvas )
 
         Error err ->
             ( model, Cmd.batch [ Toasts.error Toast ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err), Ports.trackJsonError "js-message" err ] )

@@ -122,7 +122,6 @@ export class ElmApp {
     hideColumn = (id: ColumnId): void => this.send({kind: 'GotColumnHide', ref: id})
     moveColumn = (id: ColumnId, index: number): void => this.send({kind: 'GotColumnMove', ref: id, index})
     fitToScreen = (): void => this.send({kind: 'GotFitToScreen'})
-    resetCanvas = (): void => this.send({kind: 'GotResetCanvas'})
 
     private send(msg: JsMsg): void {
         this.elm.ports?.jsToElm.send(msg)
