@@ -1,6 +1,7 @@
-module PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation, create, new, unpack)
+module PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation, create, label, new, unpack)
 
 import Dict exposing (Dict)
+import Models.Project.ColumnRef as ColumnRef
 import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId exposing (RelationId)
@@ -42,3 +43,8 @@ unpack relation =
     , ref = relation.ref |> ErdColumnRef.unpack
     , origins = relation.origins
     }
+
+
+label : ErdRelation -> String
+label relation =
+    ColumnRef.show relation.src ++ " -> " ++ relation.name ++ " -> " ++ ColumnRef.show relation.ref

@@ -8,13 +8,12 @@ import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnRef as ColumnRef
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
+import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import Svg exposing (Svg, svg)
@@ -32,14 +31,15 @@ buildColumnInfo column layout =
 
 viewRelation : RelationStyle -> ErdConf -> Bool -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg
 viewRelation style conf dragging srcTable refTable relation =
+    -- FIXME: all relations are always rendered, don't know why :(
     let
+        label : String
+        label =
+            ErdRelation.label relation
+
         relConf : RelationConf
         relConf =
             { hover = conf.hover }
-
-        label : String
-        label =
-            ColumnRef.show relation.src ++ " -> " ++ relation.name ++ " -> " ++ ColumnRef.show relation.ref
 
         ( src, ref ) =
             ( srcTable |> buildColumnInfo relation.src.column, refTable |> buildColumnInfo relation.ref.column )

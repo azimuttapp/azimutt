@@ -309,6 +309,7 @@ hoverColumn column enter erd tableLayouts =
                     |> Relation.withLink column.table column.column
                     |> List.concatMap (\r -> [ ( r.src.table, r.src.column ), ( r.ref.table, r.ref.column ) ])
                     |> Set.fromList
+                    |> Set.insert ( column.table, column.column )
 
             else
                 Set.empty
