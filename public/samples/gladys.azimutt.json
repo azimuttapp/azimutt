@@ -5248,9 +5248,9 @@
       "updatedAt": 1649492400000
     }
   ],
-  "usedLayout": "default",
+  "usedLayout": "initial layout",
   "layouts": {
-    "default": {
+    "initial layout": {
       "canvas": {
         "position": {
           "left": 0,

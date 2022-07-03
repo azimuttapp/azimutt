@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, canResetCanvas, create, currentLayout, getColumn, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, getColumn, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack)
 
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -6,7 +6,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Project as Project exposing (Project)
-import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
@@ -91,11 +90,6 @@ mapCurrentLayout now transform erd =
 mapCurrentLayoutCmd : Time.Posix -> (ErdLayout -> ( ErdLayout, Cmd msg )) -> Erd -> ( Erd, Cmd msg )
 mapCurrentLayoutCmd now transform erd =
     erd |> mapLayoutsDCmd erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
-
-
-canResetCanvas : Erd -> Bool
-canResetCanvas erd =
-    erd |> currentLayout |> (\layout -> layout.canvas /= CanvasProps.empty || Dict.nonEmpty erd.tables)
 
 
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn

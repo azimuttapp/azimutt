@@ -6,7 +6,8 @@ import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
 import PagesComponents.Projects.Id_.Models exposing (LayoutDialog, LayoutMsg(..), Msg(..))
-import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.ErdLayout as ErdLayout
 import Ports
 import Services.Lenses exposing (mapErdMCmd, mapLayouts, mapNewLayoutM, setCurrentLayout, setName, setNewLayout)
 import Services.Toasts as Toasts
@@ -24,14 +25,14 @@ type alias Model x =
 handleLayout : Time.Posix -> LayoutMsg -> Model x -> ( Model x, Cmd Msg )
 handleLayout now msg model =
     case msg of
-        LOpen ->
-            ( model |> setNewLayout (Just { id = Conf.ids.newLayoutDialog, name = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.newLayoutDialog), Ports.track Track.openSaveLayout ] )
+        LOpen from ->
+            ( model |> setNewLayout (Just { id = Conf.ids.newLayoutDialog, from = from, name = "" }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.newLayoutDialog), Ports.track Track.openSaveLayout ] )
 
         LEdit name ->
             ( model |> mapNewLayoutM (setName name), Cmd.none )
 
-        LCreate name ->
-            model |> setNewLayout Nothing |> mapErdMCmd (createLayout name now)
+        LCreate from name ->
+            model |> setNewLayout Nothing |> mapErdMCmd (createLayout from name now)
 
         LCancel ->
             ( model |> setNewLayout Nothing, Cmd.none )
@@ -43,15 +44,15 @@ handleLayout now msg model =
             model |> mapErdMCmd (deleteLayout name)
 
 
-createLayout : LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd Msg )
-createLayout name now erd =
+createLayout : Maybe LayoutName -> LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd Msg )
+createLayout from name now erd =
     erd.layouts
         |> Dict.get name
         |> Maybe.mapOrElse
             (\_ -> ( erd, Toasts.error Toast ("Layout " ++ name ++ " already exists") ))
-            (erd
-                |> Erd.currentLayout
-                |> (\layout -> { layout | createdAt = now, updatedAt = now })
+            (from
+                |> Maybe.andThen (\f -> erd.layouts |> Dict.get f)
+                |> Maybe.withDefault (ErdLayout.empty now)
                 |> (\layout -> ( erd |> setCurrentLayout name |> mapLayouts (Dict.insert name layout), Ports.track (Track.createLayout layout) ))
             )
 

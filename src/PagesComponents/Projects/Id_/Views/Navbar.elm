@@ -1,6 +1,5 @@
 module PagesComponents.Projects.Id_.Views.Navbar exposing (NavbarArgs, argsToString, viewNavbar)
 
-import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
@@ -27,7 +26,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
-import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), resetCanvas)
+import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
@@ -68,8 +67,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
 
         features : List (Btn Msg)
         features =
-            [ Maybe.when eConf.layoutManagement { action = Right (LayoutMsg LOpen), content = text "Save current layout", hotkeys = Conf.hotkeys |> Dict.getOrElse "save-layout" [] }
-            , Just
+            [ Just
                 (virtualRelation
                     |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] })
                     |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] }
@@ -79,10 +77,6 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
             , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkeys = [] }
             ]
                 |> List.filterMap identity
-
-        canResetCanvas : Bool
-        canResetCanvas =
-            erd |> Erd.canResetCanvas
     in
     nav [ css [ "az-navbar relative z-max bg-primary-600" ] ]
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
@@ -98,8 +92,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                 , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]
                     [ div [ class "flex items-center print:hidden" ]
-                        [ viewNavbarResetLayout canResetCanvas
-                        , viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
+                        [ viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
                         , if gConf.enableCloud then
@@ -111,7 +104,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                     ]
                 ]
             ]
-        , Lazy.lazy3 viewNavbarMobileMenu features canResetCanvas model.mobileMenuOpen
+        , Lazy.lazy2 viewNavbarMobileMenu features model.mobileMenuOpen
         ]
 
 
@@ -137,11 +130,6 @@ viewNavbarHelp =
     button [ onClick (HelpMsg (HOpen "")), css [ "mx-3 rounded-full print:hidden", focus_ring_offset_600 Tw.primary ] ]
         [ Icon.solid Icon.QuestionMarkCircle "text-primary-300" ]
         |> Tooltip.b "Help"
-
-
-viewNavbarResetLayout : Bool -> Html Msg
-viewNavbarResetLayout canResetCanvas =
-    Button.primary3 Tw.primary [ onClick resetCanvas, css [ "ml-auto", B.cond canResetCanvas "" "invisible" ] ] [ text "Reset canvas" ]
 
 
 viewNavbarFeatures : Platform -> List (Btn Msg) -> HtmlId -> HtmlId -> Html Msg
@@ -197,8 +185,8 @@ navbarMobileButton open =
         ]
 
 
-viewNavbarMobileMenu : List (Btn Msg) -> Bool -> Bool -> Html Msg
-viewNavbarMobileMenu features canResetCanvas isOpen =
+viewNavbarMobileMenu : List (Btn Msg) -> Bool -> Html Msg
+viewNavbarMobileMenu features isOpen =
     let
         groupSpace : TwClass
         groupSpace =
@@ -213,8 +201,7 @@ viewNavbarMobileMenu features canResetCanvas isOpen =
             batch [ "text-primary-100 flex w-full items-center justify-start px-3 py-2 rounded-md text-base font-medium", hover [ "bg-primary-500 text-white" ], focus [ "outline-none" ] ]
     in
     div [ css [ lg [ "hidden" ], B.cond isOpen "" "hidden" ], id "mobile-menu" ]
-        ([ B.cond canResetCanvas [ button [ type_ "button", onClick resetCanvas, class btnStyle ] [ text "Reset canvas" ] ] []
-         , features
+        ([ features
             |> List.map
                 (\f ->
                     f.action

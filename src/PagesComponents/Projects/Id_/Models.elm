@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, resetCanvas, simplePrompt)
+module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlParser.AmlAdapter exposing (AmlSchemaError)
@@ -97,7 +97,7 @@ type alias SearchModel =
 
 
 type alias LayoutDialog =
-    { id : HtmlId, name : LayoutName }
+    { id : HtmlId, from : Maybe LayoutName, name : LayoutName }
 
 
 type alias NotesDialog =
@@ -223,9 +223,9 @@ type Msg
 
 
 type LayoutMsg
-    = LOpen
+    = LOpen (Maybe LayoutName)
     | LEdit LayoutName
-    | LCreate LayoutName
+    | LCreate (Maybe LayoutName) LayoutName
     | LCancel
     | LLoad LayoutName
     | LDelete LayoutName
@@ -348,8 +348,3 @@ simplePrompt label message =
         , onConfirm = message >> T.send
         }
         ""
-
-
-resetCanvas : Msg
-resetCanvas =
-    ResetCanvas |> confirm "Reset canvas?" (text "You will lose your current canvas state.")

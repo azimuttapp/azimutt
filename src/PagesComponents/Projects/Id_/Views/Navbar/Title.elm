@@ -8,7 +8,7 @@ import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route
 import Html exposing (Html, br, button, div, small, span, text)
-import Html.Attributes exposing (class, id, tabindex, type_)
+import Html.Attributes exposing (class, disabled, id, tabindex, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Bool as B
@@ -48,7 +48,7 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
            else
             div [] [ text project.name ]
          ]
-            ++ viewLayoutsMaybe eConf currentLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
+            ++ viewLayoutsMaybe gConf.platform eConf currentLayout layouts (htmlId ++ "-layouts") (openedDropdown |> String.filterStartsWith (htmlId ++ "-layouts"))
         )
 
 
@@ -92,22 +92,19 @@ viewProjectsDropdown platform projects project htmlId openedDropdown =
         )
 
 
-viewLayoutsMaybe : ErdConf -> LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> List (Html Msg)
-viewLayoutsMaybe conf currentLayout layouts htmlId openedDropdown =
-    if layouts |> Dict.isEmpty then
-        []
-
-    else if conf.layoutManagement then
+viewLayoutsMaybe : Platform -> ErdConf -> LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> List (Html Msg)
+viewLayoutsMaybe platform conf currentLayout layouts htmlId openedDropdown =
+    if conf.layoutManagement then
         [ Icon.slash "text-primary-300"
-        , Lazy.lazy4 viewLayouts currentLayout layouts htmlId openedDropdown
+        , Lazy.lazy5 viewLayouts platform currentLayout layouts htmlId openedDropdown
         ]
 
     else
         [ Icon.slash "text-primary-300", text currentLayout ]
 
 
-viewLayouts : LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> Html Msg
-viewLayouts currentLayout layouts htmlId openedDropdown =
+viewLayouts : Platform -> LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> Html Msg
+viewLayouts platform currentLayout layouts htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomLeft, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup "true", css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
@@ -118,18 +115,23 @@ viewLayouts currentLayout layouts htmlId openedDropdown =
         (\_ ->
             div [ class "min-w-max divide-y divide-gray-100" ]
                 [ div [ role "none", class "py-1" ]
-                    [ ContextMenu.btn "" (LOpen |> LayoutMsg) [ text "Create new layout" ] ]
+                    [ ContextMenu.btnHotkey "" (LOpen Nothing |> LayoutMsg) [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
                 , div [ role "none", class "py-1" ]
-                    (layouts |> Dict.toList |> List.sortBy (\( name, _ ) -> name) |> List.map (\( name, layout ) -> viewLayoutItem name layout))
+                    (layouts
+                        |> Dict.toList
+                        |> List.sortBy (\( name, _ ) -> name)
+                        |> List.map (\( name, layout ) -> viewLayoutItem (currentLayout == name) name layout)
+                    )
                 ]
         )
 
 
-viewLayoutItem : LayoutName -> ErdLayout -> Html Msg
-viewLayoutItem name layout =
-    span [ role "menuitem", tabindex -1, css [ "flex", ContextMenu.itemStyles ] ]
-        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), css [ focus [ "outline-none" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t "Delete this layout"
-        , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left", focus [ "outline-none" ] ] ]
+viewLayoutItem : Bool -> LayoutName -> ErdLayout -> Html Msg
+viewLayoutItem isCurrent name layout =
+    span [ role "menuitem", tabindex -1, css [ "flex", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles ] ]
+        [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), disabled isCurrent, css [ focus [ "outline-none" ], Tw.disabled [ "text-gray-400" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t (B.cond isCurrent "" "Delete this layout")
+        , button [ type_ "button", onClick (name |> Just |> LOpen |> LayoutMsg), css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid DocumentDuplicate "inline-block" ] |> Tooltip.t "Duplicate this layout"
+        , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
             [ text name
             , text " "
             , small [] [ text ("(" ++ (layout.tables |> String.pluralizeL "table") ++ ")") ]

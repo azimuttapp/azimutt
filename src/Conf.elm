@@ -49,7 +49,7 @@ constants =
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
-    , defaultLayout = "default"
+    , defaultLayout = "initial layout"
     , virtualRelationSourceName = "default"
     , externalAssets = "https://xkwctrduvpdgjarqzjkc.supabase.co/storage/v1/object/public/assets"
     }
@@ -184,7 +184,7 @@ hotkeys =
         , ( "move-to-top", [ { hotkey | key = "ArrowUp", ctrl = True, shift = True } ] )
         , ( "move-to-back", [ { hotkey | key = "ArrowDown", ctrl = True, shift = True } ] )
         , ( "select-all", [ { hotkey | key = "a", ctrl = True, preventDefault = True } ] )
-        , ( "save-layout", [ { hotkey | key = "l", alt = True } ] )
+        , ( "create-layout", [ { hotkey | key = "l", alt = True } ] )
         , ( "create-virtual-relation", [ { hotkey | key = "v", alt = True } ] )
         , ( "find-path", [ { hotkey | key = "p", alt = True } ] )
         , ( "reset-zoom", [ { hotkey | key = "0", ctrl = True } ] )

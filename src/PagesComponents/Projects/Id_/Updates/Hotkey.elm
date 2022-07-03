@@ -9,7 +9,7 @@ import Libs.Tuple as Tuple
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
-import PagesComponents.Projects.Id_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..), resetCanvas)
+import PagesComponents.Projects.Id_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Projects.Id_.Models.Notes as NoteRef
@@ -91,8 +91,8 @@ handleHotkey now model hotkey =
         "select-all" ->
             ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (mapProps (setSelected True))))), Cmd.none )
 
-        "save-layout" ->
-            ( model, T.send (LayoutMsg LOpen) )
+        "create-layout" ->
+            ( model, LOpen Nothing |> LayoutMsg |> T.send )
 
         "create-virtual-relation" ->
             ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) VRCreate)) )
@@ -153,7 +153,6 @@ removeElement : Model -> Cmd Msg
 removeElement model =
     (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
-        |> Maybe.orElse (model.erd |> Maybe.filter Erd.canResetCanvas |> Maybe.map (\_ -> resetCanvas |> T.send))
         |> Maybe.withDefault (Toasts.info Toast "Can't find an element to remove :(")
 
 
