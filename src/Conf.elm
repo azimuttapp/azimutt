@@ -8,6 +8,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceName exposing (SourceName)
 
@@ -28,6 +29,7 @@ constants :
     , defaultDescription : String
     , cheeringTweet : String
     , sharingTweet : String
+    , defaultLayout : LayoutName
     , virtualRelationSourceName : SourceName
     , externalAssets : String
     }
@@ -47,6 +49,7 @@ constants =
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
+    , defaultLayout = "initial layout"
     , virtualRelationSourceName = "default"
     , externalAssets = "https://xkwctrduvpdgjarqzjkc.supabase.co/storage/v1/object/public/assets"
     }
@@ -181,7 +184,7 @@ hotkeys =
         , ( "move-to-top", [ { hotkey | key = "ArrowUp", ctrl = True, shift = True } ] )
         , ( "move-to-back", [ { hotkey | key = "ArrowDown", ctrl = True, shift = True } ] )
         , ( "select-all", [ { hotkey | key = "a", ctrl = True, preventDefault = True } ] )
-        , ( "save-layout", [ { hotkey | key = "l", alt = True } ] )
+        , ( "create-layout", [ { hotkey | key = "l", alt = True } ] )
         , ( "create-virtual-relation", [ { hotkey | key = "v", alt = True } ] )
         , ( "find-path", [ { hotkey | key = "p", alt = True } ] )
         , ( "reset-zoom", [ { hotkey | key = "0", ctrl = True } ] )

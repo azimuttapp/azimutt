@@ -42,7 +42,7 @@ div factor area =
     Area (area.position |> Position.div factor) (area.size |> Size.div factor)
 
 
-merge : List Area -> Maybe Area
+merge : List (AreaLike a) -> Maybe Area
 merge areas =
     Maybe.map4 (\left top right bottom -> Area (Position left top) (Size (right - left) (bottom - top)))
         ((areas |> List.map (\area -> area.position.left)) |> List.minimum)
@@ -79,7 +79,7 @@ inside point area =
         && (point.top <= area.position.top + area.size.height)
 
 
-overlap : Area -> Area -> Bool
+overlap : AreaLike a -> AreaLike b -> Bool
 overlap area1 area2 =
     not
         -- area2 is on the left of area1

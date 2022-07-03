@@ -1,9 +1,10 @@
-module Models.Project.Relation exposing (Relation, RelationLike, clearOrigins, decode, encode, inOutRelation, merge, new, virtual, withLink, withRef, withSrc, withTableLink, withTableRef, withTableSrc)
+module Models.Project.Relation exposing (Relation, RelationLike, clearOrigins, decode, encode, inOutRelation, linkedTo, linkedToTable, merge, new, virtual)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef, ColumnRefLike)
 import Models.Project.Origin as Origin exposing (Origin)
@@ -47,34 +48,14 @@ inOutRelation tableOutRelations column =
     tableOutRelations |> List.filter (\r -> r.src.column == column)
 
 
-withTableSrc : TableId -> List (RelationLike x y) -> List (RelationLike x y)
-withTableSrc table relations =
-    relations |> List.filter (\r -> r.src.table == table)
+linkedToTable : TableId -> RelationLike x y -> Bool
+linkedToTable table relation =
+    relation.src.table == table || relation.ref.table == table
 
 
-withTableRef : TableId -> List (RelationLike x y) -> List (RelationLike x y)
-withTableRef table relations =
-    relations |> List.filter (\r -> r.ref.table == table)
-
-
-withTableLink : TableId -> List (RelationLike x y) -> List (RelationLike x y)
-withTableLink table relations =
-    relations |> List.filter (\r -> (r.src.table == table) || (r.ref.table == table))
-
-
-withSrc : TableId -> ColumnName -> List (RelationLike x y) -> List (RelationLike x y)
-withSrc table column relations =
-    relations |> List.filter (\r -> r.src.table == table && r.src.column == column)
-
-
-withRef : TableId -> ColumnName -> List (RelationLike x y) -> List (RelationLike x y)
-withRef table column relations =
-    relations |> List.filter (\r -> r.ref.table == table && r.ref.column == column)
-
-
-withLink : TableId -> ColumnName -> List (RelationLike x y) -> List (RelationLike x y)
-withLink table column relations =
-    relations |> List.filter (\r -> (r.src.table == table && r.src.column == column) || (r.ref.table == table && r.ref.column == column))
+linkedTo : ColumnId -> RelationLike x y -> Bool
+linkedTo ( table, column ) relation =
+    (relation.src.table == table && relation.src.column == column) || (relation.ref.table == table && relation.ref.column == column)
 
 
 merge : Relation -> Relation -> Relation

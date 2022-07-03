@@ -2,12 +2,10 @@ module PagesComponents.Projects.Id_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf
-import Dict exposing (Dict)
 import Gen.Route as Route
 import Libs.Area as Area exposing (Area, AreaLike)
 import Libs.Bool as B
 import Libs.Delta as Delta
-import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -19,7 +17,7 @@ import Models.Project as Project
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
-import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableId as TableId
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
@@ -27,7 +25,7 @@ import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), ProjectSett
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
-import PagesComponents.Projects.Id_.Models.ErdTableProps as ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (fitCanvas, handleWheel, zoomCanvas)
 import PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag)
@@ -39,13 +37,13 @@ import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
-import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, hoverTable, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
+import PagesComponents.Projects.Id_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
 import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapProject, mapPromptM, mapSchemaAnalysisM, mapScreen, mapSearch, mapShownTables, mapSourceParsingMCmd, mapTableProps, mapTablePropsCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCanvas, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setShownTables, setSize, setTableProps, setText, setUsedLayout)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
 import Time
@@ -87,16 +85,16 @@ update req currentLayout now msg model =
             ( model |> mapErdM (mapProject (setName name)), Cmd.none )
 
         ShowTable id hint ->
-            model |> mapErdMCmd (showTable id hint)
+            model |> mapErdMCmd (showTable now id hint)
 
         ShowTables ids hint ->
-            model |> mapErdMCmd (showTables ids hint)
+            model |> mapErdMCmd (showTables now ids hint)
 
         ShowAllTables ->
-            model |> mapErdMCmd showAllTables
+            model |> mapErdMCmd (showAllTables now)
 
         HideTable id ->
-            ( model |> mapErdM (hideTable id) |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h), Cmd.none )
+            ( model |> mapErdM (hideTable now id) |> mapHoverTable (\h -> B.cond (h == Just id) Nothing h), Cmd.none )
 
         ShowRelatedTables id ->
             model |> mapErdMCmd (showRelatedTables id)
@@ -108,64 +106,61 @@ update req currentLayout now msg model =
             let
                 collapsed : Bool
                 collapsed =
-                    model.erd |> Maybe.andThen (\e -> e.tableProps |> Dict.get id) |> Maybe.mapOrElse .collapsed False
+                    model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
             in
-            model |> mapErdMCmd (mapTablePropsCmd (mapTablePropOrSelected id (ErdTableProps.setCollapsed (not collapsed))))
+            model |> mapErdMCmd (Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected id (mapProps (setCollapsed (not collapsed))))))
 
         ShowColumn { table, column } ->
-            ( model |> mapErdM (showColumn table column), Cmd.none )
+            ( model |> mapErdM (showColumn now table column), Cmd.none )
 
         HideColumn { table, column } ->
-            ( model |> mapErdM (hideColumn table column) |> hoverNextColumn table column, Cmd.none )
+            ( model |> mapErdM (hideColumn now table column) |> hoverNextColumn table column, Cmd.none )
 
         ShowColumns id kind ->
-            model |> mapErdMCmd (showColumns id kind)
+            model |> mapErdMCmd (showColumns now id kind)
 
         HideColumns id kind ->
-            model |> mapErdMCmd (hideColumns id kind)
+            model |> mapErdMCmd (hideColumns now id kind)
 
         SortColumns id kind ->
-            model |> mapErdMCmd (sortColumns id kind)
+            model |> mapErdMCmd (sortColumns now id kind)
 
         ToggleHiddenColumns id ->
-            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapShowHiddenColumns not))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.updateBy .id id (mapProps (mapShowHiddenColumns not))))), Cmd.none )
 
         SelectTable tableId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
                 ( model, Cmd.none )
 
             else
-                ( model |> mapErdM (mapTableProps (Dict.map (\id -> ErdTableProps.mapSelected (\s -> B.cond (id == tableId) (not s) (B.cond ctrl s False))))), Cmd.none )
+                ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))), Cmd.none )
 
         TableMove id delta ->
-            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.mapPosition (\p -> delta |> Delta.move p)))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.updateBy .id id (mapProps (mapPosition (\p -> delta |> Delta.move p)))))), Cmd.none )
 
         TablePosition id position ->
-            ( model |> mapErdM (mapTableProps (Dict.alter id (ErdTableProps.setPosition position))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.updateBy .id id (mapProps (setPosition position))))), Cmd.none )
 
         TableOrder id index ->
-            ( model |> mapErdM (mapShownTables (\tables -> tables |> List.move id (List.length tables - 1 - index))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))), Cmd.none )
 
         TableColor id color ->
-            model |> mapErdMCmd (mapTablePropsCmd (mapTablePropOrSelected id (ErdTableProps.setColor color)))
+            model |> mapErdMCmd (Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected id (mapProps (setColor color)))))
 
         MoveColumn column position ->
-            ( model |> mapErdM (\erd -> erd |> mapTableProps (Dict.alter column.table (ErdTableProps.mapShownColumns (List.moveBy identity column.column position) erd.notes))), Cmd.none )
+            ( model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayout now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))), Cmd.none )
 
         ToggleHoverTable table on ->
-            ( model |> setHoverTable (B.cond on (Just table) Nothing) |> mapErdM (mapTableProps (hoverTable table on)), Cmd.none )
+            ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none )
 
         ToggleHoverColumn column on ->
-            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> mapTableProps (hoverColumn column on e)), Cmd.none )
+            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayout now (mapTables (hoverColumn column on e))), Cmd.none )
 
         CreateUserSource name ->
             ( model |> mapErdM (Source.createUserSource now name) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.createRelation now src ref)
-
-        ResetCanvas ->
-            ( model |> mapErdM (setCanvas CanvasProps.zero >> setShownTables [] >> setTableProps Dict.empty >> setUsedLayout Nothing), Cmd.none )
 
         LayoutMsg message ->
             model |> handleLayout now message
@@ -213,16 +208,16 @@ update req currentLayout now msg model =
             ( model |> setCursorMode mode, Cmd.none )
 
         FitContent ->
-            ( model |> mapErdM (fitCanvas model.screen), Cmd.none )
+            ( model |> mapErdM (fitCanvas now model.screen), Cmd.none )
 
         Fullscreen maybeId ->
             ( model, Ports.fullscreen maybeId )
 
         OnWheel event ->
-            ( model |> mapErdM (mapCanvas (handleWheel event)), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapCanvas (handleWheel event))), Cmd.none )
 
         Zoom delta ->
-            ( model |> mapErdM (mapCanvas (zoomCanvas delta model.screen)), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapCanvas (zoomCanvas delta model.screen))), Cmd.none )
 
         Logout ->
             B.cond (model.erd |> Maybe.mapOrElse (\e -> e.project.storage /= ProjectStorage.Browser) False) (Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ]) Ports.logout
@@ -255,19 +250,19 @@ update req currentLayout now msg model =
         DragStart id pos ->
             model.dragging
                 |> Maybe.mapOrElse (\d -> ( model, Toasts.info Toast ("Already dragging " ++ d.id) ))
-                    ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag d False), Cmd.none )
+                    ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag now d False), Cmd.none )
 
         DragMove pos ->
             ( model.dragging
                 |> Maybe.map (DragState.setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag d False) model
+                |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag now d False) model
             , Cmd.none
             )
 
         DragEnd pos ->
             ( model.dragging
                 |> Maybe.map (DragState.setLast pos)
-                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag d True) model
+                |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag now d True) model
             , Cmd.none
             )
 
@@ -299,7 +294,7 @@ update req currentLayout now msg model =
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
-            model |> handleJsMessage currentLayout message
+            model |> handleJsMessage now currentLayout message
 
         Send cmd ->
             ( model, cmd )
@@ -308,8 +303,8 @@ update req currentLayout now msg model =
             ( model, Cmd.none )
 
 
-handleJsMessage : Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage currentLayout msg model =
+handleJsMessage : Time.Posix -> Maybe LayoutName -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage now currentLayout msg model =
     case msg of
         GotSizes sizes ->
             model |> updateSizes sizes
@@ -349,7 +344,7 @@ handleJsMessage currentLayout msg model =
                         erd : Erd
                         erd =
                             project
-                                |> (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = Just l, layout = p.layouts |> Dict.getOrElse l p.layout }) p)
+                                |> (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = l }) p)
                                 |> Erd.create (Random.initialSeed childSeed)
 
                         uploadCmd : List (Cmd msg)
@@ -366,7 +361,7 @@ handleJsMessage currentLayout msg model =
                     ( { model | seed = newSeed, loaded = True, erd = Just erd } |> mapUploadM (\u -> { u | movingProject = False })
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
-                         , Ports.observeTablesSize erd.shownTables
+                         , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
                          , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
                          ]
                             ++ uploadCmd
@@ -390,18 +385,18 @@ handleJsMessage currentLayout msg model =
         ProjectDropped projectId ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
 
-        GotLocalFile now projectId sourceId file content ->
-            ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+        GotLocalFile now_ projectId sourceId file content ->
+            ( model, T.send (SqlSourceUpload.gotLocalFile now_ projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
-        GotRemoteFile now projectId sourceId url content sample ->
+        GotRemoteFile now_ projectId sourceId url content sample ->
             if model.erd == Nothing then
-                ( model, Cmd.batch [ T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> SourceParsing) ] )
+                ( model, Cmd.batch [ T.send (SqlSourceUpload.gotRemoteFile now_ projectId sourceId url content sample |> SourceParsing) ] )
 
             else
-                ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+                ( model, T.send (SqlSourceUpload.gotRemoteFile now_ projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
 
         GotHotkey hotkey ->
-            handleHotkey model hotkey
+            handleHotkey now model hotkey
 
         GotKeyHold key start ->
             if key == "Space" && model.conf.move then
@@ -450,9 +445,6 @@ handleJsMessage currentLayout msg model =
         GotFitToScreen ->
             ( model, T.send FitContent )
 
-        GotResetCanvas ->
-            ( model, T.send ResetCanvas )
-
         Error err ->
             ( model, Cmd.batch [ Toasts.error Toast ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err), Ports.trackJsonError "js-message" err ] )
 
@@ -477,37 +469,43 @@ updateSize change model =
         model |> mapScreen (setPosition change.position >> setSize change.size)
 
     else
-        ( TableId.fromHtmlId change.id, model.erd |> Maybe.mapOrElse (.canvas >> CanvasProps.viewport model.screen) Area.zero )
-            |> (\( tableId, viewport ) -> model |> mapErdM (mapTableProps (\props -> props |> Dict.alter tableId (updateTable props viewport change))))
+        ( TableId.fromHtmlId change.id, model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> CanvasProps.viewport model.screen) Area.zero )
+            |> (\( tableId, viewport ) ->
+                    model
+                        |> mapErdM
+                            (\erd ->
+                                erd
+                                    |> Erd.mapCurrentLayout (erd |> Erd.currentLayout |> .updatedAt)
+                                        (mapTables (\tables -> tables |> List.updateBy .id tableId (updateTable tables viewport change)))
+                            )
+               )
 
 
-updateTable : Dict TableId ErdTableProps -> Area -> SizeChange -> ErdTableProps -> ErdTableProps
-updateTable allProps viewport change props =
-    if props.size == Size.zero && props.position == Position.zero then
-        props
-            |> ErdTableProps.setSize change.size
-            |> ErdTableProps.setPosition (computeInitialPosition allProps viewport change props.positionHint)
+updateTable : List ErdTableLayout -> Area -> SizeChange -> ErdTableLayout -> ErdTableLayout
+updateTable tables viewport change table =
+    if table.props.size == Size.zero && table.props.position == Position.zero then
+        table |> mapProps (setSize change.size >> setPosition (computeInitialPosition tables viewport change table.props.positionHint))
 
     else
-        props |> ErdTableProps.setSize change.size
+        table |> mapProps (setSize change.size)
 
 
-computeInitialPosition : Dict TableId ErdTableProps -> Area -> SizeChange -> Maybe PositionHint -> Position
-computeInitialPosition allProps viewport change hint =
+computeInitialPosition : List ErdTableLayout -> Area -> SizeChange -> Maybe PositionHint -> Position
+computeInitialPosition tables viewport change hint =
     hint
         |> Maybe.mapOrElse
             (\h ->
                 case h of
                     PlaceLeft position ->
-                        position |> Position.sub { left = change.size.width + 50, top = 0 } |> moveDownIfExists (allProps |> Dict.values) change.size
+                        position |> Position.sub { left = change.size.width + 50, top = 0 } |> moveDownIfExists tables change.size
 
                     PlaceRight position size ->
-                        position |> Position.add { left = size.width + 50, top = 0 } |> moveDownIfExists (allProps |> Dict.values) change.size
+                        position |> Position.add { left = size.width + 50, top = 0 } |> moveDownIfExists tables change.size
 
                     PlaceAt position ->
                         position
             )
-            (if allProps |> Dict.filter (\_ p -> p.size /= Size.zero) |> Dict.isEmpty then
+            (if tables |> List.filter (\t -> t.props.size /= Size.zero) |> List.isEmpty then
                 viewport |> Area.center |> Position.sub (change |> Area.center) |> mapTop (max viewport.position.top)
 
              else
@@ -525,10 +523,10 @@ computeInitialPosition allProps viewport change hint =
 --    }
 
 
-moveDownIfExists : List ErdTableProps -> Size -> Position -> Position
-moveDownIfExists allProps size position =
-    if allProps |> List.any (\p -> p.position == position || isSameTopRight p (Area position size)) then
-        position |> Position.add { left = 0, top = Conf.ui.tableHeaderHeight } |> moveDownIfExists allProps size
+moveDownIfExists : List ErdTableLayout -> Size -> Position -> Position
+moveDownIfExists tables size position =
+    if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props (Area position size)) then
+        position |> Position.add { left = 0, top = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
 
     else
         position

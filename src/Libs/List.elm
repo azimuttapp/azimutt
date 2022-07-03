@@ -14,8 +14,6 @@ module Libs.List exposing
     , findIndexBy
     , get
     , groupBy
-    , has
-    , hasNot
     , indexOf
     , indexedFilter
     , last
@@ -27,7 +25,6 @@ module Libs.List exposing
     , moveByRel
     , moveIndex
     , nonEmpty
-    , notMember
     , prependIf
     , prependOn
     , remove
@@ -130,11 +127,6 @@ indexedFilter p xs =
     xs |> List.indexedMap (\i a -> B.cond (p i a) (Just a) Nothing) |> List.filterMap identity
 
 
-notMember : a -> List a -> Bool
-notMember x xs =
-    List.all (\a -> a /= x) xs
-
-
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> Maybe.isJust
@@ -156,16 +148,6 @@ updateBy matcher value transform list =
                 else
                     a
             )
-
-
-has : a -> List a -> Bool
-has item xs =
-    xs |> List.any (\a -> a == item)
-
-
-hasNot : a -> List a -> Bool
-hasNot item xs =
-    not (has item xs)
 
 
 zip : List b -> List a -> List ( a, b )

@@ -30,7 +30,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), Msg(..), simplePrompt)
 import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
-import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns
 import Ports
@@ -94,9 +94,9 @@ updateSource now sourceId input model =
         currentTables =
             model.erd |> Maybe.andThen (.sources >> List.find (\s -> s.id == sourceId)) |> Maybe.mapOrElse .tables Dict.empty
 
-        tableProps : Dict TableId ErdTableProps
-        tableProps =
-            model.erd |> Maybe.mapOrElse .tableProps Dict.empty
+        tableLayouts : List ErdTableLayout
+        tableLayouts =
+            model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) []
 
         content : Array String
         content =
@@ -125,8 +125,8 @@ updateSource now sourceId input model =
                     (\( table, previous ) ->
                         ( table.id
                         , previous
-                            |> Maybe.andThen (\t -> tableProps |> Dict.get t.id)
-                            |> Maybe.map .position
+                            |> Maybe.andThen (\t -> tableLayouts |> List.findBy .id t.id)
+                            |> Maybe.map (.props >> .position)
                             |> Maybe.filter (\p -> p /= Position.zero)
                             |> Maybe.map PlaceAt
                         )

@@ -19,11 +19,13 @@ import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel, confi
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
-import PagesComponents.Projects.Id_.Models.Notes as Notes exposing (Notes, NotesKey)
+import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Projects.Id_.Models.ErdTableNotes exposing (ErdTableNotes)
+import PagesComponents.Projects.Id_.Models.Notes exposing (Notes)
 import Simple.Fuzzy
 
 
-viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict NotesKey Notes -> List TableId -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
 viewNavbarSearch search tables relations notes shownTables htmlId openedDropdown =
     div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
@@ -97,7 +99,7 @@ type SearchResult
     | FoundRelation ErdRelation
 
 
-viewSearchResult : HtmlId -> List TableId -> Int -> Int -> SearchResult -> Html Msg
+viewSearchResult : HtmlId -> List ErdTableLayout -> Int -> Int -> SearchResult -> Html Msg
 viewSearchResult searchId shownTables active index res =
     let
         viewItem : msg -> Icon -> List (Html msg) -> Bool -> Html msg
@@ -122,23 +124,23 @@ viewSearchResult searchId shownTables active index res =
     in
     case res of
         FoundTable table ->
-            viewItem (ShowTable table.id Nothing) Icon.Table [ text (TableId.show table.id) ] (shownTables |> List.has table.id)
+            viewItem (ShowTable table.id Nothing) Icon.Table [ text (TableId.show table.id) ] (shownTables |> List.memberBy .id table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id Nothing) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> List.has table.id)
+            viewItem (ShowTable table.id Nothing) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
 
         FoundRelation relation ->
-            if shownTables |> List.hasNot relation.src.table then
+            if shownTables |> List.memberBy .id relation.src.table |> not then
                 viewItem (ShowTable relation.src.table Nothing) ExternalLink [ text relation.name ] False
 
-            else if shownTables |> List.hasNot relation.ref.table then
+            else if shownTables |> List.memberBy .id relation.ref.table |> not then
                 viewItem (ShowTable relation.ref.table Nothing) ExternalLink [ text relation.name ] False
 
             else
                 viewItem (ShowTable relation.src.table Nothing) ExternalLink [ text relation.name ] True
 
 
-performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict NotesKey Notes -> String -> List SearchResult
+performSearch : Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> String -> List SearchResult
 performSearch tables relations notes lQuery =
     let
         maxResults : Int
@@ -147,12 +149,23 @@ performSearch tables relations notes lQuery =
 
         tableResults : List ( Float, SearchResult )
         tableResults =
-            tables |> Dict.values |> List.filterMap (tableMatch lQuery notes)
+            tables |> Dict.values |> List.filterMap (\t -> t |> tableMatch lQuery (notes |> Dict.get t.id |> Maybe.andThen .table))
 
         columnResults : List ( Float, SearchResult )
         columnResults =
             if (tableResults |> List.length) < maxResults then
-                tables |> Dict.values |> List.concatMap (\table -> table.columns |> Dict.values |> List.filterMap (columnMatch lQuery notes table))
+                tables
+                    |> Dict.values
+                    |> List.concatMap
+                        (\table ->
+                            notes
+                                |> Dict.get table.id
+                                |> (\n ->
+                                        table.columns
+                                            |> Dict.values
+                                            |> List.filterMap (\c -> c |> columnMatch lQuery (n |> Maybe.andThen (.columns >> Dict.get c.name)) table)
+                                   )
+                        )
 
             else
                 []
@@ -168,7 +181,7 @@ performSearch tables relations notes lQuery =
     (tableResults ++ columnResults ++ relationResults) |> List.sortBy (\( r, _ ) -> negate r) |> List.take maxResults |> List.map Tuple.second
 
 
-tableMatch : String -> Dict NotesKey Notes -> ErdTable -> Maybe ( Float, SearchResult )
+tableMatch : String -> Maybe Notes -> ErdTable -> Maybe ( Float, SearchResult )
 tableMatch lQuery notes table =
     if String.toLower table.name == lQuery then
         Just ( 9, FoundTable table )
@@ -184,7 +197,7 @@ tableMatch lQuery notes table =
 
     else if
         (table.comment |> Maybe.any (.text >> match lQuery))
-            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (match lQuery))
+            || (notes |> Maybe.any (match lQuery))
             || (table.primaryKey |> Maybe.andThen .name |> Maybe.any (match lQuery))
             || (table.uniques |> List.any (\u -> (u.name |> match lQuery) || (u.definition |> Maybe.any (match lQuery))))
             || (table.indexes |> List.any (\i -> (i.name |> match lQuery) || (i.definition |> Maybe.any (match lQuery))))
@@ -194,7 +207,7 @@ tableMatch lQuery notes table =
 
     else if
         (table.comment |> Maybe.any (.text >> fuzzy lQuery))
-            || (notes |> Dict.get (Notes.tableKey table.id) |> Maybe.any (fuzzy lQuery))
+            || (notes |> Maybe.any (fuzzy lQuery))
     then
         Just ( 4 + shortBonus table.name, FoundTable table )
 
@@ -202,7 +215,7 @@ tableMatch lQuery notes table =
         Nothing
 
 
-columnMatch : String -> Dict NotesKey Notes -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
+columnMatch : String -> Maybe Notes -> ErdTable -> ErdColumn -> Maybe ( Float, SearchResult )
 columnMatch lQuery notes table column =
     if String.toLower column.name == lQuery then
         Just ( 0.9, FoundColumn table column )
@@ -218,7 +231,7 @@ columnMatch lQuery notes table column =
 
     else if
         (column.comment |> Maybe.any (.text >> match lQuery))
-            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (match lQuery))
+            || (notes |> Maybe.any (match lQuery))
             || (column.kind |> match lQuery)
             || (column.default |> Maybe.any (match lQuery))
     then
@@ -226,7 +239,7 @@ columnMatch lQuery notes table column =
 
     else if
         (column.comment |> Maybe.any (.text >> fuzzy lQuery))
-            || (notes |> Dict.get (Notes.columnKey { table = table.id, column = column.name }) |> Maybe.any (fuzzy lQuery))
+            || (notes |> Maybe.any (fuzzy lQuery))
     then
         Just ( 0.4, FoundColumn table column )
 

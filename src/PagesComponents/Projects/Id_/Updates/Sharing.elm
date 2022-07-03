@@ -26,14 +26,14 @@ handleSharing msg model =
                                     { id = Conf.ids.sharingDialog
                                     , kind = EmbedKind.EmbedProjectId
                                     , content = erd.project.id
-                                    , layout = erd.usedLayout |> Maybe.withDefault ""
+                                    , layout = erd.currentLayout
                                     , mode = EmbedMode.default
                                     }
                                 )
                                 { id = Conf.ids.sharingDialog
                                 , kind = EmbedKind.EmbedProjectUrl
                                 , content = ""
-                                , layout = model.erd |> Maybe.andThen .usedLayout |> Maybe.withDefault ""
+                                , layout = model.erd |> Maybe.mapOrElse .currentLayout ""
                                 , mode = EmbedMode.default
                                 }
                         )

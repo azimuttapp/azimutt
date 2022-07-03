@@ -1,4 +1,4 @@
-module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles)
+module Components.Molecules.ContextMenu exposing (Action, Direction(..), ItemAction(..), MenuItem, SubMenuItem, btn, btnDisabled, btnHotkey, btnSubmenu, itemActiveStyles, itemCurrentStyles, itemDisabledActiveStyles, itemDisabledStyles, itemStyles, link, linkHtml, menu, menuStyles)
 
 import Components.Atoms.Kbd as Kbd
 import Html exposing (Attribute, Html, a, button, div, text)
@@ -10,7 +10,7 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
-import Libs.Tailwind exposing (TwClass, batch, focus, hover)
+import Libs.Tailwind exposing (TwClass, batch, disabled, focus, hover)
 
 
 type Direction
@@ -129,7 +129,12 @@ menuStyles =
 
 itemStyles : TwClass
 itemStyles =
-    batch [ "py-2 px-4 text-sm text-gray-700", hover [ "bg-gray-100 text-gray-900" ] ]
+    batch [ "py-2 px-4 text-sm text-gray-700", hover [ "bg-gray-100 text-gray-900" ], disabled [ "text-gray-400" ] ]
+
+
+itemCurrentStyles : TwClass
+itemCurrentStyles =
+    batch [ "py-2 px-4 text-sm text-gray-700 bg-gray-100", hover [ "bg-gray-200 text-gray-900" ], disabled [ "text-gray-400" ] ]
 
 
 itemActiveStyles : TwClass

@@ -85,7 +85,6 @@ export type JsMsg =
     | GotColumnHide
     | GotColumnMove
     | GotFitToScreen
-    | GotResetCanvas
     | Error
 export type GotLogin = { kind: 'GotLogin', user: Profile }
 export type GotLogout = { kind: 'GotLogout' }
@@ -111,7 +110,6 @@ export type GotColumnShow = { kind: 'GotColumnShow', ref: ColumnId }
 export type GotColumnHide = { kind: 'GotColumnHide', ref: ColumnId }
 export type GotColumnMove = { kind: 'GotColumnMove', ref: ColumnId, index: number }
 export type GotFitToScreen = { kind: 'GotFitToScreen' }
-export type GotResetCanvas = { kind: 'GotResetCanvas' }
 export type Error = { kind: 'Error', message: string }
 
 export type ElmMsg =

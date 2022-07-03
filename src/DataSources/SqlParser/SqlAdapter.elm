@@ -298,7 +298,7 @@ buildViewColumn origin tables index column =
 createPrimaryKey : Origin -> Nel ParsedColumn -> Maybe ParsedPrimaryKey -> Maybe PrimaryKey
 createPrimaryKey origin columns primaryKey =
     (primaryKey |> Maybe.map (\pk -> PrimaryKey pk.name pk.columns [ origin ]))
-        |> Maybe.orElse (columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> PrimaryKey (String.nonEmptyMaybe pk) (Nel c.name []) [ origin ])) |> List.head)
+        |> Maybe.orElse (columns |> Nel.filterMap (\c -> c.primaryKey |> Maybe.map (\pk -> PrimaryKey (String.maybeNonEmpty pk) (Nel c.name []) [ origin ])) |> List.head)
 
 
 createUniques : Origin -> SqlTableName -> Nel ParsedColumn -> List ParsedUnique -> List Unique

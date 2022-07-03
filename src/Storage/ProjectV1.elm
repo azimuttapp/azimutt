@@ -247,12 +247,12 @@ stringAsLayoutName name =
 
 initLayout : Time.Posix -> LayoutV1
 initLayout now =
-    { canvas = CanvasProps.zero, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
+    { canvas = CanvasProps.empty, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 defaultTime : Time.Posix
 defaultTime =
-    Time.millisToPosix 0
+    Time.zero
 
 
 defaultLayout : LayoutV1
@@ -277,9 +277,8 @@ upgrade project =
     , tables = project.schema.tables |> Dict.map (\_ -> upgradeTable)
     , relations = project.schema.relations |> List.map upgradeRelation
     , notes = Dict.empty
-    , layout = project.schema.layout |> upgradeLayout
-    , usedLayout = project.currentLayout
-    , layouts = project.layouts |> Dict.map (\_ -> upgradeLayout)
+    , usedLayout = project.currentLayout |> Maybe.withDefault Conf.constants.defaultLayout
+    , layouts = project.layouts |> Dict.insert Conf.constants.defaultLayout project.schema.layout |> Dict.map (\_ -> upgradeLayout)
     , settings = ProjectSettings.init |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
     , storage = ProjectStorage.Browser
     , createdAt = project.createdAt

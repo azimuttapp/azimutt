@@ -1,4 +1,4 @@
-module Models.Project.CanvasProps exposing (CanvasProps, adapt, decode, encode, viewport, zero)
+module Models.Project.CanvasProps exposing (CanvasProps, adapt, decode, empty, encode, viewport)
 
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
@@ -14,8 +14,8 @@ type alias CanvasProps =
     { position : Position, zoom : ZoomLevel }
 
 
-zero : CanvasProps
-zero =
+empty : CanvasProps
+empty =
     { position = Position.zero, zoom = 1 }
 
 

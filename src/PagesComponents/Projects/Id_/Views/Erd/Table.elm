@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToString, viewTable)
+module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToString, stringToArgs, viewTable)
 
 import Components.Molecules.ContextMenu exposing (ItemAction(..))
 import Components.Organisms.Table as Table
@@ -16,7 +16,7 @@ import Libs.Html.Events exposing (PointerEvent, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Platform exposing (Platform)
+import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Color exposing (bg_500, focus, hover)
@@ -27,41 +27,46 @@ import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
-import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
+import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Projects.Id_.Models.ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Projects.Id_.Models.HideColumns as HideColumns
 import PagesComponents.Projects.Id_.Models.Notes as NoteRef
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns
 import PagesComponents.Projects.Id_.Views.Modals.ColumnContextMenu exposing (viewColumnContextMenu, viewHiddenColumnContextMenu)
+import Set
 
 
 type alias TableArgs =
     String
 
 
-argsToString : String -> String -> Bool -> Bool -> Bool -> TableArgs
-argsToString openedDropdown openedPopover dragging virtualRelation useBasicTypes =
-    openedDropdown ++ "~" ++ openedPopover ++ "~" ++ B.cond dragging "Y" "N" ++ "~" ++ B.cond virtualRelation "Y" "N" ++ "~" ++ B.cond useBasicTypes "Y" "N"
+argsToString : Platform -> CursorMode -> String -> String -> Int -> Bool -> Bool -> Bool -> Bool -> TableArgs
+argsToString platform cursorMode openedDropdown openedPopover index isHover dragging virtualRelation useBasicTypes =
+    [ Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover, String.fromInt index, B.cond isHover "Y" "N", B.cond dragging "Y" "N", B.cond virtualRelation "Y" "N", B.cond useBasicTypes "Y" "N" ] |> String.join "~"
 
 
-stringToArgs : TableArgs -> ( ( String, String ), ( Bool, Bool, Bool ) )
+stringToArgs : TableArgs -> ( ( Platform, CursorMode ), ( String, String, Int ), ( ( Bool, Bool ), ( Bool, Bool ) ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ openedDropdown, openedPopover, dragging, virtualRelation, useBasicTypes ] ->
-            ( ( openedDropdown, openedPopover ), ( dragging == "Y", virtualRelation == "Y", useBasicTypes == "Y" ) )
+        [ platform, cursorMode, openedDropdown, openedPopover, index, isHover, dragging, virtualRelation, useBasicTypes ] ->
+            ( ( Platform.fromString platform, CursorMode.fromString cursorMode )
+            , ( openedDropdown, openedPopover, String.toInt index |> Maybe.withDefault 0 )
+            , ( ( isHover == "Y", dragging == "Y" ), ( virtualRelation == "Y", useBasicTypes == "Y" ) )
+            )
 
         _ ->
-            ( ( "", "" ), ( False, False, False ) )
+            ( ( Platform.PC, CursorMode.Drag ), ( "", "", 0 ), ( ( False, False ), ( False, False ) ) )
 
 
-viewTable : Platform -> ErdConf -> ZoomLevel -> CursorMode -> TableArgs -> Int -> ErdTableProps -> ErdTable -> Html Msg
-viewTable platform conf zoom cursorMode args index props table =
+viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
+viewTable conf zoom args notes layout table =
     let
-        ( ( openedDropdown, openedPopover ), ( dragging, virtualRelation, useBasicTypes ) ) =
+        ( ( platform, cursorMode ), ( openedDropdown, openedPopover, index ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
-            table.columns |> Dict.values |> List.map (buildColumn useBasicTypes props) |> List.partition (\c -> props.shownColumns |> List.any (\col -> c.name == col))
+            table.columns |> Dict.values |> List.map (buildColumn useBasicTypes notes layout) |> List.partition (\c -> layout.columns |> List.memberBy .name c.name)
 
         drag : List (Attribute Msg)
         drag =
@@ -69,12 +74,12 @@ viewTable platform conf zoom cursorMode args index props table =
 
         zIndex : Int
         zIndex =
-            Conf.canvas.zIndex.tables + index + B.cond (props.selected || dragging || (openedDropdown |> String.startsWith table.htmlId)) 1000 0
+            Conf.canvas.zIndex.tables + index + B.cond (layout.props.selected || dragging || (openedDropdown |> String.startsWith table.htmlId)) 1000 0
     in
     div
-        ([ css [ "select-none absolute", B.cond (props.size == Size.zero) "invisible" "" ]
-         , style "left" (String.fromFloat props.position.left ++ "px")
-         , style "top" (String.fromFloat props.position.top ++ "px")
+        ([ css [ "select-none absolute", B.cond (layout.props.size == Size.zero) "invisible" "" ]
+         , style "left" (String.fromFloat layout.props.position.left ++ "px")
+         , style "top" (String.fromFloat layout.props.position.top ++ "px")
          , style "z-index" (String.fromInt zIndex)
          ]
             ++ drag
@@ -85,25 +90,25 @@ viewTable platform conf zoom cursorMode args index props table =
             , label = table.label
             , isView = table.view
             , comment = table.comment |> Maybe.map .text
-            , notes = props.notes
-            , columns = columns |> List.sortBy (\c -> props.shownColumns |> List.indexOf c.name |> Maybe.withDefault 0)
+            , notes = notes.table
+            , columns = layout.columns |> List.filterMap (\c -> columns |> List.findBy .name c.name)
             , hiddenColumns = hiddenColumns |> List.sortBy .index
             , settings =
-                [ Maybe.when conf.layout { label = B.cond props.selected "Hide selected tables" "Hide table", action = Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "remove" [] } }
+                [ Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "remove" [] } }
                 , Maybe.when conf.layout
                     { label =
-                        if props.collapsed then
-                            B.cond props.selected "Expand selected tables" "Expand table"
+                        if layout.props.collapsed then
+                            B.cond layout.props.selected "Expand selected tables" "Expand table"
 
                         else
-                            B.cond props.selected "Collapse selected tables" "Collapse table"
+                            B.cond layout.props.selected "Collapse selected tables" "Collapse table"
                     , action = Simple { action = ToggleColumns table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "collapse" [] }
                     }
                 , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
                 , Maybe.when conf.layout { label = "Show related", action = Simple { action = ShowRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "expand" [] } }
                 , Maybe.when conf.layout { label = "Hide related", action = Simple { action = HideRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "shrink" [] } }
                 , Maybe.when conf.layout
-                    { label = B.cond props.selected "Set color of selected tables" "Set color"
+                    { label = B.cond layout.props.selected "Set color of selected tables" "Set color"
                     , action =
                         Custom
                             (div [ css [ "group-hover:grid grid-cols-6 gap-1 p-1 pl-2" ] ]
@@ -123,9 +128,9 @@ viewTable platform conf zoom cursorMode args index props table =
                                 )
                             )
                     }
-                , Maybe.when conf.layout { label = B.cond props.selected "Sort columns of selected tables" "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, platform = platform, hotkeys = [] })) }
+                , Maybe.when conf.layout { label = B.cond layout.props.selected "Sort columns of selected tables" "Sort columns", action = SubMenu (ColumnOrder.all |> List.map (\o -> { label = ColumnOrder.show o, action = SortColumns table.id o, platform = platform, hotkeys = [] })) }
                 , Maybe.when conf.layout
-                    { label = B.cond props.selected "Hide columns of selected tables" "Hide columns"
+                    { label = B.cond layout.props.selected "Hide columns of selected tables" "Hide columns"
                     , action =
                         SubMenu
                             [ { label = "Without relation", action = HideColumns table.id HideColumns.Relations, platform = platform, hotkeys = [] }
@@ -135,7 +140,7 @@ viewTable platform conf zoom cursorMode args index props table =
                             ]
                     }
                 , Maybe.when conf.layout
-                    { label = B.cond props.selected "Show columns of selected tables" "Show columns"
+                    { label = B.cond layout.props.selected "Show columns of selected tables" "Show columns"
                     , action =
                         SubMenu
                             [ { label = "With relations", action = ShowColumns table.id ShowColumns.Relations, platform = platform, hotkeys = [] }
@@ -157,15 +162,15 @@ viewTable platform conf zoom cursorMode args index props table =
                     |> List.filterMap identity
             , platform = platform
             , state =
-                { color = props.color
-                , isHover = props.isHover
-                , highlightedColumns = props.highlightedColumns
-                , selected = props.selected
+                { color = layout.props.color
+                , isHover = isHover
+                , highlightedColumns = layout.columns |> List.filter .highlighted |> List.map .name |> Set.fromList
+                , selected = layout.props.selected
                 , dragging = dragging
-                , collapsed = props.collapsed
+                , collapsed = layout.props.collapsed
                 , openedDropdown = openedDropdown
                 , openedPopover = openedPopover
-                , showHiddenColumns = props.showHiddenColumns
+                , showHiddenColumns = layout.props.showHiddenColumns
                 }
             , actions =
                 { hoverTable = ToggleHoverTable table.id
@@ -173,11 +178,11 @@ viewTable platform conf zoom cursorMode args index props table =
                 , clickHeader = SelectTable table.id
                 , clickColumn = B.maybe virtualRelation (\col pos -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } pos))
                 , clickNotes = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
-                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (props.shownColumns |> List.has col) viewColumnContextMenu viewHiddenColumnContextMenu platform i { table = table.id, column = col } (props.columnProps |> Dict.get col |> Maybe.andThen .notes))
-                , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (props.shownColumns |> List.has col) HideColumn ShowColumn
+                , contextMenuColumn = \i col -> ContextMenuCreate (B.cond (layout.columns |> List.memberBy .name col) viewColumnContextMenu viewHiddenColumnContextMenu platform i { table = table.id, column = col } (notes.columns |> Dict.get col))
+                , dblClickColumn = \col -> { table = table.id, column = col } |> B.cond (layout.columns |> List.memberBy .name col) HideColumn ShowColumn
                 , clickRelations =
                     \cols isOut ->
-                        Just (B.cond isOut (PlaceRight props.position props.size) (PlaceLeft props.position))
+                        Just (B.cond isOut (PlaceRight layout.props.position layout.props.size) (PlaceLeft layout.props.position))
                             |> (\hint ->
                                     case cols of
                                         [] ->
@@ -211,8 +216,8 @@ handleTablePointerDown htmlId e =
         Noop "No match on table pointer down"
 
 
-buildColumn : Bool -> ErdTableProps -> ErdColumn -> Table.Column
-buildColumn useBasicTypes props column =
+buildColumn : Bool -> ErdTableNotes -> ErdTableLayout -> ErdColumn -> Table.Column
+buildColumn useBasicTypes notes layout column =
     { index = column.index
     , name = column.name
     , kind =
@@ -224,19 +229,19 @@ buildColumn useBasicTypes props column =
     , nullable = column.nullable
     , default = column.default
     , comment = column.comment |> Maybe.map .text
-    , notes = props.columnProps |> Dict.get column.name |> Maybe.andThen .notes
+    , notes = notes.columns |> Dict.get column.name
     , isPrimaryKey = column.isPrimaryKey
-    , inRelations = column.inRelations |> List.map (buildColumnRelation props)
-    , outRelations = column.outRelations |> List.map (buildColumnRelation props)
+    , inRelations = column.inRelations |> List.map (buildColumnRelation layout)
+    , outRelations = column.outRelations |> List.map (buildColumnRelation layout)
     , uniques = column.uniques |> List.map (\u -> { name = u })
     , indexes = column.indexes |> List.map (\i -> { name = i })
     , checks = column.checks |> List.map (\c -> { name = c })
     }
 
 
-buildColumnRelation : ErdTableProps -> ErdColumnRef -> Table.Relation
-buildColumnRelation props relation =
+buildColumnRelation : ErdTableLayout -> ErdColumnRef -> Table.Relation
+buildColumnRelation layout relation =
     { column = { schema = relation.table |> Tuple.first, table = relation.table |> Tuple.second, column = relation.column }
     , nullable = relation.nullable
-    , tableShown = props.relatedTables |> Dict.get relation.table |> Maybe.mapOrElse .shown False
+    , tableShown = layout.relatedTables |> Dict.get relation.table |> Maybe.mapOrElse .shown False
     }

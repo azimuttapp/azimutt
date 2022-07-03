@@ -1,5 +1,6 @@
 module Models.Project exposing (Project, compute, computeRelations, computeTables, create, decode, downloadContent, downloadFilename, encode, new)
 
+import Conf
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -29,8 +30,7 @@ type alias Project =
     , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
     , relations : List Relation -- computed from sources, do not update directly (see compute function)
     , notes : Dict NotesKey Notes
-    , layout : Layout
-    , usedLayout : Maybe LayoutName
+    , usedLayout : LayoutName
     , layouts : Dict LayoutName Layout
     , settings : ProjectSettings
     , storage : ProjectStorage
@@ -39,15 +39,14 @@ type alias Project =
     }
 
 
-new : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> Maybe LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
-new id name sources notes layout usedLayout layouts settings storage createdAt updatedAt =
+new : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
+new id name sources notes usedLayout layouts settings storage createdAt updatedAt =
     { id = id
     , name = name
     , sources = sources
     , tables = Dict.empty
     , relations = []
     , notes = notes
-    , layout = layout
     , usedLayout = usedLayout
     , layouts = layouts
     , settings = settings
@@ -60,7 +59,7 @@ new id name sources notes layout usedLayout layouts settings storage createdAt u
 
 create : ProjectId -> ProjectName -> Source -> Project
 create id name source =
-    new id name [ source ] Dict.empty (Layout.init source.createdAt) Nothing Dict.empty ProjectSettings.init ProjectStorage.Browser source.createdAt source.updatedAt
+    new id name [ source ] Dict.empty Conf.constants.defaultLayout (Dict.fromList [ ( Conf.constants.defaultLayout, Layout.empty source.createdAt ) ]) ProjectSettings.init ProjectStorage.Browser source.createdAt source.updatedAt
 
 
 compute : Project -> Project
@@ -131,8 +130,7 @@ encode value =
         , ( "name", value.name |> ProjectName.encode )
         , ( "sources", value.sources |> Encode.list Source.encode )
         , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
-        , ( "layout", value.layout |> Layout.encode )
-        , ( "usedLayout", value.usedLayout |> Encode.maybe LayoutName.encode )
+        , ( "usedLayout", value.usedLayout |> LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode ProjectSettings.init )
         , ( "storage", value.storage |> Encode.withDefault ProjectStorage.encode ProjectStorage.Browser )
@@ -144,15 +142,30 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map11 new
+    Decode.map11 decodeProject
         (Decode.field "id" ProjectId.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.field "sources" (Decode.list Source.decode))
         (Decode.defaultField "notes" (Decode.dict Decode.string) Dict.empty)
-        (Decode.defaultField "layout" Layout.decode (Layout.init (Time.millisToPosix 0)))
-        (Decode.maybeField "usedLayout" LayoutName.decode)
+        (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
+        (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
         (Decode.defaultFieldDeep "settings" ProjectSettings.decode ProjectSettings.init)
         (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Browser)
-        (Decode.defaultField "createdAt" Time.decode (Time.millisToPosix 0))
-        (Decode.defaultField "updatedAt" Time.decode (Time.millisToPosix 0))
+        (Decode.defaultField "createdAt" Time.decode Time.zero)
+        (Decode.defaultField "updatedAt" Time.decode Time.zero)
+
+
+decodeProject : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
+decodeProject id name sources notes layout usedLayout layouts settings storage createdAt updatedAt =
+    let
+        allLayouts : Dict LayoutName Layout
+        allLayouts =
+            -- migrate from a default layout to only layouts
+            if layout == Layout.empty Time.zero then
+                layouts
+
+            else
+                layouts |> Dict.insert Conf.constants.defaultLayout layout
+    in
+    new id name sources notes usedLayout allLayouts settings storage createdAt updatedAt

@@ -4,11 +4,12 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Modal as Modal
 import Conf
-import Html exposing (Html, div, h3, input, label, p, text)
-import Html.Attributes exposing (autofocus, class, disabled, for, id, name, tabindex, type_, value)
+import Html exposing (Html, div, h3, input, p, text)
+import Html.Attributes exposing (autofocus, class, disabled, id, name, tabindex, type_, value)
 import Html.Events exposing (onClick, onInput)
 import Libs.Html exposing (bText, sendTweet)
 import Libs.Html.Attributes exposing (css)
+import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -42,10 +43,9 @@ viewCreateLayout layouts opened model =
                 ]
             , div [ css [ "mt-3 text-center", sm [ "mt-0 ml-4 text-left" ] ] ]
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
-                    [ text "Save your layout" ]
+                    [ text (model.from |> Maybe.mapOrElse (\f -> "Duplicate layout '" ++ f ++ "'") "New empty layout") ]
                 , div [ class "mt-2" ]
-                    [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Layout name" ]
-                    , div [ class "mt-1" ]
+                    [ div [ class "mt-1" ]
                         [ input [ type_ "text", name inputId, id inputId, value model.name, onInput (LEdit >> LayoutMsg), autofocus True, css [ "shadow-sm block w-full border-gray-300 rounded-md", focus [ "ring-indigo-500 border-indigo-500" ], sm [ "text-sm" ] ] ] []
                         ]
                     , if alreadyExists then
@@ -64,7 +64,7 @@ viewCreateLayout layouts opened model =
                 ]
             ]
         , div [ class "px-6 py-3 mt-6 flex items-center flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Button.primary3 Tw.primary [ onClick (model.name |> LCreate |> LayoutMsg |> ModalClose), disabled alreadyExists, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text "Save layout" ]
+            [ Button.primary3 Tw.primary [ onClick (model.name |> LCreate model.from |> LayoutMsg |> ModalClose), disabled alreadyExists, css [ "w-full text-base", sm [ "ml-3 w-auto text-sm" ] ] ] [ text (model.from |> Maybe.mapOrElse (\f -> "Duplicate '" ++ f ++ "'") "Create layout") ]
             , Button.white3 Tw.gray [ onClick (LCancel |> LayoutMsg |> ModalClose), css [ "mt-3 w-full text-base", sm [ "mt-0 w-auto text-sm" ] ] ] [ text "Cancel" ]
             ]
         ]

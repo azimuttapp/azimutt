@@ -1,4 +1,4 @@
-module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, from, fromList, has, indexedMap, length, map, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
+module Libs.Nel exposing (Nel, any, append, filter, filterMap, filterNot, filterZip, find, from, fromList, indexedMap, length, map, member, merge, partition, prepend, sortBy, toList, unique, uniqueBy, zipWith)
 
 -- Nel: NonEmptyList
 
@@ -74,8 +74,8 @@ any predicate nel =
     nel |> toList |> List.any predicate
 
 
-has : a -> Nel a -> Bool
-has value nel =
+member : a -> Nel a -> Bool
+member value nel =
     nel |> toList |> List.any (\a -> a == value)
 
 

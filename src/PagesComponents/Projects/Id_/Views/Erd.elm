@@ -13,18 +13,20 @@ import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Area exposing (Area)
 import Libs.Bool as B
+import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes as Attributes exposing (css)
 import Libs.Html.Events exposing (PointerEvent, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Platform exposing (Platform)
+import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
+import Libs.Tuple as Tuple
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
@@ -35,58 +37,69 @@ import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
+import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Projects.Id_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps)
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
-import PagesComponents.Projects.Id_.Views.Erd.Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
+import PagesComponents.Projects.Id_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable)
+import Set
 
 
 type alias ErdArgs =
     String
 
 
-argsToString : CursorMode -> String -> String -> ErdArgs
-argsToString cursorMode openedDropdown openedPopover =
-    CursorMode.toString cursorMode ++ "~" ++ openedDropdown ++ "~" ++ openedPopover
+argsToString : Platform -> CursorMode -> String -> String -> ErdArgs
+argsToString platform cursorMode openedDropdown openedPopover =
+    [ Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover ] |> String.join "~"
 
 
-stringToArgs : ErdArgs -> ( CursorMode, String, String )
+stringToArgs : ErdArgs -> ( ( Platform, CursorMode ), ( String, String ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ cursorMode, openedDropdown, openedPopover ] ->
-            ( CursorMode.fromString cursorMode, openedDropdown, openedPopover )
+        [ platform, cursorMode, openedDropdown, openedPopover ] ->
+            ( ( Platform.fromString platform, CursorMode.fromString cursorMode ), ( openedDropdown, openedPopover ) )
 
         _ ->
-            ( CursorMode.Select, "", "" )
+            ( ( Platform.PC, CursorMode.Select ), ( "", "" ) )
 
 
-viewErd : Platform -> ErdConf -> ScreenProps -> Erd -> Maybe Area -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
-viewErd platform conf screen erd selectionBox virtualRelation args dragging =
+viewErd : ErdConf -> ScreenProps -> Maybe TableId -> Erd -> Maybe Area -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
+viewErd conf screen hoverTable erd selectionBox virtualRelation args dragging =
     let
-        ( cursorMode, openedDropdown, openedPopover ) =
+        ( ( platform, cursorMode ), ( openedDropdown, openedPopover ) ) =
             stringToArgs args
+
+        layout : ErdLayout
+        layout =
+            erd |> Erd.currentLayout
 
         canvas : CanvasProps
         canvas =
-            dragging |> Maybe.filter (\d -> d.id == Conf.ids.erd) |> Maybe.mapOrElse (\d -> erd.canvas |> Drag.moveCanvas d) erd.canvas
+            dragging |> Maybe.filter (\d -> d.id == Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.canvas |> Drag.moveCanvas d) layout.canvas
 
-        tableProps : Dict TableId ErdTableProps
+        tableProps : List ErdTableLayout
         tableProps =
-            dragging |> Maybe.filter (\d -> d.id /= Conf.ids.erd) |> Maybe.mapOrElse (\d -> erd.tableProps |> Drag.moveTables d canvas.zoom) erd.tableProps
+            dragging |> Maybe.filter (\d -> d.id /= Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.tables |> Drag.moveTables d canvas.zoom) layout.tables
 
-        displayedTables : Dict TableId ErdTableProps
+        displayedTables : List ErdTableLayout
         displayedTables =
-            tableProps |> Dict.filter (\_ t -> t.size /= Size.zero && (erd.shownTables |> List.member t.id))
+            tableProps |> List.filter (\t -> t.props.size /= Size.zero)
+
+        displayedIds : Set.Set TableId
+        displayedIds =
+            displayedTables |> List.map .id |> Set.fromList
 
         displayedRelations : List ErdRelation
         displayedRelations =
-            erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedTables |> Dict.member c.table))
+            erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedIds |> Set.member c.table))
 
-        virtualRelationInfo : Maybe ( ( Maybe ErdColumnProps, ErdColumn ), Position )
+        virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, column : ErdColumnProps, index : Int }, ErdColumn ), Position )
         virtualRelationInfo =
             virtualRelation
                 |> Maybe.andThen
@@ -94,10 +107,10 @@ viewErd platform conf screen erd selectionBox virtualRelation args dragging =
                         vr.src
                             |> Maybe.andThen
                                 (\src ->
-                                    (erd |> Erd.getColumn src.table src.column)
+                                    (erd |> Erd.getColumn src)
                                         |> Maybe.map
                                             (\ref ->
-                                                ( ( erd |> Erd.getColumnProps src.table src.column, ref )
+                                                ( ( Relation.buildColumnInfo src.column (tableProps |> List.findBy .id src.table), ref )
                                                 , vr.mouse |> Position.sub { left = 0, top = Conf.ui.navbarHeight } |> CanvasProps.adapt screen canvas
                                                 )
                                             )
@@ -112,19 +125,19 @@ viewErd platform conf screen erd selectionBox virtualRelation args dragging =
             , ( "cursor-crosshair-all", virtualRelation /= Nothing )
             ]
         , id Conf.ids.erd
-        , Attributes.when (conf.move && not (Dict.isEmpty tableProps)) (onWheel platform OnWheel)
+        , Attributes.when (conf.move && not (List.isEmpty tableProps)) (onWheel platform OnWheel)
         , Attributes.when (conf.move || conf.select) (stopPointerDown platform (handleErdPointerDown conf cursorMode))
         ]
         [ div
             [ class "az-canvas origin-top-left"
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
-            [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover dragging canvas.zoom erd.settings.columnBasicTypes tableProps erd.tables erd.shownTables
+            [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.columnBasicTypes erd.tables tableProps erd.notes
             , Lazy.lazy5 viewRelations conf dragging erd.settings.relationStyle displayedTables displayedRelations
-            , selectionBox |> Maybe.filterNot (\_ -> tableProps |> Dict.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
+            , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
-        , if tableProps |> Dict.isEmpty then
+        , if tableProps |> List.isEmpty then
             viewEmptyState erd.tables
 
           else
@@ -161,44 +174,41 @@ handleErdPointerDown conf cursorMode e =
         Noop "No match on erd pointer down"
 
 
-viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTableProps -> Dict TableId ErdTable -> List TableId -> Html Msg
-viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover dragging zoom useBasicTypes tableProps tables shownTables =
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTable -> List ErdTableLayout -> Dict TableId ErdTableNotes -> Html Msg
+viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom useBasicTypes tables tableLayouts notes =
     Keyed.node "div"
         [ class "az-tables" ]
-        (shownTables
+        (tableLayouts
             |> List.reverse
-            |> List.indexedMap (\index tableId -> ( index, tableId ))
-            |> List.filterMap (\( index, tableId ) -> Maybe.map2 (\table props -> ( index, table, props )) (tables |> Dict.get tableId) (tableProps |> Dict.get tableId))
+            |> List.indexedMap Tuple.new
+            |> List.filterMap (\( index, tableLayout ) -> tables |> Dict.get tableLayout.id |> Maybe.map (\table -> ( index, table, tableLayout )))
             |> List.map
-                (\( index, table, props ) ->
+                (\( index, table, tableLayout ) ->
                     ( TableId.toString table.id
-                    , Lazy.lazy8 viewTable
-                        platform
+                    , Lazy.lazy6 viewTable
                         conf
                         zoom
-                        cursorMode
                         (Table.argsToString
+                            platform
+                            cursorMode
                             (B.cond (openedDropdown |> String.startsWith table.htmlId) openedDropdown "")
                             (B.cond (openedPopover |> String.startsWith table.htmlId) openedPopover "")
+                            index
+                            (hoverTable == Just table.id)
                             (dragging |> Maybe.any (\d -> d.id == table.htmlId && d.init /= d.last))
                             (virtualRelation /= Nothing)
                             useBasicTypes
                         )
-                        index
-                        props
+                        (notes |> Dict.getOrElse table.id ErdTableNotes.empty)
+                        tableLayout
                         table
                     )
                 )
         )
 
 
-viewRelations : ErdConf -> Maybe DragState -> RelationStyle -> Dict TableId ErdTableProps -> List ErdRelation -> Html Msg
-viewRelations conf dragging style tableProps relations =
-    let
-        getColumnProps : ErdColumnRef -> Maybe ErdColumnProps
-        getColumnProps ref =
-            tableProps |> Dict.get ref.table |> Maybe.andThen (\t -> t.columnProps |> Dict.get ref.column)
-    in
+viewRelations : ErdConf -> Maybe DragState -> RelationStyle -> List ErdTableLayout -> List ErdRelation -> Html Msg
+viewRelations conf dragging style tableLayouts relations =
     Keyed.node "div"
         [ class "az-relations" ]
         (relations
@@ -209,8 +219,8 @@ viewRelations conf dragging style tableProps relations =
                         style
                         conf
                         (dragging |> Maybe.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
-                        (getColumnProps r.src)
-                        (getColumnProps r.ref)
+                        (tableLayouts |> List.findBy .id r.src.table)
+                        (tableLayouts |> List.findBy .id r.ref.table)
                         r
                     )
                 )
