@@ -101,7 +101,11 @@ app.on('Create3dGraph', msg => { // https://github.com/vasturiano/3d-force-graph
     document.body.appendChild(elt)
 
     const sources = msg.project.sources.filter(s => s.enabled !== false)
-    const hideColumns = (msg.project.settings?.hiddenColumns?.list || '').split(',').map(c => new RegExp(c.trim(), 'i'))
+    const hideColumns = (msg.project.settings?.hiddenColumns?.list || '')
+        .split(',')
+        .map(c => c.trim())
+        .filter(c => c)
+        .map(c => new RegExp(c, 'i'))
     const nodes = sources.flatMap(s => s.tables).map(t => ({
         id: `${t.schema}.${t.table}`,
         name: t.table,
