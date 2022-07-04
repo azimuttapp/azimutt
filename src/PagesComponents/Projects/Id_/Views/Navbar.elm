@@ -74,6 +74,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                 )
             , Maybe.when eConf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkeys = Conf.hotkeys |> Dict.getOrElse "find-path" [] }
             , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkeys = [] }
+            , Just { action = Right Toggle3dGraph, content = text (B.cond model.has3dGraph "Hide 3D graph" "Show 3D graph"), hotkeys = [] }
             , Just { action = Left Conf.constants.azimuttFeatureRequests, content = text "Suggest a feature 🚀", hotkeys = [] }
             ]
                 |> List.filterMap identity

@@ -89,6 +89,7 @@ type alias Model =
 type alias NavbarModel =
     { mobileMenuOpen : Bool
     , search : SearchModel
+    , has3dGraph : Bool
     }
 
 
@@ -188,6 +189,7 @@ type Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | SourceParsing SqlSourceUploadMsg
     | SourceParsed ProjectId Source
+    | Toggle3dGraph
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent

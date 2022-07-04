@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, create3dGraph, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, remove3dGraph, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -193,6 +193,16 @@ confettiPride =
     messageToJs ConfettiPride
 
 
+create3dGraph : Project -> Cmd msg
+create3dGraph project =
+    messageToJs (Create3dGraph project)
+
+
+remove3dGraph : Cmd msg
+remove3dGraph =
+    messageToJs Remove3dGraph
+
+
 track : TrackEvent -> Cmd msg
 track event =
     if event.enabled then
@@ -255,6 +265,8 @@ type ElmMsg
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
     | ConfettiPride
+    | Create3dGraph Project
+    | Remove3dGraph
     | TrackPage String
     | TrackEvent String Value
     | TrackError String Value
@@ -404,6 +416,12 @@ elmEncoder elm =
 
         ConfettiPride ->
             Encode.object [ ( "kind", "ConfettiPride" |> Encode.string ) ]
+
+        Create3dGraph project ->
+            Encode.object [ ( "kind", "Create3dGraph" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        Remove3dGraph ->
+            Encode.object [ ( "kind", "Remove3dGraph" |> Encode.string ) ]
 
         TrackPage name ->
             Encode.object [ ( "kind", "TrackPage" |> Encode.string ), ( "name", name |> Encode.string ) ]

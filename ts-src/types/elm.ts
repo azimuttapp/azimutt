@@ -141,6 +141,8 @@ export type ElmMsg =
     | ListenKeysMsg
     | ConfettiMsg
     | ConfettiPrideMsg
+    | Create3dGraphMsg
+    | Remove3dGraphMsg
     | TrackPageMsg
     | TrackEventMsg
     | TrackErrorMsg
@@ -172,6 +174,8 @@ export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
 export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export type ConfettiMsg = { kind: 'Confetti', id: HtmlId }
 export type ConfettiPrideMsg = { kind: 'ConfettiPride' }
+export type Create3dGraphMsg = { kind: 'Create3dGraph', project: Project }
+export type Remove3dGraphMsg = { kind: 'Remove3dGraph' }
 export type TrackPageMsg = { kind: 'TrackPage', name: string }
 export type TrackEventMsg = { kind: 'TrackEvent', name: string, details?: Data }
 export type TrackErrorMsg = { kind: 'TrackError', name: string, details?: Data }

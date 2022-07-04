@@ -47,7 +47,7 @@ init : Time.Posix -> ProjectId -> ( Model, Cmd Msg )
 init now id =
     ( { seed = Random.initialSeed (now |> Time.posixToMillis)
       , conf = ErdConf.default
-      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
+      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 }, has3dGraph = False }
       , screen = ScreenProps.zero
       , loaded = False
       , erd = Nothing

@@ -162,11 +162,12 @@ export interface Delta {
 
 export interface Settings {
     removedTables?: string
+    hiddenColumns?: { list: string }
 }
 
 export type ProjectStorage = 'browser' | 'cloud'
 
-export const ProjectStorage: {[key in ProjectStorage]: key} = {
+export const ProjectStorage: { [key in ProjectStorage]: key } = {
     browser: 'browser',
     cloud: 'cloud'
 }
