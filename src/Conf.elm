@@ -206,6 +206,7 @@ blogPosts =
     , "improve-your-database-design-with-azimutt-analyzer"
     , "aml-a-language-to-define-your-database-schema"
     , "stop-using-auto-increment-for-primary-keys"
+    , "changelog-2022-06"
 
     --, "make-your-app-hackable"
     ]
