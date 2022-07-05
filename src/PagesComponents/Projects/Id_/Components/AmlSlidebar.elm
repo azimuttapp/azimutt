@@ -227,7 +227,7 @@ viewHeading =
             ]
         , p [ class "mt-1 text-sm text-gray-500" ]
             [ text "In Azimutt your schema is the union of all active sources. Create or update one with "
-            , extLink "https://azimutt.app/blog/aml-a-language-to-define-your-database-schema" [ class "link" ] [ text "AML syntax" ]
+            , extLink (Conf.constants.azimuttBlog ++ "/aml-a-language-to-define-your-database-schema") [ class "link" ] [ text "AML syntax" ]
             , text " to extend it."
             ]
         ]
@@ -302,6 +302,6 @@ viewHelp : Html msg
 viewHelp =
     p [ class "mt-2 text-sm text-gray-500" ]
         [ text "Write your schema using "
-        , extLink "https://azimutt.app/blog/aml-a-language-to-define-your-database-schema" [ class "link" ] [ text "AML syntax" ]
+        , extLink (Conf.constants.azimuttBlog ++ "/aml-a-language-to-define-your-database-schema") [ class "link" ] [ text "AML syntax" ]
         , text "."
         ]

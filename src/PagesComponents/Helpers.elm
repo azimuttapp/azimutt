@@ -30,7 +30,7 @@ publicHeader =
     Header.rightLinksWhite
         { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
         , links =
-            [ { url = Route.toHref Route.Blog, content = [ text "Blog" ], external = False }
+            [ { url = Conf.constants.azimuttBlog, content = [ text "Blog" ], external = False }
             , { url = Conf.constants.azimuttDiscussions, content = [ text "Discussions" ], external = True }
             , { url = Conf.constants.azimuttRoadmap, content = [ text "Roadmap" ], external = True }
             , { url = Conf.constants.azimuttGithub, content = [ text "Source code" ], external = True }

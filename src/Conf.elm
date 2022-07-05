@@ -1,4 +1,4 @@
-module Conf exposing (SampleSchema, blogPosts, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
+module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
@@ -15,6 +15,7 @@ import Models.Project.SourceName exposing (SourceName)
 
 constants :
     { azimuttWebsite : String
+    , azimuttBlog : String
     , azimuttTwitter : String
     , azimuttGithub : String
     , azimuttDiscussions : String
@@ -35,6 +36,7 @@ constants :
     }
 constants =
     { azimuttWebsite = "https://azimutt.app"
+    , azimuttBlog = "https://azimutt.app/blog"
     , azimuttTwitter = "https://twitter.com/" ++ twitter
     , azimuttGithub = github
     , azimuttDiscussions = github ++ "/discussions"
@@ -194,19 +196,3 @@ hotkeys =
         , ( "cancel", [ { hotkey | key = "Escape" } ] )
         , ( "help", [ { hotkey | key = "?" } ] )
         ]
-
-
-blogPosts : List String
-blogPosts =
-    [ "the-story-behind-azimutt"
-    , "how-to-explore-your-database-schema-with-azimutt"
-    , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
-    , "embed-your-database-diagram-anywhere"
-    , "how-to-choose-your-entity-relationship-diagram"
-    , "improve-your-database-design-with-azimutt-analyzer"
-    , "aml-a-language-to-define-your-database-schema"
-    , "stop-using-auto-increment-for-primary-keys"
-    , "changelog-2022-06"
-
-    --, "make-your-app-hackable"
-    ]
