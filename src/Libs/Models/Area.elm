@@ -1,4 +1,4 @@
-module Libs.Area exposing (Area, AreaLike, center, div, from, inside, merge, move, mult, normalize, overlap, zero)
+module Libs.Models.Area exposing (Area, AreaLike, center, div, from, inside, merge, move, mult, normalize, overlap, zero)
 
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)

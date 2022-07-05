@@ -1,7 +1,7 @@
-module Libs.DateTimeTest exposing (..)
+module Libs.Models.DateTimeTest exposing (..)
 
 import Expect
-import Libs.DateTime as DateTime
+import Libs.Models.DateTime as DateTime
 import Test exposing (Test, describe, test)
 import Time
 

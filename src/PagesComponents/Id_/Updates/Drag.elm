@@ -1,9 +1,9 @@
 module PagesComponents.Id_.Updates.Drag exposing (handleDrag, moveCanvas, moveTables)
 
 import Conf
-import Libs.Area as Area exposing (Area)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Area as Area exposing (Area)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)

@@ -1,9 +1,8 @@
-module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
+module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, schema, schemaSamples, ui)
 
 import Components.Atoms.Icon exposing (Icon(..))
-import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
-import Libs.Hotkey exposing (Hotkey, hotkey, target)
+import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
@@ -65,11 +64,6 @@ twitter =
 github : String
 github =
     "https://github.com/azimuttapp/azimutt"
-
-
-newsletter : Newsletter.Form
-newsletter =
-    { method = "post", url = "https://www.getrevue.co/profile/azimuttapp/add_subscriber", placeholder = "Enter your email", cta = "Subscribe" }
 
 
 type alias SampleSchema =

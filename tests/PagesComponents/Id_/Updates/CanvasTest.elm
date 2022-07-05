@@ -2,7 +2,7 @@ module PagesComponents.Id_.Updates.CanvasTest exposing (..)
 
 import Expect exposing (Expectation, FloatingPointTolerance(..))
 import Fuzz exposing (tuple)
-import Libs.Area exposing (Area)
+import Libs.Models.Area exposing (Area)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Models.Project.CanvasProps exposing (CanvasProps)

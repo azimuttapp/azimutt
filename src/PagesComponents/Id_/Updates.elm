@@ -4,13 +4,13 @@ import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict exposing (Dict)
 import Gen.Route as Route
-import Libs.Area as Area exposing (Area, AreaLike)
 import Libs.Bool as B
-import Libs.Delta as Delta
 import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
+import Libs.Models.Area as Area exposing (Area, AreaLike)
+import Libs.Models.Delta as Delta
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T

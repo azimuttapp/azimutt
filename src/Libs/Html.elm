@@ -1,7 +1,6 @@
 module Libs.Html exposing (bText, codeText, divIf, extLink, none, sendTweet)
 
 import Html exposing (Attribute, Html, a, b, code, div, text)
-import Html.Attributes exposing (href, rel, target)
 import Libs.Html.Attributes exposing (hrefBlank, track)
 import Track
 import Url exposing (percentEncode)

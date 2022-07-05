@@ -1,4 +1,4 @@
-module Libs.Delta exposing (Delta, adjust, decode, encode, fromTuple, move, negate)
+module Libs.Models.Delta exposing (Delta, adjust, decode, encode, fromTuple, move, negate)
 
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode

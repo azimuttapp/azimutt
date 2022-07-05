@@ -5,7 +5,7 @@ import Html.Events exposing (preventDefaultOn, stopPropagationOn)
 import Html.Events.Extra.Mouse as Button exposing (Button)
 import Json.Decode as Decode
 import Libs.Bool as B
-import Libs.Delta exposing (Delta)
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.Position exposing (Position)
 

@@ -1,4 +1,4 @@
-module Libs.Duration exposing (Duration, days, millis, toMillis)
+module Libs.Models.Duration exposing (Duration, days, millis, toMillis)
 
 
 type Duration

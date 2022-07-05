@@ -1,4 +1,4 @@
-module Libs.Hotkey exposing (Hotkey, HotkeyTarget, hotkey, hotkeyEncoder, keys, target)
+module Libs.Models.Hotkey exposing (Hotkey, HotkeyTarget, hotkey, hotkeyEncoder, keys, target)
 
 import Json.Encode as Encode exposing (Value)
 import Libs.Bool as B

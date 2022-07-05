@@ -1,4 +1,4 @@
-module Libs.Models.Url exposing (asString, empty)
+module Libs.Url exposing (asString, empty)
 
 import Url exposing (Url)
 

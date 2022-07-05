@@ -1,10 +1,10 @@
 module PagesComponents.Id_.Updates.Canvas exposing (computeFit, fitCanvas, handleWheel, performZoom, zoomCanvas)
 
 import Conf
-import Libs.Area as Area exposing (Area)
 import Libs.Bool as B
-import Libs.Delta as Delta
 import Libs.Html.Events exposing (WheelEvent)
+import Libs.Models.Area as Area exposing (Area)
+import Libs.Models.Delta as Delta
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)

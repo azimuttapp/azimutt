@@ -11,7 +11,6 @@ import Html.Events exposing (onClick)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
-import Libs.Area exposing (Area)
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink, sendTweet)
@@ -19,6 +18,7 @@ import Libs.Html.Attributes as Attributes exposing (css)
 import Libs.Html.Events exposing (PointerEvent, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Area exposing (Area)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.Position as Position exposing (Position)

@@ -3,10 +3,10 @@ module PagesComponents.Id_.Updates.Table exposing (hideColumn, hideColumns, hide
 import Conf
 import Dict
 import Libs.Bool as B
-import Libs.Delta exposing (Delta)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Delta exposing (Delta)
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnId exposing (ColumnId)

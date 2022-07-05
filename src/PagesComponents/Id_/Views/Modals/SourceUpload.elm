@@ -10,10 +10,10 @@ import Conf
 import Html exposing (Html, br, div, h3, input, li, p, span, text, ul)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
-import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Maybe as Maybe
+import Libs.Models.DateTime as DateTime
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)

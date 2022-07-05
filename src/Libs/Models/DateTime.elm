@@ -1,7 +1,7 @@
-module Libs.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, greaterThan, human, minus, parse, unsafeParse)
+module Libs.Models.DateTime exposing (format, formatDate, formatDatetime, formatTime, formatUtc, greaterThan, human, minus, parse, unsafeParse)
 
 import Iso8601
-import Libs.Duration as Duration exposing (Duration)
+import Libs.Models.Duration as Duration exposing (Duration)
 import Libs.String as String
 import Libs.Time as Time
 import Time
