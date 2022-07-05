@@ -14,9 +14,9 @@ import Models.Project exposing (Project)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
-import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Projects.Id_.Models.FindPathResult exposing (FindPathResult)
-import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Id_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Id_.Models.FindPathResult exposing (FindPathResult)
+import PagesComponents.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 
 
 

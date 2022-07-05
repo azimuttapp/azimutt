@@ -30,7 +30,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
 import Models.User as User exposing (User)
 import Models.UserId as UserId exposing (UserId)
-import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
 import Track

@@ -10,14 +10,14 @@ import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), SourceParsingDialog)
-import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
-import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind
-import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
-import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
-import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
-import PagesComponents.Projects.Id_.Updates as Updates
-import PagesComponents.Projects.Id_.Views as Views
+import PagesComponents.Id_.Models as Models exposing (Msg(..), SourceParsingDialog)
+import PagesComponents.Id_.Models.CursorMode as CursorMode
+import PagesComponents.Id_.Models.EmbedKind as EmbedKind
+import PagesComponents.Id_.Models.EmbedMode as EmbedMode
+import PagesComponents.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
+import PagesComponents.Id_.Subscriptions as Subscriptions
+import PagesComponents.Id_.Updates as Updates
+import PagesComponents.Id_.Views as Views
 import Ports
 import Random
 import Request

@@ -77,7 +77,7 @@ appShell gConf currentUrl maybeUser onNavigationClick onProfileClick onLogout mo
         [ Navbar.admin
             { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
             , navigation =
-                { links = [ { url = Route.toHref Route.Projects, text = "Dashboard" } ]
+                { links = [ { url = Route.toHref Route.Home_, text = "Dashboard" } ]
                 , onClick = onNavigationClick
                 }
             , search = Nothing
