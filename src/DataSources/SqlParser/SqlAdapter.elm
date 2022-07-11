@@ -109,7 +109,7 @@ evolve source ( statement, command ) content =
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedCheck constraint check)) ->
             updateTable schema table (\t -> ( { t | checks = t.checks ++ [ Check constraint check.columns (Just check.predicate) [ origin ] ] }, [] )) statement content
 
-        AlterTable (AddTableConstraint _ _ IgnoredConstraint) ->
+        AlterTable (AddTableConstraint _ _ (IgnoredConstraint _)) ->
             content
 
         AlterTable (AlterColumn schema table (ColumnDefault column default)) ->
@@ -128,6 +128,9 @@ evolve source ( statement, command ) content =
             content
 
         AlterTable (DropConstraint _ _ _) ->
+            content
+
+        AlterTable (IgnoredCommand _) ->
             content
 
         CreateIndex index ->
@@ -246,7 +249,7 @@ createView origin tables view =
     , schema = id |> Tuple.first
     , name = id |> Tuple.second
     , view = True
-    , columns = view.select.columns |> Nel.toList |> List.indexedMap (buildViewColumn origin tables) |> Dict.fromListMap .name
+    , columns = view.select.columns |> List.indexedMap (buildViewColumn origin tables) |> Dict.fromListMap .name
     , primaryKey = Nothing
     , uniques = []
     , indexes = []

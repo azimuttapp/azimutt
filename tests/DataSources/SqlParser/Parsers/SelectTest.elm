@@ -1,9 +1,9 @@
 module DataSources.SqlParser.Parsers.SelectTest exposing (..)
 
-import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..), SelectColumnBasic, SelectTable(..), SelectTableBasic, parseSelect, parseSelectColumn, parseSelectTable)
+import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..), SelectColumnBasic, SelectTable(..), SelectTableBasic, parseSelect, parseSelectColumn, parseSelectTable, splitFirstTopLevelFrom)
 import DataSources.SqlParser.TestHelpers.Tests exposing (testSql)
-import Libs.Nel exposing (Nel)
-import Test exposing (Test, describe)
+import Expect
+import Test exposing (Test, describe, test)
 
 
 suite : Test
@@ -12,19 +12,25 @@ suite =
         [ describe "parseSelect"
             [ testSql ( parseSelect, "basic" )
                 "SELECT id, name FROM users"
-                { columns =
-                    Nel (BasicColumn { column | column = "id" })
-                        [ BasicColumn { column | column = "name" } ]
+                { columns = [ BasicColumn { column | column = "id" }, BasicColumn { column | column = "name" } ]
                 , tables = [ BasicTable { table | table = "users" } ]
                 , whereClause = Nothing
                 }
             , testSql ( parseSelect, "distinct on" )
                 "SELECT DISTINCT ON (id) id, name FROM users"
-                { columns =
-                    Nel (BasicColumn { column | column = "id" })
-                        [ BasicColumn { column | column = "name" } ]
+                { columns = [ BasicColumn { column | column = "id" }, BasicColumn { column | column = "name" } ]
                 , tables = [ BasicTable { table | table = "users" } ]
                 , whereClause = Nothing
+                }
+            , testSql ( parseSelect, "subquery in columns" )
+                "SELECT pg_authid.rolname AS groname, pg_authid.oid AS grosysid, ARRAY(SELECT pg_auth_members.member FROM pg_auth_members WHERE (pg_auth_members.roleid = pg_authid.oid)) AS grolist FROM pg_authid WHERE (NOT pg_authid.rolcanlogin)"
+                { columns =
+                    [ BasicColumn { table = Just "pg_authid", column = "rolname", alias = Just "groname" }
+                    , BasicColumn { table = Just "pg_authid", column = "oid", alias = Just "grosysid" }
+                    , ComplexColumn { formula = "ARRAY(SELECT pg_auth_members.member FROM pg_auth_members WHERE (pg_auth_members.roleid = pg_authid.oid))", alias = "grolist" }
+                    ]
+                , tables = [ BasicTable { table | table = "pg_authid" } ]
+                , whereClause = Just "(NOT pg_authid.rolcanlogin)"
                 }
             ]
         , describe "parseSelectColumn"
@@ -78,6 +84,11 @@ suite =
             , testSql ( parseSelectTable, "with everything" )
                 "public.users u"
                 (BasicTable { table | schema = Just "public", table = "users", alias = Just "u" })
+            ]
+        , describe "splitFirstTopLevelFrom"
+            [ test "split on first FROM" (\_ -> "hello FROM to FROM there" |> splitFirstTopLevelFrom |> Expect.equal ( "hello", "to FROM there" ))
+            , test "ignore in ()" (\_ -> "hello (FROM to) FROM there" |> splitFirstTopLevelFrom |> Expect.equal ( "hello (FROM to)", "there" ))
+            , test "ignore in ''" (\_ -> "hello 'FROM to' FROM there" |> splitFirstTopLevelFrom |> Expect.equal ( "hello 'FROM to'", "there" ))
             ]
         ]
 

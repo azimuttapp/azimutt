@@ -67,6 +67,9 @@ suite =
             , testSql ( parseCreateTableColumn, "with enclosing quotes" )
                 "\"id\" bigint"
                 { parsedColumn | name = "id", kind = "bigint" }
+            , testSql ( parseCreateTableColumn, "with enclosing quotes on type" )
+                "id \"bigint\""
+                { parsedColumn | name = "id", kind = "bigint" }
             , testSql ( parseCreateTableColumn, "with primary key" )
                 "id bigint PRIMARY KEY"
                 { parsedColumn | name = "id", kind = "bigint", primaryKey = Just "" }
@@ -100,6 +103,9 @@ suite =
             , testSql ( parseCreateTableColumn, "with collate" )
                 "id nvarchar(32) COLLATE Modern_Spanish_CI_AS NOT NULL"
                 { parsedColumn | name = "id", kind = "nvarchar(32)", nullable = False }
+            , testSql ( parseCreateTableColumn, "with collate after not null" )
+                "description text NOT NULL COLLATE pg_catalog.\"C\""
+                { parsedColumn | name = "description", kind = "text", nullable = False }
             , testSql ( parseCreateTableColumn, "with generated" )
                 "event_name text not null generated always as ((((service__name || '.'::text) || resource_type__name) || '.'::text) || verb__name) stored"
                 { parsedColumn | name = "event_name", kind = "text", nullable = False, default = Just "generated always as ((((service__name || '.'::text) || resource_type__name) || '.'::text) || verb__name) stored" }

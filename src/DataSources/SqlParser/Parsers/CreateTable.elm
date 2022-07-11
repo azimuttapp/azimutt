@@ -2,7 +2,7 @@ module DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedCo
 
 import DataSources.Helpers exposing (defaultUniqueName)
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (TableConstraint(..), parseAlterTableAddConstraint)
-import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, sqlTriggers)
+import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildColumnType, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, sqlTriggers)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -128,7 +128,7 @@ extractBody rest =
 
 parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn sql =
-    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?(?: COMMENT '(?<comment>(?:[^']|'')+)')?$" of
+    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?(?: COMMENT '(?<comment>(?:[^']|'')+)')?$" of
         (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraints :: maybeReference :: maybePrimary :: maybeUnique :: maybeCheck :: maybeGenerated :: maybeComment :: [] ->
             maybeConstraints
                 |> Maybe.mapOrElse (Regex.split (Regex.asRegexI " *constraint *")) []
@@ -155,7 +155,7 @@ parseCreateTableColumn sql =
                 |> Result.map
                     (\( primaryKey, foreignKey, nullable2 ) ->
                         { name = name |> buildColumnName
-                        , kind = kind
+                        , kind = kind |> buildColumnType
                         , nullable = nullable == Nothing && nullable2
                         , default = default1 |> Maybe.orElse default2 |> Maybe.orElse (maybeGenerated |> Maybe.map String.trim)
                         , primaryKey = primaryKey

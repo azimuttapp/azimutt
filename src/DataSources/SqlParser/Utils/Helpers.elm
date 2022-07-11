@@ -1,6 +1,6 @@
-module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
+module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildColumnType, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
 
-import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlComment, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlComment, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.Nel as Nel
 import Libs.Regex as Regex
 
@@ -52,6 +52,11 @@ buildTableName name =
 
 buildColumnName : String -> SqlColumnName
 buildColumnName name =
+    name |> String.trim |> noEnclosingQuotes
+
+
+buildColumnType : String -> SqlColumnType
+buildColumnType name =
     name |> String.trim |> noEnclosingQuotes
 
 

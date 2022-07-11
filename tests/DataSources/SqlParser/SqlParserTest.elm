@@ -190,6 +190,9 @@ suite =
             , testStatement ( parseCommand, "parse lowercase" )
                 "comment on column public.table1.col is 'A comment';"
                 (ColumnComment { schema = Just "public", table = "table1", column = "col", comment = "A comment" })
+            , testStatement ( parseCommand, "ignore CREATE RULE" )
+                "CREATE RULE pg_settings_n AS ON UPDATE TO pg_catalog.pg_settings DO INSTEAD NOTHING;"
+                (Ignored (Nel { index = 0, text = "CREATE RULE pg_settings_n AS ON UPDATE TO pg_catalog.pg_settings DO INSTEAD NOTHING;" } []))
             , testStatement ( parseCommand, "ignore GO" )
                 "GO /****** Object:  Schema [api]    Script Date: 6-9-2021 13:53:38 ******/ CREATE SCHEMA [api] ;"
                 (Ignored (Nel { index = 0, text = "GO /****** Object:  Schema [api]    Script Date: 6-9-2021 13:53:38 ******/ CREATE SCHEMA [api] ;" } []))

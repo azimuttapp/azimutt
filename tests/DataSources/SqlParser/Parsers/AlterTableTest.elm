@@ -39,7 +39,7 @@ suite =
                 (AddTableConstraint (Just "p") "t1" (ParsedCheck "t1_kind_not_null" { columns = [], predicate = "((kind IS NOT NULL)) NOT VALID" }))
             , testStatement ( parseAlterTable, "exclude using" )
                 "ALTER TABLE p.t1 ADD CONSTRAINT name EXCLUDE USING p.t2 (rotation_id WITH =, tstzrange(starts_at, ends_at, '[)'::text) WITH &&);"
-                (AddTableConstraint (Just "p") "t1" IgnoredConstraint)
+                (AddTableConstraint (Just "p") "t1" (IgnoredConstraint "EXCLUDE USING p.t2 (rotation_id WITH =, tstzrange(starts_at, ends_at, '[)'::text) WITH &&)"))
             , testStatement ( parseAlterTable, "column default" )
                 "ALTER TABLE public.table1 ALTER COLUMN id SET DEFAULT 1;"
                 (AlterColumn (Just "public") "table1" (ColumnDefault "id" "1"))

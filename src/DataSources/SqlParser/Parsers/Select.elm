@@ -1,15 +1,14 @@
-module DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..), SelectColumnBasic, SelectColumnComplex, SelectInfo, SelectTable(..), SelectTableBasic, SelectTableComplex, TableAlias, parseSelect, parseSelectColumn, parseSelectTable)
+module DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..), SelectColumnBasic, SelectColumnComplex, SelectInfo, SelectTable(..), SelectTableBasic, SelectTableComplex, TableAlias, parseSelect, parseSelectColumn, parseSelectTable, splitFirstTopLevelFrom)
 
 import DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildSchemaName, buildTableName, commaSplit)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlSchemaName, SqlTableName)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Nel as Nel exposing (Nel)
 import Libs.Regex as Regex
 
 
 type alias SelectInfo =
-    { columns : Nel SelectColumn, tables : List SelectTable, whereClause : Maybe String }
+    { columns : List SelectColumn, tables : List SelectTable, whereClause : Maybe String }
 
 
 type SelectColumn
@@ -44,14 +43,64 @@ type alias TableAlias =
 
 parseSelect : RawSql -> Result (List ParseError) SelectInfo
 parseSelect select =
-    case select |> Regex.matches "^SELECT(?:\\s+DISTINCT ON \\([^)]+\\))?\\s+(?<columns>.+?)(?:\\s+FROM\\s+(?<tables>.+?))?(?:\\s+WHERE\\s+(?<where>.+?))?$" of
-        (Just columnsStr) :: tablesStr :: whereClause :: [] ->
-            Result.map2 (\columns tables -> { columns = columns, tables = tables, whereClause = whereClause })
-                (commaSplit columnsStr |> List.map String.trim |> List.map parseSelectColumn |> List.resultSeq |> Result.andThen (\cols -> cols |> Nel.fromList |> Result.fromMaybe [ "Select can't have empty columns" ]))
-                (tablesStr |> Maybe.toList |> List.map parseSelectTable |> List.resultSeq)
+    case select |> Regex.matches "^SELECT(?:\\s+DISTINCT ON \\([^)]+\\))?\\s+(?<body>.+)$" of
+        (Just body) :: [] ->
+            body
+                |> splitFirstTopLevelFrom
+                |> (\( columnsStr, rest ) ->
+                        case rest |> Regex.matches "^(?<tables>.+?)?(?:\\s+WHERE\\s+(?<where>.+?))?$" of
+                            tablesStr :: whereClause :: [] ->
+                                Result.map2 (\columns tables -> { columns = columns, tables = tables, whereClause = whereClause })
+                                    (commaSplit columnsStr |> List.map String.trim |> List.map parseSelectColumn |> List.resultSeq)
+                                    (tablesStr |> Maybe.toList |> List.map parseSelectTable |> List.resultSeq)
+
+                            _ ->
+                                Err [ "Can't parse rest in select: '" ++ rest ++ "'" ]
+                   )
 
         _ ->
             Err [ "Can't parse select: '" ++ select ++ "'" ]
+
+
+splitFirstTopLevelFrom : String -> ( String, String )
+splitFirstTopLevelFrom body =
+    body
+        |> String.split "FROM"
+        |> List.foldl
+            (\part ( ( columns, rest ), ( parenthesis, quotes, done ) ) ->
+                if not done then
+                    let
+                        newParenthesis : Int
+                        newParenthesis =
+                            parenthesis + (part |> String.indexes "(" |> List.length) - (part |> String.indexes ")" |> List.length)
+
+                        newQuotes : Int
+                        newQuotes =
+                            (quotes + (part |> String.indexes "'" |> List.length)) |> modBy 2
+                    in
+                    if newParenthesis > 0 || newQuotes > 0 then
+                        ( ( join "FROM" columns part, rest ), ( newParenthesis, newQuotes, done ) )
+
+                    else
+                        ( ( join "FROM" columns part, rest ), ( newParenthesis, newQuotes, True ) )
+
+                else
+                    ( ( columns, join "FROM" rest part ), ( parenthesis, quotes, done ) )
+            )
+            ( ( "", "" ), ( 0, 0, False ) )
+        |> (\( ( columns, rest ), _ ) -> ( columns |> String.trim, rest |> String.trim ))
+
+
+join : String -> String -> String -> String
+join sep a b =
+    if a == "" then
+        b
+
+    else if b == "" then
+        a
+
+    else
+        a ++ sep ++ b
 
 
 parseSelectColumn : RawSql -> Result ParseError SelectColumn

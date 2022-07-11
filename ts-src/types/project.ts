@@ -63,10 +63,11 @@ export interface Table {
     table: TableName
     view?: boolean
     columns: Column[]
-    primaryKey: PrimaryKey
+    primaryKey?: PrimaryKey
     uniques?: Unique[]
     indexes?: Index[]
     checks?: Check[]
+    comment?: Comment
     origins: Origin[]
 }
 
@@ -103,6 +104,12 @@ export interface Column {
     type: ColumnType
     nullable?: boolean
     default?: string
+    comment?: Comment
+    origins: Origin[]
+}
+
+export interface Comment {
+    text: string
     origins: Origin[]
 }
 

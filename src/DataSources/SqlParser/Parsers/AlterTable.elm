@@ -15,6 +15,7 @@ type TableUpdate
     | AddTableOwner (Maybe SqlSchemaName) SqlTableName SqlUser
     | AttachPartition (Maybe SqlSchemaName) SqlTableName
     | DropConstraint (Maybe SqlSchemaName) SqlTableName SqlConstraintName
+    | IgnoredCommand String
 
 
 type TableConstraint
@@ -22,7 +23,7 @@ type TableConstraint
     | ParsedForeignKey (Maybe SqlConstraintName) (Nel ForeignKeyInner)
     | ParsedUnique SqlConstraintName UniqueInner
     | ParsedCheck SqlConstraintName CheckInner
-    | IgnoredConstraint
+    | IgnoredConstraint String
 
 
 type alias PrimaryKeyInner =
@@ -92,8 +93,11 @@ parseAlterTable statement =
             else if command |> String.toUpper |> String.startsWith "DROP CONSTRAINT " then
                 parseAlterTableDropConstraint command |> Result.map (DropConstraint schemaName tableName)
 
+            else if command |> String.toUpper |> String.startsWith "REPLICA IDENTITY " then
+                Ok (IgnoredCommand command)
+
             else
-                Err [ "Command not handled: '" ++ command ++ "'" ]
+                Err [ "Alter table command not handled: '" ++ command ++ "'" ]
 
         _ ->
             Err [ "Can't parse alter table: '" ++ buildRawSql statement ++ "'" ]
@@ -116,7 +120,7 @@ parseAlterTableAddConstraint command =
                 parseAlterTableAddConstraintCheck constraint |> Result.map (ParsedCheck (name |> buildConstraintName))
 
             else if constraint |> String.toUpper |> String.startsWith "EXCLUDE USING" then
-                Ok IgnoredConstraint
+                Ok (IgnoredConstraint constraint)
 
             else
                 Err [ "Constraint not handled: '" ++ constraint ++ "'" ]
