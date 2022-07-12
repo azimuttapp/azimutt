@@ -33,4 +33,5 @@ initAll settings relations table =
         |> Dict.values
         |> List.filterNot (ProjectSettings.hideColumn settings.hiddenColumns)
         |> ColumnOrder.sortBy settings.columnOrder table tableRelations
+        |> List.take settings.hiddenColumns.max
         |> List.map (.name >> create)
