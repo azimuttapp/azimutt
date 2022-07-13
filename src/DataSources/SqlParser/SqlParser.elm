@@ -196,6 +196,9 @@ parseCommand statement =
     else if firstLine |> startsWith "(CREATE|COMMENT ON) TRIGGER" then
         Ok (Ignored statement)
 
+    else if firstLine |> startsWith "CREATE PROCEDURE" then
+        Ok (Ignored statement)
+
     else if firstLine |> startsWith "CREATE RULE" then
         Ok (Ignored statement)
 
