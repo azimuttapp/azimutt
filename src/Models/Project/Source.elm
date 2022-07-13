@@ -15,6 +15,7 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SampleKey as SampleKey exposing (SampleKey)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind as SourceKind exposing (SourceKind(..))
 import Models.Project.SourceLine as SourceLine exposing (SourceLine)
@@ -63,10 +64,10 @@ refreshWith new current =
         current
 
 
-addRelation : Time.Posix -> ColumnRef -> ColumnRef -> Source -> Source
-addRelation now src ref source =
+addRelation : Time.Posix -> SchemaName -> ColumnRef -> ColumnRef -> Source -> Source
+addRelation now defaultSchema src ref source =
     source
-        |> mapContent (Array.push (AmlGenerator.relation src ref))
+        |> mapContent (Array.push (AmlGenerator.relation defaultSchema src ref))
         |> mapRelations (\r -> r ++ [ Relation.virtual src ref (Origin source.id [ Array.length source.content + 1 ]) ])
         |> setUpdatedAt now
 
@@ -87,9 +88,9 @@ encode value =
         ]
 
 
-decode : Decode.Decoder Source
-decode =
-    Decode.map10 decodeSource
+decode : SchemaName -> Decode.Decoder Source
+decode defaultSchema =
+    Decode.map10 (decodeSource defaultSchema)
         (Decode.field "id" SourceId.decode)
         (Decode.field "name" SourceName.decode)
         (Decode.field "kind" SourceKind.decode)
@@ -102,14 +103,14 @@ decode =
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeSource : SourceId -> SourceName -> SourceKind -> Array SourceLine -> Dict TableId Table -> List Relation -> Bool -> Maybe SampleKey -> Time.Posix -> Time.Posix -> Source
-decodeSource id name kind content tables relations enabled fromSample createdAt updatedAt =
+decodeSource : SchemaName -> SourceId -> SourceName -> SourceKind -> Array SourceLine -> Dict TableId Table -> List Relation -> Bool -> Maybe SampleKey -> Time.Posix -> Time.Posix -> Source
+decodeSource defaultSchema id name kind content tables relations enabled fromSample createdAt updatedAt =
     let
         ( n, c ) =
             if kind == AmlEditor && Array.isEmpty content && Dict.isEmpty tables && List.nonEmpty relations then
                 -- migration from previous: no content, only relations and bad name for virtual relations
                 ( Conf.constants.virtualRelationSourceName
-                , Array.fromList (relations |> List.map (\r -> AmlGenerator.relation r.src r.ref))
+                , Array.fromList (relations |> List.map (\r -> AmlGenerator.relation defaultSchema r.src r.ref))
                 )
 
             else

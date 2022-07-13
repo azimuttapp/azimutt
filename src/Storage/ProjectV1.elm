@@ -279,7 +279,7 @@ upgrade project =
     , notes = Dict.empty
     , usedLayout = project.currentLayout |> Maybe.withDefault Conf.constants.defaultLayout
     , layouts = project.layouts |> Dict.insert Conf.constants.defaultLayout project.schema.layout |> Dict.map (\_ -> upgradeLayout)
-    , settings = ProjectSettings.init |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
+    , settings = ProjectSettings.init Nothing |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
     , storage = ProjectStorage.Browser
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
@@ -406,7 +406,7 @@ upgradeLayout layout =
 upgradeFindPath : FindPathSettingsV1 -> FindPathSettings
 upgradeFindPath fp =
     { maxPathLength = fp.maxPathLength
-    , ignoredTables = fp.ignoredTables |> List.map TableId.show |> String.join ", "
+    , ignoredTables = fp.ignoredTables |> List.map (TableId.show Conf.schema.default) |> String.join ", "
     , ignoredColumns = fp.ignoredColumns |> String.join ", "
     }
 

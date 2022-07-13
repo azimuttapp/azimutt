@@ -21,6 +21,7 @@ import Libs.Tailwind as Tw exposing (sm)
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SchemaAnalysisDialog, SchemaAnalysisMsg(..))
@@ -34,8 +35,8 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 --  - % of nullable columns in a table (warn if > 50%)
 
 
-viewSchemaAnalysis : Bool -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg
-viewSchemaAnalysis opened tables model =
+viewSchemaAnalysis : Bool -> SchemaName -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg
+viewSchemaAnalysis opened defaultSchema tables model =
     let
         titleId : HtmlId
         titleId =
@@ -43,7 +44,7 @@ viewSchemaAnalysis opened tables model =
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = ModalClose (SchemaAnalysisMsg SAClose) }
         [ viewHeader titleId
-        , viewAnalysis model.opened tables
+        , viewAnalysis model.opened defaultSchema tables
         , viewFooter
         ]
 
@@ -62,13 +63,13 @@ viewHeader titleId =
         ]
 
 
-viewAnalysis : HtmlId -> Dict TableId ErdTable -> Html Msg
-viewAnalysis opened tables =
+viewAnalysis : HtmlId -> SchemaName -> Dict TableId ErdTable -> Html Msg
+viewAnalysis opened defaultSchema tables =
     div [ class "px-6" ]
-        [ viewMissingPrimaryKey "missing-pks" opened (computeMissingPrimaryKey tables)
-        , viewMissingRelations "missing-relations" opened (computeMissingRelations tables)
-        , viewHeterogeneousTypes "heterogeneous-types" opened (computeHeterogeneousTypes tables)
-        , viewBigTables "big-tables" opened (computeBigTables tables)
+        [ viewMissingPrimaryKey "missing-pks" opened defaultSchema (computeMissingPrimaryKey tables)
+        , viewMissingRelations "missing-relations" opened defaultSchema (computeMissingRelations tables)
+        , viewHeterogeneousTypes "heterogeneous-types" opened defaultSchema (computeHeterogeneousTypes tables)
+        , viewBigTables "big-tables" opened defaultSchema (computeBigTables tables)
         ]
 
 
@@ -89,8 +90,8 @@ computeMissingPrimaryKey tables =
     tables |> Dict.values |> List.filter (\t -> t.primaryKey == Nothing)
 
 
-viewMissingPrimaryKey : HtmlId -> HtmlId -> List ErdTable -> Html Msg
-viewMissingPrimaryKey htmlId opened missingPks =
+viewMissingPrimaryKey : HtmlId -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
+viewMissingPrimaryKey htmlId opened defaultSchema missingPks =
     viewSection htmlId
         opened
         "All tables have a primary key"
@@ -101,7 +102,7 @@ viewMissingPrimaryKey htmlId opened missingPks =
                 |> List.map
                     (\t ->
                         div [ class "flex justify-between items-center my-1" ]
-                            [ div [] [ bText (TableId.show t.id), text " has no primary key" ]
+                            [ div [] [ bText (TableId.show defaultSchema t.id), text " has no primary key" ]
                             , Button.primary1 Tw.primary [ class "ml-3", onClick (ShowTable t.id Nothing) ] [ text "Show table" ]
                             ]
                     )
@@ -189,8 +190,8 @@ kindMatch rel =
         rel.src.kind == rel.ref.kind
 
 
-viewMissingRelations : HtmlId -> HtmlId -> ( List MissingRelation, List MissingRef ) -> Html Msg
-viewMissingRelations htmlId opened ( missingRels, missingRefs ) =
+viewMissingRelations : HtmlId -> HtmlId -> SchemaName -> ( List MissingRelation, List MissingRef ) -> Html Msg
+viewMissingRelations htmlId opened defaultSchema ( missingRels, missingRefs ) =
     viewSection htmlId
         opened
         "No potentially missing relation found"
@@ -198,15 +199,15 @@ viewMissingRelations htmlId opened ( missingRels, missingRefs ) =
         (\nb -> "Found " ++ (nb |> String.pluralize "potentially missing relation"))
         [ div []
             (missingRels
-                |> List.sortBy (\rel -> ColumnRef.show rel.ref ++ " ← " ++ ColumnRef.show rel.src)
+                |> List.sortBy (\rel -> ColumnRef.show defaultSchema rel.ref ++ " ← " ++ ColumnRef.show defaultSchema rel.src)
                 |> List.map
                     (\rel ->
                         div [ class "flex justify-between items-center py-1" ]
                             [ div []
-                                [ text (TableId.show rel.ref.table)
+                                [ text (TableId.show defaultSchema rel.ref.table)
                                 , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.ref.column "") ]
                                 , Icon.solid ArrowNarrowLeft "inline mx-1"
-                                , text (TableId.show rel.src.table)
+                                , text (TableId.show defaultSchema rel.src.table)
                                 , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
                                 ]
                             , div [ class "ml-3" ]
@@ -227,7 +228,7 @@ viewMissingRelations htmlId opened ( missingRels, missingRefs ) =
                         |> List.map
                             (\rel ->
                                 div [ class "ml-3" ]
-                                    [ text (TableId.show rel.src.table)
+                                    [ text (TableId.show defaultSchema rel.src.table)
                                     , span [ class "text-gray-500" ] [ text (ColumnName.withName rel.src.column "") ]
                                     , span [ class "text-gray-400" ] [ text (" (" ++ rel.src.kind ++ ")") ]
                                     ]
@@ -252,8 +253,8 @@ computeHeterogeneousTypes tables =
         |> List.filter (\( _, cols ) -> (cols |> List.length) > 1)
 
 
-viewHeterogeneousTypes : HtmlId -> HtmlId -> List ( ColumnName, List ( ColumnType, List TableId ) ) -> Html Msg
-viewHeterogeneousTypes htmlId opened heterogeneousTypes =
+viewHeterogeneousTypes : HtmlId -> HtmlId -> SchemaName -> List ( ColumnName, List ( ColumnType, List TableId ) ) -> Html Msg
+viewHeterogeneousTypes htmlId opened defaultSchema heterogeneousTypes =
     viewSection htmlId
         opened
         "No heterogeneous types found"
@@ -274,7 +275,7 @@ viewHeterogeneousTypes htmlId opened heterogeneousTypes =
                                 , text " has types: "
                                 , span [ class "text-gray-500" ]
                                     (types
-                                        |> List.map (\( t, ids ) -> text t |> Tooltip.t (ids |> List.map TableId.show |> String.join ", "))
+                                        |> List.map (\( t, ids ) -> text t |> Tooltip.t (ids |> List.map (TableId.show defaultSchema) |> String.join ", "))
                                         |> List.intersperse (text ", ")
                                     )
                                 ]
@@ -295,14 +296,14 @@ computeBigTables tables =
         |> List.sortBy (\t -> t.columns |> Dict.size |> negate)
 
 
-viewBigTables : HtmlId -> HtmlId -> List ErdTable -> Html Msg
-viewBigTables htmlId opened bigTables =
+viewBigTables : HtmlId -> HtmlId -> SchemaName -> List ErdTable -> Html Msg
+viewBigTables htmlId opened defaultSchema bigTables =
     viewSection htmlId
         opened
         "No big table found"
         (bigTables |> List.length)
         (\nb -> "Found " ++ (nb |> String.pluralize "table") ++ " too big")
-        [ div [] (bigTables |> List.map (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show t.id) ]))
+        [ div [] (bigTables |> List.map (\t -> div [] [ text ((t.columns |> Dict.size |> String.pluralize "column") ++ ": "), bText (TableId.show defaultSchema t.id) ]))
         , div [ class "mt-1 text-gray-500" ]
             [ text "See "
             , extLink "/blog/why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"

@@ -289,6 +289,7 @@ type ProjectSettingsMsg
     | PSSqlSourceMsg SqlSourceUploadMsg
     | PSSourceRefresh Source
     | PSSourceAdd Source
+    | PSDefaultSchemaUpdate SchemaName
     | PSSchemaToggle SchemaName
     | PSRemoveViewsToggle
     | PSRemovedTablesUpdate String

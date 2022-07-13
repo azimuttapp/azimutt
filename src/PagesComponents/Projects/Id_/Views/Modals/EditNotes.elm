@@ -62,12 +62,12 @@ refAsName erd ref =
         TableNote table ->
             erd.tables
                 |> Dict.get table
-                |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (TableId.show table) ], text " table" ])
-                |> Maybe.withDefault (text ("unknown table " ++ TableId.show table))
+                |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (TableId.show erd.settings.defaultSchema table) ], text " table" ])
+                |> Maybe.withDefault (text ("unknown table " ++ TableId.show erd.settings.defaultSchema table))
 
         ColumnNote column ->
             erd.tables
                 |> Dict.get column.table
                 |> Maybe.andThen (\t -> t.columns |> Dict.get column.column)
-                |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (ColumnRef.show column) ], text " column" ])
-                |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show column))
+                |> Maybe.map (\_ -> span [] [ Badge.rounded Tw.gray [] [ text (ColumnRef.show erd.settings.defaultSchema column) ], text " column" ])
+                |> Maybe.withDefault (text ("unknown column " ++ ColumnRef.show erd.settings.defaultSchema column))

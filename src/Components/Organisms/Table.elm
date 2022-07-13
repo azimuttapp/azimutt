@@ -28,6 +28,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
+import Models.Project.SchemaName exposing (SchemaName)
 import Set exposing (Set)
 import Track
 
@@ -47,6 +48,7 @@ type alias Model msg =
     , zoom : ZoomLevel
     , conf : TableConf
     , platform : Platform
+    , defaultSchema : SchemaName
     }
 
 
@@ -307,7 +309,7 @@ viewColumnIcon model column =
         tooltip : String
         tooltip =
             [ Bool.maybe column.isPrimaryKey "Primary key"
-            , Bool.maybe (column.outRelations |> List.nonEmpty) ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> formatColumnRef) ""))
+            , Bool.maybe (column.outRelations |> List.nonEmpty) ("Foreign key to " ++ (column.outRelations |> List.head |> Maybe.mapOrElse (.column >> showColumnRef model.defaultSchema) ""))
             , Bool.maybe (column.uniques |> List.nonEmpty) ("Unique constraint for " ++ (column.uniques |> List.map .name |> String.join ", "))
             , Bool.maybe (column.indexes |> List.nonEmpty) ("Indexed by " ++ (column.indexes |> List.map .name |> String.join ", "))
             , Bool.maybe (column.checks |> List.nonEmpty) ("In checks " ++ (column.checks |> List.map .name |> String.join ", "))
@@ -381,7 +383,7 @@ viewColumnIconDropdown model column icon =
                                     content : List (Html msg)
                                     content =
                                         [ Icon.solid ExternalLink "inline"
-                                        , bText (formatTableRef { schema = rels.head.column.schema, table = rels.head.column.table })
+                                        , bText (showTableRef model.defaultSchema { schema = rels.head.column.schema, table = rels.head.column.table })
                                         , text ("." ++ (rels |> Nel.toList |> List.map (\r -> r.column.column ++ Bool.cond r.nullable "?" "") |> String.join ", "))
                                         ]
                                 in
@@ -459,18 +461,18 @@ viewColumnKind model column =
     div [ class "ml-1" ] (value :: nullable)
 
 
-formatTableRef : TableRef -> String
-formatTableRef ref =
-    if ref.schema == Conf.schema.default then
+showTableRef : SchemaName -> TableRef -> String
+showTableRef defaultSchema ref =
+    if ref.schema == defaultSchema then
         ref.table
 
     else
         ref.schema ++ "." ++ ref.table
 
 
-formatColumnRef : ColumnRef -> String
-formatColumnRef ref =
-    if ref.schema == Conf.schema.default then
+showColumnRef : SchemaName -> ColumnRef -> String
+showColumnRef defaultSchema ref =
+    if ref.schema == defaultSchema then
         ref.table ++ "." ++ ref.column
 
     else
@@ -563,6 +565,7 @@ sample =
         }
     , zoom = 1
     , conf = { layout = True, move = True, select = True, hover = True }
+    , defaultSchema = Conf.schema.default
     }
 
 

@@ -12,7 +12,7 @@ import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
-import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
+import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdRelation exposing (ErdRelation)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.FindPathDialog exposing (FindPathDialog)
@@ -41,8 +41,8 @@ handleFindPath msg model =
                 |> setFindPath
                     (Just
                         { id = Conf.ids.findPathDialog
-                        , from = from |> Maybe.map TableId.show |> Maybe.withDefault ""
-                        , to = to |> Maybe.map TableId.show |> Maybe.withDefault ""
+                        , from = from |> Maybe.map (TableId.show (model.erd |> Erd.defaultSchemaM)) |> Maybe.withDefault ""
+                        , to = to |> Maybe.map (TableId.show (model.erd |> Erd.defaultSchemaM)) |> Maybe.withDefault ""
                         , showSettings = False
                         , result = Empty
                         }
@@ -62,7 +62,7 @@ handleFindPath msg model =
 
         FPSearch ->
             Maybe.zip model.findPath model.erd
-                |> Maybe.andThen (\( fp, erd ) -> Maybe.zip3 (Just erd) (erd.tables |> Dict.get (TableId.parse fp.from)) (erd.tables |> Dict.get (TableId.parse fp.to)))
+                |> Maybe.andThen (\( fp, erd ) -> Maybe.zip3 (Just erd) (erd.tables |> Dict.get (TableId.parse erd.settings.defaultSchema fp.from)) (erd.tables |> Dict.get (TableId.parse erd.settings.defaultSchema fp.to)))
                 |> Maybe.mapOrElse (\( erd, from, to ) -> ( model |> mapFindPathM (setResult Searching), T.sendAfter 300 (FindPathMsg (FPCompute erd.tables erd.relations from.id to.id erd.settings.findPath)) ))
                     ( model, Cmd.none )
 

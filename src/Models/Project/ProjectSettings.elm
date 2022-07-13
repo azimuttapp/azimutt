@@ -1,5 +1,6 @@
 module Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings, RemovedTables, decode, encode, fillFindPath, hideColumn, init, removeColumn, removeTable)
 
+import Conf
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
@@ -19,6 +20,7 @@ import Services.Lenses exposing (mapFindPath, setIgnoredColumns, setIgnoredTable
 
 type alias ProjectSettings =
     { findPath : FindPathSettings
+    , defaultSchema : SchemaName
     , removedSchemas : List SchemaName
     , removeViews : Bool
     , removedTables : RemovedTables
@@ -38,9 +40,10 @@ type alias HiddenColumns =
     { list : String, max : Int, props : Bool, relations : Bool }
 
 
-init : ProjectSettings
-init =
+init : Maybe SchemaName -> ProjectSettings
+init defaultSchema =
     { findPath = FindPathSettings.init
+    , defaultSchema = defaultSchema |> Maybe.withDefault Conf.schema.default
     , removedSchemas = []
     , removeViews = False
     , removedTables = ""
@@ -104,6 +107,7 @@ encode : ProjectSettings -> ProjectSettings -> Value
 encode default value =
     Encode.notNullObject
         [ ( "findPath", value.findPath |> Encode.withDefaultDeep FindPathSettings.encode default.findPath )
+        , ( "defaultSchema", value.defaultSchema |> Encode.withDefault SchemaName.encode default.defaultSchema )
         , ( "removedSchemas", value.removedSchemas |> Encode.withDefault (Encode.list SchemaName.encode) default.removedSchemas )
         , ( "removeViews", value.removeViews |> Encode.withDefault Encode.bool default.removeViews )
         , ( "removedTables", value.removedTables |> Encode.withDefault Encode.string default.removedTables )
@@ -117,16 +121,21 @@ encode default value =
 
 decode : ProjectSettings -> Decode.Decoder ProjectSettings
 decode default =
-    Decode.map9 ProjectSettings
-        (Decode.defaultFieldDeep "findPath" FindPathSettings.decode default.findPath)
-        (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
-        (Decode.defaultField "removeViews" Decode.bool default.removeViews)
-        (Decode.defaultField "removedTables" Decode.string default.removedTables)
-        (Decode.defaultFieldDeep "hiddenColumns" decodeHiddenColumns default.hiddenColumns)
-        (Decode.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)
-        (Decode.defaultField "relationStyle" RelationStyle.decode default.relationStyle)
-        (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
-        (Decode.defaultField "collapseTableColumns" Decode.bool default.collapseTableColumns)
+    Decode.defaultField "defaultSchema" SchemaName.decode default.defaultSchema
+        |> Decode.andThen
+            (\defaultSchema ->
+                Decode.map10 ProjectSettings
+                    (Decode.defaultFieldDeep "findPath" (FindPathSettings.decode defaultSchema) default.findPath)
+                    (Decode.succeed defaultSchema)
+                    (Decode.defaultField "removedSchemas" (Decode.list SchemaName.decode) default.removedSchemas)
+                    (Decode.defaultField "removeViews" Decode.bool default.removeViews)
+                    (Decode.defaultField "removedTables" Decode.string default.removedTables)
+                    (Decode.defaultFieldDeep "hiddenColumns" decodeHiddenColumns default.hiddenColumns)
+                    (Decode.defaultField "columnOrder" ColumnOrder.decode default.columnOrder)
+                    (Decode.defaultField "relationStyle" RelationStyle.decode default.relationStyle)
+                    (Decode.defaultField "columnBasicTypes" Decode.bool default.columnBasicTypes)
+                    (Decode.defaultField "collapseTableColumns" Decode.bool default.collapseTableColumns)
+            )
 
 
 encodeHiddenColumns : HiddenColumns -> HiddenColumns -> Value

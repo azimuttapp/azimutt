@@ -21,6 +21,7 @@ import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Color exposing (bg_500, focus, hover)
 import Models.ColumnOrder as ColumnOrder
+import Models.Project.SchemaName exposing (SchemaName)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -41,28 +42,28 @@ type alias TableArgs =
     String
 
 
-argsToString : Platform -> CursorMode -> String -> String -> Int -> Bool -> Bool -> Bool -> Bool -> TableArgs
-argsToString platform cursorMode openedDropdown openedPopover index isHover dragging virtualRelation useBasicTypes =
-    [ Platform.toString platform, CursorMode.toString cursorMode, openedDropdown, openedPopover, String.fromInt index, B.cond isHover "Y" "N", B.cond dragging "Y" "N", B.cond virtualRelation "Y" "N", B.cond useBasicTypes "Y" "N" ] |> String.join "~"
+argsToString : Platform -> CursorMode -> SchemaName -> String -> String -> Int -> Bool -> Bool -> Bool -> Bool -> TableArgs
+argsToString platform cursorMode defaultSchema openedDropdown openedPopover index isHover dragging virtualRelation useBasicTypes =
+    [ Platform.toString platform, CursorMode.toString cursorMode, defaultSchema, openedDropdown, openedPopover, String.fromInt index, B.cond isHover "Y" "N", B.cond dragging "Y" "N", B.cond virtualRelation "Y" "N", B.cond useBasicTypes "Y" "N" ] |> String.join "~"
 
 
-stringToArgs : TableArgs -> ( ( Platform, CursorMode ), ( String, String, Int ), ( ( Bool, Bool ), ( Bool, Bool ) ) )
+stringToArgs : TableArgs -> ( ( Platform, CursorMode, SchemaName ), ( String, String, Int ), ( ( Bool, Bool ), ( Bool, Bool ) ) )
 stringToArgs args =
     case args |> String.split "~" of
-        [ platform, cursorMode, openedDropdown, openedPopover, index, isHover, dragging, virtualRelation, useBasicTypes ] ->
-            ( ( Platform.fromString platform, CursorMode.fromString cursorMode )
+        [ platform, cursorMode, defaultSchema, openedDropdown, openedPopover, index, isHover, dragging, virtualRelation, useBasicTypes ] ->
+            ( ( Platform.fromString platform, CursorMode.fromString cursorMode, defaultSchema )
             , ( openedDropdown, openedPopover, String.toInt index |> Maybe.withDefault 0 )
             , ( ( isHover == "Y", dragging == "Y" ), ( virtualRelation == "Y", useBasicTypes == "Y" ) )
             )
 
         _ ->
-            ( ( Platform.PC, CursorMode.Drag ), ( "", "", 0 ), ( ( False, False ), ( False, False ) ) )
+            ( ( Platform.PC, CursorMode.Drag, Conf.schema.default ), ( "", "", 0 ), ( ( False, False ), ( False, False ) ) )
 
 
 viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg
 viewTable conf zoom args notes layout table =
     let
-        ( ( platform, cursorMode ), ( openedDropdown, openedPopover, index ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
+        ( ( platform, cursorMode, defaultSchema ), ( openedDropdown, openedPopover, index ), ( ( isHover, dragging ), ( virtualRelation, useBasicTypes ) ) ) =
             stringToArgs args
 
         ( columns, hiddenColumns ) =
@@ -200,6 +201,7 @@ viewTable conf zoom args notes layout table =
                 }
             , zoom = zoom
             , conf = { layout = conf.layout, move = conf.move, select = conf.select, hover = conf.hover }
+            , defaultSchema = defaultSchema
             }
         ]
 

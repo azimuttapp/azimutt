@@ -18,6 +18,7 @@ import Libs.Nel as Nel
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Models.Project.ColumnRef as ColumnRef
 import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSettings)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
@@ -29,8 +30,8 @@ import PagesComponents.Projects.Id_.Models.FindPathStep exposing (FindPathStep)
 import PagesComponents.Projects.Id_.Models.FindPathStepDir exposing (FindPathStepDir(..))
 
 
-viewFindPath : Bool -> HtmlId -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
-viewFindPath opened openedDropdown tables settings model =
+viewFindPath : Bool -> HtmlId -> SchemaName -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFindPath opened openedDropdown defaultSchema tables settings model =
     let
         titleId : HtmlId
         titleId =
@@ -45,8 +46,8 @@ viewFindPath opened openedDropdown tables settings model =
         [ viewHeader titleId
         , viewSettings model.id model.showSettings settings
         , viewSearchForm model.id openedDropdown tables model.from model.to
-        , viewPaths tables model
-        , viewFooter tables settings model
+        , viewPaths defaultSchema tables model
+        , viewFooter defaultSchema tables settings model
         ]
 
 
@@ -164,9 +165,9 @@ viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
         ]
 
 
-viewPaths : Dict TableId ErdTable -> FindPathDialog -> Html Msg
-viewPaths tables model =
-    case ( model.from |> existingTableId tables, model.to |> existingTableId tables, model.result ) of
+viewPaths : SchemaName -> Dict TableId ErdTable -> FindPathDialog -> Html Msg
+viewPaths defaultSchema tables model =
+    case ( model.from |> existingTableId defaultSchema tables, model.to |> existingTableId defaultSchema tables, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
             if result.paths |> List.isEmpty then
                 div [ class "px-6 mt-3 text-center" ]
@@ -178,16 +179,16 @@ viewPaths tables model =
                 div [ class "px-6 mt-3 overflow-y-auto" ]
                     [ div []
                         ([ text ("Found " ++ String.fromInt (List.length result.paths) ++ " paths between tables ")
-                         , bText (TableId.show from)
+                         , bText (TableId.show defaultSchema from)
                          , text " and "
-                         , bText (TableId.show to)
+                         , bText (TableId.show defaultSchema to)
                          , text ":"
                          , br [] []
                          ]
                             |> List.appendIf ((result.paths |> List.length) > 100) (small [ class "text-gray-500" ] [ text "Too much results ? Check 'Search settings' above to ignore some table or columns" ])
                         )
                     , div [ class "mt-3 border border-gray-300 rounded-md shadow-sm divide-y divide-gray-300" ]
-                        (result.paths |> List.sortBy Nel.length |> List.indexedMap (viewPath result.opened from))
+                        (result.paths |> List.sortBy Nel.length |> List.indexedMap (viewPath defaultSchema result.opened from))
                     , small [ class "text-gray-500" ] [ text "Not enough results ? Check 'Search settings' above and increase max length of path or remove some ignored columns..." ]
                     , div [ class "mt-3" ]
                         [ text "We hope your like this feature. If you have a few minutes, please write us "
@@ -200,55 +201,55 @@ viewPaths tables model =
             div [] []
 
 
-viewPath : Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
-viewPath opened from i path =
+viewPath : SchemaName -> Maybe Int -> TableId -> Int -> FindPathPath -> Html Msg
+viewPath defaultSchema opened from i path =
     div []
         [ div [ onClick (FindPathMsg (FPToggleResult i)), css [ "px-6 py-4 cursor-pointer", B.cond (opened == Just i) "bg-primary-100 text-primary-700" "" ] ]
-            (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show from) ] :: (path |> Nel.toList |> List.concatMap viewPathStep))
+            (text (String.fromInt (i + 1) ++ ". ") :: span [] [ text (TableId.show defaultSchema from) ] :: (path |> Nel.toList |> List.concatMap (viewPathStep defaultSchema)))
         , div [ css [ "px-6 py-3 border-t border-gray-300", "text-primary-700", B.cond (opened /= Just i) "hidden" "" ] ]
-            [ pre [] [ text (buildQuery from path) ]
+            [ pre [] [ text (buildQuery defaultSchema from path) ]
             ]
         ]
 
 
-viewPathStep : FindPathStep -> List (Html msg)
-viewPathStep s =
+viewPathStep : SchemaName -> FindPathStep -> List (Html msg)
+viewPathStep defaultSchema s =
     case s.direction of
         Right ->
-            viewPathStepDetails "→" s.relation.src s.relation.ref
+            viewPathStepDetails defaultSchema "→" s.relation.src s.relation.ref
 
         Left ->
-            viewPathStepDetails "←" s.relation.ref s.relation.src
+            viewPathStepDetails defaultSchema "←" s.relation.ref s.relation.src
 
 
-viewPathStepDetails : String -> ErdColumnRef -> ErdColumnRef -> List (Html msg)
-viewPathStepDetails dir from to =
-    [ text " > ", span [ class "underline" ] [ text (TableId.show to.table) ] |> Tooltip.t (ColumnRef.show from ++ " " ++ dir ++ " " ++ ColumnRef.show to) ]
+viewPathStepDetails : SchemaName -> String -> ErdColumnRef -> ErdColumnRef -> List (Html msg)
+viewPathStepDetails defaultSchema dir from to =
+    [ text " > ", span [ class "underline" ] [ text (TableId.show defaultSchema to.table) ] |> Tooltip.t (ColumnRef.show defaultSchema from ++ " " ++ dir ++ " " ++ ColumnRef.show defaultSchema to) ]
 
 
-buildQuery : TableId -> FindPathPath -> String
-buildQuery table joins =
+buildQuery : SchemaName -> TableId -> FindPathPath -> String
+buildQuery defaultSchema table joins =
     "SELECT *"
-        ++ ("\nFROM " ++ TableId.show table)
+        ++ ("\nFROM " ++ TableId.show defaultSchema table)
         ++ (joins
                 |> Nel.toList
                 |> List.map
                     (\s ->
                         case s.direction of
                             Right ->
-                                "\n  JOIN " ++ TableId.show s.relation.ref.table ++ " ON " ++ ColumnRef.show s.relation.ref ++ " = " ++ ColumnRef.show s.relation.src
+                                "\n  JOIN " ++ TableId.show defaultSchema s.relation.ref.table ++ " ON " ++ ColumnRef.show defaultSchema s.relation.ref ++ " = " ++ ColumnRef.show defaultSchema s.relation.src
 
                             Left ->
-                                "\n  JOIN " ++ TableId.show s.relation.src.table ++ " ON " ++ ColumnRef.show s.relation.src ++ " = " ++ ColumnRef.show s.relation.ref
+                                "\n  JOIN " ++ TableId.show defaultSchema s.relation.src.table ++ " ON " ++ ColumnRef.show defaultSchema s.relation.src ++ " = " ++ ColumnRef.show defaultSchema s.relation.ref
                     )
                 |> String.join ""
            )
 
 
-viewFooter : Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
-viewFooter tables settings model =
+viewFooter : SchemaName -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFooter defaultSchema tables settings model =
     div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        (case ( model.from |> existingTableId tables, model.to |> existingTableId tables, model.result ) of
+        (case ( model.from |> existingTableId defaultSchema tables, model.to |> existingTableId defaultSchema tables, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
                     [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
@@ -267,6 +268,6 @@ viewFooter tables settings model =
         )
 
 
-existingTableId : Dict TableId ErdTable -> String -> Maybe TableId
-existingTableId tables input =
-    tables |> Dict.get (TableId.parse input) |> Maybe.map .id
+existingTableId : SchemaName -> Dict TableId ErdTable -> String -> Maybe TableId
+existingTableId defaultSchema tables input =
+    tables |> Dict.get (TableId.parse defaultSchema input) |> Maybe.map .id

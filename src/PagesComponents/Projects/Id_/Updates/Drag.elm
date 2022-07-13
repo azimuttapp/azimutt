@@ -59,18 +59,18 @@ moveCanvas drag canvas =
 moveTables : DragState -> ZoomLevel -> List ErdTableLayout -> List ErdTableLayout
 moveTables drag zoom tables =
     let
-        tableId : TableId
+        tableId : Maybe TableId
         tableId =
             TableId.fromHtmlId drag.id
 
         dragSelected : Bool
         dragSelected =
-            tables |> List.findBy .id tableId |> Maybe.mapOrElse (.props >> .selected) False
+            tableId |> Maybe.mapOrElse (\id -> tables |> List.findBy .id id |> Maybe.mapOrElse (.props >> .selected) False) False
     in
     tables
         |> List.map
             (\t ->
-                if tableId == t.id || (dragSelected && t.props.selected) then
+                if Just t.id == tableId || (dragSelected && t.props.selected) then
                     t |> mapProps (mapPosition (move drag zoom >> Position.stepBy Conf.canvas.grid))
 
                 else

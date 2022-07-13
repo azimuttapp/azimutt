@@ -3,7 +3,6 @@ module Libs.BasicsTest exposing (..)
 import Expect
 import Fuzz
 import Libs.Basics exposing (convertBase, fromDec, inside, toDec)
-import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe, fuzz, test)
 
 
@@ -15,12 +14,12 @@ suite =
             , test "10 from 10 to 8" (\_ -> "10" |> convertBase 10 8 |> Expect.equal (Ok "12"))
             , test "10 from 10 to 10" (\_ -> "10" |> convertBase 10 10 |> Expect.equal (Ok "10"))
             , test "10 from 10 to 16" (\_ -> "10" |> convertBase 10 16 |> Expect.equal (Ok "A"))
-            , test "from base is too big" (\_ -> "10" |> convertBase 100 16 |> Expect.equal (Err (Nel "Base 100 is too big, max is 62" [])))
-            , test "from base is too low" (\_ -> "10" |> convertBase 1 16 |> Expect.equal (Err (Nel "Base 1 is not valid" [])))
-            , test "to base is too big" (\_ -> "10" |> convertBase 10 160 |> Expect.equal (Err (Nel "Base 160 is too big, max is 62" [])))
-            , test "to base is too low" (\_ -> "10" |> convertBase 10 1 |> Expect.equal (Err (Nel "Base 1 is not valid" [])))
-            , test "value has an invalid char" (\_ -> "1a" |> convertBase 10 16 |> Expect.equal (Err (Nel "Invalid digit 'a' for base 10" [])))
-            , test "value has many invalid chars" (\_ -> "1a0b" |> convertBase 10 16 |> Expect.equal (Err (Nel "Invalid digit 'a' for base 10" [ "Invalid digit 'b' for base 10" ])))
+            , test "from base is too big" (\_ -> "10" |> convertBase 100 16 |> Expect.equal (Err [ "Base 100 is too big, max is 62" ]))
+            , test "from base is too low" (\_ -> "10" |> convertBase 1 16 |> Expect.equal (Err [ "Base 1 is not valid" ]))
+            , test "to base is too big" (\_ -> "10" |> convertBase 10 160 |> Expect.equal (Err [ "Base 160 is too big, max is 62" ]))
+            , test "to base is too low" (\_ -> "10" |> convertBase 10 1 |> Expect.equal (Err [ "Base 1 is not valid" ]))
+            , test "value has an invalid char" (\_ -> "1a" |> convertBase 10 16 |> Expect.equal (Err [ "Invalid digit 'a' for base 10" ]))
+            , test "value has many invalid chars" (\_ -> "1a0b" |> convertBase 10 16 |> Expect.equal (Err [ "Invalid digit 'a' for base 10", "Invalid digit 'b' for base 10" ]))
             , test "works for 0" (\_ -> "0" |> convertBase 10 2 |> Expect.equal (Ok "0"))
             , test "works for negative number" (\_ -> "-3" |> convertBase 10 8 |> Expect.equal (Ok "-3"))
             , test "10 from 2 to 8" (\_ -> "1010" |> convertBase 2 8 |> Expect.equal (Ok "12"))

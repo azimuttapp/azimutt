@@ -13,6 +13,7 @@ module Services.Lenses exposing
     , mapConf
     , mapContent
     , mapContextMenuM
+    , mapDefaultSchema
     , mapEachProjectMLayoutTables
     , mapEachTable
     , mapEditNotesM
@@ -133,6 +134,7 @@ module Services.Lenses exposing
     , setContextMenu
     , setCurrentLayout
     , setCursorMode
+    , setDefaultSchema
     , setDragState
     , setDragging
     , setEditNotes
@@ -435,6 +437,16 @@ setDragging =
 setDragState : v -> { item | dragState : v } -> { item | dragState : v }
 setDragState =
     set .dragState (\value item -> { item | dragState = value })
+
+
+setDefaultSchema : v -> { item | defaultSchema : v } -> { item | defaultSchema : v }
+setDefaultSchema =
+    set .defaultSchema (\value item -> { item | defaultSchema = value })
+
+
+mapDefaultSchema : (v -> v) -> { item | defaultSchema : v } -> { item | defaultSchema : v }
+mapDefaultSchema =
+    map .defaultSchema setDefaultSchema
 
 
 setEditNotes : v -> { item | editNotes : v } -> { item | editNotes : v }

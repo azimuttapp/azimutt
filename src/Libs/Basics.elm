@@ -1,12 +1,11 @@
-module Libs.Basics exposing (convertBase, fromDec, inside, toDec, toHex, toOct, tupled)
+module Libs.Basics exposing (convertBase, fromDec, inside, maxBy, minBy, toDec, toHex, toOct, tupled)
 
 import Array exposing (Array)
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
-import Libs.Nel as Nel exposing (Nel)
 
 
-convertBase : Int -> Int -> String -> Result (Nel String) String
+convertBase : Int -> Int -> String -> Result (List String) String
 convertBase fromBase toBase value =
     let
         dict : Array Char
@@ -30,12 +29,12 @@ convertBase fromBase toBase value =
         |> Result.map (addSign value)
 
 
-toDec : Int -> String -> Result (Nel String) Int
+toDec : Int -> String -> Result (List String) Int
 toDec fromBase value =
-    value |> convertBase fromBase 10 |> Result.andThen (\r -> String.toInt r |> Result.fromMaybe (Nel ("Can't convert " ++ r ++ " to Int") []))
+    value |> convertBase fromBase 10 |> Result.andThen (\r -> String.toInt r |> Result.fromMaybe [ "Can't convert " ++ r ++ " to Int" ])
 
 
-fromDec : Int -> Int -> Result (Nel String) String
+fromDec : Int -> Int -> Result (List String) String
 fromDec toBase value =
     value |> String.fromInt |> convertBase 10 toBase
 
@@ -50,13 +49,31 @@ toHex value =
     value |> fromDec 16 |> Result.withDefault ""
 
 
-checkBase : Array Char -> Int -> Result (Nel String) ()
+maxBy : (a -> comparable) -> a -> a -> a
+maxBy getKey x y =
+    if getKey x > getKey y then
+        x
+
+    else
+        y
+
+
+minBy : (a -> comparable) -> a -> a -> a
+minBy getKey x y =
+    if getKey x < getKey y then
+        x
+
+    else
+        y
+
+
+checkBase : Array Char -> Int -> Result (List String) ()
 checkBase dict base =
     if base < 2 then
-        Err (Nel ("Base " ++ String.fromInt base ++ " is not valid") [])
+        Err [ "Base " ++ String.fromInt base ++ " is not valid" ]
 
     else if base > Array.length dict then
-        Err (Nel ("Base " ++ String.fromInt base ++ " is too big, max is " ++ String.fromInt (Array.length dict)) [])
+        Err [ "Base " ++ String.fromInt base ++ " is too big, max is " ++ String.fromInt (Array.length dict) ]
 
     else
         Ok ()
@@ -80,7 +97,7 @@ addSign initValue value =
         value
 
 
-toDecInner : Int -> Dict Char Int -> String -> Result (Nel String) Int
+toDecInner : Int -> Dict Char Int -> String -> Result (List String) Int
 toDecInner base dict value =
     value
         |> String.toList
@@ -95,10 +112,10 @@ toDecInner base dict value =
                         err
 
                     ( Nothing, Ok _ ) ->
-                        Err (Nel (errorMsg base digit) [])
+                        Err [ errorMsg base digit ]
 
                     ( Nothing, Err errs ) ->
-                        Err (errs |> Nel.prepend (errorMsg base digit))
+                        Err (errorMsg base digit :: errs)
             )
             (Ok 0)
 

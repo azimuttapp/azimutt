@@ -117,4 +117,4 @@ update _ msg model =
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ _ =
-    Sub.batch [ Time.every (10 * 1000) TimeChanged, Ports.onJsMessage JsMessage ]
+    Sub.batch [ Time.every (10 * 1000) TimeChanged, Ports.onJsMessage Nothing JsMessage ]

@@ -28,6 +28,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Tuple as Tuple
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
@@ -132,13 +133,13 @@ viewErd conf screen hoverTable erd selectionBox virtualRelation args dragging =
             [ class "az-canvas origin-top-left"
             , style "transform" ("translate(" ++ String.fromFloat canvas.position.left ++ "px, " ++ String.fromFloat canvas.position.top ++ "px) scale(" ++ String.fromFloat canvas.zoom ++ ")")
             ]
-            [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.columnBasicTypes erd.tables tableProps erd.notes
-            , Lazy.lazy5 viewRelations conf dragging erd.settings.relationStyle displayedTables displayedRelations
+            [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables tableProps erd.notes
+            , Lazy.lazy6 viewRelations conf erd.settings.defaultSchema dragging erd.settings.relationStyle displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
         , if tableProps |> List.isEmpty then
-            viewEmptyState erd.tables
+            viewEmptyState erd.settings.defaultSchema erd.tables
 
           else
             div [] []
@@ -174,8 +175,8 @@ handleErdPointerDown conf cursorMode e =
         Noop "No match on erd pointer down"
 
 
-viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> Bool -> Dict TableId ErdTable -> List ErdTableLayout -> Dict TableId ErdTableNotes -> Html Msg
-viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom useBasicTypes tables tableLayouts notes =
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> Bool -> Dict TableId ErdTable -> List ErdTableLayout -> Dict TableId ErdTableNotes -> Html Msg
+viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema useBasicTypes tables tableLayouts notes =
     Keyed.node "div"
         [ class "az-tables" ]
         (tableLayouts
@@ -191,6 +192,7 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
                         (Table.argsToString
                             platform
                             cursorMode
+                            defaultSchema
                             (B.cond (openedDropdown |> String.startsWith table.htmlId) openedDropdown "")
                             (B.cond (openedPopover |> String.startsWith table.htmlId) openedPopover "")
                             index
@@ -207,15 +209,16 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
         )
 
 
-viewRelations : ErdConf -> Maybe DragState -> RelationStyle -> List ErdTableLayout -> List ErdRelation -> Html Msg
-viewRelations conf dragging style tableLayouts relations =
+viewRelations : ErdConf -> SchemaName -> Maybe DragState -> RelationStyle -> List ErdTableLayout -> List ErdRelation -> Html Msg
+viewRelations conf defaultSchema dragging style tableLayouts relations =
     Keyed.node "div"
         [ class "az-relations" ]
         (relations
             |> List.map
                 (\r ->
                     ( r.name
-                    , Lazy.lazy6 viewRelation
+                    , Lazy.lazy7 viewRelation
+                        defaultSchema
                         style
                         conf
                         (dragging |> Maybe.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
@@ -238,8 +241,8 @@ viewSelectionBox area =
         []
 
 
-viewEmptyState : Dict TableId ErdTable -> Html Msg
-viewEmptyState tables =
+viewEmptyState : SchemaName -> Dict TableId ErdTable -> Html Msg
+viewEmptyState defaultSchema tables =
     let
         bestOneWordTables : List ErdTable
         bestOneWordTables =
@@ -275,7 +278,7 @@ viewEmptyState tables =
                     [ text "Your project has "
                     , bText (tables |> String.pluralizeD "table")
                     , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
+                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
                     ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ❤️ Azimutt, "

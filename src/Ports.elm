@@ -1,5 +1,6 @@
 port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
+import Conf
 import Dict exposing (Dict)
 import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
@@ -23,6 +24,7 @@ import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.SampleKey exposing (SampleKey)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
@@ -298,11 +300,11 @@ messageToJs message =
     elmToJs (elmEncoder message)
 
 
-onJsMessage : (JsMsg -> msg) -> Sub msg
-onJsMessage callback =
+onJsMessage : Maybe SchemaName -> (JsMsg -> msg) -> Sub msg
+onJsMessage defaultSchema callback =
     jsToElm
         (\value ->
-            case Decode.decodeValue jsDecoder value of
+            case Decode.decodeValue (jsDecoder (defaultSchema |> Maybe.withDefault Conf.schema.default)) value of
                 Ok message ->
                     callback message
 
@@ -415,8 +417,8 @@ elmEncoder elm =
             Encode.object [ ( "kind", "TrackError" |> Encode.string ), ( "name", name |> Encode.string ), ( "details", details ) ]
 
 
-jsDecoder : Decoder JsMsg
-jsDecoder =
+jsDecoder : SchemaName -> Decoder JsMsg
+jsDecoder defaultSchema =
     Decode.matchOn "kind"
         (\kind ->
             case kind of
@@ -508,13 +510,13 @@ jsDecoder =
                         (Decode.field "color" Color.decodeColor)
 
                 "GotColumnShow" ->
-                    Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
+                    Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema))
 
                 "GotColumnHide" ->
-                    Decode.map GotColumnHide (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
+                    Decode.map GotColumnHide (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema))
 
                 "GotColumnMove" ->
-                    Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString) (Decode.field "index" Decode.int)
+                    Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema)) (Decode.field "index" Decode.int)
 
                 "GotFitToScreen" ->
                     Decode.succeed GotFitToScreen

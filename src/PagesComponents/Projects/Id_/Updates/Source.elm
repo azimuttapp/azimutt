@@ -4,6 +4,7 @@ import Conf
 import Dict
 import Libs.List as List
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
@@ -37,16 +38,16 @@ createRelation : Time.Posix -> ColumnRef -> ColumnRef -> Erd -> ( Erd, Cmd Msg )
 createRelation now src ref erd =
     case erd.sources |> List.find (\s -> s.kind == AmlEditor && s.name == Conf.constants.virtualRelationSourceName) of
         Just source ->
-            ( erd |> addRelation now source src ref
-            , Toasts.info Toast ("Relation " ++ TableId.show src.table ++ " → " ++ TableId.show ref.table ++ " added to " ++ source.name ++ " source.")
+            ( erd |> addRelation now erd.settings.defaultSchema source src ref
+            , Toasts.info Toast ("Relation " ++ TableId.show erd.settings.defaultSchema src.table ++ " → " ++ TableId.show erd.settings.defaultSchema ref.table ++ " added to " ++ source.name ++ " source.")
             )
 
         Nothing ->
-            ( erd |> addUserSource now Conf.constants.virtualRelationSourceName |> (\( e, s ) -> e |> addRelation now s src ref)
+            ( erd |> addUserSource now Conf.constants.virtualRelationSourceName |> (\( e, s ) -> e |> addRelation now erd.settings.defaultSchema s src ref)
             , Toasts.info Toast ("Created " ++ Conf.constants.virtualRelationSourceName ++ " source to add the relation.")
             )
 
 
-addRelation : Time.Posix -> Source -> ColumnRef -> ColumnRef -> Erd -> Erd
-addRelation now source src ref erd =
-    erd |> Erd.mapSource source.id (Source.addRelation now src ref)
+addRelation : Time.Posix -> SchemaName -> Source -> ColumnRef -> ColumnRef -> Erd -> Erd
+addRelation now defaultSchema source src ref erd =
+    erd |> Erd.mapSource source.id (Source.addRelation now defaultSchema src ref)

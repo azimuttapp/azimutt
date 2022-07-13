@@ -6,6 +6,7 @@ import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation exposing (Relation)
 import Models.Project.RelationId as RelationId exposing (RelationId)
 import Models.Project.RelationName exposing (RelationName)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models.ErdColumnRef as ErdColumnRef exposing (ErdColumnRef)
@@ -45,6 +46,6 @@ unpack relation =
     }
 
 
-label : ErdRelation -> String
-label relation =
-    ColumnRef.show relation.src ++ " -> " ++ relation.name ++ " -> " ++ ColumnRef.show relation.ref
+label : SchemaName -> ErdRelation -> String
+label defaultSchema relation =
+    ColumnRef.show defaultSchema relation.src ++ " -> " ++ relation.name ++ " -> " ++ ColumnRef.show defaultSchema relation.ref

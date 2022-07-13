@@ -53,19 +53,19 @@ sortBy order table relations columns =
                 |> List.sortBy
                     (\c ->
                         if c.name |> Table.inPrimaryKey table |> Maybe.isJust then
-                            ( 0 + sortOffset c.nullable, c.name |> String.toLower )
+                            ( 0 + sortOffset c.nullable, c.index )
 
                         else if c.name |> Relation.inOutRelation tableRelations |> List.nonEmpty then
-                            ( 1 + sortOffset c.nullable, c.name |> String.toLower )
+                            ( 1 + sortOffset c.nullable, c.index )
 
                         else if c.name |> Table.inUniques table |> List.nonEmpty then
-                            ( 2 + sortOffset c.nullable, c.name |> String.toLower )
+                            ( 2 + sortOffset c.nullable, c.index )
 
                         else if c.name |> Table.inIndexes table |> List.nonEmpty then
-                            ( 3 + sortOffset c.nullable, c.name |> String.toLower )
+                            ( 3 + sortOffset c.nullable, c.index )
 
                         else
-                            ( 4 + sortOffset c.nullable, c.name |> String.toLower )
+                            ( 4 + sortOffset c.nullable, c.index )
                     )
 
         OderByName ->

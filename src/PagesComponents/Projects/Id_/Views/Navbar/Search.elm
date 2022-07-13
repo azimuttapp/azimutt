@@ -14,6 +14,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind exposing (TwClass, focus, lg, sm)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SearchModel, confirm)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -25,8 +26,8 @@ import PagesComponents.Projects.Id_.Models.Notes exposing (Notes)
 import Simple.Fuzzy
 
 
-viewNavbarSearch : SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarSearch search tables relations notes shownTables htmlId openedDropdown =
+viewNavbarSearch : SchemaName -> SearchModel -> Dict TableId ErdTable -> List ErdRelation -> Dict TableId ErdTableNotes -> List ErdTableLayout -> HtmlId -> HtmlId -> Html Msg
+viewNavbarSearch defaultSchema search tables relations notes shownTables htmlId openedDropdown =
     div [ class "ml-6 print:hidden" ]
         [ div [ css [ "max-w-lg w-full", lg [ "max-w-xs" ] ] ]
             [ label [ for htmlId, class "sr-only" ] [ text "Search" ]
@@ -86,7 +87,7 @@ viewNavbarSearch search tables relations notes shownTables htmlId openedDropdown
 
                                     else
                                         div [ class "max-h-192 overflow-y-auto" ]
-                                            (results |> List.indexedMap (viewSearchResult m.id shownTables (search.active |> modBy (results |> List.length))))
+                                            (results |> List.indexedMap (viewSearchResult m.id defaultSchema shownTables (search.active |> modBy (results |> List.length))))
                                )
                 )
             ]
@@ -99,8 +100,8 @@ type SearchResult
     | FoundRelation ErdRelation
 
 
-viewSearchResult : HtmlId -> List ErdTableLayout -> Int -> Int -> SearchResult -> Html Msg
-viewSearchResult searchId shownTables active index res =
+viewSearchResult : HtmlId -> SchemaName -> List ErdTableLayout -> Int -> Int -> SearchResult -> Html Msg
+viewSearchResult searchId defaultSchema shownTables active index res =
     let
         viewItem : msg -> Icon -> List (Html msg) -> Bool -> Html msg
         viewItem =
@@ -124,10 +125,10 @@ viewSearchResult searchId shownTables active index res =
     in
     case res of
         FoundTable table ->
-            viewItem (ShowTable table.id Nothing) Icon.Table [ text (TableId.show table.id) ] (shownTables |> List.memberBy .id table.id)
+            viewItem (ShowTable table.id Nothing) Icon.Table [ text (TableId.show defaultSchema table.id) ] (shownTables |> List.memberBy .id table.id)
 
         FoundColumn table column ->
-            viewItem (ShowTable table.id Nothing) Tag [ span [ class "opacity-50" ] [ text (TableId.show table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
+            viewItem (ShowTable table.id Nothing) Tag [ span [ class "opacity-50" ] [ text (TableId.show defaultSchema table.id ++ ".") ], text column.name ] (shownTables |> List.memberBy .id table.id)
 
         FoundRelation relation ->
             if shownTables |> List.memberBy .id relation.src.table |> not then

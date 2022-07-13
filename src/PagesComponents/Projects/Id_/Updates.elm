@@ -2,6 +2,7 @@ module PagesComponents.Projects.Id_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf
+import Dict exposing (Dict)
 import Gen.Route as Route
 import Libs.Area as Area exposing (Area, AreaLike)
 import Libs.Bool as B
@@ -14,10 +15,9 @@ import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T
 import Models.Project as Project
-import Models.Project.CanvasProps as CanvasProps
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
-import Models.Project.TableId as TableId
+import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
@@ -108,7 +108,7 @@ update req currentLayout now msg model =
                 collapsed =
                     model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.findBy .id id) |> Maybe.mapOrElse (.props >> .collapsed) False
             in
-            model |> mapErdMCmd (Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected id (mapProps (setCollapsed (not collapsed))))))
+            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setCollapsed (not collapsed))))))
 
         ShowColumn { table, column } ->
             ( model |> mapErdM (showColumn now table column), Cmd.none )
@@ -145,7 +145,7 @@ update req currentLayout now msg model =
             ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))), Cmd.none )
 
         TableColor id color ->
-            model |> mapErdMCmd (Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected id (mapProps (setColor color)))))
+            model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color)))))
 
         MoveColumn column position ->
             ( model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayout now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))), Cmd.none )
@@ -452,33 +452,39 @@ handleJsMessage now currentLayout msg model =
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
 updateSizes changes model =
     let
-        modelWithSizes : Model
-        modelWithSizes =
-            changes |> List.sortBy (\c -> B.cond (c.id == Conf.ids.erd) 0 1) |> List.foldl updateSize model
+        erdChanged : Model
+        erdChanged =
+            changes |> List.findBy .id "erd" |> Maybe.mapOrElse (\c -> model |> mapScreen (setPosition c.position >> setSize c.size)) model
+
+        tableChanges : Dict TableId SizeChange
+        tableChanges =
+            changes |> List.filterMap (\c -> TableId.fromHtmlId c.id |> Maybe.map (\id -> ( id, c ))) |> Dict.fromList
+
+        tablesChanged : Model
+        tablesChanged =
+            erdChanged
+                |> mapErdM
+                    (\erd ->
+                        erd
+                            |> Erd.mapCurrentLayout (erd |> Erd.currentLayout |> .updatedAt)
+                                (mapTables
+                                    (\tables ->
+                                        tables
+                                            |> List.map
+                                                (\table ->
+                                                    tableChanges
+                                                        |> Dict.get table.id
+                                                        |> Maybe.mapOrElse (\change -> updateTable tables (erdChanged.erd |> Erd.viewportM erdChanged.screen) change table) table
+                                                )
+                                    )
+                                )
+                    )
     in
     if model.conf.fitOnLoad then
-        ( modelWithSizes |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitContent )
+        ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitContent )
 
     else
-        ( modelWithSizes, Cmd.none )
-
-
-updateSize : SizeChange -> Model -> Model
-updateSize change model =
-    if change.id == Conf.ids.erd then
-        model |> mapScreen (setPosition change.position >> setSize change.size)
-
-    else
-        ( TableId.fromHtmlId change.id, model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas >> CanvasProps.viewport model.screen) Area.zero )
-            |> (\( tableId, viewport ) ->
-                    model
-                        |> mapErdM
-                            (\erd ->
-                                erd
-                                    |> Erd.mapCurrentLayout (erd |> Erd.currentLayout |> .updatedAt)
-                                        (mapTables (\tables -> tables |> List.updateBy .id tableId (updateTable tables viewport change)))
-                            )
-               )
+        ( tablesChanged, Cmd.none )
 
 
 updateTable : List ErdTableLayout -> Area -> SizeChange -> ErdTableLayout -> ErdTableLayout

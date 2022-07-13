@@ -11,6 +11,7 @@ import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.Unique exposing (Unique)
@@ -21,29 +22,29 @@ suite : Test
 suite =
     describe "SourceAdapter"
         [ describe "evolve"
-            [ test "empty changes nothing" (\_ -> schema |> evolve source (AmlEmptyStatement { comment = Nothing }) |> Expect.equal schema)
+            [ test "empty changes nothing" (\_ -> schema |> evolve defaultSchema source (AmlEmptyStatement { comment = Nothing }) |> Expect.equal schema)
             , test "add a table"
                 (\_ ->
                     schema
-                        |> evolve source (AmlTableStatement usersAml)
+                        |> evolve defaultSchema source (AmlTableStatement usersAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ] }
                 )
             , test "can't add a table twice"
                 (\_ ->
                     { schema | tables = Dict.fromListMap .id [ users ] }
-                        |> evolve source (AmlTableStatement usersAml)
+                        |> evolve defaultSchema source (AmlTableStatement usersAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ { row = 0, col = 0, problem = "Table 'users' is already defined" } ] }
                 )
             , test "add a relation"
                 (\_ ->
                     schema
-                        |> evolve source (AmlRelationStatement loginsFkAml)
+                        |> evolve defaultSchema source (AmlRelationStatement loginsFkAml)
                         |> Expect.equal { schema | relations = [ loginsFk ] }
                 )
             , test "add a table with relations"
                 (\_ ->
                     schema
-                        |> evolve source (AmlTableStatement loginsAml)
+                        |> evolve defaultSchema source (AmlTableStatement loginsAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ logins ], relations = [ loginsFk ] }
                 )
             ]
@@ -67,8 +68,8 @@ usersAml =
 users : Table
 users =
     { table
-        | id = ( Conf.schema.default, "users" )
-        , schema = Conf.schema.default
+        | id = ( defaultSchema, "users" )
+        , schema = defaultSchema
         , name = "users"
         , columns =
             Dict.fromListMap .name
@@ -96,8 +97,8 @@ loginsAml =
 logins : Table
 logins =
     { table
-        | id = ( Conf.schema.default, "logins" )
-        , schema = Conf.schema.default
+        | id = ( defaultSchema, "logins" )
+        , schema = defaultSchema
         , name = "logins"
         , columns =
             Dict.fromListMap .name
@@ -172,3 +173,8 @@ comment =
 source : SourceId
 source =
     SourceId.new "src"
+
+
+defaultSchema : SchemaName
+defaultSchema =
+    "public"

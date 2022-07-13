@@ -1,15 +1,19 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, getColumn, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM)
 
+import Conf
 import Dict exposing (Dict)
+import Libs.Area exposing (Area)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Project as Project exposing (Project)
+import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
@@ -48,7 +52,7 @@ create seed project =
     in
     { seed = seed
     , project = ProjectInfo.create project
-    , tables = project.tables |> Dict.map (\id -> ErdTable.create project.tables (relationsByTable |> Dict.getOrElse id []))
+    , tables = project.tables |> Dict.map (\id -> ErdTable.create project.settings.defaultSchema project.tables (relationsByTable |> Dict.getOrElse id []))
     , relations = project.relations |> List.map (ErdRelation.create project.tables)
     , relationsByTable = relationsByTable
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
@@ -102,6 +106,16 @@ isShown table erd =
     erd |> currentLayout |> .tables |> List.memberBy .id table
 
 
+defaultSchemaM : Maybe Erd -> SchemaName
+defaultSchemaM erd =
+    erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.default
+
+
+viewportM : Area -> Maybe Erd -> Area
+viewportM screen erd =
+    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport screen) screen
+
+
 computeSchema : Erd -> Erd
 computeSchema erd =
     let
@@ -118,7 +132,7 @@ computeSchema erd =
             buildRelationsByTable relations
     in
     { erd
-        | tables = tables |> Dict.map (\id -> ErdTable.create tables (relationsByTable |> Dict.getOrElse id []))
+        | tables = tables |> Dict.map (\id -> ErdTable.create erd.settings.defaultSchema tables (relationsByTable |> Dict.getOrElse id []))
         , relations = relations |> List.map (ErdRelation.create tables)
         , relationsByTable = relationsByTable
     }

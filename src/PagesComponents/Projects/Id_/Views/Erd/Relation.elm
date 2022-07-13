@@ -8,6 +8,7 @@ import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
 import Models.Project.ColumnName exposing (ColumnName)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -29,13 +30,13 @@ buildColumnInfo column layout =
     layout |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.findBy (Tuple.first >> .name) column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
 
 
-viewRelation : RelationStyle -> ErdConf -> Bool -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg
-viewRelation style conf dragging srcTable refTable relation =
+viewRelation : SchemaName -> RelationStyle -> ErdConf -> Bool -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg
+viewRelation defaultSchema style conf dragging srcTable refTable relation =
     -- FIXME: all relations are always rendered, don't know why :(
     let
         label : String
         label =
-            ErdRelation.label relation
+            ErdRelation.label defaultSchema relation
 
         relConf : RelationConf
         relConf =

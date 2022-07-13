@@ -36,8 +36,8 @@ type alias ErdTable =
     }
 
 
-create : Dict TableId Table -> List Relation -> Table -> ErdTable
-create tables tableRelations table =
+create : SchemaName -> Dict TableId Table -> List Relation -> Table -> ErdTable
+create defaultSchema tables tableRelations table =
     let
         relationsByColumn : Dict ColumnName (List Relation)
         relationsByColumn =
@@ -62,7 +62,7 @@ create tables tableRelations table =
     in
     { id = table.id
     , htmlId = table.id |> TableId.toHtmlId
-    , label = table.id |> TableId.show
+    , label = table.id |> TableId.show defaultSchema
     , schema = table.schema
     , name = table.name
     , view = table.view

@@ -24,6 +24,7 @@ import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
@@ -63,8 +64,8 @@ buildSqlSource source lines schema =
     }
 
 
-evolve : SourceId -> ( SqlStatement, Command ) -> SqlSchema -> SqlSchema
-evolve source ( statement, command ) content =
+evolve : SchemaName -> SourceId -> ( SqlStatement, Command ) -> SqlSchema -> SqlSchema
+evolve defaultSchema source ( statement, command ) content =
     let
         origin : Origin
         origin =
@@ -73,29 +74,29 @@ evolve source ( statement, command ) content =
     case command of
         CreateTable sqlTable ->
             sqlTable
-                |> createTable origin content.tables
+                |> createTable defaultSchema origin content.tables
                 |> (\( table, relations, errors ) ->
                         (content.tables |> Dict.get table.id)
-                            |> Maybe.map (\_ -> { content | errors = [ "Table '" ++ TableId.show table.id ++ "' is already defined" ] :: content.errors })
+                            |> Maybe.map (\_ -> { content | errors = [ "Table '" ++ TableId.show defaultSchema table.id ++ "' is already defined" ] :: content.errors })
                             |> Maybe.withDefault { content | tables = content.tables |> Dict.insert table.id table, relations = relations ++ content.relations, errors = content.errors |> addErrors errors }
                    )
 
         CreateView sqlView ->
             sqlView
-                |> createView origin content.tables
+                |> createView defaultSchema origin content.tables
                 |> (\view ->
                         (content.tables |> Dict.get view.id)
                             |> Maybe.filterNot (\_ -> sqlView.replace)
-                            |> Maybe.map (\_ -> { content | errors = [ "View '" ++ TableId.show view.id ++ "' is already defined" ] :: content.errors })
+                            |> Maybe.map (\_ -> { content | errors = [ "View '" ++ TableId.show defaultSchema view.id ++ "' is already defined" ] :: content.errors })
                             |> Maybe.withDefault { content | tables = content.tables |> Dict.insert view.id view }
                    )
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedPrimaryKey constraintName pk)) ->
-            updateTable schema table (\t -> t.primaryKey |> Maybe.mapOrElse (\_ -> ( t, [ "Primary key already defined for '" ++ TableId.show t.id ++ "' table" ] )) ( { t | primaryKey = Just (PrimaryKey constraintName pk [ origin ]) }, [] )) statement content
+            updateTable defaultSchema schema table (\t -> t.primaryKey |> Maybe.mapOrElse (\_ -> ( t, [ "Primary key already defined for '" ++ TableId.show defaultSchema t.id ++ "' table" ] )) ( { t | primaryKey = Just (PrimaryKey constraintName pk [ origin ]) }, [] )) statement content
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fks)) ->
             -- FIXME: handle multi-column foreign key!
-            createRelation origin content.tables table constraint (ColumnRef (createTableId schema table) fks.head.column) fks.head.ref
+            createRelation defaultSchema origin content.tables table constraint (ColumnRef (createTableId defaultSchema schema table) fks.head.column) fks.head.ref
                 |> (\( relation, errors ) ->
                         { content
                             | relations = relation |> Maybe.mapOrElse (\r -> r :: content.relations) content.relations
@@ -104,22 +105,22 @@ evolve source ( statement, command ) content =
                    )
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedUnique constraint unique)) ->
-            updateTable schema table (\t -> ( { t | uniques = t.uniques ++ [ Unique constraint unique.columns (Just unique.definition) [ origin ] ] }, [] )) statement content
+            updateTable defaultSchema schema table (\t -> ( { t | uniques = t.uniques ++ [ Unique constraint unique.columns (Just unique.definition) [ origin ] ] }, [] )) statement content
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedCheck constraint check)) ->
-            updateTable schema table (\t -> ( { t | checks = t.checks ++ [ Check constraint check.columns (Just check.predicate) [ origin ] ] }, [] )) statement content
+            updateTable defaultSchema schema table (\t -> ( { t | checks = t.checks ++ [ Check constraint check.columns (Just check.predicate) [ origin ] ] }, [] )) statement content
 
         AlterTable (AddTableConstraint _ _ (IgnoredConstraint _)) ->
             content
 
         AlterTable (AlterColumn schema table (ColumnDefault column default)) ->
-            updateColumn schema table column (\c -> ( { c | default = Just default, origins = c.origins ++ [ origin ] }, [] )) statement content
+            updateColumn defaultSchema schema table column (\c -> ( { c | default = Just default, origins = c.origins ++ [ origin ] }, [] )) statement content
 
         AlterTable (AlterColumn _ _ (ColumnStatistics _ _)) ->
             content
 
         AlterTable (DropColumn schema table column) ->
-            deleteColumn schema table column statement content
+            deleteColumn defaultSchema schema table column statement content
 
         AlterTable (AddTableOwner _ _ _) ->
             content
@@ -134,16 +135,16 @@ evolve source ( statement, command ) content =
             content
 
         CreateIndex index ->
-            updateTable index.table.schema index.table.table (\t -> ( { t | indexes = t.indexes ++ [ Index index.name index.columns (Just index.definition) [ origin ] ] }, [] )) statement content
+            updateTable defaultSchema index.table.schema index.table.table (\t -> ( { t | indexes = t.indexes ++ [ Index index.name index.columns (Just index.definition) [ origin ] ] }, [] )) statement content
 
         CreateUnique unique ->
-            updateTable unique.table.schema unique.table.table (\t -> ( { t | uniques = t.uniques ++ [ Unique unique.name unique.columns (Just unique.definition) [ origin ] ] }, [] )) statement content
+            updateTable defaultSchema unique.table.schema unique.table.table (\t -> ( { t | uniques = t.uniques ++ [ Unique unique.name unique.columns (Just unique.definition) [ origin ] ] }, [] )) statement content
 
         TableComment comment ->
-            updateTable comment.schema comment.table (\t -> t.comment |> Maybe.mapOrElse (\_ -> ( t, [ "Comment already defined for '" ++ TableId.show t.id ++ "' table" ] )) ( { t | comment = Just (Comment comment.comment [ origin ]) }, [] )) statement content
+            updateTable defaultSchema comment.schema comment.table (\t -> t.comment |> Maybe.mapOrElse (\_ -> ( t, [ "Comment already defined for '" ++ TableId.show defaultSchema t.id ++ "' table" ] )) ( { t | comment = Just (Comment comment.comment [ origin ]) }, [] )) statement content
 
         ColumnComment comment ->
-            updateColumn comment.schema comment.table comment.column (\c -> c.comment |> Maybe.mapOrElse (\_ -> ( c, [ "Comment already defined for '" ++ c.name ++ "' column in '" ++ TableId.show (createTableId comment.schema comment.table) ++ "' table" ] )) ( { c | comment = Just (Comment comment.comment [ origin ]) }, [] )) statement content
+            updateColumn defaultSchema comment.schema comment.table comment.column (\c -> c.comment |> Maybe.mapOrElse (\_ -> ( c, [ "Comment already defined for '" ++ c.name ++ "' column in '" ++ TableId.show defaultSchema (createTableId defaultSchema comment.schema comment.table) ++ "' table" ] )) ( { c | comment = Just (Comment comment.comment [ origin ]) }, [] )) statement content
 
         ConstraintComment _ ->
             content
@@ -152,35 +153,37 @@ evolve source ( statement, command ) content =
             content
 
 
-updateTable : Maybe SqlSchemaName -> SqlTableName -> (Table -> ( Table, List SqlSchemaError )) -> SqlStatement -> SqlSchema -> SqlSchema
-updateTable schema table transform statement content =
-    createTableId schema table
+updateTable : SchemaName -> Maybe SqlSchemaName -> SqlTableName -> (Table -> ( Table, List SqlSchemaError )) -> SqlStatement -> SqlSchema -> SqlSchema
+updateTable defaultSchema schema table transform statement content =
+    createTableId defaultSchema schema table
         |> (\id ->
                 (content.tables |> Dict.get id)
                     |> Maybe.map transform
                     |> Maybe.map (\( t, errors ) -> { content | tables = content.tables |> Dict.insert id t, errors = content.errors |> addErrors errors })
-                    |> Maybe.withDefault { content | errors = [ "Table '" ++ TableId.show id ++ "' does not exist (in '" ++ buildRawSql statement ++ "')" ] :: content.errors }
+                    |> Maybe.withDefault { content | errors = [ "Table '" ++ TableId.show defaultSchema id ++ "' does not exist (in '" ++ buildRawSql statement ++ "')" ] :: content.errors }
            )
 
 
-updateColumn : Maybe SqlSchemaName -> SqlTableName -> SqlColumnName -> (Column -> ( Column, List SqlSchemaError )) -> SqlStatement -> SqlSchema -> SqlSchema
-updateColumn schema table column transform statement content =
+updateColumn : SchemaName -> Maybe SqlSchemaName -> SqlTableName -> SqlColumnName -> (Column -> ( Column, List SqlSchemaError )) -> SqlStatement -> SqlSchema -> SqlSchema
+updateColumn defaultSchema schema table column transform statement content =
     updateTable
+        defaultSchema
         schema
         table
         (\t ->
             (t.columns |> Dict.get column)
                 |> Maybe.map transform
                 |> Maybe.map (\( col, errors ) -> ( { t | columns = t.columns |> Dict.insert column col }, errors ))
-                |> Maybe.withDefault ( t, [ "Column '" ++ column ++ "' does not exist in table '" ++ TableId.show t.id ++ "' (in '" ++ buildRawSql statement ++ "')" ] )
+                |> Maybe.withDefault ( t, [ "Column '" ++ column ++ "' does not exist in table '" ++ TableId.show defaultSchema t.id ++ "' (in '" ++ buildRawSql statement ++ "')" ] )
         )
         statement
         content
 
 
-deleteColumn : Maybe SqlSchemaName -> SqlTableName -> SqlColumnName -> SqlStatement -> SqlSchema -> SqlSchema
-deleteColumn schema table column statement content =
+deleteColumn : SchemaName -> Maybe SqlSchemaName -> SqlTableName -> SqlColumnName -> SqlStatement -> SqlSchema -> SqlSchema
+deleteColumn defaultSchema schema table column statement content =
     updateTable
+        defaultSchema
         schema
         table
         (\t ->
@@ -188,26 +191,26 @@ deleteColumn schema table column statement content =
                 |> Maybe.map
                     (\_ ->
                         if Dict.size t.columns == 1 then
-                            ( t, [ "Can't delete last column (" ++ column ++ ") of table " ++ TableId.show t.id ++ " (in '" ++ buildRawSql statement ++ "')" ] )
+                            ( t, [ "Can't delete last column (" ++ column ++ ") of table " ++ TableId.show defaultSchema t.id ++ " (in '" ++ buildRawSql statement ++ "')" ] )
 
                         else
                             ( { t | columns = t.columns |> Dict.remove column }, [] )
                     )
-                |> Maybe.withDefault ( t, [ "Can't delete missing column " ++ column ++ " in table " ++ TableId.show t.id ++ " (in '" ++ buildRawSql statement ++ "')" ] )
+                |> Maybe.withDefault ( t, [ "Can't delete missing column " ++ column ++ " in table " ++ TableId.show defaultSchema t.id ++ " (in '" ++ buildRawSql statement ++ "')" ] )
         )
         statement
         content
 
 
-createTable : Origin -> Dict TableId Table -> ParsedTable -> ( Table, List Relation, List SqlSchemaError )
-createTable origin tables table =
+createTable : SchemaName -> Origin -> Dict TableId Table -> ParsedTable -> ( Table, List Relation, List SqlSchemaError )
+createTable defaultSchema origin tables table =
     let
         id : TableId
         id =
-            createTableId table.schema table.table
+            createTableId defaultSchema table.schema table.table
 
         ( relations, errors ) =
-            table.foreignKeys |> createRelations origin tables id table.table table.columns
+            table.foreignKeys |> createRelations defaultSchema origin tables id table.table table.columns
     in
     ( { id = id
       , schema = id |> Tuple.first
@@ -238,18 +241,18 @@ createColumn origin index column =
     }
 
 
-createView : Origin -> Dict TableId Table -> ParsedView -> Table
-createView origin tables view =
+createView : SchemaName -> Origin -> Dict TableId Table -> ParsedView -> Table
+createView defaultSchema origin tables view =
     let
         id : TableId
         id =
-            createTableId view.schema view.table
+            createTableId defaultSchema view.schema view.table
     in
     { id = id
     , schema = id |> Tuple.first
     , name = id |> Tuple.second
     , view = True
-    , columns = view.select.columns |> List.indexedMap (buildViewColumn origin tables) |> Dict.fromListMap .name
+    , columns = view.select.columns |> List.indexedMap (buildViewColumn defaultSchema origin tables) |> Dict.fromListMap .name
     , primaryKey = Nothing
     , uniques = []
     , indexes = []
@@ -259,13 +262,13 @@ createView origin tables view =
     }
 
 
-buildViewColumn : Origin -> Dict TableId Table -> Int -> SelectColumn -> Column
-buildViewColumn origin tables index column =
+buildViewColumn : SchemaName -> Origin -> Dict TableId Table -> Int -> SelectColumn -> Column
+buildViewColumn defaultSchema origin tables index column =
     case column of
         BasicColumn c ->
             c.table
                 -- FIXME should handle table alias (when table is renamed in select)
-                |> Maybe.andThen (\t -> tables |> Dict.get (createTableId Nothing t))
+                |> Maybe.andThen (\t -> tables |> Dict.get (createTableId defaultSchema Nothing t))
                 |> Maybe.andThen (\t -> t.columns |> Dict.get c.column)
                 |> Maybe.mapOrElse
                     (\col ->
@@ -326,16 +329,16 @@ createComment origin comment =
     Comment comment [ origin ]
 
 
-createRelations : Origin -> Dict TableId Table -> TableId -> SqlTableName -> Nel ParsedColumn -> List ParsedForeignKey -> ( List Relation, List SqlSchemaError )
-createRelations origin tables tableId tableName columns foreignKeys =
-    ((columns |> Nel.toList |> List.filterMap (\col -> col.foreignKey |> Maybe.map (\( name, ref ) -> createRelation origin tables tableName name (ColumnRef tableId col.name) ref)))
-        ++ (foreignKeys |> List.map (\fk -> createRelation origin tables tableName fk.name (ColumnRef tableId fk.src) fk.ref))
+createRelations : SchemaName -> Origin -> Dict TableId Table -> TableId -> SqlTableName -> Nel ParsedColumn -> List ParsedForeignKey -> ( List Relation, List SqlSchemaError )
+createRelations defaultSchema origin tables tableId tableName columns foreignKeys =
+    ((columns |> Nel.toList |> List.filterMap (\col -> col.foreignKey |> Maybe.map (\( name, ref ) -> createRelation defaultSchema origin tables tableName name (ColumnRef tableId col.name) ref)))
+        ++ (foreignKeys |> List.map (\fk -> createRelation defaultSchema origin tables tableName fk.name (ColumnRef tableId fk.src) fk.ref))
     )
         |> List.foldr (\( rel, errs ) ( rels, errors ) -> ( rel |> Maybe.mapOrElse (\r -> r :: rels) rels, errs ++ errors )) ( [], [] )
 
 
-createRelation : Origin -> Dict TableId Table -> SqlTableName -> Maybe RelationName -> ColumnRef -> SqlForeignKeyRef -> ( Maybe Relation, List SqlSchemaError )
-createRelation origin tables table relation src ref =
+createRelation : SchemaName -> Origin -> Dict TableId Table -> SqlTableName -> Maybe RelationName -> ColumnRef -> SqlForeignKeyRef -> ( Maybe Relation, List SqlSchemaError )
+createRelation defaultSchema origin tables table relation src ref =
     let
         name : RelationName
         name =
@@ -343,7 +346,7 @@ createRelation origin tables table relation src ref =
 
         refTable : TableId
         refTable =
-            createTableId ref.schema ref.table
+            createTableId defaultSchema ref.schema ref.table
 
         ( refCol, errors ) =
             ref.column
@@ -359,12 +362,12 @@ createRelation origin tables table relation src ref =
                                             ( Just cols.head, [] )
 
                                         else
-                                            ( Just cols.head, [ "Bad relation '" ++ name ++ "': target table " ++ TableId.show refTable ++ " has a primary key with multiple columns (" ++ String.join ", " (Nel.toList cols) ++ ")" ] )
+                                            ( Just cols.head, [ "Bad relation '" ++ name ++ "': target table " ++ TableId.show defaultSchema refTable ++ " has a primary key with multiple columns (" ++ String.join ", " (Nel.toList cols) ++ ")" ] )
 
                                     Nothing ->
-                                        ( Nothing, [ "Can't create relation '" ++ name ++ "': target table '" ++ TableId.show refTable ++ "' has no primary key" ] )
+                                        ( Nothing, [ "Can't create relation '" ++ name ++ "': target table '" ++ TableId.show defaultSchema refTable ++ "' has no primary key" ] )
                             )
-                            ( Nothing, [ "Can't create relation '" ++ name ++ "': target table '" ++ TableId.show refTable ++ "' does not exist (yet)" ] )
+                            ( Nothing, [ "Can't create relation '" ++ name ++ "': target table '" ++ TableId.show defaultSchema refTable ++ "' does not exist (yet)" ] )
                     )
     in
     ( refCol |> Maybe.map (\col -> Relation.new name src (ColumnRef refTable col) [ origin ]), errors )
@@ -375,9 +378,9 @@ createOrigin source statement =
     { id = source, lines = statement |> Nel.map .index |> Nel.toList }
 
 
-createTableId : Maybe SqlSchemaName -> SqlTableName -> TableId
-createTableId schema table =
-    ( schema |> Maybe.withDefault Conf.schema.default, table )
+createTableId : SchemaName -> Maybe SqlSchemaName -> SqlTableName -> TableId
+createTableId defaultSchema schema table =
+    ( schema |> Maybe.withDefault defaultSchema, table )
 
 
 addErrors : List SqlSchemaError -> List (List SqlSchemaError) -> List (List SqlSchemaError)

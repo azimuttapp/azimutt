@@ -9,6 +9,7 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Relation as Relation
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
@@ -95,14 +96,19 @@ rolesToUsers =
     buildRelation ( "roles", "by" ) ( "users", "id" )
 
 
+defaultSchema : SchemaName
+defaultSchema =
+    "public"
+
+
 tableId : TableName -> TableId
 tableId name =
-    ( "public", name )
+    ( defaultSchema, name )
 
 
 buildTable : TableName -> List String -> ErdTable
 buildTable name columnNames =
-    Table (tableId name) "public" name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create Dict.empty []
+    Table (tableId name) defaultSchema name False (columnNames |> List.map buildColumn |> Dict.fromListMap .name) Nothing [] [] [] Nothing [] |> ErdTable.create defaultSchema Dict.empty []
 
 
 buildColumn : ColumnName -> Column

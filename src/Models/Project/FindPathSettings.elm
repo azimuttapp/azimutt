@@ -5,6 +5,7 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Models.Project.ColumnName as ColumnName
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId
 
 
@@ -29,19 +30,21 @@ encode default value =
         ]
 
 
-decode : FindPathSettings -> Decode.Decoder FindPathSettings
-decode default =
+decode : SchemaName -> FindPathSettings -> Decode.Decoder FindPathSettings
+decode defaultSchema default =
     Decode.map3 FindPathSettings
         (Decode.defaultField "maxPathLength" Decode.int default.maxPathLength)
-        (Decode.defaultField "ignoredTables" decodeTables default.ignoredTables)
+        (Decode.defaultField "ignoredTables" (decodeTables defaultSchema) default.ignoredTables)
         (Decode.defaultField "ignoredColumns" decodeColumns default.ignoredColumns)
 
 
-decodeTables : Decode.Decoder String
-decodeTables =
+decodeTables : SchemaName -> Decode.Decoder String
+decodeTables defaultSchema =
     Decode.oneOf
         [ Decode.string
-        , Decode.list TableId.decode |> Decode.map (List.map TableId.show >> String.join ", ")
+
+        -- needed for retro-compatibility
+        , Decode.list (TableId.decodeWith defaultSchema) |> Decode.map (List.map (TableId.show defaultSchema) >> String.join ", ")
         ]
 
 
@@ -49,5 +52,7 @@ decodeColumns : Decode.Decoder String
 decodeColumns =
     Decode.oneOf
         [ Decode.string
+
+        -- needed for retro-compatibility
         , Decode.list ColumnName.decode |> Decode.map (String.join ", ")
         ]

@@ -131,6 +131,7 @@ initSourceParsing =
     { id = Conf.ids.sourceParsingDialog
     , parsing =
         SqlSourceUpload.init
+            Conf.schema.default
             Nothing
             Nothing
             (\( projectId, parser, source ) ->

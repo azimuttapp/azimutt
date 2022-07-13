@@ -32,6 +32,7 @@ import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationId as RelationId
 import Models.Project.SampleKey exposing (SampleKey)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
@@ -46,7 +47,8 @@ import Url exposing (percentEncode)
 
 
 type alias SqlSourceUpload msg =
-    { project : Maybe ProjectId
+    { defaultSchema : SchemaName
+    , project : Maybe ProjectId
     , source : Maybe Source
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe FileUrl
@@ -96,9 +98,10 @@ type UiMsg
 -- INIT
 
 
-init : Maybe ProjectId -> Maybe Source -> (( ProjectId, SqlParsing msg, Source ) -> msg) -> SqlSourceUpload msg
-init project source callback =
-    { project = project
+init : SchemaName -> Maybe ProjectId -> Maybe Source -> (( ProjectId, SqlParsing msg, Source ) -> msg) -> SqlSourceUpload msg
+init defaultSchema project source callback =
+    { defaultSchema = defaultSchema
+    , project = project
     , source = source
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
@@ -135,12 +138,12 @@ update msg wrap model =
             ( { model | selectedRemoteFile = B.cond (url == "") Nothing (Just url) }, Cmd.none )
 
         SelectLocalFile file ->
-            ( init model.project model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
+            ( init model.defaultSchema model.project model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file
             )
 
         SelectRemoteFile url ->
-            ( init model.project model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
+            ( init model.defaultSchema model.project model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
             , Ports.readRemoteFile model.project (model.source |> Maybe.map .id) url Nothing
             )
 
@@ -154,9 +157,8 @@ update msg wrap model =
 
         ParseMsg parseMsg ->
             Maybe.map2
-                (\p ( _, sourceInfo, _ ) ->
-                    p
-                        |> parsingUpdate sourceInfo.id parseMsg
+                (\parsedSchema ( _, sourceInfo, _ ) ->
+                    parsingUpdate model.defaultSchema sourceInfo.id parseMsg parsedSchema
                         |> (\( parsed, message ) ->
                                 ( { model | parsedSchema = Just parsed }
                                   -- 342 is an arbitrary number to break Elm message batching
@@ -190,8 +192,8 @@ update msg wrap model =
                 |> Maybe.withDefault ( model, Cmd.none )
 
 
-parsingUpdate : SourceId -> ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )
-parsingUpdate sourceId msg model =
+parsingUpdate : SchemaName -> SourceId -> ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )
+parsingUpdate defaultSchema sourceId msg model =
     (case msg of
         BuildLines ->
             ( { model | lines = model.fileContent |> SqlParser.splitLines |> Just }, model.buildMsg BuildStatements )
@@ -219,7 +221,7 @@ parsingUpdate sourceId msg model =
                             Ok cmd ->
                                 model.schema
                                     |> Maybe.withDefault SqlAdapter.initSchema
-                                    |> SqlAdapter.evolve sourceId ( statement, cmd )
+                                    |> SqlAdapter.evolve defaultSchema sourceId ( statement, cmd )
                                     |> (\schema -> ( { model | schemaIndex = model.schemaIndex + 1, schema = Just schema }, model.buildMsg EvolveSchema ))
 
                             Err _ ->
@@ -272,24 +274,24 @@ viewParsing wrap model =
             (\parsedSchema fileName ->
                 div []
                     [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                    , viewLogs wrap fileName parsedSchema
+                    , viewLogs wrap model.defaultSchema fileName parsedSchema
                     , viewErrorAlert parsedSchema
-                    , model.source |> Maybe.map2 viewSourceDiff model.parsedSource |> Maybe.withDefault (div [] [])
+                    , model.source |> Maybe.map2 (viewSourceDiff model.defaultSchema) model.parsedSource |> Maybe.withDefault (div [] [])
                     ]
             )
             model.parsedSchema
         |> Maybe.withDefault (div [] [])
 
 
-viewLogs : (SqlSourceUploadMsg -> msg) -> String -> SqlParsing msg -> Html msg
-viewLogs wrap filename model =
+viewLogs : (SqlSourceUploadMsg -> msg) -> SchemaName -> String -> SqlParsing msg -> Html msg
+viewLogs wrap defaultSchema filename model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
         [ viewLogsFile wrap model.show filename model.fileContent
         , model.lines |> Maybe.mapOrElse (viewLogsLines wrap model.show) (div [] [])
         , model.statements |> Maybe.mapOrElse (viewLogsStatements wrap model.show) (div [] [])
         , model.commands |> Maybe.mapOrElse (viewLogsCommands model.statements) (div [] [])
         , viewLogsErrors (model.schema |> Maybe.mapOrElse .errors [])
-        , model.schema |> Maybe.mapOrElse (viewLogsSchema wrap model.show) (div [] [])
+        , model.schema |> Maybe.mapOrElse (viewLogsSchema wrap defaultSchema model.show) (div [] [])
         ]
 
 
@@ -411,8 +413,8 @@ viewLogsErrors schemaErrors =
             )
 
 
-viewLogsSchema : (SqlSourceUploadMsg -> msg) -> HtmlId -> SqlSchema -> Html msg
-viewLogsSchema wrap show schema =
+viewLogsSchema : (SqlSourceUploadMsg -> msg) -> SchemaName -> HtmlId -> SqlSchema -> Html msg
+viewLogsSchema wrap defaultSchema htmlId schema =
     let
         count : Int
         count =
@@ -429,16 +431,16 @@ viewLogsSchema wrap show schema =
     in
     div []
         [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "tables"))) ] [ text ("Schema built with " ++ (count |> String.pluralize "table") ++ ".") ]
-        , if show == "tables" then
+        , if htmlId == "tables" then
             div []
                 (schema.tables
                     |> Dict.values
-                    |> List.sortBy (\t -> TableId.show t.id)
+                    |> List.sortBy (\t -> TableId.toString t.id)
                     |> List.indexedMap
                         (\i t ->
                             div [ class "flex items-start" ]
                                 [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
-                                , pre [ class "whitespace-pre font-mono" ] [ text (TableId.show t.id) ]
+                                , pre [ class "whitespace-pre font-mono" ] [ text (TableId.show defaultSchema t.id) ]
                                 ]
                         )
                 )
@@ -528,8 +530,8 @@ sendErrorReport parseErrors schemaErrors =
     "mailto:" ++ email ++ "?subject=" ++ percentEncode subject ++ "&body=" ++ percentEncode body
 
 
-viewSourceDiff : Source -> Source -> Html msg
-viewSourceDiff newSource oldSource =
+viewSourceDiff : SchemaName -> Source -> Source -> Html msg
+viewSourceDiff defaultSchema newSource oldSource =
     let
         ( removedTables, updatedTables, newTables ) =
             List.diff .id (oldSource.tables |> Dict.values |> List.map Table.clearOrigins) (newSource.tables |> Dict.values |> List.map Table.clearOrigins)
@@ -541,12 +543,12 @@ viewSourceDiff newSource oldSource =
         div [ class "mt-3" ]
             [ Alert.withDescription { color = Tw.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
                 [ ul [ class "list-disc list-inside" ]
-                    ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( old, new ) -> ( TableId.show new.id, tableDiff old new )))
-                     , viewSourceDiffItem "new table" (newTables |> List.map (\t -> ( TableId.show t.id, Nothing )))
-                     , viewSourceDiffItem "removed table" (removedTables |> List.map (\t -> ( TableId.show t.id, Nothing )))
-                     , viewSourceDiffItem "modified relation" (updatedRelations |> List.map (\( old, new ) -> ( RelationId.show new.id, relationDiff old new )))
-                     , viewSourceDiffItem "new relation" (newRelations |> List.map (\r -> ( RelationId.show r.id, Nothing )))
-                     , viewSourceDiffItem "removed relation" (removedRelations |> List.map (\r -> ( RelationId.show r.id, Nothing )))
+                    ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( old, new ) -> ( TableId.show defaultSchema new.id, tableDiff old new )))
+                     , viewSourceDiffItem "new table" (newTables |> List.map (\t -> ( TableId.show defaultSchema t.id, Nothing )))
+                     , viewSourceDiffItem "removed table" (removedTables |> List.map (\t -> ( TableId.show defaultSchema t.id, Nothing )))
+                     , viewSourceDiffItem "modified relation" (updatedRelations |> List.map (\( old, new ) -> ( RelationId.show defaultSchema new.id, relationDiff old new )))
+                     , viewSourceDiffItem "new relation" (newRelations |> List.map (\r -> ( RelationId.show defaultSchema r.id, Nothing )))
+                     , viewSourceDiffItem "removed relation" (removedRelations |> List.map (\r -> ( RelationId.show defaultSchema r.id, Nothing )))
                      ]
                         |> List.filterMap identity
                     )

@@ -104,7 +104,7 @@ updateSource now sourceId input model =
 
         parsed : AmlSchema
         parsed =
-            String.trim input ++ "\n" |> AmlParser.parse |> AmlAdapter.adapt sourceId
+            String.trim input ++ "\n" |> AmlParser.parse |> AmlAdapter.adapt (Erd.defaultSchemaM model.erd) sourceId
 
         ( removed, bothPresent, added ) =
             List.diff .id (currentTables |> Dict.values) (parsed.tables |> Dict.values)
@@ -199,10 +199,10 @@ view erd model =
                                 Nothing
 
                             Just Nothing ->
-                                Just ("Column '" ++ column ++ "' not found in table '" ++ TableId.show table ++ "'")
+                                Just ("Column '" ++ column ++ "' not found in table '" ++ TableId.show erd.settings.defaultSchema table ++ "'")
 
                             Nothing ->
-                                Just ("Table '" ++ TableId.show table ++ "' not found")
+                                Just ("Table '" ++ TableId.show erd.settings.defaultSchema table ++ "' not found")
                     )
     in
     div []

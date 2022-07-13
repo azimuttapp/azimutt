@@ -90,7 +90,7 @@ update req msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Ports.onJsMessage JsMessage
+    Ports.onJsMessage Nothing JsMessage
 
 
 

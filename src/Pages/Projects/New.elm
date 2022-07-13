@@ -117,7 +117,7 @@ setSelectedTab : Tab -> Model -> Model
 setSelectedTab tab model =
     case tab of
         Schema ->
-            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Nothing Nothing (\_ -> Noop "select-tab-source-upload")), projectImport = Nothing, sampleSelection = Nothing }
+            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Conf.schema.default Nothing Nothing (\_ -> Noop "select-tab-source-upload")), projectImport = Nothing, sampleSelection = Nothing }
 
         Import ->
             { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Just ProjectImport.init, sampleSelection = Nothing }
@@ -157,7 +157,7 @@ update req msg model =
                    )
 
         SqlSourceUploadDrop ->
-            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Nothing Nothing (\_ -> Noop "drop-source-upload")), Cmd.none )
+            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Conf.schema.default Nothing Nothing (\_ -> Noop "drop-source-upload")), Cmd.none )
 
         SqlSourceUploadCreate projectId source ->
             Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source
@@ -280,7 +280,7 @@ handleJsMessage msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        ([ Ports.onJsMessage JsMessage ]
+        ([ Ports.onJsMessage Nothing JsMessage ]
             ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
         )
 

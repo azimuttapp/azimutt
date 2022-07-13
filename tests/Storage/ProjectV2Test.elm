@@ -23,6 +23,7 @@ import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
 import Models.Project.ProjectSettings as ProjectSettings exposing (HiddenColumns, ProjectSettings)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Relation as Relation exposing (Relation)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
@@ -61,9 +62,14 @@ suite =
             , jsonFuzz "Layout" ProjectFuzzers.layout Layout.encode Layout.decode
             , jsonFuzz "CanvasProps" ProjectFuzzers.canvasProps CanvasProps.encode CanvasProps.decode
             , jsonFuzz "TableProps" ProjectFuzzers.tableProps TableProps.encode TableProps.decode
-            , jsonFuzz "ProjectSettings" ProjectFuzzers.projectSettings (ProjectSettings.encode ProjectSettings.init) (ProjectSettings.decode ProjectSettings.init)
+            , jsonFuzz "ProjectSettings" ProjectFuzzers.projectSettings (ProjectSettings.encode (ProjectSettings.init Nothing)) (ProjectSettings.decode (ProjectSettings.init Nothing))
             ]
         ]
+
+
+defaultSchema : SchemaName
+defaultSchema =
+    "public"
 
 
 src1 : SourceId
@@ -81,7 +87,7 @@ project0 =
     , notes = Dict.empty
     , usedLayout = "initial layout"
     , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (Position 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
-    , settings = ProjectSettings.init
+    , settings = ProjectSettings.init Nothing
     , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001
@@ -114,7 +120,7 @@ project1 =
             [ ( "initial layout", Layout (CanvasProps (Position 10 20) 0.75) [ TableProps ( "public", "users" ) (Position 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
             , ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
             ]
-    , settings = ProjectSettings (FindPathSettings 4 "" "") [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
+    , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001
@@ -221,7 +227,7 @@ project2 =
             , ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
             , ( "users", Layout (CanvasProps (Position 120 320) 1.5) [ TableProps ( "public", "users" ) (Position 90 100) Size.zero Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
-    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
+    , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Browser
     , createdAt = time 1000
     , updatedAt = time 1001

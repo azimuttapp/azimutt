@@ -17,9 +17,11 @@ module Libs.List exposing
     , indexOf
     , indexedFilter
     , last
+    , maximumBy
     , memberBy
     , merge
     , mergeMaybe
+    , minimumBy
     , move
     , moveBy
     , moveByRel
@@ -44,6 +46,7 @@ module Libs.List exposing
     )
 
 import Dict exposing (Dict)
+import Libs.Basics exposing (maxBy, minBy)
 import Libs.Bool as B
 import Libs.Maybe as Maybe
 import Libs.Tuple3 as Tuple3
@@ -370,6 +373,26 @@ mergeMaybe : (a -> Maybe comparable) -> (a -> a -> a) -> List a -> List a -> Lis
 mergeMaybe getKey mergeValue l1 l2 =
     (l1 |> List.map (\a1 -> l2 |> find (\a2 -> getKey a1 /= Nothing && getKey a1 == getKey a2) |> Maybe.mapOrElse (mergeValue a1) a1))
         ++ (l2 |> filterNot (\a2 -> l1 |> List.any (\a1 -> getKey a1 /= Nothing && getKey a1 == getKey a2)))
+
+
+maximumBy : (a -> comparable) -> List a -> Maybe a
+maximumBy getKey list =
+    case list of
+        x :: xs ->
+            Just (List.foldl (maxBy getKey) x xs)
+
+        _ ->
+            Nothing
+
+
+minimumBy : (a -> comparable) -> List a -> Maybe a
+minimumBy getKey list =
+    case list of
+        x :: xs ->
+            Just (List.foldl (minBy getKey) x xs)
+
+        _ ->
+            Nothing
 
 
 toggle : comparable -> List comparable -> List comparable

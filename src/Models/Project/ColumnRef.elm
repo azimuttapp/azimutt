@@ -1,10 +1,10 @@
-module Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike, decode, encode, fromString, show, toString)
+module Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike, decode, encode, fromString, fromStringWith, show, toString)
 
-import Conf
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Libs.Json.Encode as Encode
 import Models.Project.ColumnName as ColumnName exposing (ColumnName)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 
 
@@ -16,9 +16,9 @@ type alias ColumnRefLike x =
     { x | table : TableId, column : ColumnName }
 
 
-show : ColumnRefLike x -> String
-show { table, column } =
-    TableId.show table |> ColumnName.withName column
+show : SchemaName -> ColumnRefLike x -> String
+show defaultSchema { table, column } =
+    TableId.show defaultSchema table |> ColumnName.withName column
 
 
 toString : ColumnRef -> String
@@ -26,17 +26,27 @@ toString ref =
     (ref.table |> Tuple.first) ++ "." ++ (ref.table |> Tuple.second) ++ "." ++ ref.column
 
 
-fromString : String -> ColumnRef
+fromString : String -> Maybe ColumnRef
 fromString id =
+    case String.split "." id of
+        schema :: table :: column :: [] ->
+            Just { table = ( schema, table ), column = column }
+
+        _ ->
+            Nothing
+
+
+fromStringWith : SchemaName -> String -> ColumnRef
+fromStringWith defaultSchema id =
     case String.split "." id of
         schema :: table :: column :: [] ->
             { table = ( schema, table ), column = column }
 
         table :: column :: [] ->
-            { table = ( Conf.schema.default, table ), column = column }
+            { table = ( defaultSchema, table ), column = column }
 
         _ ->
-            { table = ( Conf.schema.default, id ), column = "" }
+            { table = ( defaultSchema, id ), column = "" }
 
 
 encode : ColumnRef -> Value

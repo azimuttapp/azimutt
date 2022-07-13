@@ -120,6 +120,13 @@ viewSchemasSection htmlId erd =
             [ legend [ class "font-medium text-gray-900" ] [ text "Project schemas" ]
             , p [ class "text-sm text-gray-500" ] [ text "Allow you to enable or not SQL schemas in your project." ]
             , div [ class "list-group" ] (schemas |> List.map (viewSchema htmlId erd.settings.removedSchemas))
+            , Input.textWithLabelAndHelp "mt-3"
+                (htmlId ++ "-default-schema")
+                "Default schema"
+                "Hide it in diagram to make it cleaner."
+                "ex: public, dto..."
+                erd.settings.defaultSchema
+                (PSDefaultSchemaUpdate >> ProjectSettingsMsg)
             ]
 
     else

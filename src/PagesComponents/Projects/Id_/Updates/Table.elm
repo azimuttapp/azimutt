@@ -13,6 +13,7 @@ import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Relation as Relation
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
@@ -35,13 +36,13 @@ showTable now id hint erd =
     case erd.tables |> Dict.get id of
         Just table ->
             if erd |> Erd.isShown id then
-                ( erd, Toasts.info Toast ("Table " ++ TableId.show id ++ " already shown") )
+                ( erd, Toasts.info Toast ("Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown") )
 
             else
                 ( erd |> performShowTable now table hint, Cmd.batch [ Ports.observeTableSize table.id ] )
 
         Nothing ->
-            ( erd, Toasts.error Toast ("Can't show table " ++ TableId.show id ++ ": not found") )
+            ( erd, Toasts.error Toast ("Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found") )
 
 
 showTables : Time.Posix -> List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
@@ -66,8 +67,8 @@ showTables now ids hint erd =
                 ( e
                 , Cmd.batch
                     [ Ports.observeTablesSize found
-                    , B.cond (shown |> List.isEmpty) Cmd.none (Toasts.info Toast ("Tables " ++ (shown |> List.map TableId.show |> String.join ", ") ++ " are already shown"))
-                    , B.cond (notFound |> List.isEmpty) Cmd.none (Toasts.info Toast ("Can't show tables " ++ (notFound |> List.map TableId.show |> String.join ", ") ++ ": can't found them"))
+                    , B.cond (shown |> List.isEmpty) Cmd.none (Toasts.info Toast ("Tables " ++ (shown |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ " are already shown"))
+                    , B.cond (notFound |> List.isEmpty) Cmd.none (Toasts.info Toast ("Can't show tables " ++ (notFound |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ ": can't found them"))
                     ]
                 )
            )
@@ -350,8 +351,8 @@ updateRelatedTables tables =
         |> (\shownTables -> tables |> List.map (mapRelatedTables (Dict.map (\id -> setShown (shownTables |> Set.member id)))))
 
 
-mapTablePropOrSelected : TableId -> (ErdTableLayout -> ErdTableLayout) -> List ErdTableLayout -> ( List ErdTableLayout, Cmd Msg )
-mapTablePropOrSelected id transform tableLayouts =
+mapTablePropOrSelected : SchemaName -> TableId -> (ErdTableLayout -> ErdTableLayout) -> List ErdTableLayout -> ( List ErdTableLayout, Cmd Msg )
+mapTablePropOrSelected defaultSchema id transform tableLayouts =
     tableLayouts
         |> List.findBy .id id
         |> Maybe.map
@@ -362,13 +363,29 @@ mapTablePropOrSelected id transform tableLayouts =
                 else
                     ( tableLayouts |> List.updateBy .id id transform, Cmd.none )
             )
-        |> Maybe.withDefault ( tableLayouts, Toasts.info Toast ("Table " ++ TableId.show id ++ " not found") )
+        |> Maybe.withDefault ( tableLayouts, Toasts.info Toast ("Table " ++ TableId.show defaultSchema id ++ " not found") )
 
 
 mapTablePropsOrSelectedColumns : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> List ErdColumnProps) -> Erd -> Erd
 mapTablePropsOrSelectedColumns now id transform erd =
-    erd.tables
-        |> Dict.get id
-        |> Maybe.mapOrElse
-            (\table -> erd |> Erd.mapCurrentLayout now (mapTablesL .id id (mapColumns (transform table >> List.filter (\c -> table.columns |> Dict.member c.name)))))
-            erd
+    let
+        selected : Bool
+        selected =
+            erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.mapOrElse (.props >> .selected) False
+    in
+    erd
+        |> Erd.mapCurrentLayout now
+            (mapTables
+                (List.map
+                    (\props ->
+                        if props.id == id || (selected && props.props.selected) then
+                            erd.tables
+                                |> Dict.get props.id
+                                |> Maybe.map (\table -> props |> mapColumns (transform table >> List.filter (\c -> table.columns |> Dict.member c.name)))
+                                |> Maybe.withDefault props
+
+                        else
+                            props
+                    )
+                )
+            )
