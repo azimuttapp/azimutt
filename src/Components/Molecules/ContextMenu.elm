@@ -4,10 +4,10 @@ import Components.Atoms.Kbd as Kbd
 import Html exposing (Attribute, Html, a, button, div, text)
 import Html.Attributes exposing (class, href, tabindex, type_)
 import Html.Events exposing (onClick)
-import Libs.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Html.Attributes exposing (ariaLabelledby, ariaOrientation, css, role)
 import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
+import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.Tailwind exposing (TwClass, batch, disabled, focus, hover)

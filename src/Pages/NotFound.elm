@@ -130,7 +130,7 @@ viewNotFound model =
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
-            , { url = Route.toHref Route.Blog, text = "Blog" }
+            , { url = Conf.constants.azimuttBlog, text = "Blog" }
             ]
         }
     , Lazy.lazy2 Toasts.view Toast model.toasts

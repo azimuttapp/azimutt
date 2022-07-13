@@ -6,7 +6,7 @@ import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Tailwind exposing (Color)
 import Models.User exposing (User)
-import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
 import Task

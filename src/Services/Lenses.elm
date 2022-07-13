@@ -240,8 +240,8 @@ module Services.Lenses exposing
 
 import Dict exposing (Dict)
 import Libs.Bool as B
-import Libs.Delta exposing (Delta)
 import Libs.Maybe as Maybe
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 

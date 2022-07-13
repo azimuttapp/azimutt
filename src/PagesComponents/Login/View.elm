@@ -79,7 +79,7 @@ cta =
             [ Icon.github2 20
             , span [ class "truncate" ] [ text "Sign In with GitHub" ]
             ]
-        , a [ href (Route.toHref Route.Blog), class "inline-flex items-center space-x-2 bg-slate-100 text-slate-900 text-sm rounded shadow-sm px-4 py-2 outline-none outline-0 transition transition-all ease-out duration-200 hover:bg-slate-200" ]
+        , a [ href Conf.constants.azimuttBlog, class "inline-flex items-center space-x-2 bg-slate-100 text-slate-900 text-sm rounded shadow-sm px-4 py-2 outline-none outline-0 transition transition-all ease-out duration-200 hover:bg-slate-200" ]
             [ span [ class "truncate" ] [ text "Blog" ]
             ]
         ]

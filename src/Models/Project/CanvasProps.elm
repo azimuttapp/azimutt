@@ -2,8 +2,8 @@ module Models.Project.CanvasProps exposing (CanvasProps, adapt, decode, empty, e
 
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
-import Libs.Area as Area exposing (Area)
 import Libs.Json.Encode as Encode
+import Libs.Models.Area as Area exposing (Area)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 import Models.Project.GridPosition as GridPosition

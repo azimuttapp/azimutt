@@ -111,7 +111,7 @@ update shared req msg model =
             ( model, Cmd.none )
 
         DoLogout ->
-            ( model, Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ] )
+            ( model, Cmd.batch [ Ports.logout, Request.pushRoute Route.Home_ req ] )
 
         Toast message ->
             model |> mapToastsCmd (Toasts.update Toast message)

@@ -78,7 +78,7 @@ navbar color currentUrl model =
     let
         menuLinks : List LinkAction
         menuLinks =
-            [ { label = "Dashboard", url = Route.toHref Route.Projects } ]
+            [ { label = "Dashboard", url = Route.toHref Route.Home_ } ]
 
         profileLinks : List Action
         profileLinks =

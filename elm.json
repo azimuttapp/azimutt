@@ -22,7 +22,6 @@
             "elm/svg": "1.0.1",
             "elm/time": "1.0.0",
             "elm/url": "1.0.0",
-            "elm-explorations/markdown": "1.0.0",
             "mpizenberg/elm-file": "1.0.0",
             "mpizenberg/elm-pointer-events": "4.0.2",
             "rtfeldman/elm-iso8601-date-strings": "1.1.4",

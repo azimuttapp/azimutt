@@ -5,15 +5,15 @@ import Dict exposing (Dict)
 import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
 import Json.Encode as Encode
-import Libs.Delta as Delta exposing (Delta)
-import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
@@ -30,7 +30,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
 import Models.User as User exposing (User)
 import Models.UserId as UserId exposing (UserId)
-import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
 import Time
 import Track
