@@ -4,6 +4,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileName as FileName exposing (FileName)
 import Libs.Models.FileSize as FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt as FileUpdatedAt exposing (FileUpdatedAt)
@@ -13,6 +14,7 @@ import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 type SourceKind
     = SqlFileLocal FileName FileSize FileUpdatedAt
     | SqlFileRemote FileUrl FileSize
+    | DatabaseConnection DatabaseUrl
     | AmlEditor
 
 
@@ -35,6 +37,9 @@ path sourceContent =
         SqlFileRemote url _ ->
             url
 
+        DatabaseConnection url ->
+            url
+
         AmlEditor ->
             ""
 
@@ -46,6 +51,9 @@ same k2 k1 =
             True
 
         ( SqlFileRemote _ _, SqlFileRemote _ _ ) ->
+            True
+
+        ( DatabaseConnection _, DatabaseConnection _ ) ->
             True
 
         ( AmlEditor, AmlEditor ) ->
@@ -60,7 +68,7 @@ encode value =
     case value of
         SqlFileLocal name size modified ->
             Encode.notNullObject
-                [ ( "kind", "LocalFile" |> Encode.string )
+                [ ( "kind", "SqlFileLocal" |> Encode.string )
                 , ( "name", name |> FileName.encode )
                 , ( "size", size |> FileSize.encode )
                 , ( "modified", modified |> FileUpdatedAt.encode )
@@ -68,9 +76,15 @@ encode value =
 
         SqlFileRemote name size ->
             Encode.notNullObject
-                [ ( "kind", "RemoteFile" |> Encode.string )
+                [ ( "kind", "SqlFileRemote" |> Encode.string )
                 , ( "url", name |> FileUrl.encode )
                 , ( "size", size |> FileSize.encode )
+                ]
+
+        DatabaseConnection url ->
+            Encode.notNullObject
+                [ ( "kind", "DatabaseConnection" |> Encode.string )
+                , ( "url", url |> DatabaseUrl.encode )
                 ]
 
         AmlEditor ->
@@ -87,6 +101,9 @@ decode =
 
                 "SqlFileRemote" ->
                     decodeSqlFileRemote
+
+                "DatabaseConnection" ->
+                    decodeDatabaseConnection
 
                 "AmlEditor" ->
                     decodeAmlEditor
@@ -119,6 +136,12 @@ decodeSqlFileRemote =
     Decode.map2 SqlFileRemote
         (Decode.field "url" FileUrl.decode)
         (Decode.field "size" FileSize.decode)
+
+
+decodeDatabaseConnection : Decode.Decoder SourceKind
+decodeDatabaseConnection =
+    Decode.map DatabaseConnection
+        (Decode.field "url" DatabaseUrl.decode)
 
 
 decodeAmlEditor : Decode.Decoder SourceKind

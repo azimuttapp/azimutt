@@ -2,22 +2,30 @@ module Pages.Projects.New exposing (Model, Msg, page)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf exposing (SampleSchema)
+import DataSources.DatabaseSchemaParser.DatabaseAdapter as DatabaseAdapter
 import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
+import Libs.Http as Http
 import Libs.Maybe as Maybe
 import Libs.Models.FileUrl as FileUrl
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..))
+import Random
 import Request
-import Services.Lenses exposing (mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapToastsCmd, setConfirm)
+import Services.Backend as Backend exposing (BackendUrl)
+import Services.DatabaseSource as DatabaseSource
+import Services.Lenses exposing (mapDatabaseSourceM, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapToastsCmd, setConfirm, setSeed, setStatus, setUrl)
 import Services.ProjectImport as ProjectImport
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
@@ -30,8 +38,8 @@ import View exposing (View)
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init req
-        , update = update req
+        { init = init req shared.now
+        , update = update req shared.now shared.conf.backendUrl
         , view = view shared req
         , subscriptions = subscriptions
         }
@@ -54,8 +62,8 @@ title =
     Conf.constants.defaultTitle
 
 
-init : Request.With Params -> ( Model, Cmd Msg )
-init req =
+init : Request.With Params -> Time.Posix -> ( Model, Cmd Msg )
+init req now =
     let
         sample : Maybe SampleSchema
         sample =
@@ -67,28 +75,43 @@ init req =
 
         selectedTab : Tab
         selectedTab =
-            (sample |> Maybe.map (\_ -> Sample))
+            (sample |> Maybe.map (\_ -> TabSamples))
                 |> Maybe.withDefault
                     (case tab of
+                        Just "sql" ->
+                            TabSql
+
+                        Just "database" ->
+                            TabDatabase
+
+                        Just "project" ->
+                            TabProject
+
+                        Just "samples" ->
+                            TabSamples
+
+                        -- legacy names:
                         Just "schema" ->
-                            Schema
+                            TabSql
 
                         Just "import" ->
-                            Import
+                            TabProject
 
                         Just "sample" ->
-                            Sample
+                            TabSamples
 
                         _ ->
-                            Schema
+                            TabSql
                     )
     in
-    ( { selectedMenu = "New project"
+    ( { seed = Random.initialSeed (now |> Time.posixToMillis)
+      , selectedMenu = "New project"
       , mobileMenuOpen = False
       , openedCollapse = ""
       , projects = []
-      , selectedTab = Sample
+      , selectedTab = TabSamples
       , sqlSourceUpload = Nothing
+      , databaseSource = Nothing
       , projectImport = Nothing
       , sampleSelection = Nothing
       , openedDropdown = ""
@@ -96,7 +119,7 @@ init req =
       , confirm = Nothing
       , openedDialogs = []
       }
-        |> setSelectedTab selectedTab
+        |> initTab selectedTab
     , Cmd.batch
         ([ Ports.setMeta
             { title = Just title
@@ -113,25 +136,33 @@ init req =
     )
 
 
-setSelectedTab : Tab -> Model -> Model
-setSelectedTab tab model =
+initTab : Tab -> Model -> Model
+initTab tab model =
+    let
+        clean : Model
+        clean =
+            { model | selectedTab = tab, sqlSourceUpload = Nothing, databaseSource = Nothing, projectImport = Nothing, sampleSelection = Nothing }
+    in
     case tab of
-        Schema ->
-            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Conf.schema.default Nothing Nothing (\_ -> Noop "select-tab-source-upload")), projectImport = Nothing, sampleSelection = Nothing }
+        TabSql ->
+            { clean | sqlSourceUpload = Just (SqlSourceUpload.init Conf.schema.default Nothing Nothing (\_ -> Noop "select-tab-source-upload")) }
 
-        Import ->
-            { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Just ProjectImport.init, sampleSelection = Nothing }
+        TabDatabase ->
+            { clean | databaseSource = Just (DatabaseSource.init Nothing) }
 
-        Sample ->
-            { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Nothing, sampleSelection = Just ProjectImport.init }
+        TabProject ->
+            { clean | projectImport = Just ProjectImport.init }
+
+        TabSamples ->
+            { clean | sampleSelection = Just ProjectImport.init }
 
 
 
 -- UPDATE
 
 
-update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
-update req msg model =
+update : Request.With Params -> Time.Posix -> BackendUrl -> Msg -> Model -> ( Model, Cmd Msg )
+update req now backendUrl msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -143,7 +174,7 @@ update req msg model =
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
 
         SelectTab tab ->
-            ( model |> setSelectedTab tab, Cmd.none )
+            ( model |> initTab tab, Cmd.none )
 
         SqlSourceUploadMsg message ->
             model
@@ -159,11 +190,35 @@ update req msg model =
         SqlSourceUploadDrop ->
             ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Conf.schema.default Nothing Nothing (\_ -> Noop "drop-source-upload")), Cmd.none )
 
-        SqlSourceUploadCreate projectId source ->
-            Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source
-                |> (\project ->
-                        ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
-                   )
+        DatabaseSourceMsg (DatabaseSource.UpdateUrl url) ->
+            ( model |> mapDatabaseSourceM (setUrl url), Cmd.none )
+
+        DatabaseSourceMsg (DatabaseSource.FetchSchema url) ->
+            ( model |> mapDatabaseSourceM (setStatus (DatabaseSource.Fetching url))
+            , Backend.getDatabaseSchema backendUrl url (DatabaseSource.GotSchema url >> DatabaseSourceMsg)
+            )
+
+        DatabaseSourceMsg (DatabaseSource.GotSchema url result) ->
+            case result of
+                Ok schema ->
+                    let
+                        ( sourceId, seed ) =
+                            SourceId.random model.seed
+
+                        source : Source
+                        source =
+                            DatabaseAdapter.buildDatabaseSource now sourceId url schema
+                    in
+                    ( model |> setSeed seed |> mapDatabaseSourceM (setStatus (DatabaseSource.Success source)), Cmd.none )
+
+                Err err ->
+                    ( model |> mapDatabaseSourceM (setStatus (DatabaseSource.Error (Http.errorToString err))), Cmd.none )
+
+        DatabaseSourceMsg DatabaseSource.DropSchema ->
+            ( model |> mapDatabaseSourceM (setStatus DatabaseSource.Pending), Cmd.none )
+
+        DatabaseSourceMsg (DatabaseSource.CreateProject source) ->
+            ( model, T.send (CreateProjectFromSource source) )
 
         ProjectImportMsg message ->
             model
@@ -180,15 +235,6 @@ update req msg model =
         ProjectImportDrop ->
             ( model |> mapProjectImportM (\_ -> ProjectImport.init), Cmd.none )
 
-        ProjectImportCreate project ->
-            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
-
-        ProjectImportCreateNew id project ->
-            { project | id = id, name = String.unique (model.projects |> List.map .name) project.name }
-                |> (\p ->
-                        ( model, Cmd.batch [ Ports.createProject p, Ports.track (Track.importProject p), Request.pushRoute (Route.Projects__Id_ { id = p.id }) req ] )
-                   )
-
         SampleSelectMsg message ->
             model
                 |> mapSampleSelectionMCmd (ProjectImport.update message)
@@ -204,7 +250,12 @@ update req msg model =
         SampleSelectDrop ->
             ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )
 
-        SampleSelectCreate project ->
+        CreateProjectFromSource source ->
+            ProjectId.random model.seed
+                |> Tuple.mapFirst (\projectId -> Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source)
+                |> (\( project, seed ) -> ( model |> setSeed seed, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] ))
+
+        CreateProject project ->
             ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
         DropdownToggle id ->

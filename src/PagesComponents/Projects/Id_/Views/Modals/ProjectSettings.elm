@@ -98,6 +98,9 @@ viewSource htmlId _ zone source =
         SqlFileRemote url _ ->
             view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
 
+        DatabaseConnection url ->
+            view Database "Last fetched on " source.updatedAt ("Database " ++ url)
+
         AmlEditor ->
             view User "Last edited on " source.updatedAt "Created by you"
 

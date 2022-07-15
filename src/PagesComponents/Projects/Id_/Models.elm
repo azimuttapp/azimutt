@@ -44,6 +44,7 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
 import Random
+import Services.DatabaseSource as DatabaseSource
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
 import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
@@ -125,7 +126,7 @@ type alias ProjectSettingsDialog =
 
 
 type alias SourceUploadDialog =
-    { id : HtmlId, parsing : SqlSourceUpload Msg }
+    { id : HtmlId, parsing : SqlSourceUpload Msg, databaseSource : DatabaseSource.Model }
 
 
 type alias SourceParsingDialog =
@@ -287,6 +288,7 @@ type ProjectSettingsMsg
     | PSSourceUploadOpen (Maybe Source)
     | PSSourceUploadClose
     | PSSqlSourceMsg SqlSourceUploadMsg
+    | PSDatabaseSourceMsg DatabaseSource.Msg
     | PSSourceRefresh Source
     | PSSourceAdd Source
     | PSDefaultSchemaUpdate SchemaName

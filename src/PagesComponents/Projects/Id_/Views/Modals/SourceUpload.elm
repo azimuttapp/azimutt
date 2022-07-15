@@ -14,6 +14,7 @@ import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, role)
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
@@ -22,6 +23,7 @@ import Libs.Tailwind as Tw exposing (sm)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsMsg(..), SourceUploadDialog)
+import Services.DatabaseSource as DatabaseSource
 import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg(..))
 import Time
 
@@ -48,6 +50,9 @@ viewSourceUpload zone now opened model =
 
                         SqlFileRemote url _ ->
                             remoteFileModal zone now titleId source url model.parsing
+
+                        DatabaseConnection url ->
+                            databaseModal zone now (model.id ++ "-database") titleId source url model.databaseSource
 
                         AmlEditor ->
                             userDefinedModal titleId
@@ -130,6 +135,36 @@ remoteFileModal zone now titleId source fileUrl model =
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
+        , closeBtn
+        ]
+    ]
+
+
+databaseModal : Time.Zone -> Time.Posix -> HtmlId -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model -> List (Html Msg)
+databaseModal zone now htmlId titleId source url model =
+    [ div [ class "max-w-3xl mx-6 mt-6" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
+            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
+                [ text ("Refresh " ++ source.name ++ " source") ]
+            , div [ class "mt-2" ]
+                [ p [ class "text-sm text-gray-500" ]
+                    [ text "This source came from "
+                    , bText url
+                    , text " which was fetched the "
+                    , bText (DateTime.formatDate zone source.updatedAt)
+                    , text (" (" ++ (source.updatedAt |> DateTime.human now) ++ ").")
+                    , br [] []
+                    , text "Click on the button to fetch it again now."
+                    ]
+                ]
+            ]
+        , div [ class "mt-3 flex justify-center" ]
+            [ Button.primary5 Tw.primary [ onClick (DatabaseSource.FetchSchema url |> PSDatabaseSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch schema again" ]
+            ]
+        , DatabaseSource.view (htmlId ++ "-source") model |> Html.map (PSDatabaseSourceMsg >> ProjectSettingsMsg)
+        ]
+    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
+        [ primaryBtn (model |> DatabaseSource.source |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
         , closeBtn
         ]
     ]

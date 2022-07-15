@@ -30,6 +30,7 @@ import {Profile, UserId} from "./profile";
 export interface GlobalConf {
     env: Env
     platform: Platform
+    backendUrl: string
     enableCloud: boolean
 }
 

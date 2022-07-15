@@ -6,10 +6,11 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw
 import Libs.Task as T
 import Models.Project exposing (Project)
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
+import Random
+import Services.DatabaseSource as DatabaseSource
 import Services.ProjectImport exposing (ProjectImport, ProjectImportMsg)
 import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
 import Services.Toasts as Toasts
@@ -17,12 +18,14 @@ import Shared exposing (Confirm)
 
 
 type alias Model =
-    { selectedMenu : String
+    { seed : Random.Seed
+    , selectedMenu : String
     , mobileMenuOpen : Bool
     , openedCollapse : HtmlId
     , projects : List ProjectInfo
     , selectedTab : Tab
     , sqlSourceUpload : Maybe (SqlSourceUpload Msg)
+    , databaseSource : Maybe DatabaseSource.Model
     , projectImport : Maybe ProjectImport
     , sampleSelection : Maybe ProjectImport
 
@@ -35,9 +38,10 @@ type alias Model =
 
 
 type Tab
-    = Schema
-    | Import
-    | Sample
+    = TabSql
+    | TabDatabase
+    | TabProject
+    | TabSamples
 
 
 type alias ConfirmDialog =
@@ -51,14 +55,13 @@ type Msg
     | SelectTab Tab
     | SqlSourceUploadMsg SqlSourceUploadMsg
     | SqlSourceUploadDrop
-    | SqlSourceUploadCreate ProjectId Source
+    | DatabaseSourceMsg DatabaseSource.Msg
     | ProjectImportMsg ProjectImportMsg
     | ProjectImportDrop
-    | ProjectImportCreate Project
-    | ProjectImportCreateNew ProjectId Project
     | SampleSelectMsg ProjectImportMsg
     | SampleSelectDrop
-    | SampleSelectCreate Project
+    | CreateProjectFromSource Source
+    | CreateProject Project
       -- global messages
     | DropdownToggle HtmlId
     | Toast Toasts.Msg

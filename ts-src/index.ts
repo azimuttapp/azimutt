@@ -25,7 +25,7 @@ const env = Utils.getEnv()
 const platform = Utils.getPlatform()
 const conf = Conf.get(env)
 const logger = new ConsoleLogger(env)
-const fs = {env, platform, enableCloud: !!localStorage.getItem('enable-cloud')}
+const fs = {env, platform, backendUrl: conf.supabase.backendUrl, enableCloud: !!localStorage.getItem('enable-cloud')}
 const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
 const supabase = Supabase.init(conf.supabase).onLogin(user => {
     app.login(user)

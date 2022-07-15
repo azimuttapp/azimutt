@@ -43,6 +43,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
+import Services.Backend exposing (BackendUrl)
 import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
 import Services.SqlSourceUpload as SqlSourceUpload
 import Services.Toasts as Toasts
@@ -50,8 +51,8 @@ import Time
 import Track
 
 
-update : Request.With params -> Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update req currentLayout now msg model =
+update : Request.With params -> Maybe LayoutName -> Time.Posix -> BackendUrl -> Msg -> Model -> ( Model, Cmd Msg )
+update req currentLayout now backendUrl msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -193,7 +194,7 @@ update req currentLayout now msg model =
             model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings message
+            model |> handleProjectSettings now backendUrl message
 
         SourceParsing message ->
             model |> mapSourceParsingMCmd (mapParsingCmd (SqlSourceUpload.update message SourceParsing))

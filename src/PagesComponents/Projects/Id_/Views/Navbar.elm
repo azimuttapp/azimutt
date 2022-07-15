@@ -21,9 +21,9 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
-import Libs.Models.Url as Url
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
+import Libs.Url as Url
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))

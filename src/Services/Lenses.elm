@@ -13,6 +13,8 @@ module Services.Lenses exposing
     , mapConf
     , mapContent
     , mapContextMenuM
+    , mapDatabaseSource
+    , mapDatabaseSourceM
     , mapDefaultSchema
     , mapEachProjectMLayoutTables
     , mapEachTable
@@ -134,6 +136,7 @@ module Services.Lenses exposing
     , setContextMenu
     , setCurrentLayout
     , setCursorMode
+    , setDatabaseSource
     , setDefaultSchema
     , setDragState
     , setDragging
@@ -196,6 +199,7 @@ module Services.Lenses exposing
     , setSchemaAnalysis
     , setScreen
     , setSearch
+    , setSeed
     , setSelected
     , setSelection
     , setSelectionBox
@@ -212,6 +216,7 @@ module Services.Lenses exposing
     , setSourceUpload
     , setSources
     , setSqlSourceUpload
+    , setStatus
     , setSwitch
     , setTable
     , setTableProps
@@ -227,6 +232,7 @@ module Services.Lenses exposing
     , setUniques
     , setUpdatedAt
     , setUpload
+    , setUrl
     , setUsedLayout
     , setUser
     , setUsername
@@ -427,6 +433,21 @@ setCurrentLayout =
 setCursorMode : v -> { item | cursorMode : v } -> { item | cursorMode : v }
 setCursorMode =
     set .cursorMode (\value item -> { item | cursorMode = value })
+
+
+setDatabaseSource : v -> { item | databaseSource : v } -> { item | databaseSource : v }
+setDatabaseSource =
+    set .databaseSource (\value item -> { item | databaseSource = value })
+
+
+mapDatabaseSource : (v -> v) -> { item | databaseSource : v } -> { item | databaseSource : v }
+mapDatabaseSource =
+    map .databaseSource setDatabaseSource
+
+
+mapDatabaseSourceM : (v -> v) -> { item | databaseSource : Maybe v } -> { item | databaseSource : Maybe v }
+mapDatabaseSourceM =
+    mapM .databaseSource setDatabaseSource
 
 
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }
@@ -1004,6 +1025,11 @@ mapSearch =
     map .search setSearch
 
 
+setSeed : v -> { item | seed : v } -> { item | seed : v }
+setSeed =
+    set .seed (\value item -> { item | seed = value })
+
+
 setSelection : v -> { item | selection : v } -> { item | selection : v }
 setSelection =
     set .selection (\value item -> { item | selection = value })
@@ -1179,6 +1205,11 @@ mapSqlSourceUploadMCmd =
     mapMCmd .sqlSourceUpload setSqlSourceUpload
 
 
+setStatus : v -> { item | status : v } -> { item | status : v }
+setStatus =
+    set .status (\value item -> { item | status = value })
+
+
 setSwitch : v -> { item | switch : v } -> { item | switch : v }
 setSwitch =
     set .switch (\value item -> { item | switch = value })
@@ -1332,6 +1363,11 @@ mapUploadM =
 mapUploadCmd : (v -> ( v, Cmd msg )) -> { item | upload : v } -> ( { item | upload : v }, Cmd msg )
 mapUploadCmd =
     mapCmd .upload setUpload
+
+
+setUrl : v -> { item | url : v } -> { item | url : v }
+setUrl =
+    set .url (\value item -> { item | url = value })
 
 
 setUsedLayout : v -> { item | usedLayout : v } -> { item | usedLayout : v }

@@ -24,9 +24,11 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
+import Models.Project as Project
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
+import Services.DatabaseSource as DatabaseSource
 import Services.ProjectImport as ProjectImport exposing (ProjectImport)
 import Services.SqlSourceUpload as SqlSourceUpload exposing (SqlSourceUpload)
 import Services.Toasts as Toasts
@@ -49,9 +51,10 @@ viewNewProject currentUrl shared model =
             shared.zone
             model
             { tabs =
-                [ { tab = Schema, icon = Icon.DocumentText, content = [ text "From SQL schema" ] }
-                , { tab = Import, icon = Icon.FolderDownload, content = [ text "Import project", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
-                , { tab = Sample, icon = Icon.Gift, content = [ text "From sample" ] }
+                [ { tab = TabSql, icon = Icon.DocumentText, content = [ text "From SQL schema" ] }
+                , { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connexion", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = TabProject, icon = Icon.FolderDownload, content = [ text "Import project", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = TabSamples, icon = Icon.Gift, content = [ text "From sample" ] }
                 ]
             }
         ]
@@ -97,13 +100,16 @@ viewTab selected tab =
 viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
 viewTabContent htmlId zone model =
     case model.selectedTab of
-        Schema ->
+        TabSql ->
             model.sqlSourceUpload |> Maybe.mapOrElse (viewSchemaUploadTab (htmlId ++ "-schema") model.openedCollapse) (div [] [])
 
-        Import ->
+        TabDatabase ->
+            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database")) (div [] [])
+
+        TabProject ->
             model.projectImport |> Maybe.mapOrElse (viewProjectImportTab (htmlId ++ "-import") zone model.projects) (div [] [])
 
-        Sample ->
+        TabSamples ->
             model.sampleSelection |> Maybe.mapOrElse (viewSampleSelectionTab zone model.projects) (div [] [])
 
 
@@ -159,6 +165,25 @@ viewSchemaUploadTab htmlId openedCollapse sqlSourceUpload =
         ]
 
 
+viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model -> Html Msg
+viewDatabaseSourceTab htmlId model =
+    div []
+        [ viewHeading "Export database schema to Azimutt" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is saved."
+        , DatabaseSource.view htmlId model |> Html.map DatabaseSourceMsg
+        , case model.status of
+            DatabaseSource.Success source ->
+                div [ css [ "mt-6" ] ]
+                    [ div [ css [ "flex justify-end" ] ]
+                        [ Button.white3 Tw.primary [ onClick (DatabaseSourceMsg DatabaseSource.DropSchema) ] [ text "Trash this" ]
+                        , Button.primary3 Tw.primary [ onClick (DatabaseSourceMsg (DatabaseSource.CreateProject source)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                        ]
+                    ]
+
+            _ ->
+                div [] []
+        ]
+
+
 viewProjectImportTab : HtmlId -> Time.Zone -> List ProjectInfo -> ProjectImport -> Html Msg
 viewProjectImportTab htmlId zone projects projectImport =
     div []
@@ -210,18 +235,17 @@ viewSqlSourceUpload : SqlSourceUpload Msg -> Html Msg
 viewSqlSourceUpload sqlSourceUpload =
     div []
         [ SqlSourceUpload.viewParsing SqlSourceUploadMsg sqlSourceUpload
-        , Maybe.map2
-            (\( projectId, _, _ ) source ->
-                div [ css [ "mt-6" ] ]
-                    [ div [ css [ "flex justify-end" ] ]
-                        [ Button.white3 Tw.primary [ onClick SqlSourceUploadDrop ] [ text "Trash this" ]
-                        , Button.primary3 Tw.primary [ onClick (SqlSourceUploadCreate projectId source), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+        , sqlSourceUpload.parsedSource
+            |> Maybe.mapOrElse
+                (\source ->
+                    div [ css [ "mt-6" ] ]
+                        [ div [ css [ "flex justify-end" ] ]
+                            [ Button.white3 Tw.primary [ onClick SqlSourceUploadDrop ] [ text "Trash this" ]
+                            , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource source), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                            ]
                         ]
-                    ]
-            )
-            sqlSourceUpload.loadedFile
-            sqlSourceUpload.parsedSource
-            |> Maybe.withDefault (div [] [])
+                )
+                (div [] [])
         ]
 
 
@@ -240,11 +264,11 @@ viewProjectImport zone projects projectImport =
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.mapOrElse
                                             (\p ->
-                                                [ Button.secondary3 Tw.red [ onClick (ProjectImportCreate project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                , Button.primary3 Tw.primary [ onClick (ProjectImportCreateNew projectId project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                [ Button.secondary3 Tw.red [ onClick (CreateProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
+                                                , Button.primary3 Tw.primary [ onClick (CreateProject (project |> Project.duplicate (projects |> List.map .name) projectId)), id "import-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                 ]
                                             )
-                                            [ Button.primary3 Tw.primary [ onClick (ProjectImportCreate project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                            [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
                                    )
                             )
                         ]
@@ -268,7 +292,7 @@ viewSampleSelection zone projects projectImport =
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.mapOrElse
                                             (\_ -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), id "sample-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
-                                            [ Button.primary3 Tw.primary [ onClick (SampleSelectCreate project), id "sample-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
+                                            [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "sample-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )
                         ]
