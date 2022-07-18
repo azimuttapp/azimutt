@@ -21,7 +21,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports
 import Random
 import Request
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
 import Time
@@ -114,7 +114,7 @@ init now query =
          ]
             ++ ((query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
                     |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Ports.loadRemoteProject url ]))
-                    |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (SourceParsing (SqlSourceUpload.SelectRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (EmbedSourceParsing (SqlSource.SelectRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.withDefault []
                )
         )
@@ -129,17 +129,16 @@ initConf mode =
 initSourceParsing : SourceParsingDialog
 initSourceParsing =
     { id = Conf.ids.sourceParsingDialog
-    , parsing =
-        SqlSourceUpload.init
+    , sqlSource =
+        SqlSource.init
             Conf.schema.default
             Nothing
-            Nothing
-            (\( projectId, parser, source ) ->
-                if parser |> SqlSourceUpload.hasErrors then
-                    Noop "embed-parse-source-has-errors"
+            (\( parser, source ) ->
+                if parser |> SqlSource.hasErrors then
+                    Noop "embed-parse-sql-source-has-errors"
 
                 else
-                    ModalClose (SourceParsed projectId source)
+                    ModalClose (SourceParsed source)
             )
     }
 

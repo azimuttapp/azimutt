@@ -11,11 +11,10 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId exposing (SourceId)
 
 
 type alias Model =
-    { source : Maybe SourceId
+    { source : Maybe Source
     , url : String
     , status : Status
     }
@@ -46,7 +45,7 @@ type Msg
     | CreateProject Source
 
 
-init : Maybe SourceId -> Model
+init : Maybe Source -> Model
 init src =
     { source = src
     , url = ""

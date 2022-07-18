@@ -1,0 +1,232 @@
+{
+  "tables": [
+    {
+      "schema": "public",
+      "table": "credentials",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "login",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "password",
+          "type": "varchar(255)",
+          "nullable": false
+        }
+      ],
+      "uniques": [
+        {
+          "name": "credentials_login_uniq",
+          "columns": [
+            "login"
+          ],
+          "definition": "(login)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "role_user",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "role_id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "role_user_pk",
+        "columns": [
+          "id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "roles",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "text"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "roles_pk",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "roles_slug_uniq",
+          "columns": [
+            "slug"
+          ],
+          "definition": "(slug)"
+        },
+        {
+          "name": "roles_name_uniq",
+          "columns": [
+            "name"
+          ],
+          "definition": "(name)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "int",
+          "nullable": false,
+          "comment": "The user id which is automatically defined based on subscription order. Should never change!"
+        },
+        {
+          "name": "first_name",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "varchar(255)",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": "varchar(255)"
+        },
+        {
+          "name": "external_id",
+          "type": "uuid"
+        }
+      ],
+      "primaryKey": {
+        "name": "users_pk",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "user_email_uniq",
+          "columns": [
+            "email"
+          ],
+          "definition": "(email)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "user_name_index",
+          "columns": [
+            "first_name",
+            "last_name"
+          ],
+          "definition": "USING btree (first_name, last_name)"
+        },
+        {
+          "name": "user_external_id_index",
+          "columns": [
+            "external_id"
+          ],
+          "definition": "(external_id)"
+        }
+      ],
+      "comment": "A table to store all users and in a single diagram control them, for the better or worse!"
+    }
+  ],
+  "relations": [
+    {
+      "name": "credentials_user_id_fk",
+      "src": {
+        "schema": "public",
+        "table": "credentials",
+        "column": "user_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "role_user_role_id_fk",
+      "src": {
+        "schema": "public",
+        "table": "role_user",
+        "column": "role_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "roles",
+        "column": "id"
+      }
+    },
+    {
+      "name": "role_user_user_id_fk",
+      "src": {
+        "schema": "public",
+        "table": "role_user",
+        "column": "user_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    }
+  ]
+}

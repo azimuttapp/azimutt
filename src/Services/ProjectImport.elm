@@ -1,47 +1,49 @@
-module Services.ProjectImport exposing (ProjectImport, ProjectImportMsg(..), gotLocalFile, gotRemoteFile, init, update, viewParsing)
+module Services.ProjectImport exposing (Model, Msg(..), gotLocalFile, gotRemoteFile, init, kind, update, viewInput, viewParsing)
 
-import Components.Atoms.Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
+import Components.Molecules.FileInput as FileInput
 import Conf
 import FileValue exposing (File)
-import Html exposing (Html, div, li, text, ul)
+import Html exposing (Html, div, li, p, span, text, ul)
 import Html.Attributes exposing (class)
 import Json.Decode as Decode
 import Libs.DateTime as DateTime
 import Libs.Html exposing (extLink)
+import Libs.Html.Attributes exposing (css)
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
 import Libs.Models.FileUrl exposing (FileUrl)
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Models.Project as Project exposing (Project)
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.SampleKey exposing (SampleKey)
 import Ports
 import Time
 
 
-type alias ProjectImport =
+type alias Model =
     { selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe { url : FileUrl, sample : Maybe SampleKey }
-    , parsedProject : Maybe ( ProjectId, Result Decode.Error Project )
+    , parsedProject : Maybe (Result Decode.Error Project)
     }
 
 
-type ProjectImportMsg
+type Msg
     = SelectLocalFile File
     | SelectRemoteFile FileUrl (Maybe SampleKey)
-    | FileLoaded ProjectId FileContent
+    | FileLoaded FileContent
 
 
 
 -- INIT
 
 
-init : ProjectImport
+init : Model
 init =
     { selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
@@ -53,42 +55,65 @@ init =
 -- UPDATE
 
 
-update : ProjectImportMsg -> ProjectImport -> ( ProjectImport, Cmd msg )
+update : Msg -> Model -> ( Model, Cmd msg )
 update msg model =
     case msg of
         SelectLocalFile file ->
             ( init |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile Nothing Nothing file
+            , Ports.readLocalFile kind file
             )
 
         SelectRemoteFile url sample ->
             ( init |> (\m -> { m | selectedRemoteFile = Just { url = url, sample = sample } })
-            , Ports.readRemoteFile Nothing Nothing url sample
+            , Ports.readRemoteFile kind url sample
             )
 
-        FileLoaded projectId content ->
-            ( { model | parsedProject = Just ( projectId, Decode.decodeString Project.decode content ) }, Cmd.none )
+        FileLoaded content ->
+            ( { model | parsedProject = Just (Decode.decodeString Project.decode content) }, Cmd.none )
 
 
 
 -- SUBSCRIPTIONS
 
 
-gotLocalFile : ProjectId -> FileContent -> ProjectImportMsg
-gotLocalFile projectId content =
-    FileLoaded projectId content
+kind : String
+kind =
+    "import-project"
 
 
-gotRemoteFile : ProjectId -> FileContent -> ProjectImportMsg
-gotRemoteFile projectId content =
-    FileLoaded projectId content
+gotLocalFile : FileContent -> Msg
+gotLocalFile content =
+    FileLoaded content
+
+
+gotRemoteFile : FileContent -> Msg
+gotRemoteFile content =
+    FileLoaded content
 
 
 
 -- VIEW
 
 
-viewParsing : Time.Zone -> Maybe Project -> ProjectImport -> Html msg
+viewInput : HtmlId -> (File -> msg) -> msg -> Html msg
+viewInput htmlId onSelect noop =
+    FileInput.input
+        { id = htmlId
+        , onDrop = \f _ -> onSelect f
+        , onOver = \_ _ -> noop
+        , onLeave = Nothing
+        , onSelect = onSelect
+        , content =
+            div [ css [ "space-y-1 text-center" ] ]
+                [ Icon.outline2x FolderAdd "mx-auto"
+                , p [] [ span [ css [ "text-primary-600" ] ] [ text "Upload a project file" ], text " or drag and drop" ]
+                , p [ css [ "text-xs" ] ] [ text ".json file only" ]
+                ]
+        , mimes = [ ".json" ]
+        }
+
+
+viewParsing : Time.Zone -> Maybe Project -> Model -> Html msg
 viewParsing zone currentProject model =
     let
         isSample : Bool
@@ -103,7 +128,6 @@ viewParsing zone currentProject model =
                     [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedProject |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
                     , viewLogs zone isSample fileName model.parsedProject
                     , model.parsedProject
-                        |> Maybe.map Tuple.second
                         |> Maybe.andThen Result.toMaybe
                         |> Maybe.andThen (\project -> currentProject |> Maybe.map (\p -> viewDiffAlert zone isSample p project))
                         |> Maybe.withDefault (div [] [])
@@ -112,11 +136,11 @@ viewParsing zone currentProject model =
             (div [] [])
 
 
-viewLogs : Time.Zone -> Bool -> String -> Maybe ( ProjectId, Result Decode.Error Project ) -> Html msg
+viewLogs : Time.Zone -> Bool -> String -> Maybe (Result Decode.Error Project) -> Html msg
 viewLogs zone isSample fileName parsedProject =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
         [ div [] [ text ("Loaded " ++ fileName ++ ".") ]
-        , parsedProject |> Maybe.map Tuple.second |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])
+        , parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])
         ]
 
 

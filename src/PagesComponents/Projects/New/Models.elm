@@ -11,8 +11,9 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Random
 import Services.DatabaseSource as DatabaseSource
-import Services.ProjectImport exposing (ProjectImport, ProjectImportMsg)
-import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
+import Services.JsonSource as JsonSource
+import Services.ProjectImport as ProjectImport exposing (Model, Msg)
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared exposing (Confirm)
 
@@ -24,10 +25,11 @@ type alias Model =
     , openedCollapse : HtmlId
     , projects : List ProjectInfo
     , selectedTab : Tab
-    , sqlSourceUpload : Maybe (SqlSourceUpload Msg)
+    , sqlSource : Maybe (SqlSource.Model Msg)
     , databaseSource : Maybe DatabaseSource.Model
-    , projectImport : Maybe ProjectImport
-    , sampleSelection : Maybe ProjectImport
+    , jsonSource : Maybe (JsonSource.Model Msg)
+    , projectImport : Maybe ProjectImport.Model
+    , sampleSelection : Maybe ProjectImport.Model
 
     -- global attrs
     , openedDropdown : HtmlId
@@ -40,6 +42,7 @@ type alias Model =
 type Tab
     = TabSql
     | TabDatabase
+    | TabJson
     | TabProject
     | TabSamples
 
@@ -53,15 +56,18 @@ type Msg
     | Logout
     | ToggleCollapse HtmlId
     | SelectTab Tab
-    | SqlSourceUploadMsg SqlSourceUploadMsg
-    | SqlSourceUploadDrop
+    | SqlSourceMsg SqlSource.Msg
+    | SqlSourceDrop
     | DatabaseSourceMsg DatabaseSource.Msg
-    | ProjectImportMsg ProjectImportMsg
+    | JsonSourceMsg JsonSource.Msg
+    | JsonSourceDrop
+    | ProjectImportMsg ProjectImport.Msg
     | ProjectImportDrop
-    | SampleSelectMsg ProjectImportMsg
+    | SampleSelectMsg ProjectImport.Msg
     | SampleSelectDrop
     | CreateProjectFromSource Source
     | CreateProject Project
+    | CreateNewProject Project
       -- global messages
     | DropdownToggle HtmlId
     | Toast Toasts.Msg

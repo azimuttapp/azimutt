@@ -12,7 +12,6 @@ import {
 import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
 import {Email, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
-import {Utils} from "../utils/utils";
 import {Profile} from "../types/profile";
 
 export class ElmApp {
@@ -93,17 +92,13 @@ export class ElmApp {
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
     gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
-        now: Date.now(),
-        projectId: msg.project || Utils.randomId(),
-        sourceId: msg.source || Utils.randomId(),
+        sourceKind: msg.sourceKind,
         file: msg.file,
         content
     })
     gotRemoteFile = (msg: GetRemoteFileMsg, content: string): void => this.send({
         kind: 'GotRemoteFile',
-        now: Date.now(),
-        projectId: msg.project || Utils.randomId(),
-        sourceId: msg.source || Utils.randomId(),
+        sourceKind: msg.sourceKind,
         url: msg.url,
         content,
         sample: msg.sample

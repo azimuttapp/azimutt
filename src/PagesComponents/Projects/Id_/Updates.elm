@@ -16,7 +16,9 @@ import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.SourceId as SourceId
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
@@ -44,8 +46,9 @@ import Ports exposing (JsMsg(..))
 import Random
 import Request
 import Services.Backend exposing (BackendUrl)
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.JsonSource as JsonSource
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapSqlSourceCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSeed, setShow, setSize, setText)
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -196,11 +199,15 @@ update req currentLayout now backendUrl msg model =
         ProjectSettingsMsg message ->
             model |> handleProjectSettings now backendUrl message
 
-        SourceParsing message ->
-            model |> mapSourceParsingMCmd (mapParsingCmd (SqlSourceUpload.update message SourceParsing))
+        EmbedSourceParsing message ->
+            model |> mapSourceParsingMCmd (mapSqlSourceCmd (SqlSource.update message EmbedSourceParsing))
 
-        SourceParsed projectId source ->
-            ( model, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
+        SourceParsed source ->
+            let
+                ( projectId, seed ) =
+                    ProjectId.random model.seed
+            in
+            ( model |> setSeed seed, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -386,15 +393,45 @@ handleJsMessage now currentLayout msg model =
         ProjectDropped projectId ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
 
-        GotLocalFile now_ projectId sourceId file content ->
-            ( model, T.send (SqlSourceUpload.gotLocalFile now_ projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+        GotLocalFile kind file content ->
+            let
+                ( sourceId, seed ) =
+                    SourceId.random model.seed
 
-        GotRemoteFile now_ projectId sourceId url content sample ->
-            if model.erd == Nothing then
-                ( model, Cmd.batch [ T.send (SqlSourceUpload.gotRemoteFile now_ projectId sourceId url content sample |> SourceParsing) ] )
+                updated : Model
+                updated =
+                    model |> setSeed seed
+            in
+            if kind == SqlSource.kind then
+                ( updated, T.send (SqlSource.gotLocalFile now sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+
+            else if kind == JsonSource.kind then
+                ( updated, T.send (JsonSource.gotLocalFile now sourceId file content |> PSJsonSourceMsg |> ProjectSettingsMsg) )
 
             else
-                ( model, T.send (SqlSourceUpload.gotRemoteFile now_ projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+                ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
+
+        GotRemoteFile kind url content sample ->
+            let
+                ( sourceId, seed ) =
+                    SourceId.random model.seed
+
+                updated : Model
+                updated =
+                    model |> setSeed seed
+            in
+            if kind == SqlSource.kind then
+                if model.erd == Nothing then
+                    ( updated, Cmd.batch [ T.send (SqlSource.gotRemoteFile now sourceId url content sample |> EmbedSourceParsing) ] )
+
+                else
+                    ( updated, T.send (SqlSource.gotRemoteFile now sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+
+            else if kind == JsonSource.kind then
+                ( updated, T.send (JsonSource.gotRemoteFile now sourceId url content sample |> PSJsonSourceMsg |> ProjectSettingsMsg) )
+
+            else
+                ( model, Toasts.error Toast ("Unhandled remote file for " ++ kind ++ " source") )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey

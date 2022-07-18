@@ -1,4 +1,4 @@
-module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, fold, isErr, isOk, map6, partition, toErrMaybe)
+module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, fold, isErr, isOk, map6, partition, toError)
 
 import Libs.Nel as Nel exposing (Nel)
 
@@ -23,8 +23,8 @@ isErr result =
             True
 
 
-toErrMaybe : Result e a -> Maybe e
-toErrMaybe result =
+toError : Result e a -> Maybe e
+toError result =
     case result of
         Ok _ ->
             Nothing

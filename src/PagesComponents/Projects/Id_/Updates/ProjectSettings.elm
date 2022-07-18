@@ -17,8 +17,9 @@ import Ports
 import Random
 import Services.Backend as Backend exposing (BackendUrl)
 import Services.DatabaseSource as DatabaseSource
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapDatabaseSource, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadM, mapSourceUploadMCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSeed, setSettings, setSourceUpload, setStatus, setUrl)
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.JsonSource as JsonSource
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapDatabaseSource, mapEnabled, mapErdM, mapHiddenColumns, mapJsonSourceCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadM, mapSourceUploadMCmd, mapSqlSourceCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSeed, setSettings, setSourceUpload, setStatus, setUrl)
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -62,8 +63,9 @@ handleProjectSettings now backendUrl msg model =
                 |> setSourceUpload
                     (Just
                         { id = Conf.ids.sourceUploadDialog
-                        , parsing = SqlSourceUpload.init (model.erd |> Erd.defaultSchemaM) (model.erd |> Maybe.map (\p -> p.project.id)) source (\_ -> Noop "project-settings-source-parsed")
-                        , databaseSource = DatabaseSource.init (source |> Maybe.map .id)
+                        , sqlSource = SqlSource.init (model.erd |> Erd.defaultSchemaM) source (\_ -> Noop "project-settings-sql-source-parsed")
+                        , databaseSource = DatabaseSource.init source
+                        , jsonSource = JsonSource.init source (\_ -> Noop "project-settings-json-source-parsed")
                         }
                     )
             , T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog)
@@ -73,7 +75,7 @@ handleProjectSettings now backendUrl msg model =
             ( model |> setSourceUpload Nothing, Cmd.none )
 
         PSSqlSourceMsg message ->
-            model |> mapSourceUploadMCmd (mapParsingCmd (SqlSourceUpload.update message (PSSqlSourceMsg >> ProjectSettingsMsg)))
+            model |> mapSourceUploadMCmd (mapSqlSourceCmd (SqlSource.update message (PSSqlSourceMsg >> ProjectSettingsMsg)))
 
         PSDatabaseSourceMsg (DatabaseSource.UpdateUrl url) ->
             ( model |> mapSourceUploadM (mapDatabaseSource (setUrl url)), Cmd.none )
@@ -88,7 +90,7 @@ handleProjectSettings now backendUrl msg model =
                 Ok schema ->
                     let
                         ( sourceId, seed ) =
-                            model.sourceUpload |> Maybe.andThen (.databaseSource >> .source) |> Maybe.mapOrElse (\id -> ( id, model.seed )) (SourceId.random model.seed)
+                            model.sourceUpload |> Maybe.andThen (.databaseSource >> .source) |> Maybe.mapOrElse (\src -> ( src.id, model.seed )) (SourceId.random model.seed)
 
                         source : Source
                         source =
@@ -104,6 +106,9 @@ handleProjectSettings now backendUrl msg model =
 
         PSDatabaseSourceMsg (DatabaseSource.CreateProject source) ->
             ( model, T.send (PSSourceRefresh source |> ProjectSettingsMsg) )
+
+        PSJsonSourceMsg message ->
+            model |> mapSourceUploadMCmd (mapJsonSourceCmd (JsonSource.update message (PSJsonSourceMsg >> ProjectSettingsMsg)))
 
         PSSourceRefresh source ->
             ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.refreshSource source) ] )

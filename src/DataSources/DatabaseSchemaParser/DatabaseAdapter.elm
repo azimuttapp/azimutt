@@ -19,7 +19,7 @@ import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.SourceKind as SourceKid
+import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.Unique exposing (Unique)
@@ -35,7 +35,7 @@ buildDatabaseSource now sourceId url schema =
     in
     { id = sourceId
     , name = DatabaseUrl.databaseName url
-    , kind = SourceKid.DatabaseConnection url
+    , kind = SourceKind.DatabaseConnection url
     , content = Array.empty
     , tables = schema.tables |> List.map (buildTable origins) |> Dict.fromList
     , relations = schema.relations |> List.filterMap (buildRelation origins)

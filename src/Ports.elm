@@ -25,14 +25,12 @@ import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
-import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
 import Models.User as User exposing (User)
 import Models.UserId as UserId exposing (UserId)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
-import Time
 import Track
 
 
@@ -146,14 +144,14 @@ dropProject project =
     Cmd.batch [ messageToJs (DropProject project), track (Track.deleteProject project) ]
 
 
-readLocalFile : Maybe ProjectId -> Maybe SourceId -> File -> Cmd msg
-readLocalFile project source file =
-    messageToJs (GetLocalFile project source file)
+readLocalFile : String -> File -> Cmd msg
+readLocalFile sourceKind file =
+    messageToJs (GetLocalFile sourceKind file)
 
 
-readRemoteFile : Maybe ProjectId -> Maybe SourceId -> FileUrl -> Maybe SampleKey -> Cmd msg
-readRemoteFile project source url sample =
-    messageToJs (GetRemoteFile project source url sample)
+readRemoteFile : String -> FileUrl -> Maybe SampleKey -> Cmd msg
+readRemoteFile sourceKind url sample =
+    messageToJs (GetRemoteFile sourceKind url sample)
 
 
 observeSize : HtmlId -> Cmd msg
@@ -251,8 +249,8 @@ type ElmMsg
     | SetOwners ProjectId (List UserId)
     | DownloadFile FileName FileContent
     | DropProject ProjectInfo
-    | GetLocalFile (Maybe ProjectId) (Maybe SourceId) File
-    | GetRemoteFile (Maybe ProjectId) (Maybe SourceId) FileUrl (Maybe SampleKey)
+    | GetLocalFile String File
+    | GetRemoteFile String FileUrl (Maybe SampleKey)
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
@@ -276,8 +274,8 @@ type JsMsg
     | GotUser Email (Maybe User)
     | GotOwners ProjectId (List User)
     | ProjectDropped ProjectId
-    | GotLocalFile Time.Posix ProjectId SourceId File FileContent
-    | GotRemoteFile Time.Posix ProjectId SourceId FileUrl FileContent (Maybe SampleKey)
+    | GotLocalFile String File FileContent
+    | GotRemoteFile String FileUrl FileContent (Maybe SampleKey)
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -389,11 +387,11 @@ elmEncoder elm =
         DropProject project ->
             Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ) ]
 
-        GetLocalFile project source file ->
-            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "file", file |> FileValue.encode ) ]
+        GetLocalFile sourceKind file ->
+            Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "file", file |> FileValue.encode ) ]
 
-        GetRemoteFile project source url sample ->
-            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "project", project |> Encode.maybe ProjectId.encode ), ( "source", source |> Encode.maybe SourceId.encode ), ( "url", url |> Encode.string ), ( "sample", sample |> Encode.maybe Encode.string ) ]
+        GetRemoteFile sourceKind url sample ->
+            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> Encode.maybe Encode.string ) ]
 
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
@@ -461,18 +459,14 @@ jsDecoder defaultSchema =
                     Decode.map ProjectDropped (Decode.field "id" ProjectId.decode)
 
                 "GotLocalFile" ->
-                    Decode.map5 GotLocalFile
-                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "projectId" ProjectId.decode)
-                        (Decode.field "sourceId" SourceId.decode)
+                    Decode.map3 GotLocalFile
+                        (Decode.field "sourceKind" Decode.string)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
 
                 "GotRemoteFile" ->
-                    Decode.map6 GotRemoteFile
-                        (Decode.field "now" Decode.int |> Decode.map Time.millisToPosix)
-                        (Decode.field "projectId" ProjectId.decode)
-                        (Decode.field "sourceId" SourceId.decode)
+                    Decode.map4 GotRemoteFile
+                        (Decode.field "sourceKind" Decode.string)
                         (Decode.field "url" Decode.string)
                         (Decode.field "content" Decode.string)
                         (Decode.maybeField "sample" Decode.string)
@@ -585,10 +579,10 @@ unhandledJsMsgError msg =
                 ProjectDropped _ ->
                     "ProjectDropped"
 
-                GotLocalFile _ _ _ _ _ ->
+                GotLocalFile _ _ _ ->
                     "GotLocalFile"
 
-                GotRemoteFile _ _ _ _ _ _ ->
+                GotRemoteFile _ _ _ _ ->
                     "GotRemoteFile"
 
                 GotHotkey _ ->

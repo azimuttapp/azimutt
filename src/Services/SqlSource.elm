@@ -1,9 +1,10 @@
-module Services.SqlSourceUpload exposing (ParsingMsg(..), SqlParsing, SqlSourceUpload, SqlSourceUploadMsg(..), UiMsg, gotLocalFile, gotRemoteFile, hasErrors, init, update, viewParsing)
+module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, UiMsg, gotLocalFile, gotRemoteFile, hasErrors, init, kind, update, viewInput, viewParsing)
 
-import Components.Atoms.Icon exposing (Icon(..))
+import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
+import Components.Molecules.FileInput as FileInput
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import DataSources.Helpers exposing (SourceLine)
@@ -19,43 +20,41 @@ import Html.Events exposing (onClick)
 import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText)
+import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
-import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
+import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationId as RelationId
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId
-import Models.SourceInfo exposing (SourceInfo)
+import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Ports
-import Services.Lenses exposing (mapParsedSchemaM, mapShow)
+import Services.Lenses exposing (mapParsedSchemaM, mapShow, setParsedSource)
 import Time
 import Track
 import Url exposing (percentEncode)
 
 
-type alias SqlSourceUpload msg =
+type alias Model msg =
     { defaultSchema : SchemaName
-    , project : Maybe ProjectId
     , source : Maybe Source
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe FileUrl
-    , loadedFile : Maybe ( ProjectId, SourceInfo, FileContent )
+    , loadedFile : Maybe ( SourceInfo, FileContent )
     , parsedSchema : Maybe (SqlParsing msg)
     , parsedSource : Maybe Source
-    , callback : ( ProjectId, SqlParsing msg, Source ) -> msg
+    , callback : ( SqlParsing msg, Source ) -> msg
     }
 
 
@@ -73,11 +72,11 @@ type alias SqlParsing msg =
     }
 
 
-type SqlSourceUploadMsg
+type Msg
     = UpdateRemoteFile FileUrl
-    | SelectLocalFile File
     | SelectRemoteFile FileUrl
-    | FileLoaded ProjectId SourceInfo FileContent
+    | SelectLocalFile File
+    | FileLoaded SourceInfo FileContent
     | ParseMsg ParsingMsg
     | UiMsg UiMsg
     | BuildSource
@@ -98,10 +97,9 @@ type UiMsg
 -- INIT
 
 
-init : SchemaName -> Maybe ProjectId -> Maybe Source -> (( ProjectId, SqlParsing msg, Source ) -> msg) -> SqlSourceUpload msg
-init defaultSchema project source callback =
+init : SchemaName -> Maybe Source -> (( SqlParsing msg, Source ) -> msg) -> Model msg
+init defaultSchema source callback =
     { defaultSchema = defaultSchema
-    , project = project
     , source = source
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
@@ -131,25 +129,25 @@ parsingInit fileContent buildMsg buildProject =
 -- UPDATE
 
 
-update : SqlSourceUploadMsg -> (SqlSourceUploadMsg -> msg) -> SqlSourceUpload msg -> ( SqlSourceUpload msg, Cmd msg )
+update : Msg -> (Msg -> msg) -> Model msg -> ( Model msg, Cmd msg )
 update msg wrap model =
     case msg of
         UpdateRemoteFile url ->
             ( { model | selectedRemoteFile = B.cond (url == "") Nothing (Just url) }, Cmd.none )
 
-        SelectLocalFile file ->
-            ( init model.defaultSchema model.project model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
-            , Ports.readLocalFile model.project (model.source |> Maybe.map .id) file
-            )
-
         SelectRemoteFile url ->
-            ( init model.defaultSchema model.project model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
-            , Ports.readRemoteFile model.project (model.source |> Maybe.map .id) url Nothing
+            ( init model.defaultSchema model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
+            , Ports.readRemoteFile kind url Nothing
             )
 
-        FileLoaded projectId sourceInfo fileContent ->
+        SelectLocalFile file ->
+            ( init model.defaultSchema model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
+            , Ports.readLocalFile kind file
+            )
+
+        FileLoaded sourceInfo fileContent ->
             ( { model
-                | loadedFile = Just ( projectId, sourceInfo, fileContent )
+                | loadedFile = Just ( sourceInfo, fileContent )
                 , parsedSchema = Just (parsingInit fileContent (ParseMsg >> wrap) (BuildSource |> wrap))
               }
             , T.send (BuildLines |> ParseMsg |> wrap)
@@ -157,7 +155,7 @@ update msg wrap model =
 
         ParseMsg parseMsg ->
             Maybe.map2
-                (\parsedSchema ( _, sourceInfo, _ ) ->
+                (\parsedSchema ( sourceInfo, _ ) ->
                     parsingUpdate model.defaultSchema sourceInfo.id parseMsg parsedSchema
                         |> (\( parsed, message ) ->
                                 ( { model | parsedSchema = Just parsed }
@@ -179,14 +177,14 @@ update msg wrap model =
                 |> Maybe.andThen
                     (\parsedSchema ->
                         parsedSchema.schema
-                            |> Maybe.map3 (\( projectId, sourceInfo, _ ) lines schema -> ( projectId, parsedSchema, SqlAdapter.buildSqlSource sourceInfo lines schema ))
+                            |> Maybe.map3 (\( sourceInfo, _ ) lines schema -> ( parsedSchema, SqlAdapter.buildSqlSource sourceInfo lines schema ))
                                 model.loadedFile
                                 parsedSchema.lines
                     )
                 |> Maybe.map
-                    (\( projectId, parsedSchema, source ) ->
-                        ( { model | parsedSource = Just source }
-                        , Cmd.batch [ T.send (model.callback ( projectId, parsedSchema, source )), Ports.track (Track.parsedSource parsedSchema source) ]
+                    (\( parsedSchema, source ) ->
+                        ( model |> setParsedSource (Just source)
+                        , Cmd.batch [ T.send (model.callback ( parsedSchema, source )), Ports.track (Track.parsedSQLSource parsedSchema source) ]
                         )
                     )
                 |> Maybe.withDefault ( model, Cmd.none )
@@ -241,31 +239,44 @@ parsingCptInc model =
 -- SUBSCRIPTIONS
 
 
-gotLocalFile : Time.Posix -> ProjectId -> SourceId -> File -> FileContent -> SqlSourceUploadMsg
-gotLocalFile now projectId sourceId file content =
-    FileLoaded projectId (SourceInfo sourceId file.name (localSource file) True Nothing now now) content
+kind : String
+kind =
+    "sql-source"
 
 
-gotRemoteFile : Time.Posix -> ProjectId -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SqlSourceUploadMsg
-gotRemoteFile now projectId sourceId url content sample =
-    FileLoaded projectId (SourceInfo sourceId (url |> FileUrl.filename) (remoteSource url content) True sample now now) content
+gotLocalFile : Time.Posix -> SourceId -> File -> FileContent -> Msg
+gotLocalFile now sourceId file content =
+    FileLoaded (SourceInfo.sqlLocal now sourceId file) content
 
 
-localSource : File -> SourceKind
-localSource file =
-    SqlFileLocal file.name file.size file.lastModified
-
-
-remoteSource : FileUrl -> FileContent -> SourceKind
-remoteSource url content =
-    SqlFileRemote url (String.length content)
+gotRemoteFile : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> Msg
+gotRemoteFile now sourceId url content sample =
+    FileLoaded (SourceInfo.sqlRemote now sourceId url content sample) content
 
 
 
 -- VIEW
 
 
-viewParsing : (SqlSourceUploadMsg -> msg) -> SqlSourceUpload msg -> Html msg
+viewInput : HtmlId -> (File -> msg) -> msg -> Html msg
+viewInput htmlId onSelect noop =
+    FileInput.input
+        { id = htmlId
+        , onDrop = \f _ -> onSelect f
+        , onOver = \_ _ -> noop
+        , onLeave = Nothing
+        , onSelect = onSelect
+        , content =
+            div [ css [ "space-y-1 text-center" ] ]
+                [ Icon.outline2x DocumentAdd "mx-auto"
+                , p [] [ span [ css [ "text-primary-600" ] ] [ text "Upload your SQL schema" ], text " or drag and drop" ]
+                , p [ css [ "text-xs" ] ] [ text ".sql file only" ]
+                ]
+        , mimes = [ ".sql" ]
+        }
+
+
+viewParsing : (Msg -> msg) -> Model msg -> Html msg
 viewParsing wrap model =
     ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
         |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
@@ -283,7 +294,7 @@ viewParsing wrap model =
         |> Maybe.withDefault (div [] [])
 
 
-viewLogs : (SqlSourceUploadMsg -> msg) -> SchemaName -> String -> SqlParsing msg -> Html msg
+viewLogs : (Msg -> msg) -> SchemaName -> String -> SqlParsing msg -> Html msg
 viewLogs wrap defaultSchema filename model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
         [ viewLogsFile wrap model.show filename model.fileContent
@@ -295,7 +306,7 @@ viewLogs wrap defaultSchema filename model =
         ]
 
 
-viewLogsFile : (SqlSourceUploadMsg -> msg) -> HtmlId -> String -> FileContent -> Html msg
+viewLogsFile : (Msg -> msg) -> HtmlId -> String -> FileContent -> Html msg
 viewLogsFile wrap show filename content =
     div []
         [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "file"))) ] [ text ("Loaded " ++ filename ++ ".") ]
@@ -307,7 +318,7 @@ viewLogsFile wrap show filename content =
         ]
 
 
-viewLogsLines : (SqlSourceUploadMsg -> msg) -> HtmlId -> List SourceLine -> Html msg
+viewLogsLines : (Msg -> msg) -> HtmlId -> List SourceLine -> Html msg
 viewLogsLines wrap show lines =
     let
         count : Int
@@ -342,7 +353,7 @@ viewLogsLines wrap show lines =
         ]
 
 
-viewLogsStatements : (SqlSourceUploadMsg -> msg) -> HtmlId -> Dict Int SqlStatement -> Html msg
+viewLogsStatements : (Msg -> msg) -> HtmlId -> Dict Int SqlStatement -> Html msg
 viewLogsStatements wrap show statements =
     let
         count : Int
@@ -413,7 +424,7 @@ viewLogsErrors schemaErrors =
             )
 
 
-viewLogsSchema : (SqlSourceUploadMsg -> msg) -> SchemaName -> HtmlId -> SqlSchema -> Html msg
+viewLogsSchema : (Msg -> msg) -> SchemaName -> HtmlId -> SqlSchema -> Html msg
 viewLogsSchema wrap defaultSchema htmlId schema =
     let
         count : Int
@@ -471,7 +482,7 @@ viewErrorAlert model =
     let
         parseErrors : List (List ParseError)
         parseErrors =
-            model.commands |> Maybe.map (Dict.values >> List.filterMap (\( _, r ) -> r |> Result.toErrMaybe)) |> Maybe.withDefault []
+            model.commands |> Maybe.map (Dict.values >> List.filterMap (Tuple.second >> Result.toError)) |> Maybe.withDefault []
 
         schemaErrors : List (List SqlSchemaError)
         schemaErrors =

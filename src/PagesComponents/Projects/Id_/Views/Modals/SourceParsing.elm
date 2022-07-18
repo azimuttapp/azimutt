@@ -9,10 +9,8 @@ import Libs.Maybe as Maybe
 import Libs.Models.FileUrl as FileUrl
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw
-import Models.Project.ProjectId exposing (ProjectId)
-import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), SourceParsingDialog)
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.SqlSource as SqlSource
 
 
 viewSourceParsing : Bool -> SourceParsingDialog -> Html Msg
@@ -24,13 +22,9 @@ viewSourceParsing opened model =
 
         sourceName : String
         sourceName =
-            (model.parsing.selectedLocalFile |> Maybe.map .name)
-                |> Maybe.orElse (model.parsing.selectedRemoteFile |> Maybe.map FileUrl.filename)
+            (model.sqlSource.selectedLocalFile |> Maybe.map .name)
+                |> Maybe.orElse (model.sqlSource.selectedRemoteFile |> Maybe.map FileUrl.filename)
                 |> Maybe.withDefault "your"
-
-        result : Maybe ( ProjectId, Source )
-        result =
-            Maybe.map2 (\( projectId, _, _ ) source -> ( projectId, source )) model.parsing.loadedFile model.parsing.parsedSource
     in
     Modal.modal
         { id = model.id
@@ -39,8 +33,8 @@ viewSourceParsing opened model =
         , onBackgroundClick = Noop "close-source-parsing"
         }
         [ h3 [ class "px-6 pt-6 text-lg leading-6 font-medium text-gray-900" ] [ text ("Parsing " ++ sourceName ++ " source...") ]
-        , div [ class "px-6" ] [ SqlSourceUpload.viewParsing SourceParsing model.parsing ]
+        , div [ class "px-6" ] [ SqlSource.viewParsing EmbedSourceParsing model.sqlSource ]
         , div [ class "px-6 py-3 mt-6 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Button.primary3 Tw.primary (result |> Maybe.mapOrElse (\( projectId, source ) -> [ onClick (ModalClose (SourceParsed projectId source)) ]) [ disabled True ]) [ text "Open schema" ]
+            [ Button.primary3 Tw.primary (model.sqlSource.parsedSource |> Maybe.mapOrElse (\source -> [ onClick (ModalClose (SourceParsed source)) ]) [ disabled True ]) [ text "Open schema" ]
             ]
         ]

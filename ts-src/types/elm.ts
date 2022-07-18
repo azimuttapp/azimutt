@@ -21,7 +21,6 @@ import {
     ProjectInfo,
     ProjectStorage,
     Size,
-    SourceId,
     TableId
 } from "./project";
 import {LoginInfo} from "../services/supabase";
@@ -95,8 +94,8 @@ export type GotProject = { kind: 'GotProject', project?: Project }
 export type GotUser = { kind: 'GotUser', email: Email, user: Profile | undefined }
 export type GotOwners = { kind: 'GotOwners', project: ProjectId, owners: Profile[] }
 export type ProjectDropped = { kind: 'ProjectDropped', id: ProjectId }
-export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
-export type GotRemoteFile = { kind: 'GotRemoteFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, url: string, content: string, sample?: string }
+export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: string, file: File, content: string }
+export type GotRemoteFile = { kind: 'GotRemoteFile', sourceKind: string, url: string, content: string, sample?: string }
 export type GotHotkey = { kind: 'GotHotkey', id: string }
 export type GotKeyHold = { kind: 'GotKeyHold', key: string, start: boolean }
 export type GotToast = { kind: 'GotToast', level: ToastLevel, message: string }
@@ -167,8 +166,8 @@ export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
 export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
 export type DropProjectMsg = { kind: 'DropProject', project: ProjectInfo }
-export type GetLocalFileMsg = { kind: 'GetLocalFile', project?: ProjectId, source?: SourceId, file: File }
-export type GetRemoteFileMsg = { kind: 'GetRemoteFile', project?: ProjectId, source?: SourceId, url: FileUrl, sample: SampleKey }
+export type GetLocalFileMsg = { kind: 'GetLocalFile', sourceKind: string, file: File }
+export type GetRemoteFileMsg = { kind: 'GetRemoteFile', sourceKind: string, url: FileUrl, sample: SampleKey }
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
 export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export type ConfettiMsg = { kind: 'Confetti', id: HtmlId }

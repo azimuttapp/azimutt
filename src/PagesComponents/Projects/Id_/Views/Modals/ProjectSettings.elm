@@ -101,6 +101,12 @@ viewSource htmlId _ zone source =
         DatabaseConnection url ->
             view Database "Last fetched on " source.updatedAt ("Database " ++ url)
 
+        JsonFileLocal path _ modified ->
+            view Code "File last modified on " modified (path ++ " file")
+
+        JsonFileRemote url _ ->
+            view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
+
         AmlEditor ->
             view User "Last edited on " source.updatedAt "Created by you"
 

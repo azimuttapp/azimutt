@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUpdateSchema, parsedSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUpdateSchema, parsedJsonSource, parsedSQLSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlParser.SqlAdapter exposing (SqlSchema)
@@ -83,9 +83,14 @@ openUpdateSchema =
     { name = "open-update-schema", details = [], enabled = True }
 
 
-parsedSource : SQLParsing msg -> Source -> TrackEvent
-parsedSource =
+parsedSQLSource : SQLParsing msg -> Source -> TrackEvent
+parsedSQLSource =
     parseSQLEvent
+
+
+parsedJsonSource : Result String Source -> TrackEvent
+parsedJsonSource =
+    parseJsonEvent
 
 
 createProject : Project -> TrackEvent
@@ -192,6 +197,21 @@ parseSQLEvent parser source =
         , ( "parsing-errors", parser.commands |> Maybe.mapOrElse (Dict.count (\_ ( _, r ) -> r |> Result.isErr)) 0 |> String.fromInt )
         , ( "schema-errors", parser.schema |> Maybe.mapOrElse .errors [] |> List.length |> String.fromInt )
         ]
+    , enabled = True
+    }
+
+
+parseJsonEvent : Result String Source -> TrackEvent
+parseJsonEvent source =
+    { name = "parse" ++ (source |> Result.toMaybe |> Maybe.andThen .fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-json-source"
+    , details =
+        source
+            |> Result.fold (\e -> [ ( "error", e ) ])
+                (\s ->
+                    [ ( "table-count", s.tables |> Dict.size |> String.fromInt )
+                    , ( "relation-count", s.relations |> List.length |> String.fromInt )
+                    ]
+                )
     , enabled = True
     }
 

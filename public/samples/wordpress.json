@@ -1,0 +1,895 @@
+{
+  "tables": [
+    {
+      "schema": "public",
+      "table": "commentmeta",
+      "columns": [
+        {
+          "name": "meta_id",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "comment_id",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "meta_key",
+          "type": "varchar(255)",
+          "default": "NULL"
+        },
+        {
+          "name": "meta_value",
+          "type": "longtext"
+        }
+      ],
+      "primaryKey": {
+        "name": "commentmeta_pk_az",
+        "columns": [
+          "meta_id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "comment_id",
+          "columns": [
+            "comment_id"
+          ],
+          "definition": "KEY `comment_id` (`comment_id`)"
+        },
+        {
+          "name": "meta_key",
+          "columns": [
+            "meta_key"
+          ],
+          "definition": "KEY `meta_key` (`meta_key`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "comments",
+      "columns": [
+        {
+          "name": "comment_ID",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "comment_post_ID",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "comment_author",
+          "type": "tinytext",
+          "nullable": false
+        },
+        {
+          "name": "comment_author_email",
+          "type": "varchar(100)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "comment_author_url",
+          "type": "varchar(200)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "comment_author_IP",
+          "type": "varchar(100)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "comment_date",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "comment_date_gmt",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "comment_content",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "comment_karma",
+          "type": "int(11)",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "comment_approved",
+          "type": "varchar(20)",
+          "default": "'1'",
+          "nullable": false
+        },
+        {
+          "name": "comment_agent",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "comment_type",
+          "type": "varchar(20)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "comment_parent",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "comments_pk_az",
+        "columns": [
+          "comment_ID"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "comment_approved",
+          "columns": [
+            "comment_approved"
+          ],
+          "definition": "KEY `comment_approved` (`comment_approved`)"
+        },
+        {
+          "name": "comment_post_ID",
+          "columns": [
+            "comment_post_ID"
+          ],
+          "definition": "KEY `comment_post_ID` (`comment_post_ID`)"
+        },
+        {
+          "name": "comment_approved_date_gmt",
+          "columns": [
+            "comment_approved",
+            "comment_date_gmt"
+          ],
+          "definition": "KEY `comment_approved_date_gmt` (`comment_approved`,`comment_date_gmt`)"
+        },
+        {
+          "name": "comment_date_gmt",
+          "columns": [
+            "comment_date_gmt"
+          ],
+          "definition": "KEY `comment_date_gmt` (`comment_date_gmt`)"
+        },
+        {
+          "name": "comment_parent",
+          "columns": [
+            "comment_parent"
+          ],
+          "definition": "KEY `comment_parent` (`comment_parent`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "ec3_schedule",
+      "columns": [
+        {
+          "name": "sched_id",
+          "type": "bigint(20)",
+          "nullable": false
+        },
+        {
+          "name": "post_id",
+          "type": "bigint(20)",
+          "default": "NULL"
+        },
+        {
+          "name": "start",
+          "type": "datetime",
+          "default": "NULL"
+        },
+        {
+          "name": "end",
+          "type": "datetime",
+          "default": "NULL"
+        },
+        {
+          "name": "allday",
+          "type": "tinyint(1)",
+          "default": "NULL"
+        },
+        {
+          "name": "rpt",
+          "type": "varchar(64)",
+          "default": "NULL"
+        }
+      ],
+      "primaryKey": {
+        "name": "ec3_schedule_pk_az",
+        "columns": [
+          "sched_id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "links",
+      "columns": [
+        {
+          "name": "link_id",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "link_url",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "link_name",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "link_image",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "link_target",
+          "type": "varchar(25)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "link_description",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "link_visible",
+          "type": "varchar(20)",
+          "default": "'Y'",
+          "nullable": false
+        },
+        {
+          "name": "link_owner",
+          "type": "bigint(20) unsigned",
+          "default": "'1'",
+          "nullable": false
+        },
+        {
+          "name": "link_rating",
+          "type": "int(11)",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "link_updated",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "link_rel",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "link_notes",
+          "type": "mediumtext",
+          "nullable": false
+        },
+        {
+          "name": "link_rss",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "links_pk_az",
+        "columns": [
+          "link_id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "link_visible",
+          "columns": [
+            "link_visible"
+          ],
+          "definition": "KEY `link_visible` (`link_visible`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "options",
+      "columns": [
+        {
+          "name": "option_id",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "blog_id",
+          "type": "int(11)",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "option_name",
+          "type": "varchar(64)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "option_value",
+          "type": "longtext",
+          "nullable": false
+        },
+        {
+          "name": "autoload",
+          "type": "varchar(20)",
+          "default": "'yes'",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "options_pk_az",
+        "columns": [
+          "option_id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "option_name",
+          "columns": [
+            "option_name"
+          ],
+          "definition": "UNIQUE KEY `option_name` (`option_name`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "postmeta",
+      "columns": [
+        {
+          "name": "meta_id",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "post_id",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "meta_key",
+          "type": "varchar(255)",
+          "default": "NULL"
+        },
+        {
+          "name": "meta_value",
+          "type": "longtext"
+        }
+      ],
+      "primaryKey": {
+        "name": "postmeta_pk_az",
+        "columns": [
+          "meta_id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "post_id",
+          "columns": [
+            "post_id"
+          ],
+          "definition": "KEY `post_id` (`post_id`)"
+        },
+        {
+          "name": "meta_key",
+          "columns": [
+            "meta_key"
+          ],
+          "definition": "KEY `meta_key` (`meta_key`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "posts",
+      "columns": [
+        {
+          "name": "ID",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "post_author",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "post_date",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "post_date_gmt",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "post_content",
+          "type": "longtext",
+          "nullable": false
+        },
+        {
+          "name": "post_title",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "post_excerpt",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "post_status",
+          "type": "varchar(20)",
+          "default": "'publish'",
+          "nullable": false
+        },
+        {
+          "name": "comment_status",
+          "type": "varchar(20)",
+          "default": "'open'",
+          "nullable": false
+        },
+        {
+          "name": "ping_status",
+          "type": "varchar(20)",
+          "default": "'open'",
+          "nullable": false
+        },
+        {
+          "name": "post_password",
+          "type": "varchar(20)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "post_name",
+          "type": "varchar(200)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "to_ping",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "pinged",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "post_modified",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "post_modified_gmt",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "post_content_filtered",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "post_parent",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "guid",
+          "type": "varchar(255)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "menu_order",
+          "type": "int(11)",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "post_type",
+          "type": "varchar(20)",
+          "default": "'post'",
+          "nullable": false
+        },
+        {
+          "name": "post_mime_type",
+          "type": "varchar(100)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "comment_count",
+          "type": "bigint(20)",
+          "default": "'0'",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "posts_pk_az",
+        "columns": [
+          "ID"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "post_name",
+          "columns": [
+            "post_name"
+          ],
+          "definition": "KEY `post_name` (`post_name`)"
+        },
+        {
+          "name": "type_status_date",
+          "columns": [
+            "post_type",
+            "post_status",
+            "post_date",
+            "ID"
+          ],
+          "definition": "KEY `type_status_date` (`post_type`,`post_status`,`post_date`,`ID`)"
+        },
+        {
+          "name": "post_parent",
+          "columns": [
+            "post_parent"
+          ],
+          "definition": "KEY `post_parent` (`post_parent`)"
+        },
+        {
+          "name": "post_author",
+          "columns": [
+            "post_author"
+          ],
+          "definition": "KEY `post_author` (`post_author`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "term_relationships",
+      "columns": [
+        {
+          "name": "object_id",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "term_taxonomy_id",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "term_order",
+          "type": "int(11)",
+          "default": "'0'",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "term_relationships_pk_az",
+        "columns": [
+          "object_id",
+          "term_taxonomy_id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "term_taxonomy_id",
+          "columns": [
+            "term_taxonomy_id"
+          ],
+          "definition": "KEY `term_taxonomy_id` (`term_taxonomy_id`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "term_taxonomy",
+      "columns": [
+        {
+          "name": "term_taxonomy_id",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "term_id",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "taxonomy",
+          "type": "varchar(32)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "longtext",
+          "nullable": false
+        },
+        {
+          "name": "parent",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "count",
+          "type": "bigint(20)",
+          "default": "'0'",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "term_taxonomy_pk_az",
+        "columns": [
+          "term_taxonomy_id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "term_id_taxonomy",
+          "columns": [
+            "term_id",
+            "taxonomy"
+          ],
+          "definition": "UNIQUE KEY `term_id_taxonomy` (`term_id`,`taxonomy`)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "taxonomy",
+          "columns": [
+            "taxonomy"
+          ],
+          "definition": "KEY `taxonomy` (`taxonomy`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "terms",
+      "columns": [
+        {
+          "name": "term_id",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "varchar(200)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "term_group",
+          "type": "bigint(10)",
+          "default": "'0'",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "terms_pk_az",
+        "columns": [
+          "term_id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "slug",
+          "columns": [
+            "slug"
+          ],
+          "definition": "UNIQUE KEY `slug` (`slug`)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "name",
+          "columns": [
+            "name"
+          ],
+          "definition": "KEY `name` (`name`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "usermeta",
+      "columns": [
+        {
+          "name": "umeta_id",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "bigint(20) unsigned",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "meta_key",
+          "type": "varchar(255)",
+          "default": "NULL"
+        },
+        {
+          "name": "meta_value",
+          "type": "longtext"
+        }
+      ],
+      "primaryKey": {
+        "name": "usermeta_pk_az",
+        "columns": [
+          "umeta_id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "user_id",
+          "columns": [
+            "user_id"
+          ],
+          "definition": "KEY `user_id` (`user_id`)"
+        },
+        {
+          "name": "meta_key",
+          "columns": [
+            "meta_key"
+          ],
+          "definition": "KEY `meta_key` (`meta_key`)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "columns": [
+        {
+          "name": "ID",
+          "type": "bigint(20) unsigned",
+          "nullable": false
+        },
+        {
+          "name": "user_login",
+          "type": "varchar(60)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "user_pass",
+          "type": "varchar(64)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "user_nicename",
+          "type": "varchar(50)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "user_email",
+          "type": "varchar(100)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "user_url",
+          "type": "varchar(100)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "user_registered",
+          "type": "datetime",
+          "default": "'0000-00-00 00:00:00'",
+          "nullable": false
+        },
+        {
+          "name": "user_activation_key",
+          "type": "varchar(60)",
+          "default": "''",
+          "nullable": false
+        },
+        {
+          "name": "user_status",
+          "type": "int(11)",
+          "default": "'0'",
+          "nullable": false
+        },
+        {
+          "name": "display_name",
+          "type": "varchar(250)",
+          "default": "''",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "users_pk_az",
+        "columns": [
+          "ID"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "user_login_key",
+          "columns": [
+            "user_login"
+          ],
+          "definition": "KEY `user_login_key` (`user_login`)"
+        },
+        {
+          "name": "user_nicename",
+          "columns": [
+            "user_nicename"
+          ],
+          "definition": "KEY `user_nicename` (`user_nicename`)"
+        }
+      ]
+    }
+  ],
+  "relations": []
+}

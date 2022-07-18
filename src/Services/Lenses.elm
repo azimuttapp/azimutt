@@ -32,6 +32,9 @@ module Services.Lenses exposing
     , mapHoverTable
     , mapIndex
     , mapIndexes
+    , mapJsonSourceCmd
+    , mapJsonSourceM
+    , mapJsonSourceMCmd
     , mapLayout
     , mapLayouts
     , mapLayoutsD
@@ -91,9 +94,9 @@ module Services.Lenses exposing
     , mapSourceUploadMCmd
     , mapSources
     , mapSourcesL
-    , mapSqlSourceUploadCmd
-    , mapSqlSourceUploadM
-    , mapSqlSourceUploadMCmd
+    , mapSqlSourceCmd
+    , mapSqlSourceM
+    , mapSqlSourceMCmd
     , mapSwitch
     , mapTableInList
     , mapTableProps
@@ -160,6 +163,7 @@ module Services.Lenses exposing
     , setIndexes
     , setInput
     , setIsOpen
+    , setJsonSource
     , setLast
     , setLayout
     , setLayouts
@@ -180,6 +184,7 @@ module Services.Lenses exposing
     , setOpenedPopover
     , setOrigins
     , setParsedSchema
+    , setParsedSource
     , setParsing
     , setPopover
     , setPosition
@@ -215,7 +220,7 @@ module Services.Lenses exposing
     , setSourceParsing
     , setSourceUpload
     , setSources
-    , setSqlSourceUpload
+    , setSqlSource
     , setStatus
     , setSwitch
     , setTable
@@ -640,6 +645,26 @@ setIsOpen =
     set .isOpen (\value item -> { item | isOpen = value })
 
 
+setJsonSource : v -> { item | jsonSource : v } -> { item | jsonSource : v }
+setJsonSource =
+    set .jsonSource (\value item -> { item | jsonSource = value })
+
+
+mapJsonSourceM : (v -> v) -> { item | jsonSource : Maybe v } -> { item | jsonSource : Maybe v }
+mapJsonSourceM =
+    mapM .jsonSource setJsonSource
+
+
+mapJsonSourceCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : v } -> ( { item | jsonSource : v }, Cmd msg )
+mapJsonSourceCmd =
+    mapCmd .jsonSource setJsonSource
+
+
+mapJsonSourceMCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : Maybe v } -> ( { item | jsonSource : Maybe v }, Cmd msg )
+mapJsonSourceMCmd =
+    mapMCmd .jsonSource setJsonSource
+
+
 setLast : v -> { item | last : v } -> { item | last : v }
 setLast =
     set .last (\value item -> { item | last = value })
@@ -808,6 +833,11 @@ mapParsedSchema =
 mapParsedSchemaM : (v -> v) -> { item | parsedSchema : Maybe v } -> { item | parsedSchema : Maybe v }
 mapParsedSchemaM =
     mapM .parsedSchema setParsedSchema
+
+
+setParsedSource : v -> { item | parsedSource : v } -> { item | parsedSource : v }
+setParsedSource =
+    set .parsedSource (\value item -> { item | parsedSource = value })
 
 
 setParsing : v -> { item | parsing : v } -> { item | parsing : v }
@@ -1185,24 +1215,24 @@ mapSourceUploadMCmd =
     mapMCmd .sourceUpload setSourceUpload
 
 
-setSqlSourceUpload : v -> { item | sqlSourceUpload : v } -> { item | sqlSourceUpload : v }
-setSqlSourceUpload =
-    set .sqlSourceUpload (\value item -> { item | sqlSourceUpload = value })
+setSqlSource : v -> { item | sqlSource : v } -> { item | sqlSource : v }
+setSqlSource =
+    set .sqlSource (\value item -> { item | sqlSource = value })
 
 
-mapSqlSourceUploadM : (v -> v) -> { item | sqlSourceUpload : Maybe v } -> { item | sqlSourceUpload : Maybe v }
-mapSqlSourceUploadM =
-    mapM .sqlSourceUpload setSqlSourceUpload
+mapSqlSourceM : (v -> v) -> { item | sqlSource : Maybe v } -> { item | sqlSource : Maybe v }
+mapSqlSourceM =
+    mapM .sqlSource setSqlSource
 
 
-mapSqlSourceUploadCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : v } -> ( { item | sqlSourceUpload : v }, Cmd msg )
-mapSqlSourceUploadCmd =
-    mapCmd .sqlSourceUpload setSqlSourceUpload
+mapSqlSourceCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : v } -> ( { item | sqlSource : v }, Cmd msg )
+mapSqlSourceCmd =
+    mapCmd .sqlSource setSqlSource
 
 
-mapSqlSourceUploadMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : Maybe v } -> ( { item | sqlSourceUpload : Maybe v }, Cmd msg )
-mapSqlSourceUploadMCmd =
-    mapMCmd .sqlSourceUpload setSqlSourceUpload
+mapSqlSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, Cmd msg )
+mapSqlSourceMCmd =
+    mapMCmd .sqlSource setSqlSource
 
 
 setStatus : v -> { item | status : v } -> { item | status : v }

@@ -17,7 +17,6 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -45,7 +44,8 @@ import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
 import Random
 import Services.DatabaseSource as DatabaseSource
-import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
+import Services.JsonSource as JsonSource
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
 
@@ -126,11 +126,11 @@ type alias ProjectSettingsDialog =
 
 
 type alias SourceUploadDialog =
-    { id : HtmlId, parsing : SqlSourceUpload Msg, databaseSource : DatabaseSource.Model }
+    { id : HtmlId, sqlSource : SqlSource.Model Msg, databaseSource : DatabaseSource.Model, jsonSource : JsonSource.Model Msg }
 
 
 type alias SourceParsingDialog =
-    { id : HtmlId, parsing : SqlSourceUpload Msg }
+    { id : HtmlId, sqlSource : SqlSource.Model Msg }
 
 
 type alias HelpDialog =
@@ -187,8 +187,8 @@ type Msg
     | SharingMsg SharingMsg
     | ProjectUploadDialogMsg ProjectUploadDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
-    | SourceParsing SqlSourceUploadMsg
-    | SourceParsed ProjectId Source
+    | EmbedSourceParsing SqlSource.Msg
+    | SourceParsed Source
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
@@ -287,8 +287,9 @@ type ProjectSettingsMsg
     | PSSourceDelete Source
     | PSSourceUploadOpen (Maybe Source)
     | PSSourceUploadClose
-    | PSSqlSourceMsg SqlSourceUploadMsg
+    | PSSqlSourceMsg SqlSource.Msg
     | PSDatabaseSourceMsg DatabaseSource.Msg
+    | PSJsonSourceMsg JsonSource.Msg
     | PSSourceRefresh Source
     | PSSourceAdd Source
     | PSDefaultSchemaUpdate SchemaName
