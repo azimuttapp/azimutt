@@ -10,12 +10,12 @@ import Libs.Bool as B
 import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
+import Libs.Result as Result
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
-import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
@@ -183,7 +183,7 @@ update req now backendUrl msg model =
 
         SqlSourceMsg message ->
             model
-                |> mapSqlSourceMCmd (SqlSource.update message SqlSourceMsg)
+                |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg message)
                 |> (\( m, cmd ) ->
                         if message == SqlSource.BuildSource then
                             ( m, Cmd.batch [ cmd, Ports.confetti "create-project-btn" ] )
@@ -204,20 +204,20 @@ update req now backendUrl msg model =
             )
 
         DatabaseSourceMsg (DatabaseSource.GotSchema url result) ->
-            case result of
-                Ok schema ->
-                    let
-                        ( sourceId, seed ) =
-                            SourceId.random model.seed
+            ( model, Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg) SourceId.generator )
 
-                        source : Source
-                        source =
-                            DatabaseAdapter.buildDatabaseSource now sourceId url schema
-                    in
-                    ( model |> setSeed seed |> mapDatabaseSourceM (setStatus (DatabaseSource.Success source)), Cmd.none )
-
-                Err err ->
-                    ( model |> mapDatabaseSourceM (setStatus (DatabaseSource.Error (Http.errorToString err))), Cmd.none )
+        DatabaseSourceMsg (DatabaseSource.GotSchemaWithId url result sourceId) ->
+            ( model
+                |> mapDatabaseSourceM
+                    (setStatus
+                        (result
+                            |> Result.fold
+                                (Http.errorToString >> DatabaseSource.Error)
+                                (DatabaseAdapter.buildDatabaseSource now sourceId url >> DatabaseSource.Success)
+                        )
+                    )
+            , Cmd.none
+            )
 
         DatabaseSourceMsg DatabaseSource.DropSchema ->
             ( model |> mapDatabaseSourceM (setStatus DatabaseSource.Pending), Cmd.none )
@@ -227,7 +227,7 @@ update req now backendUrl msg model =
 
         JsonSourceMsg message ->
             model
-                |> mapJsonSourceMCmd (JsonSource.update message JsonSourceMsg)
+                |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg message)
                 |> (\( m, cmd ) ->
                         if message == JsonSource.BuildSource then
                             ( m, Cmd.batch [ cmd, Ports.confetti "create-project-btn" ] )
@@ -270,7 +270,8 @@ update req now backendUrl msg model =
             ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )
 
         CreateProjectFromSource source ->
-            ProjectId.random model.seed
+            model.seed
+                |> Random.step ProjectId.generator
                 |> Tuple.mapFirst (\projectId -> Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source)
                 |> (\( project, seed ) -> ( model |> setSeed seed, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] ))
 
@@ -280,7 +281,7 @@ update req now backendUrl msg model =
         CreateNewProject project ->
             let
                 ( projectId, seed ) =
-                    ProjectId.random model.seed
+                    model.seed |> Random.step ProjectId.generator
             in
             ( model |> setSeed seed, T.send (CreateProject (project |> Project.duplicate (model.projects |> List.map .name) projectId)) )
 
@@ -318,7 +319,7 @@ handleJsMessage now msg model =
         GotLocalFile kind file content ->
             let
                 ( sourceId, seed ) =
-                    SourceId.random model.seed
+                    model.seed |> Random.step SourceId.generator
 
                 updated : Model
                 updated =
@@ -339,7 +340,7 @@ handleJsMessage now msg model =
         GotRemoteFile kind url content sample ->
             let
                 ( sourceId, seed ) =
-                    SourceId.random model.seed
+                    model.seed |> Random.step SourceId.generator
 
                 updated : Model
                 updated =

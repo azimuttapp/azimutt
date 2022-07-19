@@ -1,4 +1,4 @@
-module Models.Project.ProjectId exposing (ProjectId, decode, encode, isSample, random)
+module Models.Project.ProjectId exposing (ProjectId, decode, encode, generator, isSample)
 
 import Json.Decode as Decode exposing (Value)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
@@ -9,9 +9,9 @@ type alias ProjectId =
     Uuid
 
 
-random : Random.Seed -> ( ProjectId, Random.Seed )
-random seed =
-    seed |> Uuid.random
+generator : Random.Generator ProjectId
+generator =
+    Uuid.generator
 
 
 isSample : ProjectId -> Bool

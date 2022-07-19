@@ -12,6 +12,7 @@ import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
+import Random
 import Services.Toasts as Toasts
 import Time
 
@@ -25,7 +26,7 @@ addUserSource : Time.Posix -> SourceName -> Erd -> ( Erd, Source )
 addUserSource now name erd =
     let
         ( sourceId, seed ) =
-            SourceId.random erd.seed
+            erd.seed |> Random.step SourceId.generator
 
         source : Source
         source =

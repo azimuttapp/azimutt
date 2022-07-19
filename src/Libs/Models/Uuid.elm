@@ -1,4 +1,4 @@
-module Libs.Models.Uuid exposing (Uuid, decode, encode, isValid, random)
+module Libs.Models.Uuid exposing (Uuid, decode, encode, generator, isValid)
 
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
@@ -10,9 +10,9 @@ type alias Uuid =
     String
 
 
-random : Random.Seed -> ( Uuid, Random.Seed )
-random seed =
-    seed |> Random.step UUID.generator |> Tuple.mapFirst UUID.toString
+generator : Random.Generator Uuid
+generator =
+    UUID.generator |> Random.map UUID.toString
 
 
 isValid : String -> Bool

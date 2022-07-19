@@ -23,6 +23,7 @@ import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
+import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.DragState as DragState
@@ -200,12 +201,12 @@ update req currentLayout now backendUrl msg model =
             model |> handleProjectSettings now backendUrl message
 
         EmbedSourceParsing message ->
-            model |> mapSourceParsingMCmd (mapSqlSourceCmd (SqlSource.update message EmbedSourceParsing))
+            model |> mapSourceParsingMCmd (mapSqlSourceCmd (SqlSource.update EmbedSourceParsing message))
 
         SourceParsed source ->
             let
                 ( projectId, seed ) =
-                    ProjectId.random model.seed
+                    model.seed |> Random.step ProjectId.generator
             in
             ( model |> setSeed seed, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
 
@@ -396,17 +397,17 @@ handleJsMessage now currentLayout msg model =
         GotLocalFile kind file content ->
             let
                 ( sourceId, seed ) =
-                    SourceId.random model.seed
+                    model.seed |> Random.step SourceId.generator
 
                 updated : Model
                 updated =
                     model |> setSeed seed
             in
             if kind == SqlSource.kind then
-                ( updated, T.send (SqlSource.gotLocalFile now sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+                ( updated, T.send (SqlSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == JsonSource.kind then
-                ( updated, T.send (JsonSource.gotLocalFile now sourceId file content |> PSJsonSourceMsg |> ProjectSettingsMsg) )
+                ( updated, T.send (JsonSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
@@ -414,7 +415,7 @@ handleJsMessage now currentLayout msg model =
         GotRemoteFile kind url content sample ->
             let
                 ( sourceId, seed ) =
-                    SourceId.random model.seed
+                    model.seed |> Random.step SourceId.generator
 
                 updated : Model
                 updated =
@@ -425,10 +426,10 @@ handleJsMessage now currentLayout msg model =
                     ( updated, Cmd.batch [ T.send (SqlSource.gotRemoteFile now sourceId url content sample |> EmbedSourceParsing) ] )
 
                 else
-                    ( updated, T.send (SqlSource.gotRemoteFile now sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+                    ( updated, T.send (SqlSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == JsonSource.kind then
-                ( updated, T.send (JsonSource.gotRemoteFile now sourceId url content sample |> PSJsonSourceMsg |> ProjectSettingsMsg) )
+                ( updated, T.send (JsonSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled remote file for " ++ kind ++ " source") )

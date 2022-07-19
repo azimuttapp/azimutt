@@ -27,6 +27,7 @@ import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
+import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.EmbedKind exposing (EmbedKind)
@@ -285,13 +286,8 @@ type ProjectSettingsMsg
     | PSClose
     | PSSourceToggle Source
     | PSSourceDelete Source
-    | PSSourceUploadOpen (Maybe Source)
-    | PSSourceUploadClose
-    | PSSqlSourceMsg SqlSource.Msg
-    | PSDatabaseSourceMsg DatabaseSource.Msg
-    | PSJsonSourceMsg JsonSource.Msg
-    | PSSourceRefresh Source
-    | PSSourceAdd Source
+    | PSSourceUpdate SourceUpdateDialog.Msg
+    | PSSourceSet Source
     | PSDefaultSchemaUpdate SchemaName
     | PSSchemaToggle SchemaName
     | PSRemoveViewsToggle

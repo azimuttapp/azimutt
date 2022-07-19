@@ -124,7 +124,7 @@ ids :
     { searchInput : HtmlId
     , sharingDialog : HtmlId
     , settingsDialog : HtmlId
-    , sourceUploadDialog : HtmlId
+    , sourceUpdateDialog : HtmlId
     , sourceParsingDialog : HtmlId
     , erd : HtmlId
     , selectionBox : HtmlId
@@ -142,7 +142,7 @@ ids =
     { searchInput = "app-nav-search"
     , sharingDialog = "sharing-dialog"
     , settingsDialog = "settings-dialog"
-    , sourceUploadDialog = "source-upload-dialog"
+    , sourceUpdateDialog = "source-update-dialog"
     , sourceParsingDialog = "source-parsing-dialog"
     , erd = "erd"
     , selectionBox = "selection-box"

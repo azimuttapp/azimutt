@@ -9,6 +9,7 @@ import Libs.Tuple as Tuple
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
+import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
@@ -178,7 +179,7 @@ cancelElement model =
         |> Maybe.orElse (model.amlSidebar |> Maybe.map (\_ -> AmlSidebarMsg AClose))
         |> Maybe.orElse (model.findPath |> Maybe.map (\_ -> ModalClose (FindPathMsg FPClose)))
         |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
-        |> Maybe.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSSourceUploadClose)))
+        |> Maybe.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)))
         |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg SClose)))
         |> Maybe.orElse (model.upload |> Maybe.map (\_ -> ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)))
         |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))

@@ -129,8 +129,8 @@ parsingInit fileContent buildMsg buildProject =
 -- UPDATE
 
 
-update : Msg -> (Msg -> msg) -> Model msg -> ( Model msg, Cmd msg )
-update msg wrap model =
+update : (Msg -> msg) -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap msg model =
     case msg of
         UpdateRemoteFile url ->
             ( { model | selectedRemoteFile = B.cond (url == "") Nothing (Just url) }, Cmd.none )

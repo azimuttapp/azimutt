@@ -11,6 +11,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId exposing (SourceId)
 
 
 type alias Model =
@@ -41,6 +42,7 @@ type Msg
     = UpdateUrl DatabaseUrl
     | FetchSchema DatabaseUrl
     | GotSchema DatabaseUrl (Result Http.Error DatabaseSchema)
+    | GotSchemaWithId DatabaseUrl (Result Http.Error DatabaseSchema) SourceId
     | DropSchema
     | CreateProject Source
 

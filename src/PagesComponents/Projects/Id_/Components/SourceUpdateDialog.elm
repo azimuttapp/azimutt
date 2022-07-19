@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Views.Modals.SourceUpload exposing (viewSourceUpload)
+module PagesComponents.Projects.Id_.Components.SourceUpdateDialog exposing (Model, Msg(..), init, update, view)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon exposing (Icon(..))
@@ -6,68 +6,155 @@ import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Modal as Modal
 import Conf
+import DataSources.DatabaseSchemaParser.DatabaseAdapter as DatabaseAdapter
 import Html exposing (Html, br, div, h3, input, li, p, span, text, ul)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, role)
+import Libs.Http as Http
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (sm)
+import Libs.Task as T
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsMsg(..), SourceUploadDialog)
+import Random
+import Services.Backend as Backend exposing (BackendUrl)
 import Services.DatabaseSource as DatabaseSource
+import Services.JsonSource as JsonSource
+import Services.Lenses exposing (mapDatabaseSource, mapJsonSourceCmd, mapM, mapMCmd, mapSqlSourceCmd, setStatus, setUrl)
 import Services.SqlSource as SqlSource
 import Time
 
 
-viewSourceUpload : Time.Zone -> Time.Posix -> Bool -> SourceUploadDialog -> Html Msg
-viewSourceUpload zone now opened model =
+type alias Model msg =
+    { id : HtmlId
+    , sqlSource : SqlSource.Model msg
+    , databaseSource : DatabaseSource.Model
+    , jsonSource : JsonSource.Model msg
+    }
+
+
+type Msg
+    = Open (Maybe Source)
+    | Close
+    | SqlSourceMsg SqlSource.Msg
+    | DatabaseSourceMsg DatabaseSource.Msg
+    | JsonSourceMsg JsonSource.Msg
+
+
+init : (String -> msg) -> SchemaName -> Maybe Source -> Model msg
+init noop defaultSchema source =
+    { id = Conf.ids.sourceUpdateDialog
+    , sqlSource = SqlSource.init defaultSchema source (\_ -> noop "project-settings-sql-source-parsed")
+    , databaseSource = DatabaseSource.init source
+    , jsonSource = JsonSource.init source (\_ -> noop "project-settings-json-source-parsed")
+    }
+
+
+update : (Msg -> msg) -> (Source -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> BackendUrl -> SchemaName -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
+update wrap sourceSet modalOpen noop now backendUrl defaultSchema msg model =
+    case msg of
+        Open source ->
+            ( Just (init noop defaultSchema source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
+
+        Close ->
+            ( Nothing, Cmd.none )
+
+        SqlSourceMsg message ->
+            model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) message))
+
+        DatabaseSourceMsg (DatabaseSource.UpdateUrl url) ->
+            ( model |> mapM (mapDatabaseSource (setUrl url)), Cmd.none )
+
+        DatabaseSourceMsg (DatabaseSource.FetchSchema url) ->
+            ( model |> mapM (mapDatabaseSource (setStatus (DatabaseSource.Fetching url)))
+            , Backend.getDatabaseSchema backendUrl url (DatabaseSource.GotSchema url >> DatabaseSourceMsg >> wrap)
+            )
+
+        DatabaseSourceMsg (DatabaseSource.GotSchema url result) ->
+            ( model, Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg >> wrap) SourceId.generator )
+
+        DatabaseSourceMsg (DatabaseSource.GotSchemaWithId url result sourceId) ->
+            ( model
+                |> mapM
+                    (mapDatabaseSource
+                        (\db ->
+                            db
+                                |> setStatus
+                                    (result
+                                        |> Result.fold (Http.errorToString >> DatabaseSource.Error)
+                                            (DatabaseAdapter.buildDatabaseSource now (db.source |> Maybe.mapOrElse .id sourceId) url >> DatabaseSource.Success)
+                                    )
+                        )
+                    )
+            , Cmd.none
+            )
+
+        DatabaseSourceMsg DatabaseSource.DropSchema ->
+            ( model |> mapM (mapDatabaseSource (setStatus DatabaseSource.Pending)), Cmd.none )
+
+        DatabaseSourceMsg (DatabaseSource.CreateProject source) ->
+            ( model, T.send (sourceSet source) )
+
+        JsonSourceMsg message ->
+            model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) message))
+
+
+view : (Msg -> msg) -> (Source -> msg) -> (msg -> msg) -> (String -> msg) -> Time.Zone -> Time.Posix -> Bool -> Model msg -> Html msg
+view wrap sourceSet modalClose noop zone now opened model =
     let
         titleId : HtmlId
         titleId =
             model.id ++ "-title"
+
+        close : msg
+        close =
+            Close |> wrap |> modalClose
     in
     Modal.modal
         { id = model.id
         , titleId = titleId
         , isOpen = opened
-        , onBackgroundClick = PSSourceUploadClose |> ProjectSettingsMsg |> ModalClose
+        , onBackgroundClick = close
         }
         (model.sqlSource.source
             |> Maybe.mapOrElse
                 (\source ->
                     case source.kind of
                         SqlFileLocal filename _ updatedAt ->
-                            sqlLocalFileModal zone now titleId source filename updatedAt model.sqlSource
+                            sqlLocalFileModal wrap sourceSet close noop zone now titleId source filename updatedAt model.sqlSource
 
                         SqlFileRemote url _ ->
-                            sqlRemoteFileModal zone now titleId source url model.sqlSource
+                            sqlRemoteFileModal wrap sourceSet close zone now titleId source url model.sqlSource
 
                         DatabaseConnection url ->
-                            databaseModal zone now (model.id ++ "-database") titleId source url model.databaseSource
+                            databaseModal wrap sourceSet close zone now (model.id ++ "-database") titleId source url model.databaseSource
 
                         JsonFileLocal filename _ updatedAt ->
-                            sqlLocalFileModal zone now titleId source filename updatedAt model.sqlSource
+                            sqlLocalFileModal wrap sourceSet close noop zone now titleId source filename updatedAt model.sqlSource
 
                         JsonFileRemote url _ ->
-                            sqlRemoteFileModal zone now titleId source url model.sqlSource
+                            sqlRemoteFileModal wrap sourceSet close zone now titleId source url model.sqlSource
 
                         AmlEditor ->
-                            userDefinedModal titleId
+                            userDefinedModal close titleId
                 )
-                (newSourceModal titleId model.sqlSource)
+                (newSourceModal wrap sourceSet close noop titleId model.sqlSource)
         )
 
 
-sqlLocalFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SqlSource.Model Msg -> List (Html Msg)
-sqlLocalFileModal zone now titleId source fileName updatedAt model =
+sqlLocalFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SqlSource.Model msg -> List (Html msg)
+sqlLocalFileModal wrap sourceSet close noop zone now titleId source fileName updatedAt model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
@@ -84,7 +171,7 @@ sqlLocalFileModal zone now titleId source fileName updatedAt model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ SqlSource.viewInput "file-upload" (SqlSource.SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "update-source-local-file") ]
+        , div [ class "mt-3" ] [ SqlSource.viewInput "file-upload" (SqlSource.SelectLocalFile >> SqlSourceMsg >> wrap) (noop "update-source-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
             ( SqlFileLocal name1 _ updated1, Just (SqlFileLocal name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
@@ -98,25 +185,24 @@ sqlLocalFileModal zone now titleId source fileName updatedAt model =
                             else
                                 div [ class "mt-3" ]
                                     [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Found some strange things" }
-                                        [ ul [ role "list", class "list-disc list-inside" ]
-                                            (warnings |> List.map (\warning -> li [] warning))
+                                        [ ul [ role "list", class "list-disc list-inside" ] (warnings |> List.map (li []))
                                         ]
                                     ]
                        )
 
             _ ->
                 div [] []
-        , SqlSource.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
+        , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
-        , closeBtn
+        [ primaryBtn (model.parsedSource |> Maybe.map sourceSet) "Update source"
+        , closeBtn close
         ]
     ]
 
 
-sqlRemoteFileModal : Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> SqlSource.Model Msg -> List (Html Msg)
-sqlRemoteFileModal zone now titleId source fileUrl model =
+sqlRemoteFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> SqlSource.Model msg -> List (Html msg)
+sqlRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
@@ -134,19 +220,19 @@ sqlRemoteFileModal zone now titleId source fileUrl model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (fileUrl |> SqlSource.SelectRemoteFile |> PSSqlSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch file again" ]
+            [ Button.primary5 Tw.primary [ onClick (fileUrl |> SqlSource.SelectRemoteFile |> SqlSourceMsg >> wrap) ] [ text "Fetch file again" ]
             ]
-        , SqlSource.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
+        , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
-        , closeBtn
+        [ primaryBtn (model.parsedSource |> Maybe.map sourceSet) "Update source"
+        , closeBtn close
         ]
     ]
 
 
-databaseModal : Time.Zone -> Time.Posix -> HtmlId -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model -> List (Html Msg)
-databaseModal zone now htmlId titleId source url model =
+databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model -> List (Html msg)
+databaseModal wrap sourceSet close zone now htmlId titleId source url model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
@@ -164,19 +250,19 @@ databaseModal zone now htmlId titleId source url model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (DatabaseSource.FetchSchema url |> PSDatabaseSourceMsg |> ProjectSettingsMsg) ] [ text "Fetch schema again" ]
+            [ Button.primary5 Tw.primary [ onClick (DatabaseSource.FetchSchema url |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
             ]
-        , DatabaseSource.view (htmlId ++ "-source") model |> Html.map (PSDatabaseSourceMsg >> ProjectSettingsMsg)
+        , DatabaseSource.view (htmlId ++ "-source") model |> Html.map (DatabaseSourceMsg >> wrap)
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model |> DatabaseSource.source |> Maybe.map (PSSourceRefresh >> ProjectSettingsMsg)) "Update source"
-        , closeBtn
+        [ primaryBtn (model |> DatabaseSource.source |> Maybe.map sourceSet) "Update source"
+        , closeBtn close
         ]
     ]
 
 
-userDefinedModal : HtmlId -> List (Html Msg)
-userDefinedModal titleId =
+userDefinedModal : msg -> HtmlId -> List (Html msg)
+userDefinedModal close titleId =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
@@ -193,13 +279,13 @@ userDefinedModal titleId =
             ]
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (PSSourceUploadClose |> ProjectSettingsMsg |> ModalClose |> Just) "Close"
+        [ primaryBtn (close |> Just) "Close"
         ]
     ]
 
 
-newSourceModal : HtmlId -> SqlSource.Model Msg -> List (Html Msg)
-newSourceModal titleId model =
+newSourceModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> HtmlId -> SqlSource.Model msg -> List (Html msg)
+newSourceModal wrap sourceSet close noop titleId model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
@@ -211,7 +297,7 @@ newSourceModal titleId model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ SqlSource.viewInput "file-upload" (SqlSource.SelectLocalFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "new-source-local-file") ]
+        , div [ class "mt-3" ] [ SqlSource.viewInput "file-upload" (SqlSource.SelectLocalFile >> SqlSourceMsg >> wrap) (noop "new-source-local-file") ]
         , div [ class "my-3" ] [ Divider.withLabel "OR" ]
         , div [ class "flex rounded-md shadow-sm" ]
             [ span [ class "inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm" ] [ text "Remote schema" ]
@@ -221,30 +307,30 @@ newSourceModal titleId model =
                 , name "file-remote"
                 , placeholder "https://azimutt.app/samples/gospeak.sql"
                 , value (model.selectedRemoteFile |> Maybe.withDefault "")
-                , onInput (SqlSource.UpdateRemoteFile >> PSSqlSourceMsg >> ProjectSettingsMsg)
-                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SqlSource.SelectRemoteFile >> PSSqlSourceMsg >> ProjectSettingsMsg) (Noop "new-source-remote-file"))
+                , onInput (SqlSource.UpdateRemoteFile >> SqlSourceMsg >> wrap)
+                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SqlSource.SelectRemoteFile >> SqlSourceMsg >> wrap) (noop "new-source-remote-file"))
                 , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ]
                 []
             ]
-        , SqlSource.viewParsing (PSSqlSourceMsg >> ProjectSettingsMsg) model
+        , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.map (PSSourceAdd >> ProjectSettingsMsg)) "Add source"
-        , closeBtn
+        [ primaryBtn (model.parsedSource |> Maybe.map sourceSet) "Add source"
+        , closeBtn close
         ]
     ]
 
 
 
--- helpers
+-- HELPERS
 
 
-primaryBtn : Maybe Msg -> String -> Html Msg
+primaryBtn : Maybe msg -> String -> Html msg
 primaryBtn clicked label =
     Button.primary3 Tw.primary (clicked |> Maybe.mapOrElse (\c -> [ onClick c ]) [ disabled True ]) [ text label ]
 
 
-closeBtn : Html Msg
-closeBtn =
-    Button.white3 Tw.gray [ onClick (ModalClose (ProjectSettingsMsg PSSourceUploadClose)) ] [ text "Close" ]
+closeBtn : msg -> Html msg
+closeBtn close =
+    Button.white3 Tw.gray [ onClick close ] [ text "Close" ]
