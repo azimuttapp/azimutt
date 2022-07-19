@@ -82,7 +82,7 @@ update wrap sourceSet modalOpen noop now backendUrl defaultSchema msg model =
             )
 
         DatabaseSourceMsg (DatabaseSource.GotSchema url result) ->
-            ( model, Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg >> wrap) SourceId.generator )
+            ( model, SourceId.generator |> Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg >> wrap) )
 
         DatabaseSourceMsg (DatabaseSource.GotSchemaWithId url result sourceId) ->
             ( model

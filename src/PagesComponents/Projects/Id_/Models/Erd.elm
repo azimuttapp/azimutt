@@ -24,14 +24,12 @@ import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (
 import PagesComponents.Projects.Id_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
-import Random
 import Services.Lenses exposing (mapLayoutsD, mapLayoutsDCmd)
 import Time
 
 
 type alias Erd =
-    { seed : Random.Seed
-    , project : ProjectInfo
+    { project : ProjectInfo
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
     , relationsByTable : Dict TableId (List Relation)
@@ -43,15 +41,14 @@ type alias Erd =
     }
 
 
-create : Random.Seed -> Project -> Erd
-create seed project =
+create : Project -> Erd
+create project =
     let
         relationsByTable : Dict TableId (List Relation)
         relationsByTable =
             buildRelationsByTable project.relations
     in
-    { seed = seed
-    , project = ProjectInfo.create project
+    { project = ProjectInfo.create project
     , tables = project.tables |> Dict.map (\id -> ErdTable.create project.settings.defaultSchema project.tables (relationsByTable |> Dict.getOrElse id []))
     , relations = project.relations |> List.map (ErdRelation.create project.tables)
     , relationsByTable = relationsByTable

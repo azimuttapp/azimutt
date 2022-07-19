@@ -26,7 +26,7 @@ import Request
 import Services.Backend as Backend exposing (BackendUrl)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceM, mapJsonSourceM, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceM, mapSqlSourceMCmd, mapToastsCmd, setConfirm, setSeed, setStatus, setUrl)
+import Services.Lenses exposing (mapDatabaseSourceM, mapJsonSourceM, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceM, mapSqlSourceMCmd, mapToastsCmd, setConfirm, setStatus, setUrl)
 import Services.ProjectImport as ProjectImport
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -39,7 +39,7 @@ import View exposing (View)
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init req shared.now
+        { init = init req
         , update = update req shared.now shared.conf.backendUrl
         , view = view shared req
         , subscriptions = subscriptions
@@ -63,8 +63,8 @@ title =
     Conf.constants.defaultTitle
 
 
-init : Request.With Params -> Time.Posix -> ( Model, Cmd Msg )
-init req now =
+init : Request.With Params -> ( Model, Cmd Msg )
+init req =
     let
         sample : Maybe SampleSchema
         sample =
@@ -105,8 +105,7 @@ init req now =
                             TabSql
                     )
     in
-    ( { seed = Random.initialSeed (now |> Time.posixToMillis)
-      , selectedMenu = "New project"
+    ( { selectedMenu = "New project"
       , mobileMenuOpen = False
       , openedCollapse = ""
       , projects = []
@@ -204,7 +203,7 @@ update req now backendUrl msg model =
             )
 
         DatabaseSourceMsg (DatabaseSource.GotSchema url result) ->
-            ( model, Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg) SourceId.generator )
+            ( model, SourceId.generator |> Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg) )
 
         DatabaseSourceMsg (DatabaseSource.GotSchemaWithId url result sourceId) ->
             ( model
@@ -269,21 +268,14 @@ update req now backendUrl msg model =
         SampleSelectDrop ->
             ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )
 
-        CreateProjectFromSource source ->
-            model.seed
-                |> Random.step ProjectId.generator
-                |> Tuple.mapFirst (\projectId -> Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source)
-                |> (\( project, seed ) -> ( model |> setSeed seed, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] ))
-
         CreateProject project ->
-            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
-        CreateNewProject project ->
-            let
-                ( projectId, seed ) =
-                    model.seed |> Random.step ProjectId.generator
-            in
-            ( model |> setSeed seed, T.send (CreateProject (project |> Project.duplicate (model.projects |> List.map .name) projectId)) )
+        CreateProjectNew project ->
+            ( model, ProjectId.generator |> Random.generate (\projectId -> project |> Project.duplicate (model.projects |> List.map .name) projectId |> CreateProject) )
+
+        CreateProjectFromSource source ->
+            ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source |> CreateProject) )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
@@ -317,47 +309,31 @@ handleJsMessage now msg model =
             ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }, Cmd.none )
 
         GotLocalFile kind file content ->
-            let
-                ( sourceId, seed ) =
-                    model.seed |> Random.step SourceId.generator
-
-                updated : Model
-                updated =
-                    model |> setSeed seed
-            in
             if kind == ProjectImport.kind then
-                ( updated, T.send (ProjectImport.gotLocalFile content |> ProjectImportMsg) )
+                ( model, T.send (ProjectImport.gotLocalFile content |> ProjectImportMsg) )
 
             else if kind == SqlSource.kind then
-                ( updated, T.send (SqlSource.gotLocalFile now sourceId file content |> SqlSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotLocalFile now sourceId file content |> SqlSourceMsg) )
 
             else if kind == JsonSource.kind then
-                ( updated, T.send (JsonSource.gotLocalFile now sourceId file content |> JsonSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotLocalFile now sourceId file content |> JsonSourceMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
 
         GotRemoteFile kind url content sample ->
-            let
-                ( sourceId, seed ) =
-                    model.seed |> Random.step SourceId.generator
-
-                updated : Model
-                updated =
-                    model |> setSeed seed
-            in
             if kind == ProjectImport.kind then
                 if sample == Nothing then
-                    ( updated, T.send (ProjectImport.gotRemoteFile content |> ProjectImportMsg) )
+                    ( model, T.send (ProjectImport.gotRemoteFile content |> ProjectImportMsg) )
 
                 else
-                    ( updated, T.send (ProjectImport.gotRemoteFile content |> SampleSelectMsg) )
+                    ( model, T.send (ProjectImport.gotRemoteFile content |> SampleSelectMsg) )
 
             else if kind == SqlSource.kind then
-                ( updated, T.send (SqlSource.gotRemoteFile now sourceId url content sample |> SqlSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotRemoteFile now sourceId url content sample |> SqlSourceMsg) )
 
             else if kind == JsonSource.kind then
-                ( updated, T.send (JsonSource.gotRemoteFile now sourceId url content sample |> JsonSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotRemoteFile now sourceId url content sample |> JsonSourceMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled remote file for " ++ kind ++ " source") )

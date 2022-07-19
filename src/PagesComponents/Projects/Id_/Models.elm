@@ -43,7 +43,6 @@ import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
-import Random
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.SqlSource as SqlSource
@@ -52,8 +51,7 @@ import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
-    { seed : Random.Seed
-    , conf : ErdConf
+    { conf : ErdConf
     , navbar : NavbarModel
     , screen : ScreenProps
     , loaded : Bool
@@ -178,6 +176,7 @@ type Msg
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
     | CreateUserSource SourceName
+    | CreateUserSourceWithId Source
     | CreateRelation ColumnRef ColumnRef
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg

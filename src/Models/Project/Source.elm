@@ -40,14 +40,14 @@ type alias Source =
     }
 
 
-amlEditor : SourceId -> SourceName -> Dict TableId Table -> List Relation -> Time.Posix -> Source
-amlEditor id name tables relations now =
+amlEditor : SourceId -> SourceName -> Time.Posix -> Source
+amlEditor id name now =
     { id = id
     , name = name
     , kind = AmlEditor
     , content = Array.empty
-    , tables = tables
-    , relations = relations
+    , tables = Dict.empty
+    , relations = []
     , enabled = True
     , fromSample = Nothing
     , createdAt = now

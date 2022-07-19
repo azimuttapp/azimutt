@@ -18,6 +18,7 @@ import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
@@ -48,7 +49,7 @@ import Random
 import Request
 import Services.Backend exposing (BackendUrl)
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapSqlSourceCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSeed, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapSqlSourceCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -162,7 +163,10 @@ update req currentLayout now backendUrl msg model =
             ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayout now (mapTables (hoverColumn column on e))), Cmd.none )
 
         CreateUserSource name ->
-            ( model |> mapErdM (Source.createUserSource now name) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
+            ( model, SourceId.generator |> Random.generate (\sourceId -> Source.amlEditor sourceId name now |> CreateUserSourceWithId) )
+
+        CreateUserSourceWithId source ->
+            ( model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.createRelation now src ref)
@@ -204,11 +208,7 @@ update req currentLayout now backendUrl msg model =
             model |> mapSourceParsingMCmd (mapSqlSourceCmd (SqlSource.update EmbedSourceParsing message))
 
         SourceParsed source ->
-            let
-                ( projectId, seed ) =
-                    model.seed |> Random.step ProjectId.generator
-            in
-            ( model |> setSeed seed, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
+            ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId source.name source |> Ok |> Just |> GotProject |> JsMessage) )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -347,14 +347,9 @@ handleJsMessage now currentLayout msg model =
 
                 Just (Ok project) ->
                     let
-                        ( childSeed, newSeed ) =
-                            Random.step (Random.int Random.minInt Random.maxInt) model.seed
-
                         erd : Erd
                         erd =
-                            project
-                                |> (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = l }) p)
-                                |> Erd.create (Random.initialSeed childSeed)
+                            currentLayout |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project |> Erd.create
 
                         uploadCmd : List (Cmd msg)
                         uploadCmd =
@@ -367,7 +362,7 @@ handleJsMessage now currentLayout msg model =
                             else
                                 []
                     in
-                    ( { model | seed = newSeed, loaded = True, erd = Just erd } |> mapUploadM (\u -> { u | movingProject = False })
+                    ( { model | loaded = True, erd = Just erd } |> mapUploadM (\u -> { u | movingProject = False })
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
                          , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
@@ -395,41 +390,25 @@ handleJsMessage now currentLayout msg model =
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
 
         GotLocalFile kind file content ->
-            let
-                ( sourceId, seed ) =
-                    model.seed |> Random.step SourceId.generator
-
-                updated : Model
-                updated =
-                    model |> setSeed seed
-            in
             if kind == SqlSource.kind then
-                ( updated, T.send (SqlSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == JsonSource.kind then
-                ( updated, T.send (JsonSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
 
         GotRemoteFile kind url content sample ->
-            let
-                ( sourceId, seed ) =
-                    model.seed |> Random.step SourceId.generator
-
-                updated : Model
-                updated =
-                    model |> setSeed seed
-            in
             if kind == SqlSource.kind then
                 if model.erd == Nothing then
-                    ( updated, Cmd.batch [ T.send (SqlSource.gotRemoteFile now sourceId url content sample |> EmbedSourceParsing) ] )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotRemoteFile now sourceId url content sample |> EmbedSourceParsing) )
 
                 else
-                    ( updated, T.send (SqlSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                    ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == JsonSource.kind then
-                ( updated, T.send (JsonSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled remote file for " ++ kind ++ " source") )

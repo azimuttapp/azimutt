@@ -207,7 +207,6 @@ module Services.Lenses exposing
     , setSchemaAnalysis
     , setScreen
     , setSearch
-    , setSeed
     , setSelected
     , setSelection
     , setSelectionBox
@@ -1056,11 +1055,6 @@ setSearch =
 mapSearch : (v -> v) -> { item | search : v } -> { item | search : v }
 mapSearch =
     map_ .search setSearch
-
-
-setSeed : v -> { item | seed : v } -> { item | seed : v }
-setSeed =
-    set_ .seed (\value item -> { item | seed = value })
 
 
 setSelection : v -> { item | selection : v } -> { item | selection : v }

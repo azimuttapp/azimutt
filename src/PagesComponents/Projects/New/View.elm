@@ -288,7 +288,7 @@ viewProjectImportTab htmlId zone projects model =
                                             |> Maybe.mapOrElse
                                                 (\p ->
                                                     [ Button.secondary3 Tw.red [ onClick (CreateProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                    , Button.primary3 Tw.primary [ onClick (CreateNewProject project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                    , Button.primary3 Tw.primary [ onClick (CreateProjectNew project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                     ]
                                                 )
                                                 [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]

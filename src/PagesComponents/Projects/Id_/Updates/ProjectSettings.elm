@@ -12,7 +12,6 @@ import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdat
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
-import Random
 import Services.Backend exposing (BackendUrl)
 import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
@@ -22,8 +21,7 @@ import Track
 
 type alias Model x =
     { x
-        | seed : Random.Seed
-        , erd : Maybe Erd
+        | erd : Maybe Erd
         , settings : Maybe ProjectSettingsDialog
         , sourceUpload : Maybe SourceUploadDialog
     }
@@ -61,7 +59,7 @@ handleProjectSettings now backendUrl msg model =
                 ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.refreshSource source) ] )
 
             else
-                ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ source ])), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.addSource source) ] )
+                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.addSource source) ] )
 
         PSDefaultSchemaUpdate value ->
             ( model |> mapErdM (Erd.mapSettings (setDefaultSchema value)), Cmd.none )

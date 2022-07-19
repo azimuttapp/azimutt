@@ -14,17 +14,15 @@ import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
 import Ports
-import Random
 import Request
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
-import Time
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init shared.now req.params.id
+        { init = init req.params.id
         , update = Updates.update req Nothing shared.now shared.conf.backendUrl
         , view = Views.view (Request.pushRoute Route.Projects req) req.url shared
         , subscriptions = Subscriptions.subscriptions
@@ -43,10 +41,9 @@ type alias Msg =
 -- INIT
 
 
-init : Time.Posix -> ProjectId -> ( Model, Cmd Msg )
-init now id =
-    ( { seed = Random.initialSeed (now |> Time.posixToMillis)
-      , conf = ErdConf.default
+init : ProjectId -> ( Model, Cmd Msg )
+init id =
+    ( { conf = ErdConf.default
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = False

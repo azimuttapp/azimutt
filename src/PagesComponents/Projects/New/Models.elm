@@ -9,7 +9,6 @@ import Models.Project exposing (Project)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
-import Random
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.ProjectImport as ProjectImport exposing (Model, Msg)
@@ -19,8 +18,7 @@ import Shared exposing (Confirm)
 
 
 type alias Model =
-    { seed : Random.Seed
-    , selectedMenu : String
+    { selectedMenu : String
     , mobileMenuOpen : Bool
     , openedCollapse : HtmlId
     , projects : List ProjectInfo
@@ -65,9 +63,9 @@ type Msg
     | ProjectImportDrop
     | SampleSelectMsg ProjectImport.Msg
     | SampleSelectDrop
-    | CreateProjectFromSource Source
     | CreateProject Project
-    | CreateNewProject Project
+    | CreateProjectNew Project
+    | CreateProjectFromSource Source
       -- global messages
     | DropdownToggle HtmlId
     | Toast Toasts.Msg

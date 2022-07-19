@@ -19,12 +19,10 @@ import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
 import Ports
-import Random
 import Request
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
-import Time
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -35,7 +33,7 @@ page shared req =
             parseQueryString req.query
     in
     Page.element
-        { init = init shared.now query
+        { init = init query
         , update = Updates.update req query.layout shared.now shared.conf.backendUrl
         , view = Views.view (Request.pushRoute Route.NotFound req) req.url shared
         , subscriptions = Subscriptions.subscriptions
@@ -63,10 +61,9 @@ type alias Msg =
 -- INIT
 
 
-init : Time.Posix -> QueryString -> ( Model, Cmd Msg )
-init now query =
-    ( { seed = Random.initialSeed (now |> Time.posixToMillis)
-      , conf = initConf query.mode
+init : QueryString -> ( Model, Cmd Msg )
+init query =
+    ( { conf = initConf query.mode
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
       , loaded = query.projectId == Nothing && query.projectUrl == Nothing && query.sourceUrl == Nothing
