@@ -160,6 +160,7 @@ module Services.Lenses exposing
     , setHover
     , setHoverColumn
     , setHoverTable
+    , setId
     , setIgnoredColumns
     , setIgnoredTables
     , setIndex
@@ -605,6 +606,11 @@ setHoverTable =
 mapHoverTable : (v -> v) -> { item | hoverTable : v } -> { item | hoverTable : v }
 mapHoverTable =
     map_ .hoverTable setHoverTable
+
+
+setId : v -> { item | id : v } -> { item | id : v }
+setId =
+    set_ .id (\value item -> { item | id = value })
 
 
 setIgnoredColumns : v -> { item | ignoredColumns : v } -> { item | ignoredColumns : v }

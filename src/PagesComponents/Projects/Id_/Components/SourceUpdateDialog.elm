@@ -32,12 +32,14 @@ import Services.Backend as Backend exposing (BackendUrl)
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapDatabaseSource, mapJsonSourceCmd, mapM, mapMCmd, mapSqlSourceCmd, setStatus, setUrl)
+import Services.SourceDiff as SourceDiff
 import Services.SqlSource as SqlSource
 import Time
 
 
 type alias Model msg =
     { id : HtmlId
+    , source : Maybe Source
     , sqlSource : SqlSource.Model msg
     , databaseSource : DatabaseSource.Model
     , jsonSource : JsonSource.Model msg
@@ -55,9 +57,10 @@ type Msg
 init : (String -> msg) -> SchemaName -> Maybe Source -> Model msg
 init noop defaultSchema source =
     { id = Conf.ids.sourceUpdateDialog
+    , source = source
     , sqlSource = SqlSource.init defaultSchema source (\_ -> noop "project-settings-sql-source-parsed")
-    , databaseSource = DatabaseSource.init source
-    , jsonSource = JsonSource.init source (\_ -> noop "project-settings-json-source-parsed")
+    , databaseSource = DatabaseSource.init defaultSchema source
+    , jsonSource = JsonSource.init defaultSchema source (\_ -> noop "project-settings-json-source-parsed")
     }
 
 
@@ -127,24 +130,24 @@ view wrap sourceSet modalClose noop zone now opened model =
         , isOpen = opened
         , onBackgroundClick = close
         }
-        (model.sqlSource.source
+        (model.source
             |> Maybe.mapOrElse
                 (\source ->
                     case source.kind of
                         SqlFileLocal filename _ updatedAt ->
-                            sqlLocalFileModal wrap sourceSet close noop zone now titleId source filename updatedAt model.sqlSource
+                            sqlLocalFileModal wrap sourceSet close noop zone now (model.id ++ "-sql-local") titleId source filename updatedAt model.sqlSource
 
                         SqlFileRemote url _ ->
                             sqlRemoteFileModal wrap sourceSet close zone now titleId source url model.sqlSource
 
                         DatabaseConnection url ->
-                            databaseModal wrap sourceSet close zone now (model.id ++ "-database") titleId source url model.databaseSource
+                            databaseModal wrap sourceSet close zone now titleId source url model.databaseSource
 
                         JsonFileLocal filename _ updatedAt ->
-                            sqlLocalFileModal wrap sourceSet close noop zone now titleId source filename updatedAt model.sqlSource
+                            jsonLocalFileModal wrap sourceSet close noop zone now (model.id ++ "-json-local") titleId source filename updatedAt model.jsonSource
 
                         JsonFileRemote url _ ->
-                            sqlRemoteFileModal wrap sourceSet close zone now titleId source url model.sqlSource
+                            jsonRemoteFileModal wrap sourceSet close zone now titleId source url model.jsonSource
 
                         AmlEditor ->
                             userDefinedModal close titleId
@@ -153,8 +156,8 @@ view wrap sourceSet modalClose noop zone now opened model =
         )
 
 
-sqlLocalFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SqlSource.Model msg -> List (Html msg)
-sqlLocalFileModal wrap sourceSet close noop zone now titleId source fileName updatedAt model =
+sqlLocalFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> Time.Zone -> Time.Posix -> HtmlId -> HtmlId -> Source -> FileName -> FileUpdatedAt -> SqlSource.Model msg -> List (Html msg)
+sqlLocalFileModal wrap sourceSet close noop zone now htmlId titleId source fileName updatedAt model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
@@ -171,7 +174,7 @@ sqlLocalFileModal wrap sourceSet close noop zone now titleId source fileName upd
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ SqlSource.viewInput "file-upload" (SqlSource.SelectLocalFile >> SqlSourceMsg >> wrap) (noop "update-source-local-file") ]
+        , div [ class "mt-3" ] [ SqlSource.viewInput (htmlId ++ "-file-upload") (SqlSource.SelectLocalFile >> SqlSourceMsg >> wrap) (noop "update-sql-source-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
             ( SqlFileLocal name1 _ updated1, Just (SqlFileLocal name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
@@ -193,6 +196,7 @@ sqlLocalFileModal wrap sourceSet close noop zone now titleId source fileName upd
             _ ->
                 div [] []
         , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
+        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) model.parsedSource |> Maybe.withDefault (div [] [])
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (model.parsedSource |> Maybe.map sourceSet) "Update source"
@@ -223,6 +227,7 @@ sqlRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
             [ Button.primary5 Tw.primary [ onClick (fileUrl |> SqlSource.SelectRemoteFile |> SqlSourceMsg >> wrap) ] [ text "Fetch file again" ]
             ]
         , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
+        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) model.parsedSource |> Maybe.withDefault (div [] [])
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (model.parsedSource |> Maybe.map sourceSet) "Update source"
@@ -231,8 +236,8 @@ sqlRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
     ]
 
 
-databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model -> List (Html msg)
-databaseModal wrap sourceSet close zone now htmlId titleId source url model =
+databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model -> List (Html msg)
+databaseModal wrap sourceSet close zone now titleId source url model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
             [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
@@ -252,10 +257,91 @@ databaseModal wrap sourceSet close zone now htmlId titleId source url model =
         , div [ class "mt-3 flex justify-center" ]
             [ Button.primary5 Tw.primary [ onClick (DatabaseSource.FetchSchema url |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
             ]
-        , DatabaseSource.view (htmlId ++ "-source") model |> Html.map (DatabaseSourceMsg >> wrap)
+        , DatabaseSource.viewParsing model
+        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model |> DatabaseSource.source) |> Maybe.withDefault (div [] [])
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
         [ primaryBtn (model |> DatabaseSource.source |> Maybe.map sourceSet) "Update source"
+        , closeBtn close
+        ]
+    ]
+
+
+jsonLocalFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> Time.Zone -> Time.Posix -> HtmlId -> HtmlId -> Source -> FileName -> FileUpdatedAt -> JsonSource.Model msg -> List (Html msg)
+jsonLocalFileModal wrap sourceSet close noop zone now htmlId titleId source fileName updatedAt model =
+    [ div [ class "max-w-3xl mx-6 mt-6" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
+            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
+                [ text ("Refresh " ++ source.name ++ " source") ]
+            , div [ class "mt-2" ]
+                [ p [ class "text-sm text-gray-500" ]
+                    [ text "This source came from the "
+                    , bText (DateTime.formatDate zone updatedAt)
+                    , text " version of "
+                    , bText fileName
+                    , text (" file (" ++ (updatedAt |> DateTime.human now) ++ ").")
+                    , br [] []
+                    , text "Please upload its new version to update the source."
+                    ]
+                ]
+            ]
+        , div [ class "mt-3" ] [ JsonSource.viewInput (htmlId ++ "-file-upload") (JsonSource.SelectLocalFile >> JsonSourceMsg >> wrap) (noop "update-json-source-local-file") ]
+        , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
+            ( JsonFileLocal name1 _ updated1, Just (JsonFileLocal name2 _ updated2) ) ->
+                [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
+                , Just [ text "You file is ", bText "older", text " than the previous one" ] |> Maybe.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
+                ]
+                    |> List.filterMap identity
+                    |> (\warnings ->
+                            if warnings == [] then
+                                div [] []
+
+                            else
+                                div [ class "mt-3" ]
+                                    [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Found some strange things" }
+                                        [ ul [ role "list", class "list-disc list-inside" ] (warnings |> List.map (li []))
+                                        ]
+                                    ]
+                       )
+
+            _ ->
+                div [] []
+        , JsonSource.viewParsing (JsonSourceMsg >> wrap) model
+        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+        ]
+    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
+        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
+        , closeBtn close
+        ]
+    ]
+
+
+jsonRemoteFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> FileUrl -> JsonSource.Model msg -> List (Html msg)
+jsonRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
+    [ div [ class "max-w-3xl mx-6 mt-6" ]
+        [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
+            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
+                [ text ("Refresh " ++ source.name ++ " source") ]
+            , div [ class "mt-2" ]
+                [ p [ class "text-sm text-gray-500" ]
+                    [ text "This source came from "
+                    , bText fileUrl
+                    , text " which was fetched the "
+                    , bText (DateTime.formatDate zone source.updatedAt)
+                    , text (" (" ++ (source.updatedAt |> DateTime.human now) ++ ").")
+                    , br [] []
+                    , text "Click on the button to fetch it again now."
+                    ]
+                ]
+            ]
+        , div [ class "mt-3 flex justify-center" ]
+            [ Button.primary5 Tw.primary [ onClick (fileUrl |> JsonSource.SelectRemoteFile |> JsonSourceMsg >> wrap) ] [ text "Fetch file again" ]
+            ]
+        , JsonSource.viewParsing (JsonSourceMsg >> wrap) model
+        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+        ]
+    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
+        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
         , closeBtn close
         ]
     ]

@@ -9,7 +9,7 @@ import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.Source as Source
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog)
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
 import Services.Backend exposing (BackendUrl)
@@ -23,7 +23,7 @@ type alias Model x =
     { x
         | erd : Maybe Erd
         , settings : Maybe ProjectSettingsDialog
-        , sourceUpload : Maybe SourceUploadDialog
+        , sourceUpload : Maybe (SourceUpdateDialog.Model Msg)
     }
 
 

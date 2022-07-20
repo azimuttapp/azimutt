@@ -149,10 +149,10 @@ initTab tab model =
             { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
 
         TabDatabase ->
-            { clean | databaseSource = Just (DatabaseSource.init Nothing) }
+            { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing) }
 
         TabJson ->
-            { clean | jsonSource = Just (JsonSource.init Nothing (\_ -> Noop "select-tab-json-source")) }
+            { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
 
         TabProject ->
             { clean | projectImport = Just ProjectImport.init }
@@ -236,7 +236,7 @@ update req now backendUrl msg model =
                    )
 
         JsonSourceDrop ->
-            ( model |> mapJsonSourceM (\_ -> JsonSource.init Nothing (\_ -> Noop "drop-json-source")), Cmd.none )
+            ( model |> mapJsonSourceM (\_ -> JsonSource.init Conf.schema.default Nothing (\_ -> Noop "drop-json-source")), Cmd.none )
 
         ProjectImportMsg message ->
             model

@@ -15,17 +15,19 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
 import Models.Project.SampleKey exposing (SampleKey)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Ports
-import Services.Lenses exposing (setParsedSchema, setParsedSource)
+import Services.Lenses exposing (setId, setParsedSchema, setParsedSource)
 import Time
 import Track
 
 
 type alias Model msg =
-    { source : Maybe Source
+    { defaultSchema : SchemaName
+    , source : Maybe Source
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe FileUrl
     , loadedFile : Maybe ( SourceInfo, FileContent )
@@ -48,9 +50,10 @@ type Msg
 -- INIT
 
 
-init : Maybe Source -> (Result String Source -> msg) -> Model msg
-init source callback =
-    { source = source
+init : SchemaName -> Maybe Source -> (Result String Source -> msg) -> Model msg
+init defaultSchema source callback =
+    { defaultSchema = defaultSchema
+    , source = source
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
     , loadedFile = Nothing
@@ -71,17 +74,17 @@ update wrap msg model =
             ( { model | selectedRemoteFile = B.cond (url == "") Nothing (Just url) }, Cmd.none )
 
         SelectRemoteFile url ->
-            ( init model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
+            ( init model.defaultSchema model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
             , Ports.readRemoteFile kind url Nothing
             )
 
         SelectLocalFile file ->
-            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
+            ( init model.defaultSchema model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile kind file
             )
 
         FileLoaded sourceInfo fileContent ->
-            ( { model | loadedFile = Just ( sourceInfo, fileContent ) }
+            ( { model | loadedFile = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent ) }
             , T.send (ParseSource |> wrap)
             )
 

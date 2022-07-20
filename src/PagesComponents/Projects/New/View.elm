@@ -187,7 +187,8 @@ viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model -> Html Msg
 viewDatabaseSourceTab htmlId model =
     div []
         [ viewHeading "Extract your database schema" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is saved."
-        , DatabaseSource.view htmlId model |> Html.map DatabaseSourceMsg
+        , DatabaseSource.viewInput htmlId model |> Html.map DatabaseSourceMsg
+        , DatabaseSource.viewParsing model
         , case model.status of
             DatabaseSource.Success source ->
                 div [ css [ "mt-6" ] ]

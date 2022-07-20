@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
+module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlParser.AmlAdapter exposing (AmlSchemaError)
@@ -43,8 +43,6 @@ import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
-import Services.DatabaseSource as DatabaseSource
-import Services.JsonSource as JsonSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
@@ -70,7 +68,7 @@ type alias Model =
     , sharing : Maybe SharingDialog
     , upload : Maybe ProjectUploadDialog.Model
     , settings : Maybe ProjectSettingsDialog
-    , sourceUpload : Maybe SourceUploadDialog
+    , sourceUpload : Maybe (SourceUpdateDialog.Model Msg)
     , sourceParsing : Maybe SourceParsingDialog
     , help : Maybe HelpDialog
 
@@ -122,10 +120,6 @@ type alias SharingDialog =
 
 type alias ProjectSettingsDialog =
     { id : HtmlId }
-
-
-type alias SourceUploadDialog =
-    { id : HtmlId, sqlSource : SqlSource.Model Msg, databaseSource : DatabaseSource.Model, jsonSource : JsonSource.Model Msg }
 
 
 type alias SourceParsingDialog =

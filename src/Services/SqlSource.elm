@@ -5,7 +5,6 @@ import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
-import Components.Molecules.Tooltip as Tooltip
 import Conf
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlParser.SqlAdapter as SqlAdapter exposing (SqlSchema, SqlSchemaError)
@@ -14,7 +13,7 @@ import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
 import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
 import FileValue exposing (File)
-import Html exposing (Html, div, li, p, pre, span, text, ul)
+import Html exposing (Html, div, p, pre, span, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Libs.Bool as B
@@ -30,17 +29,14 @@ import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
-import Models.Project.Relation as Relation exposing (Relation)
-import Models.Project.RelationId as RelationId
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId as TableId
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Ports
-import Services.Lenses exposing (mapParsedSchemaM, mapShow, setParsedSource)
+import Services.Lenses exposing (mapParsedSchemaM, mapShow, setId, setParsedSource)
 import Time
 import Track
 import Url exposing (percentEncode)
@@ -147,7 +143,7 @@ update wrap msg model =
 
         FileLoaded sourceInfo fileContent ->
             ( { model
-                | loadedFile = Just ( sourceInfo, fileContent )
+                | loadedFile = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent )
                 , parsedSchema = Just (parsingInit fileContent (ParseMsg >> wrap) (BuildSource |> wrap))
               }
             , T.send (BuildLines |> ParseMsg |> wrap)
@@ -278,38 +274,35 @@ viewInput htmlId onSelect noop =
 
 viewParsing : (Msg -> msg) -> Model msg -> Html msg
 viewParsing wrap model =
-    ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
-        |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file"))
-    )
-        |> Maybe.map2
-            (\parsedSchema fileName ->
-                div []
-                    [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                    , viewLogs wrap model.defaultSchema fileName parsedSchema
-                    , viewErrorAlert parsedSchema
-                    , model.source |> Maybe.map2 (viewSourceDiff model.defaultSchema) model.parsedSource |> Maybe.withDefault (div [] [])
-                    ]
-            )
-            model.parsedSchema
+    Maybe.map2
+        (\fileName parsedSchema ->
+            div []
+                [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
+                , viewLogs model.defaultSchema fileName parsedSchema |> Html.map wrap
+                , viewErrorAlert parsedSchema
+                ]
+        )
+        ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file")))
+        model.parsedSchema
         |> Maybe.withDefault (div [] [])
 
 
-viewLogs : (Msg -> msg) -> SchemaName -> String -> SqlParsing msg -> Html msg
-viewLogs wrap defaultSchema filename model =
+viewLogs : SchemaName -> String -> SqlParsing msg -> Html Msg
+viewLogs defaultSchema filename model =
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
-        [ viewLogsFile wrap model.show filename model.fileContent
-        , model.lines |> Maybe.mapOrElse (viewLogsLines wrap model.show) (div [] [])
-        , model.statements |> Maybe.mapOrElse (viewLogsStatements wrap model.show) (div [] [])
+        [ viewLogsFile model.show filename model.fileContent
+        , model.lines |> Maybe.mapOrElse (viewLogsLines model.show) (div [] [])
+        , model.statements |> Maybe.mapOrElse (viewLogsStatements model.show) (div [] [])
         , model.commands |> Maybe.mapOrElse (viewLogsCommands model.statements) (div [] [])
         , viewLogsErrors (model.schema |> Maybe.mapOrElse .errors [])
-        , model.schema |> Maybe.mapOrElse (viewLogsSchema wrap defaultSchema model.show) (div [] [])
+        , model.schema |> Maybe.mapOrElse (viewLogsSchema defaultSchema model.show) (div [] [])
         ]
 
 
-viewLogsFile : (Msg -> msg) -> HtmlId -> String -> FileContent -> Html msg
-viewLogsFile wrap show filename content =
+viewLogsFile : HtmlId -> String -> FileContent -> Html Msg
+viewLogsFile show filename content =
     div []
-        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "file"))) ] [ text ("Loaded " ++ filename ++ ".") ]
+        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "file")) ] [ text ("Loaded " ++ filename ++ ".") ]
         , if show == "file" then
             div [] [ pre [ class "whitespace-pre font-mono" ] [ text content ] ]
 
@@ -318,8 +311,8 @@ viewLogsFile wrap show filename content =
         ]
 
 
-viewLogsLines : (Msg -> msg) -> HtmlId -> List SourceLine -> Html msg
-viewLogsLines wrap show lines =
+viewLogsLines : HtmlId -> List SourceLine -> Html Msg
+viewLogsLines show lines =
     let
         count : Int
         count =
@@ -335,7 +328,7 @@ viewLogsLines wrap show lines =
             \i -> i |> String.fromInt |> String.padLeft size ' '
     in
     div []
-        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "lines"))) ] [ text ("Found " ++ (count |> String.pluralize "line") ++ " in the file.") ]
+        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "lines")) ] [ text ("Found " ++ (count |> String.pluralize "line") ++ " in the file.") ]
         , if show == "lines" then
             div []
                 (lines
@@ -353,8 +346,8 @@ viewLogsLines wrap show lines =
         ]
 
 
-viewLogsStatements : (Msg -> msg) -> HtmlId -> Dict Int SqlStatement -> Html msg
-viewLogsStatements wrap show statements =
+viewLogsStatements : HtmlId -> Dict Int SqlStatement -> Html Msg
+viewLogsStatements show statements =
     let
         count : Int
         count =
@@ -370,7 +363,7 @@ viewLogsStatements wrap show statements =
             \i -> i |> String.fromInt |> String.padLeft size ' '
     in
     div []
-        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "statements"))) ] [ text ("Found " ++ (count |> String.pluralize "SQL statement") ++ ".") ]
+        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "statements")) ] [ text ("Found " ++ (count |> String.pluralize "SQL statement") ++ ".") ]
         , if show == "statements" then
             div []
                 (statements
@@ -424,8 +417,8 @@ viewLogsErrors schemaErrors =
             )
 
 
-viewLogsSchema : (Msg -> msg) -> SchemaName -> HtmlId -> SqlSchema -> Html msg
-viewLogsSchema wrap defaultSchema htmlId schema =
+viewLogsSchema : SchemaName -> HtmlId -> SqlSchema -> Html Msg
+viewLogsSchema defaultSchema htmlId schema =
     let
         count : Int
         count =
@@ -441,7 +434,7 @@ viewLogsSchema wrap defaultSchema htmlId schema =
             \i -> i |> String.fromInt |> String.padLeft size ' '
     in
     div []
-        [ div [ class "cursor-pointer", onClick (wrap (UiMsg (Toggle "tables"))) ] [ text ("Schema built with " ++ (count |> String.pluralize "table") ++ ".") ]
+        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "tables")) ] [ text ("Schema built with " ++ (count |> String.pluralize "table") ++ ".") ]
         , if htmlId == "tables" then
             div []
                 (schema.tables
@@ -541,53 +534,6 @@ sendErrorReport parseErrors schemaErrors =
     "mailto:" ++ email ++ "?subject=" ++ percentEncode subject ++ "&body=" ++ percentEncode body
 
 
-viewSourceDiff : SchemaName -> Source -> Source -> Html msg
-viewSourceDiff defaultSchema newSource oldSource =
-    let
-        ( removedTables, updatedTables, newTables ) =
-            List.diff .id (oldSource.tables |> Dict.values |> List.map Table.clearOrigins) (newSource.tables |> Dict.values |> List.map Table.clearOrigins)
-
-        ( removedRelations, updatedRelations, newRelations ) =
-            List.diff .id (oldSource.relations |> List.map Relation.clearOrigins) (newSource.relations |> List.map Relation.clearOrigins)
-    in
-    if List.nonEmpty updatedTables || List.nonEmpty newTables || List.nonEmpty removedTables || List.nonEmpty updatedRelations || List.nonEmpty newRelations || List.nonEmpty removedRelations then
-        div [ class "mt-3" ]
-            [ Alert.withDescription { color = Tw.green, icon = CheckCircle, title = "Source parsed, here are the changes:" }
-                [ ul [ class "list-disc list-inside" ]
-                    ([ viewSourceDiffItem "modified table" (updatedTables |> List.map (\( old, new ) -> ( TableId.show defaultSchema new.id, tableDiff old new )))
-                     , viewSourceDiffItem "new table" (newTables |> List.map (\t -> ( TableId.show defaultSchema t.id, Nothing )))
-                     , viewSourceDiffItem "removed table" (removedTables |> List.map (\t -> ( TableId.show defaultSchema t.id, Nothing )))
-                     , viewSourceDiffItem "modified relation" (updatedRelations |> List.map (\( old, new ) -> ( RelationId.show defaultSchema new.id, relationDiff old new )))
-                     , viewSourceDiffItem "new relation" (newRelations |> List.map (\r -> ( RelationId.show defaultSchema r.id, Nothing )))
-                     , viewSourceDiffItem "removed relation" (removedRelations |> List.map (\r -> ( RelationId.show defaultSchema r.id, Nothing )))
-                     ]
-                        |> List.filterMap identity
-                    )
-                ]
-            ]
-
-    else
-        div [ class "mt-3" ]
-            [ Alert.withDescription { color = Tw.green, icon = CheckCircle, title = "Source parsed" }
-                [ text "There is no differences but you can still refresh the source to change the last updated date." ]
-            ]
-
-
-viewSourceDiffItem : String -> List ( String, Maybe String ) -> Maybe (Html msg)
-viewSourceDiffItem label items =
-    items
-        |> List.head
-        |> Maybe.map
-            (\_ ->
-                li []
-                    [ bText (items |> String.pluralizeL label)
-                    , text " ("
-                    , span [] (items |> List.map (\( item, details ) -> text item |> Tooltip.t (details |> Maybe.withDefault "")) |> List.intersperse (text ", "))
-                    , text ")"
-                    ]
-            )
-
-
 
 -- HELPERS
 
@@ -595,60 +541,3 @@ viewSourceDiffItem label items =
 hasErrors : SqlParsing msg -> Bool
 hasErrors parser =
     (parser.commands |> Maybe.any (Dict.values >> List.any (\( _, r ) -> r |> Result.isErr))) || (parser.schema |> Maybe.mapOrElse .errors [] |> List.nonEmpty)
-
-
-tableDiff : Table -> Table -> Maybe String
-tableDiff old new =
-    let
-        ( removedColumns, updatedColumns, newColumns ) =
-            List.diff .name (old.columns |> Dict.values) (new.columns |> Dict.values)
-
-        primaryKey : Bool
-        primaryKey =
-            old.primaryKey /= new.primaryKey
-
-        ( removedUniques, updatedUniques, newUniques ) =
-            List.diff .name old.uniques new.uniques
-
-        ( removedIndexes, updatedIndexes, newIndexes ) =
-            List.diff .name old.indexes new.indexes
-
-        ( removedChecks, updatedChecks, newChecks ) =
-            List.diff .name old.checks new.checks
-
-        comment : Bool
-        comment =
-            old.comment /= new.comment
-    in
-    [ newColumns |> List.head |> Maybe.map (\_ -> (newColumns |> String.pluralizeL "new column") ++ ": " ++ (newColumns |> List.map .name |> String.join ", "))
-    , removedColumns |> List.head |> Maybe.map (\_ -> (removedColumns |> String.pluralizeL "removed column") ++ ": " ++ (removedColumns |> List.map .name |> String.join ", "))
-    , updatedColumns |> List.head |> Maybe.map (\_ -> (updatedColumns |> String.pluralizeL "updated column") ++ ": " ++ (updatedColumns |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
-    , B.maybe primaryKey "primary key updated"
-    , newUniques |> List.head |> Maybe.map (\_ -> (newUniques |> String.pluralizeL "new unique") ++ ": " ++ (newUniques |> List.map .name |> String.join ", "))
-    , removedUniques |> List.head |> Maybe.map (\_ -> (removedUniques |> String.pluralizeL "removed unique") ++ ": " ++ (removedUniques |> List.map .name |> String.join ", "))
-    , updatedUniques |> List.head |> Maybe.map (\_ -> (updatedUniques |> String.pluralizeL "updated unique") ++ ": " ++ (updatedUniques |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
-    , newIndexes |> List.head |> Maybe.map (\_ -> (newIndexes |> String.pluralizeL "new index") ++ ": " ++ (newIndexes |> List.map .name |> String.join ", "))
-    , removedIndexes |> List.head |> Maybe.map (\_ -> (removedIndexes |> String.pluralizeL "removed index") ++ ": " ++ (removedIndexes |> List.map .name |> String.join ", "))
-    , updatedIndexes |> List.head |> Maybe.map (\_ -> (updatedIndexes |> String.pluralizeL "updated index") ++ ": " ++ (updatedIndexes |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
-    , newChecks |> List.head |> Maybe.map (\_ -> (newChecks |> String.pluralizeL "new check") ++ ": " ++ (newChecks |> List.map .name |> String.join ", "))
-    , removedChecks |> List.head |> Maybe.map (\_ -> (removedChecks |> String.pluralizeL "removed check") ++ ": " ++ (removedChecks |> List.map .name |> String.join ", "))
-    , updatedChecks |> List.head |> Maybe.map (\_ -> (updatedChecks |> String.pluralizeL "updated check") ++ ": " ++ (updatedChecks |> List.map (\( c, _ ) -> c.name) |> String.join ", "))
-    , B.maybe comment "comment updated"
-    ]
-        |> List.filterMap identity
-        |> String.join ", "
-        |> String.maybeNonEmpty
-
-
-relationDiff : Relation -> Relation -> Maybe String
-relationDiff old new =
-    let
-        name : Bool
-        name =
-            old.name /= new.name
-    in
-    [ B.maybe name "name updated"
-    ]
-        |> List.filterMap identity
-        |> String.join ", "
-        |> String.maybeNonEmpty
