@@ -2,15 +2,12 @@ module Pages.Projects.New exposing (Model, Msg, page)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf exposing (SampleSchema)
-import DataSources.DatabaseSchemaParser.DatabaseAdapter as DatabaseAdapter
 import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
-import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
-import Libs.Result as Result
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
@@ -23,10 +20,10 @@ import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Backend as Backend exposing (BackendUrl)
+import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceM, mapJsonSourceM, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceM, mapSqlSourceMCmd, mapToastsCmd, setConfirm, setStatus, setUrl)
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
 import Services.ProjectImport as ProjectImport
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -149,7 +146,7 @@ initTab tab model =
             { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
 
         TabDatabase ->
-            { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing) }
+            { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-database-source")) }
 
         TabJson ->
             { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
@@ -165,7 +162,7 @@ initTab tab model =
 -- UPDATE
 
 
-update : Request.With Params -> Time.Posix -> BackendUrl -> Msg -> Model -> ( Model, Cmd Msg )
+update : Request.With Params -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
 update req now backendUrl msg model =
     case msg of
         SelectMenu menu ->
@@ -183,72 +180,63 @@ update req now backendUrl msg model =
         SqlSourceMsg message ->
             model
                 |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg message)
-                |> (\( m, cmd ) ->
-                        if message == SqlSource.BuildSource then
-                            ( m, Cmd.batch [ cmd, Ports.confetti "create-project-btn" ] )
+                |> Tuple.mapSecond
+                    (\cmd ->
+                        case message of
+                            SqlSource.BuildSource ->
+                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
-                        else
-                            ( m, cmd )
-                   )
+                            _ ->
+                                cmd
+                    )
 
         SqlSourceDrop ->
-            ( model |> mapSqlSourceM (\_ -> SqlSource.init Conf.schema.default Nothing (\_ -> Noop "drop-sql-source")), Cmd.none )
+            ( { model | sqlSource = SqlSource.init Conf.schema.default Nothing (\_ -> Noop "drop-sql-source") |> Just }, Cmd.none )
 
-        DatabaseSourceMsg (DatabaseSource.UpdateUrl url) ->
-            ( model |> mapDatabaseSourceM (setUrl url), Cmd.none )
+        DatabaseSourceMsg message ->
+            model
+                |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg backendUrl now message)
+                |> Tuple.mapSecond
+                    (\cmd ->
+                        case message of
+                            DatabaseSource.BuildSource _ ->
+                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
-        DatabaseSourceMsg (DatabaseSource.FetchSchema url) ->
-            ( model |> mapDatabaseSourceM (setStatus (DatabaseSource.Fetching url))
-            , Backend.getDatabaseSchema backendUrl url (DatabaseSource.GotSchema url >> DatabaseSourceMsg)
-            )
-
-        DatabaseSourceMsg (DatabaseSource.GotSchema url result) ->
-            ( model, SourceId.generator |> Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg) )
-
-        DatabaseSourceMsg (DatabaseSource.GotSchemaWithId url result sourceId) ->
-            ( model
-                |> mapDatabaseSourceM
-                    (setStatus
-                        (result
-                            |> Result.fold
-                                (Http.errorToString >> DatabaseSource.Error)
-                                (DatabaseAdapter.buildDatabaseSource now sourceId url >> DatabaseSource.Success)
-                        )
+                            _ ->
+                                cmd
                     )
-            , Cmd.none
-            )
 
-        DatabaseSourceMsg DatabaseSource.DropSchema ->
-            ( model |> mapDatabaseSourceM (setStatus DatabaseSource.Pending), Cmd.none )
-
-        DatabaseSourceMsg (DatabaseSource.CreateProject source) ->
-            ( model, T.send (CreateProjectFromSource source) )
+        DatabaseSourceDrop ->
+            ( { model | databaseSource = DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "drop-database-source") |> Just }, Cmd.none )
 
         JsonSourceMsg message ->
             model
                 |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg message)
-                |> (\( m, cmd ) ->
-                        if message == JsonSource.BuildSource then
-                            ( m, Cmd.batch [ cmd, Ports.confetti "create-project-btn" ] )
+                |> Tuple.mapSecond
+                    (\cmd ->
+                        case message of
+                            JsonSource.BuildSource ->
+                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
-                        else
-                            ( m, cmd )
-                   )
+                            _ ->
+                                cmd
+                    )
 
         JsonSourceDrop ->
-            ( model |> mapJsonSourceM (\_ -> JsonSource.init Conf.schema.default Nothing (\_ -> Noop "drop-json-source")), Cmd.none )
+            ( { model | jsonSource = JsonSource.init Conf.schema.default Nothing (\_ -> Noop "drop-json-source") |> Just }, Cmd.none )
 
         ProjectImportMsg message ->
             model
                 |> mapProjectImportMCmd (ProjectImport.update message)
-                |> (\( m, cmd ) ->
+                |> Tuple.mapSecond
+                    (\cmd ->
                         case message of
                             ProjectImport.FileLoaded _ ->
-                                ( m, Cmd.batch [ cmd, Ports.confetti "import-project-btn" ] )
+                                Cmd.batch [ cmd, Ports.confetti "import-project-btn" ]
 
                             _ ->
-                                ( m, cmd )
-                   )
+                                cmd
+                    )
 
         ProjectImportDrop ->
             ( model |> mapProjectImportM (\_ -> ProjectImport.init), Cmd.none )
@@ -256,14 +244,15 @@ update req now backendUrl msg model =
         SampleSelectMsg message ->
             model
                 |> mapSampleSelectionMCmd (ProjectImport.update message)
-                |> (\( m, cmd ) ->
+                |> Tuple.mapSecond
+                    (\cmd ->
                         case message of
                             ProjectImport.FileLoaded _ ->
-                                ( m, Cmd.batch [ cmd, Ports.confetti "sample-project-btn" ] )
+                                Cmd.batch [ cmd, Ports.confetti "sample-project-btn" ]
 
                             _ ->
-                                ( m, cmd )
-                   )
+                                cmd
+                    )
 
         SampleSelectDrop ->
             ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )

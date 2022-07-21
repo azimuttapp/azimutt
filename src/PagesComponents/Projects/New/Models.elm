@@ -24,7 +24,7 @@ type alias Model =
     , projects : List ProjectInfo
     , selectedTab : Tab
     , sqlSource : Maybe (SqlSource.Model Msg)
-    , databaseSource : Maybe DatabaseSource.Model
+    , databaseSource : Maybe (DatabaseSource.Model Msg)
     , jsonSource : Maybe (JsonSource.Model Msg)
     , projectImport : Maybe ProjectImport.Model
     , sampleSelection : Maybe ProjectImport.Model
@@ -57,6 +57,7 @@ type Msg
     | SqlSourceMsg SqlSource.Msg
     | SqlSourceDrop
     | DatabaseSourceMsg DatabaseSource.Msg
+    | DatabaseSourceDrop
     | JsonSourceMsg JsonSource.Msg
     | JsonSourceDrop
     | ProjectImportMsg ProjectImport.Msg

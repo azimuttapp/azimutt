@@ -47,7 +47,7 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Backend exposing (BackendUrl)
+import Services.Backend as Backend
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapSqlSourceCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
@@ -56,7 +56,7 @@ import Time
 import Track
 
 
-update : Request.With params -> Maybe LayoutName -> Time.Posix -> BackendUrl -> Msg -> Model -> ( Model, Cmd Msg )
+update : Request.With params -> Maybe LayoutName -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
 update req currentLayout now backendUrl msg model =
     case msg of
         ToggleMobileMenu ->

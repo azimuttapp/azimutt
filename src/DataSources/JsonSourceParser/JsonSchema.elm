@@ -1,19 +1,19 @@
-module DataSources.JsonSourceParser.JsonSource exposing (JsonSource, decode, jsonSchema)
+module DataSources.JsonSourceParser.JsonSchema exposing (JsonSchema, decode, jsonSchema)
 
 import DataSources.JsonSourceParser.Models.JsonRelation as JsonRelation exposing (JsonRelation)
 import DataSources.JsonSourceParser.Models.JsonTable as JsonTable exposing (JsonTable)
 import Json.Decode as Decode
 
 
-type alias JsonSource =
+type alias JsonSchema =
     { tables : List JsonTable
     , relations : List JsonRelation
     }
 
 
-decode : Decode.Decoder JsonSource
+decode : Decode.Decoder JsonSchema
 decode =
-    Decode.map2 JsonSource
+    Decode.map2 JsonSchema
         (Decode.field "tables" (Decode.list JsonTable.decode))
         (Decode.field "relations" (Decode.list JsonRelation.decode))
 

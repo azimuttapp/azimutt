@@ -1,4 +1,4 @@
-module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, UiMsg, gotLocalFile, gotRemoteFile, hasErrors, init, kind, update, viewInput, viewParsing)
+module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, gotLocalFile, gotRemoteFile, hasErrors, init, kind, update, viewInput, viewParsing)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
@@ -29,14 +29,15 @@ import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
 import Libs.Task as T
+import Models.Project.Column exposing (Column)
 import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
-import Models.Project.TableId as TableId
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Ports
 import Services.Lenses exposing (mapParsedSchemaM, mapShow, setId, setParsedSource)
+import Services.SourceLogs as SourceLogs
 import Time
 import Track
 import Url exposing (percentEncode)
@@ -70,12 +71,12 @@ type alias SqlParsing msg =
 
 type Msg
     = UpdateRemoteFile FileUrl
-    | SelectRemoteFile FileUrl
-    | SelectLocalFile File
-    | FileLoaded SourceInfo FileContent
+    | GetRemoteFile FileUrl
+    | GetLocalFile File
+    | GotFile SourceInfo FileContent
     | ParseMsg ParsingMsg
-    | UiMsg UiMsg
     | BuildSource
+    | UiToggle HtmlId
 
 
 type ParsingMsg
@@ -83,10 +84,6 @@ type ParsingMsg
     | BuildStatements
     | BuildCommand
     | EvolveSchema
-
-
-type UiMsg
-    = Toggle HtmlId
 
 
 
@@ -131,17 +128,17 @@ update wrap msg model =
         UpdateRemoteFile url ->
             ( { model | selectedRemoteFile = B.cond (url == "") Nothing (Just url) }, Cmd.none )
 
-        SelectRemoteFile url ->
+        GetRemoteFile url ->
             ( init model.defaultSchema model.source model.callback |> (\m -> { m | selectedRemoteFile = Just url })
             , Ports.readRemoteFile kind url Nothing
             )
 
-        SelectLocalFile file ->
+        GetLocalFile file ->
             ( init model.defaultSchema model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile kind file
             )
 
-        FileLoaded sourceInfo fileContent ->
+        GotFile sourceInfo fileContent ->
             ( { model
                 | loadedFile = Just ( sourceInfo |> setId (model.source |> Maybe.mapOrElse .id sourceInfo.id), fileContent )
                 , parsedSchema = Just (parsingInit fileContent (ParseMsg >> wrap) (BuildSource |> wrap))
@@ -165,7 +162,7 @@ update wrap msg model =
                 model.loadedFile
                 |> Maybe.withDefault ( model, Cmd.none )
 
-        UiMsg (Toggle htmlId) ->
+        UiToggle htmlId ->
             ( model |> mapParsedSchemaM (mapShow (\s -> B.cond (s == htmlId) "" htmlId)), Cmd.none )
 
         BuildSource ->
@@ -173,7 +170,7 @@ update wrap msg model =
                 |> Maybe.andThen
                     (\parsedSchema ->
                         parsedSchema.schema
-                            |> Maybe.map3 (\( sourceInfo, _ ) lines schema -> ( parsedSchema, SqlAdapter.buildSqlSource sourceInfo lines schema ))
+                            |> Maybe.map3 (\( sourceInfo, _ ) lines schema -> ( parsedSchema, SqlAdapter.buildSource sourceInfo lines schema ))
                                 model.loadedFile
                                 parsedSchema.lines
                     )
@@ -242,12 +239,12 @@ kind =
 
 gotLocalFile : Time.Posix -> SourceId -> File -> FileContent -> Msg
 gotLocalFile now sourceId file content =
-    FileLoaded (SourceInfo.sqlLocal now sourceId file) content
+    GotFile (SourceInfo.sqlLocal now sourceId file) content
 
 
 gotRemoteFile : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> Msg
 gotRemoteFile now sourceId url content sample =
-    FileLoaded (SourceInfo.sqlRemote now sourceId url content sample) content
+    GotFile (SourceInfo.sqlRemote now sourceId url content sample) content
 
 
 
@@ -274,40 +271,40 @@ viewInput htmlId onSelect noop =
 
 viewParsing : (Msg -> msg) -> Model msg -> Html msg
 viewParsing wrap model =
-    Maybe.map2
-        (\fileName parsedSchema ->
-            div []
-                [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedSource |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                , viewLogs model.defaultSchema fileName parsedSchema |> Html.map wrap
-                , viewErrorAlert parsedSchema
-                ]
-        )
-        ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file")))
-        model.parsedSchema
+    ((model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file")) |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\u -> u ++ " file")))
+        |> Maybe.map
+            (\fileName ->
+                div []
+                    [ div [ class "mt-6" ]
+                        [ Divider.withLabel
+                            ((model.parsedSource |> Maybe.map (\_ -> "Loaded!"))
+                                |> Maybe.orElse (model.parsedSchema |> Maybe.map (\_ -> "Building..."))
+                                |> Maybe.orElse (model.loadedFile |> Maybe.map (\_ -> "Parsing..."))
+                                |> Maybe.withDefault "Fetching..."
+                            )
+                        ]
+                    , viewLogs fileName model |> Html.map wrap
+                    , viewErrorAlert model.parsedSchema
+                    ]
+            )
         |> Maybe.withDefault (div [] [])
 
 
-viewLogs : SchemaName -> String -> SqlParsing msg -> Html Msg
-viewLogs defaultSchema filename model =
-    div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
-        [ viewLogsFile model.show filename model.fileContent
-        , model.lines |> Maybe.mapOrElse (viewLogsLines model.show) (div [] [])
-        , model.statements |> Maybe.mapOrElse (viewLogsStatements model.show) (div [] [])
-        , model.commands |> Maybe.mapOrElse (viewLogsCommands model.statements) (div [] [])
-        , viewLogsErrors (model.schema |> Maybe.mapOrElse .errors [])
-        , model.schema |> Maybe.mapOrElse (viewLogsSchema defaultSchema model.show) (div [] [])
-        ]
-
-
-viewLogsFile : HtmlId -> String -> FileContent -> Html Msg
-viewLogsFile show filename content =
-    div []
-        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "file")) ] [ text ("Loaded " ++ filename ++ ".") ]
-        , if show == "file" then
-            div [] [ pre [ class "whitespace-pre font-mono" ] [ text content ] ]
-
-          else
-            div [] []
+viewLogs : String -> Model msg -> Html Msg
+viewLogs filename model =
+    let
+        show : HtmlId
+        show =
+            model.parsedSchema |> Maybe.mapOrElse .show ""
+    in
+    SourceLogs.viewContainer
+        [ SourceLogs.viewFile UiToggle show filename (model.parsedSchema |> Maybe.map .fileContent)
+        , model.parsedSchema |> Maybe.andThen .lines |> Maybe.mapOrElse (viewLogsLines show) (div [] [])
+        , model.parsedSchema |> Maybe.andThen .statements |> Maybe.mapOrElse (viewLogsStatements show) (div [] [])
+        , model.parsedSchema |> Maybe.andThen .commands |> Maybe.mapOrElse (viewLogsCommands (model.parsedSchema |> Maybe.andThen .statements)) (div [] [])
+        , viewLogsErrors (model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse .errors [])
+        , model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse (normalizeSchema >> Ok >> SourceLogs.viewParsedSchema UiToggle model.defaultSchema show) (div [] [])
+        , model.parsedSource |> Maybe.mapOrElse (\_ -> div [] [ text "Done!" ]) (div [] [])
         ]
 
 
@@ -328,7 +325,7 @@ viewLogsLines show lines =
             \i -> i |> String.fromInt |> String.padLeft size ' '
     in
     div []
-        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "lines")) ] [ text ("Found " ++ (count |> String.pluralize "line") ++ " in the file.") ]
+        [ div [ class "cursor-pointer", onClick (UiToggle "lines") ] [ text ("Found " ++ (count |> String.pluralize "line") ++ " in the file.") ]
         , if show == "lines" then
             div []
                 (lines
@@ -363,7 +360,7 @@ viewLogsStatements show statements =
             \i -> i |> String.fromInt |> String.padLeft size ' '
     in
     div []
-        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "statements")) ] [ text ("Found " ++ (count |> String.pluralize "SQL statement") ++ ".") ]
+        [ div [ class "cursor-pointer", onClick (UiToggle "statements") ] [ text ("Found " ++ (count |> String.pluralize "SQL statement") ++ ".") ]
         , if show == "statements" then
             div []
                 (statements
@@ -417,41 +414,9 @@ viewLogsErrors schemaErrors =
             )
 
 
-viewLogsSchema : SchemaName -> HtmlId -> SqlSchema -> Html Msg
-viewLogsSchema defaultSchema htmlId schema =
-    let
-        count : Int
-        count =
-            schema.tables |> Dict.size
-
-        pad : Int -> String
-        pad =
-            let
-                size : Int
-                size =
-                    count |> String.fromInt |> String.length
-            in
-            \i -> i |> String.fromInt |> String.padLeft size ' '
-    in
-    div []
-        [ div [ class "cursor-pointer", onClick (UiMsg (Toggle "tables")) ] [ text ("Schema built with " ++ (count |> String.pluralize "table") ++ ".") ]
-        , if htmlId == "tables" then
-            div []
-                (schema.tables
-                    |> Dict.values
-                    |> List.sortBy (\t -> TableId.toString t.id)
-                    |> List.indexedMap
-                        (\i t ->
-                            div [ class "flex items-start" ]
-                                [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
-                                , pre [ class "whitespace-pre font-mono" ] [ text (TableId.show defaultSchema t.id) ]
-                                ]
-                        )
-                )
-
-          else
-            div [] []
-        ]
+normalizeSchema : SqlSchema -> { tables : List { schema : String, table : String, columns : List Column } }
+normalizeSchema schema =
+    { tables = schema.tables |> Dict.values |> List.map (\t -> { schema = t.schema, table = t.name, columns = t.columns |> Dict.values }) }
 
 
 viewParseError : SqlStatement -> List ParseError -> Html msg
@@ -470,16 +435,16 @@ viewSchemaError errors =
         )
 
 
-viewErrorAlert : SqlParsing msg -> Html msg
+viewErrorAlert : Maybe (SqlParsing msg) -> Html msg
 viewErrorAlert model =
     let
         parseErrors : List (List ParseError)
         parseErrors =
-            model.commands |> Maybe.map (Dict.values >> List.filterMap (Tuple.second >> Result.toError)) |> Maybe.withDefault []
+            model |> Maybe.andThen .commands |> Maybe.map (Dict.values >> List.filterMap (Tuple.second >> Result.toError)) |> Maybe.withDefault []
 
         schemaErrors : List (List SqlSchemaError)
         schemaErrors =
-            model.schema |> Maybe.mapOrElse .errors []
+            model |> Maybe.andThen .schema |> Maybe.mapOrElse .errors []
     in
     if (parseErrors |> List.isEmpty) && (schemaErrors |> List.isEmpty) then
         div [] []

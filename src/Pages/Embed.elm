@@ -111,7 +111,7 @@ init query =
          ]
             ++ ((query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
                     |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Ports.loadRemoteProject url ]))
-                    |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (EmbedSourceParsing (SqlSource.SelectRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (EmbedSourceParsing (SqlSource.GetRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.withDefault []
                )
         )

@@ -1,4 +1,4 @@
-module DataSources.AmlParser.AmlAdapter exposing (AmlSchema, AmlSchemaError, adapt, buildAmlSource, evolve)
+module DataSources.AmlParser.AmlAdapter exposing (AmlSchema, AmlSchemaError, adapt, buildSource, evolve)
 
 import Array
 import Conf
@@ -41,8 +41,8 @@ type alias AmlSchemaError =
     }
 
 
-buildAmlSource : SchemaName -> SourceInfo -> List AmlStatement -> ( List AmlSchemaError, Source )
-buildAmlSource defaultSchema source statements =
+buildSource : SchemaName -> SourceInfo -> List AmlStatement -> ( List AmlSchemaError, Source )
+buildSource defaultSchema source statements =
     let
         schema : AmlSchema
         schema =

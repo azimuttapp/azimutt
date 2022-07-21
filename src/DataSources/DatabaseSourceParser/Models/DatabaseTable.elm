@@ -1,4 +1,4 @@
-module DataSources.DatabaseSchemaParser.Models.DatabaseTable exposing (DatabaseCheck, DatabaseColumn, DatabaseIndex, DatabasePrimaryKey, DatabaseTable, DatabaseUnique, decode)
+module DataSources.DatabaseSourceParser.Models.DatabaseTable exposing (DatabaseCheck, DatabaseColumn, DatabaseIndex, DatabasePrimaryKey, DatabaseTable, DatabaseUnique, decode)
 
 import Json.Decode as Decode
 import Libs.Json.Decode as Decode

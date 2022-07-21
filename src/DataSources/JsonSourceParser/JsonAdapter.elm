@@ -1,8 +1,8 @@
-module DataSources.JsonSourceParser.JsonAdapter exposing (buildJsonSource)
+module DataSources.JsonSourceParser.JsonAdapter exposing (buildSource)
 
 import Array
 import DataSources.Helpers exposing (defaultCheckName, defaultIndexName, defaultUniqueName)
-import DataSources.JsonSourceParser.JsonSource exposing (JsonSource)
+import DataSources.JsonSourceParser.JsonSchema exposing (JsonSchema)
 import DataSources.JsonSourceParser.Models.JsonRelation exposing (JsonRelation)
 import DataSources.JsonSourceParser.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonPrimaryKey, JsonTable, JsonUnique)
 import Dict exposing (Dict)
@@ -22,8 +22,8 @@ import Models.Project.Unique exposing (Unique)
 import Models.SourceInfo exposing (SourceInfo)
 
 
-buildJsonSource : SourceInfo -> JsonSource -> Source
-buildJsonSource source json =
+buildSource : SourceInfo -> JsonSchema -> Source
+buildSource source schema =
     let
         origins : List Origin
         origins =
@@ -33,8 +33,8 @@ buildJsonSource source json =
     , name = source.name
     , kind = source.kind
     , content = Array.empty
-    , tables = json.tables |> List.map (buildTable origins) |> Dict.fromList
-    , relations = json.relations |> List.map (buildRelation origins)
+    , tables = schema.tables |> List.map (buildTable origins) |> Dict.fromList
+    , relations = schema.relations |> List.map (buildRelation origins)
     , enabled = source.enabled
     , fromSample = source.fromSample
     , createdAt = source.createdAt

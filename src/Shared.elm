@@ -9,7 +9,7 @@ import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
-import Services.Backend as Backend exposing (BackendUrl)
+import Services.Backend as Backend
 import Task
 import Time
 
@@ -21,7 +21,7 @@ type alias Flags =
 
 
 type alias GlobalConf =
-    { env : Env, platform : Platform, backendUrl : BackendUrl, enableCloud : Bool }
+    { env : Env, platform : Platform, backendUrl : Backend.Url, enableCloud : Bool }
 
 
 type alias Model =

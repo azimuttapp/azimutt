@@ -1,4 +1,4 @@
-module DataSources.DatabaseSchemaParser.Models.DatabaseRelation exposing (ColumnLink, DatabaseRelation, DatabaseTableRef, decode)
+module DataSources.DatabaseSourceParser.Models.DatabaseRelation exposing (ColumnLink, DatabaseRelation, DatabaseTableRef, decode)
 
 import Json.Decode as Decode
 

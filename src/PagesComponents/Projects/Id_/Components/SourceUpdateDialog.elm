@@ -6,32 +6,27 @@ import Components.Molecules.Alert as Alert
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Modal as Modal
 import Conf
-import DataSources.DatabaseSchemaParser.DatabaseAdapter as DatabaseAdapter
 import Html exposing (Html, br, div, h3, input, li, p, span, text, ul)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, type_, value)
 import Html.Events exposing (onBlur, onClick, onInput)
 import Libs.DateTime as DateTime
 import Libs.Html exposing (bText, extLink)
 import Libs.Html.Attributes exposing (css, role)
-import Libs.Http as Http
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
-import Random
-import Services.Backend as Backend exposing (BackendUrl)
+import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSource, mapJsonSourceCmd, mapM, mapMCmd, mapSqlSourceCmd, setStatus, setUrl)
+import Services.Lenses exposing (mapDatabaseSourceCmd, mapJsonSourceCmd, mapMCmd, mapSqlSourceCmd)
 import Services.SourceDiff as SourceDiff
 import Services.SqlSource as SqlSource
 import Time
@@ -41,7 +36,7 @@ type alias Model msg =
     { id : HtmlId
     , source : Maybe Source
     , sqlSource : SqlSource.Model msg
-    , databaseSource : DatabaseSource.Model
+    , databaseSource : DatabaseSource.Model msg
     , jsonSource : JsonSource.Model msg
     }
 
@@ -58,14 +53,14 @@ init : (String -> msg) -> SchemaName -> Maybe Source -> Model msg
 init noop defaultSchema source =
     { id = Conf.ids.sourceUpdateDialog
     , source = source
-    , sqlSource = SqlSource.init defaultSchema source (\_ -> noop "project-settings-sql-source-parsed")
-    , databaseSource = DatabaseSource.init defaultSchema source
-    , jsonSource = JsonSource.init defaultSchema source (\_ -> noop "project-settings-json-source-parsed")
+    , sqlSource = SqlSource.init defaultSchema source (\_ -> noop "project-settings-sql-source-callback")
+    , databaseSource = DatabaseSource.init defaultSchema source (\_ -> noop "project-settings-database-source-callback")
+    , jsonSource = JsonSource.init defaultSchema source (\_ -> noop "project-settings-json-source-callback")
     }
 
 
-update : (Msg -> msg) -> (Source -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> BackendUrl -> SchemaName -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
-update wrap sourceSet modalOpen noop now backendUrl defaultSchema msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Backend.Url -> SchemaName -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
+update wrap modalOpen noop now backendUrl defaultSchema msg model =
     case msg of
         Open source ->
             ( Just (init noop defaultSchema source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
@@ -76,38 +71,8 @@ update wrap sourceSet modalOpen noop now backendUrl defaultSchema msg model =
         SqlSourceMsg message ->
             model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) message))
 
-        DatabaseSourceMsg (DatabaseSource.UpdateUrl url) ->
-            ( model |> mapM (mapDatabaseSource (setUrl url)), Cmd.none )
-
-        DatabaseSourceMsg (DatabaseSource.FetchSchema url) ->
-            ( model |> mapM (mapDatabaseSource (setStatus (DatabaseSource.Fetching url)))
-            , Backend.getDatabaseSchema backendUrl url (DatabaseSource.GotSchema url >> DatabaseSourceMsg >> wrap)
-            )
-
-        DatabaseSourceMsg (DatabaseSource.GotSchema url result) ->
-            ( model, SourceId.generator |> Random.generate (DatabaseSource.GotSchemaWithId url result >> DatabaseSourceMsg >> wrap) )
-
-        DatabaseSourceMsg (DatabaseSource.GotSchemaWithId url result sourceId) ->
-            ( model
-                |> mapM
-                    (mapDatabaseSource
-                        (\db ->
-                            db
-                                |> setStatus
-                                    (result
-                                        |> Result.fold (Http.errorToString >> DatabaseSource.Error)
-                                            (DatabaseAdapter.buildDatabaseSource now (db.source |> Maybe.mapOrElse .id sourceId) url >> DatabaseSource.Success)
-                                    )
-                        )
-                    )
-            , Cmd.none
-            )
-
-        DatabaseSourceMsg DatabaseSource.DropSchema ->
-            ( model |> mapM (mapDatabaseSource (setStatus DatabaseSource.Pending)), Cmd.none )
-
-        DatabaseSourceMsg (DatabaseSource.CreateProject source) ->
-            ( model, T.send (sourceSet source) )
+        DatabaseSourceMsg message ->
+            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) backendUrl now message))
 
         JsonSourceMsg message ->
             model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) message))
@@ -174,7 +139,7 @@ sqlLocalFileModal wrap sourceSet close noop zone now htmlId titleId source fileN
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ SqlSource.viewInput (htmlId ++ "-file-upload") (SqlSource.SelectLocalFile >> SqlSourceMsg >> wrap) (noop "update-sql-source-local-file") ]
+        , div [ class "mt-3" ] [ SqlSource.viewInput (htmlId ++ "-file-upload") (SqlSource.GetLocalFile >> SqlSourceMsg >> wrap) (noop "update-sql-source-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
             ( SqlFileLocal name1 _ updated1, Just (SqlFileLocal name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
@@ -224,7 +189,7 @@ sqlRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (fileUrl |> SqlSource.SelectRemoteFile |> SqlSourceMsg >> wrap) ] [ text "Fetch file again" ]
+            [ Button.primary5 Tw.primary [ onClick (fileUrl |> SqlSource.GetRemoteFile |> SqlSourceMsg >> wrap) ] [ text "Fetch file again" ]
             ]
         , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
         , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) model.parsedSource |> Maybe.withDefault (div [] [])
@@ -236,7 +201,7 @@ sqlRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
     ]
 
 
-databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model -> List (Html msg)
+databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posix -> HtmlId -> Source -> DatabaseUrl -> DatabaseSource.Model msg -> List (Html msg)
 databaseModal wrap sourceSet close zone now titleId source url model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
@@ -255,13 +220,13 @@ databaseModal wrap sourceSet close zone now titleId source url model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (DatabaseSource.FetchSchema url |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
+            [ Button.primary5 Tw.primary [ onClick (DatabaseSource.GetSchema url |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
             ]
-        , DatabaseSource.viewParsing model
-        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model |> DatabaseSource.source) |> Maybe.withDefault (div [] [])
+        , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model
+        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
         ]
     , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model |> DatabaseSource.source |> Maybe.map sourceSet) "Update source"
+        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
         , closeBtn close
         ]
     ]
@@ -285,8 +250,8 @@ jsonLocalFileModal wrap sourceSet close noop zone now htmlId titleId source file
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ JsonSource.viewInput (htmlId ++ "-file-upload") (JsonSource.SelectLocalFile >> JsonSourceMsg >> wrap) (noop "update-json-source-local-file") ]
-        , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
+        , div [ class "mt-3" ] [ JsonSource.viewInput (htmlId ++ "-file-upload") (JsonSource.GetLocalFile >> JsonSourceMsg >> wrap) (noop "update-json-source-local-file") ]
+        , case ( source.kind, model.loadedSchema |> Maybe.map (\( src, _ ) -> src.kind) ) of
             ( JsonFileLocal name1 _ updated1, Just (JsonFileLocal name2 _ updated2) ) ->
                 [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
                 , Just [ text "You file is ", bText "older", text " than the previous one" ] |> Maybe.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
@@ -335,7 +300,7 @@ jsonRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
                 ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (fileUrl |> JsonSource.SelectRemoteFile |> JsonSourceMsg >> wrap) ] [ text "Fetch file again" ]
+            [ Button.primary5 Tw.primary [ onClick (fileUrl |> JsonSource.GetRemoteFile |> JsonSourceMsg >> wrap) ] [ text "Fetch file again" ]
             ]
         , JsonSource.viewParsing (JsonSourceMsg >> wrap) model
         , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
@@ -383,7 +348,7 @@ newSourceModal wrap sourceSet close noop titleId model =
                     ]
                 ]
             ]
-        , div [ class "mt-3" ] [ SqlSource.viewInput "file-upload" (SqlSource.SelectLocalFile >> SqlSourceMsg >> wrap) (noop "new-source-local-file") ]
+        , div [ class "mt-3" ] [ SqlSource.viewInput "file-upload" (SqlSource.GetLocalFile >> SqlSourceMsg >> wrap) (noop "new-source-local-file") ]
         , div [ class "my-3" ] [ Divider.withLabel "OR" ]
         , div [ class "flex rounded-md shadow-sm" ]
             [ span [ class "inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm" ] [ text "Remote schema" ]
@@ -394,7 +359,7 @@ newSourceModal wrap sourceSet close noop titleId model =
                 , placeholder "https://azimutt.app/samples/gospeak.sql"
                 , value (model.selectedRemoteFile |> Maybe.withDefault "")
                 , onInput (SqlSource.UpdateRemoteFile >> SqlSourceMsg >> wrap)
-                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SqlSource.SelectRemoteFile >> SqlSourceMsg >> wrap) (noop "new-source-remote-file"))
+                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SqlSource.GetRemoteFile >> SqlSourceMsg >> wrap) (noop "new-source-remote-file"))
                 , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ]
                 []

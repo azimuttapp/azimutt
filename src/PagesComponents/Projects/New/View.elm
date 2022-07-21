@@ -9,7 +9,7 @@ import Components.Molecules.Divider as Divider
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Conf
-import DataSources.JsonSourceParser.JsonSource as JsonSource
+import DataSources.JsonSourceParser.JsonSchema as JsonSchema
 import Dict
 import Gen.Route as Route
 import Html exposing (Html, a, aside, div, form, h2, input, li, nav, p, pre, span, text, ul)
@@ -125,7 +125,7 @@ viewSqlSourceTab htmlId openedCollapse model =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ SqlSource.viewInput (htmlId ++ "-local-file") (SqlSource.SelectLocalFile >> SqlSourceMsg) (Noop "no-sql-local-file")
+                    [ SqlSource.viewInput (htmlId ++ "-local-file") (SqlSource.GetLocalFile >> SqlSourceMsg) (Noop "no-sql-local-file")
                     ]
                 ]
             ]
@@ -139,7 +139,7 @@ viewSqlSourceTab htmlId openedCollapse model =
                 , placeholder "https://azimutt.app/samples/gospeak.sql"
                 , value (model.selectedRemoteFile |> Maybe.withDefault "")
                 , onInput (SqlSource.UpdateRemoteFile >> SqlSourceMsg)
-                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SqlSource.SelectRemoteFile >> SqlSourceMsg) (Noop "no-sql-remote-file"))
+                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SqlSource.GetRemoteFile >> SqlSourceMsg) (Noop "no-sql-remote-file"))
                 , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ]
                 []
@@ -183,34 +183,41 @@ viewSqlSourceTab htmlId openedCollapse model =
         ]
 
 
-viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model -> Html Msg
+viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model Msg -> Html Msg
 viewDatabaseSourceTab htmlId model =
     div []
         [ viewHeading "Extract your database schema" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is saved."
         , DatabaseSource.viewInput htmlId model |> Html.map DatabaseSourceMsg
-        , DatabaseSource.viewParsing model
-        , case model.status of
-            DatabaseSource.Success source ->
-                div [ css [ "mt-6" ] ]
-                    [ div [ css [ "flex justify-end" ] ]
-                        [ Button.white3 Tw.primary [ onClick (DatabaseSourceMsg DatabaseSource.DropSchema) ] [ text "Trash this" ]
-                        , Button.primary3 Tw.primary [ onClick (DatabaseSourceMsg (DatabaseSource.CreateProject source)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
-                        ]
-                    ]
-
-            _ ->
-                div [] []
+        , div []
+            [ DatabaseSource.viewParsing DatabaseSourceMsg model
+            , model.parsedSource
+                |> Maybe.mapOrElse
+                    (\source ->
+                        div [ css [ "mt-6" ] ]
+                            [ div [ css [ "flex justify-end" ] ]
+                                (source
+                                    |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick DatabaseSourceDrop ] [ text "Clean it" ] ])
+                                        (\src ->
+                                            [ Button.white3 Tw.primary [ onClick DatabaseSourceDrop ] [ text "Trash this" ]
+                                            , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                                            ]
+                                        )
+                                )
+                            ]
+                    )
+                    (div [] [])
+            ]
         ]
 
 
 viewJsonSourceTab : HtmlId -> HtmlId -> JsonSource.Model Msg -> Html Msg
 viewJsonSourceTab htmlId openedCollapse model =
     div []
-        [ viewHeading "Import your custom source in JSON" "If you have a data source ot (yet) supported by Azimutt, you can extract and format its schema in JSON and import it here."
+        [ viewHeading "Import your custom source in JSON" "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here."
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ JsonSource.viewInput (htmlId ++ "-local-file") (JsonSource.SelectLocalFile >> JsonSourceMsg) (Noop "no-json-local-file")
+                    [ JsonSource.viewInput (htmlId ++ "-local-file") (JsonSource.GetLocalFile >> JsonSourceMsg) (Noop "no-json-local-file")
                     ]
                 ]
             ]
@@ -224,7 +231,7 @@ viewJsonSourceTab htmlId openedCollapse model =
                 , placeholder "https://azimutt.app/samples/gospeak.json"
                 , value (model.selectedRemoteFile |> Maybe.withDefault "")
                 , onInput (JsonSource.UpdateRemoteFile >> JsonSourceMsg)
-                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (JsonSource.SelectRemoteFile >> JsonSourceMsg) (Noop "no-json-remote-file"))
+                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (JsonSource.GetRemoteFile >> JsonSourceMsg) (Noop "no-json-remote-file"))
                 , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
                 ]
                 []
@@ -233,7 +240,7 @@ viewJsonSourceTab htmlId openedCollapse model =
             [ div [ onClick (ToggleCollapse (htmlId ++ "-json-schema")), css [ "link text-sm text-gray-500" ] ] [ text "What is the schema for the JSON?" ]
             , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-json-schema")) "" "hidden" ] ]
                 [ p [] [ text "Here is the JSON schema defining what is expected:" ]
-                , pre [] [ text JsonSource.jsonSchema ]
+                , pre [] [ text JsonSchema.jsonSchema ]
                 , p []
                     [ text "You can use "
                     , extLink "https://www.jsonschemavalidator.net" [ class "link" ] [ text "jsonschemavalidator.net" ]

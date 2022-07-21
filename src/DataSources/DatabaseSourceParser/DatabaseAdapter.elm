@@ -1,9 +1,9 @@
-module DataSources.DatabaseSchemaParser.DatabaseAdapter exposing (buildDatabaseSource)
+module DataSources.DatabaseSourceParser.DatabaseAdapter exposing (buildSource)
 
 import Array
-import DataSources.DatabaseSchemaParser.DatabaseSchema exposing (DatabaseSchema)
-import DataSources.DatabaseSchemaParser.Models.DatabaseRelation exposing (DatabaseRelation)
-import DataSources.DatabaseSchemaParser.Models.DatabaseTable exposing (DatabaseCheck, DatabaseColumn, DatabaseIndex, DatabasePrimaryKey, DatabaseTable, DatabaseUnique)
+import DataSources.DatabaseSourceParser.DatabaseSchema exposing (DatabaseSchema)
+import DataSources.DatabaseSourceParser.Models.DatabaseRelation exposing (DatabaseRelation)
+import DataSources.DatabaseSourceParser.Models.DatabaseTable exposing (DatabaseCheck, DatabaseColumn, DatabaseIndex, DatabasePrimaryKey, DatabaseTable, DatabaseUnique)
 import DataSources.Helpers exposing (defaultCheckName, defaultIndexName, defaultUniqueName)
 import Dict exposing (Dict)
 import Libs.Dict as Dict
@@ -26,8 +26,8 @@ import Models.Project.Unique exposing (Unique)
 import Time
 
 
-buildDatabaseSource : Time.Posix -> SourceId -> DatabaseUrl -> DatabaseSchema -> Source
-buildDatabaseSource now sourceId url schema =
+buildSource : Time.Posix -> SourceId -> DatabaseUrl -> DatabaseSchema -> Source
+buildSource now sourceId url schema =
     let
         origins : List Origin
         origins =

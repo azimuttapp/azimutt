@@ -14,7 +14,9 @@ module Services.Lenses exposing
     , mapContent
     , mapContextMenuM
     , mapDatabaseSource
+    , mapDatabaseSourceCmd
     , mapDatabaseSourceM
+    , mapDatabaseSourceMCmd
     , mapDefaultSchema
     , mapEachProjectMLayoutTables
     , mapEachTable
@@ -456,6 +458,16 @@ mapDatabaseSource =
 mapDatabaseSourceM : (v -> v) -> { item | databaseSource : Maybe v } -> { item | databaseSource : Maybe v }
 mapDatabaseSourceM =
     mapM_ .databaseSource setDatabaseSource
+
+
+mapDatabaseSourceCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : v } -> ( { item | databaseSource : v }, Cmd msg )
+mapDatabaseSourceCmd =
+    mapCmd_ .databaseSource setDatabaseSource
+
+
+mapDatabaseSourceMCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : Maybe v } -> ( { item | databaseSource : Maybe v }, Cmd msg )
+mapDatabaseSourceMCmd =
+    mapMCmd_ .databaseSource setDatabaseSource
 
 
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }
