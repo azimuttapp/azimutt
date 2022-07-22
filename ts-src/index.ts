@@ -1,6 +1,5 @@
 import {
     GetLocalFileMsg,
-    GetRemoteFileMsg,
     Hotkey,
     HotkeyId,
     ListenKeysMsg,
@@ -88,7 +87,6 @@ app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners 
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('DropProject', msg => store.dropProject(msg.project).then(_ => app.dropProject(msg.project.id)))
 app.on('GetLocalFile', getLocalFile)
-app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
@@ -180,13 +178,6 @@ function getLocalFile(msg: GetLocalFileMsg) {
     const reader = new FileReader()
     reader.onload = (e: any) => app.gotLocalFile(msg, e.target.result)
     reader.readAsText(msg.file as any)
-}
-
-function getRemoteFile(msg: GetRemoteFileMsg) {
-    fetch(msg.url)
-        .then(res => res.text())
-        .then(content => app.gotRemoteFile(msg, content))
-        .catch(err => app.toast('error', `Can't get remote file ${msg.url}: ${err}`))
 }
 
 const resizeObserver = new ResizeObserver(entries => {

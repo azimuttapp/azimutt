@@ -188,7 +188,7 @@ viewParsing wrap model =
                         [ SourceLogs.viewFile UiToggle model.show dbName (model.loadedSchema |> Maybe.andThen Result.toMaybe) |> Html.map wrap
                         , model.loadedSchema |> Maybe.mapOrElse SourceLogs.viewBackendError (div [] [])
                         , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show model.defaultSchema) (div [] []) |> Html.map wrap
-                        , model.parsedSource |> Maybe.mapOrElse (\_ -> div [] [ text "Done!" ]) (div [] [])
+                        , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]
                     , if model.parsedSource == Nothing then
                         div [] [ img [ class "mt-1 rounded-l-lg", src "/assets/images/illustrations/exploration.gif" ] [] ]

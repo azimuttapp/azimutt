@@ -7,6 +7,7 @@ import Gen.Route as Route
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Result as Result
 import Libs.Task as T
 import Models.ScreenProps as ScreenProps
 import Page
@@ -131,11 +132,11 @@ initSourceParsing =
             Conf.schema.default
             Nothing
             (\( parser, source ) ->
-                if parser |> SqlSource.hasErrors then
-                    Noop "embed-parse-sql-source-has-errors"
+                if parser |> Maybe.any SqlSource.hasErrors then
+                    Noop "embed-parse-sql-has-errors"
 
                 else
-                    ModalClose (SourceParsed source)
+                    source |> Result.fold (\_ -> Noop "embed-load-sql-has-errors") (SourceParsed >> ModalClose)
             )
     }
 

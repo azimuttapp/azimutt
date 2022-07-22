@@ -4,7 +4,6 @@ import {
     ElmMsg,
     ElmRuntime,
     GetLocalFileMsg,
-    GetRemoteFileMsg,
     Hotkey,
     HotkeyId,
     JsMsg
@@ -43,7 +42,6 @@ export class ElmApp {
         DownloadFile: [],
         DropProject: [],
         GetLocalFile: [],
-        GetRemoteFile: [],
         ObserveSizes: [],
         ListenKeys: [],
         TrackPage: [],
@@ -95,13 +93,6 @@ export class ElmApp {
         sourceKind: msg.sourceKind,
         file: msg.file,
         content
-    })
-    gotRemoteFile = (msg: GetRemoteFileMsg, content: string): void => this.send({
-        kind: 'GotRemoteFile',
-        sourceKind: msg.sourceKind,
-        url: msg.url,
-        content,
-        sample: msg.sample
     })
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})

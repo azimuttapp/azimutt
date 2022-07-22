@@ -1,4 +1,4 @@
-module Services.ImportProject exposing (Model, Msg(..), gotLocalFile, gotRemoteFile, init, kind, update, viewInput, viewParsing)
+module Services.ImportProject exposing (Model, Msg(..), gotLocalFile, init, kind, update, viewLocalInput, viewParsing)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
@@ -8,10 +8,13 @@ import Conf
 import FileValue exposing (File)
 import Html exposing (Html, div, li, p, span, text, ul)
 import Html.Attributes exposing (class)
+import Http
 import Json.Decode as Decode
+import Libs.Bool as B
 import Libs.DateTime as DateTime
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
+import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
@@ -20,23 +23,34 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Tailwind as Tw
+import Libs.Task as T
 import Models.Project as Project exposing (Project)
 import Models.Project.SampleKey exposing (SampleKey)
 import Ports
+import Services.Lenses exposing (mapShow, setProject)
+import Services.SourceLogs as SourceLogs
 import Time
 
 
 type alias Model =
     { selectedLocalFile : Maybe File
-    , selectedRemoteFile : Maybe { url : FileUrl, sample : Maybe SampleKey }
+    , selectedRemoteFile : Maybe FileUrl
+    , selectedSample : Maybe SampleKey
+    , loadedProject : Maybe (Result Http.Error FileContent)
     , parsedProject : Maybe (Result Decode.Error Project)
+    , project : Maybe (Result String Project)
+    , show : HtmlId
     }
 
 
 type Msg
-    = SelectLocalFile File
-    | SelectRemoteFile FileUrl (Maybe SampleKey)
-    | FileLoaded FileContent
+    = GetRemoteFile FileUrl (Maybe SampleKey)
+    | GotRemoteFile (Result Http.Error FileContent)
+    | GetLocalFile File
+    | GotFile FileContent
+    | ParseProject
+    | BuildProject
+    | UiToggle HtmlId
 
 
 
@@ -47,7 +61,11 @@ init : Model
 init =
     { selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
+    , selectedSample = Nothing
+    , loadedProject = Nothing
     , parsedProject = Nothing
+    , project = Nothing
+    , show = ""
     }
 
 
@@ -55,21 +73,55 @@ init =
 -- UPDATE
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg model =
+update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
+update wrap msg model =
     case msg of
-        SelectLocalFile file ->
+        GetLocalFile file ->
             ( init |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile kind file
             )
 
-        SelectRemoteFile url sample ->
-            ( init |> (\m -> { m | selectedRemoteFile = Just { url = url, sample = sample } })
-            , Ports.readRemoteFile kind url sample
+        GetRemoteFile url sample ->
+            ( init |> (\m -> { m | selectedRemoteFile = Just url, selectedSample = sample })
+            , Http.get { url = url, expect = Http.expectString (GotRemoteFile >> wrap) }
             )
 
-        FileLoaded content ->
-            ( { model | parsedProject = Just (Decode.decodeString Project.decode content) }, Cmd.none )
+        GotRemoteFile result ->
+            case result of
+                Ok content ->
+                    ( model, T.send (GotFile content |> wrap) )
+
+                Err err ->
+                    ( { model | loadedProject = err |> Err |> Just } |> setProject (err |> Http.errorToString |> Err |> Just), Cmd.none )
+
+        GotFile content ->
+            ( { model | loadedProject = content |> Ok |> Just }, T.send (ParseProject |> wrap) )
+
+        ParseProject ->
+            model.loadedProject
+                |> Maybe.andThen Result.toMaybe
+                |> Maybe.mapOrElse
+                    (\loadedProject ->
+                        case loadedProject |> Decode.decodeString Project.decode of
+                            Ok project ->
+                                ( { model | parsedProject = project |> Ok |> Just }, T.send (BuildProject |> wrap) )
+
+                            Err err ->
+                                ( { model | parsedProject = err |> Err |> Just } |> setProject (err |> Decode.errorToString |> Err |> Just), Cmd.none )
+                    )
+                    ( model, Cmd.none )
+
+        BuildProject ->
+            model.parsedProject
+                |> Maybe.andThen Result.toMaybe
+                |> Maybe.mapOrElse
+                    (\parsedProject ->
+                        ( model |> setProject (parsedProject |> Ok |> Just), Cmd.none )
+                    )
+                    ( model, Cmd.none )
+
+        UiToggle htmlId ->
+            ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )
 
 
 
@@ -83,26 +135,21 @@ kind =
 
 gotLocalFile : FileContent -> Msg
 gotLocalFile content =
-    FileLoaded content
-
-
-gotRemoteFile : FileContent -> Msg
-gotRemoteFile content =
-    FileLoaded content
+    GotFile content
 
 
 
 -- VIEW
 
 
-viewInput : HtmlId -> (File -> msg) -> msg -> Html msg
-viewInput htmlId onSelect noop =
+viewLocalInput : (Msg -> msg) -> (String -> msg) -> HtmlId -> Html msg
+viewLocalInput wrap noop htmlId =
     FileInput.input
         { id = htmlId
-        , onDrop = \f _ -> onSelect f
-        , onOver = \_ _ -> noop
+        , onDrop = \f _ -> f |> GetLocalFile |> wrap
+        , onOver = \_ _ -> noop htmlId
         , onLeave = Nothing
-        , onSelect = onSelect
+        , onSelect = GetLocalFile >> wrap
         , content =
             div [ css [ "space-y-1 text-center" ] ]
                 [ Icon.outline2x FolderAdd "mx-auto"
@@ -113,20 +160,32 @@ viewInput htmlId onSelect noop =
         }
 
 
-viewParsing : Time.Zone -> Maybe Project -> Model -> Html msg
-viewParsing zone currentProject model =
+viewParsing : (Msg -> msg) -> Time.Zone -> Maybe Project -> Model -> Html msg
+viewParsing wrap zone currentProject model =
     let
         isSample : Bool
         isSample =
-            (model.selectedRemoteFile |> Maybe.andThen .sample) /= Nothing
+            model.selectedSample /= Nothing
     in
-    (model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
-        |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\{ url, sample } -> sample |> Maybe.withDefault (url ++ " file")))
+    model.selectedSample
+        |> Maybe.orElse (model.selectedLocalFile |> Maybe.map (\f -> f.name ++ " file"))
+        |> Maybe.orElse (model.selectedRemoteFile |> Maybe.map (\url -> url ++ " file"))
         |> Maybe.mapOrElse
             (\fileName ->
                 div []
-                    [ div [ class "mt-6" ] [ Divider.withLabel (model.parsedProject |> Maybe.mapOrElse (\_ -> "Parsed!") "Parsing ...") ]
-                    , viewLogs zone isSample fileName model.parsedProject
+                    [ div [ class "mt-6" ]
+                        [ Divider.withLabel
+                            ((model.project |> Maybe.map (\_ -> "Loaded!"))
+                                |> Maybe.orElse (model.parsedProject |> Maybe.map (\_ -> "Building..."))
+                                |> Maybe.orElse (model.loadedProject |> Maybe.map (\_ -> "Parsing..."))
+                                |> Maybe.withDefault "Fetching..."
+                            )
+                        ]
+                    , SourceLogs.viewContainer
+                        [ SourceLogs.viewFile UiToggle model.show fileName (model.loadedProject |> Maybe.andThen Result.toMaybe) |> Html.map wrap
+                        , model.parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])
+                        , model.project |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
+                        ]
                     , model.parsedProject
                         |> Maybe.andThen Result.toMaybe
                         |> Maybe.andThen (\project -> currentProject |> Maybe.map (\p -> viewDiffAlert zone isSample p project))
@@ -134,15 +193,6 @@ viewParsing zone currentProject model =
                     ]
             )
             (div [] [])
-
-
-viewLogs : Time.Zone -> Bool -> String -> Maybe (Result Decode.Error Project) -> Html msg
-viewLogs zone isSample fileName parsedProject =
-    -- FIXME: use SourceLogs
-    div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
-        [ div [] [ text ("Loaded " ++ fileName ++ ".") ]
-        , parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])
-        ]
 
 
 viewLogsError : Decode.Error -> Html msg

@@ -205,7 +205,7 @@ update req currentLayout now backendUrl msg model =
             model |> handleProjectSettings now backendUrl message
 
         EmbedSourceParsing message ->
-            model |> mapSourceParsingMCmd (mapSqlSourceCmd (SqlSource.update EmbedSourceParsing message))
+            model |> mapSourceParsingMCmd (mapSqlSourceCmd (SqlSource.update EmbedSourceParsing now message))
 
         SourceParsed source ->
             ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId source.name source |> Ok |> Just |> GotProject |> JsMessage) )
@@ -398,20 +398,6 @@ handleJsMessage now currentLayout msg model =
 
             else
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
-
-        GotRemoteFile kind url content sample ->
-            if kind == SqlSource.kind then
-                if model.erd == Nothing then
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotRemoteFile now sourceId url content sample |> EmbedSourceParsing) )
-
-                else
-                    ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
-
-            else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotRemoteFile now sourceId url content sample |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
-
-            else
-                ( model, Toasts.error Toast ("Unhandled remote file for " ++ kind ++ " source") )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey

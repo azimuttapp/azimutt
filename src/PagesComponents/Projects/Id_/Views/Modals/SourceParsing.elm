@@ -23,7 +23,7 @@ viewSourceParsing opened model =
         sourceName : String
         sourceName =
             (model.sqlSource.selectedLocalFile |> Maybe.map .name)
-                |> Maybe.orElse (model.sqlSource.selectedRemoteFile |> Maybe.map FileUrl.filename)
+                |> Maybe.orElse (model.sqlSource.selectedRemoteFile |> Maybe.andThen Result.toMaybe |> Maybe.map FileUrl.filename)
                 |> Maybe.withDefault "your"
     in
     Modal.modal
@@ -35,6 +35,6 @@ viewSourceParsing opened model =
         [ h3 [ class "px-6 pt-6 text-lg leading-6 font-medium text-gray-900" ] [ text ("Parsing " ++ sourceName ++ " source...") ]
         , div [ class "px-6" ] [ SqlSource.viewParsing EmbedSourceParsing model.sqlSource ]
         , div [ class "px-6 py-3 mt-6 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-            [ Button.primary3 Tw.primary (model.sqlSource.parsedSource |> Maybe.mapOrElse (\source -> [ onClick (ModalClose (SourceParsed source)) ]) [ disabled True ]) [ text "Open schema" ]
+            [ Button.primary3 Tw.primary (model.sqlSource.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.mapOrElse (\source -> [ onClick (ModalClose (SourceParsed source)) ]) [ disabled True ]) [ text "Open schema" ]
             ]
         ]

@@ -12,9 +12,9 @@ import Conf
 import DataSources.JsonSourceParser.JsonSchema as JsonSchema
 import Dict
 import Gen.Route as Route
-import Html exposing (Html, a, aside, div, form, h2, input, li, nav, p, pre, span, text, ul)
-import Html.Attributes exposing (class, href, id, name, placeholder, type_, value)
-import Html.Events exposing (onBlur, onClick, onInput)
+import Html exposing (Html, a, aside, div, form, h2, li, nav, p, pre, span, text, ul)
+import Html.Attributes exposing (class, href, id)
+import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
 import Html.Lazy as Lazy
 import Libs.Bool as B
@@ -125,25 +125,12 @@ viewSqlSourceTab htmlId openedCollapse model =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ SqlSource.viewInput (htmlId ++ "-local-file") (SqlSource.GetLocalFile >> SqlSourceMsg) (Noop "no-sql-local-file")
+                    [ SqlSource.viewLocalInput SqlSourceMsg Noop (htmlId ++ "-local-file")
                     ]
                 ]
             ]
         , div [ class "my-3" ] [ Divider.withLabel "OR" ]
-        , div [ class "flex rounded-md shadow-sm" ]
-            [ span [ class "inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm" ] [ text "Remote schema" ]
-            , input
-                [ type_ "text"
-                , id (htmlId ++ "-remote-file")
-                , name (htmlId ++ "-remote-file")
-                , placeholder "https://azimutt.app/samples/gospeak.sql"
-                , value (model.selectedRemoteFile |> Maybe.withDefault "")
-                , onInput (SqlSource.UpdateRemoteFile >> SqlSourceMsg)
-                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (SqlSource.GetRemoteFile >> SqlSourceMsg) (Noop "no-sql-remote-file"))
-                , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                ]
-                []
-            ]
+        , SqlSource.viewRemoteInput SqlSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError)
         , div [ css [ "mt-3" ] ]
             [ div [ onClick (ToggleCollapse (htmlId ++ "-get-schema")), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
             , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-get-schema")) "" "hidden" ] ]
@@ -173,9 +160,14 @@ viewSqlSourceTab htmlId openedCollapse model =
                     (\source ->
                         div [ css [ "mt-6" ] ]
                             [ div [ css [ "flex justify-end" ] ]
-                                [ Button.white3 Tw.primary [ onClick SqlSourceDrop ] [ text "Trash this" ]
-                                , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource source), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
-                                ]
+                                (source
+                                    |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick SqlSourceDrop ] [ text "Clear" ] ])
+                                        (\src ->
+                                            [ Button.white3 Tw.primary [ onClick SqlSourceDrop ] [ text "Trash this" ]
+                                            , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                                            ]
+                                        )
+                                )
                             ]
                     )
                     (div [] [])
@@ -217,25 +209,12 @@ viewJsonSourceTab htmlId openedCollapse model =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ JsonSource.viewInput (htmlId ++ "-local-file") (JsonSource.GetLocalFile >> JsonSourceMsg) (Noop "no-json-local-file")
+                    [ JsonSource.viewLocalInput JsonSourceMsg Noop (htmlId ++ "-local-file")
                     ]
                 ]
             ]
         , div [ class "my-3" ] [ Divider.withLabel "OR" ]
-        , div [ class "flex rounded-md shadow-sm" ]
-            [ span [ class "inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm" ] [ text "Remote source" ]
-            , input
-                [ type_ "text"
-                , id (htmlId ++ "-remote-file")
-                , name (htmlId ++ "-remote-file")
-                , placeholder "https://azimutt.app/samples/gospeak.json"
-                , value (model.selectedRemoteFile |> Maybe.withDefault "")
-                , onInput (JsonSource.UpdateRemoteFile >> JsonSourceMsg)
-                , onBlur (model.selectedRemoteFile |> Maybe.mapOrElse (JsonSource.GetRemoteFile >> JsonSourceMsg) (Noop "no-json-remote-file"))
-                , class "flex-1 min-w-0 block w-full px-3 py-2 border-gray-300 rounded-none rounded-r-md sm:text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                ]
-                []
-            ]
+        , JsonSource.viewRemoteInput JsonSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError)
         , div [ css [ "mt-3" ] ]
             [ div [ onClick (ToggleCollapse (htmlId ++ "-json-schema")), css [ "link text-sm text-gray-500" ] ] [ text "What is the schema for the JSON?" ]
             , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-json-schema")) "" "hidden" ] ]
@@ -277,13 +256,13 @@ viewImportProjectTab htmlId zone projects model =
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ ImportProject.viewInput (htmlId ++ "-remote-file") (ImportProject.SelectLocalFile >> ImportProjectMsg) (Noop "no-project-local-file")
+                    [ ImportProject.viewLocalInput ImportProjectMsg Noop (htmlId ++ "-remote-file")
                     ]
                 ]
             ]
-        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "If you have an existing project, you can download it at the bottom of project settings (top right cog)." ]
+        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Download your project with the button on the bottom of the settings (top right cog)." ]
         , div []
-            [ ImportProject.viewParsing zone Nothing model
+            [ ImportProject.viewParsing ImportProjectMsg zone Nothing model
             , model.parsedProject
                 |> Maybe.andThen Result.toMaybe
                 |> Maybe.map
@@ -323,13 +302,13 @@ viewSampleProjectTab zone projects model =
                         , icon = sample.icon
                         , title = sample.name ++ " (" ++ (sample.tables |> String.fromInt) ++ " tables)"
                         , description = sample.description
-                        , active = model.selectedRemoteFile |> Maybe.andThen .sample |> Maybe.all (\s -> s == sample.key)
-                        , onClick = SampleProjectMsg (ImportProject.SelectRemoteFile sample.url (Just sample.key))
+                        , active = model.selectedSample |> Maybe.all (\s -> s == sample.key)
+                        , onClick = ImportProject.GetRemoteFile sample.url (Just sample.key) |> SampleProjectMsg
                         }
                     )
             )
         , div []
-            [ ImportProject.viewParsing zone Nothing model
+            [ ImportProject.viewParsing ImportProjectMsg zone Nothing model
             , model.parsedProject
                 |> Maybe.andThen Result.toMaybe
                 |> Maybe.map

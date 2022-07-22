@@ -129,7 +129,7 @@ init req =
          , Ports.trackPage "new-project"
          , Ports.listProjects
          ]
-            ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleProjectMsg (ImportProject.SelectRemoteFile s.url (Just s.key))) ]) [])
+            ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleProjectMsg (ImportProject.GetRemoteFile s.url (Just s.key))) ]) [])
         )
     )
 
@@ -178,7 +178,7 @@ update req now backendUrl msg model =
             ( model |> initTab tab, Cmd.none )
 
         SqlSourceMsg message ->
-            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg message))
+            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -208,7 +208,7 @@ update req now backendUrl msg model =
             ( { model | databaseSource = DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "drop-database-source") |> Just }, Cmd.none )
 
         JsonSourceMsg message ->
-            (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg message))
+            (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -223,11 +223,11 @@ update req now backendUrl msg model =
             ( { model | jsonSource = JsonSource.init Conf.schema.default Nothing (\_ -> Noop "drop-json-source") |> Just }, Cmd.none )
 
         ImportProjectMsg message ->
-            (model |> mapImportProjectMCmd (ImportProject.update message))
+            (model |> mapImportProjectMCmd (ImportProject.update ImportProjectMsg message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
-                            ImportProject.FileLoaded _ ->
+                            ImportProject.BuildProject ->
                                 Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
                             _ ->
@@ -238,11 +238,11 @@ update req now backendUrl msg model =
             ( model |> mapImportProjectM (\_ -> ImportProject.init), Cmd.none )
 
         SampleProjectMsg message ->
-            (model |> mapSampleProjectMCmd (ImportProject.update message))
+            (model |> mapSampleProjectMCmd (ImportProject.update SampleProjectMsg message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
-                            ImportProject.FileLoaded _ ->
+                            ImportProject.BuildProject ->
                                 Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
                             _ ->
@@ -304,23 +304,6 @@ handleJsMessage now msg model =
 
             else
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
-
-        GotRemoteFile kind url content sample ->
-            if kind == ImportProject.kind then
-                if sample == Nothing then
-                    ( model, T.send (ImportProject.gotRemoteFile content |> ImportProjectMsg) )
-
-                else
-                    ( model, T.send (ImportProject.gotRemoteFile content |> SampleProjectMsg) )
-
-            else if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotRemoteFile now sourceId url content sample |> SqlSourceMsg) )
-
-            else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotRemoteFile now sourceId url content sample |> JsonSourceMsg) )
-
-            else
-                ( model, Toasts.error Toast ("Unhandled remote file for " ++ kind ++ " source") )
 
         GotToast level message ->
             ( model, Toasts.create Toast level message )

@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, readRemoteFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
 import Conf
 import Dict exposing (Dict)
@@ -23,7 +23,6 @@ import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
-import Models.Project.SampleKey exposing (SampleKey)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
@@ -149,11 +148,6 @@ readLocalFile sourceKind file =
     messageToJs (GetLocalFile sourceKind file)
 
 
-readRemoteFile : String -> FileUrl -> Maybe SampleKey -> Cmd msg
-readRemoteFile sourceKind url sample =
-    messageToJs (GetRemoteFile sourceKind url sample)
-
-
 observeSize : HtmlId -> Cmd msg
 observeSize id =
     observeSizes [ id ]
@@ -250,7 +244,6 @@ type ElmMsg
     | DownloadFile FileName FileContent
     | DropProject ProjectInfo
     | GetLocalFile String File
-    | GetRemoteFile String FileUrl (Maybe SampleKey)
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
     | Confetti HtmlId
@@ -275,7 +268,6 @@ type JsMsg
     | GotOwners ProjectId (List User)
     | ProjectDropped ProjectId
     | GotLocalFile String File FileContent
-    | GotRemoteFile String FileUrl FileContent (Maybe SampleKey)
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
@@ -390,9 +382,6 @@ elmEncoder elm =
         GetLocalFile sourceKind file ->
             Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "file", file |> FileValue.encode ) ]
 
-        GetRemoteFile sourceKind url sample ->
-            Encode.object [ ( "kind", "GetRemoteFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "url", url |> Encode.string ), ( "sample", sample |> Encode.maybe Encode.string ) ]
-
         ObserveSizes ids ->
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
@@ -463,13 +452,6 @@ jsDecoder defaultSchema =
                         (Decode.field "sourceKind" Decode.string)
                         (Decode.field "file" FileValue.decoder)
                         (Decode.field "content" Decode.string)
-
-                "GotRemoteFile" ->
-                    Decode.map4 GotRemoteFile
-                        (Decode.field "sourceKind" Decode.string)
-                        (Decode.field "url" Decode.string)
-                        (Decode.field "content" Decode.string)
-                        (Decode.maybeField "sample" Decode.string)
 
                 "GotHotkey" ->
                     Decode.map GotHotkey (Decode.field "id" Decode.string)
@@ -581,9 +563,6 @@ unhandledJsMsgError msg =
 
                 GotLocalFile _ _ _ ->
                     "GotLocalFile"
-
-                GotRemoteFile _ _ _ _ ->
-                    "GotRemoteFile"
 
                 GotHotkey _ ->
                     "GotHotkey"

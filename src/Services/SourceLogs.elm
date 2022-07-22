@@ -1,4 +1,4 @@
-module Services.SourceLogs exposing (SchemaLike, TableLike, viewBackendError, viewContainer, viewFile, viewParsedSchema)
+module Services.SourceLogs exposing (SchemaLike, TableLike, viewBackendError, viewContainer, viewFile, viewParsedSchema, viewResult)
 
 import Html exposing (Html, div, pre, text)
 import Html.Attributes exposing (class)
@@ -94,3 +94,16 @@ viewParsedSchema toggle show defaultSchema result =
 
         Err err ->
             div [ class "text-red-500" ] [ text (Decode.errorToString err) ]
+
+
+viewResult : Result String a -> Html msg
+viewResult result =
+    case result of
+        Ok _ ->
+            div [] [ text "Done!" ]
+
+        Err err ->
+            div []
+                [ div [ class "text-red-500" ] [ text err ]
+                , div [] [ text "Done!" ]
+                ]
