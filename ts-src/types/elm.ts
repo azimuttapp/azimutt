@@ -123,7 +123,6 @@ export type ElmMsg =
     | LogoutMsg
     | ListProjectsMsg
     | LoadProjectMsg
-    | LoadRemoteProjectMsg
     | CreateProjectMsg
     | UpdateProjectMsg
     | MoveProjectToMsg
@@ -153,7 +152,6 @@ export type LoginMsg = { kind: 'Login', info: LoginInfo, redirect?: string }
 export type LogoutMsg = { kind: 'Logout' }
 export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
-export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: FileUrl }
 export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }

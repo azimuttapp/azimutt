@@ -4,11 +4,14 @@ import Conf
 import Dict exposing (Dict)
 import Gen.Params.Embed exposing (Params)
 import Gen.Route as Route
+import Http
 import Libs.Dict as Dict
+import Libs.Http as Http
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Result as Result
 import Libs.Task as T
+import Models.Project as Project
 import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), SourceParsingDialog)
@@ -19,7 +22,7 @@ import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
-import Ports
+import Ports exposing (JsMsg(..))
 import Request
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -111,7 +114,7 @@ init query =
          , Ports.listenHotkeys Conf.hotkeys
          ]
             ++ ((query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
-                    |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Ports.loadRemoteProject url ]))
+                    |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject >> JsMessage) Project.decode } ]))
                     |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (EmbedSourceParsing (SqlSource.GetRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.withDefault []
                )

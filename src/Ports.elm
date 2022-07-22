@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, loadRemoteProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
 import Conf
 import Dict exposing (Dict)
@@ -13,7 +13,6 @@ import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
-import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
@@ -91,11 +90,6 @@ listProjects =
 loadProject : ProjectId -> Cmd msg
 loadProject id =
     messageToJs (LoadProject id)
-
-
-loadRemoteProject : String -> Cmd msg
-loadRemoteProject projectUrl =
-    messageToJs (LoadRemoteProject projectUrl)
 
 
 createProject : Project -> Cmd msg
@@ -233,7 +227,6 @@ type ElmMsg
     | Logout
     | ListProjects
     | LoadProject ProjectId
-    | LoadRemoteProject FileUrl
     | CreateProject Project
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
@@ -348,9 +341,6 @@ elmEncoder elm =
 
         LoadProject id ->
             Encode.object [ ( "kind", "LoadProject" |> Encode.string ), ( "id", id |> ProjectId.encode ) ]
-
-        LoadRemoteProject projectUrl ->
-            Encode.object [ ( "kind", "LoadRemoteProject" |> Encode.string ), ( "projectUrl", projectUrl |> Encode.string ) ]
 
         CreateProject project ->
             Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]

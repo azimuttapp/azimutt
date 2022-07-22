@@ -3,7 +3,6 @@ import {
     Hotkey,
     HotkeyId,
     ListenKeysMsg,
-    LoadRemoteProjectMsg,
     ObserveSizesMsg,
     SetMetaMsg,
     UpdateProjectMsg
@@ -73,7 +72,6 @@ app.on('Logout', _ => supabase.logout().then(() => {
 }).then(listProjects).catch(logger.warn))
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))
-app.on('LoadRemoteProject', loadRemoteProject)
 app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProject))
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
 app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
@@ -124,16 +122,6 @@ function setMeta(meta: SetMetaMsg) {
     if (typeof meta.body === 'string') {
         document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body)
     }
-}
-
-function loadRemoteProject(msg: LoadRemoteProjectMsg) {
-    fetch(msg.projectUrl)
-        .then(res => res.json())
-        .then((project: Project) => app.gotProject(project))
-        .catch(err => {
-            app.loadProjects([])
-            app.toast('error', `Can't load remote project: ${err}`)
-        })
 }
 
 function listProjects() {

@@ -31,7 +31,6 @@ export class ElmApp {
         Logout: [],
         ListProjects: [],
         LoadProject: [],
-        LoadRemoteProject: [],
         CreateProject: [],
         UpdateProject: [],
         MoveProjectTo: [],
