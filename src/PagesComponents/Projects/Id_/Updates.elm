@@ -21,6 +21,7 @@ import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.SourceInfo as SourceInfo
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
@@ -391,10 +392,10 @@ handleJsMessage now currentLayout msg model =
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotLocalFile now sourceId file content |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )

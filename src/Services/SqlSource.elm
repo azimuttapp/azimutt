@@ -1,4 +1,4 @@
-module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, gotLocalFile, hasErrors, init, kind, update, viewLocalInput, viewParsing, viewRemoteInput)
+module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, hasErrors, init, kind, update, viewLocalInput, viewParsing, viewRemoteInput)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
@@ -92,6 +92,11 @@ type ParsingMsg
 
 
 -- INIT
+
+
+kind : String
+kind =
+    "sql-source"
 
 
 init : SchemaName -> Maybe Source -> (( Maybe (SqlParsing msg), Result String Source ) -> msg) -> Model msg
@@ -246,20 +251,6 @@ parsingUpdate defaultSchema sourceId msg model =
 parsingCptInc : SqlParsing msg -> SqlParsing msg
 parsingCptInc model =
     { model | cpt = model.cpt + 1 }
-
-
-
--- SUBSCRIPTIONS
-
-
-kind : String
-kind =
-    "sql-source"
-
-
-gotLocalFile : Time.Posix -> SourceId -> File -> FileContent -> Msg
-gotLocalFile now sourceId file content =
-    GotFile (SourceInfo.sqlLocal now sourceId file) content
 
 
 

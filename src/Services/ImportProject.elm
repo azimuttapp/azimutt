@@ -1,4 +1,4 @@
-module Services.ImportProject exposing (Model, Msg(..), gotLocalFile, init, kind, update, viewLocalInput, viewParsing)
+module Services.ImportProject exposing (Model, Msg(..), init, kind, update, viewLocalInput, viewParsing)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
@@ -55,6 +55,11 @@ type Msg
 
 
 -- INIT
+
+
+kind : String
+kind =
+    "import-project"
 
 
 init : Model
@@ -125,20 +130,6 @@ update wrap msg model =
 
 
 
--- SUBSCRIPTIONS
-
-
-kind : String
-kind =
-    "import-project"
-
-
-gotLocalFile : FileContent -> Msg
-gotLocalFile content =
-    GotFile content
-
-
-
 -- VIEW
 
 
@@ -183,6 +174,7 @@ viewParsing wrap zone currentProject model =
                         ]
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show fileName (model.loadedProject |> Maybe.andThen Result.toMaybe) |> Html.map wrap
+                        , model.loadedProject |> Maybe.mapOrElse SourceLogs.viewHttpError (div [] [])
                         , model.parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])
                         , model.project |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]

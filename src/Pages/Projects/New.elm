@@ -14,6 +14,7 @@ import Models.Project as Project
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.SourceId as SourceId
+import Models.SourceInfo as SourceInfo
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
@@ -294,13 +295,13 @@ handleJsMessage now msg model =
 
         GotLocalFile kind file content ->
             if kind == ImportProject.kind then
-                ( model, T.send (ImportProject.gotLocalFile content |> ImportProjectMsg) )
+                ( model, T.send (content |> ImportProject.GotFile |> ImportProjectMsg) )
 
             else if kind == SqlSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotLocalFile now sourceId file content |> SqlSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SqlSourceMsg) )
 
             else if kind == JsonSource.kind then
-                ( model, SourceId.generator |> Random.generate (\sourceId -> JsonSource.gotLocalFile now sourceId file content |> JsonSourceMsg) )
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> JsonSourceMsg) )
 
             else
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )

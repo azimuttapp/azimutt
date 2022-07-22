@@ -308,7 +308,7 @@ viewSampleProjectTab zone projects model =
                     )
             )
         , div []
-            [ ImportProject.viewParsing ImportProjectMsg zone Nothing model
+            [ ImportProject.viewParsing SampleProjectMsg zone Nothing model
             , model.parsedProject
                 |> Maybe.andThen Result.toMaybe
                 |> Maybe.map

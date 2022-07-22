@@ -1,4 +1,4 @@
-module Services.JsonSource exposing (Model, Msg(..), gotLocalFile, init, kind, update, viewLocalInput, viewParsing, viewRemoteInput)
+module Services.JsonSource exposing (Model, Msg(..), init, kind, update, viewLocalInput, viewParsing, viewRemoteInput)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
@@ -22,7 +22,7 @@ import Libs.Tailwind exposing (TwClass)
 import Libs.Task as T
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.SourceId as SourceId
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
 import Ports
 import Random
@@ -59,6 +59,11 @@ type Msg
 
 
 -- INIT
+
+
+kind : String
+kind =
+    "json-source"
 
 
 init : SchemaName -> Maybe Source -> (Result String Source -> msg) -> Model msg
@@ -130,20 +135,6 @@ update wrap now msg model =
 
         UiToggle htmlId ->
             ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )
-
-
-
--- SUBSCRIPTIONS
-
-
-kind : String
-kind =
-    "json-source"
-
-
-gotLocalFile : Time.Posix -> SourceId -> File -> FileContent -> Msg
-gotLocalFile now sourceId file content =
-    GotFile (SourceInfo.jsonLocal now sourceId file) content
 
 
 
