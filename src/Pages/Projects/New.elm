@@ -77,11 +77,14 @@ init req =
             (sample |> Maybe.map (\_ -> TabSamples))
                 |> Maybe.withDefault
                     (case tab of
+                        Just "database" ->
+                            TabDatabase
+
                         Just "sql" ->
                             TabSql
 
-                        Just "database" ->
-                            TabDatabase
+                        Just "json" ->
+                            TabJson
 
                         Just "project" ->
                             TabProject
@@ -100,7 +103,7 @@ init req =
                             TabSamples
 
                         _ ->
-                            TabSql
+                            TabDatabase
                     )
     in
     ( { selectedMenu = "New project"
@@ -143,11 +146,11 @@ initTab tab model =
             { model | selectedTab = tab, sqlSource = Nothing, databaseSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
     in
     case tab of
-        TabSql ->
-            { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
-
         TabDatabase ->
             { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-database-source")) }
+
+        TabSql ->
+            { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
 
         TabJson ->
             { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
@@ -178,21 +181,6 @@ update req now backendUrl msg model =
         SelectTab tab ->
             ( model |> initTab tab, Cmd.none )
 
-        SqlSourceMsg message ->
-            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message))
-                |> Tuple.mapSecond
-                    (\cmd ->
-                        case message of
-                            SqlSource.BuildSource ->
-                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
-
-                            _ ->
-                                cmd
-                    )
-
-        SqlSourceDrop ->
-            ( { model | sqlSource = SqlSource.init Conf.schema.default Nothing (\_ -> Noop "drop-sql-source") |> Just }, Cmd.none )
-
         DatabaseSourceMsg message ->
             (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg backendUrl now message))
                 |> Tuple.mapSecond
@@ -207,6 +195,21 @@ update req now backendUrl msg model =
 
         DatabaseSourceDrop ->
             ( { model | databaseSource = DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "drop-database-source") |> Just }, Cmd.none )
+
+        SqlSourceMsg message ->
+            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message))
+                |> Tuple.mapSecond
+                    (\cmd ->
+                        case message of
+                            SqlSource.BuildSource ->
+                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
+
+                            _ ->
+                                cmd
+                    )
+
+        SqlSourceDrop ->
+            ( { model | sqlSource = SqlSource.init Conf.schema.default Nothing (\_ -> Noop "drop-sql-source") |> Just }, Cmd.none )
 
         JsonSourceMsg message ->
             (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message))

@@ -175,7 +175,7 @@ viewRemoteInput wrap htmlId model error =
                 [ type_ "text"
                 , id htmlId
                 , name htmlId
-                , placeholder "https://azimutt.app/samples/gospeak.json"
+                , placeholder "ex: https://azimutt.app/samples/gospeak.json"
                 , value model
                 , onInput (UpdateRemoteFile >> wrap)
                 , onBlur (model |> GetRemoteFile |> wrap)

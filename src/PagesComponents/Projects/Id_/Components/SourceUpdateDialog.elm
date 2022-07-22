@@ -126,48 +126,20 @@ sqlLocalFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) ->
 sqlLocalFileModal wrap sourceSet close noop zone now htmlId titleId source fileName updatedAt model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
-            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text ("Refresh " ++ source.name ++ " source") ]
-            , div [ class "mt-2" ]
-                [ p [ class "text-sm text-gray-500" ]
-                    [ text "This source came from the "
-                    , bText (DateTime.formatDate zone updatedAt)
-                    , text " version of "
-                    , bText fileName
-                    , text (" file (" ++ (updatedAt |> DateTime.human now) ++ ").")
-                    , br [] []
-                    , text "Please upload its new version to update the source."
-                    ]
-                ]
+            [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
+            , div [ class "mt-2" ] [ localFileInfo zone now fileName updatedAt ]
             ]
         , div [ class "mt-3" ] [ SqlSource.viewLocalInput (SqlSourceMsg >> wrap) noop (htmlId ++ "-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
             ( SqlFileLocal name1 _ updated1, Just (SqlFileLocal name2 _ updated2) ) ->
-                [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
-                , Just [ text "You file is ", bText "older", text " than the previous one" ] |> Maybe.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
-                ]
-                    |> List.filterMap identity
-                    |> (\warnings ->
-                            if warnings == [] then
-                                div [] []
-
-                            else
-                                div [ class "mt-3" ]
-                                    [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Found some strange things" }
-                                        [ ul [ role "list", class "list-disc list-inside" ] (warnings |> List.map (li []))
-                                        ]
-                                    ]
-                       )
+                localFileWarnings ( name1, name2 ) ( updated1, updated2 )
 
             _ ->
                 div [] []
         , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
-        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+        , viewSourceDiff model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
-        , closeBtn close
-        ]
+    , updateSourceButtons sourceSet close model.parsedSource
     ]
 
 
@@ -175,30 +147,16 @@ sqlRemoteFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time
 sqlRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
-            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text ("Refresh " ++ source.name ++ " source") ]
-            , div [ class "mt-2" ]
-                [ p [ class "text-sm text-gray-500" ]
-                    [ text "This source came from "
-                    , bText fileUrl
-                    , text " which was fetched the "
-                    , bText (DateTime.formatDate zone source.updatedAt)
-                    , text (" (" ++ (source.updatedAt |> DateTime.human now) ++ ").")
-                    , br [] []
-                    , text "Click on the button to fetch it again now."
-                    ]
-                ]
+            [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
+            , div [ class "mt-2" ] [ remoteFileInfo zone now fileUrl source.updatedAt ]
             ]
         , div [ class "mt-3 flex justify-center" ]
             [ Button.primary5 Tw.primary [ onClick (fileUrl |> SqlSource.GetRemoteFile |> SqlSourceMsg >> wrap) ] [ text "Fetch file again" ]
             ]
         , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
-        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+        , viewSourceDiff model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
-        , closeBtn close
-        ]
+    , updateSourceButtons sourceSet close model.parsedSource
     ]
 
 
@@ -206,30 +164,16 @@ databaseModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Time.Posi
 databaseModal wrap sourceSet close zone now titleId source url model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
-            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text ("Refresh " ++ source.name ++ " source") ]
-            , div [ class "mt-2" ]
-                [ p [ class "text-sm text-gray-500" ]
-                    [ text "This source came from "
-                    , bText url
-                    , text " which was fetched the "
-                    , bText (DateTime.formatDate zone source.updatedAt)
-                    , text (" (" ++ (source.updatedAt |> DateTime.human now) ++ ").")
-                    , br [] []
-                    , text "Click on the button to fetch it again now."
-                    ]
-                ]
+            [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
+            , div [ class "mt-2" ] [ remoteFileInfo zone now url source.updatedAt ]
             ]
         , div [ class "mt-3 flex justify-center" ]
-            [ Button.primary5 Tw.primary [ onClick (DatabaseSource.GetSchema url |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
+            [ Button.primary5 Tw.primary [ onClick (url |> DatabaseSource.GetSchema |> DatabaseSourceMsg |> wrap) ] [ text "Fetch schema again" ]
             ]
         , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model
-        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+        , viewSourceDiff model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
-        , closeBtn close
-        ]
+    , updateSourceButtons sourceSet close model.parsedSource
     ]
 
 
@@ -237,48 +181,20 @@ jsonLocalFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -
 jsonLocalFileModal wrap sourceSet close noop zone now htmlId titleId source fileName updatedAt model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
-            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text ("Refresh " ++ source.name ++ " source") ]
-            , div [ class "mt-2" ]
-                [ p [ class "text-sm text-gray-500" ]
-                    [ text "This source came from the "
-                    , bText (DateTime.formatDate zone updatedAt)
-                    , text " version of "
-                    , bText fileName
-                    , text (" file (" ++ (updatedAt |> DateTime.human now) ++ ").")
-                    , br [] []
-                    , text "Please upload its new version to update the source."
-                    ]
-                ]
+            [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
+            , div [ class "mt-2" ] [ localFileInfo zone now fileName updatedAt ]
             ]
         , div [ class "mt-3" ] [ JsonSource.viewLocalInput (JsonSourceMsg >> wrap) noop (htmlId ++ "-file-upload") ]
         , case ( source.kind, model.loadedSchema |> Maybe.map (\( src, _ ) -> src.kind) ) of
             ( JsonFileLocal name1 _ updated1, Just (JsonFileLocal name2 _ updated2) ) ->
-                [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
-                , Just [ text "You file is ", bText "older", text " than the previous one" ] |> Maybe.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
-                ]
-                    |> List.filterMap identity
-                    |> (\warnings ->
-                            if warnings == [] then
-                                div [] []
-
-                            else
-                                div [ class "mt-3" ]
-                                    [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Found some strange things" }
-                                        [ ul [ role "list", class "list-disc list-inside" ] (warnings |> List.map (li []))
-                                        ]
-                                    ]
-                       )
+                localFileWarnings ( name1, name2 ) ( updated1, updated2 )
 
             _ ->
                 div [] []
         , JsonSource.viewParsing (JsonSourceMsg >> wrap) model
-        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+        , viewSourceDiff model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
-        , closeBtn close
-        ]
+    , updateSourceButtons sourceSet close model.parsedSource
     ]
 
 
@@ -286,30 +202,16 @@ jsonRemoteFileModal : (Msg -> msg) -> (Source -> msg) -> msg -> Time.Zone -> Tim
 jsonRemoteFileModal wrap sourceSet close zone now titleId source fileUrl model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
-            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text ("Refresh " ++ source.name ++ " source") ]
-            , div [ class "mt-2" ]
-                [ p [ class "text-sm text-gray-500" ]
-                    [ text "This source came from "
-                    , bText fileUrl
-                    , text " which was fetched the "
-                    , bText (DateTime.formatDate zone source.updatedAt)
-                    , text (" (" ++ (source.updatedAt |> DateTime.human now) ++ ").")
-                    , br [] []
-                    , text "Click on the button to fetch it again now."
-                    ]
-                ]
+            [ modalTitle titleId ("Refresh " ++ source.name ++ " source")
+            , div [ class "mt-2" ] [ remoteFileInfo zone now fileUrl source.updatedAt ]
             ]
         , div [ class "mt-3 flex justify-center" ]
             [ Button.primary5 Tw.primary [ onClick (fileUrl |> JsonSource.GetRemoteFile |> JsonSourceMsg >> wrap) ] [ text "Fetch file again" ]
             ]
         , JsonSource.viewParsing (JsonSourceMsg >> wrap) model
-        , model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+        , viewSourceDiff model
         ]
-    , div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        [ primaryBtn (model.parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
-        , closeBtn close
-        ]
+    , updateSourceButtons sourceSet close model.parsedSource
     ]
 
 
@@ -317,8 +219,7 @@ userDefinedModal : msg -> HtmlId -> List (Html msg)
 userDefinedModal close titleId =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
-            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text "This is a user source, it can't be refreshed!" ]
+            [ modalTitle titleId "This is a user source, it can't be refreshed!"
             ]
         , p [ class "mt-3" ]
             [ text """A user source is a source created by a user to add some information to the project.
@@ -340,8 +241,7 @@ newSourceModal : (Msg -> msg) -> (Source -> msg) -> msg -> (String -> msg) -> Ht
 newSourceModal wrap sourceSet close noop htmlId titleId model =
     [ div [ class "max-w-3xl mx-6 mt-6" ]
         [ div [ css [ "mt-3", sm [ "mt-5" ] ] ]
-            [ h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ]
-                [ text "Add a source" ]
+            [ modalTitle titleId "Add a source"
             , div [ class "mt-2" ]
                 [ p [ class "text-sm text-gray-500" ]
                     [ text """A project can have several sources. They are independent and merged together when enabled to build the usable schema.
@@ -363,6 +263,69 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
 
 
 -- HELPERS
+
+
+modalTitle : HtmlId -> String -> Html msg
+modalTitle titleId title =
+    h3 [ id titleId, class "text-lg leading-6 text-center font-medium text-gray-900" ] [ text title ]
+
+
+localFileInfo : Time.Zone -> Time.Posix -> FileName -> FileUpdatedAt -> Html msg
+localFileInfo zone now fileName updatedAt =
+    p [ class "text-sm text-gray-500" ]
+        [ text "This source came from the "
+        , bText (DateTime.formatDate zone updatedAt)
+        , text " version of "
+        , bText fileName
+        , text (" file (" ++ (updatedAt |> DateTime.human now) ++ ").")
+        , br [] []
+        , text "Please upload its new version to update the source."
+        ]
+
+
+remoteFileInfo : Time.Zone -> Time.Posix -> FileUrl -> Time.Posix -> Html msg
+remoteFileInfo zone now fileUrl updatedAt =
+    p [ class "text-sm text-gray-500" ]
+        [ text "This source came from "
+        , bText fileUrl
+        , text " which was fetched the "
+        , bText (DateTime.formatDate zone updatedAt)
+        , text (" (" ++ (updatedAt |> DateTime.human now) ++ ").")
+        , br [] []
+        , text "Click on the button to fetch it again now."
+        ]
+
+
+localFileWarnings : ( FileName, FileName ) -> ( FileUpdatedAt, FileUpdatedAt ) -> Html msg
+localFileWarnings ( name1, name2 ) ( updated1, updated2 ) =
+    [ Just [ text "Your file name changed from ", bText name1, text " to ", bText name2 ] |> Maybe.filter (\_ -> name1 /= name2)
+    , Just [ text "You file is ", bText "older", text " than the previous one" ] |> Maybe.filter (\_ -> updated1 |> DateTime.greaterThan updated2)
+    ]
+        |> List.filterMap identity
+        |> (\warnings ->
+                if warnings == [] then
+                    div [] []
+
+                else
+                    div [ class "mt-3" ]
+                        [ Alert.withDescription { color = Tw.yellow, icon = Exclamation, title = "Found some strange things" }
+                            [ ul [ role "list", class "list-disc list-inside" ] (warnings |> List.map (li []))
+                            ]
+                        ]
+           )
+
+
+viewSourceDiff : { a | source : Maybe Source, defaultSchema : SchemaName, parsedSource : Maybe (Result String Source) } -> Html msg
+viewSourceDiff model =
+    model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+
+
+updateSourceButtons : (Source -> msg) -> msg -> Maybe (Result String Source) -> Html msg
+updateSourceButtons sourceSet close parsedSource =
+    div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
+        [ primaryBtn (parsedSource |> Maybe.andThen Result.toMaybe |> Maybe.map sourceSet) "Update source"
+        , closeBtn close
+        ]
 
 
 primaryBtn : Maybe msg -> String -> Html msg

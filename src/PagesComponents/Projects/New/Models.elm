@@ -23,8 +23,8 @@ type alias Model =
     , openedCollapse : HtmlId
     , projects : List ProjectInfo
     , selectedTab : Tab
-    , sqlSource : Maybe (SqlSource.Model Msg)
     , databaseSource : Maybe (DatabaseSource.Model Msg)
+    , sqlSource : Maybe (SqlSource.Model Msg)
     , jsonSource : Maybe (JsonSource.Model Msg)
     , importProject : Maybe ImportProject.Model
     , sampleProject : Maybe ImportProject.Model
@@ -38,8 +38,8 @@ type alias Model =
 
 
 type Tab
-    = TabSql
-    | TabDatabase
+    = TabDatabase
+    | TabSql
     | TabJson
     | TabProject
     | TabSamples
@@ -54,10 +54,10 @@ type Msg
     | Logout
     | ToggleCollapse HtmlId
     | SelectTab Tab
-    | SqlSourceMsg SqlSource.Msg
-    | SqlSourceDrop
     | DatabaseSourceMsg DatabaseSource.Msg
     | DatabaseSourceDrop
+    | SqlSourceMsg SqlSource.Msg
+    | SqlSourceDrop
     | JsonSourceMsg JsonSource.Msg
     | JsonSourceDrop
     | ImportProjectMsg ImportProject.Msg

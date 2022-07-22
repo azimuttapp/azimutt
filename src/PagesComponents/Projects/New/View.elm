@@ -25,6 +25,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
+import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
@@ -52,11 +53,11 @@ viewNewProject currentUrl shared model =
             shared.zone
             model
             { tabs =
-                [ { tab = TabSql, icon = Icon.DocumentText, content = [ text "From SQL schema" ] }
-                , { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
-                , { tab = TabJson, icon = Icon.Code, content = [ text "From JSON source", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                [ { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = TabSql, icon = Icon.DocumentText, content = [ text "From SQL structure" ] }
+                , { tab = TabJson, icon = Icon.Code, content = [ text "From JSON", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
                 , { tab = TabProject, icon = Icon.FolderDownload, content = [ text "Import project" ] }
-                , { tab = TabSamples, icon = Icon.Gift, content = [ text "From sample" ] }
+                , { tab = TabSamples, icon = Icon.Gift, content = [ text "Explore sample" ] }
                 ]
             }
         ]
@@ -102,11 +103,11 @@ viewTab selected tab =
 viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
 viewTabContent htmlId zone model =
     case model.selectedTab of
-        TabSql ->
-            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse) (div [] [])
-
         TabDatabase ->
             model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database")) (div [] [])
+
+        TabSql ->
+            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse) (div [] [])
 
         TabJson ->
             model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse) (div [] [])
@@ -116,6 +117,16 @@ viewTabContent htmlId zone model =
 
         TabSamples ->
             model.sampleProject |> Maybe.mapOrElse (viewSampleProjectTab zone model.projects) (div [] [])
+
+
+viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model Msg -> Html Msg
+viewDatabaseSourceTab htmlId model =
+    div []
+        [ viewHeading "Extract your database schema" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored."
+        , DatabaseSource.viewInput htmlId model |> Html.map DatabaseSourceMsg
+        , DatabaseSource.viewParsing DatabaseSourceMsg model
+        , viewSourceActionButtons DatabaseSourceDrop model.parsedSource
+        ]
 
 
 viewSqlSourceTab : HtmlId -> HtmlId -> SqlSource.Model Msg -> Html Msg
@@ -129,76 +140,13 @@ viewSqlSourceTab htmlId openedCollapse model =
                     ]
                 ]
             ]
-        , div [ class "my-3" ] [ Divider.withLabel "OR" ]
-        , SqlSource.viewRemoteInput SqlSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError)
-        , div [ css [ "mt-3" ] ]
-            [ div [ onClick (ToggleCollapse (htmlId ++ "-get-schema")), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
-            , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-get-schema")) "" "hidden" ] ]
-                [ p []
-                    [ text "An "
-                    , bText "SQL schema"
-                    , text " is a SQL file with all the needed instructions to create your database, so it contains your database structure. Here are some ways to get it:"
-                    , ul [ css [ "list-disc list-inside pl-3" ] ]
-                        [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", extLink "https://stackoverflow.com/a/54504510/15051232" [ css [ "link" ] ] [ text "DBeaver" ], text ")" ]
-                        , li [] [ bText "Find it", text " in your project: some frameworks like Rails store the schema in your project, so you may have it (ex: with Rails it's ", Kbd.badge [] [ "db/structure.sql" ], text " if you use the SQL version)" ]
-                        ]
-                    ]
-                , p [ css [ "mt-3" ] ] [ text "If you have no idea on what I'm talking about just before, ask to the developers working on the project or your database administrator 😇" ]
-                ]
-            ]
-        , div []
-            [ div [ onClick (ToggleCollapse (htmlId ++ "-data-privacy")), css [ "link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
-            , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-data-privacy")) "" "hidden" ] ]
-                [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
-                , p [ css [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
-                ]
-            ]
-        , div []
-            [ SqlSource.viewParsing SqlSourceMsg model
-            , model.parsedSource
-                |> Maybe.mapOrElse
-                    (\source ->
-                        div [ css [ "mt-6" ] ]
-                            [ div [ css [ "flex justify-end" ] ]
-                                (source
-                                    |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick SqlSourceDrop ] [ text "Clear" ] ])
-                                        (\src ->
-                                            [ Button.white3 Tw.primary [ onClick SqlSourceDrop ] [ text "Trash this" ]
-                                            , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
-                                            ]
-                                        )
-                                )
-                            ]
-                    )
-                    (div [] [])
-            ]
-        ]
-
-
-viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model Msg -> Html Msg
-viewDatabaseSourceTab htmlId model =
-    div []
-        [ viewHeading "Extract your database schema" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored."
-        , DatabaseSource.viewInput htmlId model |> Html.map DatabaseSourceMsg
-        , div []
-            [ DatabaseSource.viewParsing DatabaseSourceMsg model
-            , model.parsedSource
-                |> Maybe.mapOrElse
-                    (\source ->
-                        div [ css [ "mt-6" ] ]
-                            [ div [ css [ "flex justify-end" ] ]
-                                (source
-                                    |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick DatabaseSourceDrop ] [ text "Clear" ] ])
-                                        (\src ->
-                                            [ Button.white3 Tw.primary [ onClick DatabaseSourceDrop ] [ text "Trash this" ]
-                                            , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
-                                            ]
-                                        )
-                                )
-                            ]
-                    )
-                    (div [] [])
-            ]
+        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Azimutt has a flexible SQL parser which can handle ", bText "most SQL dialects", text ". Errors are fixed within a few days when sent." ]
+        , div [ class "mt-3" ] [ Divider.withLabel "OR" ]
+        , div [ class "mt-3" ] [ SqlSource.viewRemoteInput SqlSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError) ]
+        , div [ class "mt-3" ] [ viewHowToGetSchemaCollapse htmlId openedCollapse ]
+        , viewDataPrivacyCollapse htmlId openedCollapse
+        , SqlSource.viewParsing SqlSourceMsg model
+        , viewSourceActionButtons SqlSourceDrop model.parsedSource
         ]
 
 
@@ -213,39 +161,11 @@ viewJsonSourceTab htmlId openedCollapse model =
                     ]
                 ]
             ]
-        , div [ class "my-3" ] [ Divider.withLabel "OR" ]
-        , JsonSource.viewRemoteInput JsonSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError)
-        , div [ css [ "mt-3" ] ]
-            [ div [ onClick (ToggleCollapse (htmlId ++ "-json-schema")), css [ "link text-sm text-gray-500" ] ] [ text "What is the schema for the JSON?" ]
-            , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-json-schema")) "" "hidden" ] ]
-                [ p [] [ text "Here is the JSON schema defining what is expected:" ]
-                , pre [] [ text JsonSchema.jsonSchema ]
-                , p []
-                    [ text "You can use "
-                    , extLink "https://www.jsonschemavalidator.net" [ class "link" ] [ text "jsonschemavalidator.net" ]
-                    , text " to validate your JSON against this schema."
-                    ]
-                ]
-            ]
-        , div []
-            [ JsonSource.viewParsing JsonSourceMsg model
-            , model.parsedSource
-                |> Maybe.mapOrElse
-                    (\source ->
-                        div [ css [ "mt-6" ] ]
-                            [ div [ css [ "flex justify-end" ] ]
-                                (source
-                                    |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick JsonSourceDrop ] [ text "Clean it" ] ])
-                                        (\src ->
-                                            [ Button.white3 Tw.primary [ onClick JsonSourceDrop ] [ text "Trash this" ]
-                                            , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
-                                            ]
-                                        )
-                                )
-                            ]
-                    )
-                    (div [] [])
-            ]
+        , div [ class "mt-3" ] [ Divider.withLabel "OR" ]
+        , div [ class "mt-3" ] [ JsonSource.viewRemoteInput JsonSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError) ]
+        , div [ class "mt-3" ] [ viewJsonSourceSchemaCollapse htmlId openedCollapse ]
+        , JsonSource.viewParsing JsonSourceMsg model
+        , viewSourceActionButtons JsonSourceDrop model.parsedSource
         ]
 
 
@@ -261,30 +181,28 @@ viewImportProjectTab htmlId zone projects model =
                 ]
             ]
         , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Download your project with the button on the bottom of the settings (top right cog)." ]
-        , div []
-            [ ImportProject.viewParsing ImportProjectMsg zone Nothing model
-            , model.parsedProject
-                |> Maybe.andThen Result.toMaybe
-                |> Maybe.map
-                    (\project ->
-                        div [ css [ "mt-6" ] ]
-                            [ div [ css [ "flex justify-end" ] ]
-                                (Button.white3 Tw.primary [ onClick ImportProjectDrop ] [ text "Don't import" ]
-                                    :: (projects
-                                            |> List.find (\p -> p.id == project.id)
-                                            |> Maybe.mapOrElse
-                                                (\p ->
-                                                    [ Button.secondary3 Tw.red [ onClick (CreateProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                    , Button.primary3 Tw.primary [ onClick (CreateProjectNew project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
-                                                    ]
-                                                )
-                                                [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
-                                       )
-                                )
-                            ]
-                    )
-                |> Maybe.withDefault (div [] [])
-            ]
+        , ImportProject.viewParsing ImportProjectMsg zone Nothing model
+        , model.parsedProject
+            |> Maybe.andThen Result.toMaybe
+            |> Maybe.map
+                (\project ->
+                    div [ css [ "mt-6" ] ]
+                        [ div [ css [ "flex justify-end" ] ]
+                            (Button.white3 Tw.primary [ onClick ImportProjectDrop ] [ text "Don't import" ]
+                                :: (projects
+                                        |> List.find (\p -> p.id == project.id)
+                                        |> Maybe.map
+                                            (\p ->
+                                                [ Button.secondary3 Tw.red [ onClick (CreateProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
+                                                , Button.primary3 Tw.primary [ onClick (CreateProjectNew project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                ]
+                                            )
+                                        |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                   )
+                            )
+                        ]
+                )
+            |> Maybe.withDefault (div [] [])
         ]
 
 
@@ -307,27 +225,28 @@ viewSampleProjectTab zone projects model =
                         }
                     )
             )
-        , div []
-            [ ImportProject.viewParsing SampleProjectMsg zone Nothing model
-            , model.parsedProject
-                |> Maybe.andThen Result.toMaybe
-                |> Maybe.map
-                    (\project ->
-                        div [ css [ "mt-6" ] ]
-                            [ div [ css [ "flex justify-end" ] ]
-                                (Button.white3 Tw.primary [ onClick SampleProjectDrop ] [ text "Cancel" ]
-                                    :: (projects
-                                            |> List.find (\p -> p.id == project.id)
-                                            |> Maybe.mapOrElse
-                                                (\_ -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
-                                                [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
-                                       )
-                                )
-                            ]
-                    )
-                |> Maybe.withDefault (div [] [])
-            ]
+        , ImportProject.viewParsing SampleProjectMsg zone Nothing model
+        , model.parsedProject
+            |> Maybe.andThen Result.toMaybe
+            |> Maybe.map
+                (\project ->
+                    div [ css [ "mt-6" ] ]
+                        [ div [ css [ "flex justify-end" ] ]
+                            (Button.white3 Tw.primary [ onClick SampleProjectDrop ] [ text "Cancel" ]
+                                :: (projects
+                                        |> List.find (\p -> p.id == project.id)
+                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                        |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
+                                   )
+                            )
+                        ]
+                )
+            |> Maybe.withDefault (div [] [])
         ]
+
+
+
+-- HELPERS
 
 
 viewHeading : String -> String -> Html msg
@@ -336,6 +255,72 @@ viewHeading title description =
         [ h2 [ css [ "text-lg leading-6 font-medium text-gray-900" ] ] [ text title ]
         , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text description ]
         ]
+
+
+viewHowToGetSchemaCollapse : HtmlId -> HtmlId -> Html Msg
+viewHowToGetSchemaCollapse htmlId openedCollapse =
+    div []
+        [ div [ onClick (ToggleCollapse (htmlId ++ "-get-schema")), css [ "link text-sm text-gray-500" ] ] [ text "How to get my database schema?" ]
+        , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-get-schema")) "" "hidden" ] ]
+            [ p []
+                [ text "An "
+                , bText "SQL schema"
+                , text " is a SQL file with all the needed instructions to create your database, so it contains your database structure. Here are some ways to get it:"
+                , ul [ css [ "list-disc list-inside pl-3" ] ]
+                    [ li [] [ bText "Export it", text " from your database: connect to your database using your favorite client and follow the instructions to extract the schema (ex: ", extLink "https://stackoverflow.com/a/54504510/15051232" [ css [ "link" ] ] [ text "DBeaver" ], text ")" ]
+                    , li [] [ bText "Find it", text " in your project: some frameworks like Rails store the schema in your project, so you may have it (ex: with Rails it's ", Kbd.badge [] [ "db/structure.sql" ], text " if you use the SQL version)" ]
+                    ]
+                ]
+            , p [ css [ "mt-3" ] ] [ text "If you have no idea on what I'm talking about just before, ask to the developers working on the project or your database administrator 😇" ]
+            ]
+        ]
+
+
+viewDataPrivacyCollapse : HtmlId -> HtmlId -> Html Msg
+viewDataPrivacyCollapse htmlId openedCollapse =
+    div []
+        [ div [ onClick (ToggleCollapse (htmlId ++ "-data-privacy")), css [ "link text-sm text-gray-500" ] ] [ text "What about data privacy?" ]
+        , div [ css [ "mt-1 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-data-privacy")) "" "hidden" ] ]
+            [ p [] [ text "Your application schema may be a sensitive information, but no worries with Azimutt, everything stay on your machine. In fact, there is even no server at all!" ]
+            , p [ css [ "mt-3" ] ] [ text "Your schema is read and ", bText "parsed in your browser", text ", and then saved with the layouts in your browser ", bText "local storage", text ". Nothing fancy ^^" ]
+            ]
+        ]
+
+
+viewJsonSourceSchemaCollapse : HtmlId -> HtmlId -> Html Msg
+viewJsonSourceSchemaCollapse htmlId openedCollapse =
+    div []
+        [ div [ onClick (ToggleCollapse (htmlId ++ "-json-schema")), css [ "link text-sm text-gray-500" ] ] [ text "What is the schema for the JSON?" ]
+        , div [ css [ "mt-1 mb-3 p-3 border rounded border-gray-300", B.cond (openedCollapse == (htmlId ++ "-json-schema")) "" "hidden" ] ]
+            [ p [] [ text "Here is the JSON schema defining what is expected:" ]
+            , pre [] [ text JsonSchema.jsonSchema ]
+            , p []
+                [ text "You can use "
+                , extLink "https://www.jsonschemavalidator.net" [ class "link" ] [ text "jsonschemavalidator.net" ]
+                , text " to validate your JSON against this schema."
+                ]
+            ]
+        ]
+
+
+viewSourceActionButtons : Msg -> Maybe (Result String Source) -> Html Msg
+viewSourceActionButtons drop parsedSource =
+    parsedSource
+        |> Maybe.mapOrElse
+            (\source ->
+                div [ css [ "mt-6" ] ]
+                    [ div [ css [ "flex justify-end" ] ]
+                        (source
+                            |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick drop ] [ text "Clear" ] ])
+                                (\src ->
+                                    [ Button.white3 Tw.primary [ onClick drop ] [ text "Trash this" ]
+                                    , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                                    ]
+                                )
+                        )
+                    ]
+            )
+            (div [] [])
 
 
 viewModal : Model -> Html Msg
