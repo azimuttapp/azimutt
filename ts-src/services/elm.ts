@@ -50,6 +50,8 @@ export class ElmApp {
         TrackPage: [],
         Confetti: [],
         ConfettiPride: [],
+        Create3dGraph: [],
+        Remove3dGraph: [],
         TrackEvent: [],
         TrackError: [],
     }

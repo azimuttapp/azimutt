@@ -20,6 +20,7 @@ import {Utils} from "./utils/utils";
 import {Supabase} from "./services/supabase";
 import {StorageManager} from "./storages/manager";
 import {Conf} from "./conf";
+import ForceGraph3D from "3d-force-graph";
 
 const env = Utils.getEnv()
 const platform = Utils.getPlatform()
@@ -93,6 +94,51 @@ app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
 app.on('ConfettiPride', _ => Utils.launchConfettiPride())
+app.on('Create3dGraph', msg => { // https://github.com/vasturiano/3d-force-graph
+    const elt = document.createElement('div')
+    elt.id = '3d-graph'
+    elt.style.cssText = 'position:absolute;top:64px;'
+    document.body.appendChild(elt)
+
+    const sources = msg.project.sources.filter(s => s.enabled !== false)
+    const hideColumns = (msg.project.settings?.hiddenColumns?.list || '')
+        .split(',')
+        .map(c => c.trim())
+        .filter(c => c)
+        .map(c => new RegExp(c, 'i'))
+    const nodes = sources.flatMap(s => s.tables).map(t => ({
+        id: `${t.schema}.${t.table}`,
+        name: t.table,
+        prefix: t.table.split('_')[0]
+    }))
+    const links = sources.flatMap(s => s.relations)
+        .filter(r => !hideColumns.find(c => c.test(r.src.column) || c.test(r.ref.column)))
+        .map(r => ({source: r.src.table, target: r.ref.table}))
+
+    const Graph = ForceGraph3D()(elt)
+        .height(window.innerHeight - 64)
+        .nodeAutoColorBy('prefix')
+        .linkAutoColorBy(d => nodes.find(n => n.id === d.target)?.prefix || 'unknown')
+        .linkDirectionalArrowLength(3.5)
+        .linkDirectionalArrowRelPos(1)
+        .linkDirectionalParticles(10)
+        .graphData({nodes, links})
+        .onNodeClick((node: any) => { // https://github.com/vasturiano/3d-force-graph/blob/master/example/click-to-focus/index.html
+            const distance = 100 // Aim at node from outside it
+            const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z)
+
+            const newPos = node.x || node.y || node.z
+                ? {x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio}
+                : {x: 0, y: 0, z: distance} // special case if node is in (0,0,0)
+
+            Graph.cameraPosition(
+                newPos, // new position
+                node, // lookAt ({ x, y, z })
+                3000  // ms transition duration
+            )
+        })
+})
+app.on('Remove3dGraph', _ => document.getElementById('3d-graph')?.remove())
 app.on('TrackPage', msg => analytics.trackPage(msg.name))
 app.on('TrackEvent', msg => analytics.trackEvent(msg.name, msg.details))
 app.on('TrackError', msg => {

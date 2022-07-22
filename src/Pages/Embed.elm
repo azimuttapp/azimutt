@@ -67,7 +67,7 @@ init : Time.Posix -> QueryString -> ( Model, Cmd Msg )
 init now query =
     ( { seed = Random.initialSeed (now |> Time.posixToMillis)
       , conf = initConf query.mode
-      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
+      , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 }, has3dGraph = False }
       , screen = ScreenProps.zero
       , loaded = query.projectId == Nothing && query.projectUrl == Nothing && query.sourceUrl == Nothing
       , erd = Nothing

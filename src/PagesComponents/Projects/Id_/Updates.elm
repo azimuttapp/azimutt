@@ -201,6 +201,15 @@ update req currentLayout now msg model =
         SourceParsed projectId source ->
             ( model, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
 
+        Toggle3dGraph ->
+            ( model |> mapNavbar (\n -> { n | has3dGraph = not model.navbar.has3dGraph })
+            , if model.navbar.has3dGraph then
+                Ports.remove3dGraph
+
+              else
+                model.erd |> Maybe.mapOrElse (Erd.unpack >> Ports.create3dGraph) Cmd.none
+            )
+
         HelpMsg message ->
             model |> handleHelp message
 
