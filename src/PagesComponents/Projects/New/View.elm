@@ -186,7 +186,7 @@ viewSqlSourceTab htmlId openedCollapse model =
 viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model Msg -> Html Msg
 viewDatabaseSourceTab htmlId model =
     div []
-        [ viewHeading "Extract your database schema" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is saved."
+        [ viewHeading "Extract your database schema" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored."
         , DatabaseSource.viewInput htmlId model |> Html.map DatabaseSourceMsg
         , div []
             [ DatabaseSource.viewParsing DatabaseSourceMsg model
@@ -196,7 +196,7 @@ viewDatabaseSourceTab htmlId model =
                         div [ css [ "mt-6" ] ]
                             [ div [ css [ "flex justify-end" ] ]
                                 (source
-                                    |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick DatabaseSourceDrop ] [ text "Clean it" ] ])
+                                    |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick DatabaseSourceDrop ] [ text "Clear" ] ])
                                         (\src ->
                                             [ Button.white3 Tw.primary [ onClick DatabaseSourceDrop ] [ text "Trash this" ]
                                             , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
