@@ -22,9 +22,9 @@ import Random
 import Request
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
+import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
-import Services.ProjectImport as ProjectImport
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapImportProjectM, mapImportProjectMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapSampleProjectM, mapSampleProjectMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
@@ -110,8 +110,8 @@ init req =
       , sqlSource = Nothing
       , databaseSource = Nothing
       , jsonSource = Nothing
-      , projectImport = Nothing
-      , sampleSelection = Nothing
+      , importProject = Nothing
+      , sampleProject = Nothing
       , openedDropdown = ""
       , toasts = Toasts.init
       , confirm = Nothing
@@ -129,7 +129,7 @@ init req =
          , Ports.trackPage "new-project"
          , Ports.listProjects
          ]
-            ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleSelectMsg (ProjectImport.SelectRemoteFile s.url (Just s.key))) ]) [])
+            ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleProjectMsg (ImportProject.SelectRemoteFile s.url (Just s.key))) ]) [])
         )
     )
 
@@ -139,7 +139,7 @@ initTab tab model =
     let
         clean : Model
         clean =
-            { model | selectedTab = tab, sqlSource = Nothing, databaseSource = Nothing, jsonSource = Nothing, projectImport = Nothing, sampleSelection = Nothing }
+            { model | selectedTab = tab, sqlSource = Nothing, databaseSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
     in
     case tab of
         TabSql ->
@@ -152,10 +152,10 @@ initTab tab model =
             { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
 
         TabProject ->
-            { clean | projectImport = Just ProjectImport.init }
+            { clean | importProject = Just ImportProject.init }
 
         TabSamples ->
-            { clean | sampleSelection = Just ProjectImport.init }
+            { clean | sampleProject = Just ImportProject.init }
 
 
 
@@ -178,8 +178,7 @@ update req now backendUrl msg model =
             ( model |> initTab tab, Cmd.none )
 
         SqlSourceMsg message ->
-            model
-                |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg message)
+            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -194,8 +193,7 @@ update req now backendUrl msg model =
             ( { model | sqlSource = SqlSource.init Conf.schema.default Nothing (\_ -> Noop "drop-sql-source") |> Just }, Cmd.none )
 
         DatabaseSourceMsg message ->
-            model
-                |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg backendUrl now message)
+            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg backendUrl now message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -210,8 +208,7 @@ update req now backendUrl msg model =
             ( { model | databaseSource = DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "drop-database-source") |> Just }, Cmd.none )
 
         JsonSourceMsg message ->
-            model
-                |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg message)
+            (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
@@ -225,37 +222,35 @@ update req now backendUrl msg model =
         JsonSourceDrop ->
             ( { model | jsonSource = JsonSource.init Conf.schema.default Nothing (\_ -> Noop "drop-json-source") |> Just }, Cmd.none )
 
-        ProjectImportMsg message ->
-            model
-                |> mapProjectImportMCmd (ProjectImport.update message)
+        ImportProjectMsg message ->
+            (model |> mapImportProjectMCmd (ImportProject.update message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
-                            ProjectImport.FileLoaded _ ->
-                                Cmd.batch [ cmd, Ports.confetti "import-project-btn" ]
+                            ImportProject.FileLoaded _ ->
+                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
                             _ ->
                                 cmd
                     )
 
-        ProjectImportDrop ->
-            ( model |> mapProjectImportM (\_ -> ProjectImport.init), Cmd.none )
+        ImportProjectDrop ->
+            ( model |> mapImportProjectM (\_ -> ImportProject.init), Cmd.none )
 
-        SampleSelectMsg message ->
-            model
-                |> mapSampleSelectionMCmd (ProjectImport.update message)
+        SampleProjectMsg message ->
+            (model |> mapSampleProjectMCmd (ImportProject.update message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of
-                            ProjectImport.FileLoaded _ ->
-                                Cmd.batch [ cmd, Ports.confetti "sample-project-btn" ]
+                            ImportProject.FileLoaded _ ->
+                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
                             _ ->
                                 cmd
                     )
 
-        SampleSelectDrop ->
-            ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )
+        SampleProjectDrop ->
+            ( model |> mapSampleProjectM (\_ -> ImportProject.init), Cmd.none )
 
         CreateProject project ->
             ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
@@ -298,8 +293,8 @@ handleJsMessage now msg model =
             ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }, Cmd.none )
 
         GotLocalFile kind file content ->
-            if kind == ProjectImport.kind then
-                ( model, T.send (ProjectImport.gotLocalFile content |> ProjectImportMsg) )
+            if kind == ImportProject.kind then
+                ( model, T.send (ImportProject.gotLocalFile content |> ImportProjectMsg) )
 
             else if kind == SqlSource.kind then
                 ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotLocalFile now sourceId file content |> SqlSourceMsg) )
@@ -311,12 +306,12 @@ handleJsMessage now msg model =
                 ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
 
         GotRemoteFile kind url content sample ->
-            if kind == ProjectImport.kind then
+            if kind == ImportProject.kind then
                 if sample == Nothing then
-                    ( model, T.send (ProjectImport.gotRemoteFile content |> ProjectImportMsg) )
+                    ( model, T.send (ImportProject.gotRemoteFile content |> ImportProjectMsg) )
 
                 else
-                    ( model, T.send (ProjectImport.gotRemoteFile content |> SampleSelectMsg) )
+                    ( model, T.send (ImportProject.gotRemoteFile content |> SampleProjectMsg) )
 
             else if kind == SqlSource.kind then
                 ( model, SourceId.generator |> Random.generate (\sourceId -> SqlSource.gotRemoteFile now sourceId url content sample |> SqlSourceMsg) )

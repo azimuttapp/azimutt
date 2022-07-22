@@ -1,4 +1,4 @@
-module Services.ProjectImport exposing (Model, Msg(..), gotLocalFile, gotRemoteFile, init, kind, update, viewInput, viewParsing)
+module Services.ImportProject exposing (Model, Msg(..), gotLocalFile, gotRemoteFile, init, kind, update, viewInput, viewParsing)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Alert as Alert
@@ -138,6 +138,7 @@ viewParsing zone currentProject model =
 
 viewLogs : Time.Zone -> Bool -> String -> Maybe (Result Decode.Error Project) -> Html msg
 viewLogs zone isSample fileName parsedProject =
+    -- FIXME: use SourceLogs
     div [ class "mt-6 px-4 py-2 max-h-96 overflow-y-auto font-mono text-xs bg-gray-50 shadow rounded-lg" ]
         [ div [] [ text ("Loaded " ++ fileName ++ ".") ]
         , parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])

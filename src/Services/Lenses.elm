@@ -32,6 +32,9 @@ module Services.Lenses exposing
     , mapHover
     , mapHoverColumn
     , mapHoverTable
+    , mapImportProjectCmd
+    , mapImportProjectM
+    , mapImportProjectMCmd
     , mapIndex
     , mapIndexes
     , mapJsonSourceCmd
@@ -61,9 +64,6 @@ module Services.Lenses exposing
     , mapPrimaryKey
     , mapPrimaryKeyM
     , mapProject
-    , mapProjectImportCmd
-    , mapProjectImportM
-    , mapProjectImportMCmd
     , mapProjectM
     , mapProjectMCmd
     , mapProjectMLayout
@@ -77,8 +77,8 @@ module Services.Lenses exposing
     , mapRemoveViews
     , mapRemovedSchemas
     , mapResult
-    , mapSampleSelectionM
-    , mapSampleSelectionMCmd
+    , mapSampleProjectM
+    , mapSampleProjectMCmd
     , mapSchemaAnalysisM
     , mapScreen
     , mapSearch
@@ -165,6 +165,7 @@ module Services.Lenses exposing
     , setId
     , setIgnoredColumns
     , setIgnoredTables
+    , setImportProject
     , setIndex
     , setIndexes
     , setInput
@@ -196,7 +197,6 @@ module Services.Lenses exposing
     , setPosition
     , setPrimaryKey
     , setProject
-    , setProjectImport
     , setPrompt
     , setProps
     , setRelatedTables
@@ -206,7 +206,7 @@ module Services.Lenses exposing
     , setRemovedSchemas
     , setRemovedTables
     , setResult
-    , setSampleSelection
+    , setSampleProject
     , setSchemaAnalysis
     , setScreen
     , setSearch
@@ -925,24 +925,24 @@ mapProjectMCmd =
     mapMCmd_ .project setProject
 
 
-setProjectImport : v -> { item | projectImport : v } -> { item | projectImport : v }
-setProjectImport =
-    set_ .projectImport (\value item -> { item | projectImport = value })
+setImportProject : v -> { item | importProject : v } -> { item | importProject : v }
+setImportProject =
+    set_ .importProject (\value item -> { item | importProject = value })
 
 
-mapProjectImportM : (v -> v) -> { item | projectImport : Maybe v } -> { item | projectImport : Maybe v }
-mapProjectImportM =
-    mapM_ .projectImport setProjectImport
+mapImportProjectM : (v -> v) -> { item | importProject : Maybe v } -> { item | importProject : Maybe v }
+mapImportProjectM =
+    mapM_ .importProject setImportProject
 
 
-mapProjectImportCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : v } -> ( { item | projectImport : v }, Cmd msg )
-mapProjectImportCmd =
-    mapCmd_ .projectImport setProjectImport
+mapImportProjectCmd : (v -> ( v, Cmd msg )) -> { item | importProject : v } -> ( { item | importProject : v }, Cmd msg )
+mapImportProjectCmd =
+    mapCmd_ .importProject setImportProject
 
 
-mapProjectImportMCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : Maybe v } -> ( { item | projectImport : Maybe v }, Cmd msg )
-mapProjectImportMCmd =
-    mapMCmd_ .projectImport setProjectImport
+mapImportProjectMCmd : (v -> ( v, Cmd msg )) -> { item | importProject : Maybe v } -> ( { item | importProject : Maybe v }, Cmd msg )
+mapImportProjectMCmd =
+    mapMCmd_ .importProject setImportProject
 
 
 setPrompt : v -> { item | prompt : v } -> { item | prompt : v }
@@ -1030,19 +1030,19 @@ mapResult =
     map_ .result setResult
 
 
-setSampleSelection : v -> { item | sampleSelection : v } -> { item | sampleSelection : v }
-setSampleSelection =
-    set_ .sampleSelection (\value item -> { item | sampleSelection = value })
+setSampleProject : v -> { item | sampleProject : v } -> { item | sampleProject : v }
+setSampleProject =
+    set_ .sampleProject (\value item -> { item | sampleProject = value })
 
 
-mapSampleSelectionM : (v -> v) -> { item | sampleSelection : Maybe v } -> { item | sampleSelection : Maybe v }
-mapSampleSelectionM =
-    mapM_ .sampleSelection setSampleSelection
+mapSampleProjectM : (v -> v) -> { item | sampleProject : Maybe v } -> { item | sampleProject : Maybe v }
+mapSampleProjectM =
+    mapM_ .sampleProject setSampleProject
 
 
-mapSampleSelectionMCmd : (v -> ( v, Cmd msg )) -> { item | sampleSelection : Maybe v } -> ( { item | sampleSelection : Maybe v }, Cmd msg )
-mapSampleSelectionMCmd =
-    mapMCmd_ .sampleSelection setSampleSelection
+mapSampleProjectMCmd : (v -> ( v, Cmd msg )) -> { item | sampleProject : Maybe v } -> ( { item | sampleProject : Maybe v }, Cmd msg )
+mapSampleProjectMCmd =
+    mapMCmd_ .sampleProject setSampleProject
 
 
 setSchemaAnalysis : v -> { item | schemaAnalysis : v } -> { item | schemaAnalysis : v }

@@ -29,8 +29,8 @@ import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import Services.DatabaseSource as DatabaseSource
+import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
-import Services.ProjectImport as ProjectImport
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
@@ -112,10 +112,10 @@ viewTabContent htmlId zone model =
             model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse) (div [] [])
 
         TabProject ->
-            model.projectImport |> Maybe.mapOrElse (viewProjectImportTab (htmlId ++ "-project") zone model.projects) (div [] [])
+            model.importProject |> Maybe.mapOrElse (viewImportProjectTab (htmlId ++ "-project") zone model.projects) (div [] [])
 
         TabSamples ->
-            model.sampleSelection |> Maybe.mapOrElse (viewSamplesTab zone model.projects) (div [] [])
+            model.sampleProject |> Maybe.mapOrElse (viewSampleProjectTab zone model.projects) (div [] [])
 
 
 viewSqlSourceTab : HtmlId -> HtmlId -> SqlSource.Model Msg -> Html Msg
@@ -270,36 +270,36 @@ viewJsonSourceTab htmlId openedCollapse model =
         ]
 
 
-viewProjectImportTab : HtmlId -> Time.Zone -> List ProjectInfo -> ProjectImport.Model -> Html Msg
-viewProjectImportTab htmlId zone projects model =
+viewImportProjectTab : HtmlId -> Time.Zone -> List ProjectInfo -> ImportProject.Model -> Html Msg
+viewImportProjectTab htmlId zone projects model =
     div []
         [ viewHeading "Import an existing project" "If you have an Azimutt project, you can load it here."
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ ProjectImport.viewInput (htmlId ++ "-remote-file") (ProjectImport.SelectLocalFile >> ProjectImportMsg) (Noop "no-project-local-file")
+                    [ ImportProject.viewInput (htmlId ++ "-remote-file") (ImportProject.SelectLocalFile >> ImportProjectMsg) (Noop "no-project-local-file")
                     ]
                 ]
             ]
         , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "If you have an existing project, you can download it at the bottom of project settings (top right cog)." ]
         , div []
-            [ ProjectImport.viewParsing zone Nothing model
+            [ ImportProject.viewParsing zone Nothing model
             , model.parsedProject
                 |> Maybe.andThen Result.toMaybe
                 |> Maybe.map
                     (\project ->
                         div [ css [ "mt-6" ] ]
                             [ div [ css [ "flex justify-end" ] ]
-                                (Button.white3 Tw.primary [ onClick ProjectImportDrop ] [ text "Don't import" ]
+                                (Button.white3 Tw.primary [ onClick ImportProjectDrop ] [ text "Don't import" ]
                                     :: (projects
                                             |> List.find (\p -> p.id == project.id)
                                             |> Maybe.mapOrElse
                                                 (\p ->
                                                     [ Button.secondary3 Tw.red [ onClick (CreateProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                    , Button.primary3 Tw.primary [ onClick (CreateProjectNew project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                    , Button.primary3 Tw.primary [ onClick (CreateProjectNew project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                     ]
                                                 )
-                                                [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "import-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
+                                                [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
                                        )
                                 )
                             ]
@@ -309,8 +309,8 @@ viewProjectImportTab htmlId zone projects model =
         ]
 
 
-viewSamplesTab : Time.Zone -> List ProjectInfo -> ProjectImport.Model -> Html Msg
-viewSamplesTab zone projects model =
+viewSampleProjectTab : Time.Zone -> List ProjectInfo -> ImportProject.Model -> Html Msg
+viewSampleProjectTab zone projects model =
     div []
         [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
         , ItemList.withIcons
@@ -324,24 +324,24 @@ viewSamplesTab zone projects model =
                         , title = sample.name ++ " (" ++ (sample.tables |> String.fromInt) ++ " tables)"
                         , description = sample.description
                         , active = model.selectedRemoteFile |> Maybe.andThen .sample |> Maybe.all (\s -> s == sample.key)
-                        , onClick = SampleSelectMsg (ProjectImport.SelectRemoteFile sample.url (Just sample.key))
+                        , onClick = SampleProjectMsg (ImportProject.SelectRemoteFile sample.url (Just sample.key))
                         }
                     )
             )
         , div []
-            [ ProjectImport.viewParsing zone Nothing model
+            [ ImportProject.viewParsing zone Nothing model
             , model.parsedProject
                 |> Maybe.andThen Result.toMaybe
                 |> Maybe.map
                     (\project ->
                         div [ css [ "mt-6" ] ]
                             [ div [ css [ "flex justify-end" ] ]
-                                (Button.white3 Tw.primary [ onClick SampleSelectDrop ] [ text "Cancel" ]
+                                (Button.white3 Tw.primary [ onClick SampleProjectDrop ] [ text "Cancel" ]
                                     :: (projects
                                             |> List.find (\p -> p.id == project.id)
                                             |> Maybe.mapOrElse
-                                                (\_ -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), id "sample-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
-                                                [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "sample-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
+                                                (\_ -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = project.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                                [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                        )
                                 )
                             ]

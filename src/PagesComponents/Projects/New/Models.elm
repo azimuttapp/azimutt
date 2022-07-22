@@ -10,8 +10,8 @@ import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.DatabaseSource as DatabaseSource
+import Services.ImportProject as ImportProject exposing (Model, Msg)
 import Services.JsonSource as JsonSource
-import Services.ProjectImport as ProjectImport exposing (Model, Msg)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared exposing (Confirm)
@@ -26,8 +26,8 @@ type alias Model =
     , sqlSource : Maybe (SqlSource.Model Msg)
     , databaseSource : Maybe (DatabaseSource.Model Msg)
     , jsonSource : Maybe (JsonSource.Model Msg)
-    , projectImport : Maybe ProjectImport.Model
-    , sampleSelection : Maybe ProjectImport.Model
+    , importProject : Maybe ImportProject.Model
+    , sampleProject : Maybe ImportProject.Model
 
     -- global attrs
     , openedDropdown : HtmlId
@@ -60,10 +60,10 @@ type Msg
     | DatabaseSourceDrop
     | JsonSourceMsg JsonSource.Msg
     | JsonSourceDrop
-    | ProjectImportMsg ProjectImport.Msg
-    | ProjectImportDrop
-    | SampleSelectMsg ProjectImport.Msg
-    | SampleSelectDrop
+    | ImportProjectMsg ImportProject.Msg
+    | ImportProjectDrop
+    | SampleProjectMsg ImportProject.Msg
+    | SampleProjectDrop
     | CreateProject Project
     | CreateProjectNew Project
     | CreateProjectFromSource Source
