@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
+module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlParser.AmlAdapter exposing (AmlSchemaError)
@@ -26,6 +26,7 @@ import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
@@ -43,7 +44,6 @@ import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
-import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
 
@@ -69,7 +69,7 @@ type alias Model =
     , upload : Maybe ProjectUploadDialog.Model
     , settings : Maybe ProjectSettingsDialog
     , sourceUpload : Maybe (SourceUpdateDialog.Model Msg)
-    , sourceParsing : Maybe SourceParsingDialog
+    , embedSourceParsing : Maybe (EmbedSourceParsingDialog.Model Msg)
     , help : Maybe HelpDialog
 
     -- global attrs
@@ -120,10 +120,6 @@ type alias SharingDialog =
 
 type alias ProjectSettingsDialog =
     { id : HtmlId }
-
-
-type alias SourceParsingDialog =
-    { id : HtmlId, sqlSource : SqlSource.Model Msg }
 
 
 type alias HelpDialog =
@@ -179,9 +175,9 @@ type Msg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
-    | ProjectUploadDialogMsg ProjectUploadDialog.Msg
+    | ProjectUploadMsg ProjectUploadDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
-    | EmbedSourceParsing SqlSource.Msg
+    | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg
     | SourceParsed Source
     | HelpMsg HelpMsg
     | CursorMode CursorMode

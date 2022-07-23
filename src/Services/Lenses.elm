@@ -21,6 +21,7 @@ module Services.Lenses exposing
     , mapEachProjectMLayoutTables
     , mapEachTable
     , mapEditNotesM
+    , mapEmbedSourceParsingMCmd
     , mapEnabled
     , mapErdM
     , mapErdMCmd
@@ -93,7 +94,6 @@ module Services.Lenses exposing
     , mapShown
     , mapShownColumns
     , mapShownTables
-    , mapSourceParsingMCmd
     , mapSourceUploadCmd
     , mapSourceUploadM
     , mapSourceUploadMCmd
@@ -149,6 +149,7 @@ module Services.Lenses exposing
     , setDragState
     , setDragging
     , setEditNotes
+    , setEmbedSourceParsing
     , setEnabled
     , setErd
     , setErrors
@@ -222,7 +223,6 @@ module Services.Lenses exposing
     , setShownColumns
     , setShownTables
     , setSize
-    , setSourceParsing
     , setSourceUpload
     , setSources
     , setSqlSource
@@ -498,6 +498,16 @@ setEditNotes =
 mapEditNotesM : (v -> v) -> { item | editNotes : Maybe v } -> { item | editNotes : Maybe v }
 mapEditNotesM =
     mapM_ .editNotes setEditNotes
+
+
+setEmbedSourceParsing : v -> { item | embedSourceParsing : v } -> { item | embedSourceParsing : v }
+setEmbedSourceParsing =
+    set_ .embedSourceParsing (\value item -> { item | embedSourceParsing = value })
+
+
+mapEmbedSourceParsingMCmd : (v -> ( v, Cmd msg )) -> { item | embedSourceParsing : Maybe v } -> ( { item | embedSourceParsing : Maybe v }, Cmd msg )
+mapEmbedSourceParsingMCmd =
+    mapMCmd_ .embedSourceParsing setEmbedSourceParsing
 
 
 setEnabled : v -> { item | enabled : v } -> { item | enabled : v }
@@ -1203,16 +1213,6 @@ mapSources =
 mapSourcesL : (v -> k) -> k -> (v -> v) -> { item | sources : List v } -> { item | sources : List v }
 mapSourcesL =
     mapL_ .sources setSources
-
-
-setSourceParsing : v -> { item | sourceParsing : v } -> { item | sourceParsing : v }
-setSourceParsing =
-    set_ .sourceParsing (\value item -> { item | sourceParsing = value })
-
-
-mapSourceParsingMCmd : (v -> ( v, Cmd msg )) -> { item | sourceParsing : Maybe v } -> ( { item | sourceParsing : Maybe v }, Cmd msg )
-mapSourceParsingMCmd =
-    mapMCmd_ .sourceParsing setSourceParsing
 
 
 setSourceUpload : v -> { item | sourceUpload : v } -> { item | sourceUpload : v }

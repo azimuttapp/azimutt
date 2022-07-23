@@ -9,12 +9,12 @@ import Libs.Dict as Dict
 import Libs.Http as Http
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Result as Result
 import Libs.Task as T
 import Models.Project as Project
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), SourceParsingDialog)
+import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind
 import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
@@ -24,6 +24,8 @@ import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Request
+import Services.DatabaseSource as DatabaseSource
+import Services.JsonSource as JsonSource
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
@@ -45,9 +47,11 @@ page shared req =
 
 
 type alias QueryString =
-    { projectId : Maybe String
+    { databaseSource : Maybe String
+    , sqlSource : Maybe String
+    , jsonSource : Maybe String
+    , projectId : Maybe String
     , projectUrl : Maybe String
-    , sourceUrl : Maybe String
     , layout : Maybe String
     , mode : String
     }
@@ -70,7 +74,7 @@ init query =
     ( { conf = initConf query.mode
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
-      , loaded = query.projectId == Nothing && query.projectUrl == Nothing && query.sourceUrl == Nothing
+      , loaded = [ query.databaseSource, query.sqlSource, query.jsonSource, query.projectId, query.projectUrl ] |> List.all (\a -> a == Nothing)
       , erd = Nothing
       , projects = []
       , hoverTable = Nothing
@@ -87,11 +91,7 @@ init query =
       , upload = Nothing
       , settings = Nothing
       , sourceUpload = Nothing
-      , sourceParsing =
-            (query.projectId |> Maybe.map (\_ -> Nothing))
-                |> Maybe.orElse (query.projectUrl |> Maybe.map (\_ -> Nothing))
-                |> Maybe.orElse (query.sourceUrl |> Maybe.map (\_ -> Just initSourceParsing))
-                |> Maybe.withDefault Nothing
+      , embedSourceParsing = EmbedSourceParsingDialog.init SourceParsed ModalClose Noop query.databaseSource query.sqlSource query.jsonSource
       , help = Nothing
       , openedDropdown = ""
       , openedPopover = ""
@@ -113,9 +113,11 @@ init query =
          , Ports.trackPage "embed"
          , Ports.listenHotkeys Conf.hotkeys
          ]
-            ++ ((query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
+            ++ ((query.databaseSource |> Maybe.map (\url -> [ T.send (url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ T.send (url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.jsonSource |> Maybe.map (\url -> [ T.send (url |> JsonSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedJsonSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject >> JsMessage) Project.decode } ]))
-                    |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (EmbedSourceParsing (SqlSource.GetRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
                     |> Maybe.withDefault []
                )
         )
@@ -127,41 +129,28 @@ initConf mode =
     EmbedMode.all |> List.findBy .id mode |> Maybe.mapOrElse .conf ErdConf.embedDefault
 
 
-initSourceParsing : SourceParsingDialog
-initSourceParsing =
-    { id = Conf.ids.sourceParsingDialog
-    , sqlSource =
-        SqlSource.init
-            Conf.schema.default
-            Nothing
-            (\( parser, source ) ->
-                if parser |> Maybe.any SqlSource.hasErrors then
-                    Noop "embed-parse-sql-has-errors"
-
-                else
-                    source |> Result.fold (\_ -> Noop "embed-load-sql-has-errors") (SourceParsed >> ModalClose)
-            )
-    }
-
-
 parseQueryString : Dict String String -> QueryString
 parseQueryString query =
-    { projectId = query |> Dict.get EmbedKind.projectId
+    { databaseSource = query |> Dict.get EmbedKind.databaseSource
+    , sqlSource = query |> Dict.get EmbedKind.sqlSource |> Maybe.orElse (query |> Dict.get EmbedKind.sourceUrl)
+    , jsonSource = query |> Dict.get EmbedKind.jsonSource
+    , projectId = query |> Dict.get EmbedKind.projectId
     , projectUrl = query |> Dict.get EmbedKind.projectUrl
-    , sourceUrl = query |> Dict.get EmbedKind.sourceUrl
     , layout = query |> Dict.get "layout"
-    , mode = query |> Dict.getOrElse "mode" EmbedMode.default
+    , mode = query |> Dict.getOrElse EmbedMode.key EmbedMode.default
     }
 
 
 serializeQueryString : QueryString -> Dict String String
 serializeQueryString query =
     Dict.fromList
-        ([ ( EmbedKind.projectId, query.projectId )
+        ([ ( EmbedKind.databaseSource, query.databaseSource )
+         , ( EmbedKind.sqlSource, query.sqlSource )
+         , ( EmbedKind.jsonSource, query.jsonSource )
+         , ( EmbedKind.projectId, query.projectId )
          , ( EmbedKind.projectUrl, query.projectUrl )
-         , ( EmbedKind.sourceUrl, query.sourceUrl )
          , ( "layout", query.layout )
-         , ( "mode", Just query.mode )
+         , ( EmbedMode.key, Just query.mode )
          ]
             |> List.filterMap (\( key, maybeValue ) -> maybeValue |> Maybe.map (\value -> ( key, value )))
         )

@@ -1,4 +1,4 @@
-module Libs.Url exposing (asString, empty)
+module Libs.Url exposing (asString, buildQueryString, empty)
 
 import Url exposing (Url)
 
@@ -6,6 +6,11 @@ import Url exposing (Url)
 empty : Url
 empty =
     { protocol = Url.Https, host = "", port_ = Nothing, path = "", query = Nothing, fragment = Nothing }
+
+
+buildQueryString : List ( String, String ) -> String
+buildQueryString params =
+    params |> List.map (\( key, value ) -> key ++ "=" ++ Url.percentEncode value) |> String.join "&"
 
 
 asString : Url -> String

@@ -9,13 +9,13 @@ import Dict
 import Html exposing (Html, datalist, div, h3, iframe, img, input, label, option, p, select, span, text)
 import Html.Attributes exposing (attribute, class, for, height, id, list, name, placeholder, selected, src, style, title, type_, value)
 import Html.Events exposing (onClick, onInput)
-import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html exposing (extLink, sendTweet)
 import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Libs.Time as Time
+import Libs.Url as Url
 import Models.Project as Project exposing (Project)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -34,7 +34,7 @@ viewSharing opened erd model =
         titleId =
             model.id ++ "-title"
 
-        iframeUrl : String
+        iframeUrl : Maybe String
         iframeUrl =
             buildIframeUrl model.kind model.content model.layout model.mode
     in
@@ -49,15 +49,11 @@ viewSharing opened erd model =
         ]
 
 
-viewIframe : String -> Html msg
+viewIframe : Maybe String -> Html msg
 viewIframe iframeUrl =
-    if iframeUrl /= "" then
-        div [ style "width" "1000px" ]
-            [ iframe [ attribute "width" "100%", height 800, src iframeUrl, title "Embedded Azimutt diagram", attribute "frameborder" "0", attribute "allowtransparency" "true", attribute "allowfullscreen" "true", attribute "scrolling" "no", style "box-shadow" "0 2px 8px 0 rgba(63,69,81,0.16)", style "border-radius" "5px" ] []
-            ]
-
-    else
-        div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src "/assets/images/illustrations/education.gif" ] [] ]
+    iframeUrl
+        |> Maybe.map (\url -> div [ style "width" "1000px" ] [ iframe [ attribute "width" "100%", height 800, src url, title "Embedded Azimutt diagram", attribute "frameborder" "0", attribute "allowtransparency" "true", attribute "allowfullscreen" "true", attribute "scrolling" "no", style "box-shadow" "0 2px 8px 0 rgba(63,69,81,0.16)", style "border-radius" "5px" ] [] ])
+        |> Maybe.withDefault (div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src "/assets/images/illustrations/education.gif" ] [] ])
 
 
 buildIframeHtml : String -> String
@@ -203,29 +199,40 @@ viewBodyModeInput inputId inputValue =
 viewBodyIframe : SharingDialog -> Html msg
 viewBodyIframe model =
     let
-        iframeUrl : String
+        iframeUrl : Maybe String
         iframeUrl =
             buildIframeUrl model.kind model.content model.layout model.mode
     in
-    if iframeUrl /= "" then
-        div [ class "mt-3" ]
-            [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Iframe" ]
-            , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ] [ text (buildIframeHtml iframeUrl) ]
-            , p [ class "mt-2 text-sm text-gray-500" ]
-                [ text "You are publishing your schema? Please "
-                , sendTweet Conf.constants.sharingTweet [ class "link" ] [ text "let us know" ]
-                , text " and we can help spread it 🤗"
-                ]
-            ]
+    iframeUrl
+        |> Maybe.map
+            (\url ->
+                div [ class "mt-3" ]
+                    [ span [ class "block text-sm font-medium text-gray-700" ] [ text "Iframe" ]
+                    , div [ class "mt-1 bg-gray-100 text-gray-700 rounded text-sm px-3 py-2" ] [ text (buildIframeHtml url) ]
+                    , p [ class "mt-2 text-sm text-gray-500" ]
+                        [ text "You are publishing your schema? Please "
+                        , sendTweet Conf.constants.sharingTweet [ class "link" ] [ text "let us know" ]
+                        , text " and we can help spread it 🤗"
+                        ]
+                    ]
+            )
+        |> Maybe.withDefault (div [] [])
 
-    else
-        div [] []
 
-
-buildIframeUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> String
+buildIframeUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe String
 buildIframeUrl kind content layout mode =
     if content /= "" then
-        Conf.constants.azimuttWebsite ++ "/embed?" ++ EmbedKind.value kind ++ "=" ++ content ++ Bool.cond (layout /= "") ("&layout=" ++ layout) "" ++ Bool.cond (mode /= "") ("&mode=" ++ mode) ""
+        let
+            queryString : String
+            queryString =
+                [ ( EmbedKind.value kind, content )
+                , ( "layout", layout )
+                , ( EmbedMode.key, mode )
+                ]
+                    |> List.filter (\( _, value ) -> value /= "")
+                    |> Url.buildQueryString
+        in
+        Just (Conf.constants.azimuttWebsite ++ "/embed?" ++ queryString)
 
     else
-        ""
+        Nothing

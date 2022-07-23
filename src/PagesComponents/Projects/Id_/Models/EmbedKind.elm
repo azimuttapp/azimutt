@@ -1,15 +1,17 @@
-module PagesComponents.Projects.Id_.Models.EmbedKind exposing (EmbedKind(..), all, fromValue, label, placeholder, projectId, projectUrl, sourceUrl, value)
+module PagesComponents.Projects.Id_.Models.EmbedKind exposing (EmbedKind(..), all, databaseSource, fromValue, jsonSource, label, placeholder, projectId, projectUrl, sourceUrl, sqlSource, value)
 
 
 type EmbedKind
     = EmbedProjectId
     | EmbedProjectUrl
-    | EmbedSourceUrl
+    | EmbedDatabaseSource
+    | EmbedSqlSource
+    | EmbedJsonSource
 
 
 all : List EmbedKind
 all =
-    [ EmbedProjectId, EmbedProjectUrl, EmbedSourceUrl ]
+    [ EmbedProjectId, EmbedProjectUrl, EmbedDatabaseSource, EmbedSqlSource, EmbedJsonSource ]
 
 
 label : EmbedKind -> String
@@ -21,8 +23,14 @@ label kind =
         EmbedProjectUrl ->
             "Project url"
 
-        EmbedSourceUrl ->
-            "Source url"
+        EmbedDatabaseSource ->
+            "Database"
+
+        EmbedSqlSource ->
+            "SQL"
+
+        EmbedJsonSource ->
+            "JSON"
 
 
 placeholder : EmbedKind -> String
@@ -34,8 +42,14 @@ placeholder kind =
         EmbedProjectUrl ->
             "https://azimutt.app/samples/gospeak.azimutt.json"
 
-        EmbedSourceUrl ->
+        EmbedDatabaseSource ->
+            "postgres://<user>:<password>@<host>:<port>/<db_name>"
+
+        EmbedSqlSource ->
             "https://azimutt.app/samples/gospeak.sql"
+
+        EmbedJsonSource ->
+            "https://azimutt.app/samples/gospeak.json"
 
 
 value : EmbedKind -> String
@@ -47,8 +61,14 @@ value kind =
         EmbedProjectUrl ->
             projectUrl
 
-        EmbedSourceUrl ->
-            sourceUrl
+        EmbedDatabaseSource ->
+            databaseSource
+
+        EmbedSqlSource ->
+            sqlSource
+
+        EmbedJsonSource ->
+            jsonSource
 
 
 fromValue : String -> Maybe EmbedKind
@@ -59,8 +79,14 @@ fromValue kind =
     else if kind == projectUrl then
         Just EmbedProjectUrl
 
-    else if kind == sourceUrl then
-        Just EmbedSourceUrl
+    else if kind == databaseSource then
+        Just EmbedDatabaseSource
+
+    else if kind == sqlSource then
+        Just EmbedSqlSource
+
+    else if kind == jsonSource then
+        Just EmbedJsonSource
 
     else
         Nothing
@@ -74,6 +100,21 @@ projectId =
 projectUrl : String
 projectUrl =
     "project-url"
+
+
+databaseSource : String
+databaseSource =
+    "database-source"
+
+
+sqlSource : String
+sqlSource =
+    "sql-source"
+
+
+jsonSource : String
+jsonSource =
+    "json-source"
 
 
 sourceUrl : String

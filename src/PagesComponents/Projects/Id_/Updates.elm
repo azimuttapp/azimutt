@@ -23,6 +23,7 @@ import Models.Project.SourceId as SourceId
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SourceInfo as SourceInfo
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
+import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -50,7 +51,7 @@ import Random
 import Request
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapSqlSourceCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -199,14 +200,14 @@ update req currentLayout now backendUrl msg model =
         SharingMsg message ->
             model |> handleSharing message
 
-        ProjectUploadDialogMsg message ->
+        ProjectUploadMsg message ->
             model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings now backendUrl message
 
-        EmbedSourceParsing message ->
-            model |> mapSourceParsingMCmd (mapSqlSourceCmd (SqlSource.update EmbedSourceParsing now message))
+        EmbedSourceParsingMsg message ->
+            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg backendUrl now message)
 
         SourceParsed source ->
             ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId source.name source |> Ok |> Just |> GotProject |> JsMessage) )
@@ -378,14 +379,14 @@ handleJsMessage now currentLayout msg model =
                 ( model, Cmd.none )
 
             else
-                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateShareUser (Just ( email, user ))))) )
+                ( model, T.send (ProjectUploadMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateShareUser (Just ( email, user ))))) )
 
         GotOwners _ owners ->
             if model.upload == Nothing then
                 ( model, Cmd.none )
 
             else
-                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
+                ( model, T.send (ProjectUploadMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
 
         ProjectDropped projectId ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )

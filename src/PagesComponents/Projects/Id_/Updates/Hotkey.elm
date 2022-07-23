@@ -181,7 +181,7 @@ cancelElement model =
         |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
         |> Maybe.orElse (model.sourceUpload |> Maybe.map (\_ -> ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)))
         |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg SClose)))
-        |> Maybe.orElse (model.upload |> Maybe.map (\_ -> ModalClose (ProjectUploadDialogMsg ProjectUploadDialog.Close)))
+        |> Maybe.orElse (model.upload |> Maybe.map (\_ -> ModalClose (ProjectUploadMsg ProjectUploadDialog.Close)))
         |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\p -> SelectTable p.id False))
