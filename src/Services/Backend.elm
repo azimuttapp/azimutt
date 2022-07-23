@@ -2,7 +2,8 @@ module Services.Backend exposing (Error, Url, errorToString, getDatabaseSchema, 
 
 import Http
 import Json.Decode as Decode
-import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
+import Json.Encode as Encode
+import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 
 
 type Url
@@ -25,10 +26,21 @@ errorToString (Error err) =
 
 getDatabaseSchema : Url -> DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
 getDatabaseSchema (BackendUrl backendUrl) url toMsg =
-    Http.get
-        { url = backendUrl ++ "/database/schema?url=" ++ url
+    Http.post
+        { url = backendUrl ++ "/database/schema"
+        , body = url |> databaseSchemaBody |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
         }
+
+
+databaseSchemaBody : DatabaseUrl -> Encode.Value
+databaseSchemaBody url =
+    Encode.object
+        [ ( "url", url |> DatabaseUrl.encode ) ]
+
+
+
+-- HELPERS
 
 
 handleResponse : Http.Response String -> Result Error String
