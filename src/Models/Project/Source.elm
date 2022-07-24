@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelation, amlEditor, decode, encode, refreshWith)
+module Models.Project.Source exposing (Source, addRelation, aml, decode, encode, refreshWith)
 
 import Array exposing (Array)
 import Conf
@@ -40,8 +40,8 @@ type alias Source =
     }
 
 
-amlEditor : SourceId -> SourceName -> Time.Posix -> Source
-amlEditor id name now =
+aml : SourceId -> SourceName -> Time.Posix -> Source
+aml id name now =
     { id = id
     , name = name
     , kind = AmlEditor

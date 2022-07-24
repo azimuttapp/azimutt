@@ -8,11 +8,13 @@ import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
+import Libs.Random as Random
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.SourceInfo as SourceInfo
 import Page
@@ -155,6 +157,9 @@ initTab tab model =
         TabJson ->
             { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
 
+        TabEmptyProject ->
+            clean
+
         TabProject ->
             { clean | importProject = Just ImportProject.init }
 
@@ -264,6 +269,17 @@ update req now backendUrl msg model =
 
         CreateProjectFromSource source ->
             ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source |> CreateProject) )
+
+        CreateEmptyProject name ->
+            ( model
+            , Random.generate2
+                (\projectId sourceId ->
+                    Source.aml sourceId Conf.constants.virtualRelationSourceName now
+                        |> (\source -> Project.create projectId (String.unique (model.projects |> List.map .name) name) source |> CreateProject)
+                )
+                ProjectId.generator
+                SourceId.generator
+            )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )

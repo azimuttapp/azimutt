@@ -28,7 +28,7 @@ createRelation now src ref erd =
                 [ SourceId.generator
                     |> Random.generate
                         (\sourceId ->
-                            Source.amlEditor sourceId Conf.constants.virtualRelationSourceName now
+                            Source.aml sourceId Conf.constants.virtualRelationSourceName now
                                 |> Source.addRelation now erd.settings.defaultSchema src ref
                                 |> CreateUserSourceWithId
                         )

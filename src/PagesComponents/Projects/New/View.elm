@@ -56,6 +56,7 @@ viewNewProject currentUrl shared model =
                 [ { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
                 , { tab = TabSql, icon = Icon.DocumentText, content = [ text "From SQL structure" ] }
                 , { tab = TabJson, icon = Icon.Code, content = [ text "From JSON", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = TabEmptyProject, icon = Icon.Document, content = [ text "Empty project" ] }
                 , { tab = TabProject, icon = Icon.FolderDownload, content = [ text "Import project" ] }
                 , { tab = TabSamples, icon = Icon.Gift, content = [ text "Explore sample" ] }
                 ]
@@ -112,6 +113,9 @@ viewTabContent htmlId zone model =
         TabJson ->
             model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse) (div [] [])
 
+        TabEmptyProject ->
+            viewEmptyProjectTab
+
         TabProject ->
             model.importProject |> Maybe.mapOrElse (viewImportProjectTab (htmlId ++ "-project") zone model.projects) (div [] [])
 
@@ -122,7 +126,7 @@ viewTabContent htmlId zone model =
 viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model Msg -> Html Msg
 viewDatabaseSourceTab htmlId model =
     div []
-        [ viewHeading "Extract your database schema" "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored."
+        [ viewHeading "Extract your database schema" [ text "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored." ]
         , DatabaseSource.viewInput htmlId model |> Html.map DatabaseSourceMsg
         , DatabaseSource.viewParsing DatabaseSourceMsg model
         , viewSourceActionButtons DatabaseSourceDrop model.parsedSource
@@ -132,7 +136,7 @@ viewDatabaseSourceTab htmlId model =
 viewSqlSourceTab : HtmlId -> HtmlId -> SqlSource.Model Msg -> Html Msg
 viewSqlSourceTab htmlId openedCollapse model =
     div []
-        [ viewHeading "Import your SQL schema" "Everything stay on your machine, don't worry about your schema privacy."
+        [ viewHeading "Import your SQL schema" [ text "Everything stay on your machine, don't worry about your schema privacy." ]
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
@@ -153,7 +157,7 @@ viewSqlSourceTab htmlId openedCollapse model =
 viewJsonSourceTab : HtmlId -> HtmlId -> JsonSource.Model Msg -> Html Msg
 viewJsonSourceTab htmlId openedCollapse model =
     div []
-        [ viewHeading "Import your custom source in JSON" "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here."
+        [ viewHeading "Import your custom source in JSON" [ text "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here." ]
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
@@ -169,10 +173,22 @@ viewJsonSourceTab htmlId openedCollapse model =
         ]
 
 
+viewEmptyProjectTab : Html Msg
+viewEmptyProjectTab =
+    div []
+        [ viewHeading "Create a new project" [ text "When you don't want to import a schema, just create it in Azimutt using ", extLink "https://azimutt.app/blog/aml-a-language-to-define-your-database-schema" [ class "link" ] [ text "AML" ], text "." ]
+        , div [ css [ "mt-20" ] ]
+            [ div [ css [ "flex justify-center" ] ]
+                [ Button.primary5 Tw.primary [ onClick (CreateEmptyProject "New Project"), id "create-project-btn", css [ "ml-3" ] ] [ text "Create new project!" ]
+                ]
+            ]
+        ]
+
+
 viewImportProjectTab : HtmlId -> Time.Zone -> List ProjectInfo -> ImportProject.Model -> Html Msg
 viewImportProjectTab htmlId zone projects model =
     div []
-        [ viewHeading "Import an existing project" "If you have an Azimutt project, you can load it here."
+        [ viewHeading "Import an existing project" [ text "If you have an Azimutt project, you can load it here." ]
         , form []
             [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
                 [ div [ css [ sm [ "col-span-6" ] ] ]
@@ -209,7 +225,7 @@ viewImportProjectTab htmlId zone projects model =
 viewSampleProjectTab : Time.Zone -> List ProjectInfo -> ImportProject.Model -> Html Msg
 viewSampleProjectTab zone projects model =
     div []
-        [ viewHeading "Explore a sample schema" "If you want to see what Azimutt is capable of, you can pick a schema a play with it."
+        [ viewHeading "Explore a sample schema" [ text "If you want to see what Azimutt is capable of, you can pick a schema a play with it." ]
         , ItemList.withIcons
             (Conf.schemaSamples
                 |> Dict.values
@@ -249,11 +265,11 @@ viewSampleProjectTab zone projects model =
 -- HELPERS
 
 
-viewHeading : String -> String -> Html msg
+viewHeading : String -> List (Html msg) -> Html msg
 viewHeading title description =
     div []
         [ h2 [ css [ "text-lg leading-6 font-medium text-gray-900" ] ] [ text title ]
-        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text description ]
+        , p [ css [ "mt-1 text-sm text-gray-500" ] ] description
         ]
 
 

@@ -20,6 +20,7 @@ import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
+import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SourceInfo as SourceInfo
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
@@ -27,7 +28,7 @@ import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as Embed
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -165,7 +166,7 @@ update req currentLayout now backendUrl msg model =
             ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayout now (mapTables (hoverColumn column on e))), Cmd.none )
 
         CreateUserSource name ->
-            ( model, SourceId.generator |> Random.generate (\sourceId -> Source.amlEditor sourceId name now |> CreateUserSourceWithId) )
+            ( model, SourceId.generator |> Random.generate (\sourceId -> Source.aml sourceId name now |> CreateUserSourceWithId) )
 
         CreateUserSourceWithId source ->
             ( model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
@@ -363,8 +364,12 @@ handleJsMessage now currentLayout msg model =
 
                             else
                                 []
+
+                        amlSidebar : Maybe AmlSidebar
+                        amlSidebar =
+                            B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSlidebar.init (Just erd))
                     in
-                    ( { model | loaded = True, erd = Just erd } |> mapUploadM (\u -> { u | movingProject = False })
+                    ( { model | loaded = True, erd = Just erd, amlSidebar = amlSidebar } |> mapUploadM (\u -> { u | movingProject = False })
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
                          , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
