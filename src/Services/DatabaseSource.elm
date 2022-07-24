@@ -117,8 +117,8 @@ update wrap backendUrl now msg model =
 -- VIEW
 
 
-viewInput : HtmlId -> Model msg -> Html Msg
-viewInput htmlId model =
+viewInput : (Msg -> msg) -> HtmlId -> Model msg -> Html msg
+viewInput wrap htmlId model =
     let
         error : Maybe String
         error =
@@ -131,7 +131,7 @@ viewInput htmlId model =
                     "border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
     in
     div []
-        [ div [ class "mt-5 flex space-x-10" ]
+        [ div [ class "flex space-x-10" ]
             ([ ( "postgresql", True )
              , ( "mysql", False )
              , ( "oracle", False )
@@ -151,7 +151,7 @@ viewInput htmlId model =
                                 |> Tooltip.t "Click to ask support (done on demand)"
                     )
             )
-        , div [ class "mt-5 flex rounded-md shadow-sm" ]
+        , div [ class "mt-3 flex rounded-md shadow-sm" ]
             [ span [ css [ inputStyles, "inline-flex items-center px-3 rounded-l-md border border-r-0 bg-gray-50 text-gray-500 sm:text-sm" ] ] [ text "Database url" ]
             , input
                 [ type_ "text"
@@ -160,13 +160,13 @@ viewInput htmlId model =
                 , placeholder "ex: postgres://<user>:<password>@<host>:<port>/<db_name>"
                 , value model.url
                 , disabled ((model.selectedUrl |> Maybe.andThen Result.toMaybe) /= Nothing && model.loadedSchema == Nothing)
-                , onInput UpdateUrl
-                , onBlur (GetSchema model.url)
+                , onInput (UpdateUrl >> wrap)
+                , onBlur (GetSchema model.url |> wrap)
                 , css [ inputStyles, "flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md sm:text-sm", Tw.disabled [ "bg-slate-50 text-slate-500 border-slate-200" ] ]
                 ]
                 []
             ]
-        , error |> Maybe.mapOrElse (\err -> p [ class "mt-1 text-sm text-red-500" ] [ text err ]) (span [] [])
+        , error |> Maybe.mapOrElse (\err -> p [ class "mt-1 text-sm text-red-500" ] [ text err ]) (p [] [])
         ]
 
 

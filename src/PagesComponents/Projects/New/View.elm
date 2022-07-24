@@ -5,14 +5,13 @@ import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon exposing (Icon)
 import Components.Atoms.Kbd as Kbd
 import Components.Atoms.Link as Link
-import Components.Molecules.Divider as Divider
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Conf
 import DataSources.JsonSourceParser.JsonSchema as JsonSchema
 import Dict
 import Gen.Route as Route
-import Html exposing (Html, a, aside, div, form, h2, li, nav, p, pre, span, text, ul)
+import Html exposing (Html, a, aside, div, h2, li, nav, p, pre, span, text, ul)
 import Html.Attributes exposing (class, href, id)
 import Html.Events exposing (onClick)
 import Html.Keyed as Keyed
@@ -55,7 +54,7 @@ viewNewProject currentUrl shared model =
             { tabs =
                 [ { tab = TabDatabase, icon = Icon.Database, content = [ text "From database connection", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
                 , { tab = TabSql, icon = Icon.DocumentText, content = [ text "From SQL structure" ] }
-                , { tab = TabJson, icon = Icon.Code, content = [ text "From JSON", Badge.rounded Tw.green [ class "ml-3" ] [ text "New" ] ] }
+                , { tab = TabJson, icon = Icon.Code, content = [ text "From JSON" ] }
                 , { tab = TabEmptyProject, icon = Icon.Document, content = [ text "Empty project" ] }
                 , { tab = TabProject, icon = Icon.FolderDownload, content = [ text "Import project" ] }
                 , { tab = TabSamples, icon = Icon.Gift, content = [ text "Explore sample" ] }
@@ -127,7 +126,7 @@ viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model Msg -> Html Msg
 viewDatabaseSourceTab htmlId model =
     div []
         [ viewHeading "Extract your database schema" [ text "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored." ]
-        , DatabaseSource.viewInput htmlId model |> Html.map DatabaseSourceMsg
+        , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
         , DatabaseSource.viewParsing DatabaseSourceMsg model
         , viewSourceActionButtons DatabaseSourceDrop model.parsedSource
         ]
@@ -137,16 +136,7 @@ viewSqlSourceTab : HtmlId -> HtmlId -> SqlSource.Model Msg -> Html Msg
 viewSqlSourceTab htmlId openedCollapse model =
     div []
         [ viewHeading "Import your SQL schema" [ text "Everything stay on your machine, don't worry about your schema privacy." ]
-        , form []
-            [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
-                [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ SqlSource.viewLocalInput SqlSourceMsg Noop (htmlId ++ "-local-file")
-                    ]
-                ]
-            ]
-        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Azimutt has a flexible SQL parser which can handle ", bText "most SQL dialects", text ". Errors are fixed within a few days when sent." ]
-        , div [ class "mt-3" ] [ Divider.withLabel "OR" ]
-        , div [ class "mt-3" ] [ SqlSource.viewRemoteInput SqlSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError) ]
+        , div [ class "mt-6" ] [ SqlSource.viewInput SqlSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewHowToGetSchemaCollapse htmlId openedCollapse ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , SqlSource.viewParsing SqlSourceMsg model
@@ -158,15 +148,7 @@ viewJsonSourceTab : HtmlId -> HtmlId -> JsonSource.Model Msg -> Html Msg
 viewJsonSourceTab htmlId openedCollapse model =
     div []
         [ viewHeading "Import your custom source in JSON" [ text "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here." ]
-        , form []
-            [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
-                [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ JsonSource.viewLocalInput JsonSourceMsg Noop (htmlId ++ "-local-file")
-                    ]
-                ]
-            ]
-        , div [ class "mt-3" ] [ Divider.withLabel "OR" ]
-        , div [ class "mt-3" ] [ JsonSource.viewRemoteInput JsonSourceMsg (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError) ]
+        , div [ class "mt-6" ] [ JsonSource.viewInput JsonSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewJsonSourceSchemaCollapse htmlId openedCollapse ]
         , JsonSource.viewParsing JsonSourceMsg model
         , viewSourceActionButtons JsonSourceDrop model.parsedSource
@@ -189,13 +171,7 @@ viewImportProjectTab : HtmlId -> Time.Zone -> List ProjectInfo -> ImportProject.
 viewImportProjectTab htmlId zone projects model =
     div []
         [ viewHeading "Import an existing project" [ text "If you have an Azimutt project, you can load it here." ]
-        , form []
-            [ div [ css [ "mt-6 grid grid-cols-1 gap-y-6 gap-x-4", sm [ "grid-cols-6" ] ] ]
-                [ div [ css [ sm [ "col-span-6" ] ] ]
-                    [ ImportProject.viewLocalInput ImportProjectMsg Noop (htmlId ++ "-remote-file")
-                    ]
-                ]
-            ]
+        , div [ class "mt-6" ] [ ImportProject.viewLocalInput ImportProjectMsg Noop (htmlId ++ "-remote-file") ]
         , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Download your project with the button on the bottom of the settings (top right cog)." ]
         , ImportProject.viewParsing ImportProjectMsg zone Nothing model
         , model.parsedProject

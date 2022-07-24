@@ -1,4 +1,4 @@
-module Services.JsonSource exposing (Model, Msg(..), init, kind, update, viewLocalInput, viewParsing, viewRemoteInput)
+module Services.JsonSource exposing (Model, Msg(..), init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
@@ -18,6 +18,7 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Result as Result
 import Libs.Tailwind exposing (TwClass)
 import Libs.Task as T
 import Models.Project.SchemaName exposing (SchemaName)
@@ -139,6 +140,15 @@ update wrap now msg model =
 
 
 -- VIEW
+
+
+viewInput : (Msg -> msg) -> (String -> msg) -> HtmlId -> Model msg -> Html msg
+viewInput wrap noop htmlId model =
+    div []
+        [ viewLocalInput wrap noop (htmlId ++ "-local-file")
+        , div [ class "mt-3" ] [ Divider.withLabel "OR" ]
+        , div [ class "mt-3" ] [ viewRemoteInput wrap (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError) ]
+        ]
 
 
 viewLocalInput : (Msg -> msg) -> (String -> msg) -> HtmlId -> Html msg

@@ -1,4 +1,4 @@
-module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, hasErrors, init, kind, update, viewLocalInput, viewParsing, viewRemoteInput)
+module Services.SqlSource exposing (Model, Msg(..), ParsingMsg(..), SqlParsing, hasErrors, init, kind, update, viewInput, viewLocalInput, viewParsing, viewRemoteInput)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Atoms.Link as Link
@@ -255,6 +255,16 @@ parsingCptInc model =
 
 
 -- VIEW
+
+
+viewInput : (Msg -> msg) -> (String -> msg) -> HtmlId -> Model msg -> Html msg
+viewInput wrap noop htmlId model =
+    div []
+        [ viewLocalInput wrap noop (htmlId ++ "-local-file")
+        , p [ css [ "mt-1 text-sm text-gray-500" ] ] [ text "Azimutt has a flexible SQL parser which can handle ", bText "most SQL dialects", text ". Errors are fixed within a few days when sent." ]
+        , div [ class "mt-3" ] [ Divider.withLabel "OR" ]
+        , div [ class "mt-3" ] [ viewRemoteInput wrap (htmlId ++ "-remote-file") model.url (model.selectedRemoteFile |> Maybe.andThen Result.toError) ]
+        ]
 
 
 viewLocalInput : (Msg -> msg) -> (String -> msg) -> HtmlId -> Html msg
