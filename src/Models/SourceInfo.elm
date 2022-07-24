@@ -23,19 +23,19 @@ type alias SourceInfo =
 
 sqlLocal : Time.Posix -> SourceId -> File -> SourceInfo
 sqlLocal now sourceId file =
-    SourceInfo sourceId file.name (SqlFileLocal file.name file.size file.lastModified) True Nothing now now
+    SourceInfo sourceId file.name (SqlLocalFile file.name file.size file.lastModified) True Nothing now now
 
 
 sqlRemote : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SourceInfo
 sqlRemote now sourceId url content sample =
-    SourceInfo sourceId (url |> FileUrl.filename) (SqlFileRemote url (String.length content)) True sample now now
+    SourceInfo sourceId (url |> FileUrl.filename) (SqlRemoteFile url (String.length content)) True sample now now
 
 
 jsonLocal : Time.Posix -> SourceId -> File -> SourceInfo
 jsonLocal now sourceId file =
-    SourceInfo sourceId file.name (JsonFileLocal file.name file.size file.lastModified) True Nothing now now
+    SourceInfo sourceId file.name (JsonLocalFile file.name file.size file.lastModified) True Nothing now now
 
 
 jsonRemote : Time.Posix -> SourceId -> FileUrl -> FileContent -> Maybe SampleKey -> SourceInfo
 jsonRemote now sourceId url content sample =
-    SourceInfo sourceId (url |> FileUrl.filename) (JsonFileRemote url (String.length content)) True sample now now
+    SourceInfo sourceId (url |> FileUrl.filename) (JsonRemoteFile url (String.length content)) True sample now now

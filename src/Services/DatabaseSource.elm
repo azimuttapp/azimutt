@@ -21,11 +21,13 @@ import Libs.Task as T
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
+import Ports
 import Random
 import Services.Backend as Backend
 import Services.Lenses exposing (mapShow)
 import Services.SourceLogs as SourceLogs
 import Time
+import Track
 
 
 type alias Model msg =
@@ -97,17 +99,13 @@ update wrap backendUrl now msg model =
             ( { model | parsedSchema = model.loadedSchema |> Maybe.andThen Result.toMaybe |> Maybe.map (Decode.decodeString DatabaseSchema.decode) }, SourceId.generator |> Random.generate (BuildSource >> wrap) )
 
         BuildSource sourceId ->
-            ( { model
-                | parsedSource =
-                    Maybe.map2
-                        (\url -> Result.map (DatabaseAdapter.buildSource now (model.source |> Maybe.mapOrElse .id sourceId) url))
-                        (model.selectedUrl |> Maybe.andThen Result.toMaybe)
-                        ((model.parsedSchema |> Maybe.map (Result.mapError Decode.errorToString))
-                            |> Maybe.orElse (model.loadedSchema |> Maybe.map (Result.map (\_ -> DatabaseSchema.empty) >> Result.mapError Backend.errorToString))
-                        )
-              }
-            , Cmd.none
-            )
+            Maybe.map2
+                (\url -> Result.map (DatabaseAdapter.buildSource now (model.source |> Maybe.mapOrElse .id sourceId) url))
+                (model.selectedUrl |> Maybe.andThen Result.toMaybe)
+                ((model.parsedSchema |> Maybe.map (Result.mapError Decode.errorToString))
+                    |> Maybe.orElse (model.loadedSchema |> Maybe.map (Result.map (\_ -> DatabaseSchema.empty) >> Result.mapError Backend.errorToString))
+                )
+                |> (\source -> ( { model | parsedSource = source }, Ports.track (Track.parsedDatabaseSource (source |> Maybe.withDefault (Err "Source not available"))) ))
 
         UiToggle htmlId ->
             ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )

@@ -55,17 +55,12 @@ type Msg
     = SelectMenu String
     | Logout
     | ToggleCollapse HtmlId
-    | SelectTab Tab
+    | InitTab Tab
     | DatabaseSourceMsg DatabaseSource.Msg
-    | DatabaseSourceDrop
     | SqlSourceMsg SqlSource.Msg
-    | SqlSourceDrop
     | JsonSourceMsg JsonSource.Msg
-    | JsonSourceDrop
     | ImportProjectMsg ImportProject.Msg
-    | ImportProjectDrop
     | SampleProjectMsg ImportProject.Msg
-    | SampleProjectDrop
     | CreateProject Project
     | CreateProjectNew Project
     | CreateProjectFromSource Source

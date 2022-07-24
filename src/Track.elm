@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, importProject, loadLayout, loadProject, notFoundLayout, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUpdateSchema, parsedJsonSource, parsedSQLSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateLayout, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlParser.SqlAdapter exposing (SqlSchema)
@@ -11,7 +11,6 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (TrackEvent)
 import Libs.Result as Result
 import Models.Project exposing (Project)
-import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
@@ -83,9 +82,14 @@ openUpdateSchema =
     { name = "open-update-schema", details = [], enabled = True }
 
 
-parsedSQLSource : SQLParsing msg -> Source -> TrackEvent
-parsedSQLSource =
-    parseSQLEvent
+parsedDatabaseSource : Result String Source -> TrackEvent
+parsedDatabaseSource =
+    parseDatabaseEvent
+
+
+parsedSqlSource : SQLParsing msg -> Source -> TrackEvent
+parsedSqlSource =
+    parseSqlEvent
 
 
 parsedJsonSource : Result String Source -> TrackEvent
@@ -96,11 +100,6 @@ parsedJsonSource =
 createProject : Project -> TrackEvent
 createProject project =
     projectEvent "create" (ProjectInfo.create project)
-
-
-importProject : Project -> TrackEvent
-importProject project =
-    projectEvent "import" (ProjectInfo.create project)
 
 
 loadProject : ProjectInfo -> TrackEvent
@@ -138,19 +137,9 @@ loadLayout =
     layoutEvent "load"
 
 
-updateLayout : ErdLayout -> TrackEvent
-updateLayout =
-    layoutEvent "update"
-
-
 deleteLayout : ErdLayout -> TrackEvent
 deleteLayout =
     layoutEvent "delete"
-
-
-notFoundLayout : LayoutName -> TrackEvent
-notFoundLayout _ =
-    { name = "not-found-layout", details = [], enabled = True }
 
 
 externalLink : String -> TrackEvent
@@ -177,6 +166,21 @@ findPathResult =
 -- HELPERS
 
 
+parseDatabaseEvent : Result String Source -> TrackEvent
+parseDatabaseEvent source =
+    { name = "parse" ++ (source |> Result.toMaybe |> Maybe.andThen .fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-database-source"
+    , details =
+        source
+            |> Result.fold (\e -> [ ( "error", e ) ])
+                (\s ->
+                    [ ( "table-count", s.tables |> Dict.size |> String.fromInt )
+                    , ( "relation-count", s.relations |> List.length |> String.fromInt )
+                    ]
+                )
+    , enabled = True
+    }
+
+
 type alias SQLParsing x =
     { x
         | lines : Maybe (List SourceLine)
@@ -186,8 +190,8 @@ type alias SQLParsing x =
     }
 
 
-parseSQLEvent : SQLParsing msg -> Source -> TrackEvent
-parseSQLEvent parser source =
+parseSqlEvent : SQLParsing msg -> Source -> TrackEvent
+parseSqlEvent parser source =
     { name = "parse" ++ (source.fromSample |> Maybe.mapOrElse (\_ -> "-sample") "") ++ "-sql-source"
     , details =
         [ ( "lines-count", parser.lines |> Maybe.mapOrElse List.length 0 |> String.fromInt )

@@ -199,7 +199,7 @@ update wrap now msg model =
                 |> Maybe.map
                     (\( parsedSchema, source ) ->
                         ( model |> setParsedSource (source |> Ok |> Just)
-                        , Cmd.batch [ T.send (model.callback ( Just parsedSchema, Ok source )), Ports.track (Track.parsedSQLSource parsedSchema source) ]
+                        , Cmd.batch [ T.send (model.callback ( Just parsedSchema, Ok source )), Ports.track (Track.parsedSqlSource parsedSchema source) ]
                         )
                     )
                 |> Maybe.withDefault ( model, Cmd.none )

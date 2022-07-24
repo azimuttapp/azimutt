@@ -35,8 +35,8 @@ import Time
 type alias Model msg =
     { id : HtmlId
     , source : Maybe Source
-    , sqlSource : SqlSource.Model msg
     , databaseSource : DatabaseSource.Model msg
+    , sqlSource : SqlSource.Model msg
     , jsonSource : JsonSource.Model msg
     , newSourceTab : Tab
     }
@@ -51,8 +51,8 @@ type Tab
 type Msg
     = Open (Maybe Source)
     | Close
-    | SqlSourceMsg SqlSource.Msg
     | DatabaseSourceMsg DatabaseSource.Msg
+    | SqlSourceMsg SqlSource.Msg
     | JsonSourceMsg JsonSource.Msg
     | UpdateTab Tab
 
@@ -61,8 +61,8 @@ init : (String -> msg) -> SchemaName -> Maybe Source -> Model msg
 init noop defaultSchema source =
     { id = Conf.ids.sourceUpdateDialog
     , source = source
-    , sqlSource = SqlSource.init defaultSchema source (\_ -> noop "project-settings-sql-source-callback")
     , databaseSource = DatabaseSource.init defaultSchema source (\_ -> noop "project-settings-database-source-callback")
+    , sqlSource = SqlSource.init defaultSchema source (\_ -> noop "project-settings-sql-source-callback")
     , jsonSource = JsonSource.init defaultSchema source (\_ -> noop "project-settings-json-source-callback")
     , newSourceTab = TabDatabase
     }
@@ -77,11 +77,11 @@ update wrap modalOpen noop now backendUrl defaultSchema msg model =
         Close ->
             ( Nothing, Cmd.none )
 
-        SqlSourceMsg message ->
-            model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now message))
-
         DatabaseSourceMsg message ->
             model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) backendUrl now message))
+
+        SqlSourceMsg message ->
+            model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now message))
 
         JsonSourceMsg message ->
             model |> mapMCmd (mapJsonSourceCmd (JsonSource.update (JsonSourceMsg >> wrap) now message))
@@ -114,16 +114,16 @@ view wrap sourceSet modalClose noop zone now opened model =
                         DatabaseConnection url ->
                             databaseModal wrap sourceSet close zone now titleId source url model.databaseSource
 
-                        SqlFileLocal filename _ updatedAt ->
+                        SqlLocalFile filename _ updatedAt ->
                             sqlLocalFileModal wrap sourceSet close noop zone now (model.id ++ "-sql") titleId source filename updatedAt model.sqlSource
 
-                        SqlFileRemote url _ ->
+                        SqlRemoteFile url _ ->
                             sqlRemoteFileModal wrap sourceSet close zone now titleId source url model.sqlSource
 
-                        JsonFileLocal filename _ updatedAt ->
+                        JsonLocalFile filename _ updatedAt ->
                             jsonLocalFileModal wrap sourceSet close noop zone now (model.id ++ "-json") titleId source filename updatedAt model.jsonSource
 
-                        JsonFileRemote url _ ->
+                        JsonRemoteFile url _ ->
                             jsonRemoteFileModal wrap sourceSet close zone now titleId source url model.jsonSource
 
                         AmlEditor ->
@@ -159,7 +159,7 @@ sqlLocalFileModal wrap sourceSet close noop zone now htmlId titleId source fileN
             ]
         , div [ class "mt-3" ] [ SqlSource.viewLocalInput (SqlSourceMsg >> wrap) noop (htmlId ++ "-local-file") ]
         , case ( source.kind, model.loadedFile |> Maybe.map (\( src, _ ) -> src.kind) ) of
-            ( SqlFileLocal name1 _ updated1, Just (SqlFileLocal name2 _ updated2) ) ->
+            ( SqlLocalFile name1 _ updated1, Just (SqlLocalFile name2 _ updated2) ) ->
                 localFileWarnings ( name1, name2 ) ( updated1, updated2 )
 
             _ ->
@@ -197,7 +197,7 @@ jsonLocalFileModal wrap sourceSet close noop zone now htmlId titleId source file
             ]
         , div [ class "mt-3" ] [ JsonSource.viewLocalInput (JsonSourceMsg >> wrap) noop (htmlId ++ "-local-file") ]
         , case ( source.kind, model.loadedSchema |> Maybe.map (\( src, _ ) -> src.kind) ) of
-            ( JsonFileLocal name1 _ updated1, Just (JsonFileLocal name2 _ updated2) ) ->
+            ( JsonLocalFile name1 _ updated1, Just (JsonLocalFile name2 _ updated2) ) ->
                 localFileWarnings ( name1, name2 ) ( updated1, updated2 )
 
             _ ->
@@ -265,15 +265,23 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
             , Bool.cond (model.newSourceTab == TabSql) Button.primary1 Button.white1 Tw.primary [ onClick (TabSql |> UpdateTab |> wrap), class "ml-3" ] [ text "SQL" ]
             , Bool.cond (model.newSourceTab == TabJson) Button.primary1 Button.white1 Tw.primary [ onClick (TabJson |> UpdateTab |> wrap), class "ml-3" ] [ text "JSON" ]
             ]
-        , case model.newSourceTab of
-            TabDatabase ->
-                newDatabaseSource wrap (htmlId ++ "-database") model.databaseSource
+        , div [ class "mt-3" ]
+            (case model.newSourceTab of
+                TabDatabase ->
+                    [ DatabaseSource.viewInput (DatabaseSourceMsg >> wrap) (htmlId ++ "-database") model.databaseSource
+                    , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model.databaseSource
+                    ]
 
-            TabSql ->
-                newSqlSource wrap noop (htmlId ++ "-sql") model.sqlSource
+                TabSql ->
+                    [ SqlSource.viewInput (SqlSourceMsg >> wrap) noop (htmlId ++ "-sql") model.sqlSource
+                    , SqlSource.viewParsing (SqlSourceMsg >> wrap) model.sqlSource
+                    ]
 
-            TabJson ->
-                newJsonSource wrap noop (htmlId ++ "-json") model.jsonSource
+                TabJson ->
+                    [ JsonSource.viewInput (JsonSourceMsg >> wrap) noop (htmlId ++ "-json") model.jsonSource
+                    , JsonSource.viewParsing (JsonSourceMsg >> wrap) model.jsonSource
+                    ]
+            )
         ]
     , case model.newSourceTab of
         TabDatabase ->
@@ -285,30 +293,6 @@ newSourceModal wrap sourceSet close noop htmlId titleId model =
         TabJson ->
             newSourceButtons sourceSet close model.jsonSource.parsedSource
     ]
-
-
-newDatabaseSource : (Msg -> msg) -> HtmlId -> DatabaseSource.Model msg -> Html msg
-newDatabaseSource wrap htmlId model =
-    div [ class "mt-3" ]
-        [ DatabaseSource.viewInput (DatabaseSourceMsg >> wrap) htmlId model
-        , DatabaseSource.viewParsing (DatabaseSourceMsg >> wrap) model
-        ]
-
-
-newSqlSource : (Msg -> msg) -> (String -> msg) -> HtmlId -> SqlSource.Model msg -> Html msg
-newSqlSource wrap noop htmlId model =
-    div [ class "mt-3" ]
-        [ SqlSource.viewInput (SqlSourceMsg >> wrap) noop htmlId model
-        , SqlSource.viewParsing (SqlSourceMsg >> wrap) model
-        ]
-
-
-newJsonSource : (Msg -> msg) -> (String -> msg) -> HtmlId -> JsonSource.Model msg -> Html msg
-newJsonSource wrap noop htmlId model =
-    div [ class "mt-3" ]
-        [ JsonSource.viewInput (JsonSourceMsg >> wrap) noop htmlId model
-        , JsonSource.viewParsing (JsonSourceMsg >> wrap) model
-        ]
 
 
 newSourceButtons : (Source -> msg) -> msg -> Maybe (Result String Source) -> Html msg

@@ -68,7 +68,7 @@ type alias Model =
     , sharing : Maybe SharingDialog
     , upload : Maybe ProjectUploadDialog.Model
     , settings : Maybe ProjectSettingsDialog
-    , sourceUpload : Maybe (SourceUpdateDialog.Model Msg)
+    , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
     , embedSourceParsing : Maybe (EmbedSourceParsingDialog.Model Msg)
     , help : Maybe HelpDialog
 

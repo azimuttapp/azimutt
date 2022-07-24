@@ -3,16 +3,15 @@ module Conf exposing (SampleSchema, blogPosts, canvas, constants, hotkeys, ids, 
 import Components.Atoms.Icon exposing (Icon(..))
 import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
-import Libs.Bool as B
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
+import Libs.Url as Url
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceName exposing (SourceName)
-import Url
 
 
 constants :
@@ -44,7 +43,7 @@ constants =
     , azimuttRoadmap = github ++ "/projects/1"
     , azimuttBugReport = github ++ "/issues"
     , azimuttFeatureRequests = github ++ "/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22"
-    , azimuttNewIssue = \title body -> github ++ "/issues/new/?title=" ++ Url.percentEncode title ++ B.cond (body == "") "" ("&body=" ++ Url.percentEncode body)
+    , azimuttNewIssue = \title body -> github ++ "/issues/new/?" ++ ([ ( "title", title ), ( "body", body ) ] |> List.filter (\( _, v ) -> v /= "") |> Url.buildQueryString)
     , azimuttDiscussionFindPath = github ++ "/discussions/7"
     , azimuttDiscussionSearch = github ++ "/discussions/8"
     , azimuttDiscussionCanvas = github ++ "/discussions/9"

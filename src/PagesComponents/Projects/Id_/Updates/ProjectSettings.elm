@@ -13,7 +13,7 @@ import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDia
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
 import Services.Backend as Backend
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -23,7 +23,7 @@ type alias Model x =
     { x
         | erd : Maybe Erd
         , settings : Maybe ProjectSettingsDialog
-        , sourceUpload : Maybe (SourceUpdateDialog.Model Msg)
+        , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
     }
 
 
@@ -52,7 +52,7 @@ handleProjectSettings now backendUrl msg model =
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Toasts.info Toast ("Source " ++ source.name ++ " has been deleted from your project.") )
 
         PSSourceUpdate message ->
-            model |> mapSourceUploadCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now backendUrl (model.erd |> Erd.defaultSchemaM) message)
+            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now backendUrl (model.erd |> Erd.defaultSchemaM) message)
 
         PSSourceSet source ->
             if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then

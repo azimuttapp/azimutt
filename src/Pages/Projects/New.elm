@@ -27,7 +27,7 @@ import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapDatabaseSourceMCmd, mapImportProjectM, mapImportProjectMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapSampleProjectM, mapSampleProjectMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapImportProjectMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapSampleProjectMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
@@ -91,6 +91,9 @@ init req =
                         Just "project" ->
                             TabProject
 
+                        Just "empty" ->
+                            TabEmptyProject
+
                         Just "samples" ->
                             TabSamples
 
@@ -113,8 +116,8 @@ init req =
       , openedCollapse = ""
       , projects = []
       , selectedTab = TabSamples
-      , sqlSource = Nothing
       , databaseSource = Nothing
+      , sqlSource = Nothing
       , jsonSource = Nothing
       , importProject = Nothing
       , sampleProject = Nothing
@@ -145,7 +148,7 @@ initTab tab model =
     let
         clean : Model
         clean =
-            { model | selectedTab = tab, sqlSource = Nothing, databaseSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
+            { model | selectedTab = tab, databaseSource = Nothing, sqlSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
     in
     case tab of
         TabDatabase ->
@@ -183,7 +186,7 @@ update req now backendUrl msg model =
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
 
-        SelectTab tab ->
+        InitTab tab ->
             ( model |> initTab tab, Cmd.none )
 
         DatabaseSourceMsg message ->
@@ -198,68 +201,21 @@ update req now backendUrl msg model =
                                 cmd
                     )
 
-        DatabaseSourceDrop ->
-            ( { model | databaseSource = DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "drop-database-source") |> Just }, Cmd.none )
-
         SqlSourceMsg message ->
             (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message))
-                |> Tuple.mapSecond
-                    (\cmd ->
-                        case message of
-                            SqlSource.BuildSource ->
-                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
-
-                            _ ->
-                                cmd
-                    )
-
-        SqlSourceDrop ->
-            ( { model | sqlSource = SqlSource.init Conf.schema.default Nothing (\_ -> Noop "drop-sql-source") |> Just }, Cmd.none )
+                |> Tuple.mapSecond (\cmd -> B.cond (message == SqlSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         JsonSourceMsg message ->
             (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message))
-                |> Tuple.mapSecond
-                    (\cmd ->
-                        case message of
-                            JsonSource.BuildSource ->
-                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
-
-                            _ ->
-                                cmd
-                    )
-
-        JsonSourceDrop ->
-            ( { model | jsonSource = JsonSource.init Conf.schema.default Nothing (\_ -> Noop "drop-json-source") |> Just }, Cmd.none )
+                |> Tuple.mapSecond (\cmd -> B.cond (message == JsonSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         ImportProjectMsg message ->
             (model |> mapImportProjectMCmd (ImportProject.update ImportProjectMsg message))
-                |> Tuple.mapSecond
-                    (\cmd ->
-                        case message of
-                            ImportProject.BuildProject ->
-                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
-
-                            _ ->
-                                cmd
-                    )
-
-        ImportProjectDrop ->
-            ( model |> mapImportProjectM (\_ -> ImportProject.init), Cmd.none )
+                |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         SampleProjectMsg message ->
             (model |> mapSampleProjectMCmd (ImportProject.update SampleProjectMsg message))
-                |> Tuple.mapSecond
-                    (\cmd ->
-                        case message of
-                            ImportProject.BuildProject ->
-                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
-
-                            _ ->
-                                cmd
-                    )
-
-        SampleProjectDrop ->
-            ( model |> mapSampleProjectM (\_ -> ImportProject.init), Cmd.none )
+                |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         CreateProject project ->
             ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
@@ -323,7 +279,7 @@ handleJsMessage now msg model =
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> JsonSourceMsg) )
 
             else
-                ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
+                ( model, Toasts.error Toast ("Unhandled local file kind '" ++ kind ++ "'") )
 
         GotToast level message ->
             ( model, Toasts.create Toast level message )

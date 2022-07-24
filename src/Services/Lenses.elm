@@ -94,9 +94,7 @@ module Services.Lenses exposing
     , mapShown
     , mapShownColumns
     , mapShownTables
-    , mapSourceUploadCmd
-    , mapSourceUploadM
-    , mapSourceUploadMCmd
+    , mapSourceUpdateCmd
     , mapSources
     , mapSourcesL
     , mapSqlSourceCmd
@@ -223,7 +221,7 @@ module Services.Lenses exposing
     , setShownColumns
     , setShownTables
     , setSize
-    , setSourceUpload
+    , setSourceUpdate
     , setSources
     , setSqlSource
     , setStatus
@@ -1215,24 +1213,14 @@ mapSourcesL =
     mapL_ .sources setSources
 
 
-setSourceUpload : v -> { item | sourceUpload : v } -> { item | sourceUpload : v }
-setSourceUpload =
-    set_ .sourceUpload (\value item -> { item | sourceUpload = value })
+setSourceUpdate : v -> { item | sourceUpdate : v } -> { item | sourceUpdate : v }
+setSourceUpdate =
+    set_ .sourceUpdate (\value item -> { item | sourceUpdate = value })
 
 
-mapSourceUploadM : (v -> v) -> { item | sourceUpload : Maybe v } -> { item | sourceUpload : Maybe v }
-mapSourceUploadM =
-    mapM_ .sourceUpload setSourceUpload
-
-
-mapSourceUploadCmd : (v -> ( v, Cmd msg )) -> { item | sourceUpload : v } -> ( { item | sourceUpload : v }, Cmd msg )
-mapSourceUploadCmd =
-    mapCmd_ .sourceUpload setSourceUpload
-
-
-mapSourceUploadMCmd : (v -> ( v, Cmd msg )) -> { item | sourceUpload : Maybe v } -> ( { item | sourceUpload : Maybe v }, Cmd msg )
-mapSourceUploadMCmd =
-    mapMCmd_ .sourceUpload setSourceUpload
+mapSourceUpdateCmd : (v -> ( v, Cmd msg )) -> { item | sourceUpdate : v } -> ( { item | sourceUpdate : v }, Cmd msg )
+mapSourceUpdateCmd =
+    mapCmd_ .sourceUpdate setSourceUpdate
 
 
 setSqlSource : v -> { item | sqlSource : v } -> { item | sqlSource : v }

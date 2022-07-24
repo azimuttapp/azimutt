@@ -306,10 +306,10 @@ upgradeProjectSource tables relations fromSample source =
     , kind =
         case source.source of
             LocalFileV1 name size modified ->
-                SqlFileLocal name size modified
+                SqlLocalFile name size modified
 
             RemoteFileV1 url size ->
-                SqlFileRemote url size
+                SqlRemoteFile url size
     , content =
         let
             sources : Dict Int String

@@ -93,19 +93,19 @@ viewSource htmlId _ zone source =
                     ]
     in
     case source.kind of
-        SqlFileLocal path _ modified ->
-            view DocumentText "File last modified on " modified (path ++ " file")
-
-        SqlFileRemote url _ ->
-            view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
-
         DatabaseConnection url ->
             view Database "Last fetched on " source.updatedAt ("Database " ++ url)
 
-        JsonFileLocal path _ modified ->
+        SqlLocalFile path _ modified ->
+            view DocumentText "File last modified on " modified (path ++ " file")
+
+        SqlRemoteFile url _ ->
+            view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
+
+        JsonLocalFile path _ modified ->
             view Code "File last modified on " modified (path ++ " file")
 
-        JsonFileRemote url _ ->
+        JsonRemoteFile url _ ->
             view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
 
         AmlEditor ->

@@ -404,7 +404,7 @@ handleJsMessage now currentLayout msg model =
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
-                ( model, Toasts.error Toast ("Unhandled local file for " ++ kind ++ " source") )
+                ( model, Toasts.error Toast ("Unhandled local file kind '" ++ kind ++ "'") )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey

@@ -94,7 +94,7 @@ viewTab selected tab =
             ]
 
     else
-        a [ href "", onClick (SelectTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-gray-50 text-gray-900" ] ] ]
+        a [ href "", onClick (InitTab tab.tab), css [ "border-transparent text-gray-900 border-l-4 px-3 py-2 flex items-center text-sm font-medium", hover [ "bg-gray-50 text-gray-900" ] ] ]
             [ Icon.outline tab.icon "-ml-1 mr-3 text-gray-400"
             , span [ css [ "truncate" ] ] tab.content
             ]
@@ -128,7 +128,7 @@ viewDatabaseSourceTab htmlId model =
         [ viewHeading "Extract your database schema" [ text "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored." ]
         , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
         , DatabaseSource.viewParsing DatabaseSourceMsg model
-        , viewSourceActionButtons DatabaseSourceDrop model.parsedSource
+        , viewSourceActionButtons (InitTab TabDatabase) model.parsedSource
         ]
 
 
@@ -140,7 +140,7 @@ viewSqlSourceTab htmlId openedCollapse model =
         , div [ class "mt-3" ] [ viewHowToGetSchemaCollapse htmlId openedCollapse ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , SqlSource.viewParsing SqlSourceMsg model
-        , viewSourceActionButtons SqlSourceDrop model.parsedSource
+        , viewSourceActionButtons (InitTab TabSql) model.parsedSource
         ]
 
 
@@ -151,7 +151,7 @@ viewJsonSourceTab htmlId openedCollapse model =
         , div [ class "mt-6" ] [ JsonSource.viewInput JsonSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewJsonSourceSchemaCollapse htmlId openedCollapse ]
         , JsonSource.viewParsing JsonSourceMsg model
-        , viewSourceActionButtons JsonSourceDrop model.parsedSource
+        , viewSourceActionButtons (InitTab TabJson) model.parsedSource
         ]
 
 
@@ -180,7 +180,7 @@ viewImportProjectTab htmlId zone projects model =
                 (\project ->
                     div [ css [ "mt-6" ] ]
                         [ div [ css [ "flex justify-end" ] ]
-                            (Button.white3 Tw.primary [ onClick ImportProjectDrop ] [ text "Don't import" ]
+                            (Button.white3 Tw.primary [ onClick (InitTab TabProject) ] [ text "Don't import" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.map
@@ -224,7 +224,7 @@ viewSampleProjectTab zone projects model =
                 (\project ->
                     div [ css [ "mt-6" ] ]
                         [ div [ css [ "flex justify-end" ] ]
-                            (Button.white3 Tw.primary [ onClick SampleProjectDrop ] [ text "Cancel" ]
+                            (Button.white3 Tw.primary [ onClick (InitTab TabSamples) ] [ text "Cancel" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
