@@ -174,7 +174,7 @@ viewParsing wrap zone currentProject model =
                         ]
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show fileName (model.loadedProject |> Maybe.andThen Result.toMaybe) |> Html.map wrap
-                        , model.loadedProject |> Maybe.mapOrElse SourceLogs.viewHttpError (div [] [])
+                        , model.loadedProject |> Maybe.mapOrElse (Result.mapError Http.errorToString >> SourceLogs.viewError) (div [] [])
                         , model.parsedProject |> Maybe.mapOrElse (Result.fold viewLogsError (viewLogsProject zone isSample)) (div [] [])
                         , model.project |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]

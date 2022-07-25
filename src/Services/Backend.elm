@@ -3,6 +3,8 @@ module Services.Backend exposing (Error, Url, errorToString, getDatabaseSchema, 
 import Http
 import Json.Decode as Decode
 import Json.Encode as Encode
+import Libs.Bool as Bool
+import Libs.Http as Http
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 
 
@@ -47,33 +49,21 @@ handleResponse : Http.Response String -> Result Error String
 handleResponse response =
     case response of
         Http.BadUrl_ badUrl ->
-            Err (Error ("Bad url: " ++ badUrl))
+            Http.BadUrl badUrl |> Http.errorToString |> Error |> Err
 
         Http.Timeout_ ->
-            Err (Error "Timeout")
+            Http.Timeout |> Http.errorToString |> Error |> Err
 
         Http.NetworkError_ ->
-            Err (Error "Network error")
+            Http.NetworkError |> Http.errorToString |> Error |> Err
 
         Http.BadStatus_ metadata body ->
             case body |> Decode.decodeString errorDecoder of
                 Ok err ->
-                    Err (Error (metadata.statusText ++ ": " ++ err))
+                    metadata.statusText ++ ": " ++ err |> Error |> Err
 
                 Err _ ->
-                    Err
-                        (Error
-                            ("Unknown "
-                                ++ metadata.statusText
-                                ++ " error"
-                                ++ (if String.isEmpty body then
-                                        ""
-
-                                    else
-                                        ": " ++ body
-                                   )
-                            )
-                        )
+                    (Http.BadStatus metadata.statusCode |> Http.errorToString) ++ (Bool.cond (String.isEmpty body) "" ": " ++ body) |> Error |> Err
 
         Http.GoodStatus_ _ body ->
             Ok body

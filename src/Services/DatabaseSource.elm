@@ -184,7 +184,7 @@ viewParsing wrap model =
                         ]
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show dbName (model.loadedSchema |> Maybe.andThen Result.toMaybe) |> Html.map wrap
-                        , model.loadedSchema |> Maybe.mapOrElse SourceLogs.viewBackendError (div [] [])
+                        , model.loadedSchema |> Maybe.mapOrElse (Result.mapError Backend.errorToString >> SourceLogs.viewError) (div [] [])
                         , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show model.defaultSchema) (div [] []) |> Html.map wrap
                         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]

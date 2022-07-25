@@ -348,6 +348,7 @@ viewLogs filename model =
         , model.parsedSchema |> Maybe.andThen .commands |> Maybe.mapOrElse (viewLogsCommands (model.parsedSchema |> Maybe.andThen .statements)) (div [] [])
         , viewLogsErrors (model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse .errors [])
         , model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse (normalizeSchema >> Ok >> SourceLogs.viewParsedSchema UiToggle model.defaultSchema show) (div [] [])
+        , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewError (div [] [])
         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
         ]
 

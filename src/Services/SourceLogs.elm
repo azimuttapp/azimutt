@@ -1,11 +1,9 @@
-module Services.SourceLogs exposing (SchemaLike, TableLike, viewBackendError, viewContainer, viewFile, viewHttpError, viewParsedSchema, viewResult)
+module Services.SourceLogs exposing (SchemaLike, TableLike, viewContainer, viewError, viewFile, viewParsedSchema, viewResult)
 
 import Html exposing (Html, div, pre, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
-import Http
 import Json.Decode as Decode
-import Libs.Http as Http
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
@@ -13,7 +11,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId
-import Services.Backend as Backend
 
 
 type alias SchemaLike x y z =
@@ -44,26 +41,6 @@ viewFile toggle show filename content =
                     ]
             )
             (div [] [ div [] [ text ("Loading " ++ filename ++ ".") ] ])
-
-
-viewBackendError : Result Backend.Error a -> Html msg
-viewBackendError result =
-    case result of
-        Ok _ ->
-            div [] []
-
-        Err err ->
-            div [ class "text-red-500" ] [ text (Backend.errorToString err) ]
-
-
-viewHttpError : Result Http.Error a -> Html msg
-viewHttpError result =
-    case result of
-        Ok _ ->
-            div [] []
-
-        Err err ->
-            div [ class "text-red-500" ] [ text ("Http error: " ++ Http.errorToString err) ]
 
 
 viewParsedSchema : (HtmlId -> msg) -> HtmlId -> SchemaName -> Result Decode.Error (SchemaLike x y z) -> Html msg
@@ -111,3 +88,13 @@ viewParsedSchema toggle show defaultSchema result =
 viewResult : Result String a -> Html msg
 viewResult _ =
     div [] [ text "Done!" ]
+
+
+viewError : Result String a -> Html msg
+viewError result =
+    case result of
+        Ok _ ->
+            div [] []
+
+        Err err ->
+            div [ class "text-red-500" ] [ text err ]

@@ -214,6 +214,7 @@ viewParsing wrap model =
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show fileName (model.loadedSchema |> Maybe.map Tuple.second) |> Html.map wrap
                         , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show model.defaultSchema) (div [] []) |> Html.map wrap
+                        , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewError (div [] [])
                         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]
                     ]

@@ -1,7 +1,7 @@
 module Pages.Projects.New exposing (Model, Msg, page)
 
 import Components.Molecules.Dropdown as Dropdown
-import Conf exposing (SampleSchema)
+import Conf
 import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
@@ -65,57 +65,11 @@ title =
 
 init : Request.With Params -> ( Model, Cmd Msg )
 init req =
-    let
-        sample : Maybe SampleSchema
-        sample =
-            req.query |> Dict.get "sample" |> Maybe.andThen (\key -> Conf.schemaSamples |> Dict.get key)
-
-        tab : Maybe String
-        tab =
-            req.query |> Dict.get "tab"
-
-        selectedTab : Tab
-        selectedTab =
-            (sample |> Maybe.map (\_ -> TabSamples))
-                |> Maybe.withDefault
-                    (case tab of
-                        Just "database" ->
-                            TabDatabase
-
-                        Just "sql" ->
-                            TabSql
-
-                        Just "json" ->
-                            TabJson
-
-                        Just "project" ->
-                            TabProject
-
-                        Just "empty" ->
-                            TabEmptyProject
-
-                        Just "samples" ->
-                            TabSamples
-
-                        -- legacy names:
-                        Just "schema" ->
-                            TabSql
-
-                        Just "import" ->
-                            TabProject
-
-                        Just "sample" ->
-                            TabSamples
-
-                        _ ->
-                            TabDatabase
-                    )
-    in
     ( { selectedMenu = "New project"
       , mobileMenuOpen = False
       , openedCollapse = ""
       , projects = []
-      , selectedTab = TabSamples
+      , selectedTab = TabDatabase
       , databaseSource = Nothing
       , sqlSource = Nothing
       , jsonSource = Nothing
@@ -126,7 +80,6 @@ init req =
       , confirm = Nothing
       , openedDialogs = []
       }
-        |> initTab selectedTab
     , Cmd.batch
         ([ Ports.setMeta
             { title = Just title
@@ -138,36 +91,16 @@ init req =
          , Ports.trackPage "new-project"
          , Ports.listProjects
          ]
-            ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleProjectMsg (ImportProject.GetRemoteFile s.url (Just s.key))) ]) [])
+            ++ ((req.query |> Dict.get "database" |> Maybe.map (\value -> [ T.send (InitTab TabDatabase), T.sendAfter 1 (DatabaseSourceMsg (DatabaseSource.GetSchema value)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\value -> [ T.send (InitTab TabSql), T.sendAfter 1 (SqlSourceMsg (SqlSource.GetRemoteFile value)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\value -> [ T.send (InitTab TabJson), T.sendAfter 1 (JsonSourceMsg (JsonSource.GetRemoteFile value)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "empty" |> Maybe.map (\_ -> [ T.send (InitTab TabEmptyProject) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "project" |> Maybe.map (\value -> [ T.send (InitTab TabProject), T.sendAfter 1 (ImportProjectMsg (ImportProject.GetRemoteFile value Nothing)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "sample" |> Maybe.map (\value -> T.send (InitTab TabSamples) :: (Conf.schemaSamples |> Dict.get value |> Maybe.mapOrElse (\s -> [ T.sendAfter 1 (SampleProjectMsg (ImportProject.GetRemoteFile s.url (Just s.key))) ]) [])))
+                    |> Maybe.withDefault [ T.send (InitTab TabDatabase) ]
+               )
         )
     )
-
-
-initTab : Tab -> Model -> Model
-initTab tab model =
-    let
-        clean : Model
-        clean =
-            { model | selectedTab = tab, databaseSource = Nothing, sqlSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
-    in
-    case tab of
-        TabDatabase ->
-            { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-database-source")) }
-
-        TabSql ->
-            { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
-
-        TabJson ->
-            { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
-
-        TabEmptyProject ->
-            clean
-
-        TabProject ->
-            { clean | importProject = Just ImportProject.init }
-
-        TabSamples ->
-            { clean | sampleProject = Just ImportProject.init }
 
 
 
@@ -187,7 +120,31 @@ update req now backendUrl msg model =
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
 
         InitTab tab ->
-            ( model |> initTab tab, Cmd.none )
+            ( let
+                clean : Model
+                clean =
+                    { model | selectedTab = tab, databaseSource = Nothing, sqlSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
+              in
+              case tab of
+                TabDatabase ->
+                    { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-database-source")) }
+
+                TabSql ->
+                    { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
+
+                TabJson ->
+                    { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
+
+                TabEmptyProject ->
+                    clean
+
+                TabProject ->
+                    { clean | importProject = Just ImportProject.init }
+
+                TabSamples ->
+                    { clean | sampleProject = Just ImportProject.init }
+            , Cmd.none
+            )
 
         DatabaseSourceMsg message ->
             (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg backendUrl now message))
