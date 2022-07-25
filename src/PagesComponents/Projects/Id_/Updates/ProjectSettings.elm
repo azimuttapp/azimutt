@@ -8,12 +8,14 @@ import Libs.Task as T
 import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.Source as Source
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), SourceUploadDialog)
+import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
+import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
-import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapParsingCmd, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUploadMCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings, setSourceUpload)
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Backend as Backend
+import Services.Lenses exposing (mapCollapseTableColumns, mapColumnBasicTypes, mapEnabled, mapErdM, mapHiddenColumns, mapProps, mapRelations, mapRemoveViews, mapRemovedSchemas, mapSourceUpdateCmd, setColumnOrder, setDefaultSchema, setList, setMax, setRelationStyle, setRemovedTables, setSettings)
 import Services.Toasts as Toasts
+import Time
 import Track
 
 
@@ -21,12 +23,12 @@ type alias Model x =
     { x
         | erd : Maybe Erd
         , settings : Maybe ProjectSettingsDialog
-        , sourceUpload : Maybe SourceUploadDialog
+        , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
     }
 
 
-handleProjectSettings : ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
-handleProjectSettings msg model =
+handleProjectSettings : Time.Posix -> Backend.Url -> ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
+handleProjectSettings now backendUrl msg model =
     case msg of
         PSOpen ->
             ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog), Ports.track Track.openSettings ] )
@@ -49,20 +51,15 @@ handleProjectSettings msg model =
         PSSourceDelete source ->
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Toasts.info Toast ("Source " ++ source.name ++ " has been deleted from your project.") )
 
-        PSSourceUploadOpen source ->
-            ( model |> setSourceUpload (Just { id = Conf.ids.sourceUploadDialog, parsing = SqlSourceUpload.init (model.erd |> Erd.defaultSchemaM) (model.erd |> Maybe.map (\p -> p.project.id)) source (\_ -> Noop "project-settings-source-parsed") }), T.sendAfter 1 (ModalOpen Conf.ids.sourceUploadDialog) )
+        PSSourceUpdate message ->
+            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now backendUrl (model.erd |> Erd.defaultSchemaM) message)
 
-        PSSourceUploadClose ->
-            ( model |> setSourceUpload Nothing, Cmd.none )
+        PSSourceSet source ->
+            if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then
+                ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.refreshSource source) ] )
 
-        PSSqlSourceMsg message ->
-            model |> mapSourceUploadMCmd (mapParsingCmd (SqlSourceUpload.update message (PSSqlSourceMsg >> ProjectSettingsMsg)))
-
-        PSSourceRefresh source ->
-            ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith source)), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.refreshSource source) ] )
-
-        PSSourceAdd source ->
-            ( model |> mapErdM (Erd.mapSources (\sources -> sources ++ [ source ])), Cmd.batch [ T.send (ModalClose (ProjectSettingsMsg PSSourceUploadClose)), Ports.track (Track.addSource source) ] )
+            else
+                ( model |> mapErdM (Erd.mapSources (List.add source)), Cmd.batch [ T.send (ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)), Ports.track (Track.addSource source) ] )
 
         PSDefaultSchemaUpdate value ->
             ( model |> mapErdM (Erd.mapSettings (setDefaultSchema value)), Cmd.none )

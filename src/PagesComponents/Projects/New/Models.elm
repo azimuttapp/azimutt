@@ -6,12 +6,14 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw
 import Libs.Task as T
 import Models.Project exposing (Project)
-import Models.Project.ProjectId exposing (ProjectId)
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
-import Services.ProjectImport exposing (ProjectImport, ProjectImportMsg)
-import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
+import Services.DatabaseSource as DatabaseSource
+import Services.ImportProject as ImportProject exposing (Model, Msg)
+import Services.JsonSource as JsonSource
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared exposing (Confirm)
 
@@ -22,9 +24,11 @@ type alias Model =
     , openedCollapse : HtmlId
     , projects : List ProjectInfo
     , selectedTab : Tab
-    , sqlSourceUpload : Maybe (SqlSourceUpload Msg)
-    , projectImport : Maybe ProjectImport
-    , sampleSelection : Maybe ProjectImport
+    , databaseSource : Maybe (DatabaseSource.Model Msg)
+    , sqlSource : Maybe (SqlSource.Model Msg)
+    , jsonSource : Maybe (JsonSource.Model Msg)
+    , importProject : Maybe ImportProject.Model
+    , sampleProject : Maybe ImportProject.Model
 
     -- global attrs
     , openedDropdown : HtmlId
@@ -35,9 +39,12 @@ type alias Model =
 
 
 type Tab
-    = Schema
-    | Import
-    | Sample
+    = TabDatabase
+    | TabSql
+    | TabJson
+    | TabEmptyProject
+    | TabProject
+    | TabSamples
 
 
 type alias ConfirmDialog =
@@ -48,17 +55,16 @@ type Msg
     = SelectMenu String
     | Logout
     | ToggleCollapse HtmlId
-    | SelectTab Tab
-    | SqlSourceUploadMsg SqlSourceUploadMsg
-    | SqlSourceUploadDrop
-    | SqlSourceUploadCreate ProjectId Source
-    | ProjectImportMsg ProjectImportMsg
-    | ProjectImportDrop
-    | ProjectImportCreate Project
-    | ProjectImportCreateNew ProjectId Project
-    | SampleSelectMsg ProjectImportMsg
-    | SampleSelectDrop
-    | SampleSelectCreate Project
+    | InitTab Tab
+    | DatabaseSourceMsg DatabaseSource.Msg
+    | SqlSourceMsg SqlSource.Msg
+    | JsonSourceMsg JsonSource.Msg
+    | ImportProjectMsg ImportProject.Msg
+    | SampleProjectMsg ImportProject.Msg
+    | CreateProject Project
+    | CreateProjectNew Project
+    | CreateProjectFromSource Source
+    | CreateEmptyProject ProjectName
       -- global messages
     | DropdownToggle HtmlId
     | Toast Toasts.Msg

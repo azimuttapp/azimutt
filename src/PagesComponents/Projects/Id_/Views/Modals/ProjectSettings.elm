@@ -26,6 +26,7 @@ import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.Table exposing (Table)
 import Models.RelationStyle as RelationStyle
+import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), confirm)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import Ports
@@ -75,12 +76,12 @@ viewSource htmlId _ zone source =
                             (htmlId ++ "-" ++ SourceId.toString source.id)
                             [ span [] [ Icon.solid icon "inline", text source.name ] |> Tooltip.b labelTitle ]
                             source.enabled
-                            (ProjectSettingsMsg (PSSourceToggle source))
+                            (source |> PSSourceToggle |> ProjectSettingsMsg)
                         , div []
-                            [ button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen (Just source))), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor || source.fromSample /= Nothing) "hidden" "" ] ]
+                            [ button [ type_ "button", onClick (source |> Just |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ focus [ "outline-none" ], B.cond (source.kind == AmlEditor || source.fromSample /= Nothing) "hidden" "" ] ]
                                 [ Icon.solid Refresh "inline" ]
                                 |> Tooltip.bl "Refresh this source"
-                            , button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceDelete source) |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
+                            , button [ type_ "button", onClick (source |> PSSourceDelete |> ProjectSettingsMsg |> confirm ("Delete " ++ source.name ++ " source?") (text "Are you really sure?")), css [ focus [ "outline-none" ] ] ]
                                 [ Icon.solid Trash "inline" ]
                                 |> Tooltip.bl "Delete this source"
                             ]
@@ -92,10 +93,19 @@ viewSource htmlId _ zone source =
                     ]
     in
     case source.kind of
-        SqlFileLocal path _ modified ->
+        DatabaseConnection url ->
+            view Database "Last fetched on " source.updatedAt ("Database " ++ url)
+
+        SqlLocalFile path _ modified ->
             view DocumentText "File last modified on " modified (path ++ " file")
 
-        SqlFileRemote url _ ->
+        SqlRemoteFile url _ ->
+            view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
+
+        JsonLocalFile path _ modified ->
+            view Code "File last modified on " modified (path ++ " file")
+
+        JsonRemoteFile url _ ->
             view CloudDownload "Last fetched on " source.updatedAt ("File from " ++ url)
 
         AmlEditor ->
@@ -104,7 +114,7 @@ viewSource htmlId _ zone source =
 
 viewAddSource : HtmlId -> ProjectId -> Html Msg
 viewAddSource _ _ =
-    button [ type_ "button", onClick (ProjectSettingsMsg (PSSourceUploadOpen Nothing)), css [ "inline-flex items-center px-3 py-2 w-full text-left", focus [ "outline-none" ] ] ]
+    button [ type_ "button", onClick (Nothing |> SourceUpdateDialog.Open |> PSSourceUpdate |> ProjectSettingsMsg), css [ "inline-flex items-center px-3 py-2 w-full text-left", focus [ "outline-none" ] ] ]
         [ Icon.solid Plus "inline", text "Add source" ]
 
 

@@ -4,6 +4,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileName as FileName exposing (FileName)
 import Libs.Models.FileSize as FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt as FileUpdatedAt exposing (FileUpdatedAt)
@@ -11,8 +12,11 @@ import Libs.Models.FileUrl as FileUrl exposing (FileUrl)
 
 
 type SourceKind
-    = SqlFileLocal FileName FileSize FileUpdatedAt
-    | SqlFileRemote FileUrl FileSize
+    = DatabaseConnection DatabaseUrl
+    | SqlLocalFile FileName FileSize FileUpdatedAt
+    | SqlRemoteFile FileUrl FileSize
+    | JsonLocalFile FileName FileSize FileUpdatedAt
+    | JsonRemoteFile FileUrl FileSize
     | AmlEditor
 
 
@@ -29,10 +33,19 @@ isUser kind =
 path : SourceKind -> String
 path sourceContent =
     case sourceContent of
-        SqlFileLocal name _ _ ->
+        DatabaseConnection url ->
+            url
+
+        SqlLocalFile name _ _ ->
             name
 
-        SqlFileRemote url _ ->
+        SqlRemoteFile url _ ->
+            url
+
+        JsonLocalFile name _ _ ->
+            name
+
+        JsonRemoteFile url _ ->
             url
 
         AmlEditor ->
@@ -42,10 +55,19 @@ path sourceContent =
 same : SourceKind -> SourceKind -> Bool
 same k2 k1 =
     case ( k1, k2 ) of
-        ( SqlFileLocal _ _ _, SqlFileLocal _ _ _ ) ->
+        ( DatabaseConnection _, DatabaseConnection _ ) ->
             True
 
-        ( SqlFileRemote _ _, SqlFileRemote _ _ ) ->
+        ( SqlLocalFile _ _ _, SqlLocalFile _ _ _ ) ->
+            True
+
+        ( SqlRemoteFile _ _, SqlRemoteFile _ _ ) ->
+            True
+
+        ( JsonLocalFile _ _ _, JsonLocalFile _ _ _ ) ->
+            True
+
+        ( JsonRemoteFile _ _, JsonRemoteFile _ _ ) ->
             True
 
         ( AmlEditor, AmlEditor ) ->
@@ -58,23 +80,44 @@ same k2 k1 =
 encode : SourceKind -> Value
 encode value =
     case value of
-        SqlFileLocal name size modified ->
+        DatabaseConnection url ->
             Encode.notNullObject
-                [ ( "kind", "LocalFile" |> Encode.string )
+                [ ( "kind", "DatabaseConnection" |> Encode.string )
+                , ( "url", url |> DatabaseUrl.encode )
+                ]
+
+        SqlLocalFile name size modified ->
+            Encode.notNullObject
+                [ ( "kind", "SqlLocalFile" |> Encode.string )
                 , ( "name", name |> FileName.encode )
                 , ( "size", size |> FileSize.encode )
                 , ( "modified", modified |> FileUpdatedAt.encode )
                 ]
 
-        SqlFileRemote name size ->
+        SqlRemoteFile name size ->
             Encode.notNullObject
-                [ ( "kind", "RemoteFile" |> Encode.string )
+                [ ( "kind", "SqlRemoteFile" |> Encode.string )
+                , ( "url", name |> FileUrl.encode )
+                , ( "size", size |> FileSize.encode )
+                ]
+
+        JsonLocalFile name size modified ->
+            Encode.notNullObject
+                [ ( "kind", "JsonLocalFile" |> Encode.string )
+                , ( "name", name |> FileName.encode )
+                , ( "size", size |> FileSize.encode )
+                , ( "modified", modified |> FileUpdatedAt.encode )
+                ]
+
+        JsonRemoteFile name size ->
+            Encode.notNullObject
+                [ ( "kind", "JsonRemoteFile" |> Encode.string )
                 , ( "url", name |> FileUrl.encode )
                 , ( "size", size |> FileSize.encode )
                 ]
 
         AmlEditor ->
-            Encode.notNullObject [ ( "kind", "UserDefined" |> Encode.string ) ]
+            Encode.notNullObject [ ( "kind", "AmlEditor" |> Encode.string ) ]
 
 
 decode : Decode.Decoder SourceKind
@@ -82,21 +125,30 @@ decode =
     Decode.matchOn "kind"
         (\kind ->
             case kind of
-                "SqlFileLocal" ->
-                    decodeSqlFileLocal
+                "DatabaseConnection" ->
+                    decodeDatabaseConnection
 
-                "SqlFileRemote" ->
-                    decodeSqlFileRemote
+                "SqlLocalFile" ->
+                    decodeSqlLocalFile
+
+                "SqlRemoteFile" ->
+                    decodeSqlRemoteFile
+
+                "JsonLocalFile" ->
+                    decodeJsonLocalFile
+
+                "JsonRemoteFile" ->
+                    decodeJsonRemoteFile
 
                 "AmlEditor" ->
                     decodeAmlEditor
 
                 -- legacy names:
                 "LocalFile" ->
-                    decodeSqlFileLocal
+                    decodeSqlLocalFile
 
                 "RemoteFile" ->
-                    decodeSqlFileRemote
+                    decodeSqlRemoteFile
 
                 "UserDefined" ->
                     decodeAmlEditor
@@ -106,17 +158,38 @@ decode =
         )
 
 
-decodeSqlFileLocal : Decode.Decoder SourceKind
-decodeSqlFileLocal =
-    Decode.map3 SqlFileLocal
+decodeDatabaseConnection : Decode.Decoder SourceKind
+decodeDatabaseConnection =
+    Decode.map DatabaseConnection
+        (Decode.field "url" DatabaseUrl.decode)
+
+
+decodeSqlLocalFile : Decode.Decoder SourceKind
+decodeSqlLocalFile =
+    Decode.map3 SqlLocalFile
         (Decode.field "name" FileName.decode)
         (Decode.field "size" FileSize.decode)
         (Decode.field "modified" FileUpdatedAt.decode)
 
 
-decodeSqlFileRemote : Decode.Decoder SourceKind
-decodeSqlFileRemote =
-    Decode.map2 SqlFileRemote
+decodeSqlRemoteFile : Decode.Decoder SourceKind
+decodeSqlRemoteFile =
+    Decode.map2 SqlRemoteFile
+        (Decode.field "url" FileUrl.decode)
+        (Decode.field "size" FileSize.decode)
+
+
+decodeJsonLocalFile : Decode.Decoder SourceKind
+decodeJsonLocalFile =
+    Decode.map3 JsonLocalFile
+        (Decode.field "name" FileName.decode)
+        (Decode.field "size" FileSize.decode)
+        (Decode.field "modified" FileUpdatedAt.decode)
+
+
+decodeJsonRemoteFile : Decode.Decoder SourceKind
+decodeJsonRemoteFile =
+    Decode.map2 JsonRemoteFile
         (Decode.field "url" FileUrl.decode)
         (Decode.field "size" FileSize.decode)
 

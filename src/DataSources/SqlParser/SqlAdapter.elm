@@ -1,4 +1,4 @@
-module DataSources.SqlParser.SqlAdapter exposing (SqlSchema, SqlSchemaError, buildSqlSource, evolve, initSchema)
+module DataSources.SqlParser.SqlAdapter exposing (SqlSchema, SqlSchemaError, buildSource, evolve, initSchema)
 
 import Array
 import Conf
@@ -49,8 +49,8 @@ initSchema =
     { tables = Dict.empty, relations = [], errors = [] }
 
 
-buildSqlSource : SourceInfo -> List SourceLine -> SqlSchema -> Source
-buildSqlSource source lines schema =
+buildSource : SourceInfo -> List SourceLine -> SqlSchema -> Source
+buildSource source lines schema =
     { id = source.id
     , name = source.name
     , kind = source.kind

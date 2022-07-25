@@ -4,7 +4,6 @@ import {
     ElmMsg,
     ElmRuntime,
     GetLocalFileMsg,
-    GetRemoteFileMsg,
     Hotkey,
     HotkeyId,
     JsMsg
@@ -12,7 +11,6 @@ import {
 import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
 import {Email, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
-import {Utils} from "../utils/utils";
 import {Profile} from "../types/profile";
 
 export class ElmApp {
@@ -33,7 +31,6 @@ export class ElmApp {
         Logout: [],
         ListProjects: [],
         LoadProject: [],
-        LoadRemoteProject: [],
         CreateProject: [],
         UpdateProject: [],
         MoveProjectTo: [],
@@ -44,7 +41,6 @@ export class ElmApp {
         DownloadFile: [],
         DropProject: [],
         GetLocalFile: [],
-        GetRemoteFile: [],
         ObserveSizes: [],
         ListenKeys: [],
         TrackPage: [],
@@ -93,20 +89,9 @@ export class ElmApp {
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
     gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
-        now: Date.now(),
-        projectId: msg.project || Utils.randomId(),
-        sourceId: msg.source || Utils.randomId(),
+        sourceKind: msg.sourceKind,
         file: msg.file,
         content
-    })
-    gotRemoteFile = (msg: GetRemoteFileMsg, content: string): void => this.send({
-        kind: 'GotRemoteFile',
-        now: Date.now(),
-        projectId: msg.project || Utils.randomId(),
-        sourceId: msg.source || Utils.randomId(),
-        url: msg.url,
-        content,
-        sample: msg.sample
     })
     gotHotkey = (hotkey: Hotkey & { id: HotkeyId }): void => this.send({kind: 'GotHotkey', id: hotkey.id})
     gotKeyHold = (key: string, start: boolean): void => this.send({kind: 'GotKeyHold', key, start})

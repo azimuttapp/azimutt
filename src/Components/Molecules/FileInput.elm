@@ -1,4 +1,4 @@
-module Components.Molecules.FileInput exposing (Model, basic, doc, input, projectFile, schemaFile)
+module Components.Molecules.FileInput exposing (Model, basic, doc, input)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import ElmBook.Actions exposing (logAction)
@@ -10,42 +10,6 @@ import Libs.Html.Attributes exposing (css, role)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus_ring_within_600, hover)
-
-
-schemaFile : HtmlId -> (File -> msg) -> msg -> Html msg
-schemaFile htmlId onSelect noop =
-    input
-        { id = htmlId
-        , onDrop = \f _ -> onSelect f
-        , onOver = \_ _ -> noop
-        , onLeave = Nothing
-        , onSelect = onSelect
-        , content =
-            div [ css [ "space-y-1 text-center" ] ]
-                [ Icon.outline2x DocumentAdd "mx-auto"
-                , p [] [ span [ css [ "text-primary-600" ] ] [ text "Upload your SQL schema" ], text " or drag and drop" ]
-                , p [ css [ "text-xs" ] ] [ text ".sql file only" ]
-                ]
-        , mimes = [ ".sql" ]
-        }
-
-
-projectFile : HtmlId -> (File -> msg) -> msg -> Html msg
-projectFile htmlId onSelect noop =
-    input
-        { id = htmlId
-        , onDrop = \f _ -> onSelect f
-        , onOver = \_ _ -> noop
-        , onLeave = Nothing
-        , onSelect = onSelect
-        , content =
-            div [ css [ "space-y-1 text-center" ] ]
-                [ Icon.outline2x FolderAdd "mx-auto"
-                , p [] [ span [ css [ "text-primary-600" ] ] [ text "Upload a project file" ], text " or drag and drop" ]
-                , p [ css [ "text-xs" ] ] [ text ".json file only" ]
-                ]
-        , mimes = [ ".json" ]
-        }
 
 
 basic : HtmlId -> (File -> msg) -> msg -> List String -> Html msg -> Html msg

@@ -4,27 +4,34 @@ import Conf
 import Dict exposing (Dict)
 import Gen.Params.Embed exposing (Params)
 import Gen.Route as Route
-import Libs.Dict as Dict
+import Http
+import Libs.Http as Http
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
+import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Task as T
+import Models.Project as Project
+import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId exposing (ProjectId)
 import Models.ScreenProps as ScreenProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..), SourceParsingDialog)
+import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind
-import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode
-import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf exposing (ErdConf)
+import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
+import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf
 import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
 import PagesComponents.Projects.Id_.Updates as Updates
 import PagesComponents.Projects.Id_.Views as Views
-import Ports
-import Random
+import Ports exposing (JsMsg(..))
 import Request
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.DatabaseSource as DatabaseSource
+import Services.JsonSource as JsonSource
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
-import Time
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -35,19 +42,21 @@ page shared req =
             parseQueryString req.query
     in
     Page.element
-        { init = init shared.now query
-        , update = Updates.update req query.layout shared.now
+        { init = init query
+        , update = Updates.update req query.layout shared.now shared.conf.backendUrl
         , view = Views.view (Request.pushRoute Route.NotFound req) req.url shared
         , subscriptions = Subscriptions.subscriptions
         }
 
 
 type alias QueryString =
-    { projectId : Maybe String
-    , projectUrl : Maybe String
-    , sourceUrl : Maybe String
-    , layout : Maybe String
-    , mode : String
+    { projectId : Maybe ProjectId
+    , projectUrl : Maybe FileUrl
+    , databaseSource : Maybe DatabaseUrl
+    , sqlSource : Maybe FileUrl
+    , jsonSource : Maybe FileUrl
+    , layout : Maybe LayoutName
+    , mode : Maybe EmbedModeId
     }
 
 
@@ -63,13 +72,12 @@ type alias Msg =
 -- INIT
 
 
-init : Time.Posix -> QueryString -> ( Model, Cmd Msg )
-init now query =
-    ( { seed = Random.initialSeed (now |> Time.posixToMillis)
-      , conf = initConf query.mode
+init : QueryString -> ( Model, Cmd Msg )
+init query =
+    ( { conf = query.mode |> Maybe.andThen (\mode -> EmbedMode.all |> List.findBy .id mode) |> Maybe.mapOrElse .conf ErdConf.embedDefault
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , screen = ScreenProps.zero
-      , loaded = query.projectId == Nothing && query.projectUrl == Nothing && query.sourceUrl == Nothing
+      , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
       , erd = Nothing
       , projects = []
       , hoverTable = Nothing
@@ -85,12 +93,8 @@ init now query =
       , sharing = Nothing
       , upload = Nothing
       , settings = Nothing
-      , sourceUpload = Nothing
-      , sourceParsing =
-            (query.projectId |> Maybe.map (\_ -> Nothing))
-                |> Maybe.orElse (query.projectUrl |> Maybe.map (\_ -> Nothing))
-                |> Maybe.orElse (query.sourceUrl |> Maybe.map (\_ -> Just initSourceParsing))
-                |> Maybe.withDefault Nothing
+      , sourceUpdate = Nothing
+      , embedSourceParsing = EmbedSourceParsingDialog.init SourceParsed ModalClose Noop query.databaseSource query.sqlSource query.jsonSource
       , help = Nothing
       , openedDropdown = ""
       , openedPopover = ""
@@ -113,44 +117,25 @@ init now query =
          , Ports.listenHotkeys Conf.hotkeys
          ]
             ++ ((query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
-                    |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Ports.loadRemoteProject url ]))
-                    |> Maybe.orElse (query.sourceUrl |> Maybe.map (\url -> [ T.send (SourceParsing (SqlSourceUpload.SelectRemoteFile url)), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject >> JsMessage) Project.decode } ]))
+                    |> Maybe.orElse (query.databaseSource |> Maybe.map (\url -> [ T.send (url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ T.send (url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
+                    |> Maybe.orElse (query.jsonSource |> Maybe.map (\url -> [ T.send (url |> JsonSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedJsonSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.withDefault []
                )
         )
     )
 
 
-initConf : String -> ErdConf
-initConf mode =
-    EmbedMode.all |> List.findBy .id mode |> Maybe.mapOrElse .conf ErdConf.embedDefault
-
-
-initSourceParsing : SourceParsingDialog
-initSourceParsing =
-    { id = Conf.ids.sourceParsingDialog
-    , parsing =
-        SqlSourceUpload.init
-            Conf.schema.default
-            Nothing
-            Nothing
-            (\( projectId, parser, source ) ->
-                if parser |> SqlSourceUpload.hasErrors then
-                    Noop "embed-parse-source-has-errors"
-
-                else
-                    ModalClose (SourceParsed projectId source)
-            )
-    }
-
-
 parseQueryString : Dict String String -> QueryString
 parseQueryString query =
     { projectId = query |> Dict.get EmbedKind.projectId
     , projectUrl = query |> Dict.get EmbedKind.projectUrl
-    , sourceUrl = query |> Dict.get EmbedKind.sourceUrl
+    , databaseSource = query |> Dict.get EmbedKind.databaseSource
+    , sqlSource = query |> Dict.get EmbedKind.sqlSource |> Maybe.orElse (query |> Dict.get EmbedKind.sourceUrl)
+    , jsonSource = query |> Dict.get EmbedKind.jsonSource
     , layout = query |> Dict.get "layout"
-    , mode = query |> Dict.getOrElse "mode" EmbedMode.default
+    , mode = query |> Dict.get EmbedMode.key
     }
 
 
@@ -159,9 +144,11 @@ serializeQueryString query =
     Dict.fromList
         ([ ( EmbedKind.projectId, query.projectId )
          , ( EmbedKind.projectUrl, query.projectUrl )
-         , ( EmbedKind.sourceUrl, query.sourceUrl )
+         , ( EmbedKind.databaseSource, query.databaseSource )
+         , ( EmbedKind.sqlSource, query.sqlSource )
+         , ( EmbedKind.jsonSource, query.jsonSource )
          , ( "layout", query.layout )
-         , ( "mode", Just query.mode )
+         , ( EmbedMode.key, query.mode )
          ]
             |> List.filterMap (\( key, maybeValue ) -> maybeValue |> Maybe.map (\value -> ( key, value )))
         )

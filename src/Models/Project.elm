@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, compute, computeRelations, computeTables, create, decode, downloadContent, downloadFilename, encode, new)
+module Models.Project exposing (Project, compute, computeRelations, computeTables, create, decode, downloadContent, downloadFilename, duplicate, encode, new)
 
 import Conf
 import Dict exposing (Dict)
@@ -8,6 +8,7 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
+import Libs.String as String
 import Libs.Time as Time
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
@@ -70,6 +71,11 @@ create id name source =
         ProjectStorage.Browser
         source.createdAt
         source.updatedAt
+
+
+duplicate : List ProjectName -> ProjectId -> Project -> Project
+duplicate takenNames projectId project =
+    { project | id = projectId, name = String.unique takenNames project.name }
 
 
 mostUsedSchema : Dict TableId Table -> Maybe SchemaName

@@ -1,10 +1,8 @@
 import {
     GetLocalFileMsg,
-    GetRemoteFileMsg,
     Hotkey,
     HotkeyId,
     ListenKeysMsg,
-    LoadRemoteProjectMsg,
     ObserveSizesMsg,
     SetMetaMsg,
     UpdateProjectMsg
@@ -25,7 +23,7 @@ const env = Utils.getEnv()
 const platform = Utils.getPlatform()
 const conf = Conf.get(env)
 const logger = new ConsoleLogger(env)
-const fs = {env, platform, enableCloud: !!localStorage.getItem('enable-cloud')}
+const fs = {env, platform, backendUrl: conf.supabase.backendUrl, enableCloud: !!localStorage.getItem('enable-cloud')}
 const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
 const supabase = Supabase.init(conf.supabase).onLogin(user => {
     app.login(user)
@@ -74,7 +72,6 @@ app.on('Logout', _ => supabase.logout().then(() => {
 }).then(listProjects).catch(logger.warn))
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))
-app.on('LoadRemoteProject', loadRemoteProject)
 app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProject))
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
 app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
@@ -88,7 +85,6 @@ app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners 
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('DropProject', msg => store.dropProject(msg.project).then(_ => app.dropProject(msg.project.id)))
 app.on('GetLocalFile', getLocalFile)
-app.on('GetRemoteFile', getRemoteFile)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
 app.on('Confetti', msg => Utils.launchConfetti(msg.id))
@@ -126,16 +122,6 @@ function setMeta(meta: SetMetaMsg) {
     if (typeof meta.body === 'string') {
         document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body)
     }
-}
-
-function loadRemoteProject(msg: LoadRemoteProjectMsg) {
-    fetch(msg.projectUrl)
-        .then(res => res.json())
-        .then((project: Project) => app.gotProject(project))
-        .catch(err => {
-            app.loadProjects([])
-            app.toast('error', `Can't load remote project: ${err}`)
-        })
 }
 
 function listProjects() {
@@ -180,13 +166,6 @@ function getLocalFile(msg: GetLocalFileMsg) {
     const reader = new FileReader()
     reader.onload = (e: any) => app.gotLocalFile(msg, e.target.result)
     reader.readAsText(msg.file as any)
-}
-
-function getRemoteFile(msg: GetRemoteFileMsg) {
-    fetch(msg.url)
-        .then(res => res.text())
-        .then(content => app.gotRemoteFile(msg, content))
-        .catch(err => app.toast('error', `Can't get remote file ${msg.url}: ${err}`))
 }
 
 const resizeObserver = new ResizeObserver(entries => {

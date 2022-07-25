@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelation, amlEditor, decode, encode, refreshWith)
+module Models.Project.Source exposing (Source, addRelation, aml, decode, encode, refreshWith)
 
 import Array exposing (Array)
 import Conf
@@ -40,14 +40,14 @@ type alias Source =
     }
 
 
-amlEditor : SourceId -> SourceName -> Dict TableId Table -> List Relation -> Time.Posix -> Source
-amlEditor id name tables relations now =
+aml : SourceId -> SourceName -> Time.Posix -> Source
+aml id name now =
     { id = id
     , name = name
     , kind = AmlEditor
     , content = Array.empty
-    , tables = tables
-    , relations = relations
+    , tables = Dict.empty
+    , relations = []
     , enabled = True
     , fromSample = Nothing
     , createdAt = now

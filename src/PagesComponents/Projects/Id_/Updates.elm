@@ -16,12 +16,19 @@ import Libs.Models.Size as Size exposing (Size)
 import Libs.Task as T
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.Source as Source
+import Models.Project.SourceId as SourceId
+import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.SourceInfo as SourceInfo
 import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
+import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
-import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
+import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
+import PagesComponents.Projects.Id_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
 import PagesComponents.Projects.Id_.Models.DragState as DragState
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -43,15 +50,17 @@ import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapParsingCmd, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapSourceParsingMCmd, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Backend as Backend
+import Services.JsonSource as JsonSource
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
 
 
-update : Request.With params -> Maybe LayoutName -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update req currentLayout now msg model =
+update : Request.With params -> Maybe LayoutName -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
+update req currentLayout now backendUrl msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -157,7 +166,10 @@ update req currentLayout now msg model =
             ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayout now (mapTables (hoverColumn column on e))), Cmd.none )
 
         CreateUserSource name ->
-            ( model |> mapErdM (Source.createUserSource now name) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
+            ( model, SourceId.generator |> Random.generate (\sourceId -> Source.aml sourceId name now |> CreateUserSourceWithId) )
+
+        CreateUserSourceWithId source ->
+            ( model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.createRelation now src ref)
@@ -189,17 +201,17 @@ update req currentLayout now msg model =
         SharingMsg message ->
             model |> handleSharing message
 
-        ProjectUploadDialogMsg message ->
+        ProjectUploadMsg message ->
             model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings message
+            model |> handleProjectSettings now backendUrl message
 
-        SourceParsing message ->
-            model |> mapSourceParsingMCmd (mapParsingCmd (SqlSourceUpload.update message SourceParsing))
+        EmbedSourceParsingMsg message ->
+            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg backendUrl now message)
 
-        SourceParsed projectId source ->
-            ( model, T.send (JsMessage (GotProject (Just (Ok (Project.create projectId source.name source))))) )
+        SourceParsed source ->
+            ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId source.name source |> Ok |> Just |> GotProject |> JsMessage) )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -338,14 +350,9 @@ handleJsMessage now currentLayout msg model =
 
                 Just (Ok project) ->
                     let
-                        ( childSeed, newSeed ) =
-                            Random.step (Random.int Random.minInt Random.maxInt) model.seed
-
                         erd : Erd
                         erd =
-                            project
-                                |> (\p -> currentLayout |> Maybe.mapOrElse (\l -> { p | usedLayout = l }) p)
-                                |> Erd.create (Random.initialSeed childSeed)
+                            currentLayout |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project |> Erd.create
 
                         uploadCmd : List (Cmd msg)
                         uploadCmd =
@@ -357,8 +364,12 @@ handleJsMessage now currentLayout msg model =
 
                             else
                                 []
+
+                        amlSidebar : Maybe AmlSidebar
+                        amlSidebar =
+                            B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSlidebar.init (Just erd))
                     in
-                    ( { model | seed = newSeed, loaded = True, erd = Just erd } |> mapUploadM (\u -> { u | movingProject = False })
+                    ( { model | loaded = True, erd = Just erd, amlSidebar = amlSidebar } |> mapUploadM (\u -> { u | movingProject = False })
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
                          , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
@@ -373,27 +384,27 @@ handleJsMessage now currentLayout msg model =
                 ( model, Cmd.none )
 
             else
-                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateShareUser (Just ( email, user ))))) )
+                ( model, T.send (ProjectUploadMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateShareUser (Just ( email, user ))))) )
 
         GotOwners _ owners ->
             if model.upload == Nothing then
                 ( model, Cmd.none )
 
             else
-                ( model, T.send (ProjectUploadDialogMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
+                ( model, T.send (ProjectUploadMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
 
         ProjectDropped projectId ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
 
-        GotLocalFile now_ projectId sourceId file content ->
-            ( model, T.send (SqlSourceUpload.gotLocalFile now_ projectId sourceId file content |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+        GotLocalFile kind file content ->
+            if kind == SqlSource.kind then
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SourceUpdateDialog.SqlSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
-        GotRemoteFile now_ projectId sourceId url content sample ->
-            if model.erd == Nothing then
-                ( model, Cmd.batch [ T.send (SqlSourceUpload.gotRemoteFile now_ projectId sourceId url content sample |> SourceParsing) ] )
+            else if kind == JsonSource.kind then
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
-                ( model, T.send (SqlSourceUpload.gotRemoteFile now_ projectId sourceId url content sample |> PSSqlSourceMsg |> ProjectSettingsMsg) )
+                ( model, Toasts.error Toast ("Unhandled local file kind '" ++ kind ++ "'") )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey

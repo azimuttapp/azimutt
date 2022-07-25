@@ -65,29 +65,33 @@ update modalOpen erd msg model =
             model |> mapMTeamCmd (ProjectTeam.update message)
 
 
-view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> msg -> Url -> Maybe User -> Bool -> ProjectInfo -> Model -> Html msg
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> (msg -> msg) -> Url -> Maybe User -> Bool -> ProjectInfo -> Model -> Html msg
 view confirm onDelete wrap moveProject modalClose currentUrl user opened project model =
     let
         titleId : HtmlId
         titleId =
             model.id ++ "-title"
+
+        close : msg
+        close =
+            Close |> wrap |> modalClose
     in
     Modal.modal
         { id = model.id
         , titleId = titleId
         , isOpen = opened
-        , onBackgroundClick = modalClose
+        , onBackgroundClick = close
         }
         [ user
             |> Maybe.mapOrElse
                 (\u ->
                     if project.storage == ProjectStorage.Browser then
-                        uploadModal modalClose moveProject titleId model.movingProject project
+                        uploadModal close moveProject titleId model.movingProject project
 
                     else
                         cloudModal confirm onDelete wrap moveProject model.id titleId u model.team model.movingProject project
                 )
-                (signInModal modalClose currentUrl titleId project)
+                (signInModal close currentUrl titleId project)
         ]
 
 

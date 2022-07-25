@@ -13,10 +13,15 @@ module Services.Lenses exposing
     , mapConf
     , mapContent
     , mapContextMenuM
+    , mapDatabaseSource
+    , mapDatabaseSourceCmd
+    , mapDatabaseSourceM
+    , mapDatabaseSourceMCmd
     , mapDefaultSchema
     , mapEachProjectMLayoutTables
     , mapEachTable
     , mapEditNotesM
+    , mapEmbedSourceParsingMCmd
     , mapEnabled
     , mapErdM
     , mapErdMCmd
@@ -28,13 +33,21 @@ module Services.Lenses exposing
     , mapHover
     , mapHoverColumn
     , mapHoverTable
+    , mapImportProjectCmd
+    , mapImportProjectM
+    , mapImportProjectMCmd
     , mapIndex
     , mapIndexes
+    , mapJsonSourceCmd
+    , mapJsonSourceM
+    , mapJsonSourceMCmd
     , mapLayout
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDCmd
     , mapList
+    , mapM
+    , mapMCmd
     , mapMTeamCmd
     , mapMobileMenuOpen
     , mapNavbar
@@ -52,9 +65,6 @@ module Services.Lenses exposing
     , mapPrimaryKey
     , mapPrimaryKeyM
     , mapProject
-    , mapProjectImportCmd
-    , mapProjectImportM
-    , mapProjectImportMCmd
     , mapProjectM
     , mapProjectMCmd
     , mapProjectMLayout
@@ -68,8 +78,8 @@ module Services.Lenses exposing
     , mapRemoveViews
     , mapRemovedSchemas
     , mapResult
-    , mapSampleSelectionM
-    , mapSampleSelectionMCmd
+    , mapSampleProjectM
+    , mapSampleProjectMCmd
     , mapSchemaAnalysisM
     , mapScreen
     , mapSearch
@@ -84,14 +94,12 @@ module Services.Lenses exposing
     , mapShown
     , mapShownColumns
     , mapShownTables
-    , mapSourceParsingMCmd
-    , mapSourceUploadM
-    , mapSourceUploadMCmd
+    , mapSourceUpdateCmd
     , mapSources
     , mapSourcesL
-    , mapSqlSourceUploadCmd
-    , mapSqlSourceUploadM
-    , mapSqlSourceUploadMCmd
+    , mapSqlSourceCmd
+    , mapSqlSourceM
+    , mapSqlSourceMCmd
     , mapSwitch
     , mapTableInList
     , mapTableProps
@@ -134,10 +142,12 @@ module Services.Lenses exposing
     , setContextMenu
     , setCurrentLayout
     , setCursorMode
+    , setDatabaseSource
     , setDefaultSchema
     , setDragState
     , setDragging
     , setEditNotes
+    , setEmbedSourceParsing
     , setEnabled
     , setErd
     , setErrors
@@ -151,12 +161,15 @@ module Services.Lenses exposing
     , setHover
     , setHoverColumn
     , setHoverTable
+    , setId
     , setIgnoredColumns
     , setIgnoredTables
+    , setImportProject
     , setIndex
     , setIndexes
     , setInput
     , setIsOpen
+    , setJsonSource
     , setLast
     , setLayout
     , setLayouts
@@ -177,12 +190,12 @@ module Services.Lenses exposing
     , setOpenedPopover
     , setOrigins
     , setParsedSchema
+    , setParsedSource
     , setParsing
     , setPopover
     , setPosition
     , setPrimaryKey
     , setProject
-    , setProjectImport
     , setPrompt
     , setProps
     , setRelatedTables
@@ -192,7 +205,7 @@ module Services.Lenses exposing
     , setRemovedSchemas
     , setRemovedTables
     , setResult
-    , setSampleSelection
+    , setSampleProject
     , setSchemaAnalysis
     , setScreen
     , setSearch
@@ -208,10 +221,10 @@ module Services.Lenses exposing
     , setShownColumns
     , setShownTables
     , setSize
-    , setSourceParsing
-    , setSourceUpload
+    , setSourceUpdate
     , setSources
-    , setSqlSourceUpload
+    , setSqlSource
+    , setStatus
     , setSwitch
     , setTable
     , setTableProps
@@ -227,6 +240,7 @@ module Services.Lenses exposing
     , setUniques
     , setUpdatedAt
     , setUpload
+    , setUrl
     , setUsedLayout
     , setUser
     , setUsername
@@ -256,987 +270,1042 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 setActive : v -> { item | active : v } -> { item | active : v }
 setActive =
-    set .active (\value item -> { item | active = value })
+    set_ .active (\value item -> { item | active = value })
 
 
 mapActive : (v -> v) -> { item | active : v } -> { item | active : v }
 mapActive =
-    map .active setActive
+    map_ .active setActive
 
 
 setAmlSidebar : v -> { item | amlSidebar : v } -> { item | amlSidebar : v }
 setAmlSidebar =
-    set .amlSidebar (\value item -> { item | amlSidebar = value })
+    set_ .amlSidebar (\value item -> { item | amlSidebar = value })
 
 
 mapAmlSidebarM : (v -> v) -> { item | amlSidebar : Maybe v } -> { item | amlSidebar : Maybe v }
 mapAmlSidebarM =
-    mapM .amlSidebar setAmlSidebar
+    mapM_ .amlSidebar setAmlSidebar
 
 
 setBio : v -> { item | bio : v } -> { item | bio : v }
 setBio =
-    set .bio (\value item -> { item | bio = value })
+    set_ .bio (\value item -> { item | bio = value })
 
 
 setCanvas : v -> { item | canvas : v } -> { item | canvas : v }
 setCanvas =
-    set .canvas (\value item -> { item | canvas = value })
+    set_ .canvas (\value item -> { item | canvas = value })
 
 
 mapCanvas : (v -> v) -> { item | canvas : v } -> { item | canvas : v }
 mapCanvas =
-    map .canvas setCanvas
+    map_ .canvas setCanvas
 
 
 setChecks : v -> { item | checks : v } -> { item | checks : v }
 setChecks =
-    set .checks (\value item -> { item | checks = value })
+    set_ .checks (\value item -> { item | checks = value })
 
 
 mapChecks : (v -> v) -> { item | checks : v } -> { item | checks : v }
 mapChecks =
-    map .checks setChecks
+    map_ .checks setChecks
 
 
 setCollapsed : v -> { item | collapsed : v } -> { item | collapsed : v }
 setCollapsed =
-    set .collapsed (\value item -> { item | collapsed = value })
+    set_ .collapsed (\value item -> { item | collapsed = value })
 
 
 setCollapseTableColumns : v -> { item | collapseTableColumns : v } -> { item | collapseTableColumns : v }
 setCollapseTableColumns =
-    set .collapseTableColumns (\value item -> { item | collapseTableColumns = value })
+    set_ .collapseTableColumns (\value item -> { item | collapseTableColumns = value })
 
 
 mapCollapseTableColumns : (v -> v) -> { item | collapseTableColumns : v } -> { item | collapseTableColumns : v }
 mapCollapseTableColumns =
-    map .collapseTableColumns setCollapseTableColumns
+    map_ .collapseTableColumns setCollapseTableColumns
 
 
 setColor : v -> { item | color : v } -> { item | color : v }
 setColor =
-    set .color (\value item -> { item | color = value })
+    set_ .color (\value item -> { item | color = value })
 
 
 setColumn : v -> { item | column : v } -> { item | column : v }
 setColumn =
-    set .column (\value item -> { item | column = value })
+    set_ .column (\value item -> { item | column = value })
 
 
 setColumns : v -> { item | columns : v } -> { item | columns : v }
 setColumns =
-    set .columns (\value item -> { item | columns = value })
+    set_ .columns (\value item -> { item | columns = value })
 
 
 mapColumns : (v -> v) -> { item | columns : v } -> { item | columns : v }
 mapColumns =
-    map .columns setColumns
+    map_ .columns setColumns
 
 
 mapColumnsD : comparable -> (v -> v) -> { item | columns : Dict comparable v } -> { item | columns : Dict comparable v }
 mapColumnsD =
-    mapD .columns setColumns
+    mapD_ .columns setColumns
 
 
 setColumnBasicTypes : v -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
 setColumnBasicTypes =
-    set .columnBasicTypes (\value item -> { item | columnBasicTypes = value })
+    set_ .columnBasicTypes (\value item -> { item | columnBasicTypes = value })
 
 
 mapColumnBasicTypes : (v -> v) -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
 mapColumnBasicTypes =
-    map .columnBasicTypes setColumnBasicTypes
+    map_ .columnBasicTypes setColumnBasicTypes
 
 
 setColumnOrder : v -> { item | columnOrder : v } -> { item | columnOrder : v }
 setColumnOrder =
-    set .columnOrder (\value item -> { item | columnOrder = value })
+    set_ .columnOrder (\value item -> { item | columnOrder = value })
 
 
 setColumnProps : v -> { item | columnProps : v } -> { item | columnProps : v }
 setColumnProps =
-    set .columnProps (\value item -> { item | columnProps = value })
+    set_ .columnProps (\value item -> { item | columnProps = value })
 
 
 mapColumnProps : (v -> v) -> { item | columnProps : v } -> { item | columnProps : v }
 mapColumnProps =
-    map .columnProps setColumnProps
+    map_ .columnProps setColumnProps
 
 
 setComment : v -> { item | comment : v } -> { item | comment : v }
 setComment =
-    set .comment (\value item -> { item | comment = value })
+    set_ .comment (\value item -> { item | comment = value })
 
 
 mapComment : (v -> v) -> { item | comment : v } -> { item | comment : v }
 mapComment =
-    map .comment setComment
+    map_ .comment setComment
 
 
 mapCommentM : (v -> v) -> { item | comment : Maybe v } -> { item | comment : Maybe v }
 mapCommentM =
-    mapM .comment setComment
+    mapM_ .comment setComment
 
 
 setCompany : v -> { item | company : v } -> { item | company : v }
 setCompany =
-    set .company (\value item -> { item | company = value })
+    set_ .company (\value item -> { item | company = value })
 
 
 setConf : v -> { item | conf : v } -> { item | conf : v }
 setConf =
-    set .conf (\value item -> { item | conf = value })
+    set_ .conf (\value item -> { item | conf = value })
 
 
 mapConf : (v -> v) -> { item | conf : v } -> { item | conf : v }
 mapConf =
-    map .conf setConf
+    map_ .conf setConf
 
 
 setConfirm : v -> { item | confirm : v } -> { item | confirm : v }
 setConfirm =
-    set .confirm (\value item -> { item | confirm = value })
+    set_ .confirm (\value item -> { item | confirm = value })
 
 
 setContent : v -> { item | content : v } -> { item | content : v }
 setContent =
-    set .content (\value item -> { item | content = value })
+    set_ .content (\value item -> { item | content = value })
 
 
 mapContent : (v -> v) -> { item | content : v } -> { item | content : v }
 mapContent =
-    map .content setContent
+    map_ .content setContent
 
 
 setContextMenu : v -> { item | contextMenu : v } -> { item | contextMenu : v }
 setContextMenu =
-    set .contextMenu (\value item -> { item | contextMenu = value })
+    set_ .contextMenu (\value item -> { item | contextMenu = value })
 
 
 mapContextMenuM : (v -> v) -> { item | contextMenu : Maybe v } -> { item | contextMenu : Maybe v }
 mapContextMenuM =
-    mapM .contextMenu setContextMenu
+    mapM_ .contextMenu setContextMenu
 
 
 setCurrentLayout : v -> { item | currentLayout : v } -> { item | currentLayout : v }
 setCurrentLayout =
-    set .currentLayout (\value item -> { item | currentLayout = value })
+    set_ .currentLayout (\value item -> { item | currentLayout = value })
 
 
 setCursorMode : v -> { item | cursorMode : v } -> { item | cursorMode : v }
 setCursorMode =
-    set .cursorMode (\value item -> { item | cursorMode = value })
+    set_ .cursorMode (\value item -> { item | cursorMode = value })
+
+
+setDatabaseSource : v -> { item | databaseSource : v } -> { item | databaseSource : v }
+setDatabaseSource =
+    set_ .databaseSource (\value item -> { item | databaseSource = value })
+
+
+mapDatabaseSource : (v -> v) -> { item | databaseSource : v } -> { item | databaseSource : v }
+mapDatabaseSource =
+    map_ .databaseSource setDatabaseSource
+
+
+mapDatabaseSourceM : (v -> v) -> { item | databaseSource : Maybe v } -> { item | databaseSource : Maybe v }
+mapDatabaseSourceM =
+    mapM_ .databaseSource setDatabaseSource
+
+
+mapDatabaseSourceCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : v } -> ( { item | databaseSource : v }, Cmd msg )
+mapDatabaseSourceCmd =
+    mapCmd_ .databaseSource setDatabaseSource
+
+
+mapDatabaseSourceMCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : Maybe v } -> ( { item | databaseSource : Maybe v }, Cmd msg )
+mapDatabaseSourceMCmd =
+    mapMCmd_ .databaseSource setDatabaseSource
 
 
 setDragging : v -> { item | dragging : v } -> { item | dragging : v }
 setDragging =
-    set .dragging (\value item -> { item | dragging = value })
+    set_ .dragging (\value item -> { item | dragging = value })
 
 
 setDragState : v -> { item | dragState : v } -> { item | dragState : v }
 setDragState =
-    set .dragState (\value item -> { item | dragState = value })
+    set_ .dragState (\value item -> { item | dragState = value })
 
 
 setDefaultSchema : v -> { item | defaultSchema : v } -> { item | defaultSchema : v }
 setDefaultSchema =
-    set .defaultSchema (\value item -> { item | defaultSchema = value })
+    set_ .defaultSchema (\value item -> { item | defaultSchema = value })
 
 
 mapDefaultSchema : (v -> v) -> { item | defaultSchema : v } -> { item | defaultSchema : v }
 mapDefaultSchema =
-    map .defaultSchema setDefaultSchema
+    map_ .defaultSchema setDefaultSchema
 
 
 setEditNotes : v -> { item | editNotes : v } -> { item | editNotes : v }
 setEditNotes =
-    set .editNotes (\value item -> { item | editNotes = value })
+    set_ .editNotes (\value item -> { item | editNotes = value })
 
 
 mapEditNotesM : (v -> v) -> { item | editNotes : Maybe v } -> { item | editNotes : Maybe v }
 mapEditNotesM =
-    mapM .editNotes setEditNotes
+    mapM_ .editNotes setEditNotes
+
+
+setEmbedSourceParsing : v -> { item | embedSourceParsing : v } -> { item | embedSourceParsing : v }
+setEmbedSourceParsing =
+    set_ .embedSourceParsing (\value item -> { item | embedSourceParsing = value })
+
+
+mapEmbedSourceParsingMCmd : (v -> ( v, Cmd msg )) -> { item | embedSourceParsing : Maybe v } -> ( { item | embedSourceParsing : Maybe v }, Cmd msg )
+mapEmbedSourceParsingMCmd =
+    mapMCmd_ .embedSourceParsing setEmbedSourceParsing
 
 
 setEnabled : v -> { item | enabled : v } -> { item | enabled : v }
 setEnabled =
-    set .enabled (\value item -> { item | enabled = value })
+    set_ .enabled (\value item -> { item | enabled = value })
 
 
 mapEnabled : (v -> v) -> { item | enabled : v } -> { item | enabled : v }
 mapEnabled =
-    map .enabled setEnabled
+    map_ .enabled setEnabled
 
 
 setErd : v -> { item | erd : v } -> { item | erd : v }
 setErd =
-    set .erd (\value item -> { item | erd = value })
+    set_ .erd (\value item -> { item | erd = value })
 
 
 mapErdM : (v -> v) -> { item | erd : Maybe v } -> { item | erd : Maybe v }
 mapErdM =
-    mapM .erd setErd
+    mapM_ .erd setErd
 
 
 mapErdMCmd : (v -> ( v, Cmd msg )) -> { item | erd : Maybe v } -> ( { item | erd : Maybe v }, Cmd msg )
 mapErdMCmd =
-    mapMCmd .erd setErd
+    mapMCmd_ .erd setErd
 
 
 setErrors : v -> { item | errors : v } -> { item | errors : v }
 setErrors =
-    set .errors (\value item -> { item | errors = value })
+    set_ .errors (\value item -> { item | errors = value })
 
 
 setFindPath : v -> { item | findPath : v } -> { item | findPath : v }
 setFindPath =
-    set .findPath (\value item -> { item | findPath = value })
+    set_ .findPath (\value item -> { item | findPath = value })
 
 
 mapFindPath : (v -> v) -> { item | findPath : v } -> { item | findPath : v }
 mapFindPath =
-    map .findPath setFindPath
+    map_ .findPath setFindPath
 
 
 mapFindPathM : (v -> v) -> { item | findPath : Maybe v } -> { item | findPath : Maybe v }
 mapFindPathM =
-    mapM .findPath setFindPath
+    mapM_ .findPath setFindPath
 
 
 setFrom : v -> { item | from : v } -> { item | from : v }
 setFrom =
-    set .from (\value item -> { item | from = value })
+    set_ .from (\value item -> { item | from = value })
 
 
 setGithub : v -> { item | github : v } -> { item | github : v }
 setGithub =
-    set .github (\value item -> { item | github = value })
+    set_ .github (\value item -> { item | github = value })
 
 
 setHiddenColumns : v -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }
 setHiddenColumns =
-    set .hiddenColumns (\value item -> { item | hiddenColumns = value })
+    set_ .hiddenColumns (\value item -> { item | hiddenColumns = value })
 
 
 mapHiddenColumns : (v -> v) -> { item | hiddenColumns : v } -> { item | hiddenColumns : v }
 mapHiddenColumns =
-    map .hiddenColumns setHiddenColumns
+    map_ .hiddenColumns setHiddenColumns
 
 
 setHiddenTables : v -> { item | hiddenTables : v } -> { item | hiddenTables : v }
 setHiddenTables =
-    set .hiddenTables (\value item -> { item | hiddenTables = value })
+    set_ .hiddenTables (\value item -> { item | hiddenTables = value })
 
 
 mapHiddenTables : (v -> v) -> { item | hiddenTables : v } -> { item | hiddenTables : v }
 mapHiddenTables =
-    map .hiddenTables setHiddenTables
+    map_ .hiddenTables setHiddenTables
 
 
 setHighlight : v -> { item | highlight : v } -> { item | highlight : v }
 setHighlight =
-    set .highlight (\value item -> { item | highlight = value })
+    set_ .highlight (\value item -> { item | highlight = value })
 
 
 setHighlighted : v -> { item | highlighted : v } -> { item | highlighted : v }
 setHighlighted =
-    set .highlighted (\value item -> { item | highlighted = value })
+    set_ .highlighted (\value item -> { item | highlighted = value })
 
 
 mapHighlighted : (v -> v) -> { item | highlighted : v } -> { item | highlighted : v }
 mapHighlighted =
-    map .highlighted setHighlighted
+    map_ .highlighted setHighlighted
 
 
 setHover : v -> { item | hover : v } -> { item | hover : v }
 setHover =
-    set .hover (\value item -> { item | hover = value })
+    set_ .hover (\value item -> { item | hover = value })
 
 
 mapHover : (v -> v) -> { item | hover : v } -> { item | hover : v }
 mapHover =
-    map .hover setHover
+    map_ .hover setHover
 
 
 setHoverColumn : v -> { item | hoverColumn : v } -> { item | hoverColumn : v }
 setHoverColumn =
-    set .hoverColumn (\value item -> { item | hoverColumn = value })
+    set_ .hoverColumn (\value item -> { item | hoverColumn = value })
 
 
 mapHoverColumn : (v -> v) -> { item | hoverColumn : v } -> { item | hoverColumn : v }
 mapHoverColumn =
-    map .hoverColumn setHoverColumn
+    map_ .hoverColumn setHoverColumn
 
 
 setHoverTable : v -> { item | hoverTable : v } -> { item | hoverTable : v }
 setHoverTable =
-    set .hoverTable (\value item -> { item | hoverTable = value })
+    set_ .hoverTable (\value item -> { item | hoverTable = value })
 
 
 mapHoverTable : (v -> v) -> { item | hoverTable : v } -> { item | hoverTable : v }
 mapHoverTable =
-    map .hoverTable setHoverTable
+    map_ .hoverTable setHoverTable
+
+
+setId : v -> { item | id : v } -> { item | id : v }
+setId =
+    set_ .id (\value item -> { item | id = value })
 
 
 setIgnoredColumns : v -> { item | ignoredColumns : v } -> { item | ignoredColumns : v }
 setIgnoredColumns =
-    set .ignoredColumns (\value item -> { item | ignoredColumns = value })
+    set_ .ignoredColumns (\value item -> { item | ignoredColumns = value })
 
 
 setIgnoredTables : v -> { item | ignoredTables : v } -> { item | ignoredTables : v }
 setIgnoredTables =
-    set .ignoredTables (\value item -> { item | ignoredTables = value })
+    set_ .ignoredTables (\value item -> { item | ignoredTables = value })
 
 
 setIndex : v -> { item | index : v } -> { item | index : v }
 setIndex =
-    set .index (\value item -> { item | index = value })
+    set_ .index (\value item -> { item | index = value })
 
 
 mapIndex : (v -> v) -> { item | index : v } -> { item | index : v }
 mapIndex =
-    map .index setIndex
+    map_ .index setIndex
 
 
 setIndexes : v -> { item | indexes : v } -> { item | indexes : v }
 setIndexes =
-    set .indexes (\value item -> { item | indexes = value })
+    set_ .indexes (\value item -> { item | indexes = value })
 
 
 mapIndexes : (v -> v) -> { item | indexes : v } -> { item | indexes : v }
 mapIndexes =
-    map .indexes setIndexes
+    map_ .indexes setIndexes
 
 
 setInput : v -> { item | input : v } -> { item | input : v }
 setInput =
-    set .input (\value item -> { item | input = value })
+    set_ .input (\value item -> { item | input = value })
 
 
 setIsOpen : v -> { item | isOpen : v } -> { item | isOpen : v }
 setIsOpen =
-    set .isOpen (\value item -> { item | isOpen = value })
+    set_ .isOpen (\value item -> { item | isOpen = value })
+
+
+setJsonSource : v -> { item | jsonSource : v } -> { item | jsonSource : v }
+setJsonSource =
+    set_ .jsonSource (\value item -> { item | jsonSource = value })
+
+
+mapJsonSourceM : (v -> v) -> { item | jsonSource : Maybe v } -> { item | jsonSource : Maybe v }
+mapJsonSourceM =
+    mapM_ .jsonSource setJsonSource
+
+
+mapJsonSourceCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : v } -> ( { item | jsonSource : v }, Cmd msg )
+mapJsonSourceCmd =
+    mapCmd_ .jsonSource setJsonSource
+
+
+mapJsonSourceMCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : Maybe v } -> ( { item | jsonSource : Maybe v }, Cmd msg )
+mapJsonSourceMCmd =
+    mapMCmd_ .jsonSource setJsonSource
 
 
 setLast : v -> { item | last : v } -> { item | last : v }
 setLast =
-    set .last (\value item -> { item | last = value })
+    set_ .last (\value item -> { item | last = value })
 
 
 setLayout : v -> { item | layout : v } -> { item | layout : v }
 setLayout =
-    set .layout (\value item -> { item | layout = value })
+    set_ .layout (\value item -> { item | layout = value })
 
 
 mapLayout : (v -> v) -> { item | layout : v } -> { item | layout : v }
 mapLayout =
-    map .layout setLayout
+    map_ .layout setLayout
 
 
 setLayouts : v -> { item | layouts : v } -> { item | layouts : v }
 setLayouts =
-    set .layouts (\value item -> { item | layouts = value })
+    set_ .layouts (\value item -> { item | layouts = value })
 
 
 mapLayouts : (v -> v) -> { item | layouts : v } -> { item | layouts : v }
 mapLayouts =
-    map .layouts setLayouts
+    map_ .layouts setLayouts
 
 
 mapLayoutsD : comparable -> (v -> v) -> { item | layouts : Dict comparable v } -> { item | layouts : Dict comparable v }
 mapLayoutsD =
-    mapD .layouts setLayouts
+    mapD_ .layouts setLayouts
 
 
 mapLayoutsDCmd : comparable -> (v -> ( v, Cmd msg )) -> { item | layouts : Dict comparable v } -> ( { item | layouts : Dict comparable v }, Cmd msg )
 mapLayoutsDCmd =
-    mapDCmd .layouts setLayouts
+    mapDCmd_ .layouts setLayouts
 
 
 setList : v -> { item | list : v } -> { item | list : v }
 setList =
-    set .list (\value item -> { item | list = value })
+    set_ .list (\value item -> { item | list = value })
 
 
 setLoading : v -> { item | loading : v } -> { item | loading : v }
 setLoading =
-    set .loading (\value item -> { item | loading = value })
+    set_ .loading (\value item -> { item | loading = value })
 
 
 setLocation : v -> { item | location : v } -> { item | location : v }
 setLocation =
-    set .location (\value item -> { item | location = value })
+    set_ .location (\value item -> { item | location = value })
 
 
 setMax : v -> { item | max : v } -> { item | max : v }
 setMax =
-    set .max (\value item -> { item | max = value })
+    set_ .max (\value item -> { item | max = value })
 
 
 setMobileMenuOpen : v -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }
 setMobileMenuOpen =
-    set .mobileMenuOpen (\value item -> { item | mobileMenuOpen = value })
+    set_ .mobileMenuOpen (\value item -> { item | mobileMenuOpen = value })
 
 
 mapMobileMenuOpen : (v -> v) -> { item | mobileMenuOpen : v } -> { item | mobileMenuOpen : v }
 mapMobileMenuOpen =
-    map .mobileMenuOpen setMobileMenuOpen
+    map_ .mobileMenuOpen setMobileMenuOpen
 
 
 setMouse : v -> { item | mouse : v } -> { item | mouse : v }
 setMouse =
-    set .mouse (\value item -> { item | mouse = value })
+    set_ .mouse (\value item -> { item | mouse = value })
 
 
 setName : v -> { item | name : v } -> { item | name : v }
 setName =
-    set .name (\value item -> { item | name = value })
+    set_ .name (\value item -> { item | name = value })
 
 
 setNavbar : v -> { item | navbar : v } -> { item | navbar : v }
 setNavbar =
-    set .navbar (\value item -> { item | navbar = value })
+    set_ .navbar (\value item -> { item | navbar = value })
 
 
 mapNavbar : (v -> v) -> { item | navbar : v } -> { item | navbar : v }
 mapNavbar =
-    map .navbar setNavbar
+    map_ .navbar setNavbar
 
 
 setNewLayout : v -> { item | newLayout : v } -> { item | newLayout : v }
 setNewLayout =
-    set .newLayout (\value item -> { item | newLayout = value })
+    set_ .newLayout (\value item -> { item | newLayout = value })
 
 
 mapNewLayoutM : (v -> v) -> { item | newLayout : Maybe v } -> { item | newLayout : Maybe v }
 mapNewLayoutM =
-    mapM .newLayout setNewLayout
+    mapM_ .newLayout setNewLayout
 
 
 setNotes : v -> { item | notes : v } -> { item | notes : v }
 setNotes =
-    set .notes (\value item -> { item | notes = value })
+    set_ .notes (\value item -> { item | notes = value })
 
 
 mapNotes : (v -> v) -> { item | notes : v } -> { item | notes : v }
 mapNotes =
-    map .notes setNotes
+    map_ .notes setNotes
 
 
 setNow : v -> { item | now : v } -> { item | now : v }
 setNow =
-    set .now (\value item -> { item | now = value })
+    set_ .now (\value item -> { item | now = value })
 
 
 setOpened : v -> { item | opened : v } -> { item | opened : v }
 setOpened =
-    set .opened (\value item -> { item | opened = value })
+    set_ .opened (\value item -> { item | opened = value })
 
 
 mapOpened : (v -> v) -> { item | opened : v } -> { item | opened : v }
 mapOpened =
-    map .opened setOpened
+    map_ .opened setOpened
 
 
 setOpenedDropdown : v -> { item | openedDropdown : v } -> { item | openedDropdown : v }
 setOpenedDropdown =
-    set .openedDropdown (\value item -> { item | openedDropdown = value })
+    set_ .openedDropdown (\value item -> { item | openedDropdown = value })
 
 
 mapOpenedDropdown : (v -> v) -> { item | openedDropdown : v } -> { item | openedDropdown : v }
 mapOpenedDropdown =
-    map .openedDropdown setOpenedDropdown
+    map_ .openedDropdown setOpenedDropdown
 
 
 setOpenedPopover : v -> { item | openedPopover : v } -> { item | openedPopover : v }
 setOpenedPopover =
-    set .openedPopover (\value item -> { item | openedPopover = value })
+    set_ .openedPopover (\value item -> { item | openedPopover = value })
 
 
 mapOpenedPopover : (v -> v) -> { item | openedPopover : v } -> { item | openedPopover : v }
 mapOpenedPopover =
-    map .openedPopover setOpenedPopover
+    map_ .openedPopover setOpenedPopover
 
 
 setOpenedDialogs : v -> { item | openedDialogs : v } -> { item | openedDialogs : v }
 setOpenedDialogs =
-    set .openedDialogs (\value item -> { item | openedDialogs = value })
+    set_ .openedDialogs (\value item -> { item | openedDialogs = value })
 
 
 mapOpenedDialogs : (v -> v) -> { item | openedDialogs : v } -> { item | openedDialogs : v }
 mapOpenedDialogs =
-    map .openedDialogs setOpenedDialogs
+    map_ .openedDialogs setOpenedDialogs
 
 
 setOrigins : v -> { item | origins : v } -> { item | origins : v }
 setOrigins =
-    set .origins (\value item -> { item | origins = value })
+    set_ .origins (\value item -> { item | origins = value })
 
 
 setParsedSchema : v -> { item | parsedSchema : v } -> { item | parsedSchema : v }
 setParsedSchema =
-    set .parsedSchema (\value item -> { item | parsedSchema = value })
+    set_ .parsedSchema (\value item -> { item | parsedSchema = value })
 
 
 mapParsedSchema : (v -> v) -> { item | parsedSchema : v } -> { item | parsedSchema : v }
 mapParsedSchema =
-    map .parsedSchema setParsedSchema
+    map_ .parsedSchema setParsedSchema
 
 
 mapParsedSchemaM : (v -> v) -> { item | parsedSchema : Maybe v } -> { item | parsedSchema : Maybe v }
 mapParsedSchemaM =
-    mapM .parsedSchema setParsedSchema
+    mapM_ .parsedSchema setParsedSchema
+
+
+setParsedSource : v -> { item | parsedSource : v } -> { item | parsedSource : v }
+setParsedSource =
+    set_ .parsedSource (\value item -> { item | parsedSource = value })
 
 
 setParsing : v -> { item | parsing : v } -> { item | parsing : v }
 setParsing =
-    set .parsing (\value item -> { item | parsing = value })
+    set_ .parsing (\value item -> { item | parsing = value })
 
 
 mapParsing : (v -> v) -> { item | parsing : v } -> { item | parsing : v }
 mapParsing =
-    map .parsing setParsing
+    map_ .parsing setParsing
 
 
 mapParsingCmd : (v -> ( v, Cmd msg )) -> { item | parsing : v } -> ( { item | parsing : v }, Cmd msg )
 mapParsingCmd =
-    mapCmd .parsing setParsing
+    mapCmd_ .parsing setParsing
 
 
 setPopover : v -> { item | popover : v } -> { item | popover : v }
 setPopover =
-    set .popover (\value item -> { item | popover = value })
+    set_ .popover (\value item -> { item | popover = value })
 
 
 setPosition : v -> { item | position : v } -> { item | position : v }
 setPosition =
-    set .position (\value item -> { item | position = value })
+    set_ .position (\value item -> { item | position = value })
 
 
 mapPosition : (v -> v) -> { item | position : v } -> { item | position : v }
 mapPosition =
-    map .position setPosition
+    map_ .position setPosition
 
 
 setPrimaryKey : v -> { item | primaryKey : v } -> { item | primaryKey : v }
 setPrimaryKey =
-    set .primaryKey (\value item -> { item | primaryKey = value })
+    set_ .primaryKey (\value item -> { item | primaryKey = value })
 
 
 mapPrimaryKey : (v -> v) -> { item | primaryKey : v } -> { item | primaryKey : v }
 mapPrimaryKey =
-    map .primaryKey setPrimaryKey
+    map_ .primaryKey setPrimaryKey
 
 
 mapPrimaryKeyM : (v -> v) -> { item | primaryKey : Maybe v } -> { item | primaryKey : Maybe v }
 mapPrimaryKeyM =
-    mapM .primaryKey setPrimaryKey
+    mapM_ .primaryKey setPrimaryKey
 
 
 setProject : v -> { item | project : v } -> { item | project : v }
 setProject =
-    set .project (\value item -> { item | project = value })
+    set_ .project (\value item -> { item | project = value })
 
 
 mapProject : (v -> v) -> { item | project : v } -> { item | project : v }
 mapProject =
-    map .project setProject
+    map_ .project setProject
 
 
 mapProjectM : (v -> v) -> { item | project : Maybe v } -> { item | project : Maybe v }
 mapProjectM =
-    mapM .project setProject
+    mapM_ .project setProject
 
 
 mapProjectMCmd : (v -> ( v, Cmd msg )) -> { item | project : Maybe v } -> ( { item | project : Maybe v }, Cmd msg )
 mapProjectMCmd =
-    mapMCmd .project setProject
+    mapMCmd_ .project setProject
 
 
-setProjectImport : v -> { item | projectImport : v } -> { item | projectImport : v }
-setProjectImport =
-    set .projectImport (\value item -> { item | projectImport = value })
+setImportProject : v -> { item | importProject : v } -> { item | importProject : v }
+setImportProject =
+    set_ .importProject (\value item -> { item | importProject = value })
 
 
-mapProjectImportM : (v -> v) -> { item | projectImport : Maybe v } -> { item | projectImport : Maybe v }
-mapProjectImportM =
-    mapM .projectImport setProjectImport
+mapImportProjectM : (v -> v) -> { item | importProject : Maybe v } -> { item | importProject : Maybe v }
+mapImportProjectM =
+    mapM_ .importProject setImportProject
 
 
-mapProjectImportCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : v } -> ( { item | projectImport : v }, Cmd msg )
-mapProjectImportCmd =
-    mapCmd .projectImport setProjectImport
+mapImportProjectCmd : (v -> ( v, Cmd msg )) -> { item | importProject : v } -> ( { item | importProject : v }, Cmd msg )
+mapImportProjectCmd =
+    mapCmd_ .importProject setImportProject
 
 
-mapProjectImportMCmd : (v -> ( v, Cmd msg )) -> { item | projectImport : Maybe v } -> ( { item | projectImport : Maybe v }, Cmd msg )
-mapProjectImportMCmd =
-    mapMCmd .projectImport setProjectImport
+mapImportProjectMCmd : (v -> ( v, Cmd msg )) -> { item | importProject : Maybe v } -> ( { item | importProject : Maybe v }, Cmd msg )
+mapImportProjectMCmd =
+    mapMCmd_ .importProject setImportProject
 
 
 setPrompt : v -> { item | prompt : v } -> { item | prompt : v }
 setPrompt =
-    set .prompt (\value item -> { item | prompt = value })
+    set_ .prompt (\value item -> { item | prompt = value })
 
 
 mapPrompt : (v -> v) -> { item | prompt : v } -> { item | prompt : v }
 mapPrompt =
-    map .prompt setPrompt
+    map_ .prompt setPrompt
 
 
 mapPromptM : (v -> v) -> { item | prompt : Maybe v } -> { item | prompt : Maybe v }
 mapPromptM =
-    mapM .prompt setPrompt
+    mapM_ .prompt setPrompt
 
 
 setProps : v -> { item | props : v } -> { item | props : v }
 setProps =
-    set .props (\value item -> { item | props = value })
+    set_ .props (\value item -> { item | props = value })
 
 
 mapProps : (v -> v) -> { item | props : v } -> { item | props : v }
 mapProps =
-    map .props setProps
+    map_ .props setProps
 
 
 setRelatedTables : v -> { item | relatedTables : v } -> { item | relatedTables : v }
 setRelatedTables =
-    set .relatedTables (\value item -> { item | relatedTables = value })
+    set_ .relatedTables (\value item -> { item | relatedTables = value })
 
 
 mapRelatedTables : (v -> v) -> { item | relatedTables : v } -> { item | relatedTables : v }
 mapRelatedTables =
-    map .relatedTables setRelatedTables
+    map_ .relatedTables setRelatedTables
 
 
 setRelations : v -> { item | relations : v } -> { item | relations : v }
 setRelations =
-    set .relations (\value item -> { item | relations = value })
+    set_ .relations (\value item -> { item | relations = value })
 
 
 mapRelations : (v -> v) -> { item | relations : v } -> { item | relations : v }
 mapRelations =
-    map .relations setRelations
+    map_ .relations setRelations
 
 
 setRelationStyle : v -> { item | relationStyle : v } -> { item | relationStyle : v }
 setRelationStyle =
-    set .relationStyle (\value item -> { item | relationStyle = value })
+    set_ .relationStyle (\value item -> { item | relationStyle = value })
 
 
 setRemovedTables : v -> { item | removedTables : v } -> { item | removedTables : v }
 setRemovedTables =
-    set .removedTables (\value item -> { item | removedTables = value })
+    set_ .removedTables (\value item -> { item | removedTables = value })
 
 
 setRemovedSchemas : v -> { item | removedSchemas : v } -> { item | removedSchemas : v }
 setRemovedSchemas =
-    set .removedSchemas (\value item -> { item | removedSchemas = value })
+    set_ .removedSchemas (\value item -> { item | removedSchemas = value })
 
 
 mapRemovedSchemas : (v -> v) -> { item | removedSchemas : v } -> { item | removedSchemas : v }
 mapRemovedSchemas =
-    map .removedSchemas setRemovedSchemas
+    map_ .removedSchemas setRemovedSchemas
 
 
 setRemoveViews : v -> { item | removeViews : v } -> { item | removeViews : v }
 setRemoveViews =
-    set .removeViews (\value item -> { item | removeViews = value })
+    set_ .removeViews (\value item -> { item | removeViews = value })
 
 
 mapRemoveViews : (v -> v) -> { item | removeViews : v } -> { item | removeViews : v }
 mapRemoveViews =
-    map .removeViews setRemoveViews
+    map_ .removeViews setRemoveViews
 
 
 setResult : v -> { item | result : v } -> { item | result : v }
 setResult =
-    set .result (\value item -> { item | result = value })
+    set_ .result (\value item -> { item | result = value })
 
 
 mapResult : (v -> v) -> { item | result : v } -> { item | result : v }
 mapResult =
-    map .result setResult
+    map_ .result setResult
 
 
-setSampleSelection : v -> { item | sampleSelection : v } -> { item | sampleSelection : v }
-setSampleSelection =
-    set .sampleSelection (\value item -> { item | sampleSelection = value })
+setSampleProject : v -> { item | sampleProject : v } -> { item | sampleProject : v }
+setSampleProject =
+    set_ .sampleProject (\value item -> { item | sampleProject = value })
 
 
-mapSampleSelectionM : (v -> v) -> { item | sampleSelection : Maybe v } -> { item | sampleSelection : Maybe v }
-mapSampleSelectionM =
-    mapM .sampleSelection setSampleSelection
+mapSampleProjectM : (v -> v) -> { item | sampleProject : Maybe v } -> { item | sampleProject : Maybe v }
+mapSampleProjectM =
+    mapM_ .sampleProject setSampleProject
 
 
-mapSampleSelectionMCmd : (v -> ( v, Cmd msg )) -> { item | sampleSelection : Maybe v } -> ( { item | sampleSelection : Maybe v }, Cmd msg )
-mapSampleSelectionMCmd =
-    mapMCmd .sampleSelection setSampleSelection
+mapSampleProjectMCmd : (v -> ( v, Cmd msg )) -> { item | sampleProject : Maybe v } -> ( { item | sampleProject : Maybe v }, Cmd msg )
+mapSampleProjectMCmd =
+    mapMCmd_ .sampleProject setSampleProject
 
 
 setSchemaAnalysis : v -> { item | schemaAnalysis : v } -> { item | schemaAnalysis : v }
 setSchemaAnalysis =
-    set .schemaAnalysis (\value item -> { item | schemaAnalysis = value })
+    set_ .schemaAnalysis (\value item -> { item | schemaAnalysis = value })
 
 
 mapSchemaAnalysisM : (v -> v) -> { item | schemaAnalysis : Maybe v } -> { item | schemaAnalysis : Maybe v }
 mapSchemaAnalysisM =
-    mapM .schemaAnalysis setSchemaAnalysis
+    mapM_ .schemaAnalysis setSchemaAnalysis
 
 
 setScreen : v -> { item | screen : v } -> { item | screen : v }
 setScreen =
-    set .screen (\value item -> { item | screen = value })
+    set_ .screen (\value item -> { item | screen = value })
 
 
 mapScreen : (v -> v) -> { item | screen : v } -> { item | screen : v }
 mapScreen =
-    map .screen setScreen
+    map_ .screen setScreen
 
 
 setSearch : v -> { item | search : v } -> { item | search : v }
 setSearch =
-    set .search (\value item -> { item | search = value })
+    set_ .search (\value item -> { item | search = value })
 
 
 mapSearch : (v -> v) -> { item | search : v } -> { item | search : v }
 mapSearch =
-    map .search setSearch
+    map_ .search setSearch
 
 
 setSelection : v -> { item | selection : v } -> { item | selection : v }
 setSelection =
-    set .selection (\value item -> { item | selection = value })
+    set_ .selection (\value item -> { item | selection = value })
 
 
 setSettings : v -> { item | settings : v } -> { item | settings : v }
 setSettings =
-    set .settings (\value item -> { item | settings = value })
+    set_ .settings (\value item -> { item | settings = value })
 
 
 mapSettings : (v -> v) -> { item | settings : v } -> { item | settings : v }
 mapSettings =
-    map .settings setSettings
+    map_ .settings setSettings
 
 
 setSelected : v -> { item | selected : v } -> { item | selected : v }
 setSelected =
-    set .selected (\value item -> { item | selected = value })
+    set_ .selected (\value item -> { item | selected = value })
 
 
 mapSelected : (v -> v) -> { item | selected : v } -> { item | selected : v }
 mapSelected =
-    map .selected setSelected
+    map_ .selected setSelected
 
 
 setSelectionBox : v -> { item | selectionBox : v } -> { item | selectionBox : v }
 setSelectionBox =
-    set .selectionBox (\value item -> { item | selectionBox = value })
+    set_ .selectionBox (\value item -> { item | selectionBox = value })
 
 
 mapSelectionBox : (v -> v) -> { item | selectionBox : v } -> { item | selectionBox : v }
 mapSelectionBox =
-    map .selectionBox setSelectionBox
+    map_ .selectionBox setSelectionBox
 
 
 setSharing : v -> { item | sharing : v } -> { item | sharing : v }
 setSharing =
-    set .sharing (\value item -> { item | sharing = value })
+    set_ .sharing (\value item -> { item | sharing = value })
 
 
 mapSharing : (v -> v) -> { item | sharing : v } -> { item | sharing : v }
 mapSharing =
-    map .sharing setSharing
+    map_ .sharing setSharing
 
 
 mapSharingM : (v -> v) -> { item | sharing : Maybe v } -> { item | sharing : Maybe v }
 mapSharingM =
-    mapM .sharing setSharing
+    mapM_ .sharing setSharing
 
 
 setShow : v -> { item | show : v } -> { item | show : v }
 setShow =
-    set .show (\value item -> { item | show = value })
+    set_ .show (\value item -> { item | show = value })
 
 
 mapShow : (v -> v) -> { item | show : v } -> { item | show : v }
 mapShow =
-    map .show setShow
+    map_ .show setShow
 
 
 setShown : v -> { item | shown : v } -> { item | shown : v }
 setShown =
-    set .shown (\value item -> { item | shown = value })
+    set_ .shown (\value item -> { item | shown = value })
 
 
 mapShown : (v -> v) -> { item | shown : v } -> { item | shown : v }
 mapShown =
-    map .shown setShown
+    map_ .shown setShown
 
 
 setShownColumns : v -> { item | shownColumns : v } -> { item | shownColumns : v }
 setShownColumns =
-    set .shownColumns (\value item -> { item | shownColumns = value })
+    set_ .shownColumns (\value item -> { item | shownColumns = value })
 
 
 mapShownColumns : (v -> v) -> { item | shownColumns : v } -> { item | shownColumns : v }
 mapShownColumns =
-    map .shownColumns setShownColumns
+    map_ .shownColumns setShownColumns
 
 
 setShownTables : v -> { item | shownTables : v } -> { item | shownTables : v }
 setShownTables =
-    set .shownTables (\value item -> { item | shownTables = value })
+    set_ .shownTables (\value item -> { item | shownTables = value })
 
 
 mapShownTables : (v -> v) -> { item | shownTables : v } -> { item | shownTables : v }
 mapShownTables =
-    map .shownTables setShownTables
+    map_ .shownTables setShownTables
 
 
 setShowHiddenColumns : v -> { item | showHiddenColumns : v } -> { item | showHiddenColumns : v }
 setShowHiddenColumns =
-    set .showHiddenColumns (\value item -> { item | showHiddenColumns = value })
+    set_ .showHiddenColumns (\value item -> { item | showHiddenColumns = value })
 
 
 mapShowHiddenColumns : (v -> v) -> { item | showHiddenColumns : v } -> { item | showHiddenColumns : v }
 mapShowHiddenColumns =
-    map .showHiddenColumns setShowHiddenColumns
+    map_ .showHiddenColumns setShowHiddenColumns
 
 
 setShowSettings : v -> { item | showSettings : v } -> { item | showSettings : v }
 setShowSettings =
-    set .showSettings (\value item -> { item | showSettings = value })
+    set_ .showSettings (\value item -> { item | showSettings = value })
 
 
 mapShowSettings : (v -> v) -> { item | showSettings : v } -> { item | showSettings : v }
 mapShowSettings =
-    map .showSettings setShowSettings
+    map_ .showSettings setShowSettings
 
 
 setSize : v -> { item | size : v } -> { item | size : v }
 setSize =
-    set .size (\value item -> { item | size = value })
+    set_ .size (\value item -> { item | size = value })
 
 
 setSources : v -> { item | sources : v } -> { item | sources : v }
 setSources =
-    set .sources (\value item -> { item | sources = value })
+    set_ .sources (\value item -> { item | sources = value })
 
 
 mapSources : (v -> v) -> { item | sources : v } -> { item | sources : v }
 mapSources =
-    map .sources setSources
+    map_ .sources setSources
 
 
 mapSourcesL : (v -> k) -> k -> (v -> v) -> { item | sources : List v } -> { item | sources : List v }
 mapSourcesL =
-    mapL .sources setSources
+    mapL_ .sources setSources
 
 
-setSourceParsing : v -> { item | sourceParsing : v } -> { item | sourceParsing : v }
-setSourceParsing =
-    set .sourceParsing (\value item -> { item | sourceParsing = value })
+setSourceUpdate : v -> { item | sourceUpdate : v } -> { item | sourceUpdate : v }
+setSourceUpdate =
+    set_ .sourceUpdate (\value item -> { item | sourceUpdate = value })
 
 
-mapSourceParsingMCmd : (v -> ( v, Cmd msg )) -> { item | sourceParsing : Maybe v } -> ( { item | sourceParsing : Maybe v }, Cmd msg )
-mapSourceParsingMCmd =
-    mapMCmd .sourceParsing setSourceParsing
+mapSourceUpdateCmd : (v -> ( v, Cmd msg )) -> { item | sourceUpdate : v } -> ( { item | sourceUpdate : v }, Cmd msg )
+mapSourceUpdateCmd =
+    mapCmd_ .sourceUpdate setSourceUpdate
 
 
-setSourceUpload : v -> { item | sourceUpload : v } -> { item | sourceUpload : v }
-setSourceUpload =
-    set .sourceUpload (\value item -> { item | sourceUpload = value })
+setSqlSource : v -> { item | sqlSource : v } -> { item | sqlSource : v }
+setSqlSource =
+    set_ .sqlSource (\value item -> { item | sqlSource = value })
 
 
-mapSourceUploadM : (v -> v) -> { item | sourceUpload : Maybe v } -> { item | sourceUpload : Maybe v }
-mapSourceUploadM =
-    mapM .sourceUpload setSourceUpload
+mapSqlSourceM : (v -> v) -> { item | sqlSource : Maybe v } -> { item | sqlSource : Maybe v }
+mapSqlSourceM =
+    mapM_ .sqlSource setSqlSource
 
 
-mapSourceUploadMCmd : (v -> ( v, Cmd msg )) -> { item | sourceUpload : Maybe v } -> ( { item | sourceUpload : Maybe v }, Cmd msg )
-mapSourceUploadMCmd =
-    mapMCmd .sourceUpload setSourceUpload
+mapSqlSourceCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : v } -> ( { item | sqlSource : v }, Cmd msg )
+mapSqlSourceCmd =
+    mapCmd_ .sqlSource setSqlSource
 
 
-setSqlSourceUpload : v -> { item | sqlSourceUpload : v } -> { item | sqlSourceUpload : v }
-setSqlSourceUpload =
-    set .sqlSourceUpload (\value item -> { item | sqlSourceUpload = value })
+mapSqlSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, Cmd msg )
+mapSqlSourceMCmd =
+    mapMCmd_ .sqlSource setSqlSource
 
 
-mapSqlSourceUploadM : (v -> v) -> { item | sqlSourceUpload : Maybe v } -> { item | sqlSourceUpload : Maybe v }
-mapSqlSourceUploadM =
-    mapM .sqlSourceUpload setSqlSourceUpload
-
-
-mapSqlSourceUploadCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : v } -> ( { item | sqlSourceUpload : v }, Cmd msg )
-mapSqlSourceUploadCmd =
-    mapCmd .sqlSourceUpload setSqlSourceUpload
-
-
-mapSqlSourceUploadMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSourceUpload : Maybe v } -> ( { item | sqlSourceUpload : Maybe v }, Cmd msg )
-mapSqlSourceUploadMCmd =
-    mapMCmd .sqlSourceUpload setSqlSourceUpload
+setStatus : v -> { item | status : v } -> { item | status : v }
+setStatus =
+    set_ .status (\value item -> { item | status = value })
 
 
 setSwitch : v -> { item | switch : v } -> { item | switch : v }
 setSwitch =
-    set .switch (\value item -> { item | switch = value })
+    set_ .switch (\value item -> { item | switch = value })
 
 
 mapSwitch : (v -> v) -> { item | switch : v } -> { item | switch : v }
 mapSwitch =
-    map .switch setSwitch
+    map_ .switch setSwitch
 
 
 setTable : v -> { item | table : v } -> { item | table : v }
 setTable =
-    set .table (\value item -> { item | table = value })
+    set_ .table (\value item -> { item | table = value })
 
 
 setTables : v -> { item | tables : v } -> { item | tables : v }
 setTables =
-    set .tables (\value item -> { item | tables = value })
+    set_ .tables (\value item -> { item | tables = value })
 
 
 mapTables : (v -> v) -> { item | tables : v } -> { item | tables : v }
 mapTables =
-    map .tables setTables
+    map_ .tables setTables
 
 
 mapTablesL : (v -> k) -> k -> (v -> v) -> { item | tables : List v } -> { item | tables : List v }
 mapTablesL =
-    mapL .tables setTables
+    mapL_ .tables setTables
 
 
 mapTablesCmd : (v -> ( v, Cmd msg )) -> { item | tables : v } -> ( { item | tables : v }, Cmd msg )
 mapTablesCmd =
-    mapCmd .tables setTables
+    mapCmd_ .tables setTables
 
 
 setTableProps : v -> { item | tableProps : v } -> { item | tableProps : v }
 setTableProps =
-    set .tableProps (\value item -> { item | tableProps = value })
+    set_ .tableProps (\value item -> { item | tableProps = value })
 
 
 mapTableProps : (v -> v) -> { item | tableProps : v } -> { item | tableProps : v }
 mapTableProps =
-    map .tableProps setTableProps
+    map_ .tableProps setTableProps
 
 
 mapTablePropsCmd : (v -> ( v, Cmd msg )) -> { item | tableProps : v } -> ( { item | tableProps : v }, Cmd msg )
 mapTablePropsCmd =
-    mapCmd .tableProps setTableProps
+    mapCmd_ .tableProps setTableProps
 
 
 setTeam : v -> { item | team : v } -> { item | team : v }
 setTeam =
-    set .team (\value item -> { item | team = value })
+    set_ .team (\value item -> { item | team = value })
 
 
 mapTeamCmd : (v -> ( v, Cmd msg )) -> { item | team : v } -> ( { item | team : v }, Cmd msg )
 mapTeamCmd =
-    mapCmd .team setTeam
+    mapCmd_ .team setTeam
 
 
 mapMTeamCmd : (v -> ( v, Cmd msg )) -> Maybe { item | team : v } -> ( Maybe { item | team : v }, Cmd msg )
@@ -1246,161 +1315,176 @@ mapMTeamCmd f model =
 
 setText : v -> { item | text : v } -> { item | text : v }
 setText =
-    set .text (\value item -> { item | text = value })
+    set_ .text (\value item -> { item | text = value })
 
 
 setTime : v -> { item | time : v } -> { item | time : v }
 setTime =
-    set .time (\value item -> { item | time = value })
+    set_ .time (\value item -> { item | time = value })
 
 
 mapTime : (v -> v) -> { item | time : v } -> { item | time : v }
 mapTime =
-    map .time setTime
+    map_ .time setTime
 
 
 setTo : v -> { item | to : v } -> { item | to : v }
 setTo =
-    set .to (\value item -> { item | to = value })
+    set_ .to (\value item -> { item | to = value })
 
 
 setToasts : v -> { item | toasts : v } -> { item | toasts : v }
 setToasts =
-    set .toasts (\value item -> { item | toasts = value })
+    set_ .toasts (\value item -> { item | toasts = value })
 
 
 mapToasts : (v -> v) -> { item | toasts : v } -> { item | toasts : v }
 mapToasts =
-    map .toasts setToasts
+    map_ .toasts setToasts
 
 
 mapToastsCmd : (v -> ( v, Cmd msg )) -> { item | toasts : v } -> ( { item | toasts : v }, Cmd msg )
 mapToastsCmd =
-    mapCmd .toasts setToasts
+    mapCmd_ .toasts setToasts
 
 
 setToastIdx : v -> { item | toastIdx : v } -> { item | toastIdx : v }
 setToastIdx =
-    set .toastIdx (\value item -> { item | toastIdx = value })
+    set_ .toastIdx (\value item -> { item | toastIdx = value })
 
 
 setTop : v -> { item | top : v } -> { item | top : v }
 setTop =
-    set .top (\value item -> { item | top = value })
+    set_ .top (\value item -> { item | top = value })
 
 
 mapTop : (v -> v) -> { item | top : v } -> { item | top : v }
 mapTop =
-    map .top setTop
+    map_ .top setTop
 
 
 setTwitter : v -> { item | twitter : v } -> { item | twitter : v }
 setTwitter =
-    set .twitter (\value item -> { item | twitter = value })
+    set_ .twitter (\value item -> { item | twitter = value })
 
 
 setUniques : v -> { item | uniques : v } -> { item | uniques : v }
 setUniques =
-    set .uniques (\value item -> { item | uniques = value })
+    set_ .uniques (\value item -> { item | uniques = value })
 
 
 mapUniques : (v -> v) -> { item | uniques : v } -> { item | uniques : v }
 mapUniques =
-    map .uniques setUniques
+    map_ .uniques setUniques
 
 
 setUpdatedAt : v -> { item | updatedAt : v } -> { item | updatedAt : v }
 setUpdatedAt =
-    set .updatedAt (\value item -> { item | updatedAt = value })
+    set_ .updatedAt (\value item -> { item | updatedAt = value })
 
 
 setUpload : v -> { item | upload : v } -> { item | upload : v }
 setUpload =
-    set .upload (\value item -> { item | upload = value })
+    set_ .upload (\value item -> { item | upload = value })
 
 
 mapUpload : (v -> v) -> { item | upload : v } -> { item | upload : v }
 mapUpload =
-    map .upload setUpload
+    map_ .upload setUpload
 
 
 mapUploadM : (v -> v) -> { item | upload : Maybe v } -> { item | upload : Maybe v }
 mapUploadM =
-    mapM .upload setUpload
+    mapM_ .upload setUpload
 
 
 mapUploadCmd : (v -> ( v, Cmd msg )) -> { item | upload : v } -> ( { item | upload : v }, Cmd msg )
 mapUploadCmd =
-    mapCmd .upload setUpload
+    mapCmd_ .upload setUpload
+
+
+setUrl : v -> { item | url : v } -> { item | url : v }
+setUrl =
+    set_ .url (\value item -> { item | url = value })
 
 
 setUsedLayout : v -> { item | usedLayout : v } -> { item | usedLayout : v }
 setUsedLayout =
-    set .usedLayout (\value item -> { item | usedLayout = value })
+    set_ .usedLayout (\value item -> { item | usedLayout = value })
 
 
 mapUsedLayout : (v -> v) -> { item | usedLayout : v } -> { item | usedLayout : v }
 mapUsedLayout =
-    map .usedLayout setUsedLayout
+    map_ .usedLayout setUsedLayout
 
 
 setUser : v -> { item | user : v } -> { item | user : v }
 setUser =
-    set .user (\value item -> { item | user = value })
+    set_ .user (\value item -> { item | user = value })
 
 
 mapUser : (v -> v) -> { item | user : v } -> { item | user : v }
 mapUser =
-    map .user setUser
+    map_ .user setUser
 
 
 mapUserM : (v -> v) -> { item | user : Maybe v } -> { item | user : Maybe v }
 mapUserM =
-    mapM .user setUser
+    mapM_ .user setUser
 
 
 setUsername : v -> { item | username : v } -> { item | username : v }
 setUsername =
-    set .username (\value item -> { item | username = value })
+    set_ .username (\value item -> { item | username = value })
 
 
 mapUsername : (v -> v) -> { item | username : v } -> { item | username : v }
 mapUsername =
-    map .username setUsername
+    map_ .username setUsername
 
 
 setValue : v -> { item | value : v } -> { item | value : v }
 setValue =
-    set .value (\value item -> { item | value = value })
+    set_ .value (\value item -> { item | value = value })
 
 
 setVirtualRelation : v -> { item | virtualRelation : v } -> { item | virtualRelation : v }
 setVirtualRelation =
-    set .virtualRelation (\value item -> { item | virtualRelation = value })
+    set_ .virtualRelation (\value item -> { item | virtualRelation = value })
 
 
 mapVirtualRelationM : (v -> v) -> { item | virtualRelation : Maybe v } -> { item | virtualRelation : Maybe v }
 mapVirtualRelationM =
-    mapM .virtualRelation setVirtualRelation
+    mapM_ .virtualRelation setVirtualRelation
 
 
 setWebsite : v -> { item | website : v } -> { item | website : v }
 setWebsite =
-    set .website (\value item -> { item | website = value })
+    set_ .website (\value item -> { item | website = value })
 
 
 setZoom : v -> { item | zoom : v } -> { item | zoom : v }
 setZoom =
-    set .zoom (\value item -> { item | zoom = value })
+    set_ .zoom (\value item -> { item | zoom = value })
 
 
 setZone : v -> { item | zone : v } -> { item | zone : v }
 setZone =
-    set .zone (\value item -> { item | zone = value })
+    set_ .zone (\value item -> { item | zone = value })
 
 
-set : (item -> v) -> (v -> item -> item) -> v -> item -> item
-set get update value item =
+mapM : (v -> v) -> Maybe v -> Maybe v
+mapM transform item =
+    item |> Maybe.map transform
+
+
+mapMCmd : (v -> ( v, Cmd msg )) -> Maybe v -> ( Maybe v, Cmd msg )
+mapMCmd transform item =
+    item |> Maybe.mapOrElse (transform >> Tuple.mapFirst Just) ( Nothing, Cmd.none )
+
+
+set_ : (item -> v) -> (v -> item -> item) -> v -> item -> item
+set_ get update value item =
     if get item == value then
         item
 
@@ -1408,18 +1492,18 @@ set get update value item =
         update value item
 
 
-map : (item -> v) -> (v -> item -> item) -> (v -> v) -> item -> item
-map get update transform item =
+map_ : (item -> v) -> (v -> item -> item) -> (v -> v) -> item -> item
+map_ get update transform item =
     update (item |> get |> transform) item
 
 
-mapM : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> v) -> item -> item
-mapM get update transform item =
+mapM_ : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> v) -> item -> item
+mapM_ get update transform item =
     update (item |> get |> Maybe.map transform) item
 
 
-mapL : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> v) -> item -> item
-mapL get update getKey key transform item =
+mapL_ : (item -> List v) -> (List v -> item -> item) -> (v -> k) -> k -> (v -> v) -> item -> item
+mapL_ get update getKey key transform item =
     update
         (item
             |> get
@@ -1435,24 +1519,24 @@ mapL get update getKey key transform item =
         item
 
 
-mapD : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> v) -> item -> item
-mapD get update key transform item =
+mapD_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> v) -> item -> item
+mapD_ get update key transform item =
     update (item |> get |> Dict.update key (Maybe.map transform)) item
 
 
-mapCmd : (item -> v) -> (v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapCmd get update transform item =
+mapCmd_ : (item -> v) -> (v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
+mapCmd_ get update transform item =
     item |> get |> transform |> Tuple.mapFirst (\value -> update value item)
 
 
-mapMCmd : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapMCmd get update transform item =
-    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> update (Just value) item)) ( item, Cmd.none )
+mapMCmd_ : (item -> Maybe v) -> (Maybe v -> item -> item) -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
+mapMCmd_ get update transform item =
+    item |> get |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\value -> item |> update (Just value))) ( item, Cmd.none )
 
 
-mapDCmd : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
-mapDCmd get update key transform item =
-    item |> get |> Dict.get key |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\n -> mapD get update key (\_ -> n) item)) ( item, Cmd.none )
+mapDCmd_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
+mapDCmd_ get update key transform item =
+    item |> get |> Dict.get key |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\n -> mapD_ get update key (\_ -> n) item)) ( item, Cmd.none )
 
 
 

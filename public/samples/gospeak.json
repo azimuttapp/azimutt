@@ -1,0 +1,3231 @@
+{
+  "tables": [
+    {
+      "schema": "public",
+      "table": "cfps",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "group_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "begin",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "close",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "cfps_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "cfps_slug_key",
+          "columns": [
+            "slug"
+          ],
+          "definition": "(slug)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "comments",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "proposal_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": "character varying(15)",
+          "nullable": false
+        },
+        {
+          "name": "answers",
+          "type": "character(36)"
+        },
+        {
+          "name": "text",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "comments_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "comments_event_idx",
+          "columns": [
+            "event_id"
+          ],
+          "definition": "USING btree (event_id)"
+        },
+        {
+          "name": "comments_proposal_idx",
+          "columns": [
+            "proposal_id"
+          ],
+          "definition": "USING btree (proposal_id)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "contacts",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "partner_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "first_name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "contacts_pkey",
+        "columns": [
+          "id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "credentials",
+      "columns": [
+        {
+          "name": "provider_id",
+          "type": "character varying(30)",
+          "nullable": false
+        },
+        {
+          "name": "provider_key",
+          "type": "character varying(100)",
+          "nullable": false
+        },
+        {
+          "name": "hasher",
+          "type": "character varying(100)",
+          "nullable": false
+        },
+        {
+          "name": "password",
+          "type": "character varying(100)",
+          "nullable": false
+        },
+        {
+          "name": "salt",
+          "type": "character varying(100)"
+        }
+      ],
+      "primaryKey": {
+        "name": "credentials_pkey",
+        "columns": [
+          "provider_id",
+          "provider_key"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "env",
+      "columns": [
+        {
+          "name": "name",
+          "type": "character varying(10)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "env_pkey",
+        "columns": [
+          "name"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "event_rsvps",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "answer",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "answered_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "event_rsvps_pkey",
+        "columns": [
+          "event_id",
+          "user_id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "group_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "cfp_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "slug",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "start",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "max_attendee",
+          "type": "integer"
+        },
+        {
+          "name": "allow_rsvp",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "orga_notes",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "orga_notes_updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "orga_notes_updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "venue",
+          "type": "character(36)"
+        },
+        {
+          "name": "talks",
+          "type": "character varying(258)",
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "published",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "meetupgroup",
+          "type": "character varying(80)"
+        },
+        {
+          "name": "meetupevent",
+          "type": "bigint"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": "character varying(12)",
+          "default": "'Meetup'::character varying",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "events_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "events_group_id_slug_key",
+          "columns": [
+            "group_id",
+            "slug"
+          ],
+          "definition": "(group_id, slug)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "external_cfps",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "begin",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "close",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "url",
+          "type": "character varying(1024)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "event_id",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "external_cfps_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "external_cfps_close_idx",
+          "columns": [
+            "close"
+          ],
+          "definition": "USING btree (close)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "external_events",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "logo",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "start",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "finish",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "location",
+          "type": "character varying(4096)"
+        },
+        {
+          "name": "location_id",
+          "type": "character varying(150)"
+        },
+        {
+          "name": "location_lat",
+          "type": "double precision"
+        },
+        {
+          "name": "location_lng",
+          "type": "double precision"
+        },
+        {
+          "name": "location_locality",
+          "type": "character varying(50)"
+        },
+        {
+          "name": "location_country",
+          "type": "character varying(30)"
+        },
+        {
+          "name": "url",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "tickets_url",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "videos_url",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "twitter_account",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "twitter_hashtag",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": "character varying(12)",
+          "default": "'Conference'::character varying",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "external_events_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "external_events_name_key",
+          "columns": [
+            "name"
+          ],
+          "definition": "(name)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "external_events_location_lat_idx",
+          "columns": [
+            "location_lat"
+          ],
+          "definition": "USING btree (location_lat)"
+        },
+        {
+          "name": "external_events_location_lng_idx",
+          "columns": [
+            "location_lng"
+          ],
+          "definition": "USING btree (location_lng)"
+        },
+        {
+          "name": "external_events_start_idx",
+          "columns": [
+            "start"
+          ],
+          "definition": "USING btree (start)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "external_proposals",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "talk_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "event_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "duration",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "message",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "speakers",
+          "type": "character varying(184)",
+          "nullable": false
+        },
+        {
+          "name": "slides",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "video",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "url",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "external_proposals_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "external_proposals_talk_id_event_id_key",
+          "columns": [
+            "talk_id",
+            "event_id"
+          ],
+          "definition": "(talk_id, event_id)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "external_proposals_event_id_idx",
+          "columns": [
+            "event_id"
+          ],
+          "definition": "USING btree (event_id)"
+        },
+        {
+          "name": "external_proposals_status_idx",
+          "columns": [
+            "status"
+          ],
+          "definition": "USING btree (status)"
+        },
+        {
+          "name": "external_proposals_talk_id_idx",
+          "columns": [
+            "talk_id"
+          ],
+          "definition": "USING btree (talk_id)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "flyway_schema_history",
+      "columns": [
+        {
+          "name": "installed_rank",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "version",
+          "type": "character varying(50)"
+        },
+        {
+          "name": "description",
+          "type": "character varying(200)",
+          "nullable": false
+        },
+        {
+          "name": "type",
+          "type": "character varying(20)",
+          "nullable": false
+        },
+        {
+          "name": "script",
+          "type": "character varying(1000)",
+          "nullable": false
+        },
+        {
+          "name": "checksum",
+          "type": "integer"
+        },
+        {
+          "name": "installed_by",
+          "type": "character varying(100)",
+          "nullable": false
+        },
+        {
+          "name": "installed_on",
+          "type": "timestamp without time zone",
+          "default": "now()",
+          "nullable": false
+        },
+        {
+          "name": "execution_time",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "success",
+          "type": "boolean",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "flyway_schema_history_pk",
+        "columns": [
+          "installed_rank"
+        ]
+      },
+      "indexes": [
+        {
+          "name": "flyway_schema_history_s_idx",
+          "columns": [
+            "success"
+          ],
+          "definition": "USING btree (success)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "group_members",
+      "columns": [
+        {
+          "name": "group_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "role",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "presentation",
+          "type": "character varying(4096)"
+        },
+        {
+          "name": "joined_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "leaved_at",
+          "type": "timestamp without time zone"
+        }
+      ],
+      "primaryKey": {
+        "name": "group_members_pkey",
+        "columns": [
+          "group_id",
+          "user_id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "group_settings",
+      "columns": [
+        {
+          "name": "group_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "meetup_access_token",
+          "type": "character varying(200)"
+        },
+        {
+          "name": "meetup_refresh_token",
+          "type": "character varying(200)"
+        },
+        {
+          "name": "meetup_group_slug",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "meetup_logged_user_id",
+          "type": "bigint"
+        },
+        {
+          "name": "meetup_logged_user_name",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "slack_token",
+          "type": "character varying(200)"
+        },
+        {
+          "name": "slack_bot_name",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "slack_bot_avatar",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "event_description",
+          "type": "character varying",
+          "nullable": false
+        },
+        {
+          "name": "event_templates",
+          "type": "character varying",
+          "nullable": false
+        },
+        {
+          "name": "actions",
+          "type": "character varying",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "proposal_tweet",
+          "type": "character varying",
+          "default": "'Presentation of \"{{proposal.title}}\" by{{#proposal.speakers}}{{^-first}} and{{/-first}} {{#links.twitter}}{{handle}}{{/links.twitter}}{{^links.twitter}}{{name}}{{/links.twitter}}{{/proposal.speakers}}'::character varying",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "group_settings_pkey",
+        "columns": [
+          "group_id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "groups",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "logo",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "banner",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "contact",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "website",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "location",
+          "type": "character varying(4096)"
+        },
+        {
+          "name": "location_lat",
+          "type": "double precision"
+        },
+        {
+          "name": "location_lng",
+          "type": "double precision"
+        },
+        {
+          "name": "location_locality",
+          "type": "character varying(50)"
+        },
+        {
+          "name": "location_country",
+          "type": "character varying(30)"
+        },
+        {
+          "name": "owners",
+          "type": "character varying(369)",
+          "nullable": false
+        },
+        {
+          "name": "social_facebook",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_instagram",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_twitter",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_linkedin",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_youtube",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_meetup",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_eventbrite",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_slack",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_discord",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_github",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "location_id",
+          "type": "character varying(150)"
+        }
+      ],
+      "primaryKey": {
+        "name": "groups_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "groups_slug_key",
+          "columns": [
+            "slug"
+          ],
+          "definition": "(slug)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "logins",
+      "columns": [
+        {
+          "name": "provider_id",
+          "type": "character varying(30)",
+          "nullable": false
+        },
+        {
+          "name": "provider_key",
+          "type": "character varying(100)",
+          "nullable": false
+        },
+        {
+          "name": "user_id",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "logins_pkey",
+        "columns": [
+          "provider_id",
+          "provider_key"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "partners",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "group_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)"
+        },
+        {
+          "name": "logo",
+          "type": "character varying(1024)",
+          "nullable": false
+        },
+        {
+          "name": "social_facebook",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_instagram",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_twitter",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_linkedin",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_youtube",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_meetup",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_eventbrite",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_slack",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_discord",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_github",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "partners_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "partners_group_id_slug_key",
+          "columns": [
+            "group_id",
+            "slug"
+          ],
+          "definition": "(group_id, slug)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "proposal_ratings",
+      "columns": [
+        {
+          "name": "proposal_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "grade",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "uniques": [
+        {
+          "name": "proposal_ratings_proposal_id_created_by_key",
+          "columns": [
+            "proposal_id",
+            "created_by"
+          ],
+          "definition": "(proposal_id, created_by)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "proposals",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "talk_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "cfp_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "event_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "status",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "duration",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "speakers",
+          "type": "character varying(184)",
+          "nullable": false
+        },
+        {
+          "name": "slides",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "video",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "orga_tags",
+          "type": "character varying(150)",
+          "default": "''::character varying",
+          "nullable": false
+        },
+        {
+          "name": "message",
+          "type": "character varying(4096)",
+          "default": "''::character varying",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "proposals_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "proposals_talk_id_cfp_id_key",
+          "columns": [
+            "talk_id",
+            "cfp_id"
+          ],
+          "definition": "(talk_id, cfp_id)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "proposals_status_idx",
+          "columns": [
+            "status"
+          ],
+          "definition": "USING btree (status)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "sponsor_packs",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "group_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "price",
+          "type": "double precision",
+          "nullable": false
+        },
+        {
+          "name": "currency",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "duration",
+          "type": "character varying(20)",
+          "nullable": false
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "sponsor_packs_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "sponsor_packs_group_id_slug_key",
+          "columns": [
+            "group_id",
+            "slug"
+          ],
+          "definition": "(group_id, slug)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "sponsors",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "group_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "partner_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "sponsor_pack_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "contact_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "start",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "finish",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "paid",
+          "type": "date"
+        },
+        {
+          "name": "price",
+          "type": "double precision",
+          "nullable": false
+        },
+        {
+          "name": "currency",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "sponsors_pkey",
+        "columns": [
+          "id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "talks",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "duration",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "speakers",
+          "type": "character varying(184)",
+          "nullable": false
+        },
+        {
+          "name": "slides",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "video",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "message",
+          "type": "character varying(4096)",
+          "default": "''::character varying",
+          "nullable": false
+        }
+      ],
+      "primaryKey": {
+        "name": "talks_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "talks_slug_key",
+          "columns": [
+            "slug"
+          ],
+          "definition": "(slug)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "talks_status_idx",
+          "columns": [
+            "status"
+          ],
+          "definition": "USING btree (status)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "user_requests",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "kind",
+          "type": "character varying(30)",
+          "nullable": false
+        },
+        {
+          "name": "group_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "cfp_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "event_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "talk_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "proposal_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "email",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "payload",
+          "type": "character varying(8192)"
+        },
+        {
+          "name": "deadline",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)"
+        },
+        {
+          "name": "accepted_at",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "accepted_by",
+          "type": "character(36)"
+        },
+        {
+          "name": "rejected_at",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "rejected_by",
+          "type": "character(36)"
+        },
+        {
+          "name": "canceled_at",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "canceled_by",
+          "type": "character(36)"
+        },
+        {
+          "name": "external_event_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "external_cfp_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "external_proposal_id",
+          "type": "character(36)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "users",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "slug",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "status",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "first_name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "last_name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "email",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "email_validated",
+          "type": "timestamp without time zone"
+        },
+        {
+          "name": "email_validation_before_login",
+          "type": "boolean",
+          "nullable": false
+        },
+        {
+          "name": "avatar",
+          "type": "character varying(1024)",
+          "nullable": false
+        },
+        {
+          "name": "bio",
+          "type": "character varying(4096)"
+        },
+        {
+          "name": "company",
+          "type": "character varying(36)"
+        },
+        {
+          "name": "location",
+          "type": "character varying(36)"
+        },
+        {
+          "name": "phone",
+          "type": "character varying(36)"
+        },
+        {
+          "name": "website",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_facebook",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_instagram",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_twitter",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_linkedin",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_youtube",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_meetup",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_eventbrite",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_slack",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_discord",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "social_github",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "title",
+          "type": "character varying(1024)"
+        },
+        {
+          "name": "mentoring",
+          "type": "character varying(4096)"
+        }
+      ],
+      "primaryKey": {
+        "name": "users_pkey",
+        "columns": [
+          "id"
+        ]
+      },
+      "uniques": [
+        {
+          "name": "users_email_key",
+          "columns": [
+            "email"
+          ],
+          "definition": "(email)"
+        },
+        {
+          "name": "users_slug_key",
+          "columns": [
+            "slug"
+          ],
+          "definition": "(slug)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "venues",
+      "columns": [
+        {
+          "name": "id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "partner_id",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "contact_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "address",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "address_lat",
+          "type": "double precision",
+          "nullable": false
+        },
+        {
+          "name": "address_lng",
+          "type": "double precision",
+          "nullable": false
+        },
+        {
+          "name": "address_country",
+          "type": "character varying(30)",
+          "nullable": false
+        },
+        {
+          "name": "notes",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "room_size",
+          "type": "integer"
+        },
+        {
+          "name": "meetupgroup",
+          "type": "character varying(80)"
+        },
+        {
+          "name": "meetupvenue",
+          "type": "bigint"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "created_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "updated_by",
+          "type": "character(36)",
+          "nullable": false
+        },
+        {
+          "name": "address_id",
+          "type": "character varying(150)",
+          "default": "''::character varying",
+          "nullable": false
+        },
+        {
+          "name": "address_locality",
+          "type": "character varying(150)"
+        }
+      ],
+      "primaryKey": {
+        "name": "venues_pkey",
+        "columns": [
+          "id"
+        ]
+      }
+    },
+    {
+      "schema": "public",
+      "table": "video_sources",
+      "columns": [
+        {
+          "name": "video_id",
+          "type": "character varying(15)",
+          "nullable": false
+        },
+        {
+          "name": "talk_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "proposal_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "external_proposal_id",
+          "type": "character(36)"
+        },
+        {
+          "name": "external_event_id",
+          "type": "character(36)"
+        }
+      ],
+      "uniques": [
+        {
+          "name": "video_sources_video_id_external_event_id_key",
+          "columns": [
+            "video_id",
+            "external_event_id"
+          ],
+          "definition": "(video_id, external_event_id)"
+        },
+        {
+          "name": "video_sources_video_id_external_proposal_id_key",
+          "columns": [
+            "video_id",
+            "external_proposal_id"
+          ],
+          "definition": "(video_id, external_proposal_id)"
+        },
+        {
+          "name": "video_sources_video_id_proposal_id_key",
+          "columns": [
+            "video_id",
+            "proposal_id"
+          ],
+          "definition": "(video_id, proposal_id)"
+        },
+        {
+          "name": "video_sources_video_id_talk_id_key",
+          "columns": [
+            "video_id",
+            "talk_id"
+          ],
+          "definition": "(video_id, talk_id)"
+        }
+      ]
+    },
+    {
+      "schema": "public",
+      "table": "videos",
+      "columns": [
+        {
+          "name": "platform",
+          "type": "character varying(10)",
+          "nullable": false
+        },
+        {
+          "name": "url",
+          "type": "character varying(1024)",
+          "nullable": false
+        },
+        {
+          "name": "id",
+          "type": "character varying(15)",
+          "nullable": false
+        },
+        {
+          "name": "channel_id",
+          "type": "character varying(30)",
+          "nullable": false
+        },
+        {
+          "name": "channel_name",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "playlist_id",
+          "type": "character varying(40)"
+        },
+        {
+          "name": "playlist_name",
+          "type": "character varying(120)"
+        },
+        {
+          "name": "title",
+          "type": "character varying(120)",
+          "nullable": false
+        },
+        {
+          "name": "description",
+          "type": "character varying(4096)",
+          "nullable": false
+        },
+        {
+          "name": "tags",
+          "type": "character varying(150)",
+          "nullable": false
+        },
+        {
+          "name": "published_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        },
+        {
+          "name": "duration",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "lang",
+          "type": "character varying(2)",
+          "nullable": false
+        },
+        {
+          "name": "views",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "likes",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "dislikes",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "comments",
+          "type": "bigint",
+          "nullable": false
+        },
+        {
+          "name": "updated_at",
+          "type": "timestamp without time zone",
+          "nullable": false
+        }
+      ],
+      "uniques": [
+        {
+          "name": "videos_id_key",
+          "columns": [
+            "id"
+          ],
+          "definition": "(id)"
+        },
+        {
+          "name": "videos_url_key",
+          "columns": [
+            "url"
+          ],
+          "definition": "(url)"
+        }
+      ],
+      "indexes": [
+        {
+          "name": "videos_channel_id_idx",
+          "columns": [
+            "channel_id"
+          ],
+          "definition": "USING btree (channel_id)"
+        },
+        {
+          "name": "videos_channel_name_idx",
+          "columns": [
+            "channel_name"
+          ],
+          "definition": "USING btree (channel_name)"
+        },
+        {
+          "name": "videos_id_idx",
+          "columns": [
+            "id"
+          ],
+          "definition": "USING btree (id)"
+        },
+        {
+          "name": "videos_playlist_id_idx",
+          "columns": [
+            "playlist_id"
+          ],
+          "definition": "USING btree (playlist_id)"
+        },
+        {
+          "name": "videos_playlist_name_idx",
+          "columns": [
+            "playlist_name"
+          ],
+          "definition": "USING btree (playlist_name)"
+        },
+        {
+          "name": "videos_title_idx",
+          "columns": [
+            "title"
+          ],
+          "definition": "USING btree (title)"
+        }
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "name": "cfps_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "cfps",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "cfps_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "cfps",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "cfps_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "cfps",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "comments_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "comments",
+        "column": "event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "comments_proposal_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "comments",
+        "column": "proposal_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "id"
+      }
+    },
+    {
+      "name": "comments_answers_fkey",
+      "src": {
+        "schema": "public",
+        "table": "comments",
+        "column": "answers"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "comments",
+        "column": "id"
+      }
+    },
+    {
+      "name": "comments_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "comments",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "contacts_partner_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "contacts",
+        "column": "partner_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "partners",
+        "column": "id"
+      }
+    },
+    {
+      "name": "contacts_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "contacts",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "contacts_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "contacts",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "event_rsvps_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "event_rsvps",
+        "column": "event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "event_rsvps_user_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "event_rsvps",
+        "column": "user_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "events_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "events",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "events_cfp_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "events",
+        "column": "cfp_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "cfps",
+        "column": "id"
+      }
+    },
+    {
+      "name": "events_orga_notes_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "events",
+        "column": "orga_notes_updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "events_venue_fkey",
+      "src": {
+        "schema": "public",
+        "table": "events",
+        "column": "venue"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "venues",
+        "column": "id"
+      }
+    },
+    {
+      "name": "events_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "events",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "events_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "events",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_cfps_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_cfps",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_cfps_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_cfps",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_cfps_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_cfps",
+        "column": "event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "external_events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_events_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_events",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_events_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_events",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_proposals_talk_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_proposals",
+        "column": "talk_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "talks",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_proposals_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_proposals",
+        "column": "event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "external_events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_proposals_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_proposals",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "external_proposals_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "external_proposals",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "group_members_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "group_members",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "group_members_user_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "group_members",
+        "column": "user_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "group_settings_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "group_settings",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "group_settings_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "group_settings",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "groups_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "groups",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "groups_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "groups",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "logins_user_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "logins",
+        "column": "user_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "partners_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "partners",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "partners_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "partners",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "partners_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "partners",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "proposal_ratings_proposal_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "proposal_ratings",
+        "column": "proposal_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "id"
+      }
+    },
+    {
+      "name": "proposal_ratings_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "proposal_ratings",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "proposals_talk_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "talk_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "talks",
+        "column": "id"
+      }
+    },
+    {
+      "name": "proposals_cfp_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "cfp_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "cfps",
+        "column": "id"
+      }
+    },
+    {
+      "name": "proposals_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "proposals_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "proposals_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsor_packs_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsor_packs",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsor_packs_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsor_packs",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsor_packs_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsor_packs",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsors_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsors",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsors_partner_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsors",
+        "column": "partner_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "partners",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsors_sponsor_pack_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsors",
+        "column": "sponsor_pack_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "sponsor_packs",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsors_contact_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsors",
+        "column": "contact_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "contacts",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsors_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsors",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "sponsors_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "sponsors",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "talks_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "talks",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "talks_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "talks",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_group_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "group_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "groups",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_cfp_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "cfp_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "cfps",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_talk_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "talk_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "talks",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_proposal_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "proposal_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_accepted_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "accepted_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_rejected_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "rejected_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_canceled_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "canceled_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_external_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "external_event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "external_events",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_external_cfp_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "external_cfp_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "external_cfps",
+        "column": "id"
+      }
+    },
+    {
+      "name": "user_requests_external_proposal_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "user_requests",
+        "column": "external_proposal_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "external_proposals",
+        "column": "id"
+      }
+    },
+    {
+      "name": "venues_partner_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "venues",
+        "column": "partner_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "partners",
+        "column": "id"
+      }
+    },
+    {
+      "name": "venues_contact_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "venues",
+        "column": "contact_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "contacts",
+        "column": "id"
+      }
+    },
+    {
+      "name": "venues_created_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "venues",
+        "column": "created_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "venues_updated_by_fkey",
+      "src": {
+        "schema": "public",
+        "table": "venues",
+        "column": "updated_by"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "users",
+        "column": "id"
+      }
+    },
+    {
+      "name": "video_sources_video_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "video_sources",
+        "column": "video_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "videos",
+        "column": "id"
+      }
+    },
+    {
+      "name": "video_sources_talk_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "video_sources",
+        "column": "talk_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "talks",
+        "column": "id"
+      }
+    },
+    {
+      "name": "video_sources_proposal_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "video_sources",
+        "column": "proposal_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "proposals",
+        "column": "id"
+      }
+    },
+    {
+      "name": "video_sources_external_proposal_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "video_sources",
+        "column": "external_proposal_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "external_proposals",
+        "column": "id"
+      }
+    },
+    {
+      "name": "video_sources_external_event_id_fkey",
+      "src": {
+        "schema": "public",
+        "table": "video_sources",
+        "column": "external_event_id"
+      },
+      "ref": {
+        "schema": "public",
+        "table": "external_events",
+        "column": "id"
+      }
+    }
+  ]
+}

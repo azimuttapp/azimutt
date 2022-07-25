@@ -1,25 +1,34 @@
 module Pages.Projects.New exposing (Model, Msg, page)
 
 import Components.Molecules.Dropdown as Dropdown
-import Conf exposing (SampleSchema)
+import Conf
 import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
+import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
-import Libs.Models.FileUrl as FileUrl
+import Libs.Random as Random
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.Project.Source as Source
+import Models.Project.SourceId as SourceId
+import Models.SourceInfo as SourceInfo
 import Page
 import PagesComponents.Projects.New.Models as Models exposing (Msg(..), Tab(..))
 import PagesComponents.Projects.New.View exposing (viewNewProject)
 import Ports exposing (JsMsg(..))
+import Random
 import Request
-import Services.Lenses exposing (mapOpenedDialogs, mapProjectImportM, mapProjectImportMCmd, mapSampleSelectionM, mapSampleSelectionMCmd, mapSqlSourceUploadM, mapSqlSourceUploadMCmd, mapToastsCmd, setConfirm)
-import Services.ProjectImport as ProjectImport
-import Services.SqlSourceUpload as SqlSourceUpload
+import Services.Backend as Backend
+import Services.DatabaseSource as DatabaseSource
+import Services.ImportProject as ImportProject
+import Services.JsonSource as JsonSource
+import Services.Lenses exposing (mapDatabaseSourceMCmd, mapImportProjectMCmd, mapJsonSourceMCmd, mapOpenedDialogs, mapSampleProjectMCmd, mapSqlSourceMCmd, mapToastsCmd, setConfirm)
+import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
 import Time
@@ -31,7 +40,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init req
-        , update = update req
+        , update = update req shared.now shared.conf.backendUrl
         , view = view shared req
         , subscriptions = subscriptions
         }
@@ -56,47 +65,21 @@ title =
 
 init : Request.With Params -> ( Model, Cmd Msg )
 init req =
-    let
-        sample : Maybe SampleSchema
-        sample =
-            req.query |> Dict.get "sample" |> Maybe.andThen (\key -> Conf.schemaSamples |> Dict.get key)
-
-        tab : Maybe String
-        tab =
-            req.query |> Dict.get "tab"
-
-        selectedTab : Tab
-        selectedTab =
-            (sample |> Maybe.map (\_ -> Sample))
-                |> Maybe.withDefault
-                    (case tab of
-                        Just "schema" ->
-                            Schema
-
-                        Just "import" ->
-                            Import
-
-                        Just "sample" ->
-                            Sample
-
-                        _ ->
-                            Schema
-                    )
-    in
     ( { selectedMenu = "New project"
       , mobileMenuOpen = False
       , openedCollapse = ""
       , projects = []
-      , selectedTab = Sample
-      , sqlSourceUpload = Nothing
-      , projectImport = Nothing
-      , sampleSelection = Nothing
+      , selectedTab = TabDatabase
+      , databaseSource = Nothing
+      , sqlSource = Nothing
+      , jsonSource = Nothing
+      , importProject = Nothing
+      , sampleProject = Nothing
       , openedDropdown = ""
       , toasts = Toasts.init
       , confirm = Nothing
       , openedDialogs = []
       }
-        |> setSelectedTab selectedTab
     , Cmd.batch
         ([ Ports.setMeta
             { title = Just title
@@ -108,30 +91,24 @@ init req =
          , Ports.trackPage "new-project"
          , Ports.listProjects
          ]
-            ++ (sample |> Maybe.mapOrElse (\s -> [ T.send (SampleSelectMsg (ProjectImport.SelectRemoteFile s.url (Just s.key))) ]) [])
+            ++ ((req.query |> Dict.get "database" |> Maybe.map (\value -> [ T.send (InitTab TabDatabase), T.sendAfter 1 (DatabaseSourceMsg (DatabaseSource.GetSchema value)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\value -> [ T.send (InitTab TabSql), T.sendAfter 1 (SqlSourceMsg (SqlSource.GetRemoteFile value)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\value -> [ T.send (InitTab TabJson), T.sendAfter 1 (JsonSourceMsg (JsonSource.GetRemoteFile value)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "empty" |> Maybe.map (\_ -> [ T.send (InitTab TabEmptyProject) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "project" |> Maybe.map (\value -> [ T.send (InitTab TabProject), T.sendAfter 1 (ImportProjectMsg (ImportProject.GetRemoteFile value Nothing)) ]))
+                    |> Maybe.orElse (req.query |> Dict.get "sample" |> Maybe.map (\value -> T.send (InitTab TabSamples) :: (Conf.schemaSamples |> Dict.get value |> Maybe.mapOrElse (\s -> [ T.sendAfter 1 (SampleProjectMsg (ImportProject.GetRemoteFile s.url (Just s.key))) ]) [])))
+                    |> Maybe.withDefault [ T.send (InitTab TabDatabase) ]
+               )
         )
     )
-
-
-setSelectedTab : Tab -> Model -> Model
-setSelectedTab tab model =
-    case tab of
-        Schema ->
-            { model | selectedTab = tab, sqlSourceUpload = Just (SqlSourceUpload.init Conf.schema.default Nothing Nothing (\_ -> Noop "select-tab-source-upload")), projectImport = Nothing, sampleSelection = Nothing }
-
-        Import ->
-            { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Just ProjectImport.init, sampleSelection = Nothing }
-
-        Sample ->
-            { model | selectedTab = tab, sqlSourceUpload = Nothing, projectImport = Nothing, sampleSelection = Just ProjectImport.init }
 
 
 
 -- UPDATE
 
 
-update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
-update req msg model =
+update : Request.With Params -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
+update req now backendUrl msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -142,70 +119,80 @@ update req msg model =
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
 
-        SelectTab tab ->
-            ( model |> setSelectedTab tab, Cmd.none )
+        InitTab tab ->
+            ( let
+                clean : Model
+                clean =
+                    { model | selectedTab = tab, databaseSource = Nothing, sqlSource = Nothing, jsonSource = Nothing, importProject = Nothing, sampleProject = Nothing }
+              in
+              case tab of
+                TabDatabase ->
+                    { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-database-source")) }
 
-        SqlSourceUploadMsg message ->
-            model
-                |> mapSqlSourceUploadMCmd (SqlSourceUpload.update message SqlSourceUploadMsg)
-                |> (\( m, cmd ) ->
-                        if message == SqlSourceUpload.BuildSource then
-                            ( m, Cmd.batch [ cmd, Ports.confetti "create-project-btn" ] )
+                TabSql ->
+                    { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
 
-                        else
-                            ( m, cmd )
-                   )
+                TabJson ->
+                    { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
 
-        SqlSourceUploadDrop ->
-            ( model |> mapSqlSourceUploadM (\_ -> SqlSourceUpload.init Conf.schema.default Nothing Nothing (\_ -> Noop "drop-source-upload")), Cmd.none )
+                TabEmptyProject ->
+                    clean
 
-        SqlSourceUploadCreate projectId source ->
-            Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source
-                |> (\project ->
-                        ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
-                   )
+                TabProject ->
+                    { clean | importProject = Just ImportProject.init }
 
-        ProjectImportMsg message ->
-            model
-                |> mapProjectImportMCmd (ProjectImport.update message)
-                |> (\( m, cmd ) ->
+                TabSamples ->
+                    { clean | sampleProject = Just ImportProject.init }
+            , Cmd.none
+            )
+
+        DatabaseSourceMsg message ->
+            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg backendUrl now message))
+                |> Tuple.mapSecond
+                    (\cmd ->
                         case message of
-                            ProjectImport.FileLoaded _ _ ->
-                                ( m, Cmd.batch [ cmd, Ports.confetti "import-project-btn" ] )
+                            DatabaseSource.BuildSource _ ->
+                                Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]
 
                             _ ->
-                                ( m, cmd )
-                   )
+                                cmd
+                    )
 
-        ProjectImportDrop ->
-            ( model |> mapProjectImportM (\_ -> ProjectImport.init), Cmd.none )
+        SqlSourceMsg message ->
+            (model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message))
+                |> Tuple.mapSecond (\cmd -> B.cond (message == SqlSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
-        ProjectImportCreate project ->
-            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+        JsonSourceMsg message ->
+            (model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message))
+                |> Tuple.mapSecond (\cmd -> B.cond (message == JsonSource.BuildSource) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
-        ProjectImportCreateNew id project ->
-            { project | id = id, name = String.unique (model.projects |> List.map .name) project.name }
-                |> (\p ->
-                        ( model, Cmd.batch [ Ports.createProject p, Ports.track (Track.importProject p), Request.pushRoute (Route.Projects__Id_ { id = p.id }) req ] )
-                   )
+        ImportProjectMsg message ->
+            (model |> mapImportProjectMCmd (ImportProject.update ImportProjectMsg message))
+                |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
-        SampleSelectMsg message ->
-            model
-                |> mapSampleSelectionMCmd (ProjectImport.update message)
-                |> (\( m, cmd ) ->
-                        case message of
-                            ProjectImport.FileLoaded _ _ ->
-                                ( m, Cmd.batch [ cmd, Ports.confetti "sample-project-btn" ] )
+        SampleProjectMsg message ->
+            (model |> mapSampleProjectMCmd (ImportProject.update SampleProjectMsg message))
+                |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
-                            _ ->
-                                ( m, cmd )
-                   )
+        CreateProject project ->
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
 
-        SampleSelectDrop ->
-            ( model |> mapSampleSelectionM (\_ -> ProjectImport.init), Cmd.none )
+        CreateProjectNew project ->
+            ( model, ProjectId.generator |> Random.generate (\projectId -> project |> Project.duplicate (model.projects |> List.map .name) projectId |> CreateProject) )
 
-        SampleSelectCreate project ->
-            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.importProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+        CreateProjectFromSource source ->
+            ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source |> CreateProject) )
+
+        CreateEmptyProject name ->
+            ( model
+            , Random.generate2
+                (\projectId sourceId ->
+                    Source.aml sourceId Conf.constants.virtualRelationSourceName now
+                        |> (\source -> Project.create projectId (String.unique (model.projects |> List.map .name) name) source |> CreateProject)
+                )
+                ProjectId.generator
+                SourceId.generator
+            )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
@@ -226,41 +213,30 @@ update req msg model =
             ( model |> mapOpenedDialogs (List.drop 1), T.sendAfter Conf.ui.closeDuration message )
 
         JsMessage message ->
-            model |> handleJsMessage message
+            model |> handleJsMessage now message
 
         Noop _ ->
             ( model, Cmd.none )
 
 
-handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
-handleJsMessage msg model =
+handleJsMessage : Time.Posix -> JsMsg -> Model -> ( Model, Cmd Msg )
+handleJsMessage now msg model =
     case msg of
         GotProjects ( _, projects ) ->
             ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }, Cmd.none )
 
-        GotLocalFile now projectId sourceId file content ->
-            if file.name |> String.endsWith ".json" then
-                ( model, T.send (ProjectImport.gotLocalFile projectId content |> ProjectImportMsg) )
+        GotLocalFile kind file content ->
+            if kind == ImportProject.kind then
+                ( model, T.send (content |> ImportProject.GotFile |> ImportProjectMsg) )
 
-            else if file.name |> String.endsWith ".sql" then
-                ( model, T.send (SqlSourceUpload.gotLocalFile now projectId sourceId file content |> SqlSourceUploadMsg) )
+            else if kind == SqlSource.kind then
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> SqlSource.GotFile (SourceInfo.sqlLocal now sourceId file) |> SqlSourceMsg) )
 
-            else
-                ( model, Toasts.error Toast ("File should end with .json or .sql, " ++ file.name ++ " is not handled :(") )
-
-        GotRemoteFile now projectId sourceId url content sample ->
-            if url |> FileUrl.filename |> String.endsWith ".json" then
-                if sample == Nothing then
-                    ( model, T.send (ProjectImport.gotRemoteFile projectId content |> ProjectImportMsg) )
-
-                else
-                    ( model, T.send (ProjectImport.gotRemoteFile projectId content |> SampleSelectMsg) )
-
-            else if url |> FileUrl.filename |> String.endsWith ".sql" then
-                ( model, T.send (SqlSourceUpload.gotRemoteFile now projectId sourceId url content sample |> SqlSourceUploadMsg) )
+            else if kind == JsonSource.kind then
+                ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> JsonSourceMsg) )
 
             else
-                ( model, Toasts.error Toast ("File should end with .json or .sql, " ++ url ++ " is not handled :(") )
+                ( model, Toasts.error Toast ("Unhandled local file kind '" ++ kind ++ "'") )
 
         GotToast level message ->
             ( model, Toasts.create Toast level message )
@@ -268,6 +244,9 @@ handleJsMessage msg model =
         GotLogin _ ->
             -- handled in shared
             ( model, Cmd.none )
+
+        Error err ->
+            ( model, Cmd.batch [ Toasts.error Toast ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err), Ports.trackJsonError "js-message" err ] )
 
         _ ->
             ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )

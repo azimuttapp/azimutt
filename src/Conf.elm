@@ -7,6 +7,7 @@ import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
+import Libs.Url as Url
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -21,6 +22,7 @@ constants :
     , azimuttRoadmap : String
     , azimuttBugReport : String
     , azimuttFeatureRequests : String
+    , azimuttNewIssue : String -> String -> String
     , azimuttDiscussionFindPath : String
     , azimuttDiscussionSearch : String
     , azimuttDiscussionCanvas : String
@@ -41,6 +43,7 @@ constants =
     , azimuttRoadmap = github ++ "/projects/1"
     , azimuttBugReport = github ++ "/issues"
     , azimuttFeatureRequests = github ++ "/issues?q=is%3Aissue+is%3Aopen+label%3A%22feature+request%22"
+    , azimuttNewIssue = \title body -> github ++ "/issues/new/?" ++ ([ ( "title", title ), ( "body", body ) ] |> List.filter (\( _, v ) -> v /= "") |> Url.buildQueryString)
     , azimuttDiscussionFindPath = github ++ "/discussions/7"
     , azimuttDiscussionSearch = github ++ "/discussions/8"
     , azimuttDiscussionCanvas = github ++ "/discussions/9"
@@ -124,7 +127,7 @@ ids :
     { searchInput : HtmlId
     , sharingDialog : HtmlId
     , settingsDialog : HtmlId
-    , sourceUploadDialog : HtmlId
+    , sourceUpdateDialog : HtmlId
     , sourceParsingDialog : HtmlId
     , erd : HtmlId
     , selectionBox : HtmlId
@@ -142,7 +145,7 @@ ids =
     { searchInput = "app-nav-search"
     , sharingDialog = "sharing-dialog"
     , settingsDialog = "settings-dialog"
-    , sourceUploadDialog = "source-upload-dialog"
+    , sourceUpdateDialog = "source-update-dialog"
     , sourceParsingDialog = "source-parsing-dialog"
     , erd = "erd"
     , selectionBox = "selection-box"

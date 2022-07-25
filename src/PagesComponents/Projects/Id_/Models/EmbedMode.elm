@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.EmbedMode exposing (EmbedMode, EmbedModeId, advanced, all, default, frozen, full, layout, move, static)
+module PagesComponents.Projects.Id_.Models.EmbedMode exposing (EmbedMode, EmbedModeId, advanced, all, default, frozen, full, key, layout, move, static)
 
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf, embedDefault)
 
@@ -20,6 +20,11 @@ all =
     , { id = advanced, description = "can seen and navigate between layouts", conf = { embedDefault | hover = True, select = True, move = True, layout = True, showNavbar = True, findPath = True } }
     , { id = full, description = "can do anything, except save", conf = { embedDefault | hover = True, select = True, move = True, layout = True, showNavbar = True, findPath = True, layoutManagement = True } }
     ]
+
+
+key : String
+key =
+    "mode"
 
 
 default : EmbedModeId

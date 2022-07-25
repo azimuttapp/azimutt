@@ -1,5 +1,6 @@
-module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, fold, isErr, isOk, map6, partition, toErrMaybe)
+module Libs.Result exposing (ap, ap3, ap4, ap5, bimap, filter, fold, isErr, isOk, map6, partition, toError)
 
+import Libs.Bool as B
 import Libs.Nel as Nel exposing (Nel)
 
 
@@ -23,8 +24,8 @@ isErr result =
             True
 
 
-toErrMaybe : Result e a -> Maybe e
-toErrMaybe result =
+toError : Result e a -> Maybe e
+toError result =
     case result of
         Ok _ ->
             Nothing
@@ -46,6 +47,11 @@ partition list =
                         ( e :: eList, aList )
             )
             ( [], [] )
+
+
+filter : x -> (a -> Bool) -> Result x a -> Result x a
+filter err predicate result =
+    result |> Result.andThen (\a -> B.cond (predicate a) (Ok a) (Err err))
 
 
 fold : (x -> b) -> (a -> b) -> Result x a -> b

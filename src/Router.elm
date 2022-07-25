@@ -1,7 +1,7 @@
 module Router exposing (login)
 
 import Gen.Route as Route
-import Libs.Models.Url as Url
+import Libs.Url as Url
 import Url exposing (Url)
 
 

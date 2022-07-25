@@ -81,7 +81,7 @@ project0 : Project
 project0 =
     { id = "00000000-0000-0000-0000-000000000000"
     , name = "Project 0"
-    , sources = [ Source src1 "source 1" (SqlFileLocal "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
     , tables = Dict.empty
     , relations = []
     , notes = Dict.empty
@@ -97,7 +97,7 @@ project0 =
 project0Json : String
 project0Json =
     """{"id":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
-        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"LocalFile","name":"structure.sql","size":10000,"modified":1102},"content":[],"tables":[],"relations":[],"createdAt":1100,"updatedAt":1101}],"""
+        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":1102},"content":[],"tables":[],"relations":[],"createdAt":1100,"updatedAt":1101}],"""
         ++ """"usedLayout":"initial layout","layouts":{"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[],"createdAt":1200,"updatedAt":1201}},"createdAt":1000,"updatedAt":1001,"version":2}"""
 
 
@@ -110,7 +110,7 @@ project1 : Project
 project1 =
     { id = "00000000-0000-0000-0000-000000000000"
     , name = "Project 0"
-    , sources = [ Source src1 "source 1" (SqlFileLocal "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
     , tables = tables1
     , relations = []
     , notes = Dict.empty
@@ -130,7 +130,7 @@ project1 =
 project1Json : String
 project1Json =
     """{"id":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
-        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"LocalFile","name":"structure.sql","size":10000,"modified":200},"content":[],"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int"}]}],"relations":[],"fromSample":"basic","createdAt":1100,"updatedAt":1101}],"""
+        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":[],"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int"}]}],"relations":[],"fromSample":"basic","createdAt":1100,"updatedAt":1101}],"""
         ++ """"usedLayout":"initial layout","layouts":{"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203},"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
         ++ """"settings":{"findPath":{"maxPathLength":4}},"createdAt":1000,"updatedAt":1001,"version":2}"""
 
@@ -187,7 +187,7 @@ project2 =
     , sources =
         [ Source src1
             "source 1"
-            (SqlFileLocal "structure.sql" 10000 (time 200))
+            (SqlLocalFile "structure.sql" 10000 (time 200))
             (Array.fromList
                 [ ""
                 , ""
@@ -237,7 +237,7 @@ project2 =
 project2Json : String
 project2Json =
     """{"id":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
-        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"LocalFile","name":"structure.sql","size":10000,"modified":200},"content":["","","","","","","","","","","CREATE TABLE users","  (id int NOT NULL, name varchar);","","CREATE TABLE creds (","  user_id int NOT NULL,","  login varchar NOT NULL,","  pass varchar NOT NULL,","  role varchar",");"],"tables":["""
+        ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":["","","","","","","","","","","CREATE TABLE users","  (id int NOT NULL, name varchar);","","CREATE TABLE creds (","  user_id int NOT NULL,","  login varchar NOT NULL,","  pass varchar NOT NULL,","  role varchar",");"],"tables":["""
         ++ """{"schema":"public","table":"creds","columns":[{"name":"user_id","type":"int","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[14]}]},{"name":"login","type":"varchar","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[15]}]},{"name":"pass","type":"varchar","comment":{"text":"Encrypted field"},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[16]}]},{"name":"role","type":"varchar","nullable":true,"default":"guest","origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[17]}]}],"uniques":[{"name":"unique_login","columns":["login"],"definition":"(login)"}],"indexes":[{"name":"role_idx","columns":["role"],"definition":"(role)"}],"comment":{"text":"To allow users to login"},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[13,14,15,16,17,18]}]},"""
         ++ """{"schema":"public","table":"users","columns":[{"name":"id","type":"int"},{"name":"name","type":"varchar","nullable":true}],"primaryKey":{"name":"users_pk","columns":["id"]},"origins":[{"id":"00000000-0000-0000-0000-000000000001","lines":[10,11]}]}],"""
         ++ """"relations":[{"name":"creds_user_id","src":{"table":"public.creds","column":"user_id"},"ref":{"table":"public.users","column":"id"}}],"createdAt":1100,"updatedAt":1101}],"""

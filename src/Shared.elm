@@ -9,18 +9,19 @@ import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
+import Services.Backend as Backend
 import Task
 import Time
 
 
 type alias Flags =
     { now : Int
-    , conf : { env : String, platform : String, enableCloud : Bool }
+    , conf : { env : String, platform : String, backendUrl : String, enableCloud : Bool }
     }
 
 
 type alias GlobalConf =
-    { env : Env, platform : Platform, enableCloud : Bool }
+    { env : Env, platform : Platform, backendUrl : Backend.Url, enableCloud : Bool }
 
 
 type alias Model =
@@ -76,6 +77,7 @@ init _ flags =
       , conf =
             { env = Env.fromString flags.conf.env
             , platform = Platform.fromString flags.conf.platform
+            , backendUrl = Backend.urlFromString flags.conf.backendUrl
             , enableCloud = flags.conf.enableCloud
             }
       , user = Nothing

@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Components.AmlSlidebar exposing (Model, setSource, update, view)
+module PagesComponents.Projects.Id_.Components.AmlSlidebar exposing (Model, init, setSource, update, view)
 
 import Array exposing (Array)
 import Components.Atoms.Icon as Icon
@@ -51,12 +51,12 @@ type alias Model x =
 -- INIT
 
 
-init : Model x -> AmlSidebar
-init model =
+init : Maybe Erd -> AmlSidebar
+init erd =
     let
         source : Maybe Source
         source =
-            model.erd |> Maybe.andThen (.sources >> List.filter .enabled >> List.find (.kind >> SourceKind.isUser))
+            erd |> Maybe.andThen (.sources >> List.filter .enabled >> List.find (.kind >> SourceKind.isUser))
     in
     { id = Conf.ids.amlSidebarDialog
     , selected = source |> Maybe.map .id
@@ -72,7 +72,7 @@ update : Time.Posix -> AmlSidebarMsg -> Model x -> ( Model x, Cmd Msg )
 update now msg model =
     case msg of
         AOpen ->
-            ( model |> setAmlSidebar (Just (init model)), Ports.track Track.openUpdateSchema )
+            ( model |> setAmlSidebar (Just (init model.erd)), Ports.track Track.openUpdateSchema )
 
         AClose ->
             ( model |> setAmlSidebar Nothing, Cmd.none )

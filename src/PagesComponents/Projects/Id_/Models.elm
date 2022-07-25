@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), SourceParsingDialog, SourceUploadDialog, VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
+module PagesComponents.Projects.Id_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlParser.AmlAdapter exposing (AmlSchemaError)
@@ -17,7 +17,6 @@ import Models.ColumnOrder exposing (ColumnOrder)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -27,7 +26,9 @@ import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
+import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Projects.Id_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.EmbedKind exposing (EmbedKind)
@@ -43,15 +44,12 @@ import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Id_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
-import Random
-import Services.SqlSourceUpload exposing (SqlSourceUpload, SqlSourceUploadMsg)
 import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
 
 
 type alias Model =
-    { seed : Random.Seed
-    , conf : ErdConf
+    { conf : ErdConf
     , navbar : NavbarModel
     , screen : ScreenProps
     , loaded : Bool
@@ -70,8 +68,8 @@ type alias Model =
     , sharing : Maybe SharingDialog
     , upload : Maybe ProjectUploadDialog.Model
     , settings : Maybe ProjectSettingsDialog
-    , sourceUpload : Maybe SourceUploadDialog
-    , sourceParsing : Maybe SourceParsingDialog
+    , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
+    , embedSourceParsing : Maybe (EmbedSourceParsingDialog.Model Msg)
     , help : Maybe HelpDialog
 
     -- global attrs
@@ -124,14 +122,6 @@ type alias ProjectSettingsDialog =
     { id : HtmlId }
 
 
-type alias SourceUploadDialog =
-    { id : HtmlId, parsing : SqlSourceUpload Msg }
-
-
-type alias SourceParsingDialog =
-    { id : HtmlId, parsing : SqlSourceUpload Msg }
-
-
 type alias HelpDialog =
     { id : HtmlId, openedSection : String }
 
@@ -176,6 +166,7 @@ type Msg
     | ToggleHoverTable TableId Bool
     | ToggleHoverColumn ColumnRef Bool
     | CreateUserSource SourceName
+    | CreateUserSourceWithId Source
     | CreateRelation ColumnRef ColumnRef
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
@@ -184,10 +175,10 @@ type Msg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
-    | ProjectUploadDialogMsg ProjectUploadDialog.Msg
+    | ProjectUploadMsg ProjectUploadDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
-    | SourceParsing SqlSourceUploadMsg
-    | SourceParsed ProjectId Source
+    | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg
+    | SourceParsed Source
     | HelpMsg HelpMsg
     | CursorMode CursorMode
     | FitContent
@@ -284,11 +275,8 @@ type ProjectSettingsMsg
     | PSClose
     | PSSourceToggle Source
     | PSSourceDelete Source
-    | PSSourceUploadOpen (Maybe Source)
-    | PSSourceUploadClose
-    | PSSqlSourceMsg SqlSourceUploadMsg
-    | PSSourceRefresh Source
-    | PSSourceAdd Source
+    | PSSourceUpdate SourceUpdateDialog.Msg
+    | PSSourceSet Source
     | PSDefaultSchemaUpdate SchemaName
     | PSSchemaToggle SchemaName
     | PSRemoveViewsToggle

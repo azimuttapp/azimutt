@@ -21,7 +21,6 @@ import {
     ProjectInfo,
     ProjectStorage,
     Size,
-    SourceId,
     TableId
 } from "./project";
 import {LoginInfo} from "../services/supabase";
@@ -30,6 +29,7 @@ import {Profile, UserId} from "./profile";
 export interface GlobalConf {
     env: Env
     platform: Platform
+    backendUrl: string
     enableCloud: boolean
 }
 
@@ -70,7 +70,6 @@ export type JsMsg =
     | GotOwners
     | ProjectDropped
     | GotLocalFile
-    | GotRemoteFile
     | GotHotkey
     | GotKeyHold
     | GotToast
@@ -94,8 +93,7 @@ export type GotProject = { kind: 'GotProject', project?: Project }
 export type GotUser = { kind: 'GotUser', email: Email, user: Profile | undefined }
 export type GotOwners = { kind: 'GotOwners', project: ProjectId, owners: Profile[] }
 export type ProjectDropped = { kind: 'ProjectDropped', id: ProjectId }
-export type GotLocalFile = { kind: 'GotLocalFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, file: File, content: string }
-export type GotRemoteFile = { kind: 'GotRemoteFile', now: Timestamp, projectId: ProjectId, sourceId: SourceId, url: string, content: string, sample?: string }
+export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: string, file: File, content: string }
 export type GotHotkey = { kind: 'GotHotkey', id: string }
 export type GotKeyHold = { kind: 'GotKeyHold', key: string, start: boolean }
 export type GotToast = { kind: 'GotToast', level: ToastLevel, message: string }
@@ -125,7 +123,6 @@ export type ElmMsg =
     | LogoutMsg
     | ListProjectsMsg
     | LoadProjectMsg
-    | LoadRemoteProjectMsg
     | CreateProjectMsg
     | UpdateProjectMsg
     | MoveProjectToMsg
@@ -136,7 +133,6 @@ export type ElmMsg =
     | DownloadFileMsg
     | DropProjectMsg
     | GetLocalFileMsg
-    | GetRemoteFileMsg
     | ObserveSizesMsg
     | ListenKeysMsg
     | ConfettiMsg
@@ -156,7 +152,6 @@ export type LoginMsg = { kind: 'Login', info: LoginInfo, redirect?: string }
 export type LogoutMsg = { kind: 'Logout' }
 export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
-export type LoadRemoteProjectMsg = { kind: 'LoadRemoteProject', projectUrl: FileUrl }
 export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
@@ -166,8 +161,7 @@ export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
 export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
 export type DropProjectMsg = { kind: 'DropProject', project: ProjectInfo }
-export type GetLocalFileMsg = { kind: 'GetLocalFile', project?: ProjectId, source?: SourceId, file: File }
-export type GetRemoteFileMsg = { kind: 'GetRemoteFile', project?: ProjectId, source?: SourceId, url: FileUrl, sample: SampleKey }
+export type GetLocalFileMsg = { kind: 'GetLocalFile', sourceKind: string, file: File }
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
 export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
 export type ConfettiMsg = { kind: 'Confetti', id: HtmlId }

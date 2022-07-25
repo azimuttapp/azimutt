@@ -35,7 +35,7 @@ viewNavbarTitle : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> La
 viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId openedDropdown =
     div [ class "flex justify-center items-center text-white" ]
         ([ if gConf.enableCloud && eConf.projectManagement then
-            button [ onClick (ProjectUploadDialogMsg ProjectUploadDialog.Open), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
+            button [ onClick (ProjectUploadMsg ProjectUploadDialog.Open), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
                 [ Icon.outline (B.cond (project.storage == ProjectStorage.Browser) CloudUpload Cloud) ""
                 ]
                 |> Tooltip.b (B.cond (project.storage == ProjectStorage.Browser) "Sync your project" "Sync in Azimutt")

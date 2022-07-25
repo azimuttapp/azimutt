@@ -1,5 +1,6 @@
 module Libs.List exposing
-    ( addAt
+    ( add
+    , addAt
     , appendIf
     , appendOn
     , diff
@@ -196,6 +197,11 @@ remove item list =
 removeBy : (a -> comparable) -> comparable -> List a -> List a
 removeBy getKey item list =
     list |> List.filter (\i -> getKey i /= item)
+
+
+add : a -> List a -> List a
+add item list =
+    list ++ [ item ]
 
 
 addAt : a -> Int -> List a -> List a
