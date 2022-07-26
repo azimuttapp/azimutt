@@ -1,5 +1,6 @@
-module Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike, decode, encode, fromString, fromStringWith, show, toString)
+module Models.Project.ColumnRef exposing (ColumnRef, ColumnRefLike, decode, encode, fromString, show, toString)
 
+import Conf
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
 import Libs.Json.Encode as Encode
@@ -23,30 +24,20 @@ show defaultSchema { table, column } =
 
 toString : ColumnRef -> String
 toString ref =
-    (ref.table |> Tuple.first) ++ "." ++ (ref.table |> Tuple.second) ++ "." ++ ref.column
+    TableId.toString ref.table ++ "." ++ ref.column
 
 
-fromString : String -> Maybe ColumnRef
+fromString : String -> ColumnRef
 fromString id =
-    case String.split "." id of
-        schema :: table :: column :: [] ->
-            Just { table = ( schema, table ), column = column }
-
-        _ ->
-            Nothing
-
-
-fromStringWith : SchemaName -> String -> ColumnRef
-fromStringWith defaultSchema id =
     case String.split "." id of
         schema :: table :: column :: [] ->
             { table = ( schema, table ), column = column }
 
         table :: column :: [] ->
-            { table = ( defaultSchema, table ), column = column }
+            { table = ( Conf.schema.empty, table ), column = column }
 
         _ ->
-            { table = ( defaultSchema, id ), column = "" }
+            { table = ( Conf.schema.empty, id ), column = "" }
 
 
 encode : ColumnRef -> Value

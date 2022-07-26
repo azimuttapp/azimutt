@@ -14,7 +14,7 @@ import Ports
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        ([ Ports.onJsMessage (model.erd |> Maybe.map (.settings >> .defaultSchema)) JsMessage ]
+        ([ Ports.onJsMessage JsMessage ]
             ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
             ++ B.cond (model.contextMenu == Nothing) [] [ Browser.Events.onClick (Decode.succeed ContextMenuClose) ]
             ++ (model.dragging

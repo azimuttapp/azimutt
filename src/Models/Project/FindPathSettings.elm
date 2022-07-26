@@ -1,11 +1,11 @@
 module Models.Project.FindPathSettings exposing (FindPathSettings, decode, encode, init)
 
+import Conf
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Models.Project.ColumnName as ColumnName
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId
 
 
@@ -30,21 +30,21 @@ encode default value =
         ]
 
 
-decode : SchemaName -> FindPathSettings -> Decode.Decoder FindPathSettings
-decode defaultSchema default =
+decode : FindPathSettings -> Decode.Decoder FindPathSettings
+decode default =
     Decode.map3 FindPathSettings
         (Decode.defaultField "maxPathLength" Decode.int default.maxPathLength)
-        (Decode.defaultField "ignoredTables" (decodeTables defaultSchema) default.ignoredTables)
+        (Decode.defaultField "ignoredTables" decodeTables default.ignoredTables)
         (Decode.defaultField "ignoredColumns" decodeColumns default.ignoredColumns)
 
 
-decodeTables : SchemaName -> Decode.Decoder String
-decodeTables defaultSchema =
+decodeTables : Decode.Decoder String
+decodeTables =
     Decode.oneOf
         [ Decode.string
 
         -- needed for retro-compatibility
-        , Decode.list (TableId.decodeWith defaultSchema) |> Decode.map (List.map (TableId.show defaultSchema) >> String.join ", ")
+        , Decode.list (TableId.decodeWith Conf.schema.default) |> Decode.map (List.map (TableId.show Conf.schema.default) >> String.join ", ")
         ]
 
 

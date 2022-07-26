@@ -2,8 +2,8 @@ module Libs.String exposing
     ( filterStartsWith
     , hashCode
     , inflect
-    , maybeNonEmpty
     , nonEmpty
+    , nonEmptyMaybe
     , orElse
     , plural
     , pluralize
@@ -26,8 +26,8 @@ nonEmpty string =
     string /= ""
 
 
-maybeNonEmpty : String -> Maybe String
-maybeNonEmpty str =
+nonEmptyMaybe : String -> Maybe String
+nonEmptyMaybe str =
     if str == "" then
         Nothing
 

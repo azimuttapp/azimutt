@@ -108,7 +108,7 @@ isShown table erd =
 
 defaultSchemaM : Maybe Erd -> SchemaName
 defaultSchemaM erd =
-    erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.default
+    erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.empty
 
 
 viewportM : Area -> Maybe Erd -> Area

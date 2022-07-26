@@ -82,7 +82,7 @@ duplicate takenNames projectId project =
     { project | id = projectId, name = String.unique takenNames project.name }
 
 
-mostUsedSchema : Dict TableId Table -> Maybe SchemaName
+mostUsedSchema : Dict TableId Table -> SchemaName
 mostUsedSchema table =
     table
         |> Dict.keys
@@ -92,6 +92,7 @@ mostUsedSchema table =
         |> Dict.toList
         |> List.maximumBy (\( _, count ) -> count)
         |> Maybe.map Tuple.first
+        |> Maybe.withDefault Conf.schema.empty
 
 
 compute : Project -> Project
@@ -178,7 +179,7 @@ encode value =
         , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
         , ( "usedLayout", value.usedLayout |> LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
-        , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Nothing) )
+        , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
         , ( "storage", value.storage |> Encode.withDefault ProjectStorage.encode ProjectStorage.Browser )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
@@ -196,7 +197,7 @@ decode =
         (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
         (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
-        (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Nothing))
+        (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Conf.schema.empty))
         (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Browser)
         (Decode.defaultField "createdAt" Time.decode Time.zero)
         (Decode.defaultField "updatedAt" Time.decode Time.zero)

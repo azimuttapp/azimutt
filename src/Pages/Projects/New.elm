@@ -127,13 +127,13 @@ update req now backendUrl msg model =
               in
               case tab of
                 TabDatabase ->
-                    { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-database-source")) }
+                    { clean | databaseSource = Just (DatabaseSource.init Nothing (\_ -> Noop "select-tab-database-source")) }
 
                 TabSql ->
-                    { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
+                    { clean | sqlSource = Just (SqlSource.init Nothing (\_ -> Noop "select-tab-sql-source")) }
 
                 TabJson ->
-                    { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
+                    { clean | jsonSource = Just (JsonSource.init Nothing (\_ -> Noop "select-tab-json-source")) }
 
                 TabEmptyProject ->
                     clean
@@ -258,10 +258,7 @@ handleJsMessage now msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        ([ Ports.onJsMessage Nothing JsMessage ]
-            ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
-        )
+    Sub.batch (Ports.onJsMessage JsMessage :: Dropdown.subs model DropdownToggle (Noop "dropdown already opened"))
 
 
 

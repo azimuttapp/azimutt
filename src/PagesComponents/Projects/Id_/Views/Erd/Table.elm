@@ -58,7 +58,7 @@ stringToArgs args =
             )
 
         _ ->
-            ( ( Platform.PC, CursorMode.Drag, Conf.schema.default ), ( "", "", 0 ), ( ( False, False ), ( False, False ) ) )
+            ( ( Platform.PC, CursorMode.Drag, Conf.schema.empty ), ( "", "", 0 ), ( ( False, False ), ( False, False ) ) )
 
 
 viewTable : ErdConf -> ZoomLevel -> TableArgs -> ErdTableNotes -> ErdTableLayout -> ErdTable -> Html Msg

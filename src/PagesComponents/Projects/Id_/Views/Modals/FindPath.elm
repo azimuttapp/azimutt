@@ -47,7 +47,7 @@ viewFindPath opened openedDropdown defaultSchema tables settings model =
         , viewSettings model.id model.showSettings settings
         , viewSearchForm model.id openedDropdown tables model.from model.to
         , viewPaths defaultSchema tables model
-        , viewFooter defaultSchema tables settings model
+        , viewFooter tables settings model
         ]
 
 
@@ -167,7 +167,7 @@ viewInputComboboxes openedDropdown fieldId selectedValue buildMsg tables =
 
 viewPaths : SchemaName -> Dict TableId ErdTable -> FindPathDialog -> Html Msg
 viewPaths defaultSchema tables model =
-    case ( model.from |> existingTableId defaultSchema tables, model.to |> existingTableId defaultSchema tables, model.result ) of
+    case ( model.from |> existingTableId tables, model.to |> existingTableId tables, model.result ) of
         ( Just from, Just to, FindPathState.Found result ) ->
             if result.paths |> List.isEmpty then
                 div [ class "px-6 mt-3 text-center" ]
@@ -246,10 +246,10 @@ buildQuery defaultSchema table joins =
            )
 
 
-viewFooter : SchemaName -> Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
-viewFooter defaultSchema tables settings model =
+viewFooter : Dict TableId ErdTable -> FindPathSettings -> FindPathDialog -> Html Msg
+viewFooter tables settings model =
     div [ class "px-6 py-3 mt-3 flex items-center justify-between flex-row-reverse bg-gray-50 rounded-b-lg" ]
-        (case ( model.from |> existingTableId defaultSchema tables, model.to |> existingTableId defaultSchema tables, model.result ) of
+        (case ( model.from |> existingTableId tables, model.to |> existingTableId tables, model.result ) of
             ( Just from, Just to, FindPathState.Found res ) ->
                 if from == res.from && to == res.to && settings == res.settings then
                     [ Button.primary3 Tw.primary [ onClick (FindPathMsg FPClose) ] [ text "Done" ] ]
@@ -268,6 +268,6 @@ viewFooter defaultSchema tables settings model =
         )
 
 
-existingTableId : SchemaName -> Dict TableId ErdTable -> String -> Maybe TableId
-existingTableId defaultSchema tables input =
-    tables |> Dict.get (TableId.parse defaultSchema input) |> Maybe.map .id
+existingTableId : Dict TableId ErdTable -> String -> Maybe TableId
+existingTableId tables input =
+    tables |> Dict.get (TableId.parse input) |> Maybe.map .id

@@ -451,7 +451,7 @@ viewColumnKind model column =
             ]
                 |> List.filterMap identity
                 |> String.join " / "
-                |> String.maybeNonEmpty
+                |> String.nonEmptyMaybe
 
         value : Html msg
         value =
@@ -473,7 +473,7 @@ viewColumnKind model column =
 
 showTableRef : SchemaName -> TableRef -> String
 showTableRef defaultSchema ref =
-    if ref.schema == defaultSchema then
+    if ref.schema == defaultSchema || ref.schema == Conf.schema.empty then
         ref.table
 
     else
@@ -482,7 +482,7 @@ showTableRef defaultSchema ref =
 
 showColumnRef : SchemaName -> ColumnRef -> String
 showColumnRef defaultSchema ref =
-    if ref.schema == defaultSchema then
+    if ref.schema == defaultSchema || ref.schema == Conf.schema.empty then
         ref.table ++ "." ++ ref.column
 
     else

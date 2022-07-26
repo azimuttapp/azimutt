@@ -198,10 +198,10 @@ view erd model =
                                 Nothing
 
                             Just Nothing ->
-                                Just ("Column '" ++ column ++ "' not found in table '" ++ TableId.show erd.settings.defaultSchema table ++ "'")
+                                Just ("Column '" ++ column ++ "' not found in table '" ++ TableId.show Conf.schema.empty table ++ "'")
 
                             Nothing ->
-                                Just ("Table '" ++ TableId.show erd.settings.defaultSchema table ++ "' not found")
+                                Just ("Table '" ++ TableId.show Conf.schema.empty table ++ "' not found")
                     )
     in
     div []

@@ -104,7 +104,7 @@ handleJsMessage req msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Ports.onJsMessage Nothing JsMessage
+    Ports.onJsMessage JsMessage
 
 
 

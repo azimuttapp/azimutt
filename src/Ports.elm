@@ -1,6 +1,5 @@
 port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
-import Conf
 import Dict exposing (Dict)
 import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
@@ -22,7 +21,6 @@ import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
 import Models.User as User exposing (User)
@@ -283,11 +281,11 @@ messageToJs message =
     elmToJs (elmEncoder message)
 
 
-onJsMessage : Maybe SchemaName -> (JsMsg -> msg) -> Sub msg
-onJsMessage defaultSchema callback =
+onJsMessage : (JsMsg -> msg) -> Sub msg
+onJsMessage callback =
     jsToElm
         (\value ->
-            case Decode.decodeValue (jsDecoder (defaultSchema |> Maybe.withDefault Conf.schema.default)) value of
+            case Decode.decodeValue jsDecoder value of
                 Ok message ->
                     callback message
 
@@ -394,8 +392,8 @@ elmEncoder elm =
             Encode.object [ ( "kind", "TrackError" |> Encode.string ), ( "name", name |> Encode.string ), ( "details", details ) ]
 
 
-jsDecoder : SchemaName -> Decoder JsMsg
-jsDecoder defaultSchema =
+jsDecoder : Decoder JsMsg
+jsDecoder =
     Decode.matchOn "kind"
         (\kind ->
             case kind of
@@ -476,13 +474,13 @@ jsDecoder defaultSchema =
                         (Decode.field "color" Color.decodeColor)
 
                 "GotColumnShow" ->
-                    Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema))
+                    Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
 
                 "GotColumnHide" ->
-                    Decode.map GotColumnHide (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema))
+                    Decode.map GotColumnHide (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
 
                 "GotColumnMove" ->
-                    Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema)) (Decode.field "index" Decode.int)
+                    Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString) (Decode.field "index" Decode.int)
 
                 "GotFitToScreen" ->
                     Decode.succeed GotFitToScreen
