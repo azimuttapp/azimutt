@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Components.AmlSlidebar exposing (Model, init, setSource, update, view)
+module PagesComponents.Projects.Id_.Components.AmlSidebar exposing (Model, init, setSource, update, view)
 
 import Array exposing (Array)
 import Components.Atoms.Icon as Icon

@@ -18,6 +18,8 @@ module Services.Lenses exposing
     , mapDatabaseSourceM
     , mapDatabaseSourceMCmd
     , mapDefaultSchema
+    , mapDetailsSidebar
+    , mapDetailsSidebarCmd
     , mapEachProjectMLayoutTables
     , mapEachTable
     , mapEditNotesM
@@ -144,6 +146,7 @@ module Services.Lenses exposing
     , setCursorMode
     , setDatabaseSource
     , setDefaultSchema
+    , setDetailsSidebar
     , setDragState
     , setDragging
     , setEditNotes
@@ -487,6 +490,21 @@ setDefaultSchema =
 mapDefaultSchema : (v -> v) -> { item | defaultSchema : v } -> { item | defaultSchema : v }
 mapDefaultSchema =
     map_ .defaultSchema setDefaultSchema
+
+
+setDetailsSidebar : v -> { item | detailsSidebar : v } -> { item | detailsSidebar : v }
+setDetailsSidebar =
+    set_ .detailsSidebar (\value item -> { item | detailsSidebar = value })
+
+
+mapDetailsSidebar : (v -> v) -> { item | detailsSidebar : v } -> { item | detailsSidebar : v }
+mapDetailsSidebar =
+    map_ .detailsSidebar setDetailsSidebar
+
+
+mapDetailsSidebarCmd : (v -> ( v, Cmd msg )) -> { item | detailsSidebar : v } -> ( { item | detailsSidebar : v }, Cmd msg )
+mapDetailsSidebarCmd =
+    mapCmd_ .detailsSidebar setDetailsSidebar
 
 
 setEditNotes : v -> { item | editNotes : v } -> { item | editNotes : v }

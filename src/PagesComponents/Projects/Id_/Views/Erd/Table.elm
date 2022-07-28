@@ -23,6 +23,7 @@ import Models.ColumnOrder as ColumnOrder
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
+import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -109,6 +110,7 @@ viewTable conf zoom args notes layout table =
                 , Maybe.when conf.layout { label = "Add notes", action = Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
                 , Maybe.when conf.layout { label = "Show related", action = Simple { action = ShowRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "expand" [] } }
                 , Maybe.when conf.layout { label = "Hide related", action = Simple { action = HideRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "shrink" [] } }
+                , Maybe.when conf.layout { label = "View details", action = Simple { action = DetailsSidebarMsg (DetailsSidebar.Open (Just table.id) Nothing), platform = platform, hotkeys = [] } }
                 , Maybe.when conf.layout
                     { label = B.cond layout.props.selected "Set color of selected tables" "Set color"
                     , action =

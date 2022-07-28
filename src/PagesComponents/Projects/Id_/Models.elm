@@ -26,6 +26,7 @@ import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
 import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -62,6 +63,7 @@ type alias Model =
     , newLayout : Maybe LayoutDialog
     , editNotes : Maybe NotesDialog
     , amlSidebar : Maybe AmlSidebar
+    , detailsSidebar : Maybe DetailsSidebar.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
@@ -171,6 +173,7 @@ type Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
     | AmlSidebarMsg AmlSidebarMsg
+    | DetailsSidebarMsg DetailsSidebar.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg

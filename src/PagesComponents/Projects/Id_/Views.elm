@@ -17,7 +17,8 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.User exposing (User)
-import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
+import PagesComponents.Projects.Id_.Components.AmlSidebar as AmlSidebar
+import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -100,7 +101,22 @@ viewApp currentUrl shared model htmlId erd =
                   else
                     div [] []
                 ]
+            , viewLeftSidebar model
             , viewRightSidebar model
+            ]
+        ]
+
+
+viewLeftSidebar : Model -> Html Msg
+viewLeftSidebar model =
+    let
+        content : Maybe (Html Msg)
+        content =
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg) model.erd
+    in
+    aside [ css [ "block flex-shrink-0 order-first" ] ]
+        [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
+            [ content |> Maybe.withDefault (div [] [])
             ]
         ]
 
@@ -110,10 +126,10 @@ viewRightSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            Maybe.map2 AmlSlidebar.view model.erd model.amlSidebar
+            model.amlSidebar |> Maybe.map2 AmlSidebar.view model.erd
     in
     aside [ css [ "block flex-shrink-0 order-last" ] ]
-        [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
+        [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-l border-gray-200 bg-white overflow-y-auto" ] ]
             [ content |> Maybe.withDefault (div [] [])
             ]
         ]

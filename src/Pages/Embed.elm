@@ -87,6 +87,7 @@ init query =
       , newLayout = Nothing
       , editNotes = Nothing
       , amlSidebar = Nothing
+      , detailsSidebar = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing

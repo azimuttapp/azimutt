@@ -138,6 +138,7 @@ ids :
     , newLayoutDialog : HtmlId
     , editNotesDialog : HtmlId
     , amlSidebarDialog : HtmlId
+    , detailsSidebarDialog : HtmlId
     , findPathDialog : HtmlId
     , schemaAnalysisDialog : HtmlId
     , helpDialog : HtmlId
@@ -156,6 +157,7 @@ ids =
     , newLayoutDialog = "new-layout-dialog"
     , editNotesDialog = "edit-notes-dialog"
     , amlSidebarDialog = "aml-sidebar"
+    , detailsSidebarDialog = "details-sidebar"
     , findPathDialog = "find-path-dialog"
     , schemaAnalysisDialog = "schema-analysis-dialog"
     , helpDialog = "help-dialog"
