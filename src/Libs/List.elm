@@ -28,6 +28,7 @@ module Libs.List exposing
     , moveByRel
     , moveIndex
     , nonEmpty
+    , prepend
     , prependIf
     , prependOn
     , remove
@@ -57,7 +58,11 @@ import Set
 
 get : Int -> List a -> Maybe a
 get index list =
-    list |> List.drop index |> List.head
+    if index < 0 then
+        Nothing
+
+    else
+        list |> List.drop index |> List.head
 
 
 last : List a -> Maybe a
@@ -216,6 +221,11 @@ addAt item index list =
         -- list |> List.indexedMap (\i a -> ( i, a )) |> List.concatMap (\( i, a ) -> B.cond (i == index) [ item, a ] [ a ])
         -- list |> List.foldl (\a ( res, i ) -> ( List.concat [ res, B.cond (i == index) [ item, a ] [ a ] ], i + 1 )) ( [], 0 ) |> Tuple.first
         list |> List.foldr (\a ( res, i ) -> ( B.cond (i == index) (item :: a :: res) (a :: res), i - 1 )) ( [], List.length list - 1 ) |> Tuple.first
+
+
+prepend : List a -> List a -> List a
+prepend xs ys =
+    List.append ys xs
 
 
 prependIf : Bool -> a -> List a -> List a

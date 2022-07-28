@@ -8,7 +8,13 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "List"
-        [ describe "addAt"
+        [ describe "get"
+            [ test "get item by index" (\_ -> [ "a", "b", "c" ] |> List.get 0 |> Expect.equal (Just "a"))
+            , test "get item by index end" (\_ -> [ "a", "b", "c" ] |> List.get 2 |> Expect.equal (Just "c"))
+            , test "get nothing on negative index" (\_ -> [ "a", "b", "c" ] |> List.get -1 |> Expect.equal Nothing)
+            , test "get nothing on out of array index" (\_ -> [ "a", "b", "c" ] |> List.get 4 |> Expect.equal Nothing)
+            ]
+        , describe "addAt"
             [ test "first" (\_ -> [ "b", "c" ] |> List.addAt "a" 0 |> Expect.equal [ "a", "b", "c" ])
             , test "middle" (\_ -> [ "a", "c" ] |> List.addAt "b" 1 |> Expect.equal [ "a", "b", "c" ])
             , test "last" (\_ -> [ "a", "b" ] |> List.addAt "c" 2 |> Expect.equal [ "a", "b", "c" ])

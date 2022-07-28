@@ -249,6 +249,7 @@ module Services.Lenses exposing
     , setUser
     , setUsername
     , setValue
+    , setView
     , setVirtualRelation
     , setWebsite
     , setZone
@@ -1470,6 +1471,11 @@ mapUsername =
 setValue : v -> { item | value : v } -> { item | value : v }
 setValue =
     set_ .value (\value item -> { item | value = value })
+
+
+setView : v -> { item | view : v } -> { item | view : v }
+setView =
+    set_ .view (\view item -> { item | view = view })
 
 
 setVirtualRelation : v -> { item | virtualRelation : v } -> { item | virtualRelation : v }

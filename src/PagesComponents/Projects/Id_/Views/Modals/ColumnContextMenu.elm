@@ -17,7 +17,7 @@ viewColumnContextMenu platform index column notes =
     div []
         [ ContextMenu.btnHotkey "" (HideColumn column) [ text "Hide column" ] platform (Conf.hotkeys |> Dict.getOrElse "remove" [])
         , ContextMenu.btnHotkey "" (NotesMsg (NOpen (NoteRef.fromColumn column))) [ text (notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes") ] platform (Conf.hotkeys |> Dict.getOrElse "notes" [])
-        , ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.Open (Just column.table) (Just column.column))) [ text "View details" ]
+        , ContextMenu.btn "" (DetailsSidebarMsg (DetailsSidebar.ShowColumn column)) [ text "View details" ]
         , ContextMenu.btn "" (MoveColumn column (index - 1)) [ text "Move up" ]
         , ContextMenu.btn "" (MoveColumn column (index + 1)) [ text "Move down" ]
         , ContextMenu.btn "" (MoveColumn column 0) [ text "Move top" ]

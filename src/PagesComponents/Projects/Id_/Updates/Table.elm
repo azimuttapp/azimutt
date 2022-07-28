@@ -191,7 +191,7 @@ hideRelatedTables id erd =
 
 showColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
 showColumn now table column erd =
-    erd |> Erd.mapCurrentLayout now (mapTablesL .id table (mapColumns (List.removeBy .name column >> List.append [ ErdColumnProps.create column ])))
+    erd |> Erd.mapCurrentLayout now (mapTablesL .id table (mapColumns (List.removeBy .name column >> List.prepend [ ErdColumnProps.create column ])))
 
 
 hideColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
