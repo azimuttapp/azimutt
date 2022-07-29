@@ -7,6 +7,7 @@ module Libs.List exposing
     , dropRight
     , dropUntil
     , dropWhile
+    , filterBy
     , filterNot
     , filterZip
     , find
@@ -124,6 +125,11 @@ findBy matcher value list =
 findIndexBy : (a -> b) -> b -> List a -> Maybe Int
 findIndexBy matcher value list =
     findIndex (\a -> matcher a == value) list
+
+
+filterBy : (a -> b) -> b -> List a -> List a
+filterBy matcher value list =
+    List.filter (\a -> matcher a == value) list
 
 
 filterNot : (a -> Bool) -> List a -> List a

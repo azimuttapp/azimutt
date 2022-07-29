@@ -185,7 +185,7 @@ update req currentLayout now backendUrl msg model =
             model |> AmlSidebar.update now message
 
         DetailsSidebarMsg message ->
-            model |> mapDetailsSidebarCmd (DetailsSidebar.update message)
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update erd message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
