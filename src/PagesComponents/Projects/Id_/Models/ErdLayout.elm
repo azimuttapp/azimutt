@@ -13,7 +13,7 @@ import Time
 
 type alias ErdLayout =
     { canvas : CanvasProps
-    , tables : List ErdTableLayout -- list order is used display z-index
+    , tables : List ErdTableLayout -- list order is used for z-index
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }

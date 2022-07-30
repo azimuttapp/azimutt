@@ -21,6 +21,7 @@ module Libs.List exposing
     , last
     , maximumBy
     , memberBy
+    , memberWith
     , merge
     , mergeMaybe
     , minimumBy
@@ -145,6 +146,11 @@ indexedFilter p xs =
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> Maybe.isJust
+
+
+memberWith : (a -> Bool) -> List a -> Bool
+memberWith matcher list =
+    find matcher list |> Maybe.isJust
 
 
 indexOf : a -> List a -> Maybe Int

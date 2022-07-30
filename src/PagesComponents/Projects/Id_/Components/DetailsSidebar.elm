@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Components.DetailsSidebar exposing (Model, Msg(..), View, update, view)
+module PagesComponents.Projects.Id_.Components.DetailsSidebar exposing (ColumnData, Heading, Model, Msg(..), SchemaData, TableData, View(..), update, view)
 
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Tooltip as Tooltip
@@ -218,10 +218,10 @@ view wrap showTable hideTable showColumn hideColumn erd model =
                         viewSchema wrap v
 
                     TableView v ->
-                        viewTable wrap showTable hideTable v
+                        viewTable wrap showTable hideTable erd v
 
                     ColumnView v ->
-                        viewColumn wrap showTable hideTable showColumn hideColumn v
+                        viewColumn wrap showTable hideTable showColumn hideColumn erd v
                 ]
             ]
         ]
@@ -267,8 +267,89 @@ viewSchema : (Msg -> msg) -> SchemaData -> Html msg
 viewSchema wrap model =
     div []
         [ viewSchemaHeading wrap model.schema
+        , viewSchemaDetails wrap model.schema.item model.tables
+        ]
+
+
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> Erd -> TableData -> Html msg
+viewTable wrap _ _ erd model =
+    div []
+        [ viewSchemaHeading wrap model.schema
+        , viewTableHeading wrap model.table
+        , viewTableDetails wrap erd model.table.item
+        ]
+
+
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> Erd -> ColumnData -> Html msg
+viewColumn wrap _ _ _ _ erd model =
+    div []
+        [ viewSchemaHeading wrap model.schema
+        , viewTableHeading wrap model.table
+        , viewColumnHeading wrap model.table.item.id model.column
+        , viewColumnDetails erd model.table.item model.column.item
+        ]
+
+
+viewSchemaHeading : (Msg -> msg) -> Heading SchemaName Never -> Html msg
+viewSchemaHeading wrap model =
+    div [ class "flex items-center justify-between border-t border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
+        [ div [ class "flex" ]
+            [ button [ type_ "button", onClick (ShowList |> wrap) ] [ Icon.solid Icon.ChevronUp "" ] |> Tooltip.tr "List all tables"
+            , h3 [] [ text model.item ]
+            ]
+        , div [ class "flex" ]
+            [ model.prev
+                |> Maybe.map (\s -> button [ type_ "button", onClick (s |> ShowSchema |> wrap) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.tl s)
+                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronLeft "" ])
+            , model.next
+                |> Maybe.map (\s -> button [ type_ "button", onClick (s |> ShowSchema |> wrap) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.tl s)
+                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronRight "" ])
+            ]
+        ]
+
+
+viewTableHeading : (Msg -> msg) -> Heading ErdTable ErdTableLayout -> Html msg
+viewTableHeading wrap model =
+    div [ class "flex items-center justify-between border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
+        [ div [ class "flex" ]
+            [ button [ type_ "button", onClick (model.item.schema |> ShowSchema |> wrap) ] [ Icon.solid Icon.ChevronUp "" ] |> Tooltip.tr "Schema details"
+            , h3 [] [ text model.item.name ]
+            ]
+        , div [ class "flex" ]
+            [ model.prev
+                |> Maybe.map (\t -> button [ type_ "button", onClick (t.id |> ShowTable |> wrap) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.tl t.name)
+                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronLeft "" ])
+            , model.next
+                |> Maybe.map (\t -> button [ type_ "button", onClick (t.id |> ShowTable |> wrap) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.tl t.name)
+                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronRight "" ])
+            ]
+        ]
+
+
+viewColumnHeading : (Msg -> msg) -> TableId -> Heading ErdColumn ErdColumnProps -> Html msg
+viewColumnHeading wrap table model =
+    div [ class "flex items-center justify-between border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
+        [ div [ class "flex" ]
+            [ button [ type_ "button", onClick (table |> ShowTable |> wrap) ] [ Icon.solid Icon.ChevronUp "" ] |> Tooltip.tr "Table details"
+            , h3 [] [ text model.item.name ]
+            ]
+        , div [ class "flex" ]
+            [ model.prev
+                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.name } |> ShowColumn |> wrap) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.tl c.name)
+                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronLeft "" ])
+            , model.next
+                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.name } |> ShowColumn |> wrap) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.tl c.name)
+                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronRight "" ])
+            ]
+        ]
+
+
+viewSchemaDetails : (Msg -> msg) -> SchemaName -> List ErdTable -> Html msg
+viewSchemaDetails wrap schema tables =
+    div []
+        [ h2 [ class "mt-2 px-3 text-lg font-medium text-gray-900" ] [ text schema ]
         , ul [ role "list", class "relative z-0 divide-y divide-gray-200" ]
-            (model.tables
+            (tables
                 |> List.map
                     (\table ->
                         li []
@@ -286,20 +367,21 @@ viewSchema wrap model =
         ]
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> TableData -> Html msg
-viewTable wrap showTable hideTable model =
+viewTableDetails : (Msg -> msg) -> Erd -> ErdTable -> Html msg
+viewTableDetails wrap erd table =
     div []
-        [ viewSchemaHeading wrap model.schema
-        , viewTableHeading wrap showTable hideTable model.table
+        [ h2 [ class "mt-2 px-3 text-lg font-medium text-gray-900" ] [ text table.name ]
+        , div [] [ text ("In layouts: " ++ (erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.id) |> Dict.keys |> String.join ", ")) ]
         , ul [ role "list", class "relative z-0 divide-y divide-gray-200" ]
-            (model.table.item.columns
+            (table.columns
                 |> Dict.values
+                |> List.sortBy .index
                 |> List.map
                     (\column ->
                         li []
                             [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                 [ div [ class "flex-1 min-w-0" ]
-                                    [ button [ type_ "button", onClick ({ table = model.table.item.id, column = column.name } |> ShowColumn |> wrap), class "focus:outline-none" ]
+                                    [ button [ type_ "button", onClick ({ table = table.id, column = column.name } |> ShowColumn |> wrap), class "focus:outline-none" ]
                                         [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
                                         , p [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
                                         ]
@@ -311,67 +393,9 @@ viewTable wrap showTable hideTable model =
         ]
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> ColumnData -> Html msg
-viewColumn wrap showTable hideTable showColumn hideColumn model =
+viewColumnDetails : Erd -> ErdTable -> ErdColumn -> Html msg
+viewColumnDetails erd table column =
     div []
-        [ viewSchemaHeading wrap model.schema
-        , viewTableHeading wrap showTable hideTable model.table
-        , viewColumnHeading wrap showColumn hideColumn model.table.item.id model.column
-        , div []
-            [ div [] [ text ("Index: " ++ String.fromInt model.column.item.index) ]
-            ]
-        ]
-
-
-viewSchemaHeading : (Msg -> msg) -> Heading SchemaName Never -> Html msg
-viewSchemaHeading wrap model =
-    div [ class "flex border-t border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
-        [ button [ type_ "button", onClick (ShowList |> wrap) ] [ Icon.solid Icon.ChevronUp "" ]
-        , h3 [] [ text model.item ]
-        , div [ class "flex" ]
-            [ model.prev
-                |> Maybe.map (\s -> button [ type_ "button", onClick (s |> ShowSchema |> wrap) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.t s)
-                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronLeft "" ])
-            , model.next
-                |> Maybe.map (\s -> button [ type_ "button", onClick (s |> ShowSchema |> wrap) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.t s)
-                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronRight "" ])
-            ]
-        ]
-
-
-viewTableHeading : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> Heading ErdTable ErdTableLayout -> Html msg
-viewTableHeading wrap showTable hideTable model =
-    div [ class "flex border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
-        [ button [ type_ "button", onClick (model.item.schema |> ShowSchema |> wrap) ] [ Icon.solid Icon.ChevronUp "" ]
-        , h3 [] [ text model.item.name ]
-        , div [ class "flex" ]
-            [ model.prev
-                |> Maybe.map (\t -> button [ type_ "button", onClick (t.id |> ShowTable |> wrap) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.t t.name)
-                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronLeft "" ])
-            , model.shown
-                |> Maybe.map (\_ -> button [ type_ "button", onClick (hideTable model.item.id) ] [ Icon.solid Icon.EyeOff "" ] |> Tooltip.t "Hide table")
-                |> Maybe.withDefault (button [ type_ "button", onClick (showTable model.item.id) ] [ Icon.solid Icon.Eye "" ] |> Tooltip.t "Show table")
-            , model.next
-                |> Maybe.map (\t -> button [ type_ "button", onClick (t.id |> ShowTable |> wrap) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.t t.name)
-                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronRight "" ])
-            ]
-        ]
-
-
-viewColumnHeading : (Msg -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> TableId -> Heading ErdColumn ErdColumnProps -> Html msg
-viewColumnHeading wrap showColumn hideColumn table model =
-    div [ class "flex border-b border-gray-200 bg-gray-50 px-1 py-1 text-sm font-medium text-gray-500" ]
-        [ button [ type_ "button", onClick (table |> ShowTable |> wrap) ] [ Icon.solid Icon.ChevronUp "" ]
-        , h3 [] [ text model.item.name ]
-        , div [ class "flex" ]
-            [ model.prev
-                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.name } |> ShowColumn |> wrap) ] [ Icon.solid Icon.ChevronLeft "" ] |> Tooltip.t c.name)
-                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronLeft "" ])
-            , model.shown
-                |> Maybe.map (\_ -> button [ type_ "button", onClick (hideColumn { table = table, column = model.item.name }) ] [ Icon.solid Icon.EyeOff "" ] |> Tooltip.t "Hide column")
-                |> Maybe.withDefault (button [ type_ "button", onClick (showColumn { table = table, column = model.item.name }) ] [ Icon.solid Icon.Eye "" ] |> Tooltip.t "Show column")
-            , model.next
-                |> Maybe.map (\c -> button [ type_ "button", onClick ({ table = table, column = c.name } |> ShowColumn |> wrap) ] [ Icon.solid Icon.ChevronRight "" ] |> Tooltip.t c.name)
-                |> Maybe.withDefault (button [ type_ "button", disabled True, class "text-gray-300" ] [ Icon.solid Icon.ChevronRight "" ])
-            ]
+        [ h2 [ class "mt-2 px-3 text-lg font-medium text-gray-900" ] [ text (String.fromInt column.index ++ ". " ++ column.name) ]
+        , div [] [ text ("In layouts: " ++ (erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.id && (t.columns |> List.memberBy .name column.name))) |> Dict.keys |> String.join ", ")) ]
         ]

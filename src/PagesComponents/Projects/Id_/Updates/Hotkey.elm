@@ -8,6 +8,7 @@ import Libs.Task as T
 import Libs.Tuple as Tuple
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
+import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
@@ -54,28 +55,28 @@ handleHotkey now model hotkey =
             ( model, T.send SaveProject )
 
         "move-up" ->
-            ( model, moveTables { dx = 0, dy = -1 } model )
+            ( model, model |> moveTables { dx = 0, dy = -1 } |> Maybe.orElse (model |> upDetails) |> Maybe.withDefault Cmd.none )
 
         "move-right" ->
-            ( model, moveTables { dx = 1, dy = 0 } model )
+            ( model, model |> moveTables { dx = 1, dy = 0 } |> Maybe.orElse (model |> nextDetails) |> Maybe.withDefault Cmd.none )
 
         "move-down" ->
-            ( model, moveTables { dx = 0, dy = 1 } model )
+            ( model, model |> moveTables { dx = 0, dy = 1 } |> Maybe.withDefault Cmd.none )
 
         "move-left" ->
-            ( model, moveTables { dx = -1, dy = 0 } model )
+            ( model, model |> moveTables { dx = -1, dy = 0 } |> Maybe.orElse (model |> prevDetails) |> Maybe.withDefault Cmd.none )
 
         "move-up-big" ->
-            ( model, moveTables { dx = 0, dy = -10 } model )
+            ( model, model |> moveTables { dx = 0, dy = -10 } |> Maybe.withDefault Cmd.none )
 
         "move-right-big" ->
-            ( model, moveTables { dx = 10, dy = 0 } model )
+            ( model, model |> moveTables { dx = 10, dy = 0 } |> Maybe.withDefault Cmd.none )
 
         "move-down-big" ->
-            ( model, moveTables { dx = 0, dy = 10 } model )
+            ( model, model |> moveTables { dx = 0, dy = 10 } |> Maybe.withDefault Cmd.none )
 
         "move-left-big" ->
-            ( model, moveTables { dx = -10, dy = 0 } model )
+            ( model, model |> moveTables { dx = -10, dy = 0 } |> Maybe.withDefault Cmd.none )
 
         "move-forward" ->
             ( model, moveTablesOrder 1 model )
@@ -189,7 +190,7 @@ cancelElement model =
         |> Maybe.withDefault ("Nothing to cancel" |> Toasts.info |> Toast |> T.send)
 
 
-moveTables : Delta -> Model -> Cmd Msg
+moveTables : Delta -> Model -> Maybe (Cmd Msg)
 moveTables delta model =
     let
         selectedTables : List ErdTableLayout
@@ -197,10 +198,55 @@ moveTables delta model =
             model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables >> List.filter (.props >> .selected)) []
     in
     if List.nonEmpty selectedTables then
-        Cmd.batch (selectedTables |> List.map (\t -> T.send (TableMove t.id delta)))
+        Cmd.batch (selectedTables |> List.map (\t -> T.send (TableMove t.id delta))) |> Just
 
     else
-        Cmd.none
+        Nothing
+
+
+nextDetails : Model -> Maybe (Cmd Msg)
+nextDetails model =
+    onDetails model
+        (\view -> view.schema.next |> Maybe.map DetailsSidebar.ShowSchema)
+        (\view -> view.table.next |> Maybe.map (.id >> DetailsSidebar.ShowTable))
+        (\view -> view.column.next |> Maybe.map (\col -> { table = view.table.item.id, column = col.name } |> DetailsSidebar.ShowColumn))
+
+
+prevDetails : Model -> Maybe (Cmd Msg)
+prevDetails model =
+    onDetails model
+        (\view -> view.schema.prev |> Maybe.map DetailsSidebar.ShowSchema)
+        (\view -> view.table.prev |> Maybe.map (.id >> DetailsSidebar.ShowTable))
+        (\view -> view.column.prev |> Maybe.map (\col -> { table = view.table.item.id, column = col.name } |> DetailsSidebar.ShowColumn))
+
+
+upDetails : Model -> Maybe (Cmd Msg)
+upDetails model =
+    onDetails model
+        (\_ -> DetailsSidebar.ShowList |> Just)
+        (\view -> view.table.item.schema |> DetailsSidebar.ShowSchema |> Just)
+        (\view -> view.table.item.id |> DetailsSidebar.ShowTable |> Just)
+
+
+onDetails : Model -> (DetailsSidebar.SchemaData -> Maybe DetailsSidebar.Msg) -> (DetailsSidebar.TableData -> Maybe DetailsSidebar.Msg) -> (DetailsSidebar.ColumnData -> Maybe DetailsSidebar.Msg) -> Maybe (Cmd Msg)
+onDetails model onSchema onTable onColumn =
+    model.detailsSidebar
+        |> Maybe.andThen
+            (\d ->
+                case d.view of
+                    DetailsSidebar.ListView ->
+                        Nothing
+
+                    DetailsSidebar.SchemaView view ->
+                        onSchema view
+
+                    DetailsSidebar.TableView view ->
+                        onTable view
+
+                    DetailsSidebar.ColumnView view ->
+                        onColumn view
+            )
+        |> Maybe.map (DetailsSidebarMsg >> T.send)
 
 
 moveTablesOrder : Int -> Model -> Cmd Msg
