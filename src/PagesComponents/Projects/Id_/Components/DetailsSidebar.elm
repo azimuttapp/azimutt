@@ -5,9 +5,10 @@ import Components.Atoms.Icon as Icon
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
-import Html exposing (Html, br, button, dd, div, dl, dt, h2, h3, li, nav, p, pre, span, text, ul)
-import Html.Attributes exposing (class, disabled, type_)
+import Html exposing (Html, a, aside, br, button, dd, div, dl, dt, form, h2, h3, img, input, label, li, nav, p, pre, span, text, ul)
+import Html.Attributes exposing (action, alt, class, disabled, for, href, id, name, placeholder, src, type_)
 import Html.Events exposing (onClick)
+import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, role)
 import Libs.List as List
@@ -20,6 +21,7 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
+import Models.Project.SourceLine exposing (SourceLine)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
@@ -31,7 +33,7 @@ import Services.Lenses exposing (setView)
 
 
 type alias Model =
-    { id : HtmlId, view : View }
+    { id : HtmlId, view : View, openedCollapse : HtmlId }
 
 
 type View
@@ -64,6 +66,7 @@ type Msg
     | ShowSchema SchemaName
     | ShowTable TableId
     | ShowColumn ColumnRef
+    | ToggleCollapse HtmlId
 
 
 
@@ -72,7 +75,7 @@ type Msg
 
 init : View -> Model
 init v =
-    { id = Conf.ids.detailsSidebarDialog, view = v }
+    { id = Conf.ids.detailsSidebarDialog, view = v, openedCollapse = "" }
 
 
 
@@ -99,6 +102,9 @@ update erd msg model =
 
         ShowColumn column ->
             ( model |> setViewM (columnView erd column), Cmd.none )
+
+        ToggleCollapse id ->
+            ( model |> Maybe.map (\m -> { m | openedCollapse = Bool.cond (m.openedCollapse == id) "" id }), Cmd.none )
 
 
 setViewM : View -> Maybe Model -> Maybe Model
@@ -218,16 +224,17 @@ view wrap showTable hideTable showColumn hideColumn loadLayout erd model =
             [ div [ class "absolute inset-0" ]
                 [ case model.view of
                     ListView ->
+                        -- viewDirectory
                         viewTableList wrap erd (erd.tables |> Dict.values)
 
                     SchemaView v ->
                         viewSchema wrap v
 
                     TableView v ->
-                        viewTable wrap showTable hideTable loadLayout erd v
+                        viewTable wrap showTable hideTable loadLayout erd model.openedCollapse v
 
                     ColumnView v ->
-                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd v
+                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd model.openedCollapse v
                 ]
             ]
         ]
@@ -254,7 +261,7 @@ viewTableList wrap erd tables =
                                         li []
                                             [ div [ class "relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
                                                 [ div [ class "flex-1 min-w-0" ]
-                                                    [ button [ type_ "button", onClick (t.id |> ShowTable |> wrap), class "inline focus:outline-none" ]
+                                                    [ button [ type_ "button", onClick (t.id |> ShowTable |> wrap), class "focus:outline-none" ]
                                                         [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
                                                         , p [ class "text-sm font-medium text-gray-900" ] [ text (TableId.show erd.settings.defaultSchema t.id) ]
                                                         , p [ class "text-sm text-gray-500 truncate" ] [ text (t.columns |> String.pluralizeD "column") ]
@@ -277,22 +284,22 @@ viewSchema wrap model =
         ]
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> TableData -> Html msg
-viewTable wrap _ _ loadLayout erd model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> TableData -> Html msg
+viewTable wrap _ _ loadLayout erd openedCollapse model =
     div []
         [ viewSchemaHeading wrap model.schema
         , viewTableHeading wrap model.table
-        , viewTableDetails wrap loadLayout erd model.table.item
+        , viewTableDetails wrap loadLayout erd openedCollapse model.table.item
         ]
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> ColumnData -> Html msg
-viewColumn wrap _ _ _ _ loadLayout erd model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> ColumnData -> Html msg
+viewColumn wrap _ _ _ _ loadLayout erd openedCollapse model =
     div []
         [ viewSchemaHeading wrap model.schema
         , viewTableHeading wrap model.table
         , viewColumnHeading wrap model.table.item.id model.column
-        , viewColumnDetails wrap loadLayout erd model.table.item model.column.item
+        , viewColumnDetails wrap loadLayout erd openedCollapse model.table.item model.column.item
         ]
 
 
@@ -375,23 +382,23 @@ viewSchemaDetails wrap schema tables =
         ]
 
 
-viewTableDetails : (Msg -> msg) -> (LayoutName -> msg) -> Erd -> ErdTable -> Html msg
-viewTableDetails wrap loadLayout erd table =
+viewTableDetails : (Msg -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> ErdTable -> Html msg
+viewTableDetails wrap loadLayout erd openedCollapse table =
     let
         inLayouts : List LayoutName
         inLayouts =
             erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.id) |> Dict.keys
 
-        inSources : List Source
+        inSources : List ( Origin, Source )
         inSources =
-            table.origins |> List.filterMap (\o -> erd.sources |> List.findBy .id o.id)
+            table.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
     in
     div [ class "px-3" ]
         [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text table.name ]
         , table.comment |> Maybe.mapOrElse viewComment (p [] [])
         , dl []
-            [ inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout) |> List.intersperse (text ", "))) (p [] [])
-            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map viewSource |> List.intersperse (text ", "))) (p [] [])
+            [ inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (p [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource wrap openedCollapse))) (p [] [])
             ]
         , viewProp (table.columns |> String.pluralizeD "column")
             [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
@@ -416,28 +423,27 @@ viewTableDetails wrap loadLayout erd table =
         ]
 
 
-viewColumnDetails : (Msg -> msg) -> (LayoutName -> msg) -> Erd -> ErdTable -> ErdColumn -> Html msg
-viewColumnDetails wrap loadLayout erd table column =
+viewColumnDetails : (Msg -> msg) -> (LayoutName -> msg) -> Erd -> HtmlId -> ErdTable -> ErdColumn -> Html msg
+viewColumnDetails wrap loadLayout erd openedCollapse table column =
     let
         inLayouts : List LayoutName
         inLayouts =
             erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.id && (t.columns |> List.memberBy .name column.name))) |> Dict.keys
 
-        inSources : List Source
+        inSources : List ( Origin, Source )
         inSources =
-            column.origins |> List.filterMap (\o -> erd.sources |> List.findBy .id o.id)
+            column.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id)
     in
     div [ class "px-3" ]
         [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text (String.fromInt column.index ++ ". " ++ column.name) ]
         , p [ class "mt-1 text-sm text-gray-700" ] [ text column.kind ]
         , column.comment |> Maybe.mapOrElse viewComment (p [] [])
         , dl []
-            [ column.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewRelation wrap erd.settings.defaultSchema) |> List.intersperse (br [] []))) (p [] [])
-            , column.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewRelation wrap erd.settings.defaultSchema) |> List.intersperse (br [] []))) (p [] [])
-            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout) |> List.intersperse (text ", "))) (p [] [])
-            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map viewSource |> List.intersperse (text ", "))) (p [] [])
+            [ column.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewRelation wrap erd.settings.defaultSchema))) (p [] [])
+            , column.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewRelation wrap erd.settings.defaultSchema))) (p [] [])
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout))) (p [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map (viewSource wrap openedCollapse))) (p [] [])
             ]
-        , div [ class "mt-3" ] (column.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id) |> List.map (\( o, s ) -> div [] [ text s.name, viewSourceContent o s ]))
         ]
 
 
@@ -465,23 +471,121 @@ viewProp label content =
 
 viewLayout : (LayoutName -> msg) -> LayoutName -> Html msg
 viewLayout loadLayout layout =
-    span [ class "link", onClick (loadLayout layout) ] [ text layout ]
+    div [] [ span [ class "cursor-pointer", onClick (loadLayout layout) ] [ text layout ] |> Tooltip.r "View layout" ]
 
 
-viewSource : Source -> Html msg
-viewSource source =
-    span [] [ text source.name ]
+viewSource : (Msg -> msg) -> HtmlId -> ( Origin, Source ) -> Html msg
+viewSource wrap openedCollapse ( origin, source ) =
+    div []
+        [ span [ class "cursor-pointer", onClick (source.name |> ToggleCollapse |> wrap) ] [ text source.name ] |> Tooltip.r "View source content"
+        , if openedCollapse == source.name then
+            viewSourceContent origin source
+
+          else
+            text ""
+        ]
 
 
 viewRelation : (Msg -> msg) -> SchemaName -> ErdColumnRef -> Html msg
 viewRelation wrap defaultSchema relation =
-    span [ class "link", onClick ({ table = relation.table, column = relation.column } |> ShowColumn |> wrap) ] [ text (ColumnRef.show defaultSchema relation) ]
+    div [] [ span [ class "cursor-pointer", onClick ({ table = relation.table, column = relation.column } |> ShowColumn |> wrap) ] [ text (ColumnRef.show defaultSchema relation) ] |> Tooltip.r "View column" ]
 
 
 viewSourceContent : Origin -> Source -> Html msg
 viewSourceContent origin source =
     if origin.id == source.id then
-        pre [ class "overflow-x-auto" ] [ text (origin.lines |> List.filterMap (\i -> source.content |> Array.get i) |> String.join "\n") ]
+        let
+            lines : List SourceLine
+            lines =
+                origin.lines |> List.filterMap (\i -> source.content |> Array.get i)
+        in
+        if List.isEmpty lines then
+            pre [] [ text "No content from this source" ]
+
+        else
+            pre [ class "overflow-x-auto" ] [ text (lines |> String.join "\n") ]
 
     else
         pre [] [ text "Source didn't match with origin!" ]
+
+
+
+-- TEST from https://tailwindui.com/components/application-ui/page-examples/detail-screens
+
+
+viewDirectory : Html msg
+viewDirectory =
+    aside [ class "hidden xl:order-first xl:flex xl:flex-col flex-shrink-0" ]
+        [ div [ class "px-6 pt-6 pb-4" ]
+            [ h2 [ class "text-lg font-medium text-gray-900" ] [ text "Directory" ]
+            , p [ class "mt-1 text-sm text-gray-600" ] [ text "Search directory of 3,018 employees" ]
+            , form [ class "mt-6 flex space-x-4", action "#" ]
+                [ div [ class "flex-1 min-w-0" ]
+                    [ label [ for "search", class "sr-only" ] [ text "Search" ]
+                    , div [ class "relative rounded-md shadow-sm" ]
+                        [ div [ class "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" ] [ Icon.solid Icon.Search "text-gray-400" ]
+                        , input [ type_ "search", name "search", id "search", placeholder "Search", class "focus:ring-pink-500 focus:border-pink-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md" ] []
+                        ]
+                    ]
+                , button [ type_ "submit", class "inline-flex justify-center px-3.5 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500" ]
+                    [ Icon.solid Icon.Filter "text-gray-400", span [ class "sr-only" ] [ text "Search" ] ]
+                ]
+            ]
+        , nav [ class "flex-1 min-h-0 overflow-y-auto", ariaLabel "Directory" ]
+            ([ { name = "Leslie Abbott", job = "Co-Founder / CEO", pic = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Hector Adams", job = "VP, Marketing", pic = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Blake Alexander", job = "Account Coordinator", pic = "https://images.unsplash.com/photo-1520785643438-5bf77931f493?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Fabricio Andrews", job = "Senior Art Director", pic = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Angela Beaver", job = "Chief Strategy Officer", pic = "https://images.unsplash.com/photo-1501031170107-cfd33f0cbdcc?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Yvette Blanchard", job = "Studio Artist", pic = "https://images.unsplash.com/photo-1506980595904-70325b7fdd90?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Lawrence Brooks", job = "Content Specialist", pic = "https://images.unsplash.com/photo-1513910367299-bce8d8a0ebf6?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Jeffrey Clark", job = "Senior Art Director", pic = "https://images.unsplash.com/photo-1517070208541-6ddc4d3efbcb?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Kathryn Cooper", job = "Associate Creative Director", pic = "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Alicia Edwards", job = "Junior Copywriter", pic = "https://images.unsplash.com/photo-1509783236416-c9ad59bae472?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Benjamin Emerson", job = "Director, Print Operations", pic = "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Jillian Erics", job = "Designer", pic = "https://images.unsplash.com/photo-1504703395950-b89145a5425b?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Chelsea Evans", job = "Human Resources Manager", pic = "https://images.unsplash.com/photo-1550525811-e5869dd03032?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Michael Gillard", job = "Co-Founder / CTO", pic = "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Dries Giuessepe", job = "Manager, Business Relations", pic = "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Jenny Harrison", job = "Studio Artist", pic = "https://images.unsplash.com/photo-1507101105822-7472b28e22ac?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Lindsay Hatley", job = "Front-end Developer", pic = "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Anna Hill", job = "Partner, Creative", pic = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Courtney Samuels", job = "Designer", pic = "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Tom Simpson", job = "Director, Product Development", pic = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Floyd Thompson", job = "Principal Designer", pic = "https://images.unsplash.com/photo-1463453091185-61582044d556?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Leonard Timmons", job = "Senior Designer", pic = "https://images.unsplash.com/photo-1519345182560-3f2917c472ef?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Whitney Trudeau", job = "Copywriter", pic = "https://images.unsplash.com/photo-1517365830460-955ce3ccd263?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Kristin Watson", job = "VP, Human Resources", pic = "https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Emily Wilson", job = "VP, User Experience", pic = "https://images.unsplash.com/photo-1502685104226-ee32379fefbe?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             , { name = "Emma Young", job = "Senior Front-end Developer", pic = "https://images.unsplash.com/photo-1505840717430-882ce147ef2d?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" }
+             ]
+                |> List.groupBy (\e -> e.name |> String.split " " |> List.drop 1 |> List.head |> Maybe.map (String.toUpper >> String.left 1) |> Maybe.withDefault "_")
+                |> Dict.map
+                    (\letter employees ->
+                        div [ class "relative" ]
+                            [ div [ class "z-10 sticky top-0 border-t border-b border-gray-200 bg-gray-50 px-6 py-1 text-sm font-medium text-gray-500" ] [ h3 [] [ text letter ] ]
+                            , ul [ role "list", class "relative z-0 divide-y divide-gray-200" ]
+                                (employees
+                                    |> List.map
+                                        (\employee ->
+                                            li []
+                                                [ div [ class "relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-pink-500" ]
+                                                    [ div [ class "flex-shrink-0" ]
+                                                        [ img [ class "h-10 w-10 rounded-full", src employee.pic, alt "" ] []
+                                                        ]
+                                                    , div [ class "flex-1 min-w-0" ]
+                                                        [ a [ href "#", class "focus:outline-none" ]
+                                                            [ {- Extend touch target to entire panel -} span [ class "absolute inset-0", ariaHidden True ] []
+                                                            , p [ class "text-sm font-medium text-gray-900" ] [ text employee.name ]
+                                                            , p [ class "text-sm text-gray-500 truncate" ] [ text employee.job ]
+                                                            ]
+                                                        ]
+                                                    ]
+                                                ]
+                                        )
+                                )
+                            ]
+                    )
+                |> Dict.values
+            )
+        ]
