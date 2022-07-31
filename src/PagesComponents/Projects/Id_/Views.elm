@@ -22,7 +22,7 @@ import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..), ProjectSettingsMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
@@ -112,7 +112,7 @@ viewLeftSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) HideTable ShowColumn HideColumn) model.erd
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) HideTable ShowColumn HideColumn (LLoad >> LayoutMsg)) model.erd
     in
     aside [ css [ "block flex-shrink-0 order-first" ] ]
         [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]

@@ -1,10 +1,11 @@
 module PagesComponents.Projects.Id_.Components.DetailsSidebar exposing (ColumnData, Heading, Model, Msg(..), SchemaData, TableData, View(..), update, view)
 
+import Array
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Dict
-import Html exposing (Html, button, div, h2, h3, li, nav, p, span, text, ul)
+import Html exposing (Html, br, button, dd, div, dl, dt, h2, h3, li, nav, p, pre, span, text, ul)
 import Html.Attributes exposing (class, disabled, type_)
 import Html.Events exposing (onClick)
 import Libs.Dict as Dict
@@ -13,12 +14,17 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
+import Models.Project.Comment exposing (Comment)
+import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.Origin exposing (Origin)
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.Source exposing (Source)
 import Models.Project.TableId as TableId exposing (TableId)
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
 import Services.Lenses exposing (setView)
@@ -194,8 +200,8 @@ columnHeading erd table column =
 -- VIEW
 
 
-view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> Erd -> Model -> Html msg
-view wrap showTable hideTable showColumn hideColumn erd model =
+view : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> Model -> Html msg
+view wrap showTable hideTable showColumn hideColumn loadLayout erd model =
     div [ class "flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl" ]
         [ div [ class "px-4 sm:px-6" ]
             [ div [ class "flex items-start justify-between" ]
@@ -218,10 +224,10 @@ view wrap showTable hideTable showColumn hideColumn erd model =
                         viewSchema wrap v
 
                     TableView v ->
-                        viewTable wrap showTable hideTable erd v
+                        viewTable wrap showTable hideTable loadLayout erd v
 
                     ColumnView v ->
-                        viewColumn wrap showTable hideTable showColumn hideColumn erd v
+                        viewColumn wrap showTable hideTable showColumn hideColumn loadLayout erd v
                 ]
             ]
         ]
@@ -271,22 +277,22 @@ viewSchema wrap model =
         ]
 
 
-viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> Erd -> TableData -> Html msg
-viewTable wrap _ _ erd model =
+viewTable : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (LayoutName -> msg) -> Erd -> TableData -> Html msg
+viewTable wrap _ _ loadLayout erd model =
     div []
         [ viewSchemaHeading wrap model.schema
         , viewTableHeading wrap model.table
-        , viewTableDetails wrap erd model.table.item
+        , viewTableDetails wrap loadLayout erd model.table.item
         ]
 
 
-viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> Erd -> ColumnData -> Html msg
-viewColumn wrap _ _ _ _ erd model =
+viewColumn : (Msg -> msg) -> (TableId -> msg) -> (TableId -> msg) -> (ColumnRef -> msg) -> (ColumnRef -> msg) -> (LayoutName -> msg) -> Erd -> ColumnData -> Html msg
+viewColumn wrap _ _ _ _ loadLayout erd model =
     div []
         [ viewSchemaHeading wrap model.schema
         , viewTableHeading wrap model.table
         , viewColumnHeading wrap model.table.item.id model.column
-        , viewColumnDetails erd model.table.item model.column.item
+        , viewColumnDetails wrap loadLayout erd model.table.item model.column.item
         ]
 
 
@@ -346,56 +352,136 @@ viewColumnHeading wrap table model =
 
 viewSchemaDetails : (Msg -> msg) -> SchemaName -> List ErdTable -> Html msg
 viewSchemaDetails wrap schema tables =
-    div []
-        [ h2 [ class "mt-2 px-3 text-lg font-medium text-gray-900" ] [ text schema ]
-        , ul [ role "list", class "relative z-0 divide-y divide-gray-200" ]
-            (tables
-                |> List.map
-                    (\table ->
-                        li []
-                            [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
-                                [ div [ class "flex-1 min-w-0" ]
-                                    [ button [ type_ "button", onClick (table.id |> ShowTable |> wrap), class "focus:outline-none" ]
-                                        [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
-                                        , p [ class "text-sm font-medium text-gray-900" ] [ text table.name ]
+    div [ class "px-3" ]
+        [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text schema ]
+        , viewProp (tables |> String.pluralizeL "table")
+            [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
+                (tables
+                    |> List.map
+                        (\table ->
+                            li []
+                                [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
+                                    [ div [ class "flex-1 min-w-0" ]
+                                        [ button [ type_ "button", onClick (table.id |> ShowTable |> wrap), class "focus:outline-none" ]
+                                            [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
+                                            , p [ class "text-sm font-medium text-gray-900" ] [ text table.name ]
+                                            ]
                                         ]
                                     ]
                                 ]
-                            ]
-                    )
-            )
+                        )
+                )
+            ]
         ]
 
 
-viewTableDetails : (Msg -> msg) -> Erd -> ErdTable -> Html msg
-viewTableDetails wrap erd table =
-    div []
-        [ h2 [ class "mt-2 px-3 text-lg font-medium text-gray-900" ] [ text table.name ]
-        , div [] [ text ("In layouts: " ++ (erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.id) |> Dict.keys |> String.join ", ")) ]
-        , ul [ role "list", class "relative z-0 divide-y divide-gray-200" ]
-            (table.columns
-                |> Dict.values
-                |> List.sortBy .index
-                |> List.map
-                    (\column ->
-                        li []
-                            [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
-                                [ div [ class "flex-1 min-w-0" ]
-                                    [ button [ type_ "button", onClick ({ table = table.id, column = column.name } |> ShowColumn |> wrap), class "focus:outline-none" ]
-                                        [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
-                                        , p [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
+viewTableDetails : (Msg -> msg) -> (LayoutName -> msg) -> Erd -> ErdTable -> Html msg
+viewTableDetails wrap loadLayout erd table =
+    let
+        inLayouts : List LayoutName
+        inLayouts =
+            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberBy .id table.id) |> Dict.keys
+
+        inSources : List Source
+        inSources =
+            table.origins |> List.filterMap (\o -> erd.sources |> List.findBy .id o.id)
+    in
+    div [ class "px-3" ]
+        [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text table.name ]
+        , table.comment |> Maybe.mapOrElse viewComment (p [] [])
+        , dl []
+            [ inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout) |> List.intersperse (text ", "))) (p [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map viewSource |> List.intersperse (text ", "))) (p [] [])
+            ]
+        , viewProp (table.columns |> String.pluralizeD "column")
+            [ ul [ role "list", class "-mx-3 relative z-0 divide-y divide-gray-200" ]
+                (table.columns
+                    |> Dict.values
+                    |> List.sortBy .index
+                    |> List.map
+                        (\column ->
+                            li []
+                                [ div [ class "relative px-6 py-1 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
+                                    [ div [ class "flex-1 min-w-0" ]
+                                        [ button [ type_ "button", onClick ({ table = table.id, column = column.name } |> ShowColumn |> wrap), class "focus:outline-none" ]
+                                            [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
+                                            , p [ class "text-sm font-medium text-gray-900" ] [ text column.name ]
+                                            ]
                                         ]
                                     ]
                                 ]
-                            ]
-                    )
-            )
+                        )
+                )
+            ]
         ]
 
 
-viewColumnDetails : Erd -> ErdTable -> ErdColumn -> Html msg
-viewColumnDetails erd table column =
-    div []
-        [ h2 [ class "mt-2 px-3 text-lg font-medium text-gray-900" ] [ text (String.fromInt column.index ++ ". " ++ column.name) ]
-        , div [] [ text ("In layouts: " ++ (erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.id && (t.columns |> List.memberBy .name column.name))) |> Dict.keys |> String.join ", ")) ]
+viewColumnDetails : (Msg -> msg) -> (LayoutName -> msg) -> Erd -> ErdTable -> ErdColumn -> Html msg
+viewColumnDetails wrap loadLayout erd table column =
+    let
+        inLayouts : List LayoutName
+        inLayouts =
+            erd.layouts |> Dict.filter (\_ l -> l.tables |> List.memberWith (\t -> t.id == table.id && (t.columns |> List.memberBy .name column.name))) |> Dict.keys
+
+        inSources : List Source
+        inSources =
+            column.origins |> List.filterMap (\o -> erd.sources |> List.findBy .id o.id)
+    in
+    div [ class "px-3" ]
+        [ h2 [ class "mt-2 font-medium text-gray-900" ] [ text (String.fromInt column.index ++ ". " ++ column.name) ]
+        , p [ class "mt-1 text-sm text-gray-700" ] [ text column.kind ]
+        , column.comment |> Maybe.mapOrElse viewComment (p [] [])
+        , dl []
+            [ column.outRelations |> List.nonEmptyMap (\r -> viewProp "References" (r |> List.map (viewRelation wrap erd.settings.defaultSchema) |> List.intersperse (br [] []))) (p [] [])
+            , column.inRelations |> List.nonEmptyMap (\r -> viewProp "Referenced by" (r |> List.map (viewRelation wrap erd.settings.defaultSchema) |> List.intersperse (br [] []))) (p [] [])
+            , inLayouts |> List.nonEmptyMap (\l -> viewProp "In layouts" (l |> List.map (viewLayout loadLayout) |> List.intersperse (text ", "))) (p [] [])
+            , inSources |> List.nonEmptyMap (\s -> viewProp "From sources" (s |> List.map viewSource |> List.intersperse (text ", "))) (p [] [])
+            ]
+        , div [ class "mt-3" ] (column.origins |> List.filterZip (\o -> erd.sources |> List.findBy .id o.id) |> List.map (\( o, s ) -> div [] [ text s.name, viewSourceContent o s ]))
         ]
+
+
+
+-- generic components
+
+
+viewComment : Comment -> Html msg
+viewComment comment =
+    let
+        content : List (Html msg)
+        content =
+            comment.text |> String.split "\\n" |> List.map text |> List.intersperse (br [] [])
+    in
+    p [ class "mt-1 text-sm text-gray-700" ] content
+
+
+viewProp : String -> List (Html msg) -> Html msg
+viewProp label content =
+    p [ class "mt-3" ]
+        [ dt [ class "text-sm font-medium text-gray-500" ] [ text label ]
+        , dd [ class "mt-1 text-sm text-gray-900" ] content
+        ]
+
+
+viewLayout : (LayoutName -> msg) -> LayoutName -> Html msg
+viewLayout loadLayout layout =
+    span [ class "link", onClick (loadLayout layout) ] [ text layout ]
+
+
+viewSource : Source -> Html msg
+viewSource source =
+    span [] [ text source.name ]
+
+
+viewRelation : (Msg -> msg) -> SchemaName -> ErdColumnRef -> Html msg
+viewRelation wrap defaultSchema relation =
+    span [ class "link", onClick ({ table = relation.table, column = relation.column } |> ShowColumn |> wrap) ] [ text (ColumnRef.show defaultSchema relation) ]
+
+
+viewSourceContent : Origin -> Source -> Html msg
+viewSourceContent origin source =
+    if origin.id == source.id then
+        pre [ class "overflow-x-auto" ] [ text (origin.lines |> List.filterMap (\i -> source.content |> Array.get i) |> String.join "\n") ]
+
+    else
+        pre [] [ text "Source didn't match with origin!" ]

@@ -30,6 +30,7 @@ module Libs.List exposing
     , moveByRel
     , moveIndex
     , nonEmpty
+    , nonEmptyMap
     , prepend
     , prependIf
     , prependOn
@@ -83,6 +84,16 @@ last list =
 nonEmpty : List a -> Bool
 nonEmpty list =
     not (List.isEmpty list)
+
+
+nonEmptyMap : (List a -> b) -> b -> List a -> b
+nonEmptyMap f default list =
+    case list of
+        [] ->
+            default
+
+        _ ->
+            f list
 
 
 find : (a -> Bool) -> List a -> Maybe a
