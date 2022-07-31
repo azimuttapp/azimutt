@@ -269,17 +269,29 @@ viewEmptyState defaultSchema tables =
                 [ Icon.outline2x Template "mx-auto text-primary-500"
                 , h2 [ class "mt-2 text-lg font-medium text-gray-900" ]
                     [ text "Hello from Azimutt 👋" ]
-                , p [ class "mt-3 text-sm text-gray-500" ]
-                    [ text "Azimutt let you freely explore your database schema. To start, just type what you are looking for in the "
-                    , button [ onClick (Focus Conf.ids.searchInput), css [ "link", focus [ "outline-none" ] ] ] [ text "search bar" ]
-                    , text ", and then look at columns and follow relations. Once you have interesting layout, you can save it for later."
-                    ]
-                , p [ class "mt-3 text-sm text-gray-500" ]
-                    [ text "Your project has "
-                    , bText (tables |> String.pluralizeD "table")
-                    , text ". Here are some that could be interesting:"
-                    , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
-                    ]
+                , if tables |> Dict.isEmpty then
+                    p [ class "mt-3 text-sm text-gray-500" ]
+                        [ text "Azimutt allows you to create and explore your database schema. Start writing your schema using "
+                        , extLink "https://azimutt.app/blog/aml-a-language-to-define-your-database-schema" [ class "link" ] [ text "AML syntax" ]
+                        , text " or import and explore your schema. Add any source (database url, SQL or JSON) in project settings (top right "
+                        , Icon.outline Icon.Cog "h-5 w-5 inline"
+                        , text ")."
+                        ]
+
+                  else
+                    div []
+                        [ p [ class "mt-3 text-sm text-gray-500" ]
+                            [ text "Azimutt allows you to explore your database schema. Start by typing what you are looking for in the "
+                            , button [ onClick (Focus Conf.ids.searchInput), css [ "link", focus [ "outline-none" ] ] ] [ text "search bar" ]
+                            , text ", and then look at columns, follow relations and more... Create new layouts to save them for later."
+                            ]
+                        , p [ class "mt-3 text-sm text-gray-500" ]
+                            [ text "Your project has "
+                            , bText (tables |> String.pluralizeD "table")
+                            , text ". Here are some that could be interesting:"
+                            , div [] (bestTables |> List.map (\t -> Badge.basic Tw.primary [ onClick (ShowTable t.id Nothing), class "m-1 cursor-pointer" ] [ text (TableId.show defaultSchema t.id) ] |> Tooltip.t (t.columns |> String.pluralizeD "column")))
+                            ]
+                        ]
                 , p [ class "mt-3 text-sm text-gray-500" ]
                     [ text "If you ❤️ Azimutt, "
                     , sendTweet Conf.constants.cheeringTweet [ class "link" ] [ text "come and say hi" ]

@@ -41,40 +41,40 @@ init =
     { index = 0, toasts = [] }
 
 
-create : (Msg -> msg) -> String -> String -> Cmd msg
-create wrap level message =
+create : String -> String -> Msg
+create level message =
     case level of
         "success" ->
-            success wrap message
+            success message
 
         "info" ->
-            info wrap message
+            info message
 
         "warning" ->
-            warning wrap message
+            warning message
 
         _ ->
-            error wrap message
+            error message
 
 
-success : (Msg -> msg) -> String -> Cmd msg
-success wrap message =
-    ToastAdd (Just 8000) (Simple { color = Tw.green, icon = CheckCircle, title = message, message = "" }) |> wrap |> T.send
+success : String -> Msg
+success message =
+    ToastAdd (Just 8000) (Simple { color = Tw.green, icon = CheckCircle, title = message, message = "" })
 
 
-info : (Msg -> msg) -> String -> Cmd msg
-info wrap message =
-    ToastAdd (Just 8000) (Simple { color = Tw.blue, icon = InformationCircle, title = message, message = "" }) |> wrap |> T.send
+info : String -> Msg
+info message =
+    ToastAdd (Just 8000) (Simple { color = Tw.blue, icon = InformationCircle, title = message, message = "" })
 
 
-warning : (Msg -> msg) -> String -> Cmd msg
-warning wrap message =
-    ToastAdd (Just 8000) (Simple { color = Tw.yellow, icon = ExclamationCircle, title = message, message = "" }) |> wrap |> T.send
+warning : String -> Msg
+warning message =
+    ToastAdd (Just 8000) (Simple { color = Tw.yellow, icon = ExclamationCircle, title = message, message = "" })
 
 
-error : (Msg -> msg) -> String -> Cmd msg
-error wrap message =
-    ToastAdd Nothing (Simple { color = Tw.red, icon = Exclamation, title = message, message = "" }) |> wrap |> T.send
+error : String -> Msg
+error message =
+    ToastAdd Nothing (Simple { color = Tw.red, icon = Exclamation, title = message, message = "" })
 
 
 update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )

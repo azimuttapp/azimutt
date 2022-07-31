@@ -49,7 +49,7 @@ createLayout from name now erd =
     erd.layouts
         |> Dict.get name
         |> Maybe.mapOrElse
-            (\_ -> ( erd, Toasts.error Toast ("Layout " ++ name ++ " already exists") ))
+            (\_ -> ( erd, "Layout " ++ name ++ " already exists" |> Toasts.error |> Toast |> T.send ))
             (from
                 |> Maybe.andThen (\f -> erd.layouts |> Dict.get f)
                 |> Maybe.withDefault (ErdLayout.empty now)
@@ -73,10 +73,10 @@ loadLayout name erd =
 deleteLayout : LayoutName -> Erd -> ( Erd, Cmd Msg )
 deleteLayout name erd =
     if name == erd.currentLayout then
-        ( erd, Toasts.warning Toast ("Can't delete current layout (" ++ name ++ ")") )
+        ( erd, "Can't delete current layout (" ++ name ++ ")" |> Toasts.warning |> Toast |> T.send )
 
     else
         erd.layouts
             |> Dict.get name
             |> Maybe.map (\layout -> ( erd |> mapLayouts (Dict.remove name), Ports.track (Track.deleteLayout layout) ))
-            |> Maybe.withDefault ( erd, Toasts.warning Toast ("Can't find layout '" ++ name ++ "' to delete") )
+            |> Maybe.withDefault ( erd, "Can't find layout '" ++ name ++ "' to delete" |> Toasts.warning |> Toast |> T.send )

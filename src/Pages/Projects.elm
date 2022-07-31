@@ -127,7 +127,7 @@ handleJsMessage msg model =
             ( model |> mapProjects (List.filter (\p -> p.id /= projectId)), Cmd.none )
 
         GotToast level message ->
-            ( model, Toasts.create Toast level message )
+            ( model, message |> Toasts.create level |> Toast |> T.send )
 
         GotLogin _ ->
             -- handled in shared update
@@ -138,11 +138,11 @@ handleJsMessage msg model =
             ( model, Cmd.none )
 
         GotSizes _ ->
-            -- useless here
+            -- useless here but avoid waring toast
             ( model, Cmd.none )
 
         _ ->
-            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
+            ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )
 
 
 mapProjects : (List ProjectInfo -> List ProjectInfo) -> Model -> Model

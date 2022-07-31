@@ -161,7 +161,7 @@ viewEmptyProjectTab =
         [ viewHeading "Create a new project" [ text "When you don't want to import a schema, just create it in Azimutt using ", extLink "https://azimutt.app/blog/aml-a-language-to-define-your-database-schema" [ class "link" ] [ text "AML" ], text "." ]
         , div [ css [ "mt-20" ] ]
             [ div [ css [ "flex justify-center" ] ]
-                [ Button.primary5 Tw.primary [ onClick (CreateEmptyProject "New Project"), id "create-project-btn", css [ "ml-3" ] ] [ text "Create new project!" ]
+                [ Button.primary5 Tw.primary [ onClick (CreateEmptyProject Conf.constants.newProjectName), id "create-project-btn", css [ "ml-3" ] ] [ text "Create new project!" ]
                 ]
             ]
         ]

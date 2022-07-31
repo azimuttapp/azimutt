@@ -236,20 +236,20 @@ handleJsMessage now msg model =
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> JsonSourceMsg) )
 
             else
-                ( model, Toasts.error Toast ("Unhandled local file kind '" ++ kind ++ "'") )
+                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
 
         GotToast level message ->
-            ( model, Toasts.create Toast level message )
+            ( model, message |> Toasts.create level |> Toast |> T.send )
 
         GotLogin _ ->
             -- handled in shared
             ( model, Cmd.none )
 
         Error err ->
-            ( model, Cmd.batch [ Toasts.error Toast ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err), Ports.trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
 
         _ ->
-            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
+            ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )
 
 
 

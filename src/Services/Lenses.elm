@@ -196,6 +196,7 @@ module Services.Lenses exposing
     , setPosition
     , setPrimaryKey
     , setProject
+    , setProjectName
     , setPrompt
     , setProps
     , setRelatedTables
@@ -643,6 +644,26 @@ setIgnoredTables =
     set_ .ignoredTables (\value item -> { item | ignoredTables = value })
 
 
+setImportProject : v -> { item | importProject : v } -> { item | importProject : v }
+setImportProject =
+    set_ .importProject (\value item -> { item | importProject = value })
+
+
+mapImportProjectM : (v -> v) -> { item | importProject : Maybe v } -> { item | importProject : Maybe v }
+mapImportProjectM =
+    mapM_ .importProject setImportProject
+
+
+mapImportProjectCmd : (v -> ( v, Cmd msg )) -> { item | importProject : v } -> ( { item | importProject : v }, Cmd msg )
+mapImportProjectCmd =
+    mapCmd_ .importProject setImportProject
+
+
+mapImportProjectMCmd : (v -> ( v, Cmd msg )) -> { item | importProject : Maybe v } -> ( { item | importProject : Maybe v }, Cmd msg )
+mapImportProjectMCmd =
+    mapMCmd_ .importProject setImportProject
+
+
 setIndex : v -> { item | index : v } -> { item | index : v }
 setIndex =
     set_ .index (\value item -> { item | index = value })
@@ -933,24 +954,9 @@ mapProjectMCmd =
     mapMCmd_ .project setProject
 
 
-setImportProject : v -> { item | importProject : v } -> { item | importProject : v }
-setImportProject =
-    set_ .importProject (\value item -> { item | importProject = value })
-
-
-mapImportProjectM : (v -> v) -> { item | importProject : Maybe v } -> { item | importProject : Maybe v }
-mapImportProjectM =
-    mapM_ .importProject setImportProject
-
-
-mapImportProjectCmd : (v -> ( v, Cmd msg )) -> { item | importProject : v } -> ( { item | importProject : v }, Cmd msg )
-mapImportProjectCmd =
-    mapCmd_ .importProject setImportProject
-
-
-mapImportProjectMCmd : (v -> ( v, Cmd msg )) -> { item | importProject : Maybe v } -> ( { item | importProject : Maybe v }, Cmd msg )
-mapImportProjectMCmd =
-    mapMCmd_ .importProject setImportProject
+setProjectName : v -> { item | projectName : v } -> { item | projectName : v }
+setProjectName =
+    set_ .projectName (\value item -> { item | projectName = value })
 
 
 setPrompt : v -> { item | prompt : v } -> { item | prompt : v }

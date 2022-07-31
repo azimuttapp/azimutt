@@ -36,13 +36,13 @@ showTable now id hint erd =
     case erd.tables |> Dict.get id of
         Just table ->
             if erd |> Erd.isShown id then
-                ( erd, Toasts.info Toast ("Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown") )
+                ( erd, "Table " ++ TableId.show erd.settings.defaultSchema id ++ " already shown" |> Toasts.info |> Toast |> T.send )
 
             else
                 ( erd |> performShowTable now table hint, Cmd.batch [ Ports.observeTableSize table.id ] )
 
         Nothing ->
-            ( erd, Toasts.error Toast ("Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found") )
+            ( erd, "Can't show table " ++ TableId.show erd.settings.defaultSchema id ++ ": not found" |> Toasts.error |> Toast |> T.send )
 
 
 showTables : Time.Posix -> List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
@@ -67,8 +67,8 @@ showTables now ids hint erd =
                 ( e
                 , Cmd.batch
                     [ Ports.observeTablesSize found
-                    , B.cond (shown |> List.isEmpty) Cmd.none (Toasts.info Toast ("Tables " ++ (shown |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ " are already shown"))
-                    , B.cond (notFound |> List.isEmpty) Cmd.none (Toasts.info Toast ("Can't show tables " ++ (notFound |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ ": can't found them"))
+                    , B.cond (shown |> List.isEmpty) Cmd.none ("Tables " ++ (shown |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ " are already shown" |> Toasts.info |> Toast |> T.send)
+                    , B.cond (notFound |> List.isEmpty) Cmd.none ("Can't show tables " ++ (notFound |> List.map (TableId.show erd.settings.defaultSchema) |> String.join ", ") ++ ": can't found them" |> Toasts.info |> Toast |> T.send)
                     ]
                 )
            )
@@ -363,7 +363,7 @@ mapTablePropOrSelected defaultSchema id transform tableLayouts =
                 else
                     ( tableLayouts |> List.updateBy .id id transform, Cmd.none )
             )
-        |> Maybe.withDefault ( tableLayouts, Toasts.info Toast ("Table " ++ TableId.show defaultSchema id ++ " not found") )
+        |> Maybe.withDefault ( tableLayouts, "Table " ++ TableId.show defaultSchema id ++ " not found" |> Toasts.info |> Toast |> T.send )
 
 
 mapTablePropsOrSelectedColumns : Time.Posix -> TableId -> (ErdTable -> List ErdColumnProps -> List ErdColumnProps) -> Erd -> Erd

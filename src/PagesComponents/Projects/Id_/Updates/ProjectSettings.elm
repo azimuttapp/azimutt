@@ -43,13 +43,13 @@ handleProjectSettings now backendUrl msg model =
                         ( updated
                         , Cmd.batch
                             [ Ports.observeTablesSize (updated.erd |> getShownTables)
-                            , Toasts.info Toast ("Source " ++ source.name ++ " set to " ++ B.cond source.enabled "hidden" "visible" ++ ".")
+                            , "Source " ++ source.name ++ " set to " ++ B.cond source.enabled "hidden" "visible" ++ "." |> Toasts.info |> Toast |> T.send
                             ]
                         )
                    )
 
         PSSourceDelete source ->
-            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), Toasts.info Toast ("Source " ++ source.name ++ " has been deleted from your project.") )
+            ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send )
 
         PSSourceUpdate message ->
             model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now backendUrl (model.erd |> Erd.defaultSchemaM) message)

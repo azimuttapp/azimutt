@@ -5,6 +5,7 @@ import Dict
 import Gen.Params.Profile exposing (Params)
 import Gen.Route as Route
 import Libs.Maybe as Maybe
+import Libs.Task as T
 import Page
 import PagesComponents.Profile.Models as Models exposing (Msg(..))
 import PagesComponents.Profile.View exposing (viewProfile)
@@ -130,10 +131,10 @@ handleJsMessage msg model =
             ( { model | user = Just user, updating = False }, Cmd.none )
 
         GotToast level message ->
-            ( model, Toasts.create Toast level message )
+            ( model, message |> Toasts.create level |> Toast |> T.send )
 
         _ ->
-            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
+            ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )
 
 
 

@@ -2,6 +2,7 @@ module PagesComponents.Projects.Id_.Updates.Source exposing (createRelation)
 
 import Conf
 import Libs.List as List
+import Libs.Task as T
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
@@ -19,7 +20,7 @@ createRelation now src ref erd =
     case erd.sources |> List.find (\s -> s.kind == AmlEditor && s.name == Conf.constants.virtualRelationSourceName) of
         Just source ->
             ( erd |> Erd.mapSource source.id (Source.addRelation now erd.settings.defaultSchema src ref)
-            , Toasts.info Toast ("Relation " ++ TableId.show erd.settings.defaultSchema src.table ++ " → " ++ TableId.show erd.settings.defaultSchema ref.table ++ " added to " ++ source.name ++ " source.")
+            , "Relation " ++ TableId.show erd.settings.defaultSchema src.table ++ " → " ++ TableId.show erd.settings.defaultSchema ref.table ++ " added to " ++ source.name ++ " source." |> Toasts.info |> Toast |> T.send
             )
 
         Nothing ->
@@ -32,6 +33,6 @@ createRelation now src ref erd =
                                 |> Source.addRelation now erd.settings.defaultSchema src ref
                                 |> CreateUserSourceWithId
                         )
-                , Toasts.info Toast ("Created " ++ Conf.constants.virtualRelationSourceName ++ " source to add the relation.")
+                , "Created " ++ Conf.constants.virtualRelationSourceName ++ " source to add the relation." |> Toasts.info |> Toast |> T.send
                 ]
             )

@@ -109,11 +109,11 @@ handleHotkey now model hotkey =
 
         "undo" ->
             -- FIXME
-            ( model, Toasts.info Toast "Undo action not handled yet" )
+            ( model, "Undo action not handled yet" |> Toasts.info |> Toast |> T.send )
 
         "redo" ->
             -- FIXME
-            ( model, Toasts.info Toast "Redo action not handled yet" )
+            ( model, "Redo action not handled yet" |> Toasts.info |> Toast |> T.send )
 
         "cancel" ->
             ( model, cancelElement model )
@@ -122,39 +122,39 @@ handleHotkey now model hotkey =
             ( model, T.send (HelpMsg (model.help |> Maybe.mapOrElse (\_ -> HClose) (HOpen ""))) )
 
         _ ->
-            ( model, Toasts.warning Toast ("Unhandled hotkey '" ++ hotkey ++ "'") )
+            ( model, "Unhandled hotkey '" ++ hotkey ++ "'" |> Toasts.warning |> Toast |> T.send )
 
 
 notesElement : Model -> Cmd Msg
 notesElement model =
     (model |> currentColumn |> Maybe.map (NoteRef.fromColumn >> NOpen >> NotesMsg >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (NoteRef.fromTable >> NOpen >> NotesMsg >> T.send))
-        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to collapse :(")
+        |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
 
 collapseElement : Model -> Cmd Msg
 collapseElement model =
     (model |> currentTable |> Maybe.map (ToggleColumns >> T.send))
-        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to collapse :(")
+        |> Maybe.withDefault ("Can't find an element to collapse :(" |> Toasts.info |> Toast |> T.send)
 
 
 expandElement : Model -> Cmd Msg
 expandElement model =
     (model |> currentTable |> Maybe.map (ShowRelatedTables >> T.send))
-        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to expand :(")
+        |> Maybe.withDefault ("Can't find an element to expand :(" |> Toasts.info |> Toast |> T.send)
 
 
 shrinkElement : Model -> Cmd Msg
 shrinkElement model =
     (model |> currentTable |> Maybe.map (HideRelatedTables >> T.send))
-        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to shrink :(")
+        |> Maybe.withDefault ("Can't find an element to shrink :(" |> Toasts.info |> Toast |> T.send)
 
 
 removeElement : Model -> Cmd Msg
 removeElement model =
     (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
-        |> Maybe.withDefault (Toasts.info Toast "Can't find an element to remove :(")
+        |> Maybe.withDefault ("Can't find an element to remove :(" |> Toasts.info |> Toast |> T.send)
 
 
 currentTable : Model -> Maybe TableId
@@ -186,7 +186,7 @@ cancelElement model =
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\p -> SelectTable p.id False))
         |> Maybe.map T.send
-        |> Maybe.withDefault (Toasts.info Toast "Nothing to cancel")
+        |> Maybe.withDefault ("Nothing to cancel" |> Toasts.info |> Toast |> T.send)
 
 
 moveTables : Delta -> Model -> Cmd Msg
@@ -222,4 +222,4 @@ moveTablesOrder delta model =
             |> Maybe.andThen (\id -> tables |> List.findIndexBy .id id |> Maybe.map (\i -> ( id, i )))
             |> Maybe.map (\( id, i ) -> T.send (TableOrder id (List.length tables - 1 - i + delta)))
         )
-            |> Maybe.withDefault (Toasts.info Toast "Can't find an element to move :(")
+            |> Maybe.withDefault ("Can't find an element to move :(" |> Toasts.info |> Toast |> T.send)

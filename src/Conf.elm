@@ -10,6 +10,7 @@ import Libs.Tailwind as Tw exposing (Color)
 import Libs.Url as Url
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.LayoutName exposing (LayoutName)
+import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceName exposing (SourceName)
 
@@ -29,11 +30,12 @@ constants :
     , azimuttEmail : String
     , defaultTitle : String
     , defaultDescription : String
-    , cheeringTweet : String
-    , sharingTweet : String
+    , newProjectName : ProjectName
     , defaultLayout : LayoutName
     , virtualRelationSourceName : SourceName
     , externalAssets : String
+    , cheeringTweet : String
+    , sharingTweet : String
     }
 constants =
     { azimuttWebsite = "https://azimutt.app"
@@ -50,11 +52,12 @@ constants =
     , azimuttEmail = "hey@azimutt.app"
     , defaultTitle = "Azimutt - Database explorer and analyzer"
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
-    , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
-    , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
+    , newProjectName = "New Project"
     , defaultLayout = "initial layout"
     , virtualRelationSourceName = "default"
     , externalAssets = "https://xkwctrduvpdgjarqzjkc.supabase.co/storage/v1/object/public/assets"
+    , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
+    , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     }
 
 

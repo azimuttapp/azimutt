@@ -219,7 +219,7 @@ viewHeading =
     div [ class "px-6 py-5 border-b border-gray-200" ]
         [ div [ class "flex space-x-3" ]
             [ div [ class "flex-1" ]
-                [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Update schema" ]
+                [ h3 [ class "text-lg leading-6 font-medium text-gray-900" ] [ text "Extend schema" ]
                 ]
             , div [ class "flex-shrink-0 self-center flex" ]
                 [ button [ onClick (AmlSidebarMsg AClose), class "-m-2 p-2 rounded-full flex items-center text-gray-400 hover:text-gray-600" ] [ Icon.solid Icon.X "" ]
@@ -249,7 +249,7 @@ viewChooseSource selectedSource userSources =
                         :: (userSources |> List.map (\s -> option [ selected (Maybe.map .id selectedSource == Just s.id), value (SourceId.toString s.id) ] [ text s.name ]))
                     )
                 ]
-            , button [ onClick (simplePrompt "New source name" CreateUserSource), class "-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" ]
+            , button [ onClick (simplePrompt "AML source name:" CreateUserSource), class "-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500" ]
                 [ text "New source"
                 ]
             ]

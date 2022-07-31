@@ -7,6 +7,7 @@ import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
 import Html exposing (Html)
 import Html.Lazy as Lazy
+import Libs.Task as T
 import Page
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
@@ -92,10 +93,10 @@ handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
     case msg of
         GotToast level message ->
-            ( model, Toasts.create Toast level message )
+            ( model, message |> Toasts.create level |> Toast |> T.send )
 
         _ ->
-            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
+            ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )
 
 
 

@@ -70,7 +70,7 @@ update req currentLayout now backendUrl msg model =
 
         SaveProject ->
             if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ]) [ Toasts.warning Toast "No project to save" ]) )
+                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ]) [ "No project to save" |> Toasts.warning |> Toast |> T.send ]) )
 
             else
                 ( model, Cmd.none )
@@ -83,7 +83,7 @@ update req currentLayout now backendUrl msg model =
                         |> Maybe.map Erd.unpack
                         |> Maybe.mapOrElse
                             (\p -> [ Ports.moveProjectTo p storage ])
-                            [ Toasts.warning Toast "No project to move" ]
+                            [ "No project to move" |> Toasts.warning |> Toast |> T.send ]
                     )
                 )
 
@@ -261,7 +261,7 @@ update req currentLayout now backendUrl msg model =
 
         DragStart id pos ->
             model.dragging
-                |> Maybe.mapOrElse (\d -> ( model, Toasts.info Toast ("Already dragging " ++ d.id) ))
+                |> Maybe.mapOrElse (\d -> ( model, "Already dragging " ++ d.id |> Toasts.info |> Toast |> T.send ))
                     ( { id = id, init = pos, last = pos } |> (\d -> model |> setDragging (Just d) |> handleDrag now d False), Cmd.none )
 
         DragMove pos ->
@@ -333,7 +333,7 @@ handleJsMessage now currentLayout msg model =
                 (errors
                     |> List.concatMap
                         (\( name, err ) ->
-                            [ Toasts.error Toast ("Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err)
+                            [ "Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send
                             , Ports.trackJsonError "decode-project" err
                             ]
                         )
@@ -346,7 +346,7 @@ handleJsMessage now currentLayout msg model =
                     ( { model | loaded = True }, Cmd.none )
 
                 Just (Err err) ->
-                    ( { model | loaded = True }, Cmd.batch [ Toasts.error Toast ("Unable to read project: " ++ Decode.errorToHtml err), Ports.trackJsonError "decode-project" err ] )
+                    ( { model | loaded = True }, Cmd.batch [ "Unable to read project: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "decode-project" err ] )
 
                 Just (Ok project) ->
                     let
@@ -404,7 +404,7 @@ handleJsMessage now currentLayout msg model =
                 ( model, SourceId.generator |> Random.generate (\sourceId -> content |> JsonSource.GotFile (SourceInfo.jsonLocal now sourceId file) |> SourceUpdateDialog.JsonSourceMsg |> PSSourceUpdate |> ProjectSettingsMsg) )
 
             else
-                ( model, Toasts.error Toast ("Unhandled local file kind '" ++ kind ++ "'") )
+                ( model, "Unhandled local file kind '" ++ kind ++ "'" |> Toasts.error |> Toast |> T.send )
 
         GotHotkey hotkey ->
             handleHotkey now model hotkey
@@ -421,7 +421,7 @@ handleJsMessage now currentLayout msg model =
                 ( model, Cmd.none )
 
         GotToast level message ->
-            ( model, Toasts.create Toast level message )
+            ( model, message |> Toasts.create level |> Toast |> T.send )
 
         GotTableShow id hint ->
             ( model, T.send (ShowTable id (hint |> Maybe.map PlaceAt)) )
@@ -457,7 +457,7 @@ handleJsMessage now currentLayout msg model =
             ( model, T.send FitContent )
 
         Error err ->
-            ( model, Cmd.batch [ Toasts.error Toast ("Unable to decode JavaScript message: " ++ Decode.errorToHtml err), Ports.trackJsonError "js-message" err ] )
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )

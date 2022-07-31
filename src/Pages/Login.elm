@@ -5,6 +5,7 @@ import Dict
 import Effect exposing (Effect)
 import Gen.Params.Login exposing (Params)
 import Gen.Route as Route
+import Libs.Task as T
 import Page
 import PagesComponents.Login.Models as Models exposing (Msg(..))
 import PagesComponents.Login.View exposing (viewLogin)
@@ -88,14 +89,14 @@ handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
     case msg of
         GotToast level message ->
-            ( model, Toasts.create Toast level message )
+            ( model, message |> Toasts.create level |> Toast |> T.send )
 
         GotSizes _ ->
-            -- useless here
+            -- useless here but avoid waring toast
             ( model, Cmd.none )
 
         _ ->
-            ( model, Toasts.create Toast "warning" (Ports.unhandledJsMsgError msg) )
+            ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )
 
 
 
