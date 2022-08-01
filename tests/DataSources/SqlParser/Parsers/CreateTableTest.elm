@@ -16,6 +16,9 @@ suite =
             , testStatement ( parseCreateTable, "if not exists" )
                 "CREATE TABLE IF NOT EXISTS aaa.bbb (ccc int);"
                 { parsedTable | schema = Just "aaa", table = "bbb", columns = Nel { parsedColumn | name = "ccc", kind = "int" } [] }
+            , testStatement ( parseCreateTable, "unlogged" )
+                "CREATE UNLOGGED TABLE log (name text);"
+                { parsedTable | schema = Nothing, table = "log", columns = Nel { parsedColumn | name = "name", kind = "text" } [] }
             , testStatement ( parseCreateTable, "complex" )
                 "CREATE TABLE public.users (id bigint NOT NULL, name character varying(255), price numeric(8,2)) WITH (autovacuum_enabled='false');"
                 { parsedTable
