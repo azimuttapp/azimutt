@@ -27,7 +27,7 @@ We thought about it since the beginning, but we had to first build a great explo
 
 The biggest challenge was to figure out how to integrate it well to power long term features. We finally found the perfect solution: creating a DSL, [Azimutt Markup Language](./aml-a-language-to-define-your-database-schema), instead of adding tons of needed inputs. As it's very simple, you learn it quickly. In fact, you can probably guess it correctly:
 
-```
+```aml
 group
   id uuid pk
 

@@ -213,6 +213,7 @@ blogPosts =
     , "aml-a-language-to-define-your-database-schema"
     , "stop-using-auto-increment-for-primary-keys"
     , "changelog-2022-06"
+    , "changelog-2022-07"
 
     --, "make-your-app-hackable"
     ]

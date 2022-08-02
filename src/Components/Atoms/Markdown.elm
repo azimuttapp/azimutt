@@ -70,8 +70,14 @@ type alias Dialog =
     { id : HtmlId }
 ```
 
-```js
+```javascript
 project.sources.flatMap(s => s.tables).length
+```
+
+```aml
+users
+  id uuid pk
+  name varchar
 ```
 """ )
             ]

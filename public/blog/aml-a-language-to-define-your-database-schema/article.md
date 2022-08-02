@@ -21,7 +21,7 @@ This is the first iteration of this language, to [get your feedback](https://git
 
 In order to limit learning but also mistakes and typing speed, AML has very little syntax and symbols, the most used parts look like just free text. Here is a typical example of a table definition:
 
-```
+```aml
 users
   id uuid pk
   first_name varchar(128)
@@ -31,7 +31,7 @@ users
 
 And another one with more attributes involved:
 
-```
+```aml
 credentials
   user_id pk fk users.id
   login varchar(128) unique
@@ -56,31 +56,31 @@ Now let's discover more precisely all the details of this language for Azimutt.
 
 In SQL, every table is defined by its schema and name, so does in AML. A table can be defined as easy as:
 
-```
+```aml
 schema_name.table_name
 ```
 
 As it's very common to put table in the default schema named `public`, you can omit the schema, in this case the declaration becomes just:
 
-```
+```aml
 table_name
 ```
 
 The schema and table names are identifiers, they can include any character except space, dot and equal. To have them, just surround them by double quotes:
 
-```
+```aml
 "schema name"."my.table.with.dots"
 ```
 
 Finally, if you want a view instead of a table, add a `*` just after the name:
 
-```
+```aml
 a_view*
 ```
 
 That's it. Now you can define several tables very quickly:
 
-```
+```aml
 public.users
 "users.2"
 credentials
@@ -93,7 +93,7 @@ Just make sure to have them alone on the line.
 
 Defining tables is nice but columns are as important. To add them, just go to the line with a two space indent:
 
-```
+```aml
 users
   id
   name
@@ -101,7 +101,7 @@ users
 
 That's it. With that, you have a `users` table with two columns `id` and `name`. Their type is set to `unknown`, but you can specify it, just after the name:
 
-```
+```aml
 users
   id uuid
   name varchar
@@ -111,7 +111,7 @@ Same as schema and table names, column name and type are identifier, so if they 
 By default, columns are considered NOT NULL as it's a good practice to limit null but of course, you can mark column as nullable with the `nullable` keyword ^^
 You can also define column default value by following the type with an equal sign and the value (it's an identifier, use `"` to include special chars).
 
-```
+```aml
 users
   id uuid
   name varchar nullable
@@ -124,14 +124,14 @@ Constraints are also really important in database design, so of course you can s
 
 First, to define a primary key, you simply need to add the `pk` keyword on the columns being part of it (just one most of the time, multiple ones are supported):
 
-```
+```aml
 users
   id uuid pk
 ```
 
 For other constraints like `unique`, `index` and `check` it's very similar, just add the keyword at the end of the column definition. One notable difference though, they are not automatically grouped as composite constraints. For that, you will need to specify identical identifiers just after the keyword with an equal sign:
 
-```
+```aml
 users
   id uuid pk
   first_name varchar unique=name
@@ -143,14 +143,14 @@ The `check` constraint can be followed by a predicate identifier that specify wh
 
 Finally, *and most importantly*, you can define foreign key constraints with the `fk` keyword followed by the column reference (WHAT A SURPRISE!!!):
 
-```
+```aml
 credentials
   user_id fk public.users.id
 ```
 
 Of course, the schema can be omitted when it's `public`, the default one:
 
-```
+```aml
 credentials
   user_id fk users.id
 ```
@@ -163,13 +163,13 @@ Defining a foreign key constraint creates a relation, and it should be enough mo
 
 In this case, you have the standalone foreign key definition, starting with the `fk` keyword:
 
-```
+```aml
 fk credentials.user_id -> users.id
 ```
 
 If you have/need polymorphic relations, meaning a column (ex: item_id) referencing several tables depending on another column value (ex: item_type), you can add several foreign keys for the same columns using this standalone definition:
 
-```
+```aml
 request
   id uuid
   kind varchar
@@ -183,7 +183,7 @@ fk request.item_id -> logins.id
 
 For now, composite relations, multiple columns referencing multiple others, are not supported in Azimutt so not defined in AML. The main obstacle is the graphical representation of them so if you have any idea on this, don't hesitate to [make some suggestions]({{issues_link}}). One potential syntax for AML could be:
 
-```
+```aml
 fk (logins.provider_id, logins.provider_key) -> (credentials.provider_id, credentials.provider_key)
 ```
 
@@ -191,7 +191,7 @@ fk (logins.provider_id, logins.provider_key) -> (credentials.provider_id, creden
 
 Defining the schema with tables and relations is great, but sometimes you need some textual documentation. Hopefully, SQL offers comments. With AML you can add them to any entity in their line after a `|` symbol. This is true for tables, columns but also relations or even groups (see later).
 
-```
+```aml
 users | Store all our users
   id uuid | Unique identifier for a user
   name varchar
@@ -199,7 +199,7 @@ users | Store all our users
 
 These SQL comments are not identifiers, so you don't need any `"` escaping for space, dot or equal. The only character that will need escaping is `#`, as it defines an AML comment. Everything after will just be ignored. For example, this will produce exactly the same thing as the just above code:
 
-```
+```aml
 # User table
 users | Store all our users # I'm an AML comment
   id uuid | Unique identifier for a user
@@ -208,7 +208,7 @@ users | Store all our users # I'm an AML comment
 
 The syntax shown so far defines the database schema. But Azimutt being a diagram tool, it also has some interesting data you may want to define such as table position and color or if a column is shown or not. For that, you can use a JSON like definition with attributes as `key=value` or `property` inside `{}`:
 
-```
+```aml
 users {color=red, top=10, left=100}
   id integer
   name varchar(10) {hidden}
@@ -232,7 +232,7 @@ Another important thing to note about Azimutt source management: all active sour
 
 Here is an example with almost all the feature used just as a reminder and general overview:
 
-```
+```aml
 emails
   email varchar
   score "double precision"

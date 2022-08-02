@@ -30,7 +30,7 @@ And images:
 
 And even code:
 
-```js
+```javascript
 function hello() {
     alert('Hello!')
 }
