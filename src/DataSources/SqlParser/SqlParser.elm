@@ -202,6 +202,12 @@ parseCommand statement =
     else if firstLine |> startsWith "CREATE RULE" then
         Ok (Ignored statement)
 
+    else if firstLine |> startsWith "CREATE POLICY" then
+        Ok (Ignored statement)
+
+    else if firstLine |> startsWith "(CREATE|DROP) PUBLICATION" then
+        Ok (Ignored statement)
+
     else if firstLine |> startsWith "(CREATE|ALTER|COMMENT ON) TEXT SEARCH (PARSER|TEMPLATE|DICTIONARY|CONFIGURATION)" then
         Ok (Ignored statement)
 

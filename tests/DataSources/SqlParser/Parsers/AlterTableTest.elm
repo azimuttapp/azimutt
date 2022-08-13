@@ -82,6 +82,9 @@ suite =
             , testStatement ( parseAlterTable, "if exists" )
                 "alter table if exists t1 \n       drop constraint if exists abc;"
                 (DropConstraint Nothing "t1" "abc")
+            , testStatement ( parseAlterTable, "row level security" )
+                "alter table users enable row level security;"
+                (IgnoredCommand "enable row level security")
             ]
         , describe "parseAlterTableAddConstraint"
             [ testSql ( parseAlterTableAddConstraint, "unique" )

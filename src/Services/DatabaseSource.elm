@@ -130,23 +130,22 @@ viewInput wrap htmlId model =
     in
     div []
         [ div [ class "flex space-x-10" ]
-            ([ ( "postgresql", True )
-             , ( "mysql", False )
-             , ( "oracle", False )
-             , ( "sql-server", False )
-             , ( "mariadb", False )
-             , ( "sqlite", False )
+            ([ ( "postgresql", Nothing )
+             , ( "mysql", Just (Conf.constants.azimuttNewIssue "Support mysql database import" "") )
+             , ( "oracle", Just (Conf.constants.azimuttNewIssue "Support oracle database import" "") )
+             , ( "sql-server", Just "https://github.com/azimuttapp/azimutt/issues/113" )
+             , ( "mariadb", Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") )
+             , ( "sqlite", Just (Conf.constants.azimuttNewIssue "Support sqlite database import" "") )
              ]
                 |> List.map
-                    (\( name, active ) ->
-                        if active then
-                            span [] [ img [ src ("/assets/logos/" ++ name ++ ".png") ] [] ]
-
-                        else
-                            extLink (Conf.constants.azimuttNewIssue ("Support " ++ name ++ " database import") "")
-                                []
-                                [ img [ src ("/assets/logos/" ++ name ++ ".png"), class "grayscale opacity-50" ] [] ]
-                                |> Tooltip.t "Click to ask support (done on demand)"
+                    (\( name, requestLink ) ->
+                        requestLink
+                            |> Maybe.mapOrElse
+                                (\link ->
+                                    extLink link [] [ img [ src ("/assets/logos/" ++ name ++ ".png"), class "grayscale opacity-50" ] [] ]
+                                        |> Tooltip.t "Click to ask support (done on demand)"
+                                )
+                                (span [] [ img [ src ("/assets/logos/" ++ name ++ ".png") ] [] ])
                     )
             )
         , div [ class "mt-3 flex rounded-md shadow-sm" ]

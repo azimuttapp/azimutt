@@ -35,5 +35,8 @@ suite =
             [ test "split on comma" (\_ -> commaSplit "aaa,bbb,ccc" |> Expect.equal [ "aaa", "bbb", "ccc" ])
             , test "ignore comma inside parenthesis" (\_ -> commaSplit "aaa,bbb(1,2),ccc" |> Expect.equal [ "aaa", "bbb(1,2)", "ccc" ])
             , test "ignore comma inside quotes" (\_ -> commaSplit "aaa,bbb'1,2',ccc" |> Expect.equal [ "aaa", "bbb'1,2'", "ccc" ])
+            , test "ignore comma inside double quotes" (\_ -> commaSplit "aaa,bbb\"1,2\",ccc" |> Expect.equal [ "aaa", "bbb\"1,2\"", "ccc" ])
+            , test "ignore quote inside double quotes" (\_ -> commaSplit "aaa,bbb\"l'aaa\",ccc" |> Expect.equal [ "aaa", "bbb\"l'aaa\"", "ccc" ])
+            , test "ignore double quote inside quotes" (\_ -> commaSplit "aaa,bbb'l\"aaa',ccc" |> Expect.equal [ "aaa", "bbb'l\"aaa'", "ccc" ])
             ]
         ]

@@ -67,7 +67,7 @@ buildConstraintName name =
 
 buildComment : String -> SqlComment
 buildComment comment =
-    comment |> String.replace "''" "'"
+    comment |> String.replace "''" "'" |> String.replace "\"\"" "\""
 
 
 noEnclosingQuotes : String -> String
@@ -87,7 +87,7 @@ extract regex text =
 
 commaSplit : String -> List String
 commaSplit text =
-    -- split on comma but ignore when inside () or ''
+    -- split on comma but ignore when inside (), '' or ""
     String.foldr
         (\char ( res, cur, open ) ->
             if char == ',' && List.isEmpty open then
@@ -102,7 +102,13 @@ commaSplit text =
             else if char == '\'' && List.head open == Just '\'' then
                 ( res, char :: cur, open |> List.tail |> Maybe.withDefault [] )
 
-            else if char == '\'' then
+            else if char == '\'' && List.head open /= Just '"' then
+                ( res, char :: cur, char :: open )
+
+            else if char == '"' && List.head open == Just '"' then
+                ( res, char :: cur, open |> List.tail |> Maybe.withDefault [] )
+
+            else if char == '"' && List.head open /= Just '\'' then
                 ( res, char :: cur, char :: open )
 
             else

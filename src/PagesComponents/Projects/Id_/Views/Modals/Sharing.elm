@@ -164,7 +164,7 @@ viewBodyLayoutInput inputId inputValue layouts =
     div [ class "mt-3" ]
         [ div [ class "flex justify-between" ]
             [ label [ for inputId, class "block text-sm font-medium text-gray-700" ] [ text "Layout" ]
-            , span [ class "text-sm text-gray-500" ] [ text "Choose a layout to display or keep the default one." ]
+            , span [ class "text-sm text-gray-500" ] [ text "Choose a layout to display." ]
             ]
         , div [ class "mt-1" ]
             [ input

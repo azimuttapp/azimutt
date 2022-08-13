@@ -128,11 +128,11 @@ extractBody rest =
 
 parseCreateTableColumn : RawSql -> Result ParseError ParsedColumn
 parseCreateTableColumn sql =
-    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?(?<nullable>\\s+NOT NULL)?(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?(?: COMMENT '(?<comment>(?:[^']|'')+)')?$" of
-        (Just name) :: (Just kind) :: default1 :: nullable :: default2 :: maybeConstraints :: maybeReference :: maybePrimary :: maybeUnique :: maybeCheck :: maybeGenerated :: maybeComment :: [] ->
+    case sql |> Regex.matches "^(?<name>[^ ]+)\\s+(?<type>.*?)(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default1>.*?))?( PRIMARY KEY)?(?<nullable>\\s+NOT NULL)?(?:\\s+COLLATE [^ ]+)?(?:\\s+DEFAULT\\s+(?<default2>.*?))?(?:\\s+CONSTRAINT\\s+(?<constraint>.*))?(?:\\s+(?<reference>REFERENCES\\s+.*?))?(?<nullable2>\\s+NOT NULL)?(?: AUTO_INCREMENT)?( PRIMARY KEY)?( UNIQUE)?(?: CHECK\\((?<check>.*?)\\))?( GENERATED .*?)?(?:\\s+COMMENT '(?<comment>(?:[^']|'')+)')?(?:\\s+COMMENT \"(?<comment2>(?:[^\"]|\"\")+)\")?$" of
+        (Just name) :: (Just kind) :: default1 :: maybePrimary :: nullable :: default2 :: maybeConstraints :: maybeReference :: nullable2 :: maybePrimary2 :: maybeUnique :: maybeCheck :: maybeGenerated :: maybeComment :: maybeComment2 :: [] ->
             maybeConstraints
                 |> Maybe.mapOrElse (Regex.split (Regex.asRegexI " *constraint *")) []
-                |> (\constraints -> constraints ++ List.filterMap identity [ maybeReference, maybePrimary ])
+                |> (\constraints -> constraints ++ List.filterMap identity [ maybeReference, maybePrimary |> Maybe.orElse maybePrimary2 ])
                 |> List.foldl
                     (\constraint acc ->
                         acc
@@ -153,16 +153,16 @@ parseCreateTableColumn sql =
                     )
                     (Ok ( Nothing, Nothing, True ))
                 |> Result.map
-                    (\( primaryKey, foreignKey, nullable2 ) ->
+                    (\( primaryKey, foreignKey, nullable3 ) ->
                         { name = name |> buildColumnName
                         , kind = kind |> buildColumnType
-                        , nullable = nullable == Nothing && nullable2
+                        , nullable = nullable == Nothing && nullable2 == Nothing && nullable3
                         , default = default1 |> Maybe.orElse default2 |> Maybe.orElse (maybeGenerated |> Maybe.map String.trim)
                         , primaryKey = primaryKey
                         , foreignKey = foreignKey
                         , unique = maybeUnique |> Maybe.map String.trim
                         , check = maybeCheck
-                        , comment = maybeComment |> Maybe.map buildComment
+                        , comment = maybeComment |> Maybe.orElse maybeComment2 |> Maybe.map buildComment
                         }
                     )
 

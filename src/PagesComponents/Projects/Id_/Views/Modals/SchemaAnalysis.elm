@@ -29,10 +29,20 @@ import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 
 
 
--- other possible analysis:
---  - polymorphic relations
---  - '_at' columns not of date type
---  - % of nullable columns in a table (warn if > 50%)
+{-
+   Improve analysis:
+    - better missing relations (singular table name present in column name, and follower by an existing column name in this table)
+    - identify missing polymorphic relations (two successive columns with the same name ending with _type and _id)
+    - '_at' columns not of date type
+    - % of nullable columns in a table (warn if > 50%)
+    - ?identify PII
+
+   https://schemaspy.org/sample/anomalies.html
+   - Tables that contain a single column
+   - Tables without indexes
+   - Columns whose default value is the word 'NULL' or 'null'
+   - Tables with incrementing column names, potentially indicating denormalization
+-}
 
 
 viewSchemaAnalysis : Bool -> SchemaName -> Dict TableId ErdTable -> SchemaAnalysisDialog -> Html Msg

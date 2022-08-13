@@ -76,6 +76,9 @@ suite =
             , testSql ( parseCreateTableColumn, "with primary key" )
                 "id bigint PRIMARY KEY"
                 { parsedColumn | name = "id", kind = "bigint", primaryKey = Just "" }
+            , testSql ( parseCreateTableColumn, "with primary key before nullable" )
+                "id bigint PRIMARY KEY NOT NULL"
+                { parsedColumn | name = "id", kind = "bigint", primaryKey = Just "", nullable = False }
             , testSql ( parseCreateTableColumn, "with primary key constraint" )
                 "id bigint NOT NULL CONSTRAINT users_pk PRIMARY KEY"
                 { parsedColumn | name = "id", kind = "bigint", nullable = False, primaryKey = Just "users_pk" }
@@ -94,6 +97,9 @@ suite =
             , testSql ( parseCreateTableColumn, "with foreign key and primary key" )
                 "match_id bigint REFERENCES matches(match_id) ON DELETE CASCADE PRIMARY KEY"
                 { parsedColumn | name = "match_id", kind = "bigint", primaryKey = Just "", foreignKey = Just ( Nothing, { schema = Nothing, table = "matches", column = Just "match_id" } ) }
+            , testSql ( parseCreateTableColumn, "with foreign key before not null" )
+                "id uuid references auth.users not null primary key"
+                { parsedColumn | name = "id", kind = "uuid", primaryKey = Just "", nullable = False, foreignKey = Just ( Nothing, { schema = Just "auth", table = "users", column = Nothing } ) }
             , testSql ( parseCreateTableColumn, "with unique" )
                 "`email` varchar(255) NOT NULL UNIQUE"
                 { parsedColumn | name = "email", kind = "varchar(255)", nullable = False, unique = Just "UNIQUE" }
@@ -103,6 +109,9 @@ suite =
             , testSql ( parseCreateTableColumn, "with comment" )
                 "order varchar COMMENT 'Possible values: ''asc'',''desc'''"
                 { parsedColumn | name = "order", kind = "varchar", comment = Just "Possible values: 'asc','desc'" }
+            , testSql ( parseCreateTableColumn, "with comment with double quotes" )
+                "order varchar COMMENT \"Possible values: \"\"asc\"\",\"\"desc\"\"\""
+                { parsedColumn | name = "order", kind = "varchar", comment = Just "Possible values: \"asc\",\"desc\"" }
             , testSql ( parseCreateTableColumn, "with collate" )
                 "id nvarchar(32) COLLATE Modern_Spanish_CI_AS NOT NULL"
                 { parsedColumn | name = "id", kind = "nvarchar(32)", nullable = False }

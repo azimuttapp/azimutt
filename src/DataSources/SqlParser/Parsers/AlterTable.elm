@@ -96,6 +96,9 @@ parseAlterTable statement =
             else if command |> String.toUpper |> String.startsWith "REPLICA IDENTITY " then
                 Ok (IgnoredCommand command)
 
+            else if command |> String.toUpper |> String.startsWith "ENABLE ROW LEVEL SECURITY" then
+                Ok (IgnoredCommand command)
+
             else
                 Err [ "Alter table command not handled: '" ++ command ++ "'" ]
 
