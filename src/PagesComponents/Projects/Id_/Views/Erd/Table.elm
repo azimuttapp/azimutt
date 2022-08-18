@@ -21,6 +21,7 @@ import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Color exposing (bg_500, focus, hover)
 import Models.ColumnOrder as ColumnOrder
+import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
@@ -228,7 +229,17 @@ buildColumn useBasicTypes notes layout column =
 
         else
             column.kindLabel
-    , kindDetails = column.customType |> Maybe.map .definition
+    , kindDetails =
+        column.customType
+            |> Maybe.map
+                (\t ->
+                    case t.value of
+                        CustomTypeValue.Enum values ->
+                            "Enum: " ++ String.join ", " values
+
+                        CustomTypeValue.Definition definition ->
+                            "Type: " ++ definition
+                )
     , nullable = column.nullable
     , default = column.defaultLabel
     , comment = column.comment |> Maybe.map .text

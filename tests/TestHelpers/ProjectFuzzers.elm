@@ -19,9 +19,10 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue exposing (ColumnValue)
 import Models.Project.Comment exposing (Comment)
-import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.CustomTypeName exposing (CustomTypeName)
+import Models.Project.CustomTypeValue as CustomTypeValue exposing (CustomTypeValue)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
@@ -43,7 +44,7 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Models.Project.SourceLine exposing (SourceLine)
 import Models.Project.SourceName exposing (SourceName)
-import Models.Project.Table exposing (Table)
+import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableName exposing (TableName)
 import Models.Project.TableProps exposing (TableProps)
@@ -80,7 +81,7 @@ tables =
 
 table : Fuzzer Table
 table =
-    Fuzz.map10 (\s t -> Table ( s, t ) s t)
+    Fuzz.map10 Table.new
         schemaName
         tableName
         Fuzz.bool
@@ -130,11 +131,15 @@ types =
 
 customType : Fuzzer CustomType
 customType =
-    Fuzz.map4 (\s n -> CustomType ( s, n ) n)
-        schemaName
-        customTypeName
-        Fuzz.string
-        (Fuzz.listN 1 origin)
+    Fuzz.map4 CustomType.new schemaName customTypeName customTypeValue (Fuzz.listN 1 origin)
+
+
+customTypeValue : Fuzzer CustomTypeValue
+customTypeValue =
+    Fuzz.oneOf
+        [ listSmall Fuzz.string |> Fuzz.map CustomTypeValue.Enum
+        , Fuzz.string |> Fuzz.map CustomTypeValue.Definition
+        ]
 
 
 relation : Fuzzer Relation

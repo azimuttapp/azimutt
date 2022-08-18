@@ -1,4 +1,4 @@
-module Models.Project.Table exposing (Table, TableLike, clearOrigins, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques, merge)
+module Models.Project.Table exposing (Table, TableLike, clearOrigins, decode, encode, inChecks, inIndexes, inPrimaryKey, inUniques, merge, new)
 
 import Dict exposing (Dict)
 import Json.Decode as Decode
@@ -52,6 +52,11 @@ type alias TableLike x y =
         , comment : Maybe Comment
         , origins : List Origin
     }
+
+
+new : SchemaName -> TableName -> Bool -> Dict ColumnName Column -> Maybe PrimaryKey -> List Unique -> List Index -> List Check -> Maybe Comment -> List Origin -> Table
+new schema name view columns primaryKey uniques indexes checks comment origins =
+    Table ( schema, name ) schema name view columns primaryKey uniques indexes checks comment origins
 
 
 inPrimaryKey : TableLike x y -> ColumnName -> Maybe PrimaryKey
@@ -125,7 +130,7 @@ encode value =
 
 decode : Decode.Decoder Table
 decode =
-    Decode.map10 (\s t v c p u i ch co so -> Table ( s, t ) s t v c p u i ch co so)
+    Decode.map10 new
         (Decode.field "schema" SchemaName.decode)
         (Decode.field "table" TableName.decode)
         (Decode.defaultField "view" Decode.bool False)

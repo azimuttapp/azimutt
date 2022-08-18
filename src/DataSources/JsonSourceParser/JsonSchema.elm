@@ -2,20 +2,24 @@ module DataSources.JsonSourceParser.JsonSchema exposing (JsonSchema, decode, jso
 
 import DataSources.JsonSourceParser.Models.JsonRelation as JsonRelation exposing (JsonRelation)
 import DataSources.JsonSourceParser.Models.JsonTable as JsonTable exposing (JsonTable)
+import DataSources.JsonSourceParser.Models.JsonType as JsonType exposing (JsonType)
 import Json.Decode as Decode
+import Libs.Json.Decode as Decode
 
 
 type alias JsonSchema =
     { tables : List JsonTable
     , relations : List JsonRelation
+    , types : List JsonType
     }
 
 
 decode : Decode.Decoder JsonSchema
 decode =
-    Decode.map2 JsonSchema
+    Decode.map3 JsonSchema
         (Decode.field "tables" (Decode.list JsonTable.decode))
         (Decode.field "relations" (Decode.list JsonRelation.decode))
+        (Decode.defaultField "types" (Decode.list JsonType.decode) [])
 
 
 jsonSchema : String
@@ -131,6 +135,24 @@ jsonSchema =
             }
           }
         }
+      }
+    },
+    "types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["schema", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "schema": {"type": "string"},
+          "name": {"type": "string"},
+          "values": {"type": "array", "items": {"type": "string"}},
+          "definition": {"type": "string"}
+        },
+        "oneOf": [
+          {"required": ["values"]},
+          {"required": ["definition"]}
+        ]
       }
     }
   }

@@ -21,6 +21,7 @@ import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.Index exposing (Index)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
@@ -335,12 +336,12 @@ createType : Origin -> ParsedType -> CustomType
 createType origin t =
     (case t.value of
         EnumType values ->
-            "Enum: " ++ (values |> String.join ", ")
+            CustomTypeValue.Enum values
 
         UnknownType definition ->
-            "Type: " ++ definition
+            CustomTypeValue.Definition definition
     )
-        |> (\d -> { id = ( t.schema |> Maybe.withDefault "", t.name ), name = t.name, definition = d, origins = [ origin ] })
+        |> (\value -> { id = ( t.schema |> Maybe.withDefault "", t.name ), name = t.name, value = value, origins = [ origin ] })
 
 
 createComment : Origin -> SqlComment -> Comment

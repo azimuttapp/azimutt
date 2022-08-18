@@ -15,6 +15,7 @@ import Models.Project.Check as Check
 import Models.Project.Column as Column exposing (Column)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
 import Models.Project.Comment as Comment exposing (Comment)
+import Models.Project.CustomType as CustomType
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Index as Index exposing (Index)
 import Models.Project.Layout as Layout exposing (Layout)
@@ -58,6 +59,7 @@ suite =
             , jsonFuzz "Comment" ProjectFuzzers.comment Comment.encode Comment.decode
             , jsonFuzz "Relation" ProjectFuzzers.relation Relation.encode Relation.decode
             , jsonFuzz "ColumnRef" ProjectFuzzers.columnRef ColumnRef.encode ColumnRef.decode
+            , jsonFuzz "CustomType" ProjectFuzzers.customType CustomType.encode CustomType.decode
             , jsonFuzz "Source" ProjectFuzzers.origin Origin.encode Origin.decode
             , jsonFuzz "Layout" ProjectFuzzers.layout Layout.encode Layout.decode
             , jsonFuzz "CanvasProps" ProjectFuzzers.canvasProps CanvasProps.encode CanvasProps.decode

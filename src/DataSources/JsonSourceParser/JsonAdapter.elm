@@ -5,19 +5,21 @@ import DataSources.Helpers exposing (defaultCheckName, defaultIndexName, default
 import DataSources.JsonSourceParser.JsonSchema exposing (JsonSchema)
 import DataSources.JsonSourceParser.Models.JsonRelation exposing (JsonRelation)
 import DataSources.JsonSourceParser.Models.JsonTable exposing (JsonCheck, JsonColumn, JsonIndex, JsonPrimaryKey, JsonTable, JsonUnique)
+import DataSources.JsonSourceParser.Models.JsonType exposing (JsonType, JsonTypeValue(..))
 import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.Index exposing (Index)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.Source exposing (Source)
 import Models.Project.Table exposing (Table)
-import Models.Project.TableId exposing (TableId)
 import Models.Project.Unique exposing (Unique)
 import Models.SourceInfo exposing (SourceInfo)
 
@@ -33,9 +35,9 @@ buildSource source schema =
     , name = source.name
     , kind = source.kind
     , content = Array.empty
-    , tables = schema.tables |> List.map (buildTable origins) |> Dict.fromList
+    , tables = schema.tables |> List.map (buildTable origins) |> Dict.fromListMap .id
     , relations = schema.relations |> List.map (buildRelation origins)
-    , types = Dict.empty
+    , types = schema.types |> List.map (buildType origins) |> Dict.fromListMap .id
     , enabled = source.enabled
     , fromSample = source.fromSample
     , createdAt = source.createdAt
@@ -43,27 +45,20 @@ buildSource source schema =
     }
 
 
-buildTable : List Origin -> JsonTable -> ( TableId, Table )
+buildTable : List Origin -> JsonTable -> Table
 buildTable origins table =
-    let
-        id : TableId
-        id =
-            ( table.schema, table.table )
-    in
-    ( id
-    , { id = id
-      , schema = table.schema
-      , name = table.table
-      , view = table.view |> Maybe.withDefault False
-      , columns = table.columns |> buildColumns origins
-      , primaryKey = table.primaryKey |> Maybe.map (buildPrimaryKey origins)
-      , uniques = table.uniques |> List.map (buildUnique origins table.table)
-      , indexes = table.indexes |> List.map (buildIndex origins table.table)
-      , checks = table.checks |> List.map (buildCheck origins table.table)
-      , comment = table.comment |> Maybe.map (buildComment origins)
-      , origins = origins
-      }
-    )
+    { id = ( table.schema, table.table )
+    , schema = table.schema
+    , name = table.table
+    , view = table.view |> Maybe.withDefault False
+    , columns = table.columns |> buildColumns origins
+    , primaryKey = table.primaryKey |> Maybe.map (buildPrimaryKey origins)
+    , uniques = table.uniques |> List.map (buildUnique origins table.table)
+    , indexes = table.indexes |> List.map (buildIndex origins table.table)
+    , checks = table.checks |> List.map (buildCheck origins table.table)
+    , comment = table.comment |> Maybe.map (buildComment origins)
+    , origins = origins
+    }
 
 
 buildColumns : List Origin -> List JsonColumn -> Dict ColumnName Column
@@ -131,3 +126,15 @@ buildRelation origins relation =
         { table = ( relation.src.schema, relation.src.table ), column = relation.src.column }
         { table = ( relation.ref.schema, relation.ref.table ), column = relation.ref.column }
         origins
+
+
+buildType : List Origin -> JsonType -> CustomType
+buildType origins t =
+    (case t.value of
+        JsonTypeEnum values ->
+            CustomTypeValue.Enum values
+
+        JsonTypeDefinition definition ->
+            CustomTypeValue.Definition definition
+    )
+        |> (\value -> { id = ( t.schema, t.name ), name = t.name, value = value, origins = origins })
