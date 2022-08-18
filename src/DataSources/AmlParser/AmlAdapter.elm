@@ -55,6 +55,7 @@ buildSource defaultSchema source statements =
       , content = Array.empty
       , tables = schema.tables
       , relations = schema.relations |> List.reverse
+      , types = Dict.empty
       , enabled = source.enabled
       , fromSample = source.fromSample
       , createdAt = source.createdAt

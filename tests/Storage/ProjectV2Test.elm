@@ -81,9 +81,10 @@ project0 : Project
 project0 =
     { id = "00000000-0000-0000-0000-000000000000"
     , name = "Project 0"
-    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] True Nothing (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] Dict.empty True Nothing (time 1100) (time 1101) ]
     , tables = Dict.empty
     , relations = []
+    , types = Dict.empty
     , notes = Dict.empty
     , usedLayout = "initial layout"
     , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (Position 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
@@ -110,9 +111,10 @@ project1 : Project
 project1 =
     { id = "00000000-0000-0000-0000-000000000000"
     , name = "Project 0"
-    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] True (Just "basic") (time 1100) (time 1101) ]
+    , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] Dict.empty True (Just "basic") (time 1100) (time 1101) ]
     , tables = tables1
     , relations = []
+    , types = Dict.empty
     , notes = Dict.empty
     , usedLayout = "initial layout"
     , layouts =
@@ -212,6 +214,7 @@ project2 =
             )
             tables2
             relations2
+            Dict.empty
             True
             Nothing
             (time 1100)
@@ -219,6 +222,7 @@ project2 =
         ]
     , tables = tables2
     , relations = relations2
+    , types = Dict.empty
     , notes = Dict.empty
     , usedLayout = "users"
     , layouts =

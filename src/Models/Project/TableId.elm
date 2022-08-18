@@ -45,7 +45,7 @@ fromString id =
 
 show : SchemaName -> TableId -> String
 show defaultSchema ( schema, table ) =
-    if schema == defaultSchema then
+    if schema == "" || schema == defaultSchema then
         table
 
     else

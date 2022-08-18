@@ -1,6 +1,6 @@
-module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildColumnType, buildComment, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
+module DataSources.SqlParser.Utils.Helpers exposing (buildColumnName, buildColumnType, buildComment, buildConstraintName, buildEnumValue, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, buildTypeName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
 
-import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlComment, SqlConstraintName, SqlSchemaName, SqlStatement, SqlTableName)
+import DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlComment, SqlConstraintName, SqlEnumValue, SqlSchemaName, SqlStatement, SqlTableName, SqlTypeName)
 import Libs.Nel as Nel
 import Libs.Regex as Regex
 
@@ -57,6 +57,16 @@ buildColumnName name =
 
 buildColumnType : String -> SqlColumnType
 buildColumnType name =
+    name |> String.trim |> noEnclosingQuotes
+
+
+buildTypeName : String -> SqlTypeName
+buildTypeName name =
+    name |> String.trim |> noEnclosingQuotes
+
+
+buildEnumValue : String -> SqlEnumValue
+buildEnumValue name =
     name |> String.trim |> noEnclosingQuotes
 
 

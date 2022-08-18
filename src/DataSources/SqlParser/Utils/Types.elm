@@ -1,4 +1,4 @@
-module DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName, SqlTableRef)
+module DataSources.SqlParser.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlEnumValue, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName, SqlTableRef, SqlTypeName)
 
 import DataSources.Helpers exposing (SourceLine)
 import Libs.Nel exposing (Nel)
@@ -33,6 +33,14 @@ type alias SqlColumnType =
 
 
 type alias SqlColumnValue =
+    String
+
+
+type alias SqlTypeName =
+    String
+
+
+type alias SqlEnumValue =
     String
 
 

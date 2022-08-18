@@ -35,6 +35,7 @@ buildSource source schema =
     , content = Array.empty
     , tables = schema.tables |> List.map (buildTable origins) |> Dict.fromList
     , relations = schema.relations |> List.map (buildRelation origins)
+    , types = Dict.empty
     , enabled = source.enabled
     , fromSample = source.fromSample
     , createdAt = source.createdAt

@@ -5,6 +5,7 @@ import Conf
 import DataSources.Helpers exposing (SourceLine, defaultCheckName, defaultRelName, defaultUniqueName)
 import DataSources.SqlParser.Parsers.AlterTable as AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..))
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedCheck, ParsedColumn, ParsedForeignKey, ParsedIndex, ParsedPrimaryKey, ParsedTable, ParsedUnique)
+import DataSources.SqlParser.Parsers.CreateType exposing (ParsedType, ParsedTypeValue(..))
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView)
 import DataSources.SqlParser.Parsers.Select exposing (SelectColumn(..))
 import DataSources.SqlParser.SqlParser exposing (Command(..))
@@ -19,6 +20,7 @@ import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.CustomType exposing (CustomType)
 import Models.Project.Index exposing (Index)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
@@ -36,6 +38,7 @@ import Models.SourceInfo exposing (SourceInfo)
 type alias SqlSchema =
     { tables : Dict TableId Table
     , relations : List Relation
+    , types : List CustomType
     , errors : List (List SqlSchemaError)
     }
 
@@ -46,7 +49,7 @@ type alias SqlSchemaError =
 
 initSchema : SqlSchema
 initSchema =
-    { tables = Dict.empty, relations = [], errors = [] }
+    { tables = Dict.empty, relations = [], types = [], errors = [] }
 
 
 buildSource : SourceInfo -> List SourceLine -> SqlSchema -> Source
@@ -57,6 +60,7 @@ buildSource source lines schema =
     , content = lines |> List.map .text |> Array.fromList
     , tables = schema.tables
     , relations = schema.relations |> List.reverse
+    , types = schema.types |> Dict.fromListMap .id
     , enabled = source.enabled
     , fromSample = source.fromSample
     , createdAt = source.createdAt
@@ -148,6 +152,9 @@ evolve defaultSchema source ( statement, command ) content =
 
         ConstraintComment _ ->
             content
+
+        CreateType t ->
+            { content | types = createType origin t :: content.types }
 
         Ignored _ ->
             content
@@ -322,6 +329,18 @@ createChecks : Origin -> SqlTableName -> Nel ParsedColumn -> List ParsedCheck ->
 createChecks origin tableName columns checks =
     (checks |> List.map (\c -> Check c.name c.columns (Just c.predicate) [ origin ]))
         ++ (columns |> Nel.toList |> List.filterMap (\col -> col.check |> Maybe.map (\c -> Check (defaultCheckName tableName col.name) [ col.name ] (Just c) [ origin ])))
+
+
+createType : Origin -> ParsedType -> CustomType
+createType origin t =
+    (case t.value of
+        EnumType values ->
+            "Enum: " ++ (values |> String.join ", ")
+
+        UnknownType definition ->
+            "Type: " ++ definition
+    )
+        |> (\d -> { id = ( t.schema |> Maybe.withDefault "", t.name ), name = t.name, definition = d, origins = [ origin ] })
 
 
 createComment : Origin -> SqlComment -> Comment

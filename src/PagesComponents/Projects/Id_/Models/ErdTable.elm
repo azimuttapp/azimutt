@@ -7,6 +7,8 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Project.Check exposing (Check)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Index exposing (Index)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
@@ -36,8 +38,8 @@ type alias ErdTable =
     }
 
 
-create : SchemaName -> Dict TableId Table -> List Relation -> Table -> ErdTable
-create defaultSchema tables tableRelations table =
+create : SchemaName -> Dict TableId Table -> Dict CustomTypeId CustomType -> List Relation -> Table -> ErdTable
+create defaultSchema tables types tableRelations table =
     let
         relationsByColumn : Dict ColumnName (List Relation)
         relationsByColumn =
@@ -66,7 +68,7 @@ create defaultSchema tables tableRelations table =
     , schema = table.schema
     , name = table.name
     , view = table.view
-    , columns = table.columns |> Dict.map (\name -> ErdColumn.create tables (relationsByColumn |> Dict.getOrElse name []) table)
+    , columns = table.columns |> Dict.map (\name -> ErdColumn.create defaultSchema tables types (relationsByColumn |> Dict.getOrElse name []) table)
     , primaryKey = table.primaryKey
     , uniques = table.uniques
     , indexes = table.indexes

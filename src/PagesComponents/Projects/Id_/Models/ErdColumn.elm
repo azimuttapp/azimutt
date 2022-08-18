@@ -7,12 +7,15 @@ import Models.Project.CheckName exposing (CheckName)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnIndex exposing (ColumnIndex)
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.ColumnType exposing (ColumnType)
-import Models.Project.ColumnValue exposing (ColumnValue)
+import Models.Project.ColumnType as ColumnType exposing (ColumnType)
+import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomTypeId as CustomTypeId exposing (CustomTypeId)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation exposing (Relation)
+import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
 import Models.Project.UniqueName exposing (UniqueName)
@@ -23,8 +26,11 @@ type alias ErdColumn =
     { index : ColumnIndex
     , name : ColumnName
     , kind : ColumnType
+    , kindLabel : String
+    , customType : Maybe CustomType
     , nullable : Bool
     , default : Maybe ColumnValue
+    , defaultLabel : Maybe String
     , comment : Maybe Comment
     , isPrimaryKey : Bool
     , inRelations : List ErdColumnRef
@@ -36,13 +42,16 @@ type alias ErdColumn =
     }
 
 
-create : Dict TableId Table -> List Relation -> Table -> Column -> ErdColumn
-create tables columnRelations table column =
+create : SchemaName -> Dict TableId Table -> Dict CustomTypeId CustomType -> List Relation -> Table -> Column -> ErdColumn
+create defaultSchema tables types columnRelations table column =
     { index = column.index
     , name = column.name
     , kind = column.kind
+    , kindLabel = column.kind |> ColumnType.label defaultSchema
+    , customType = types |> Dict.get (CustomTypeId.fromColumnType column.kind)
     , nullable = column.nullable
     , default = column.default
+    , defaultLabel = column.default |> Maybe.map ColumnValue.label
     , comment = column.comment
     , isPrimaryKey = column.name |> Table.inPrimaryKey table |> Maybe.isJust
     , inRelations = columnRelations |> List.filter (\r -> r.ref.table == table.id && r.ref.column == column.name) |> List.map .src |> List.map (ErdColumnRef.create tables)

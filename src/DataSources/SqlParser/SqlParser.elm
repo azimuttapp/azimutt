@@ -5,6 +5,7 @@ import DataSources.SqlParser.Parsers.AlterTable exposing (TableUpdate, parseAlte
 import DataSources.SqlParser.Parsers.Comment exposing (CommentOnColumn, CommentOnConstraint, CommentOnTable, parseColumnComment, parseColumnConstraint, parseTableComment)
 import DataSources.SqlParser.Parsers.CreateIndex exposing (ParsedIndex, parseCreateIndex)
 import DataSources.SqlParser.Parsers.CreateTable exposing (ParsedTable, parseCreateTable)
+import DataSources.SqlParser.Parsers.CreateType exposing (ParsedType, parseCreateType)
 import DataSources.SqlParser.Parsers.CreateUnique exposing (ParsedUnique, parseCreateUniqueIndex)
 import DataSources.SqlParser.Parsers.CreateView exposing (ParsedView, parseView)
 import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
@@ -24,6 +25,7 @@ type Command
     | TableComment CommentOnTable
     | ColumnComment CommentOnColumn
     | ConstraintComment CommentOnConstraint
+    | CreateType ParsedType
     | Ignored SqlStatement
 
 
@@ -125,28 +127,31 @@ parseCommand statement =
             statement.head.text |> String.trim |> String.toUpper
     in
     if firstLine |> startsWith "CREATE( UNLOGGED)? TABLE" then
-        parseCreateTable statement |> Result.map CreateTable
+        statement |> parseCreateTable |> Result.map CreateTable
 
     else if firstLine |> startsWith "ALTER TABLE" then
-        parseAlterTable statement |> Result.map AlterTable
+        statement |> parseAlterTable |> Result.map AlterTable
 
     else if firstLine |> startsWith "CREATE( OR REPLACE)?( MATERIALIZED)? VIEW" then
-        parseView statement |> Result.map CreateView
+        statement |> parseView |> Result.map CreateView
 
     else if firstLine |> startsWith "COMMENT ON (TABLE|VIEW)" then
-        parseTableComment statement |> Result.map TableComment
+        statement |> parseTableComment |> Result.map TableComment
 
     else if firstLine |> startsWith "COMMENT ON COLUMN" then
-        parseColumnComment statement |> Result.map ColumnComment
+        statement |> parseColumnComment |> Result.map ColumnComment
 
     else if firstLine |> startsWith "CREATE INDEX" then
-        parseCreateIndex statement |> Result.map CreateIndex
+        statement |> parseCreateIndex |> Result.map CreateIndex
 
     else if firstLine |> startsWith "CREATE UNIQUE INDEX" then
-        parseCreateUniqueIndex statement |> Result.map CreateUnique
+        statement |> parseCreateUniqueIndex |> Result.map CreateUnique
 
     else if firstLine |> startsWith "COMMENT ON CONSTRAINT" then
-        parseColumnConstraint statement |> Result.map ConstraintComment
+        statement |> parseColumnConstraint |> Result.map ConstraintComment
+
+    else if firstLine |> startsWith "CREATE TYPE" then
+        statement |> parseCreateType |> Result.map CreateType
 
     else if firstLine |> startsWith "SELECT" then
         Ok (Ignored statement)
@@ -172,7 +177,7 @@ parseCommand statement =
     else if firstLine |> startsWith "(ALTER|COMMENT ON) INDEX" then
         Ok (Ignored statement)
 
-    else if firstLine |> startsWith "(CREATE|ALTER|DROP|COMMENT ON) TYPE" then
+    else if firstLine |> startsWith "(ALTER|DROP|COMMENT ON) TYPE" then
         Ok (Ignored statement)
 
     else if firstLine |> startsWith "(CREATE( OR REPLACE)?|ALTER) FUNCTION" then

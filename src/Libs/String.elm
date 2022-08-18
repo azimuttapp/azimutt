@@ -1,4 +1,19 @@
-module Libs.String exposing (filterStartsWith, hashCode, inflect, maybeNonEmpty, nonEmpty, orElse, plural, pluralize, pluralizeD, pluralizeL, stripRight, unique, wordSplit)
+module Libs.String exposing
+    ( filterStartsWith
+    , hashCode
+    , inflect
+    , maybeNonEmpty
+    , nonEmpty
+    , orElse
+    , plural
+    , pluralize
+    , pluralizeD
+    , pluralizeL
+    , stripLeft
+    , stripRight
+    , unique
+    , wordSplit
+    )
 
 import Dict exposing (Dict)
 import Libs.Maybe as Maybe
@@ -18,6 +33,15 @@ maybeNonEmpty str =
 
     else
         Just str
+
+
+stripLeft : String -> String -> String
+stripLeft prefix str =
+    if str |> String.startsWith prefix then
+        str |> String.dropLeft (String.length prefix)
+
+    else
+        str
 
 
 stripRight : String -> String -> String

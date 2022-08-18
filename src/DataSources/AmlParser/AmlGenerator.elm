@@ -1,9 +1,23 @@
 module DataSources.AmlParser.AmlGenerator exposing (relation)
 
-import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
-import Models.Project.SchemaName exposing (SchemaName)
+import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.TableId exposing (TableId)
 
 
-relation : SchemaName -> ColumnRef -> ColumnRef -> String
-relation defaultSchema src ref =
-    "fk " ++ ColumnRef.show defaultSchema src ++ " -> " ++ ColumnRef.show defaultSchema ref
+relation : ColumnRef -> ColumnRef -> String
+relation src ref =
+    "fk " ++ columnRef src ++ " -> " ++ columnRef ref
+
+
+columnRef : ColumnRef -> String
+columnRef { table, column } =
+    tableId table ++ "." ++ column
+
+
+tableId : TableId -> String
+tableId ( schema, table ) =
+    if schema == "" then
+        table
+
+    else
+        schema ++ "." ++ table

@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, compute, computeRelations, computeTables, create, decode, downloadContent, downloadFilename, duplicate, encode, new)
+module Models.Project exposing (Project, compute, computeRelations, computeTables, computeTypes, create, decode, downloadContent, downloadFilename, duplicate, encode, new)
 
 import Conf
 import Dict exposing (Dict)
@@ -10,6 +10,8 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.String as String
 import Libs.Time as Time
+import Models.Project.CustomType as CustomType exposing (CustomType)
+import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
@@ -31,6 +33,7 @@ type alias Project =
     , sources : List Source
     , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
     , relations : List Relation -- computed from sources, do not update directly (see compute function)
+    , types : Dict CustomTypeId CustomType -- computed from sources, do not update directly (see compute function)
     , notes : Dict NotesKey Notes
     , usedLayout : LayoutName
     , layouts : Dict LayoutName Layout
@@ -48,6 +51,7 @@ new id name sources notes usedLayout layouts settings storage createdAt updatedA
     , sources = sources
     , tables = Dict.empty
     , relations = []
+    , types = Dict.empty
     , notes = notes
     , usedLayout = usedLayout
     , layouts = layouts
@@ -93,7 +97,13 @@ mostUsedSchema table =
 compute : Project -> Project
 compute project =
     (project.sources |> computeTables project.settings)
-        |> (\tables -> { project | tables = tables, relations = project.sources |> computeRelations tables })
+        |> (\tables ->
+                { project
+                    | tables = tables
+                    , relations = project.sources |> computeRelations tables
+                    , types = project.sources |> computeTypes
+                }
+           )
 
 
 computeTables : ProjectSettings -> List Source -> Dict TableId Table
@@ -135,6 +145,14 @@ shouldDisplayRelation tables relation =
     (tables |> Dict.member relation.src.table) && (tables |> Dict.member relation.ref.table)
 
 
+computeTypes : List Source -> Dict CustomTypeId CustomType
+computeTypes sources =
+    sources
+        |> List.filter .enabled
+        |> List.map .types
+        |> List.foldr (Dict.fuse CustomType.merge) Dict.empty
+
+
 currentVersion : Int
 currentVersion =
     -- compatibility version for Project JSON, when you have breaking change, increment it and handle needed migrations
@@ -170,22 +188,18 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Nothing)
-        |> Decode.andThen
-            (\settings ->
-                Decode.map11 decodeProject
-                    (Decode.field "id" ProjectId.decode)
-                    (Decode.field "name" ProjectName.decode)
-                    (Decode.field "sources" (Decode.list (Source.decode settings.defaultSchema)))
-                    (Decode.defaultField "notes" (Decode.dict Decode.string) Dict.empty)
-                    (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
-                    (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
-                    (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
-                    (Decode.succeed settings)
-                    (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Browser)
-                    (Decode.defaultField "createdAt" Time.decode Time.zero)
-                    (Decode.defaultField "updatedAt" Time.decode Time.zero)
-            )
+    Decode.map11 decodeProject
+        (Decode.field "id" ProjectId.decode)
+        (Decode.field "name" ProjectName.decode)
+        (Decode.field "sources" (Decode.list Source.decode))
+        (Decode.defaultField "notes" (Decode.dict Decode.string) Dict.empty)
+        (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
+        (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
+        (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
+        (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Nothing))
+        (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Browser)
+        (Decode.defaultField "createdAt" Time.decode Time.zero)
+        (Decode.defaultField "updatedAt" Time.decode Time.zero)
 
 
 decodeProject : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project

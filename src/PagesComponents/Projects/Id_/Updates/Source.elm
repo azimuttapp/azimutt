@@ -19,7 +19,7 @@ createRelation : Time.Posix -> ColumnRef -> ColumnRef -> Erd -> ( Erd, Cmd Msg )
 createRelation now src ref erd =
     case erd.sources |> List.find (\s -> s.kind == AmlEditor && s.name == Conf.constants.virtualRelationSourceName) of
         Just source ->
-            ( erd |> Erd.mapSource source.id (Source.addRelation now erd.settings.defaultSchema src ref)
+            ( erd |> Erd.mapSource source.id (Source.addRelation now src ref)
             , "Relation " ++ TableId.show erd.settings.defaultSchema src.table ++ " → " ++ TableId.show erd.settings.defaultSchema ref.table ++ " added to " ++ source.name ++ " source." |> Toasts.info |> Toast |> T.send
             )
 
@@ -30,7 +30,7 @@ createRelation now src ref erd =
                     |> Random.generate
                         (\sourceId ->
                             Source.aml sourceId Conf.constants.virtualRelationSourceName now
-                                |> Source.addRelation now erd.settings.defaultSchema src ref
+                                |> Source.addRelation now src ref
                                 |> CreateUserSourceWithId
                         )
                 , "Created " ++ Conf.constants.virtualRelationSourceName ++ " source to add the relation." |> Toasts.info |> Toast |> T.send

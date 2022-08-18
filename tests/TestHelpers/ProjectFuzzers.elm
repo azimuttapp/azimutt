@@ -4,7 +4,7 @@ import Array exposing (Array)
 import Dict exposing (Dict)
 import Fuzz exposing (Fuzzer)
 import Libs.Dict as Dict
-import Libs.Fuzz as F exposing (listN)
+import Libs.Fuzz as Fuzz
 import Libs.List as List
 import Libs.Models.Size as Size
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
@@ -19,6 +19,9 @@ import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue exposing (ColumnValue)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomTypeId exposing (CustomTypeId)
+import Models.Project.CustomTypeName exposing (CustomTypeName)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.Index exposing (Index)
 import Models.Project.IndexName exposing (IndexName)
@@ -52,12 +55,12 @@ import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModifi
 
 project : Fuzzer Project
 project =
-    F.map10 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
+    Fuzz.map10 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
 
 
 source : Fuzzer Source
 source =
-    F.map10 Source sourceId sourceName sourceKind sourceLines tables (listSmall relation) Fuzz.bool sampleName posix posix
+    Fuzz.map11 Source sourceId sourceName sourceKind sourceLines tables (listSmall relation) types Fuzz.bool sampleName posix posix
 
 
 sourceKind : Fuzzer SourceKind
@@ -77,7 +80,7 @@ tables =
 
 table : Fuzzer Table
 table =
-    F.map10 (\s t v c p u i ch co so -> Table ( s, t ) s t v c p u i ch co so)
+    Fuzz.map10 (\s t -> Table ( s, t ) s t)
         schemaName
         tableName
         Fuzz.bool
@@ -87,42 +90,56 @@ table =
         (listSmall index)
         (listSmall check)
         (Fuzz.maybe comment)
-        (listN 1 origin)
+        (Fuzz.listN 1 origin)
 
 
 column : ColumnIndex -> Fuzzer Column
 column i =
-    F.map6 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (listN 1 origin)
+    Fuzz.map6 (Column i) columnName columnType Fuzz.bool (Fuzz.maybe columnValue) (Fuzz.maybe comment) (Fuzz.listN 1 origin)
 
 
 primaryKey : Fuzzer PrimaryKey
 primaryKey =
-    Fuzz.map3 PrimaryKey (Fuzz.maybe primaryKeyName) (nelSmall columnName) (listN 1 origin)
+    Fuzz.map3 PrimaryKey (Fuzz.maybe primaryKeyName) (nelSmall columnName) (Fuzz.listN 1 origin)
 
 
 unique : Fuzzer Unique
 unique =
-    Fuzz.map4 Unique uniqueName (nelSmall columnName) (Fuzz.maybe text) (listN 1 origin)
+    Fuzz.map4 Unique uniqueName (nelSmall columnName) (Fuzz.maybe text) (Fuzz.listN 1 origin)
 
 
 index : Fuzzer Index
 index =
-    Fuzz.map4 Index indexName (nelSmall columnName) (Fuzz.maybe text) (listN 1 origin)
+    Fuzz.map4 Index indexName (nelSmall columnName) (Fuzz.maybe text) (Fuzz.listN 1 origin)
 
 
 check : Fuzzer Check
 check =
-    Fuzz.map4 Check checkName (listSmall columnName) (Fuzz.maybe text) (listN 1 origin)
+    Fuzz.map4 Check checkName (listSmall columnName) (Fuzz.maybe text) (Fuzz.listN 1 origin)
 
 
 comment : Fuzzer Comment
 comment =
-    Fuzz.map2 Comment text (listN 1 origin)
+    Fuzz.map2 Comment text (Fuzz.listN 1 origin)
+
+
+types : Fuzzer (Dict CustomTypeId CustomType)
+types =
+    listSmall customType |> Fuzz.map (Dict.fromListMap .id)
+
+
+customType : Fuzzer CustomType
+customType =
+    Fuzz.map4 (\s n -> CustomType ( s, n ) n)
+        schemaName
+        customTypeName
+        Fuzz.string
+        (Fuzz.listN 1 origin)
 
 
 relation : Fuzzer Relation
 relation =
-    Fuzz.map4 Relation.new relationName columnRef columnRef (listN 1 origin)
+    Fuzz.map4 Relation.new relationName columnRef columnRef (Fuzz.listN 1 origin)
 
 
 columnRef : Fuzzer ColumnRef
@@ -147,12 +164,12 @@ canvasProps =
 
 tableProps : Fuzzer TableProps
 tableProps =
-    F.map7 (\id p c cols s collapse h -> TableProps id p Size.zero c cols s collapse h) tableId position color (listSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map7 (\id p -> TableProps id p Size.zero) tableId position color (listSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 projectSettings : Fuzzer ProjectSettings
 projectSettings =
-    F.map10 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool
+    Fuzz.map10 ProjectSettings findPathSettings schemaName (listSmall schemaName) Fuzz.bool stringSmall findHiddenColumns columnOrder relationStyle Fuzz.bool Fuzz.bool
 
 
 findPathSettings : Fuzzer FindPathSettings
@@ -231,6 +248,11 @@ columnValue =
 columnOrder : Fuzzer ColumnOrder
 columnOrder =
     Fuzz.oneOf (ColumnOrder.all |> List.map Fuzz.constant)
+
+
+customTypeName : Fuzzer CustomTypeName
+customTypeName =
+    identifier
 
 
 relationStyle : Fuzzer RelationStyle

@@ -56,6 +56,7 @@ type alias Column =
     { index : Int
     , name : String
     , kind : String
+    , kindDetails : Maybe String
     , nullable : Bool
     , default : Maybe String
     , comment : Maybe String
@@ -443,11 +444,20 @@ viewColumnKind model column =
         opacity =
             Bool.cond (isHighlightedColumn model column) "opacity-100" "opacity-50"
 
+        tooltip : Maybe String
+        tooltip =
+            [ column.kindDetails
+            , column.default |> Maybe.map (\default -> "Default value: " ++ default)
+            ]
+                |> List.filterMap identity
+                |> String.join " / "
+                |> String.maybeNonEmpty
+
         value : Html msg
         value =
-            column.default
+            tooltip
                 |> Maybe.mapOrElse
-                    (\default -> span [ css [ "underline", opacity ] ] [ text column.kind ] |> Tooltip.t ("default value: " ++ default))
+                    (\content -> span [ css [ "underline", opacity ] ] [ text column.kind ] |> Tooltip.t content)
                     (span [ class opacity ] [ text column.kind ])
 
         nullable : List (Html msg)
@@ -508,7 +518,7 @@ updateDocState transform =
 
 sampleColumn : Column
 sampleColumn =
-    { index = 0, name = "", kind = "", nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [] }
+    { index = 0, name = "", kind = "", kindDetails = Nothing, nullable = False, default = Nothing, comment = Nothing, notes = Nothing, isPrimaryKey = False, inRelations = [], outRelations = [], uniques = [], indexes = [], checks = [] }
 
 
 sample : Model (Msg x)

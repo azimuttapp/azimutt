@@ -224,12 +224,13 @@ buildColumn useBasicTypes notes layout column =
     , name = column.name
     , kind =
         if useBasicTypes then
-            column.kind |> ColumnType.parse |> ColumnType.toString
+            column.kindLabel |> ColumnType.parse |> ColumnType.toString
 
         else
-            column.kind
+            column.kindLabel
+    , kindDetails = column.customType |> Maybe.map .definition
     , nullable = column.nullable
-    , default = column.default
+    , default = column.defaultLabel
     , comment = column.comment |> Maybe.map .text
     , notes = notes.columns |> Dict.get column.name
     , isPrimaryKey = column.isPrimaryKey

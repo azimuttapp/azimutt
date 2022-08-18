@@ -10,6 +10,8 @@ import Libs.Time as Time
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnRef exposing (ColumnRef)
+import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectSettings exposing (ProjectSettings)
 import Models.Project.Relation exposing (Relation)
@@ -32,6 +34,7 @@ type alias Erd =
     { project : ProjectInfo
     , tables : Dict TableId ErdTable
     , relations : List ErdRelation
+    , types : Dict CustomTypeId CustomType
     , relationsByTable : Dict TableId (List Relation)
     , layouts : Dict LayoutName ErdLayout
     , currentLayout : LayoutName
@@ -44,13 +47,13 @@ type alias Erd =
 create : Project -> Erd
 create project =
     let
-        relationsByTable : Dict TableId (List Relation)
-        relationsByTable =
-            buildRelationsByTable project.relations
+        ( ( tables, relations, types ), relationsByTable ) =
+            computeSources project.settings project.sources
     in
     { project = ProjectInfo.create project
-    , tables = project.tables |> Dict.map (\id -> ErdTable.create project.settings.defaultSchema project.tables (relationsByTable |> Dict.getOrElse id []))
-    , relations = project.relations |> List.map (ErdRelation.create project.tables)
+    , tables = tables
+    , relations = relations
+    , types = types
     , relationsByTable = relationsByTable
     , layouts = project.layouts |> Dict.map (\_ -> ErdLayout.create relationsByTable)
     , currentLayout = project.usedLayout
@@ -58,7 +61,6 @@ create project =
     , sources = project.sources
     , settings = project.settings
     }
-        |> computeSchema
 
 
 unpack : Erd -> Project
@@ -68,6 +70,7 @@ unpack erd =
     , sources = erd.sources
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = erd.relations |> List.map ErdRelation.unpack
+    , types = erd.types
     , notes = ErdTableNotes.unpackAll erd.notes
     , usedLayout = erd.currentLayout
     , layouts = erd.layouts |> Dict.map (\_ -> ErdLayout.unpack)
@@ -113,26 +116,34 @@ viewportM screen erd =
     erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport screen) screen
 
 
-computeSchema : Erd -> Erd
-computeSchema erd =
+computeSources : ProjectSettings -> List Source -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List Relation) )
+computeSources settings sources =
     let
         tables : Dict TableId Table
         tables =
-            erd.sources |> Project.computeTables erd.settings
+            sources |> Project.computeTables settings
 
         relations : List Relation
         relations =
-            erd.sources |> Project.computeRelations tables
+            sources |> Project.computeRelations tables
+
+        types : Dict CustomTypeId CustomType
+        types =
+            sources |> Project.computeTypes
 
         relationsByTable : Dict TableId (List Relation)
         relationsByTable =
             buildRelationsByTable relations
+
+        erdTables : Dict TableId ErdTable
+        erdTables =
+            tables |> Dict.map (\id -> ErdTable.create settings.defaultSchema tables types (relationsByTable |> Dict.getOrElse id []))
+
+        erdRelations : List ErdRelation
+        erdRelations =
+            relations |> List.map (ErdRelation.create tables)
     in
-    { erd
-        | tables = tables |> Dict.map (\id -> ErdTable.create erd.settings.defaultSchema tables (relationsByTable |> Dict.getOrElse id []))
-        , relations = relations |> List.map (ErdRelation.create tables)
-        , relationsByTable = relationsByTable
-    }
+    ( ( erdTables, erdRelations, types ), relationsByTable )
 
 
 buildRelationsByTable : List Relation -> Dict TableId (List Relation)
@@ -157,7 +168,11 @@ setSources sources erd =
         erd
 
     else
-        { erd | sources = sources } |> computeSchema
+        let
+            ( ( tables, relations, types ), relationsByTable ) =
+                computeSources erd.settings sources
+        in
+        { erd | sources = sources, tables = tables, relations = relations, types = types, relationsByTable = relationsByTable }
 
 
 mapSources : (List Source -> List Source) -> Erd -> Erd
@@ -176,7 +191,11 @@ setSettings settings erd =
         erd
 
     else
-        { erd | settings = settings } |> computeSchema
+        let
+            ( ( tables, relations, types ), relationsByTable ) =
+                computeSources settings erd.sources
+        in
+        { erd | settings = settings, tables = tables, relations = relations, types = types, relationsByTable = relationsByTable }
 
 
 mapSettings : (ProjectSettings -> ProjectSettings) -> Erd -> Erd

@@ -276,6 +276,7 @@ upgrade project =
     , sources = project.sources |> Nel.toList |> List.map (upgradeProjectSource project.schema.tables project.schema.relations project.fromSample)
     , tables = project.schema.tables |> Dict.map (\_ -> upgradeTable)
     , relations = project.schema.relations |> List.map upgradeRelation
+    , types = Dict.empty
     , notes = Dict.empty
     , usedLayout = project.currentLayout |> Maybe.withDefault Conf.constants.defaultLayout
     , layouts = project.layouts |> Dict.insert Conf.constants.defaultLayout project.schema.layout |> Dict.map (\_ -> upgradeLayout)
@@ -323,6 +324,7 @@ upgradeProjectSource tables relations fromSample source =
         List.repeat max "" |> List.indexedMap (\i a -> sources |> Dict.getOrElse i a) |> Array.fromList
     , tables = tables |> Dict.map (\_ -> upgradeTable)
     , relations = relations |> List.map upgradeRelation
+    , types = Dict.empty
     , enabled = True
     , fromSample = fromSample
     , createdAt = source.createdAt

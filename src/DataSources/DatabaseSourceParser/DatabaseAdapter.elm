@@ -39,6 +39,7 @@ buildSource now sourceId url schema =
     , content = Array.empty
     , tables = schema.tables |> List.map (buildTable origins) |> Dict.fromList
     , relations = schema.relations |> List.filterMap (buildRelation origins)
+    , types = Dict.empty
     , enabled = True
     , fromSample = Nothing
     , createdAt = now
