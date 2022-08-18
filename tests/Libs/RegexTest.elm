@@ -15,4 +15,7 @@ suite =
         , describe "replace"
             [ test "basic" (\_ -> "hello/toi.csv" |> Regex.replace "[/.]" "-" |> Expect.equal "hello-toi-csv")
             ]
+        , describe "countI"
+            [ test "basic" (\_ -> "a b c d a b a" |> Regex.countI "a" |> Expect.equal 3)
+            ]
         ]

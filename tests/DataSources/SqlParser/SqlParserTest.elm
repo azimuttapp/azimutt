@@ -173,6 +173,19 @@ suite =
                      ;
                      end;"""
                 ]
+            , testBuildStatements "start/end block both on same line"
+                """CREATE TEXT SEARCH CONFIGURATION public.doctolib_name_search (
+                    PARSER = pg_catalog."default" );
+
+                CREATE FUNCTION public.yaml_to_json(input text) RETURNS json
+                    LANGUAGE plpgsql
+                    AS $$ BEGIN RETURN '{}'::json; END; $$;"""
+                [ """CREATE TEXT SEARCH CONFIGURATION public.doctolib_name_search (
+                      PARSER = pg_catalog."default" );"""
+                , """CREATE FUNCTION public.yaml_to_json(input text) RETURNS json
+                      LANGUAGE plpgsql
+                      AS $$ BEGIN RETURN '{}'::json; END; $$;"""
+                ]
             ]
         , describe "parseCommand"
             [ testStatement ( parseCommand, "parse create table" )

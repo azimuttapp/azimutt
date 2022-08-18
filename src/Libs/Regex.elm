@@ -1,4 +1,4 @@
-module Libs.Regex exposing (asRegexI, match, matchI, matches, replace)
+module Libs.Regex exposing (asRegexI, countI, match, matchI, matches, replace)
 
 import Regex exposing (Regex)
 
@@ -11,6 +11,11 @@ matches regex text =
 matchI : String -> String -> Bool
 matchI regex text =
     regex |> asRegexI |> (\r -> Regex.contains r text)
+
+
+countI : String -> String -> Int
+countI regex text =
+    regex |> asRegexI |> (\r -> Regex.find r text |> List.length)
 
 
 match : String -> String -> Bool

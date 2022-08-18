@@ -7,7 +7,7 @@ import Libs.Regex as Regex
 
 parseIndexDefinition : String -> Result (List ParseError) (List SqlColumnName)
 parseIndexDefinition definition =
-    case definition |> Regex.matches "^\\((?<columns>[^)]+)\\)(?:(?:\\s+NOT)?\\s+DEFERRABLE)?.*$" of
+    case definition |> Regex.matches ("^\\((?<columns>[^)]+)\\)" ++ deferrable ++ ".*$") of
         (Just columns) :: [] ->
             Ok (columns |> String.split "," |> List.map String.trim)
 

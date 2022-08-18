@@ -52,8 +52,8 @@ splitLines input =
         |> List.indexedMap (\i line -> { index = i, text = line })
 
 
-buildStatements : List SourceLine -> List SqlStatement
-buildStatements lines =
+filterEmptyOrCommentedLines : List SourceLine -> List SourceLine
+filterEmptyOrCommentedLines lines =
     lines
         |> List.filter
             (\line ->
@@ -85,6 +85,11 @@ buildStatements lines =
             )
             ( [], False )
         |> Tuple.first
+
+
+aggregateStatementLines : List SourceLine -> List SqlStatement
+aggregateStatementLines lines =
+    lines
         |> List.foldr
             (\line ( currentStatementLines, statements, nestedBlock ) ->
                 case
@@ -117,6 +122,29 @@ buildStatements lines =
             ( [], [], 0 )
         |> (\( cur, res, _ ) -> addStatement cur res)
         |> List.filterNot statementIsEmpty
+
+
+groupConsecutiveLines : List SourceLine -> List (List SourceLine)
+groupConsecutiveLines lines =
+    lines
+        |> List.foldr
+            (\line ( cur, groups ) ->
+                if (cur |> List.isEmpty) || (line.index + 1 == (cur |> List.head |> Maybe.mapOrElse .index 0)) then
+                    ( line :: cur, groups )
+
+                else
+                    ( [ line ], cur :: groups )
+            )
+            ( [], [] )
+        |> (\( cur, groups ) -> cur :: groups)
+
+
+buildStatements : List SourceLine -> List SqlStatement
+buildStatements lines =
+    lines
+        |> filterEmptyOrCommentedLines
+        |> groupConsecutiveLines
+        |> List.concatMap aggregateStatementLines
 
 
 parseCommand : SqlStatement -> Result (List ParseError) Command
