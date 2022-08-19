@@ -1,9 +1,9 @@
 module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
 
 import DataSources.Helpers exposing (SourceLine)
-import DataSources.SqlParser.SqlAdapter exposing (SqlSchema)
-import DataSources.SqlParser.SqlParser exposing (Command)
-import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
+import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
+import DataSources.SqlMiner.SqlParser exposing (Command)
+import DataSources.SqlMiner.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
 import Libs.Bool as Bool
 import Libs.Dict as Dict

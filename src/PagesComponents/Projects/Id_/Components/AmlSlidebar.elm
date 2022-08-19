@@ -4,8 +4,8 @@ import Array exposing (Array)
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Conf
-import DataSources.AmlParser.AmlAdapter as AmlAdapter exposing (AmlSchema)
-import DataSources.AmlParser.AmlParser as AmlParser
+import DataSources.AmlMiner.AmlAdapter as AmlAdapter exposing (AmlSchema)
+import DataSources.AmlMiner.AmlParser as AmlParser
 import Dict exposing (Dict)
 import Html exposing (Html, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)

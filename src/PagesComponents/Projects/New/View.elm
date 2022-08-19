@@ -8,7 +8,7 @@ import Components.Atoms.Link as Link
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Conf
-import DataSources.JsonSourceParser.JsonSchema as JsonSchema
+import DataSources.JsonMiner.JsonSchema as JsonSchema
 import Dict
 import Gen.Route as Route
 import Html exposing (Html, a, aside, div, h2, li, nav, p, pre, span, text, ul)

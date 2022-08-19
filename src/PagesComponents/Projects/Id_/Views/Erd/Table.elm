@@ -3,7 +3,6 @@ module PagesComponents.Projects.Id_.Views.Erd.Table exposing (TableArgs, argsToS
 import Components.Molecules.ContextMenu exposing (ItemAction(..))
 import Components.Organisms.Table as Table
 import Conf
-import DataSources.SqlParser.Parsers.ColumnType as ColumnType
 import Dict
 import Html exposing (Attribute, Html, button, div)
 import Html.Attributes exposing (style, tabindex, title, type_)
@@ -21,6 +20,7 @@ import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Color exposing (bg_500, focus, hover)
 import Models.ColumnOrder as ColumnOrder
+import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..), VirtualRelationMsg(..))
@@ -225,7 +225,7 @@ buildColumn useBasicTypes notes layout column =
     , name = column.name
     , kind =
         if useBasicTypes then
-            column.kindLabel |> ColumnType.parse |> ColumnType.toString
+            column.kindLabel |> ColumnType.asBasic
 
         else
             column.kindLabel

@@ -3,8 +3,8 @@ module Services.DatabaseSource exposing (Model, Msg(..), init, update, viewInput
 import Components.Molecules.Divider as Divider
 import Components.Molecules.Tooltip as Tooltip
 import Conf
-import DataSources.DatabaseSourceParser.DatabaseAdapter as DatabaseAdapter
-import DataSources.DatabaseSourceParser.DatabaseSchema as DatabaseSchema exposing (DatabaseSchema)
+import DataSources.DatabaseMiner.DatabaseAdapter as DatabaseAdapter
+import DataSources.DatabaseMiner.DatabaseSchema as DatabaseSchema exposing (DatabaseSchema)
 import Html exposing (Html, div, img, input, p, span, text)
 import Html.Attributes exposing (class, disabled, id, name, placeholder, src, type_, value)
 import Html.Events exposing (onBlur, onInput)
@@ -84,9 +84,6 @@ update wrap backendUrl now msg model =
             if schemaUrl == "" then
                 ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
 
-            else if schemaUrl |> String.startsWith "postgres://" |> not then
-                ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Err "Invalid url, it should start with postgres://") }), Cmd.none )
-
             else
                 ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Ok schemaUrl) })
                 , Backend.getDatabaseSchema backendUrl schemaUrl (GotSchema >> wrap)
@@ -131,7 +128,7 @@ viewInput wrap htmlId model =
     div []
         [ div [ class "flex space-x-10" ]
             ([ ( "postgresql", Nothing )
-             , ( "mysql", Just (Conf.constants.azimuttNewIssue "Support mysql database import" "") )
+             , ( "mysql", Just "https://github.com/azimuttapp/azimutt/issues/114" )
              , ( "oracle", Just (Conf.constants.azimuttNewIssue "Support oracle database import" "") )
              , ( "sql-server", Just "https://github.com/azimuttapp/azimutt/issues/113" )
              , ( "mariadb", Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") )

@@ -1,9 +1,12 @@
-module Models.Project.CustomType exposing (CustomType, decode, def, encode, enum, merge, new)
+module Models.Project.CustomType exposing (CustomType, decode, def, encode, enum, get, merge, new)
 
+import Dict exposing (Dict)
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
+import Libs.Maybe as Maybe
+import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.CustomTypeName as CustomTypeName exposing (CustomTypeName)
 import Models.Project.CustomTypeValue as CustomTypeValue exposing (CustomTypeValue)
@@ -41,6 +44,19 @@ merge t1 t2 =
     , value = CustomTypeValue.merge t1.value t2.value
     , origins = t1.origins ++ t2.origins
     }
+
+
+get : SchemaName -> ColumnType -> Dict CustomTypeId CustomType -> Maybe CustomType
+get defaultSchema kind dict =
+    case kind |> String.split "." of
+        "" :: name :: [] ->
+            dict |> Dict.get ( defaultSchema, name ) |> Maybe.orElse (dict |> Dict.get ( "", name ))
+
+        schema :: name :: [] ->
+            dict |> Dict.get ( schema, name )
+
+        _ ->
+            dict |> Dict.get ( defaultSchema, kind ) |> Maybe.orElse (dict |> Dict.get ( "", kind ))
 
 
 encode : CustomType -> Value

@@ -10,8 +10,8 @@ import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnType as ColumnType exposing (ColumnType)
 import Models.Project.ColumnValue as ColumnValue exposing (ColumnValue)
 import Models.Project.Comment exposing (Comment)
-import Models.Project.CustomType exposing (CustomType)
-import Models.Project.CustomTypeId as CustomTypeId exposing (CustomTypeId)
+import Models.Project.CustomType as CustomType exposing (CustomType)
+import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.IndexName exposing (IndexName)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.Relation exposing (Relation)
@@ -48,7 +48,7 @@ create defaultSchema tables types columnRelations table column =
     , name = column.name
     , kind = column.kind
     , kindLabel = column.kind |> ColumnType.label defaultSchema
-    , customType = types |> Dict.get (CustomTypeId.fromColumnType column.kind)
+    , customType = types |> CustomType.get defaultSchema column.kind
     , nullable = column.nullable
     , default = column.default
     , defaultLabel = column.default |> Maybe.map ColumnValue.label

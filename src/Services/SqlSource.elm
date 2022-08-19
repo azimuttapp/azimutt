@@ -7,10 +7,10 @@ import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
 import Conf
 import DataSources.Helpers exposing (SourceLine)
-import DataSources.SqlParser.SqlAdapter as SqlAdapter exposing (SqlSchema, SqlSchemaError)
-import DataSources.SqlParser.SqlParser as SqlParser exposing (Command)
-import DataSources.SqlParser.Utils.Helpers exposing (buildRawSql)
-import DataSources.SqlParser.Utils.Types exposing (ParseError, SqlStatement)
+import DataSources.SqlMiner.SqlAdapter as SqlAdapter exposing (SqlSchema, SqlSchemaError)
+import DataSources.SqlMiner.SqlParser as SqlParser exposing (Command)
+import DataSources.SqlMiner.Utils.Helpers exposing (buildRawSql)
+import DataSources.SqlMiner.Utils.Types exposing (ParseError, SqlStatement)
 import Dict exposing (Dict)
 import FileValue exposing (File)
 import Html exposing (Html, div, input, p, pre, span, text)

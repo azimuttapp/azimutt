@@ -3,8 +3,8 @@ module Services.JsonSource exposing (Model, Msg(..), init, kind, update, viewInp
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.Divider as Divider
 import Components.Molecules.FileInput as FileInput
-import DataSources.JsonSourceParser.JsonAdapter as JsonAdapter
-import DataSources.JsonSourceParser.JsonSchema as JsonSchema exposing (JsonSchema)
+import DataSources.JsonMiner.JsonAdapter as JsonAdapter
+import DataSources.JsonMiner.JsonSchema as JsonSchema exposing (JsonSchema)
 import FileValue exposing (File)
 import Html exposing (Html, div, input, p, span, text)
 import Html.Attributes exposing (class, id, name, placeholder, type_, value)

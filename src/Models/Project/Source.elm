@@ -2,7 +2,7 @@ module Models.Project.Source exposing (Source, addRelation, aml, decode, encode,
 
 import Array exposing (Array)
 import Conf
-import DataSources.AmlParser.AmlGenerator as AmlGenerator
+import DataSources.AmlMiner.AmlGenerator as AmlGenerator
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
