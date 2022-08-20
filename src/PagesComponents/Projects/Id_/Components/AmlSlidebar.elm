@@ -4,9 +4,9 @@ import Array exposing (Array)
 import Components.Atoms.Icon as Icon
 import Components.Molecules.Editor as Editor
 import Conf
-import DataSources.AmlMiner.AmlAdapter as AmlAdapter exposing (AmlSchema)
+import DataSources.AmlMiner.AmlAdapter as AmlAdapter
 import DataSources.AmlMiner.AmlParser as AmlParser
-import Dict exposing (Dict)
+import Dict
 import Html exposing (Html, button, div, h3, label, option, p, select, text)
 import Html.Attributes exposing (class, disabled, for, id, name, selected, value)
 import Html.Events exposing (onClick, onInput)
@@ -22,8 +22,8 @@ import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
 import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnName exposing (ColumnName)
-import Models.Project.Source exposing (Source)
-import Models.Project.SourceId as SourceId exposing (SourceId)
+import Models.Project.Source as Source exposing (Source)
+import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -34,7 +34,7 @@ import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayo
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns
 import Ports
-import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setRelations, setSelected, setTables, setUpdatedAt)
+import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
 import Time
 import Track
 
@@ -84,16 +84,15 @@ update now msg model =
             ( model |> mapAmlSidebarM (setSelected source), Cmd.none )
 
         AUpdateSource id value ->
-            updateSource now id value model
+            model.erd
+                |> Maybe.andThen (.sources >> List.find (\s -> s.id == id))
+                |> Maybe.map (\s -> updateSource now s value model)
+                |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none )
 
 
-updateSource : Time.Posix -> SourceId -> String -> Model x -> ( Model x, Cmd Msg )
-updateSource now sourceId input model =
+updateSource : Time.Posix -> Source -> String -> Model x -> ( Model x, Cmd Msg )
+updateSource now source input model =
     let
-        currentTables : Dict TableId Table
-        currentTables =
-            model.erd |> Maybe.andThen (.sources >> List.find (\s -> s.id == sourceId)) |> Maybe.mapOrElse .tables Dict.empty
-
         tableLayouts : List ErdTableLayout
         tableLayouts =
             model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .tables) []
@@ -102,12 +101,12 @@ updateSource now sourceId input model =
         content =
             contentSplit input
 
-        parsed : AmlSchema
-        parsed =
-            String.trim input ++ "\n" |> AmlParser.parse |> AmlAdapter.adapt (Erd.defaultSchemaM model.erd) sourceId
+        ( errors, parsed ) =
+            -- TODO: improve, `content` should be set in source inside the `buildSource`
+            String.trim input ++ "\n" |> AmlParser.parse |> AmlAdapter.buildSource (source |> Source.toInfo) |> Tuple.mapSecond (setContent content)
 
         ( removed, bothPresent, added ) =
-            List.diff .id (currentTables |> Dict.values) (parsed.tables |> Dict.values)
+            List.diff .id (source.tables |> Dict.values) (parsed.tables |> Dict.values)
 
         toHide : List TableId
         toHide =
@@ -132,11 +131,11 @@ updateSource now sourceId input model =
                         )
                     )
     in
-    if List.nonEmpty parsed.errors then
-        ( model |> mapErdM (Erd.mapSource sourceId (setContent content >> setUpdatedAt now)) |> mapAmlSidebarM (setErrors parsed.errors), Cmd.none )
+    if List.nonEmpty errors then
+        ( model |> mapErdM (Erd.mapSource source.id (setContent content >> setUpdatedAt now)) |> mapAmlSidebarM (setErrors errors), Cmd.none )
 
     else
-        ( model |> mapErdM (Erd.mapSource sourceId (setContent content >> setUpdatedAt now >> setTables parsed.tables >> setRelations parsed.relations)) |> mapAmlSidebarM (setErrors [])
+        ( model |> mapErdM (Erd.mapSource source.id (Source.refreshWith parsed)) |> mapAmlSidebarM (setErrors [])
         , Cmd.batch
             (List.map T.send
                 ((toShow |> List.map (tupled ShowTable))

@@ -1,8 +1,9 @@
 module DataSources.AmlMiner.AmlParserTest exposing (..)
 
-import DataSources.AmlMiner.AmlParser as AmlParser exposing (AmlColumn, AmlStatement(..), AmlTable, parse)
+import DataSources.AmlMiner.AmlParser as AmlParser exposing (AmlColumn, AmlParsedColumnType, AmlStatement(..), AmlTable, parse)
 import Dict
 import Expect
+import Libs.Nel as Nel exposing (Nel)
 import Libs.Tailwind as Color
 import Parser exposing (DeadEnd, Parser, Problem(..))
 import Test exposing (Test, describe, test)
@@ -163,7 +164,7 @@ fk admins.id -> users.id
             , parserTest ( "with type & notes", AmlParser.column ) "  id int | note\n" { column | name = "id", kind = Just "int", notes = Just "note" }
             , parserTest ( "with comment", AmlParser.column ) "  id # comment\n" { column | name = "id", comment = Just "comment" }
             , parserTest ( "with type & comment", AmlParser.column ) "  id int # comment\n" { column | name = "id", kind = Just "int", comment = Just "comment" }
-            , parserTest ( "with all", AmlParser.column ) "  id int=0 nullable pk index unique=main check fk public.logins.id {hidden} | a note # a comment\n" { name = "id", kind = Just "int", default = Just "0", nullable = True, primaryKey = True, index = Just "", unique = Just "main", check = Just "", foreignKey = Just { schema = Just "public", table = "logins", column = "id" }, props = Just { hidden = True }, notes = Just "a note", comment = Just "a comment" }
+            , parserTest ( "with all", AmlParser.column ) "  id p.int(0, 1, 2)=0 nullable pk index unique=main check fk public.logins.id {hidden} | a note # a comment\n" { name = "id", kind = Just "int", kindSchema = Just "p", values = Just (Nel "0" [ "1", "2" ]), default = Just "0", nullable = True, primaryKey = True, index = Just "", unique = Just "main", check = Just "", foreignKey = Just { schema = Just "public", table = "logins", column = "id" }, props = Just { hidden = True }, notes = Just "a note", comment = Just "a comment" }
             , parserFail ( "UnexpectedChar", AmlParser.column ) "  id fk bad.\n" [ { row = 1, col = 13, problem = UnexpectedChar }, { row = 1, col = 13, problem = UnexpectedChar } ]
             ]
         , describe "constraint"
@@ -230,9 +231,19 @@ fk admins.id -> users.id
             , parserTest ( "with spaces", AmlParser.columnName ) "\"a column\"" "a column"
             ]
         , describe "columnType"
-            [ parserTest ( "basic", AmlParser.columnType ) "number" "number"
-            , parserTest ( "with precision", AmlParser.columnType ) "varchar(12)" "varchar(12)"
-            , parserTest ( "with spaces", AmlParser.columnType ) "\"varchar (12)\"" "varchar (12)"
+            [ parserTest ( "basic", AmlParser.columnType ) "number" { parsedType | name = "number" }
+            , parserTest ( "with space", AmlParser.columnType ) "\"character varying\"" { parsedType | name = "character varying" }
+            , parserTest ( "with precision", AmlParser.columnType ) "varchar(12)" { parsedType | name = "varchar(12)" }
+            , parserTest ( "with space before precision", AmlParser.columnType ) "varchar (12)" { parsedType | name = "varchar(12)" }
+            , parserTest ( "with 2 precisions", AmlParser.columnType ) "decimal(5,2)" { parsedType | name = "decimal(5, 2)" }
+            , parserTest ( "with 2 precisions & space", AmlParser.columnType ) "decimal(5, 2)" { parsedType | name = "decimal(5, 2)" }
+            , parserTest ( "enum", AmlParser.columnType ) "user_role(guest, admin)" { parsedType | name = "user_role", values = Nel.fromList [ "guest", "admin" ] }
+            , parserTest ( "enum with schema", AmlParser.columnType ) "public.user_role(guest, admin)" { parsedType | schema = Just "public", name = "user_role", values = Nel.fromList [ "guest", "admin" ] }
+            , parserTest ( "with default", AmlParser.columnType ) "varchar=val" { parsedType | name = "varchar", default = Just "val" }
+            , parserTest ( "with default & space", AmlParser.columnType ) "varchar = val" { parsedType | name = "varchar", default = Just "val" }
+            , parserTest ( "with space in default", AmlParser.columnType ) "varchar=\"a val\"" { parsedType | name = "varchar", default = Just "a val" }
+            , parserTest ( "with enum and default", AmlParser.columnType ) "user_role(guest, admin)=admin" { parsedType | name = "user_role", values = Nel.fromList [ "guest", "admin" ], default = Just "admin" }
+            , parserTest ( "with everything", AmlParser.columnType ) "\"my schema\".\"my type\" ( val 1 , \"val2 \" ) = \"val 1\"" { schema = Just "my schema", name = "my type", values = Nel.fromList [ "val 1", "val2" ], default = Just "val 1" }
             ]
         , describe "columnValue"
             [ parserTest ( "basic", AmlParser.columnValue ) "0" "0"
@@ -257,7 +268,12 @@ table =
 
 column : AmlColumn
 column =
-    { name = "", kind = Nothing, default = Nothing, nullable = False, primaryKey = False, index = Nothing, unique = Nothing, check = Nothing, foreignKey = Nothing, props = Nothing, notes = Nothing, comment = Nothing }
+    { name = "", kind = Nothing, kindSchema = Nothing, values = Nothing, default = Nothing, nullable = False, primaryKey = False, index = Nothing, unique = Nothing, check = Nothing, foreignKey = Nothing, props = Nothing, notes = Nothing, comment = Nothing }
+
+
+parsedType : AmlParsedColumnType
+parsedType =
+    { schema = Nothing, name = "", values = Nothing, default = Nothing }
 
 
 testParse : ( String, String -> Result e a ) -> String -> a -> Test

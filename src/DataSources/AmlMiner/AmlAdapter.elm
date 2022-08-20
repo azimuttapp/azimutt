@@ -1,4 +1,4 @@
-module DataSources.AmlMiner.AmlAdapter exposing (AmlSchema, AmlSchemaError, adapt, buildSource, evolve)
+module DataSources.AmlMiner.AmlAdapter exposing (AmlSchema, AmlSchemaError, buildSource, evolve)
 
 import Array
 import Conf
@@ -7,6 +7,7 @@ import DataSources.Helpers exposing (defaultCheckName, defaultIndexName, default
 import Dict exposing (Dict)
 import Libs.Dict as Dict
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Parser as Parser
 import Libs.Result as Result
@@ -14,6 +15,9 @@ import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Comment exposing (Comment)
+import Models.Project.CustomType exposing (CustomType)
+import Models.Project.CustomTypeId exposing (CustomTypeId)
+import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.Index exposing (Index)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
@@ -30,6 +34,7 @@ import Parser exposing (DeadEnd)
 type alias AmlSchema =
     { tables : Dict TableId Table
     , relations : List Relation
+    , types : Dict CustomTypeId CustomType
     , errors : List AmlSchemaError
     }
 
@@ -41,12 +46,15 @@ type alias AmlSchemaError =
     }
 
 
-buildSource : SchemaName -> SourceInfo -> List AmlStatement -> ( List AmlSchemaError, Source )
-buildSource defaultSchema source statements =
+buildSource : SourceInfo -> Result (List DeadEnd) (List AmlStatement) -> ( List AmlSchemaError, Source )
+buildSource source result =
     let
         schema : AmlSchema
         schema =
-            statements |> List.foldl (evolve defaultSchema source.id) (AmlSchema Dict.empty [] [])
+            result
+                |> Result.fold
+                    (\err -> AmlSchema Dict.empty [] Dict.empty (err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem })))
+                    (List.foldl (evolve source.id) (AmlSchema Dict.empty [] Dict.empty []))
     in
     ( schema.errors |> List.reverse
     , { id = source.id
@@ -55,7 +63,7 @@ buildSource defaultSchema source statements =
       , content = Array.empty
       , tables = schema.tables
       , relations = schema.relations |> List.reverse
-      , types = Dict.empty
+      , types = schema.types
       , enabled = source.enabled
       , fromSample = source.fromSample
       , createdAt = source.createdAt
@@ -64,32 +72,24 @@ buildSource defaultSchema source statements =
     )
 
 
-adapt : SchemaName -> SourceId -> Result (List DeadEnd) (List AmlStatement) -> AmlSchema
-adapt defaultSchema source result =
-    result
-        |> Result.fold
-            (\err -> AmlSchema Dict.empty [] (err |> List.map (\e -> { row = e.row, col = e.col, problem = Parser.problemToString e.problem })))
-            (List.foldl (evolve defaultSchema source) (AmlSchema Dict.empty [] []))
-
-
-evolve : SchemaName -> SourceId -> AmlStatement -> AmlSchema -> AmlSchema
-evolve defaultSchema source statement schema =
+evolve : SourceId -> AmlStatement -> AmlSchema -> AmlSchema
+evolve source statement schema =
     case statement of
         AmlTableStatement amlTable ->
             let
-                ( table, relations ) =
-                    createTable defaultSchema source amlTable
+                ( table, relations, types ) =
+                    createTable source amlTable
             in
             schema.tables
                 |> Dict.get table.id
-                |> Maybe.map (\_ -> { schema | errors = AmlSchemaError 0 0 ("Table '" ++ TableId.show defaultSchema table.id ++ "' is already defined") :: schema.errors })
-                |> Maybe.withDefault { schema | tables = schema.tables |> Dict.insert table.id table, relations = relations ++ schema.relations }
+                |> Maybe.map (\_ -> { schema | errors = AmlSchemaError 0 0 ("Table '" ++ TableId.show Conf.schema.empty table.id ++ "' is already defined") :: schema.errors })
+                |> Maybe.withDefault { schema | tables = schema.tables |> Dict.insert table.id table, relations = relations ++ schema.relations, types = Dict.union types schema.types }
 
         AmlRelationStatement amlRelation ->
             let
                 relation : Relation
                 relation =
-                    createRelation defaultSchema source amlRelation.from amlRelation.to
+                    createRelation source amlRelation.from amlRelation.to
             in
             { schema | relations = relation :: schema.relations }
 
@@ -97,10 +97,10 @@ evolve defaultSchema source statement schema =
             schema
 
 
-createTable : SchemaName -> SourceId -> AmlTable -> ( Table, List Relation )
-createTable defaultSchema source table =
-    ( { id = ( table.schema |> Maybe.withDefault defaultSchema, table.table )
-      , schema = table.schema |> Maybe.withDefault defaultSchema
+createTable : SourceId -> AmlTable -> ( Table, List Relation, Dict CustomTypeId CustomType )
+createTable source table =
+    ( { id = ( table.schema |> Maybe.withDefault Conf.schema.empty, table.table )
+      , schema = table.schema |> Maybe.withDefault Conf.schema.empty
       , name = table.table
       , view = table.isView
       , columns = table.columns |> List.indexedMap (createColumn source) |> Dict.fromListMap .name
@@ -111,7 +111,8 @@ createTable defaultSchema source table =
       , comment = table.notes |> Maybe.map (createComment source)
       , origins = [ { id = source, lines = [] } ]
       }
-    , table.columns |> List.filterMap (\c -> c.foreignKey |> Maybe.map (\fk -> createRelation defaultSchema source { schema = table.schema, table = table.table, column = c.name } fk))
+    , table.columns |> List.filterMap (\c -> Maybe.map (createRelation source { schema = table.schema, table = table.table, column = c.name }) c.foreignKey)
+    , table.columns |> List.filterMap (\c -> Maybe.map2 (createType source (c.kindSchema |> Maybe.orElse table.schema)) c.kind c.values) |> Dict.fromListMap .id
     )
 
 
@@ -166,20 +167,29 @@ createComment source notes =
     }
 
 
-createRelation : SchemaName -> SourceId -> AmlColumnRef -> AmlColumnRef -> Relation
-createRelation defaultSchema source from to =
+createRelation : SourceId -> AmlColumnRef -> AmlColumnRef -> Relation
+createRelation source from to =
     let
         fromId : TableId
         fromId =
-            ( from.schema |> Maybe.withDefault defaultSchema, from.table )
+            ( from.schema |> Maybe.withDefault Conf.schema.empty, from.table )
 
         toId : TableId
         toId =
-            ( to.schema |> Maybe.withDefault defaultSchema, to.table )
+            ( to.schema |> Maybe.withDefault Conf.schema.empty, to.table )
     in
     { id = ( ( fromId, from.column ), ( toId, to.column ) )
     , name = defaultRelName from.table from.column
     , src = { table = fromId, column = from.column }
     , ref = { table = toId, column = to.column }
+    , origins = [ { id = source, lines = [] } ]
+    }
+
+
+createType : SourceId -> Maybe SchemaName -> String -> Nel String -> CustomType
+createType source schema name values =
+    { id = ( schema |> Maybe.withDefault Conf.schema.empty, name )
+    , name = name
+    , value = CustomTypeValue.Enum (values |> Nel.toList)
     , origins = [ { id = source, lines = [] } ]
     }

@@ -1,7 +1,9 @@
-module DataSources.AmlMiner.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnProps, AmlColumnRef, AmlColumnType, AmlColumnValue, AmlComment, AmlEmpty, AmlNotes, AmlRelation, AmlSchemaName, AmlStatement(..), AmlTable, AmlTableName, AmlTableProps, AmlTableRef, column, columnName, columnProps, columnRef, columnType, columnValue, comment, constraint, empty, notes, parse, parser, properties, property, relation, schemaName, statement, table, tableName, tableProps, tableRef)
+module DataSources.AmlMiner.AmlParser exposing (AmlColumn, AmlColumnName, AmlColumnProps, AmlColumnRef, AmlColumnType, AmlColumnValue, AmlComment, AmlEmpty, AmlNotes, AmlParsedColumnType, AmlRelation, AmlSchemaName, AmlStatement(..), AmlTable, AmlTableName, AmlTableProps, AmlTableRef, column, columnName, columnProps, columnRef, columnType, columnValue, comment, constraint, empty, notes, parse, parser, properties, property, relation, schemaName, statement, table, tableName, tableProps, tableRef)
 
 import Dict exposing (Dict)
+import Libs.Maybe as Maybe
 import Libs.Models.Position exposing (Position)
+import Libs.Nel as Nel exposing (Nel)
 import Libs.Tailwind as Color exposing (Color)
 import Parser exposing ((|.), (|=), DeadEnd, Parser, Step(..), Trailing(..), chompIf, chompWhile, end, getChompedString, loop, oneOf, problem, sequence, succeed, symbol, variable)
 import Set
@@ -43,6 +45,8 @@ type alias AmlTableProps =
 type alias AmlColumn =
     { name : AmlColumnName
     , kind : Maybe AmlColumnType
+    , kindSchema : Maybe AmlSchemaName
+    , values : Maybe (Nel AmlColumnValue)
     , default : Maybe AmlColumnValue
     , nullable : Bool
     , primaryKey : Bool
@@ -86,6 +90,10 @@ type alias AmlColumnType =
 
 type alias AmlColumnValue =
     String
+
+
+type alias AmlParsedColumnType =
+    { schema : Maybe AmlSchemaName, name : AmlColumnType, values : Maybe (Nel AmlColumnValue), default : Maybe AmlColumnValue }
 
 
 type alias AmlNotes =
@@ -166,10 +174,12 @@ table =
 column : Parser AmlColumn
 column =
     succeed
-        (\name kind default nullable pk idx unq chk fk props ntes coms ->
+        (\name kind nullable pk idx unq chk fk props ntes coms ->
             { name = name
-            , kind = kind
-            , default = default
+            , kind = kind |> Maybe.map .name
+            , kindSchema = kind |> Maybe.andThen .schema
+            , values = kind |> Maybe.andThen .values
+            , default = kind |> Maybe.andThen .default
             , nullable = nullable /= Nothing
             , primaryKey = pk /= Nothing
             , index = idx
@@ -185,7 +195,6 @@ column =
         |= columnName
         |. spaces
         |= maybe (succeed identity |= columnType |. spaces)
-        |= maybe (succeed identity |. symbol "=" |= columnValue |. spaces)
         |= maybe (succeed identity |. symbolI "nullable" |. spaces)
         |= maybe (succeed identity |. symbolI "pk" |. spaces)
         |= maybe (succeed identity |= constraint "index" |. spaces)
@@ -362,16 +371,64 @@ columnName =
     oneOf [ quoted '"' '"', untilNonEmpty [ ' ', '.', '\n' ] ]
 
 
-columnType : Parser AmlColumnType
+columnType : Parser AmlParsedColumnType
 columnType =
+    succeed buildColumnType
+        |= columnTypeName
+        |= maybe (succeed identity |. symbol "." |= columnTypeName)
+        |. spaces
+        |= maybe columnTypeValues
+        |. spaces
+        |= maybe columnTypeDefault
+
+
+buildColumnType : String -> Maybe String -> Maybe (List String) -> Maybe String -> AmlParsedColumnType
+buildColumnType name1 name2 values default =
+    let
+        ( schema, name ) =
+            name2 |> Maybe.mapOrElse (\n -> ( Just name1, n )) ( Nothing, name1 )
+
+        vals : List String
+        vals =
+            values |> Maybe.withDefault []
+    in
+    if 0 < List.length vals && List.length vals <= 2 && List.all (\v -> String.toInt v /= Nothing) vals then
+        { schema = schema, name = name ++ "(" ++ String.join ", " vals ++ ")", values = Nothing, default = default }
+
+    else
+        { schema = schema, name = name, values = values |> Maybe.andThen (List.map String.trim >> Nel.fromList), default = default }
+
+
+columnTypeName : Parser String
+columnTypeName =
     oneOf
         [ quoted '"' '"'
         , variable
-            { start = \c -> [ '=', ' ', '\n', '{', '|', '#' ] |> List.member c |> not
-            , inner = \c -> [ '=', ' ', '\n' ] |> List.member c |> not
+            { start = \c -> [ '.', '(', '=', ' ', '\n', '{', '|', '#' ] |> List.member c |> not
+            , inner = \c -> [ '.', '(', '=', ' ', '\n' ] |> List.member c |> not
             , reserved = Set.fromList [ "nullable", "NULLABLE", "pk", "PK", "index", "INDEX", "unique", "UNIQUE", "check", "CHECK", "fk", "FK" ]
             }
         ]
+
+
+columnTypeValues : Parser (List String)
+columnTypeValues =
+    sequence
+        { start = "("
+        , separator = ","
+        , end = ")"
+        , spaces = spaces
+        , item = oneOf [ quoted '"' '"', untilNonEmpty [ ',', ')', '\n' ] ]
+        , trailing = Optional
+        }
+
+
+columnTypeDefault : Parser AmlColumnValue
+columnTypeDefault =
+    succeed identity
+        |. symbol "="
+        |. spaces
+        |= columnValue
 
 
 columnValue : Parser AmlColumnValue

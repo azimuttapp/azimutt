@@ -11,7 +11,6 @@ import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.Relation exposing (Relation)
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.Unique exposing (Unique)
@@ -22,29 +21,29 @@ suite : Test
 suite =
     describe "SourceAdapter"
         [ describe "evolve"
-            [ test "empty changes nothing" (\_ -> schema |> evolve defaultSchema source (AmlEmptyStatement { comment = Nothing }) |> Expect.equal schema)
+            [ test "empty changes nothing" (\_ -> schema |> evolve source (AmlEmptyStatement { comment = Nothing }) |> Expect.equal schema)
             , test "add a table"
                 (\_ ->
                     schema
-                        |> evolve defaultSchema source (AmlTableStatement usersAml)
+                        |> evolve source (AmlTableStatement usersAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ] }
                 )
             , test "can't add a table twice"
                 (\_ ->
                     { schema | tables = Dict.fromListMap .id [ users ] }
-                        |> evolve defaultSchema source (AmlTableStatement usersAml)
+                        |> evolve source (AmlTableStatement usersAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ users ], errors = [ { row = 0, col = 0, problem = "Table 'users' is already defined" } ] }
                 )
             , test "add a relation"
                 (\_ ->
                     schema
-                        |> evolve defaultSchema source (AmlRelationStatement loginsFkAml)
+                        |> evolve source (AmlRelationStatement loginsFkAml)
                         |> Expect.equal { schema | relations = [ loginsFk ] }
                 )
             , test "add a table with relations"
                 (\_ ->
                     schema
-                        |> evolve defaultSchema source (AmlTableStatement loginsAml)
+                        |> evolve source (AmlTableStatement loginsAml)
                         |> Expect.equal { schema | tables = Dict.fromListMap .id [ logins ], relations = [ loginsFk ] }
                 )
             ]
@@ -68,8 +67,8 @@ usersAml =
 users : Table
 users =
     { table
-        | id = ( defaultSchema, "users" )
-        , schema = defaultSchema
+        | id = ( Conf.schema.empty, "users" )
+        , schema = Conf.schema.empty
         , name = "users"
         , columns =
             Dict.fromListMap .name
@@ -97,8 +96,8 @@ loginsAml =
 logins : Table
 logins =
     { table
-        | id = ( defaultSchema, "logins" )
-        , schema = defaultSchema
+        | id = ( Conf.schema.empty, "logins" )
+        , schema = Conf.schema.empty
         , name = "logins"
         , columns =
             Dict.fromListMap .name
@@ -118,10 +117,10 @@ loginsFkAml =
 
 loginsFk : Relation
 loginsFk =
-    { id = ( ( ( "public", "logins" ), "user_id" ), ( ( "public", "users" ), "id" ) )
+    { id = ( ( ( Conf.schema.empty, "logins" ), "user_id" ), ( ( "", "users" ), "id" ) )
     , name = "logins_user_id_fk_az"
-    , src = { table = ( "public", "logins" ), column = "user_id" }
-    , ref = { table = ( "public", "users" ), column = "id" }
+    , src = { table = ( Conf.schema.empty, "logins" ), column = "user_id" }
+    , ref = { table = ( Conf.schema.empty, "users" ), column = "id" }
     , origins = [ { id = source, lines = [] } ]
     }
 
@@ -132,7 +131,7 @@ loginsFk =
 
 schema : AmlSchema
 schema =
-    { tables = Dict.empty, relations = [], errors = [] }
+    { tables = Dict.empty, relations = [], types = Dict.empty, errors = [] }
 
 
 amlTable : AmlTable
@@ -142,7 +141,7 @@ amlTable =
 
 amlColumn : AmlColumn
 amlColumn =
-    { name = "", kind = Nothing, default = Nothing, nullable = False, primaryKey = False, index = Nothing, unique = Nothing, check = Nothing, foreignKey = Nothing, props = Nothing, notes = Nothing, comment = Nothing }
+    { name = "", kind = Nothing, kindSchema = Nothing, values = Nothing, default = Nothing, nullable = False, primaryKey = False, index = Nothing, unique = Nothing, check = Nothing, foreignKey = Nothing, props = Nothing, notes = Nothing, comment = Nothing }
 
 
 table : Table
@@ -173,8 +172,3 @@ comment =
 source : SourceId
 source =
     SourceId.new "src"
-
-
-defaultSchema : SchemaName
-defaultSchema =
-    "public"

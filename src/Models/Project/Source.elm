@@ -1,4 +1,4 @@
-module Models.Project.Source exposing (Source, addRelation, aml, decode, encode, refreshWith)
+module Models.Project.Source exposing (Source, addRelation, aml, decode, encode, refreshWith, toInfo)
 
 import Array exposing (Array)
 import Conf
@@ -23,6 +23,7 @@ import Models.Project.SourceLine as SourceLine exposing (SourceLine)
 import Models.Project.SourceName as SourceName exposing (SourceName)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.SourceInfo exposing (SourceInfo)
 import Services.Lenses exposing (mapContent, mapRelations, setUpdatedAt)
 import Time
 
@@ -58,10 +59,22 @@ aml id name now =
     }
 
 
+toInfo : Source -> SourceInfo
+toInfo source =
+    { id = source.id
+    , name = source.name
+    , kind = source.kind
+    , enabled = source.enabled
+    , fromSample = source.fromSample
+    , createdAt = source.createdAt
+    , updatedAt = source.updatedAt
+    }
+
+
 refreshWith : Source -> Source -> Source
 refreshWith new current =
     if (new.id == current.id) && (new.kind |> SourceKind.same current.kind) then
-        { current | kind = new.kind, content = new.content, tables = new.tables, relations = new.relations, updatedAt = new.updatedAt }
+        { current | kind = new.kind, content = new.content, tables = new.tables, relations = new.relations, types = new.types, updatedAt = new.updatedAt }
 
     else
         current

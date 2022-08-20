@@ -174,7 +174,7 @@ update wrap now msg model =
         ParseMsg parseMsg ->
             Maybe.map2
                 (\parsedSchema ( sourceInfo, _ ) ->
-                    parsingUpdate model.defaultSchema sourceInfo.id parseMsg parsedSchema
+                    parsingUpdate sourceInfo.id parseMsg parsedSchema
                         |> (\( parsed, message ) ->
                                 ( { model | parsedSchema = Just parsed }
                                   -- 342 is an arbitrary number to break Elm message batching
@@ -208,8 +208,8 @@ update wrap now msg model =
             ( model |> mapParsedSchemaM (mapShow (\s -> B.cond (s == htmlId) "" htmlId)), Cmd.none )
 
 
-parsingUpdate : SchemaName -> SourceId -> ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )
-parsingUpdate defaultSchema sourceId msg model =
+parsingUpdate : SourceId -> ParsingMsg -> SqlParsing msg -> ( SqlParsing msg, msg )
+parsingUpdate sourceId msg model =
     (case msg of
         BuildLines ->
             ( { model | lines = model.fileContent |> SqlParser.splitLines |> Just }, model.buildMsg BuildStatements )
@@ -237,7 +237,7 @@ parsingUpdate defaultSchema sourceId msg model =
                             Ok cmd ->
                                 model.schema
                                     |> Maybe.withDefault SqlAdapter.initSchema
-                                    |> SqlAdapter.evolve defaultSchema sourceId ( statement, cmd )
+                                    |> SqlAdapter.evolve sourceId ( statement, cmd )
                                     |> (\schema -> ( { model | schemaIndex = model.schemaIndex + 1, schema = Just schema }, model.buildMsg EvolveSchema ))
 
                             Err _ ->

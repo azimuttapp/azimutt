@@ -103,9 +103,10 @@ canvas =
     }
 
 
-schema : { default : SchemaName, column : { unknownType : ColumnType } }
+schema : { default : SchemaName, empty : SchemaName, column : { unknownType : ColumnType } }
 schema =
     { default = "public"
+    , empty = ""
     , column = { unknownType = "unknown" }
     }
 
