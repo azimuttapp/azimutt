@@ -1,4 +1,4 @@
-module Models.Project.SourceId exposing (SourceId, decode, encode, fromString, generator, new, toString)
+module Models.Project.SourceId exposing (SourceId, decode, encode, fromString, generator, new, toString, zero)
 
 import Json.Decode as Decode exposing (Value)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
@@ -7,6 +7,11 @@ import Random
 
 type SourceId
     = SourceId Uuid
+
+
+zero : SourceId
+zero =
+    SourceId "00000000-00000000-00000000-00000000"
 
 
 new : String -> SourceId

@@ -8,10 +8,8 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Url as Url
-import Models.Project.ColumnType exposing (ColumnType)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectName exposing (ProjectName)
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.SourceName exposing (SourceName)
 
 
@@ -103,7 +101,7 @@ canvas =
     }
 
 
-schema : { default : SchemaName, empty : SchemaName, column : { unknownType : ColumnType } }
+schema : { default : String, empty : String, column : { unknownType : String } }
 schema =
     { default = "public"
     , empty = ""
