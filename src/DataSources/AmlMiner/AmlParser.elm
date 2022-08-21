@@ -10,7 +10,7 @@ import Set
 
 
 
--- specs from https://azimutt.app/blog/aml-a-language-to-define-your-database-schema
+-- see /docs/aml/README.md
 
 
 type AmlStatement
@@ -338,37 +338,30 @@ tableRef =
 columnRef : Parser AmlColumnRef
 columnRef =
     succeed
-        (\schema tbl col ->
-            case col of
-                Just c ->
-                    { schema = Just schema, table = tbl, column = c }
-
-                Nothing ->
-                    { schema = Nothing, table = schema, column = tbl }
+        (\name1 name2 name3 ->
+            name3
+                |> Maybe.map (\c -> { schema = Just name1, table = name2, column = c })
+                |> Maybe.withDefault { schema = Nothing, table = name1, column = name2 }
         )
         |= schemaName
         |. symbol "."
         |= tableName
-        |= maybe
-            (succeed identity
-                |. symbol "."
-                |= columnName
-            )
+        |= maybe (succeed identity |. symbol "." |= columnName)
 
 
 schemaName : Parser AmlSchemaName
 schemaName =
-    oneOf [ quoted '"' '"', untilNonEmpty [ ' ', '.', '*', '\n' ] ]
+    oneOf [ quoted '"' '"', untilNonEmpty [ '.', ' ', '\n', '*' ] ]
 
 
 tableName : Parser AmlTableName
 tableName =
-    oneOf [ quoted '"' '"', untilNonEmpty [ ' ', '.', '*', '\n' ] ]
+    oneOf [ quoted '"' '"', untilNonEmpty [ '.', ' ', '\n', '*' ] ]
 
 
 columnName : Parser AmlColumnName
 columnName =
-    oneOf [ quoted '"' '"', untilNonEmpty [ ' ', '.', '\n' ] ]
+    oneOf [ quoted '"' '"', untilNonEmpty [ '.', ' ', '\n' ] ]
 
 
 columnType : Parser AmlParsedColumnType

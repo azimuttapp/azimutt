@@ -1,5 +1,6 @@
 module Models.Project.Column exposing (Column, ColumnLike, clearOrigins, decode, encode, merge, withName, withNullable)
 
+import Conf
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
@@ -55,7 +56,12 @@ merge : Column -> Column -> Column
 merge c1 c2 =
     { index = c1.index
     , name = c1.name
-    , kind = c1.kind
+    , kind =
+        if c1.kind == Conf.schema.column.unknownType then
+            c2.kind
+
+        else
+            c1.kind
     , nullable = c1.nullable && c2.nullable
     , default = Maybe.merge ColumnValue.merge c1.default c2.default
     , comment = Maybe.merge Comment.merge c1.comment c2.comment
