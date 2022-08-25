@@ -7,6 +7,7 @@ import Libs.List as List
 import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
+import Models.Position as Position
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.RelationStyle exposing (RelationStyle)
@@ -62,45 +63,51 @@ viewRelation defaultSchema style conf dragging srcTable refTable relation =
                 viewEmptyRelation
 
             else
-                { left = s.table.position.left + s.table.size.width, top = positionTop s.table.position s.index s.table.collapsed }
-                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( { left = srcPos.left + 20, top = srcPos.top }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + s.index + B.cond dragging 1000 0) onHover)
+                (s.table.position |> Position.offGrid |> Position.moveInCanvas { dx = s.table.size.width, dy = deltaTop s.index s.table.collapsed })
+                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( srcPos |> Position.moveInCanvas { dx = 20, dy = 0 }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + s.index + B.cond dragging 1000 0) onHover)
 
         ( Nothing, Just r ) ->
             if r.table.collapsed then
                 viewEmptyRelation
 
             else
-                { left = r.table.position.left, top = positionTop r.table.position r.index r.table.collapsed }
-                    |> (\refPos -> Relation.straight relConf ( { left = refPos.left - 20, top = refPos.top }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + r.index + B.cond dragging 1000 0) onHover)
+                (r.table.position |> Position.offGrid |> Position.moveInCanvas { dx = 0, dy = deltaTop r.index r.table.collapsed })
+                    |> (\refPos -> Relation.straight relConf ( refPos |> Position.moveInCanvas { dx = -20, dy = 0 }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + r.index + B.cond dragging 1000 0) onHover)
 
         ( Just s, Just r ) ->
             let
+                ( sPos, rPos ) =
+                    ( s.table.position |> Position.extractGrid, r.table.position |> Position.extractGrid )
+
                 ( ( srcX, srcDir ), ( refX, refDir ) ) =
                     positionLeft s.table r.table
 
                 ( srcY, refY ) =
-                    ( positionTop s.table.position s.index s.table.collapsed, positionTop r.table.position r.index r.table.collapsed )
+                    ( sPos.top + deltaTop s.index s.table.collapsed, rPos.top + deltaTop r.index r.table.collapsed )
 
                 zIndex : Int
                 zIndex =
                     Conf.canvas.zIndex.tables - 1 + min s.index r.index
             in
-            Relation.show style relConf ( { left = srcX, top = srcY }, srcDir ) ( { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
+            Relation.show style relConf ( Position.buildInCanvas { left = srcX, top = srcY }, srcDir ) ( Position.buildInCanvas { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
 
 
-viewVirtualRelation : RelationStyle -> ( ( Maybe ColumnInfo, ErdColumn ), Position ) -> Svg Msg
+viewVirtualRelation : RelationStyle -> ( ( Maybe ColumnInfo, ErdColumn ), Position.InCanvas ) -> Svg Msg
 viewVirtualRelation style ( ( maybeProps, column ), position ) =
     case maybeProps of
         Just props ->
             let
+                ( pos, tablePos ) =
+                    ( position |> Position.extractInCanvas, props.table.position |> Position.extractGrid )
+
                 isRight : Bool
                 isRight =
-                    position.left > props.table.position.left + props.table.size.width / 2
+                    pos.left > tablePos.left + props.table.size.width / 2
             in
             Relation.show style
                 { hover = False }
-                ( { left = props.table.position.left + B.cond isRight props.table.size.width 0, top = positionTop props.table.position props.index props.table.collapsed }, B.cond isRight Relation.Right Relation.Left )
-                ( { left = position.left, top = position.top }, B.cond isRight Relation.Left Relation.Right )
+                ( props.table.position |> Position.offGrid |> Position.moveInCanvas { dx = B.cond isRight props.table.size.width 0, dy = deltaTop props.index props.table.collapsed }, B.cond isRight Relation.Right Relation.Left )
+                ( position, B.cond isRight Relation.Left Relation.Right )
                 column.nullable
                 (Just props.table.color)
                 "virtual relation"
@@ -132,18 +139,18 @@ getColor src ref =
             Nothing
 
 
-positionTop : Position -> Int -> Bool -> Float
-positionTop position index collapsed =
+deltaTop : Int -> Bool -> Float
+deltaTop index collapsed =
     if collapsed then
-        position.top + Conf.ui.tableHeaderHeight * 0.5
+        Conf.ui.tableHeaderHeight * 0.5
 
     else
-        position.top + Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
+        Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
 
 
 positionLeft : ErdTableProps -> ErdTableProps -> ( ( Float, Relation.Direction ), ( Float, Relation.Direction ) )
 positionLeft src ref =
-    case ( tablePositions src.position src.size, tablePositions ref.position ref.size ) of
+    case ( leftCenterRight src, leftCenterRight ref ) of
         ( ( srcLeft, srcCenter, srcRight ), ( refLeft, refCenter, refRight ) ) ->
             (if srcRight < refLeft then
                 ( ( srcRight, Relation.Right ), ( refLeft, Relation.Left ) )
@@ -172,6 +179,11 @@ positionLeft src ref =
                    )
 
 
-tablePositions : Position -> Size -> ( Float, Float, Float )
-tablePositions position size =
-    ( position.left, position.left + (size.width / 2), position.left + size.width )
+leftCenterRight : { x | position : Position.Grid, size : Size } -> ( Float, Float, Float )
+leftCenterRight { position, size } =
+    let
+        pos : Position
+        pos =
+            position |> Position.offGrid |> Position.extractInCanvas
+    in
+    ( pos.left, pos.left + (size.width / 2), pos.left + size.width )

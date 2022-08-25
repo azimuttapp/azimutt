@@ -1,19 +1,13 @@
-module PagesComponents.Projects.Id_.Models.DragState exposing (DragState, hasMoved, setLast)
+module PagesComponents.Projects.Id_.Models.DragState exposing (DragState, hasMoved)
 
 import Libs.Models.DragId exposing (DragId)
-import Libs.Models.Position exposing (Position)
-import Services.Lenses as Lenses
+import Models.Position as Position
 
 
 type alias DragState =
-    { id : DragId, init : Position, last : Position }
+    { id : DragId, init : Position.Viewport, last : Position.Viewport }
 
 
 hasMoved : DragState -> Bool
 hasMoved dragging =
     dragging.init /= dragging.last
-
-
-setLast : Position -> DragState -> DragState
-setLast last dragState =
-    dragState |> Lenses.setLast last

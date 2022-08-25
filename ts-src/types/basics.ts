@@ -17,3 +17,7 @@ export type ViewPosition = 'start' | 'end'
 export type ToastLevel = 'info' | 'success' | 'warning' | 'error'
 export type Env = 'dev' | 'staging' | 'prod'
 export type Platform = 'mac' | 'pc'
+export interface PositionViewport {
+    clientX: number
+    clientY: number
+}

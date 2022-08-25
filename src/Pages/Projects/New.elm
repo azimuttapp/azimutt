@@ -5,8 +5,9 @@ import Conf
 import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Libs.Bool as B
-import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Random as Random
 import Libs.String as String
@@ -245,8 +246,8 @@ handleJsMessage now msg model =
             -- handled in shared
             ( model, Cmd.none )
 
-        Error err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
+        Error json err ->
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
 
         _ ->
             ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )

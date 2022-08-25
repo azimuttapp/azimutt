@@ -13,12 +13,12 @@ import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Position as Position
 import Libs.Models.Size as Size
 import Libs.Tailwind as Color exposing (Color)
+import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
-import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.TableId as TableId exposing (TableId)
@@ -262,10 +262,10 @@ type JsMsg
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
-    | GotTableShow TableId (Maybe Position)
+    | GotTableShow TableId (Maybe Position.Grid)
     | GotTableHide TableId
     | GotTableToggleColumns TableId
-    | GotTablePosition TableId Position
+    | GotTablePosition TableId Position.Grid
     | GotTableMove TableId Delta
     | GotTableSelect TableId
     | GotTableColor TableId Color
@@ -273,7 +273,7 @@ type JsMsg
     | GotColumnHide ColumnRef
     | GotColumnMove ColumnRef Int
     | GotFitToScreen
-    | Error Decode.Error
+    | Error Value Decode.Error
 
 
 messageToJs : ElmMsg -> Cmd msg
@@ -290,7 +290,7 @@ onJsMessage callback =
                     callback message
 
                 Err error ->
-                    callback (Error error)
+                    callback (Error value error)
         )
 
 
@@ -402,9 +402,8 @@ jsDecoder =
                         (Decode.field "sizes"
                             (Decode.map4 SizeChange
                                 (Decode.field "id" Decode.string)
-                                (Decode.field "position" GridPosition.decode)
+                                (Decode.field "position" Position.decodeViewport)
                                 (Decode.field "size" Size.decode)
-                                -- don't round seeds, use Position instead of GridPosition
                                 (Decode.field "seeds" Position.decode)
                                 |> Decode.list
                             )
@@ -451,7 +450,7 @@ jsDecoder =
                     Decode.map2 GotToast (Decode.field "level" Decode.string) (Decode.field "message" Decode.string)
 
                 "GotTableShow" ->
-                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" GridPosition.decode)
+                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decodeGrid)
 
                 "GotTableHide" ->
                     Decode.map GotTableHide (Decode.field "id" TableId.decode)
@@ -460,7 +459,7 @@ jsDecoder =
                     Decode.map GotTableToggleColumns (Decode.field "id" TableId.decode)
 
                 "GotTablePosition" ->
-                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" GridPosition.decode)
+                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decodeGrid)
 
                 "GotTableMove" ->
                     Decode.map2 GotTableMove (Decode.field "id" TableId.decode) (Decode.field "delta" Delta.decode)
@@ -594,7 +593,7 @@ unhandledJsMsgError msg =
                 GotFitToScreen ->
                     "GotFitToScreen"
 
-                Error _ ->
+                Error _ _ ->
                     "Error"
            )
 

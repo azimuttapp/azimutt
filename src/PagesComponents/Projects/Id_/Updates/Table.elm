@@ -7,8 +7,10 @@ import Libs.Delta exposing (Delta)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Position exposing (Position)
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
+import Models.Position as Position
 import Models.Project.ColumnId exposing (ColumnId)
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -48,7 +50,7 @@ showTable now id hint erd =
 showTables : Time.Posix -> List TableId -> Maybe PositionHint -> Erd -> ( Erd, Cmd Msg )
 showTables now ids hint erd =
     ids
-        |> List.indexedMap (\i id -> ( id, erd.tables |> Dict.get id, hint |> Maybe.map (PositionHint.move { left = 0, top = Conf.ui.tableHeaderHeight * toFloat i }) ))
+        |> List.indexedMap (\i id -> ( id, erd.tables |> Dict.get id, hint |> Maybe.map (PositionHint.move { dx = 0, dy = Conf.ui.tableHeaderHeight * toFloat i }) ))
         |> List.foldl
             (\( id, maybeTable, tableHint ) ( e, ( found, shown, notFound ) ) ->
                 case maybeTable of
@@ -142,9 +144,13 @@ showRelatedTables id erd =
                     padding =
                         { dx = 50, dy = 20 }
 
+                    tablePos : Position
+                    tablePos =
+                        table.props.position |> Position.extractGrid
+
                     left : Float
                     left =
-                        table.props.position.left + table.props.size.width + padding.dx
+                        tablePos.left + table.props.size.width + padding.dx
 
                     height : Float
                     height =
@@ -152,11 +158,11 @@ showRelatedTables id erd =
 
                     top : Float
                     top =
-                        table.props.position.top + (table.props.size.height / 2) - (height / 2)
+                        tablePos.top + (table.props.size.height / 2) - (height / 2)
 
                     shows : List ( TableId, Maybe PositionHint )
                     shows =
-                        toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt { top = cur, left = left }) ) :: res )) ( top, [] ) |> Tuple.second
+                        toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.buildGrid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
                 in
                 ( erd, Cmd.batch (shows |> List.map (\( t, hint ) -> T.send (ShowTable t hint))) )
             )

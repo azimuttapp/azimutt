@@ -7,21 +7,21 @@ import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Models.Uuid exposing (Uuid)
-import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel as Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Time as Time
+import Models.Position as Position
 import Models.Project exposing (Project)
-import Models.Project.CanvasProps as CanvasProps
+import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.Check exposing (Check)
 import Models.Project.Column exposing (Column)
 import Models.Project.Comment exposing (Comment)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
-import Models.Project.GridPosition as GridPosition
 import Models.Project.Index exposing (Index)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
@@ -247,7 +247,7 @@ stringAsLayoutName name =
 
 initLayout : Time.Posix -> LayoutV1
 initLayout now =
-    { canvas = CanvasProps.empty, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
+    { canvas = { position = Position.zero, zoom = 1 }, tables = [], hiddenTables = [], createdAt = now, updatedAt = now }
 
 
 defaultTime : Time.Posix
@@ -290,7 +290,7 @@ upgrade project =
 upgradeTableProps : TablePropsV1 -> TableProps
 upgradeTableProps props =
     { id = props.id
-    , position = props.position
+    , position = props.position |> Position.buildGrid
     , size = Size.zero
     , color = props.color
     , columns = props.columns
@@ -397,11 +397,18 @@ upgradeSource source =
 
 upgradeLayout : LayoutV1 -> Layout
 upgradeLayout layout =
-    { canvas = layout.canvas
+    { canvas = layout.canvas |> upgradeCanvasProps
     , tables = layout.tables |> List.map upgradeTableProps
     , hiddenTables = layout.hiddenTables |> List.map upgradeTableProps
     , createdAt = layout.createdAt
     , updatedAt = layout.updatedAt
+    }
+
+
+upgradeCanvasProps : CanvasPropsV1 -> CanvasProps
+upgradeCanvasProps c =
+    { position = c.position |> Position.buildCanvas
+    , zoom = c.zoom
     }
 
 
@@ -571,18 +578,25 @@ decodeSourceLine =
 decodeLayout : Decode.Decoder LayoutV1
 decodeLayout =
     Decode.map5 LayoutV1
-        (Decode.field "canvas" CanvasProps.decode)
+        (Decode.field "canvas" decodeCanvasProps)
         (Decode.field "tables" (Decode.list decodeTableProps))
         (Decode.defaultField "hiddenTables" (Decode.list decodeTableProps) [])
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
 
 
+decodeCanvasProps : Decode.Decoder CanvasPropsV1
+decodeCanvasProps =
+    Decode.map2 CanvasPropsV1
+        (Decode.field "position" Position.decode)
+        (Decode.field "zoom" ZoomLevel.decode)
+
+
 decodeTableProps : Decode.Decoder TablePropsV1
 decodeTableProps =
     Decode.map5 TablePropsV1
         (Decode.field "id" decodeTableId)
-        (Decode.field "position" GridPosition.decode)
+        (Decode.field "position" Position.decode)
         (Decode.field "color" Tw.decodeColor)
         (Decode.defaultField "columns" (Decode.list Decode.string) [])
         (Decode.defaultField "selected" Decode.bool False)

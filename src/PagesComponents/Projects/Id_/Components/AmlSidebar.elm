@@ -17,9 +17,9 @@ import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position
 import Libs.Tailwind as Tw exposing (focus)
 import Libs.Task as T
+import Models.Position as Position
 import Models.Project.ColumnId as ColumnId
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.Source as Source exposing (Source)
@@ -126,7 +126,7 @@ updateSource now source input model =
                         , previous
                             |> Maybe.andThen (\t -> tableLayouts |> List.findBy .id t.id)
                             |> Maybe.map (.props >> .position)
-                            |> Maybe.filter (\p -> p /= Position.zero)
+                            |> Maybe.filter (\p -> p /= Position.zeroGrid)
                             |> Maybe.map PlaceAt
                         )
                     )

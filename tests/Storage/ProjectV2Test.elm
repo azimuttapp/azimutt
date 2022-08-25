@@ -4,11 +4,12 @@ import Array
 import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Dict as Dict
-import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Position exposing (Position)
 import Libs.Models.Size as Size
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw
 import Models.ColumnOrder exposing (ColumnOrder(..))
+import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.Check as Check
@@ -89,7 +90,7 @@ project0 =
     , types = Dict.empty
     , notes = Dict.empty
     , usedLayout = "initial layout"
-    , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (Position 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
+    , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
     , settings = ProjectSettings.init defaultSchema
     , storage = ProjectStorage.Browser
     , createdAt = time 1000
@@ -121,8 +122,8 @@ project1 =
     , usedLayout = "initial layout"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (Position 10 20) 0.75) [ TableProps ( "public", "users" ) (Position 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
-            , ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            , ( "empty", Layout (CanvasProps Position.zeroCanvas 0.5) [] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Browser
@@ -229,9 +230,9 @@ project2 =
     , usedLayout = "users"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (Position 10 20) 0.75) [ TableProps ( "public", "users" ) (Position 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
-            , ( "empty", Layout (CanvasProps Position.zero 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", Layout (CanvasProps (Position 120 320) 1.5) [ TableProps ( "public", "users" ) (Position 90 100) Size.zero Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            , ( "empty", Layout (CanvasProps Position.zeroCanvas 0.5) [] [] (time 1202) (time 1203) )
+            , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zero Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Browser
@@ -252,6 +253,16 @@ project2Json =
         ++ """"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201},"""
         ++ """"users":{"canvas":{"position":{"left":120,"top":320},"zoom":1.5},"tables":[{"id":"public.users","position":{"left":90,"top":100},"color":"red","columns":["id","name"],"selected":true}],"createdAt":1202,"updatedAt":1203}},"""
         ++ """"settings":{"findPath":{"maxPathLength":4,"ignoredTables":"users","ignoredColumns":"created_by"},"defaultSchema":"public"},"createdAt":1000,"updatedAt":1001,"version":2}"""
+
+
+canvasPos : Float -> Float -> Position.Canvas
+canvasPos x y =
+    Position x y |> Position.buildCanvas
+
+
+gridPos : Float -> Float -> Position.Grid
+gridPos x y =
+    Position x y |> Position.buildGrid
 
 
 time : Int -> Time.Posix

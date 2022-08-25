@@ -112,14 +112,12 @@ schema =
 ui :
     { openDuration : Int
     , closeDuration : Int
-    , navbarHeight : Float
     , tableHeaderHeight : Float
     , tableColumnHeight : Float
     }
 ui =
     { openDuration = 200
     , closeDuration = 300
-    , navbarHeight = 64
     , tableHeaderHeight = 45
     , tableColumnHeight = 24
     }

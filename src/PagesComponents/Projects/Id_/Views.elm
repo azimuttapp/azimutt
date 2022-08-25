@@ -16,6 +16,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import Models.Position as Position
 import Models.User exposing (User)
 import PagesComponents.Projects.Id_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
@@ -81,10 +82,10 @@ viewApp currentUrl shared model htmlId erd =
             div [] []
         , main_
             [ class "flex-1 flex overflow-hidden"
-            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ String.fromFloat Conf.ui.navbarHeight ++ "px)") "100%")
+            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px)") "100%")
             ]
             [ section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
-                [ Lazy.lazy8 viewErd model.conf model.screen model.hoverTable erd model.selectionBox model.virtualRelation (Erd.argsToString shared.conf.platform model.cursorMode model.openedDropdown model.openedPopover) model.dragging
+                [ Lazy.lazy8 viewErd model.conf model.erdElem model.hoverTable erd model.selectionBox model.virtualRelation (Erd.argsToString shared.conf.platform model.cursorMode model.openedDropdown model.openedPopover) model.dragging
                 , if model.conf.fullscreen || model.conf.move then
                     let
                         layout : ErdLayout
@@ -162,11 +163,7 @@ viewContextMenu menu =
     menu
         |> Maybe.mapOrElse
             (\m ->
-                div
-                    [ class "az-context-menu absolute"
-                    , style "left" (String.fromFloat m.position.left ++ "px")
-                    , style "top" (String.fromFloat m.position.top ++ "px")
-                    ]
+                div ([ class "az-context-menu absolute" ] ++ Position.stylesViewport m.position)
                     [ ContextMenu.menu "" BottomRight 0 m.show m.content ]
             )
             (div [ class "az-context-menu" ] [])

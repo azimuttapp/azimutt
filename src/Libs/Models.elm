@@ -2,8 +2,9 @@ module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link
 
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position exposing (Position)
+import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
+import Models.Position as Position
 
 
 type alias ListIndex =
@@ -31,7 +32,7 @@ type alias ZoomDelta =
 
 
 type alias SizeChange =
-    { id : HtmlId, position : Position, size : Size, seeds : Position }
+    { id : HtmlId, position : Position.Viewport, size : Size, seeds : Position }
 
 
 type alias Millis =

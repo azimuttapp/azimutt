@@ -1,4 +1,4 @@
-<p align="center"><a href="https://azimutt.app" target="_blank"><img width="150px" src="public/logo.svg" alt="logo"/></a></p>
+<p align="center"><a href="https://azimutt.app" target="_blank"><img width="150px" src="https://azimutt.app/logo.png" alt="logo"/></a></p>
 <h1 align="center">Azimutt</h1>
 <h4 align="center">Next gen ERD</h4>
 <p align="center">Explore and analyze your database</p>

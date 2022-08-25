@@ -1,7 +1,7 @@
-module Libs.AreaTest exposing (..)
+module Libs.Models.AreaTest exposing (..)
 
 import Expect
-import Libs.Area exposing (Area, mult, overlap)
+import Libs.Models.Area exposing (Area, overlap)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Test exposing (Test, describe, test)
@@ -10,11 +10,7 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "Libs.Area"
-        [ describe "mult"
-            [ test "no change" (\_ -> Area Position.zero (Size 50 50) |> mult 1 |> Expect.equal (Area Position.zero (Size 50 50)))
-            , test "double" (\_ -> Area Position.zero (Size 50 50) |> mult 2 |> Expect.equal (Area Position.zero (Size 100 100)))
-            ]
-        , describe "overlap"
+        [ describe "overlap"
             [ test "distinct" (\_ -> Area Position.zero (Size 10 10) |> overlap (Area (Position 20 20) (Size 30 30)) |> Expect.equal False)
             , test "inside" (\_ -> Area Position.zero (Size 10 10) |> overlap (Area (Position 5 5) (Size 30 30)) |> Expect.equal True)
             , test "cross" (\_ -> Area Position.zero (Size 10 10) |> overlap (Area (Position -5 5) (Size 15 7)) |> Expect.equal True)

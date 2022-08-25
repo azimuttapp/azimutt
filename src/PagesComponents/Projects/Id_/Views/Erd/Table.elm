@@ -15,6 +15,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Models.Position as Position
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
@@ -79,10 +80,9 @@ viewTable conf zoom args notes layout table =
     in
     div
         ([ css [ "select-none absolute", B.cond (layout.props.size == Size.zero) "invisible" "" ]
-         , style "left" (String.fromFloat layout.props.position.left ++ "px")
-         , style "top" (String.fromFloat layout.props.position.top ++ "px")
          , style "z-index" (String.fromInt zIndex)
          ]
+            ++ Position.stylesGrid layout.props.position
             ++ drag
         )
         [ Table.table
@@ -114,7 +114,7 @@ viewTable conf zoom args notes layout table =
                 , headerRightClick = ContextMenuCreate dropdown
                 , headerDropdownClick = DropdownToggle
                 , columnHover = \col on -> ToggleHoverColumn { table = table.id, column = col } on
-                , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.position))
+                , columnClick = B.maybe virtualRelation (\col e -> VirtualRelationMsg (VRUpdate { table = table.id, column = col } e.clientPos))
                 , columnDblClick = \col -> { table = table.id, column = col } |> DetailsSidebar.ShowColumn |> DetailsSidebarMsg
                 , columnRightClick = \i col -> ContextMenuCreate (B.cond (layout.columns |> List.memberBy .name col) ColumnContextMenu.view ColumnContextMenu.viewHidden platform i { table = table.id, column = col } (notes.columns |> Dict.get col))
                 , notesClick = \col -> NotesMsg (NOpen (col |> Maybe.mapOrElse (\c -> NoteRef.fromColumn { table = table.id, column = c }) (NoteRef.fromTable table.id)))
@@ -145,10 +145,10 @@ viewTable conf zoom args notes layout table =
 handleTablePointerDown : HtmlId -> PointerEvent -> Msg
 handleTablePointerDown htmlId e =
     if e.button == MainButton then
-        e |> .position |> DragStart htmlId
+        e |> .clientPos |> DragStart htmlId
 
     else if e.button == MiddleButton then
-        e |> .position |> DragStart Conf.ids.erd
+        e |> .clientPos |> DragStart Conf.ids.erd
 
     else
         Noop "No match on table pointer down"

@@ -4,9 +4,9 @@ import {
     File,
     FileContent,
     FileName,
-    FileUrl,
     HtmlId,
     Platform,
+    PositionViewport,
     Timestamp,
     ToastLevel,
     ViewPosition
@@ -177,7 +177,7 @@ export type SampleKey = string
 
 export interface ElementSize {
     id: HtmlId,
-    position: Position,
+    position: PositionViewport,
     size: Size,
     seeds: Position
 }

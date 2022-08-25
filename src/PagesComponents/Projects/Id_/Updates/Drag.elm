@@ -1,14 +1,15 @@
 module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, moveCanvas, moveTables)
 
 import Conf
-import Libs.Area as Area exposing (Area)
+import Libs.Delta as Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Models.Area as Area
+import Models.ErdProps exposing (ErdProps)
+import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.TableId as TableId exposing (TableId)
-import Models.ScreenProps exposing (ScreenProps)
 import PagesComponents.Projects.Id_.Models exposing (Model)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
 import PagesComponents.Projects.Id_.Models.Erd as Erd
@@ -37,11 +38,11 @@ handleDrag now drag isEnd model =
 
         else
             drag
-                |> buildSelectionArea model.screen canvas
+                |> buildSelectionArea model.erdElem canvas
                 |> (\area ->
                         model
                             |> setSelectionBox (Just area)
-                            |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlap area p))))))
+                            |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapInCanvas area { position = p.position |> Position.offGrid, size = p.size }))))))
                    )
 
     else if isEnd then
@@ -53,7 +54,7 @@ handleDrag now drag isEnd model =
 
 moveCanvas : DragState -> CanvasProps -> CanvasProps
 moveCanvas drag canvas =
-    canvas |> mapPosition (move drag 1)
+    canvas |> mapPosition (Position.moveCanvas (buildDelta drag 1))
 
 
 moveTables : DragState -> ZoomLevel -> List ErdTableLayout -> List ErdTableLayout
@@ -71,20 +72,20 @@ moveTables drag zoom tables =
         |> List.map
             (\t ->
                 if Just t.id == tableId || (dragSelected && t.props.selected) then
-                    t |> mapProps (mapPosition (move drag zoom >> Position.stepBy Conf.canvas.grid))
+                    t |> mapProps (mapPosition (Position.moveGrid (buildDelta drag zoom)))
 
                 else
                     t
             )
 
 
-move : DragState -> ZoomLevel -> Position -> Position
-move drag zoom position =
-    position |> Position.add ((drag.last |> Position.sub drag.init) |> Position.div zoom)
+buildDelta : DragState -> ZoomLevel -> Delta
+buildDelta drag zoom =
+    drag.last |> Position.diffViewport drag.init |> Delta.div zoom
 
 
-buildSelectionArea : ScreenProps -> CanvasProps -> DragState -> Area
-buildSelectionArea screen canvas dragState =
-    Area.from dragState.init dragState.last
-        |> Area.move (screen.position |> Position.add { left = 0, top = Conf.ui.navbarHeight } |> Position.add canvas.position |> Position.negate)
-        |> Area.div canvas.zoom
+buildSelectionArea : ErdProps -> CanvasProps -> DragState -> Area.InCanvas
+buildSelectionArea erdElem canvas dragState =
+    Area.fromInCanvas
+        (dragState.init |> Position.adaptInCanvas erdElem.position canvas.position canvas.zoom)
+        (dragState.last |> Position.adaptInCanvas erdElem.position canvas.position canvas.zoom)

@@ -2,11 +2,12 @@ module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLay
 
 import Conf
 import Dict exposing (Dict)
-import Libs.Area exposing (Area)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Time as Time
+import Models.Area as Area
+import Models.ErdProps exposing (ErdProps)
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -111,9 +112,9 @@ defaultSchemaM erd =
     erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.empty
 
 
-viewportM : Area -> Maybe Erd -> Area
-viewportM screen erd =
-    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport screen) screen
+viewportM : ErdProps -> Maybe Erd -> Area.InCanvas
+viewportM erdElem erd =
+    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroInCanvas
 
 
 computeSources : ProjectSettings -> List Source -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List Relation) )

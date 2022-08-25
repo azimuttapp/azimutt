@@ -1,7 +1,7 @@
 module PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (Model, handleVirtualRelation)
 
-import Libs.Models.Position as Position
 import Libs.Task as T
+import Models.Position as Position
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import Services.Lenses exposing (mapVirtualRelationM, setMouse, setVirtualRelation)
@@ -18,7 +18,7 @@ handleVirtualRelation : VirtualRelationMsg -> Model x -> ( Model x, Cmd Msg )
 handleVirtualRelation msg model =
     case msg of
         VRCreate ->
-            ( model |> setVirtualRelation (Just { src = Nothing, mouse = Position.zero }), Cmd.none )
+            ( model |> setVirtualRelation (Just { src = Nothing, mouse = Position.zeroViewport }), Cmd.none )
 
         VRUpdate ref pos ->
             case model.virtualRelation |> Maybe.map .src of
