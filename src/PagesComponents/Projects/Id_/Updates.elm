@@ -54,7 +54,7 @@ import Random
 import Request
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -145,6 +145,9 @@ update req currentLayout now backendUrl msg model =
 
             else
                 ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))), Cmd.none )
+
+        SelectAllTables ->
+            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (mapProps (setSelected True))))), Cmd.none )
 
         TableMove id delta ->
             ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.updateBy .id id (mapProps (mapPosition (Position.moveGrid delta)))))), Cmd.none )

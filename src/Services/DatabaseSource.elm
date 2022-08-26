@@ -129,7 +129,7 @@ viewInput wrap htmlId model =
              , ( "oracle", Just (Conf.constants.azimuttNewIssue "Support oracle database import" "") )
              , ( "sql-server", Just "https://github.com/azimuttapp/azimutt/issues/113" )
              , ( "mariadb", Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") )
-             , ( "sqlite", Just (Conf.constants.azimuttNewIssue "Support sqlite database import" "") )
+             , ( "sqlite", Just "https://github.com/azimuttapp/azimutt/issues/115" )
              ]
                 |> List.map
                     (\( name, requestLink ) ->

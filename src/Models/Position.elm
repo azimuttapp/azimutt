@@ -1,4 +1,4 @@
-module Models.Position exposing (Canvas, Document, Grid, InCanvas, Viewport, adaptCanvas, adaptInCanvas, buildCanvas, buildGrid, buildInCanvas, decodeCanvas, decodeDocument, decodeGrid, decodeViewport, diffInCanvas, diffViewport, divInCanvas, encodeCanvas, encodeGrid, extractCanvas, extractGrid, extractInCanvas, extractViewport, fromEventViewport, minInCanvas, moveCanvas, moveGrid, moveInCanvas, moveViewport, offGrid, onGrid, sizeInCanvas, styleCanvas, stylesGrid, stylesTransformInCanvas, stylesViewport, subInCanvas, zeroCanvas, zeroGrid, zeroInCanvas, zeroViewport)
+module Models.Position exposing (Canvas, Document, Grid, InCanvas, Viewport, adaptCanvas, adaptInCanvas, adaptViewport, buildCanvas, buildGrid, buildInCanvas, decodeCanvas, decodeDocument, decodeGrid, decodeViewport, diffInCanvas, diffViewport, divInCanvas, encodeCanvas, encodeGrid, extractCanvas, extractGrid, extractInCanvas, extractViewport, fromEventViewport, minInCanvas, moveCanvas, moveGrid, moveInCanvas, moveViewport, offGrid, onGrid, sizeInCanvas, styleCanvas, stylesGrid, stylesTransformInCanvas, stylesViewport, subInCanvas, zeroCanvas, zeroGrid, zeroInCanvas, zeroViewport)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -184,6 +184,11 @@ onGrid (InCanvas pos) =
 offGrid : Grid -> InCanvas
 offGrid (Grid pos) =
     buildInCanvas pos
+
+
+adaptViewport : Viewport -> Canvas -> ZoomLevel -> InCanvas -> Viewport
+adaptViewport (Viewport erdPos) (Canvas canvasPos) canvasZoom (InCanvas pos) =
+    pos |> Position.mult canvasZoom |> Position.add canvasPos |> Position.add erdPos |> buildViewport
 
 
 adaptCanvas : Canvas -> Canvas -> InCanvas

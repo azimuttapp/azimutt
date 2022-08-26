@@ -39,7 +39,7 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
         [ if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
                 [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ]
-                    |> Tooltip.t "Fit content in view"
+                    |> Tooltip.t "Fit diagram to screen"
                 ]
 
           else

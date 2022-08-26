@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM)
 
 import Conf
 import Dict exposing (Dict)
@@ -8,6 +8,7 @@ import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
+import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps
 import Models.Project.ColumnRef exposing (ColumnRef)
@@ -100,6 +101,21 @@ mapCurrentLayoutCmd now transform erd =
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn
 getColumn ref erd =
     erd.tables |> Dict.get ref.table |> Maybe.andThen (\t -> t.columns |> Dict.get ref.column)
+
+
+getColumnPos : ColumnRef -> Erd -> Maybe Position.InCanvas
+getColumnPos ref erd =
+    (currentLayout erd |> .tables)
+        |> List.find (\t -> t.id == ref.table)
+        |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.find (\( c, _ ) -> c.name == ref.column) |> Maybe.map (\( c, i ) -> ( t.props, c, i )))
+        |> Maybe.map
+            (\( t, _, index ) ->
+                if t.collapsed then
+                    t.position |> Position.offGrid |> Position.moveInCanvas { dx = t.size.width / 2, dy = Conf.ui.tableHeaderHeight * 0.5 }
+
+                else
+                    t.position |> Position.offGrid |> Position.moveInCanvas { dx = t.size.width / 2, dy = Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat))) }
+            )
 
 
 isShown : TableId -> Erd -> Bool

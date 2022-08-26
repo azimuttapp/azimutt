@@ -16,13 +16,13 @@ import PagesComponents.Projects.Id_.Models.Erd as Erd
 import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Projects.Id_.Models.Notes as NoteRef
 import Ports
-import Services.Lenses exposing (mapActive, mapErdM, mapNavbar, mapProps, mapSearch, mapTables, setSelected)
+import Services.Lenses exposing (mapActive, mapNavbar, mapSearch)
 import Services.Toasts as Toasts
 import Time
 
 
 handleHotkey : Time.Posix -> Model -> String -> ( Model, Cmd Msg )
-handleHotkey now model hotkey =
+handleHotkey _ model hotkey =
     case hotkey of
         "search-open" ->
             ( model, Ports.focus Conf.ids.searchInput )
@@ -48,8 +48,11 @@ handleHotkey now model hotkey =
         "shrink" ->
             ( model, shrinkElement model )
 
-        "remove" ->
-            ( model, removeElement model )
+        "show" ->
+            ( model, showElement model )
+
+        "hide" ->
+            ( model, hideElement model )
 
         "save" ->
             ( model, T.send SaveProject )
@@ -91,13 +94,13 @@ handleHotkey now model hotkey =
             ( model, moveTablesOrder -1000 model )
 
         "select-all" ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (mapProps (setSelected True))))), Cmd.none )
+            ( model, T.send SelectAllTables )
 
         "create-layout" ->
             ( model, LOpen Nothing |> LayoutMsg |> T.send )
 
         "create-virtual-relation" ->
-            ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) VRCreate)) )
+            ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) (VRCreate (model |> currentColumn)))) )
 
         "find-path" ->
             ( model, T.send (FindPathMsg (model.findPath |> Maybe.mapOrElse (\_ -> FPClose) (FPOpen model.hoverTable Nothing))) )
@@ -151,11 +154,18 @@ shrinkElement model =
         |> Maybe.withDefault ("Can't find an element to shrink :(" |> Toasts.info |> Toast |> T.send)
 
 
-removeElement : Model -> Cmd Msg
-removeElement model =
+showElement : Model -> Cmd Msg
+showElement model =
+    (model |> currentColumn |> Maybe.map (ShowColumn >> T.send))
+        |> Maybe.orElse (model |> currentTable |> Maybe.map (\t -> ShowTable t Nothing |> T.send))
+        |> Maybe.withDefault ("Can't find an element to show :(" |> Toasts.info |> Toast |> T.send)
+
+
+hideElement : Model -> Cmd Msg
+hideElement model =
     (model |> currentColumn |> Maybe.map (HideColumn >> T.send))
         |> Maybe.orElse (model |> currentTable |> Maybe.map (HideTable >> T.send))
-        |> Maybe.withDefault ("Can't find an element to remove :(" |> Toasts.info |> Toast |> T.send)
+        |> Maybe.withDefault ("Can't find an element to hide :(" |> Toasts.info |> Toast |> T.send)
 
 
 currentTable : Model -> Maybe TableId

@@ -15,7 +15,7 @@ import Libs.Bool as B
 import Libs.Dict as Dict
 import Libs.Html exposing (bText, extLink, sendTweet)
 import Libs.Html.Attributes as Attributes exposing (css)
-import Libs.Html.Events exposing (PointerEvent, onWheel, stopPointerDown)
+import Libs.Html.Events exposing (PointerEvent, onContextMenu, onWheel, stopPointerDown)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -48,6 +48,7 @@ import PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps
 import PagesComponents.Projects.Id_.Updates.Drag as Drag
 import PagesComponents.Projects.Id_.Views.Erd.Relation as Relation exposing (viewEmptyRelation, viewRelation, viewVirtualRelation)
 import PagesComponents.Projects.Id_.Views.Erd.Table as Table exposing (viewTable)
+import PagesComponents.Projects.Id_.Views.Modals.ErdContextMenu as ErdContextMenu
 import Set
 
 
@@ -128,6 +129,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         , id Conf.ids.erd
         , Attributes.when (conf.move && not (List.isEmpty tableProps)) (onWheel platform OnWheel)
         , Attributes.when (conf.move || conf.select) (stopPointerDown platform (handleErdPointerDown conf cursorMode))
+        , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (ErdContextMenu.view platform)))
         ]
         [ div [ class "az-canvas origin-top-left", Position.styleCanvas canvas.position canvas.zoom ]
             [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables tableProps erd.notes

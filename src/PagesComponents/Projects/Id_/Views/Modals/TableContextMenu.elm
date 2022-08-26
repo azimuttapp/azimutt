@@ -26,7 +26,7 @@ view : Platform -> ErdConf -> Int -> ErdTable -> ErdTableLayout -> Maybe String 
 view platform conf index table layout notes =
     div [ class "z-max" ]
         ([ Maybe.when conf.layout { label = "Show details", action = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id), platform = platform, hotkeys = [] } }
-         , Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = ContextMenu.Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "remove" [] } }
+         , Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = ContextMenu.Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "hide" [] } }
          , Maybe.when conf.layout { label = notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes", action = ContextMenu.Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
          , Maybe.when conf.layout
             { label = B.cond layout.props.selected "Set color of selected tables" "Set color"
@@ -76,7 +76,7 @@ view platform conf index table layout notes =
             }
          , Maybe.when conf.layout { label = "Show related", action = ContextMenu.Simple { action = ShowRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "expand" [] } }
          , Maybe.when conf.layout { label = "Hide related", action = ContextMenu.Simple { action = HideRelatedTables table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "shrink" [] } }
-         , Maybe.when conf.findPath { label = "Find path for this table", action = ContextMenu.Simple { action = FindPathMsg (FPOpen (Just table.id) Nothing), platform = platform, hotkeys = [] } }
+         , Maybe.when conf.findPath { label = "Find path from this table", action = ContextMenu.Simple { action = FindPathMsg (FPOpen (Just table.id) Nothing), platform = platform, hotkeys = [] } }
          ]
             |> List.filterMap identity
             |> List.map ContextMenu.btnSubmenu

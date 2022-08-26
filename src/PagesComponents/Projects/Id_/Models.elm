@@ -160,6 +160,7 @@ type Msg
     | SortColumns TableId ColumnOrder
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
+    | SelectAllTables
     | TableMove TableId Delta
     | TablePosition TableId Position.Grid
     | TableOrder TableId Int
@@ -240,7 +241,7 @@ type AmlSidebarMsg
 
 
 type VirtualRelationMsg
-    = VRCreate
+    = VRCreate (Maybe ColumnRef)
     | VRUpdate ColumnRef Position.Viewport
     | VRMove Position.Viewport
     | VRCancel

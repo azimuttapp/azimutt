@@ -1,4 +1,4 @@
-module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, min, move, negate, size, sub, toString, toStringRound, zero)
+module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, min, move, mult, negate, size, sub, toString, toStringRound, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -39,6 +39,11 @@ min p1 p2 =
 size : Position -> Position -> Size
 size p1 p2 =
     Size (abs (p2.left - p1.left)) (abs (p2.top - p1.top))
+
+
+mult : Float -> Position -> Position
+mult factor pos =
+    Position (pos.left * factor) (pos.top * factor)
 
 
 div : Float -> Position -> Position
