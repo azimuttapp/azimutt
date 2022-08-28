@@ -4,7 +4,6 @@ import Conf
 import Libs.Bool as B
 import Libs.Delta as Delta exposing (Delta)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models.Position as Position
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
@@ -24,7 +23,7 @@ import Time
 handleWheel : WheelEvent -> ErdProps -> CanvasProps -> CanvasProps
 handleWheel event erdElem canvas =
     if event.ctrl then
-        canvas |> performZoom (-event.delta.dy * Conf.canvas.zoom.speed) (event.clientPos |> CanvasProps.adapt erdElem canvas)
+        canvas |> performZoom erdElem (-event.delta.dy * Conf.canvas.zoom.speed) event.clientPos
 
     else
         { canvas | position = canvas.position |> Position.moveCanvas (event.delta |> Delta.negate |> Delta.adjust canvas.zoom) }
@@ -32,7 +31,7 @@ handleWheel event erdElem canvas =
 
 zoomCanvas : Float -> ErdProps -> CanvasProps -> CanvasProps
 zoomCanvas delta erdElem canvas =
-    canvas |> performZoom delta (erdElem |> Area.centerViewport |> CanvasProps.adapt erdElem canvas)
+    canvas |> performZoom erdElem delta (erdElem |> Area.centerViewport)
 
 
 fitCanvas : Time.Posix -> ErdProps -> Erd -> ( Erd, Cmd Msg )
@@ -74,31 +73,24 @@ fitCanvas now erdElem erd =
         |> Maybe.withDefault ( erd, "No table to fit into the canvas" |> Toasts.create "warning" |> Toast |> T.send )
 
 
-performZoom : Float -> Position.InCanvas -> CanvasProps -> CanvasProps
-performZoom delta target canvas =
-    -- TODO fix small vertical deviation
+performZoom : ErdProps -> Float -> Position.Viewport -> CanvasProps -> CanvasProps
+performZoom erdElem delta target canvas =
+    -- to zoom on target (center or cursor), works only if origin is top left (CSS: "transform-origin: top left;")
     let
         newZoom : ZoomLevel
         newZoom =
             (canvas.zoom + delta) |> clamp Conf.canvas.zoom.min Conf.canvas.zoom.max
 
-        zoomFactor : Float
-        zoomFactor =
-            newZoom / canvas.zoom
-
-        ( canvasPos, centerPos ) =
-            ( canvas.position |> Position.extractCanvas, target |> Position.extractInCanvas )
-
-        newPos : Position.Canvas
-        newPos =
-            canvas.position
-                -- to zoom on cursor, works only if origin is top left (CSS property: "transform-origin: top left;")
-                |> Position.moveCanvas
-                    { dx = -((centerPos.left - canvasPos.left) * (zoomFactor - 1))
-                    , dy = -((centerPos.top - canvasPos.top) * (zoomFactor - 1))
-                    }
+        targetDelta : Delta
+        targetDelta =
+            target
+                |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom
+                |> Position.inCanvasToViewport erdElem.position canvas.position newZoom
+                |> Position.diffViewport target
     in
-    { position = newPos, zoom = newZoom }
+    { position = canvas.position |> Position.moveCanvas (targetDelta |> Delta.negate) |> Position.roundCanvas
+    , zoom = newZoom
+    }
 
 
 computeFit : Area.InCanvas -> Float -> Area.InCanvas -> ZoomLevel -> ( ZoomLevel, Delta )

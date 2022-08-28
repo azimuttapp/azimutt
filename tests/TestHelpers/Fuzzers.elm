@@ -21,6 +21,11 @@ import Random
 import Time
 
 
+positionViewport : Fuzzer Position.Viewport
+positionViewport =
+    position |> Fuzz.map Position.buildViewport
+
+
 positionCanvas : Fuzzer Position.Canvas
 positionCanvas =
     position |> Fuzz.map Position.buildCanvas

@@ -1,4 +1,4 @@
-module Models.Position exposing (Canvas, Document, Grid, InCanvas, Viewport, adaptCanvas, adaptInCanvas, adaptViewport, buildCanvas, buildGrid, buildInCanvas, decodeCanvas, decodeDocument, decodeGrid, decodeViewport, diffInCanvas, diffViewport, divInCanvas, encodeCanvas, encodeGrid, extractCanvas, extractGrid, extractInCanvas, extractViewport, fromEventViewport, minInCanvas, moveCanvas, moveGrid, moveInCanvas, moveViewport, offGrid, onGrid, sizeInCanvas, styleCanvas, stylesGrid, stylesTransformInCanvas, stylesViewport, subInCanvas, zeroCanvas, zeroGrid, zeroInCanvas, zeroViewport)
+module Models.Position exposing (Canvas, Document, Grid, InCanvas, Viewport, buildCanvas, buildGrid, buildInCanvas, buildViewport, canvasToInCanvas, decodeCanvas, decodeDocument, decodeGrid, decodeViewport, diffInCanvas, diffViewport, divInCanvas, encodeCanvas, encodeGrid, extractCanvas, extractGrid, extractInCanvas, extractViewport, fromEventViewport, inCanvasToViewport, minInCanvas, moveCanvas, moveGrid, moveInCanvas, moveViewport, offGrid, onGrid, roundCanvas, sizeInCanvas, styleCanvas, stylesGrid, stylesTransformInCanvas, stylesViewport, subInCanvas, toStringRoundCanvas, toStringRoundViewport, viewportToInCanvas, zeroCanvas, zeroGrid, zeroInCanvas, zeroViewport)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -13,19 +13,19 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
 type Viewport
-    = Viewport Position -- position inside the browser viewport
+    = Viewport Position -- position in the browser viewport (for the erd, mouse...)
 
 
 type Document
-    = Document Position -- position inside the html document (same as Viewport if no scroll)
+    = Document Position -- position in the html document (same as Viewport if no scroll)
 
 
 type Canvas
-    = Canvas Position -- the position of the canvas in the erd
+    = Canvas Position -- position in the erd (for the canvas)
 
 
 type InCanvas
-    = InCanvas Position -- position in the erd canvas
+    = InCanvas Position -- position in the canvas (for tables, relations...)
 
 
 type Grid
@@ -176,6 +176,11 @@ diffInCanvas (InCanvas to) (InCanvas from) =
     from |> Position.diff to
 
 
+roundCanvas : Canvas -> Canvas
+roundCanvas (Canvas pos) =
+    pos |> Position.round |> buildCanvas
+
+
 onGrid : InCanvas -> Grid
 onGrid (InCanvas pos) =
     buildGrid pos
@@ -186,19 +191,19 @@ offGrid (Grid pos) =
     buildInCanvas pos
 
 
-adaptViewport : Viewport -> Canvas -> ZoomLevel -> InCanvas -> Viewport
-adaptViewport (Viewport erdPos) (Canvas canvasPos) canvasZoom (InCanvas pos) =
+viewportToInCanvas : Viewport -> Canvas -> ZoomLevel -> Viewport -> InCanvas
+viewportToInCanvas (Viewport erdPos) (Canvas canvasPos) canvasZoom (Viewport pos) =
+    pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div canvasZoom |> buildInCanvas
+
+
+inCanvasToViewport : Viewport -> Canvas -> ZoomLevel -> InCanvas -> Viewport
+inCanvasToViewport (Viewport erdPos) (Canvas canvasPos) canvasZoom (InCanvas pos) =
     pos |> Position.mult canvasZoom |> Position.add canvasPos |> Position.add erdPos |> buildViewport
 
 
-adaptCanvas : Canvas -> Canvas -> InCanvas
-adaptCanvas (Canvas canvasPos) (Canvas pos) =
+canvasToInCanvas : Canvas -> Canvas -> InCanvas
+canvasToInCanvas (Canvas canvasPos) (Canvas pos) =
     pos |> Position.sub canvasPos |> buildInCanvas
-
-
-adaptInCanvas : Viewport -> Canvas -> ZoomLevel -> Viewport -> InCanvas
-adaptInCanvas (Viewport erdPos) (Canvas canvasPos) canvasZoom (Viewport pos) =
-    pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div canvasZoom |> buildInCanvas
 
 
 stylesViewport : Viewport -> List (Attribute msg)
@@ -219,6 +224,16 @@ stylesTransformInCanvas (InCanvas pos) =
 stylesGrid : Grid -> List (Attribute msg)
 stylesGrid (Grid pos) =
     [ style "left" (String.fromFloat pos.left ++ "px"), style "top" (String.fromFloat pos.top ++ "px") ]
+
+
+toStringRoundViewport : Viewport -> String
+toStringRoundViewport (Viewport pos) =
+    Position.toStringRound pos
+
+
+toStringRoundCanvas : Canvas -> String
+toStringRoundCanvas (Canvas pos) =
+    Position.toStringRound pos
 
 
 decodeViewport : Decode.Decoder Viewport

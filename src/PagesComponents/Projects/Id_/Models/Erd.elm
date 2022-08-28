@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToInCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -10,7 +10,7 @@ import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
-import Models.Project.CanvasProps as CanvasProps
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -126,6 +126,11 @@ isShown table erd =
 defaultSchemaM : Maybe Erd -> SchemaName
 defaultSchemaM erd =
     erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.empty
+
+
+viewportToInCanvas : ErdProps -> CanvasProps -> Position.Viewport -> Position.InCanvas
+viewportToInCanvas erdElem canvas pos =
+    pos |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom
 
 
 viewportM : ErdProps -> Maybe Erd -> Area.InCanvas

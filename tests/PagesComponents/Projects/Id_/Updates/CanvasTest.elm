@@ -1,16 +1,18 @@
 module PagesComponents.Projects.Id_.Updates.CanvasTest exposing (..)
 
-import Expect exposing (Expectation, FloatingPointTolerance(..))
+import Expect
 import Fuzz exposing (tuple)
 import Libs.Delta as Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Models.Area as Area
+import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
-import PagesComponents.Projects.Id_.Updates.Canvas exposing (computeFit, performZoom, performZoom2)
+import PagesComponents.Projects.Id_.Updates.Canvas exposing (computeFit, performZoom)
+import Services.Lenses exposing (mapPosition)
 import Test exposing (Test, describe, fuzz, test)
-import TestHelpers.Fuzzers exposing (positionInCanvas)
+import TestHelpers.Fuzzers exposing (positionViewport)
 import TestHelpers.ProjectFuzzers exposing (canvasProps)
 
 
@@ -18,11 +20,12 @@ suite : Test
 suite =
     describe "PagesComponents.Projects.Id_.Updates.Canvas"
         [ describe "performZoom"
-            [ fuzz (tuple ( positionInCanvas, canvasProps )) "no change" (\( pos, props ) -> props |> performZoom 0 pos |> Expect.equal props)
+            [ test "basic" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom erdElem 0.5 (viewportPos 50 50) |> Expect.equal (CanvasProps (canvasPos -25 -25) 1.5))
+            , test "basic round trip" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom erdElem 0.5 (viewportPos 50 50) |> performZoom erdElem -0.5 (viewportPos 50 50) |> Expect.equal (CanvasProps (canvasPos 0 0) 1))
+            , test "complex" (\_ -> CanvasProps (canvasPos 50 20) 0.5 |> performZoom erdElem 0.1 (viewportPos 200 300) |> Expect.equal (CanvasProps (canvasPos 20 -36) 0.6))
+            , fuzz (tuple ( positionViewport, canvasProps )) "no change" (\( pos, props ) -> props |> performZoom erdElem 0 pos |> Expect.equal (props |> mapPosition Position.roundCanvas))
 
-            -- , fuzz (tuple3 ( float, position, canvasProps )) "round trip" (\( delta, pos, props ) -> props |> performZoom delta pos |> performZoom -delta pos |> expectAlmost props)
-            , test "basic" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom 0.5 (inCanvasPos 50 50) |> Expect.equal (CanvasProps (canvasPos -25 -25) 1.5))
-            , test "basic round trip" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom 0.5 (inCanvasPos 50 50) |> performZoom -0.5 (inCanvasPos 50 50) |> expectAlmost (CanvasProps (canvasPos 0 0) 1))
+            --, fuzz (tuple3 ( float, positionViewport, canvasProps )) "round trip" (\( delta, pos, props ) -> props |> performZoom erdElem delta pos |> performZoom erdElem -delta pos |> Expect.equal (props |> mapPosition Position.roundCanvas))
             ]
         , describe "computeFit"
             [ test "no change" (\_ -> computeFit (inArea Position.zero (Size 50 50)) 0 (inArea Position.zero (Size 50 50)) 1 |> Expect.equal ( 1, Delta.zero ))
@@ -36,31 +39,21 @@ suite =
         ]
 
 
+erdElem : ErdProps
+erdElem =
+    { position = Position 0 0 |> Position.buildViewport, size = Size 0 0 }
+
+
 inArea : Position -> Size -> Area.InCanvas
 inArea pos size =
     Area.InCanvas (Position.buildInCanvas pos) size
 
 
+viewportPos : Float -> Float -> Position.Viewport
+viewportPos x y =
+    Position x y |> Position.buildViewport
+
+
 canvasPos : Float -> Float -> Position.Canvas
 canvasPos x y =
     Position x y |> Position.buildCanvas
-
-
-inCanvasPos : Float -> Float -> Position.InCanvas
-inCanvasPos x y =
-    Position x y |> Position.buildInCanvas
-
-
-expectAlmost : CanvasProps -> CanvasProps -> Expectation
-expectAlmost expected props =
-    let
-        expectedPos : Position
-        expectedPos =
-            expected.position |> Position.extractCanvas
-    in
-    props
-        |> Expect.all
-            [ .zoom >> Expect.within (AbsoluteOrRelative 0.0001 0.0001) expected.zoom
-            , .position >> Position.extractCanvas >> .left >> Expect.within (AbsoluteOrRelative 0.0001 0.0001) expectedPos.left
-            , .position >> Position.extractCanvas >> .top >> Expect.within (AbsoluteOrRelative 0.0001 0.0001) expectedPos.top
-            ]

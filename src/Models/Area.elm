@@ -1,4 +1,4 @@
-module Models.Area exposing (Canvas, InCanvas, InCanvasLike, Viewport, adaptCanvas, centerInCanvas, centerViewport, divInCanvas, fromInCanvas, mergeInCanvas, overlapInCanvas, zeroInCanvas)
+module Models.Area exposing (Canvas, InCanvas, InCanvasLike, Viewport, ViewportLike, canvasToInCanvas, centerInCanvas, centerViewport, divInCanvas, fromInCanvas, mergeInCanvas, overlapInCanvas, toStringRoundInCanvas, toStringRoundViewport, zeroInCanvas)
 
 import Libs.Delta as Delta
 import Libs.Models.Area as Area exposing (Area)
@@ -17,6 +17,10 @@ type alias Canvas =
 
 type alias InCanvas =
     { position : Position.InCanvas, size : Size }
+
+
+type alias ViewportLike x =
+    { x | position : Position.Viewport, size : Size }
 
 
 type alias InCanvasLike x =
@@ -48,9 +52,9 @@ divInCanvas factor area =
     InCanvas (area.position |> Position.divInCanvas factor) (area.size |> Size.div factor)
 
 
-adaptCanvas : Position.Canvas -> ZoomLevel -> Canvas -> InCanvas
-adaptCanvas canvasPos canvasZoom { position, size } =
-    InCanvas (position |> Position.adaptCanvas canvasPos) size |> divInCanvas canvasZoom
+canvasToInCanvas : Position.Canvas -> ZoomLevel -> Canvas -> InCanvas
+canvasToInCanvas canvasPos canvasZoom { position, size } =
+    InCanvas (position |> Position.canvasToInCanvas canvasPos) size |> divInCanvas canvasZoom
 
 
 mergeInCanvas : List (InCanvasLike a) -> Maybe InCanvas
@@ -66,3 +70,13 @@ overlapInCanvas area1 area2 =
     Area.overlap
         (Area (Position.extractInCanvas area1.position) area1.size)
         (Area (Position.extractInCanvas area2.position) area2.size)
+
+
+toStringRoundViewport : ViewportLike a -> String
+toStringRoundViewport area =
+    Area.toStringRound (Area (Position.extractViewport area.position) area.size)
+
+
+toStringRoundInCanvas : InCanvasLike a -> String
+toStringRoundInCanvas area =
+    Area.toStringRound (Area (Position.extractInCanvas area.position) area.size)

@@ -1,4 +1,4 @@
-module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, sub, toString, toStringRound, toTuple, zero)
+module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, round, sub, toString, toStringRound, toTuple, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -44,14 +44,19 @@ ratio a b =
     Size (b.width / a.width) (b.height / a.height)
 
 
+round : Size -> Size
+round delta =
+    Size (delta.width |> Basics.round |> Basics.toFloat) (delta.height |> Basics.round |> Basics.toFloat)
+
+
 toString : Size -> String
 toString size =
-    String.fromFloat size.width ++ " x " ++ String.fromFloat size.height
+    String.fromFloat size.width ++ "x" ++ String.fromFloat size.height
 
 
 toStringRound : Size -> String
 toStringRound size =
-    String.fromInt (round size.width) ++ " x " ++ String.fromInt (round size.height)
+    size |> round |> toString
 
 
 encode : Size -> Value

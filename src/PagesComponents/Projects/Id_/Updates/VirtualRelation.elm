@@ -48,4 +48,4 @@ computeInitialPosition model src =
 
 adaptPosition : Model x -> Erd -> Position.InCanvas -> Position.Viewport
 adaptPosition model erd pos =
-    erd |> Erd.currentLayout |> .canvas |> (\canvas -> pos |> Position.adaptViewport model.erdElem.position canvas.position canvas.zoom)
+    erd |> Erd.currentLayout |> (\l -> pos |> Position.inCanvasToViewport model.erdElem.position l.canvas.position l.canvas.zoom)

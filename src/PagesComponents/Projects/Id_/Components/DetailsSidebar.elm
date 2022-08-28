@@ -26,7 +26,7 @@ import Services.Lenses exposing (setSearch, setView)
 
 
 type alias Model =
-    { id : HtmlId, search : String, view : View, openedCollapse : HtmlId }
+    { id : HtmlId, view : View, openedCollapse : HtmlId, search : String }
 
 
 type View
@@ -69,7 +69,7 @@ type Msg
 
 init : View -> Model
 init v =
-    { id = Conf.ids.detailsSidebarDialog, search = "", view = v, openedCollapse = "" }
+    { id = Conf.ids.detailsSidebarDialog, view = v, openedCollapse = "", search = "" }
 
 
 

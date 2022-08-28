@@ -1,4 +1,4 @@
-module Libs.Delta exposing (Delta, adjust, decode, decodeEvent, div, encode, fromTuple, mult, negate, zero)
+module Libs.Delta exposing (Delta, adjust, decode, decodeEvent, div, encode, fromTuple, mult, negate, round, toString, toStringRound, zero)
 
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
@@ -35,9 +35,24 @@ div factor pos =
     Delta (pos.dx / factor) (pos.dy / factor)
 
 
+round : Delta -> Delta
+round delta =
+    Delta (delta.dx |> Basics.round |> Basics.toFloat) (delta.dy |> Basics.round |> Basics.toFloat)
+
+
 adjust : ZoomLevel -> Delta -> Delta
 adjust zoom delta =
     Delta (delta.dx * zoom) (delta.dy * zoom)
+
+
+toString : Delta -> String
+toString delta =
+    "Δ{" ++ String.fromFloat delta.dx ++ "," ++ String.fromFloat delta.dy ++ "}"
+
+
+toStringRound : Delta -> String
+toStringRound delta =
+    delta |> round |> toString
 
 
 encode : Delta -> Value

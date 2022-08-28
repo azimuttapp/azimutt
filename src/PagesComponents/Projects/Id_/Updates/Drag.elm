@@ -87,5 +87,5 @@ buildDelta drag zoom =
 buildSelectionArea : ErdProps -> CanvasProps -> DragState -> Area.InCanvas
 buildSelectionArea erdElem canvas dragState =
     Area.fromInCanvas
-        (dragState.init |> Position.adaptInCanvas erdElem.position canvas.position canvas.zoom)
-        (dragState.last |> Position.adaptInCanvas erdElem.position canvas.position canvas.zoom)
+        (dragState.init |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom)
+        (dragState.last |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom)

@@ -1,4 +1,4 @@
-module Libs.Models.Area exposing (Area, AreaLike, inside, merge, normalize, overlap, zero)
+module Libs.Models.Area exposing (Area, AreaLike, inside, merge, normalize, overlap, toStringRound, zero)
 
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
@@ -66,3 +66,8 @@ overlap area1 area2 =
             -- area2 is above of area1
             || (area2.position.top + area2.size.height <= area1.position.top)
         )
+
+
+toStringRound : AreaLike a -> String
+toStringRound { position, size } =
+    Position.toStringRound position ++ " / " ++ Size.toStringRound size

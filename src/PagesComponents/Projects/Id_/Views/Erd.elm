@@ -28,7 +28,7 @@ import Libs.Tuple as Tuple
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
-import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
@@ -113,7 +113,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
                                         |> Maybe.map
                                             (\ref ->
                                                 ( ( Relation.buildColumnInfo src.column (tableProps |> List.findBy .id src.table), ref )
-                                                , vr.mouse |> CanvasProps.adapt erdElem canvas
+                                                , vr.mouse |> Erd.viewportToInCanvas erdElem canvas
                                                 )
                                             )
                                 )

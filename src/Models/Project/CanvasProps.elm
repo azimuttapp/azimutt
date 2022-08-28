@@ -1,4 +1,4 @@
-module Models.Project.CanvasProps exposing (CanvasProps, adapt, decode, empty, encode, viewport)
+module Models.Project.CanvasProps exposing (CanvasProps, decode, empty, encode, viewport)
 
 import Json.Decode as Decode
 import Json.Encode exposing (Value)
@@ -20,15 +20,10 @@ empty =
     { position = Position.zeroCanvas, zoom = 1 }
 
 
-adapt : ErdProps -> CanvasProps -> Position.Viewport -> Position.InCanvas
-adapt erdElem canvas pos =
-    pos |> Position.adaptInCanvas erdElem.position canvas.position canvas.zoom
-
-
 viewport : ErdProps -> CanvasProps -> Area.InCanvas
 viewport erdElem canvas =
     -- compute the canvas viewport (the visible area of the canvas)
-    Area.Canvas Position.zeroCanvas erdElem.size |> Area.adaptCanvas canvas.position canvas.zoom
+    Area.Canvas Position.zeroCanvas erdElem.size |> Area.canvasToInCanvas canvas.position canvas.zoom
 
 
 encode : CanvasProps -> Value
