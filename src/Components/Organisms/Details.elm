@@ -11,13 +11,14 @@ import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions exposing (logAction)
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import Html exposing (Html, a, aside, br, button, dd, div, dl, dt, form, h2, h3, img, input, label, li, nav, ol, p, pre, span, text, ul)
-import Html.Attributes exposing (action, alt, class, disabled, for, href, id, name, placeholder, src, type_)
-import Html.Events exposing (onClick)
+import Html.Attributes exposing (action, alt, class, disabled, for, href, id, name, placeholder, src, type_, value)
+import Html.Events exposing (onClick, onInput)
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaHidden, ariaLabel, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Libs.Tailwind exposing (TwClass)
 import Libs.Time as Time
@@ -35,46 +36,66 @@ import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnPro
 import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
+import Simple.Fuzzy
 
 
 type alias Heading item props =
     { item : item, prev : Maybe item, next : Maybe item, shown : Maybe props }
 
 
-viewList : (TableId -> msg) -> SchemaName -> List ErdTable -> Html msg
-viewList goToTable defaultSchema tables =
-    nav [ class "flex-1 min-h-0 overflow-y-auto", ariaLabel "Table list" ]
-        (tables
-            |> List.groupBy (\t -> t.name |> String.toUpper |> String.left 1)
-            |> Dict.toList
-            |> List.sortBy Tuple.first
-            |> List.map
-                (\( key, groupedTables ) ->
-                    div [ class "relative" ]
-                        [ div [ class "border-t border-b border-gray-200 bg-gray-50 px-6 py-1 text-sm font-medium text-gray-500" ]
-                            [ h3 [] [ text key ]
-                            ]
-                        , ul [ role "list", class "relative z-0 divide-y divide-gray-200" ]
-                            (groupedTables
-                                |> List.sortBy .name
-                                |> List.map
-                                    (\t ->
-                                        li []
-                                            [ div [ class "relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
-                                                [ div [ class "flex-1 min-w-0" ]
-                                                    [ button [ type_ "button", onClick (t.id |> goToTable), class "focus:outline-none" ]
-                                                        [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
-                                                        , p [ class "text-sm font-medium text-gray-900" ] [ text (TableId.show defaultSchema t.id) ]
-                                                        , p [ class "text-sm text-gray-500 truncate" ] [ text (t.columns |> String.pluralizeD "column") ]
+viewList : (TableId -> msg) -> (String -> msg) -> HtmlId -> SchemaName -> List ErdTable -> String -> Html msg
+viewList goToTable updateSearch htmlId defaultSchema tables search =
+    let
+        searchId : HtmlId
+        searchId =
+            htmlId ++ "-search"
+    in
+    div []
+        [ div [ class "px-6" ]
+            [ form []
+                [ div [ class "flex-1 min-w-0" ]
+                    [ label [ for searchId, class "sr-only" ] [ text "Search" ]
+                    , div [ class "relative rounded-md shadow-sm" ]
+                        [ div [ class "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" ] [ Icon.solid Icon.Search "text-gray-400" ]
+                        , input [ type_ "search", name searchId, id searchId, value search, onInput updateSearch, placeholder "Search", class "block w-full pl-10 sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500" ] []
+                        ]
+                    ]
+                ]
+            ]
+        , nav [ class "mt-3 flex-1 min-h-0 overflow-y-auto", ariaLabel "Table list" ]
+            (tables
+                |> List.filter (\t -> t.id |> TableId.show defaultSchema |> Simple.Fuzzy.match search)
+                |> List.groupBy (\t -> t.name |> String.toUpper |> String.left 1)
+                |> Dict.toList
+                |> List.sortBy Tuple.first
+                |> List.map
+                    (\( key, groupedTables ) ->
+                        div [ class "relative" ]
+                            [ div [ class "border-t border-b border-gray-200 bg-gray-50 px-6 py-1 text-sm font-medium text-gray-500" ]
+                                [ h3 [] [ text key ]
+                                ]
+                            , ul [ role "list", class "relative z-0 divide-y divide-gray-200" ]
+                                (groupedTables
+                                    |> List.sortBy .name
+                                    |> List.map
+                                        (\t ->
+                                            li []
+                                                [ div [ class "relative px-6 py-5 flex items-center space-x-3 hover:bg-gray-50 focus-within:ring-2 focus-within:ring-inset focus-within:ring-primary-500" ]
+                                                    [ div [ class "flex-1 min-w-0" ]
+                                                        [ button [ type_ "button", onClick (t.id |> goToTable), class "focus:outline-none" ]
+                                                            [ span [ class "absolute inset-0", ariaHidden True ] [] -- Extend touch target to entire panel
+                                                            , p [ class "text-sm font-medium text-gray-900" ] [ text (TableId.show defaultSchema t.id) ]
+                                                            , p [ class "text-sm text-gray-500 truncate" ] [ text (t.columns |> String.pluralizeD "column") ]
+                                                            ]
                                                         ]
                                                     ]
                                                 ]
-                                            ]
-                                    )
-                            )
-                        ]
-                )
-        )
+                                        )
+                                )
+                            ]
+                    )
+            )
+        ]
 
 
 viewSchema :
@@ -566,6 +587,7 @@ type alias SharedDocState x =
 type alias DocState =
     { openedCollapse : String
     , defaultSchema : SchemaName
+    , search : String
     , currentSchema : Maybe ( Heading SchemaName Never, List ErdTable )
     , currentTable : Maybe (Heading ErdTable ErdTableLayout)
     , currentColumn : Maybe (Heading ErdColumn ErdColumnProps)
@@ -576,6 +598,7 @@ initDocState : DocState
 initDocState =
     { openedCollapse = ""
     , defaultSchema = "public"
+    , search = ""
     , currentSchema = Nothing
     , currentTable = Nothing
     , currentColumn = Nothing
@@ -591,8 +614,11 @@ doc =
                 (\s ->
                     viewList
                         (\tableId -> s |> selectTable tableId |> setState)
+                        (\search -> { s | search = search } |> setState)
+                        "html-id"
                         s.defaultSchema
                         (sampleErd.tables |> Dict.values)
+                        s.search
                 )
             , component "viewSchema"
                 (\s ->

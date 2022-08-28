@@ -197,7 +197,7 @@ viewHeader model =
             [ Attributes.when model.conf.select (onPointerUp model.platform model.actions.headerClick)
             , Attributes.when model.conf.layout (onDoubleClick model.actions.headerDblClick)
             , Attributes.when model.conf.layout (onContextMenu model.platform model.actions.headerRightClick)
-            , class "flex-grow text-center"
+            , class "flex-grow text-center whitespace-nowrap"
             ]
             ([ if model.isView then
                 span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"

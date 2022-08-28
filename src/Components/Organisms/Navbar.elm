@@ -106,7 +106,7 @@ adminSearch search =
             [ label [ for search.id, css [ "sr-only" ] ] [ text "Search" ]
             , div [ css [ "relative text-gray-400", focusWithin [ "]text-gray-600" ] ] ]
                 [ div [ css [ "pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center" ] ] [ Icon.solid Search "" ]
-                , input [ type_ "search", name "search", id search.id, placeholder "Search", css [ "block w-full bg-white py-2 pl-10 pr-3 border border-transparent rounded-md leading-5 text-gray-900 placeholder-gray-500", focus_ring_offset_600 Tw.primary, sm [ "text-sm" ] ] ] []
+                , input [ type_ "search", name search.id, id search.id, placeholder "Search", css [ "block w-full bg-white py-2 pl-10 pr-3 border border-transparent rounded-md leading-5 text-gray-900 placeholder-gray-500", focus_ring_offset_600 Tw.primary, sm [ "text-sm" ] ] ] []
                 ]
             ]
         ]

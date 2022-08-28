@@ -22,11 +22,11 @@ import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
-import Services.Lenses exposing (setView)
+import Services.Lenses exposing (setSearch, setView)
 
 
 type alias Model =
-    { id : HtmlId, view : View, openedCollapse : HtmlId }
+    { id : HtmlId, search : String, view : View, openedCollapse : HtmlId }
 
 
 type View
@@ -55,6 +55,7 @@ type alias Heading item props =
 type Msg
     = Close
     | Toggle
+    | SearchUpdate String
     | ShowList
     | ShowSchema SchemaName
     | ShowTable TableId
@@ -68,7 +69,7 @@ type Msg
 
 init : View -> Model
 init v =
-    { id = Conf.ids.detailsSidebarDialog, view = v, openedCollapse = "" }
+    { id = Conf.ids.detailsSidebarDialog, search = "", view = v, openedCollapse = "" }
 
 
 
@@ -83,6 +84,9 @@ update erd msg model =
 
         Toggle ->
             ( model |> Maybe.mapOrElse (\_ -> Nothing) (listView |> init |> Just), Cmd.none )
+
+        SearchUpdate search ->
+            ( model |> Maybe.map (setSearch search), Cmd.none )
 
         ShowList ->
             ( model |> setViewM listView, Cmd.none )
@@ -172,7 +176,7 @@ view wrap showTable hideTable showColumn hideColumn loadLayout erd model =
             [ div [ class "absolute inset-0" ]
                 [ case model.view of
                     ListView ->
-                        viewTableList wrap erd (erd.tables |> Dict.values)
+                        viewTableList wrap (model.id ++ "-list") erd (erd.tables |> Dict.values) model.search
 
                     SchemaView v ->
                         viewSchema wrap erd v
@@ -187,9 +191,9 @@ view wrap showTable hideTable showColumn hideColumn loadLayout erd model =
         ]
 
 
-viewTableList : (Msg -> msg) -> Erd -> List ErdTable -> Html msg
-viewTableList wrap erd tables =
-    Details.viewList (ShowTable >> wrap) erd.settings.defaultSchema tables
+viewTableList : (Msg -> msg) -> HtmlId -> Erd -> List ErdTable -> String -> Html msg
+viewTableList wrap htmlId erd tables search =
+    Details.viewList (ShowTable >> wrap) (SearchUpdate >> wrap) htmlId erd.settings.defaultSchema tables search
 
 
 viewSchema : (Msg -> msg) -> Erd -> SchemaData -> Html msg
