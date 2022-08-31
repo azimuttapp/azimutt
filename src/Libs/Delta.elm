@@ -1,4 +1,4 @@
-module Libs.Delta exposing (Delta, adjust, decode, decodeEvent, div, encode, fromTuple, mult, negate, round, toString, toStringRound, zero)
+module Libs.Delta exposing (Delta, adjust, decode, decodeEvent, div, encode, fromTuple, max, mult, multD, negate, round, toString, toStringRound, zero)
 
 import Json.Decode as Decode exposing (Value)
 import Json.Encode as Encode
@@ -26,13 +26,23 @@ negate delta =
 
 
 mult : Float -> Delta -> Delta
-mult factor pos =
-    Delta (pos.dx * factor) (pos.dy * factor)
+mult factor delta =
+    Delta (delta.dx * factor) (delta.dy * factor)
+
+
+multD : Delta -> Delta -> Delta
+multD factor delta =
+    Delta (delta.dx * factor.dx) (delta.dy * factor.dy)
 
 
 div : Float -> Delta -> Delta
-div factor pos =
-    Delta (pos.dx / factor) (pos.dy / factor)
+div factor delta =
+    Delta (delta.dx / factor) (delta.dy / factor)
+
+
+max : Float -> Delta -> Delta
+max value delta =
+    Delta (Basics.max value delta.dx) (Basics.max value delta.dy)
 
 
 round : Delta -> Delta

@@ -27,7 +27,7 @@ handleDrag now drag isEnd model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd then
-            model |> mapErdM (Erd.mapCurrentLayout now (mapCanvas (moveCanvas drag)))
+            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag)))
 
         else
             model
@@ -42,11 +42,11 @@ handleDrag now drag isEnd model =
                 |> (\area ->
                         model
                             |> setSelectionBox (Just area)
-                            |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapInCanvas area { position = p.position |> Position.offGrid, size = p.size }))))))
+                            |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapCanvas area { position = p.position |> Position.offGrid, size = p.size }))))))
                    )
 
     else if isEnd then
-        model |> mapErdM (Erd.mapCurrentLayout now (mapTables (moveTables drag canvas.zoom)))
+        model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom)))
 
     else
         model
@@ -54,7 +54,7 @@ handleDrag now drag isEnd model =
 
 moveCanvas : DragState -> CanvasProps -> CanvasProps
 moveCanvas drag canvas =
-    canvas |> mapPosition (Position.moveCanvas (buildDelta drag 1))
+    canvas |> mapPosition (Position.moveDiagram (buildDelta drag 1))
 
 
 moveTables : DragState -> ZoomLevel -> List ErdTableLayout -> List ErdTableLayout
@@ -72,7 +72,7 @@ moveTables drag zoom tables =
         |> List.map
             (\t ->
                 if Just t.id == tableId || (dragSelected && t.props.selected) then
-                    t |> mapProps (mapPosition (Position.moveGrid (buildDelta drag zoom)))
+                    t |> mapProps (mapPosition (Position.moveCanvasGrid (buildDelta drag zoom)))
 
                 else
                     t
@@ -84,8 +84,8 @@ buildDelta drag zoom =
     drag.last |> Position.diffViewport drag.init |> Delta.div zoom
 
 
-buildSelectionArea : ErdProps -> CanvasProps -> DragState -> Area.InCanvas
+buildSelectionArea : ErdProps -> CanvasProps -> DragState -> Area.Canvas
 buildSelectionArea erdElem canvas dragState =
-    Area.fromInCanvas
-        (dragState.init |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom)
-        (dragState.last |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom)
+    Area.fromCanvas
+        (dragState.init |> Position.viewportToCanvas erdElem.position canvas.position canvas.zoom)
+        (dragState.last |> Position.viewportToCanvas erdElem.position canvas.position canvas.zoom)

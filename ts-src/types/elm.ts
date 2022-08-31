@@ -179,7 +179,7 @@ export interface ElementSize {
     id: HtmlId,
     position: PositionViewport,
     size: Size,
-    seeds: Position
+    seeds: Delta
 }
 
 export type HotkeyId = string

@@ -5,7 +5,6 @@ import Dict exposing (Dict)
 import Json.Decode as Decode
 import Libs.Dict as Dict
 import Libs.Models.Position exposing (Position)
-import Libs.Models.Size as Size
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw
 import Models.ColumnOrder exposing (ColumnOrder(..))
@@ -34,6 +33,7 @@ import Models.Project.TableId exposing (TableId)
 import Models.Project.TableProps as TableProps exposing (TableProps)
 import Models.Project.Unique as Unique exposing (Unique)
 import Models.RelationStyle exposing (RelationStyle(..))
+import Models.Size as Size
 import Test exposing (Test, describe)
 import TestHelpers.JsonTest exposing (jsonFuzz, jsonTest)
 import TestHelpers.ProjectFuzzers as ProjectFuzzers
@@ -122,8 +122,8 @@ project1 =
     , usedLayout = "initial layout"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
-            , ( "empty", Layout (CanvasProps Position.zeroCanvas 0.5) [] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Browser
@@ -230,9 +230,9 @@ project2 =
     , usedLayout = "users"
     , layouts =
         Dict.fromList
-            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zero Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
-            , ( "empty", Layout (CanvasProps Position.zeroCanvas 0.5) [] [] (time 1202) (time 1203) )
-            , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zero Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
+            [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [ TableProps ( "public", "users" ) (gridPos 30 40) Size.zeroCanvas Tw.red [ "id" ] True False False ] [] (time 1200) (time 1201) )
+            , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] [] (time 1202) (time 1203) )
+            , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Browser
@@ -255,14 +255,14 @@ project2Json =
         ++ """"settings":{"findPath":{"maxPathLength":4,"ignoredTables":"users","ignoredColumns":"created_by"},"defaultSchema":"public"},"createdAt":1000,"updatedAt":1001,"version":2}"""
 
 
-canvasPos : Float -> Float -> Position.Canvas
+canvasPos : Float -> Float -> Position.Diagram
 canvasPos x y =
-    Position x y |> Position.buildCanvas
+    Position x y |> Position.buildDiagram
 
 
-gridPos : Float -> Float -> Position.Grid
+gridPos : Float -> Float -> Position.CanvasGrid
 gridPos x y =
-    Position x y |> Position.buildGrid
+    Position x y |> Position.buildCanvasGrid
 
 
 time : Int -> Time.Posix

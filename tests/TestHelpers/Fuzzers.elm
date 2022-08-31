@@ -26,19 +26,19 @@ positionViewport =
     position |> Fuzz.map Position.buildViewport
 
 
-positionCanvas : Fuzzer Position.Canvas
+positionCanvas : Fuzzer Position.Diagram
 positionCanvas =
+    position |> Fuzz.map Position.buildDiagram
+
+
+positionInCanvas : Fuzzer Position.Canvas
+positionInCanvas =
     position |> Fuzz.map Position.buildCanvas
 
 
-positionInCanvas : Fuzzer Position.InCanvas
-positionInCanvas =
-    position |> Fuzz.map Position.buildInCanvas
-
-
-positionGrid : Fuzzer Position.Grid
+positionGrid : Fuzzer Position.CanvasGrid
 positionGrid =
-    position |> Fuzz.map Position.buildGrid
+    position |> Fuzz.map Position.buildCanvasGrid
 
 
 position : Fuzzer Position

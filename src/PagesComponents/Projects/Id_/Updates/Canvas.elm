@@ -4,13 +4,13 @@ import Conf
 import Libs.Bool as B
 import Libs.Delta as Delta exposing (Delta)
 import Libs.Html.Events exposing (WheelEvent)
-import Libs.Models.Size as Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
@@ -26,7 +26,7 @@ handleWheel event erdElem canvas =
         canvas |> performZoom erdElem (-event.delta.dy * Conf.canvas.zoom.speed) event.clientPos
 
     else
-        { canvas | position = canvas.position |> Position.moveCanvas (event.delta |> Delta.negate |> Delta.adjust canvas.zoom) }
+        { canvas | position = canvas.position |> Position.moveDiagram (event.delta |> Delta.negate |> Delta.adjust canvas.zoom) }
 
 
 zoomCanvas : Float -> ErdProps -> CanvasProps -> CanvasProps
@@ -55,7 +55,7 @@ fitCanvas now erdElem erd =
     in
     tables
         |> List.map (\t -> { position = t.props.position |> Position.offGrid, size = t.props.size })
-        |> Area.mergeInCanvas
+        |> Area.mergeCanvas
         |> Maybe.map
             (\tablesArea ->
                 let
@@ -63,9 +63,9 @@ fitCanvas now erdElem erd =
                         computeFit (layout.canvas |> CanvasProps.viewport erdElem) padding tablesArea layout.canvas.zoom
                 in
                 ( erd
-                    |> Erd.mapCurrentLayout now
-                        (mapCanvas (setPosition Position.zeroCanvas >> setZoom newZoom)
-                            >> mapTables (List.map (mapProps (mapPosition (Position.moveGrid centerOffset))))
+                    |> Erd.mapCurrentLayoutWithTime now
+                        (mapCanvas (setPosition Position.zeroDiagram >> setZoom newZoom)
+                            >> mapTables (List.map (mapProps (mapPosition (Position.moveCanvasGrid centerOffset))))
                         )
                 , Cmd.none
                 )
@@ -84,16 +84,16 @@ performZoom erdElem delta target canvas =
         targetDelta : Delta
         targetDelta =
             target
-                |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom
-                |> Position.inCanvasToViewport erdElem.position canvas.position newZoom
+                |> Position.viewportToCanvas erdElem.position canvas.position canvas.zoom
+                |> Position.canvasToViewport erdElem.position canvas.position newZoom
                 |> Position.diffViewport target
     in
-    { position = canvas.position |> Position.moveCanvas (targetDelta |> Delta.negate) |> Position.roundCanvas
+    { position = canvas.position |> Position.moveDiagram (targetDelta |> Delta.negate) |> Position.roundDiagram
     , zoom = newZoom
     }
 
 
-computeFit : Area.InCanvas -> Float -> Area.InCanvas -> ZoomLevel -> ( ZoomLevel, Delta )
+computeFit : Area.Canvas -> Float -> Area.Canvas -> ZoomLevel -> ( ZoomLevel, Delta )
 computeFit erdViewport padding content zoom =
     let
         newZoom : ZoomLevel
@@ -104,38 +104,38 @@ computeFit erdViewport padding content zoom =
         growFactor =
             newZoom / zoom
 
-        newViewport : Area.InCanvas
+        newViewport : Area.Canvas
         newViewport =
-            erdViewport |> Area.divInCanvas growFactor
+            erdViewport |> Area.divCanvas growFactor
 
-        newViewportCenter : Position.InCanvas
+        newViewportCenter : Position.Canvas
         newViewportCenter =
-            newViewport |> Area.centerInCanvas |> Position.subInCanvas newViewport.position
+            newViewport |> Area.centerCanvas |> Position.subCanvas newViewport.position
 
-        newContentCenter : Position.InCanvas
+        newContentCenter : Position.Canvas
         newContentCenter =
-            content |> Area.centerInCanvas
+            content |> Area.centerCanvas
 
         offset : Delta
         offset =
-            newViewportCenter |> Position.diffInCanvas newContentCenter
+            newViewportCenter |> Position.diffCanvas newContentCenter
     in
     ( newZoom, offset )
 
 
-computeZoom : Area.InCanvas -> Float -> Area.InCanvas -> Float -> ZoomLevel
+computeZoom : Area.Canvas -> Float -> Area.Canvas -> Float -> ZoomLevel
 computeZoom erdViewport padding contentArea zoom =
     let
-        viewportSize : Size
+        viewportSize : Size.Canvas
         viewportSize =
-            erdViewport.size |> Size.sub (2 * padding / zoom)
+            erdViewport.size |> Size.subCanvas (2 * padding / zoom)
 
-        grow : Size
+        grow : Delta
         grow =
-            viewportSize |> Size.ratio contentArea.size
+            viewportSize |> Size.ratioCanvas contentArea.size
 
         newZoom : ZoomLevel
         newZoom =
-            (zoom * min grow.width grow.height) |> clamp Conf.canvas.zoom.min 1
+            (zoom * min grow.dx grow.dy) |> clamp Conf.canvas.zoom.min 1
     in
     newZoom

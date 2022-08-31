@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToInCanvas)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToInCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -22,6 +22,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
@@ -88,8 +89,13 @@ currentLayout erd =
     erd.layouts |> Dict.getOrElse erd.currentLayout (ErdLayout.empty Time.zero)
 
 
-mapCurrentLayout : Time.Posix -> (ErdLayout -> ErdLayout) -> Erd -> Erd
-mapCurrentLayout now transform erd =
+mapCurrentLayout : (ErdLayout -> ErdLayout) -> Erd -> Erd
+mapCurrentLayout transform erd =
+    erd |> mapLayoutsD erd.currentLayout transform
+
+
+mapCurrentLayoutWithTime : Time.Posix -> (ErdLayout -> ErdLayout) -> Erd -> Erd
+mapCurrentLayoutWithTime now transform erd =
     erd |> mapLayoutsD erd.currentLayout (transform >> (\l -> { l | updatedAt = now }))
 
 
@@ -103,18 +109,24 @@ getColumn ref erd =
     erd.tables |> Dict.get ref.table |> Maybe.andThen (\t -> t.columns |> Dict.get ref.column)
 
 
-getColumnPos : ColumnRef -> Erd -> Maybe Position.InCanvas
+getColumnPos : ColumnRef -> Erd -> Maybe Position.Canvas
 getColumnPos ref erd =
     (currentLayout erd |> .tables)
         |> List.find (\t -> t.id == ref.table)
         |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.find (\( c, _ ) -> c.name == ref.column) |> Maybe.map (\( c, i ) -> ( t.props, c, i )))
         |> Maybe.map
             (\( t, _, index ) ->
-                if t.collapsed then
-                    t.position |> Position.offGrid |> Position.moveInCanvas { dx = t.size.width / 2, dy = Conf.ui.tableHeaderHeight * 0.5 }
+                (if t.collapsed then
+                    { dx = (Size.extractCanvas t.size).width / 2
+                    , dy = Conf.ui.tableHeaderHeight * 0.5
+                    }
 
-                else
-                    t.position |> Position.offGrid |> Position.moveInCanvas { dx = t.size.width / 2, dy = Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat))) }
+                 else
+                    { dx = (Size.extractCanvas t.size).width / 2
+                    , dy = Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
+                    }
+                )
+                    |> (\delta -> t.position |> Position.offGrid |> Position.moveCanvas delta)
             )
 
 
@@ -128,14 +140,14 @@ defaultSchemaM erd =
     erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.empty
 
 
-viewportToInCanvas : ErdProps -> CanvasProps -> Position.Viewport -> Position.InCanvas
+viewportToInCanvas : ErdProps -> CanvasProps -> Position.Viewport -> Position.Canvas
 viewportToInCanvas erdElem canvas pos =
-    pos |> Position.viewportToInCanvas erdElem.position canvas.position canvas.zoom
+    pos |> Position.viewportToCanvas erdElem.position canvas.position canvas.zoom
 
 
-viewportM : ErdProps -> Maybe Erd -> Area.InCanvas
+viewportM : ErdProps -> Maybe Erd -> Area.Canvas
 viewportM erdElem erd =
-    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroInCanvas
+    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroCanvas
 
 
 computeSources : ProjectSettings -> List Source -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List Relation) )

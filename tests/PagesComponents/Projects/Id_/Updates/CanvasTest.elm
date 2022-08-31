@@ -9,6 +9,7 @@ import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
 import Models.Position as Position
 import Models.Project.CanvasProps exposing (CanvasProps)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Updates.Canvas exposing (computeFit, performZoom)
 import Services.Lenses exposing (mapPosition)
 import Test exposing (Test, describe, fuzz, test)
@@ -23,7 +24,7 @@ suite =
             [ test "basic" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom erdElem 0.5 (viewportPos 50 50) |> Expect.equal (CanvasProps (canvasPos -25 -25) 1.5))
             , test "basic round trip" (\_ -> CanvasProps (canvasPos 0 0) 1 |> performZoom erdElem 0.5 (viewportPos 50 50) |> performZoom erdElem -0.5 (viewportPos 50 50) |> Expect.equal (CanvasProps (canvasPos 0 0) 1))
             , test "complex" (\_ -> CanvasProps (canvasPos 50 20) 0.5 |> performZoom erdElem 0.1 (viewportPos 200 300) |> Expect.equal (CanvasProps (canvasPos 20 -36) 0.6))
-            , fuzz (tuple ( positionViewport, canvasProps )) "no change" (\( pos, props ) -> props |> performZoom erdElem 0 pos |> Expect.equal (props |> mapPosition Position.roundCanvas))
+            , fuzz (tuple ( positionViewport, canvasProps )) "no change" (\( pos, props ) -> props |> performZoom erdElem 0 pos |> Expect.equal (props |> mapPosition Position.roundDiagram))
 
             --, fuzz (tuple3 ( float, positionViewport, canvasProps )) "round trip" (\( delta, pos, props ) -> props |> performZoom erdElem delta pos |> performZoom erdElem -delta pos |> Expect.equal (props |> mapPosition Position.roundCanvas))
             ]
@@ -41,12 +42,12 @@ suite =
 
 erdElem : ErdProps
 erdElem =
-    { position = Position 0 0 |> Position.buildViewport, size = Size 0 0 }
+    { position = Position 0 0 |> Position.buildViewport, size = Size 0 0 |> Size.buildViewport }
 
 
-inArea : Position -> Size -> Area.InCanvas
+inArea : Position -> Size -> Area.Canvas
 inArea pos size =
-    Area.InCanvas (Position.buildInCanvas pos) size
+    Area.Canvas (Position.buildCanvas pos) (Size.buildCanvas size)
 
 
 viewportPos : Float -> Float -> Position.Viewport
@@ -54,6 +55,6 @@ viewportPos x y =
     Position x y |> Position.buildViewport
 
 
-canvasPos : Float -> Float -> Position.Canvas
+canvasPos : Float -> Float -> Position.Diagram
 canvasPos x y =
-    Position x y |> Position.buildCanvas
+    Position x y |> Position.buildDiagram

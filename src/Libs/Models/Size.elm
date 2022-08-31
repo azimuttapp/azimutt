@@ -1,7 +1,8 @@
-module Libs.Models.Size exposing (Size, decode, div, encode, fromTuple, mult, ratio, round, sub, toString, toStringRound, toTuple, zero)
+module Libs.Models.Size exposing (Size, decode, diff, div, encode, fromTuple, mult, ratio, round, sub, toString, toStringRound, toTuple, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Delta exposing (Delta)
 import Libs.Json.Encode as Encode
 
 
@@ -20,8 +21,8 @@ fromTuple ( width, height ) =
 
 
 toTuple : Size -> ( Float, Float )
-toTuple pos =
-    ( pos.width, pos.height )
+toTuple size =
+    ( size.width, size.height )
 
 
 mult : Float -> Size -> Size
@@ -39,14 +40,19 @@ sub amount size =
     Size (size.width - amount) (size.height - amount)
 
 
-ratio : Size -> Size -> Size
-ratio a b =
-    Size (b.width / a.width) (b.height / a.height)
+diff : Size -> Size -> Delta
+diff b a =
+    Delta (a.width - b.width) (a.height - b.height)
+
+
+ratio : Size -> Size -> Delta
+ratio b a =
+    Delta (a.width / b.width) (a.height / b.height)
 
 
 round : Size -> Size
-round delta =
-    Size (delta.width |> Basics.round |> Basics.toFloat) (delta.height |> Basics.round |> Basics.toFloat)
+round size =
+    Size (size.width |> Basics.round |> Basics.toFloat) (size.height |> Basics.round |> Basics.toFloat)
 
 
 toString : Size -> String

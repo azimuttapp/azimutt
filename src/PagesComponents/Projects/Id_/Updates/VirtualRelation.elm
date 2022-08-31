@@ -46,6 +46,6 @@ computeInitialPosition model src =
     Maybe.map2 (\c erd -> erd |> Erd.getColumnPos c |> Maybe.map (adaptPosition model erd)) src model.erd |> Maybe.andThen identity
 
 
-adaptPosition : Model x -> Erd -> Position.InCanvas -> Position.Viewport
+adaptPosition : Model x -> Erd -> Position.Canvas -> Position.Viewport
 adaptPosition model erd pos =
-    erd |> Erd.currentLayout |> (\l -> pos |> Position.inCanvasToViewport model.erdElem.position l.canvas.position l.canvas.zoom)
+    erd |> Erd.currentLayout |> (\l -> pos |> Position.canvasToViewport model.erdElem.position l.canvas.position l.canvas.zoom)

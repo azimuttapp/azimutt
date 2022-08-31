@@ -6,7 +6,6 @@ import Fuzz exposing (Fuzzer)
 import Libs.Dict as Dict
 import Libs.Fuzz as Fuzz
 import Libs.List as List
-import Libs.Models.Size as Size
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps exposing (CanvasProps)
@@ -51,6 +50,7 @@ import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
 import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
+import Models.Size as Size
 import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionCanvas, positionGrid, posix, stringSmall, text, uuid, zoomLevel)
 
 
@@ -169,7 +169,7 @@ canvasProps =
 
 tableProps : Fuzzer TableProps
 tableProps =
-    Fuzz.map7 (\id p -> TableProps id p Size.zero) tableId positionGrid color (listSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map7 (\id p -> TableProps id p Size.zeroCanvas) tableId positionGrid color (listSmall columnName) Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 projectSettings : Fuzzer ProjectSettings

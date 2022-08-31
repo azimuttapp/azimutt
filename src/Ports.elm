@@ -13,8 +13,6 @@ import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position
-import Libs.Models.Size as Size
 import Libs.Tailwind as Color exposing (Color)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -23,6 +21,7 @@ import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
+import Models.Size as Size
 import Models.User as User exposing (User)
 import Models.UserId as UserId exposing (UserId)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -262,10 +261,10 @@ type JsMsg
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
-    | GotTableShow TableId (Maybe Position.Grid)
+    | GotTableShow TableId (Maybe Position.CanvasGrid)
     | GotTableHide TableId
     | GotTableToggleColumns TableId
-    | GotTablePosition TableId Position.Grid
+    | GotTablePosition TableId Position.CanvasGrid
     | GotTableMove TableId Delta
     | GotTableSelect TableId
     | GotTableColor TableId Color
@@ -403,8 +402,8 @@ jsDecoder =
                             (Decode.map4 SizeChange
                                 (Decode.field "id" Decode.string)
                                 (Decode.field "position" Position.decodeViewport)
-                                (Decode.field "size" Size.decode)
-                                (Decode.field "seeds" Position.decode)
+                                (Decode.field "size" Size.decodeViewport)
+                                (Decode.field "seeds" Delta.decode)
                                 |> Decode.list
                             )
                         )
@@ -450,7 +449,7 @@ jsDecoder =
                     Decode.map2 GotToast (Decode.field "level" Decode.string) (Decode.field "message" Decode.string)
 
                 "GotTableShow" ->
-                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decodeGrid)
+                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decodeCanvasGrid)
 
                 "GotTableHide" ->
                     Decode.map GotTableHide (Decode.field "id" TableId.decode)
@@ -459,7 +458,7 @@ jsDecoder =
                     Decode.map GotTableToggleColumns (Decode.field "id" TableId.decode)
 
                 "GotTablePosition" ->
-                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decodeGrid)
+                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decodeCanvasGrid)
 
                 "GotTableMove" ->
                     Decode.map2 GotTableMove (Decode.field "id" TableId.decode) (Decode.field "delta" Delta.decode)

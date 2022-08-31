@@ -8,7 +8,6 @@ import Libs.Dict as Dict
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size as Size
 import Libs.Models.Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel as ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
@@ -36,6 +35,7 @@ import Models.Project.Table exposing (Table)
 import Models.Project.TableId as TableId
 import Models.Project.TableProps exposing (TableProps)
 import Models.Project.Unique exposing (Unique)
+import Models.Size as Size
 import Time
 
 
@@ -290,8 +290,8 @@ upgrade project =
 upgradeTableProps : TablePropsV1 -> TableProps
 upgradeTableProps props =
     { id = props.id
-    , position = props.position |> Position.buildGrid
-    , size = Size.zero
+    , position = props.position |> Position.buildCanvasGrid
+    , size = Size.zeroCanvas
     , color = props.color
     , columns = props.columns
     , selected = props.selected
@@ -407,7 +407,7 @@ upgradeLayout layout =
 
 upgradeCanvasProps : CanvasPropsV1 -> CanvasProps
 upgradeCanvasProps c =
-    { position = c.position |> Position.buildCanvas
+    { position = c.position |> Position.buildDiagram
     , zoom = c.zoom
     }
 

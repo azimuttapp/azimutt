@@ -28,7 +28,7 @@ type Direction
     | None
 
 
-show : RelationStyle -> RelationConf -> ( Position.InCanvas, Direction ) -> ( Position.InCanvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+show : RelationStyle -> RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 show style conf src ref nullable color label index onHover =
     case style of
         RelationStyle.Bezier ->
@@ -41,33 +41,33 @@ show style conf src ref nullable color label index onHover =
             steps conf src ref nullable color label index onHover
 
 
-straight : RelationConf -> ( Position.InCanvas, Direction ) -> ( Position.InCanvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+straight : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 straight conf ( src, _ ) ( ref, _ ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 12 }
-        (\origin -> drawLine conf (src |> Position.subInCanvas origin) (ref |> Position.subInCanvas origin) onHover)
+        (\origin -> drawLine conf (src |> Position.subCanvas origin) (ref |> Position.subCanvas origin) onHover)
 
 
-bezier : RelationConf -> ( Position.InCanvas, Direction ) -> ( Position.InCanvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+bezier : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 bezier conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawCurve conf ( src |> Position.subInCanvas origin, srcDir ) ( ref |> Position.subInCanvas origin, refDir ) onHover)
+        (\origin -> drawCurve conf ( src |> Position.subCanvas origin, srcDir ) ( ref |> Position.subCanvas origin, refDir ) onHover)
 
 
-steps : RelationConf -> ( Position.InCanvas, Direction ) -> ( Position.InCanvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+steps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 steps conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawSteps conf ( src |> Position.subInCanvas origin, srcDir ) ( ref |> Position.subInCanvas origin, refDir ) onHover)
+        (\origin -> drawSteps conf ( src |> Position.subCanvas origin, srcDir ) ( ref |> Position.subCanvas origin, refDir ) onHover)
 
 
 type alias SvgParams =
-    { src : Position.InCanvas, ref : Position.InCanvas, nullable : Bool, color : Maybe Color, label : String, index : Int, padding : Float }
+    { src : Position.Canvas, ref : Position.Canvas, nullable : Bool, color : Maybe Color, label : String, index : Int, padding : Float }
 
 
-buildSvg : SvgParams -> (Position.InCanvas -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
+buildSvg : SvgParams -> (Position.Canvas -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
 buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
     let
         ( srcPos, refPos ) =
-            ( src |> Position.extractInCanvas, ref |> Position.extractInCanvas )
+            ( src |> Position.extractCanvas, ref |> Position.extractCanvas )
 
         origin : Position
         origin =
@@ -82,14 +82,14 @@ buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
         --, style ("transform: translate(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px); z-index: " ++ String.fromInt index ++ ";")
         --, style ("transform: translate3d(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px, 0); z-index: " ++ String.fromInt index ++ ";")
         ]
-        (text label :: svgContent (origin |> Position.buildInCanvas) nullable color)
+        (text label :: svgContent (origin |> Position.buildCanvas) nullable color)
 
 
-drawLine : RelationConf -> Position.InCanvas -> Position.InCanvas -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawLine : RelationConf -> Position.Canvas -> Position.Canvas -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
 drawLine conf pos1 pos2 onHover nullable color =
     let
         ( p1, p2 ) =
-            ( pos1 |> Position.extractInCanvas, pos2 |> Position.extractInCanvas )
+            ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
     in
     [ Svg.line
         ([ x1 (String.fromFloat p1.left)
@@ -105,11 +105,11 @@ drawLine conf pos1 pos2 onHover nullable color =
     ]
 
 
-drawCurve : RelationConf -> ( Position.InCanvas, Direction ) -> ( Position.InCanvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawCurve : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
 drawCurve conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
     let
         ( p1, p2 ) =
-            ( pos1 |> Position.extractInCanvas, pos2 |> Position.extractInCanvas )
+            ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
 
         strength : Float
         strength =
@@ -140,11 +140,11 @@ drawCurve conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
     ]
 
 
-drawSteps : RelationConf -> ( Position.InCanvas, Direction ) -> ( Position.InCanvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawSteps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
 drawSteps conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
     let
         ( p1, p2 ) =
-            ( pos1 |> Position.extractInCanvas, pos2 |> Position.extractInCanvas )
+            ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
 
         break1 : Position
         break1 =
@@ -261,19 +261,19 @@ doc =
             [ ( "straight", samples straight )
             , ( "bezier", samples bezier )
             , ( "steps", samples steps )
-            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroInCanvas, Right ) ( Position 50 50 |> Position.buildInCanvas, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
-            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroInCanvas, Right ) ( Position 50 50 |> Position.buildInCanvas, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
+            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
+            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
             ]
 
 
-samples : (RelationConf -> ( Position.InCanvas, Direction ) -> ( Position.InCanvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
+samples : (RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
 samples displayRelation =
     let
         ( p0, p55 ) =
-            ( Position 0 0 |> Position.buildInCanvas, Position 50 50 |> Position.buildInCanvas )
+            ( Position 0 0 |> Position.buildCanvas, Position 50 50 |> Position.buildCanvas )
 
         ( p05, p50 ) =
-            ( Position 0 50 |> Position.buildInCanvas, Position 50 0 |> Position.buildInCanvas )
+            ( Position 0 50 |> Position.buildCanvas, Position 50 0 |> Position.buildCanvas )
 
         dirs : List ( Direction, Direction )
         dirs =

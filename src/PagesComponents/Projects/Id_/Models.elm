@@ -59,7 +59,7 @@ type alias Model =
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
-    , selectionBox : Maybe Area.InCanvas
+    , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe LayoutDialog
     , editNotes : Maybe NotesDialog
     , amlSidebar : Maybe AmlSidebar
@@ -162,7 +162,7 @@ type Msg
     | SelectTable TableId Bool
     | SelectAllTables
     | TableMove TableId Delta
-    | TablePosition TableId Position.Grid
+    | TablePosition TableId Position.CanvasGrid
     | TableOrder TableId Int
     | TableColor TableId Color
     | MoveColumn ColumnRef Int

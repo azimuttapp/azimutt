@@ -20,7 +20,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
-import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (focus)
@@ -32,6 +31,7 @@ import Models.Project.CanvasProps exposing (CanvasProps)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), VirtualRelation)
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.DragState exposing (DragState)
@@ -71,7 +71,7 @@ stringToArgs args =
             ( ( Platform.PC, CursorMode.Select ), ( "", "" ) )
 
 
-viewErd : ErdConf -> ErdProps -> Maybe TableId -> Erd -> Maybe Area.InCanvas -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
+viewErd : ErdConf -> ErdProps -> Maybe TableId -> Erd -> Maybe Area.Canvas -> Maybe VirtualRelation -> ErdArgs -> Maybe DragState -> Html Msg
 viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
     let
         ( ( platform, cursorMode ), ( openedDropdown, openedPopover ) ) =
@@ -91,7 +91,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
 
         displayedTables : List ErdTableLayout
         displayedTables =
-            tableProps |> List.filter (\t -> t.props.size /= Size.zero)
+            tableProps |> List.filter (\t -> t.props.size /= Size.zeroCanvas)
 
         displayedIds : Set.Set TableId
         displayedIds =
@@ -101,7 +101,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         displayedRelations =
             erd.relations |> List.filter (\r -> [ r.src, r.ref ] |> List.any (\c -> displayedIds |> Set.member c.table))
 
-        virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, column : ErdColumnProps, index : Int }, ErdColumn ), Position.InCanvas )
+        virtualRelationInfo : Maybe ( ( Maybe { table : ErdTableProps, column : ErdColumnProps, index : Int }, ErdColumn ), Position.Canvas )
         virtualRelationInfo =
             virtualRelation
                 |> Maybe.andThen
@@ -131,7 +131,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         , Attributes.when (conf.move || conf.select) (stopPointerDown platform (handleErdPointerDown conf cursorMode))
         , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (ErdContextMenu.view platform)))
         ]
-        [ div [ class "az-canvas origin-top-left", Position.styleCanvas canvas.position canvas.zoom ]
+        [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
             [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables tableProps erd.notes
             , Lazy.lazy6 viewRelations conf erd.settings.defaultSchema dragging erd.settings.relationStyle displayedTables displayedRelations
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
@@ -229,15 +229,9 @@ viewRelations conf defaultSchema dragging style tableLayouts relations =
         )
 
 
-viewSelectionBox : Area.InCanvas -> Html Msg
+viewSelectionBox : Area.Canvas -> Html Msg
 viewSelectionBox area =
-    div
-        [ css [ "az-selection-area absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ]
-        , Position.stylesTransformInCanvas area.position
-        , style "width" (String.fromFloat area.size.width ++ "px")
-        , style "height" (String.fromFloat area.size.height ++ "px")
-        ]
-        []
+    div ([ css [ "az-selection-area absolute border-2 bg-opacity-25 z-max border-teal-400 bg-teal-400" ] ] ++ Area.styleTransformCanvas area) []
 
 
 viewEmptyState : SchemaName -> Dict TableId ErdTable -> Html Msg

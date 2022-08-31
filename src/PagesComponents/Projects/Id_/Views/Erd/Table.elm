@@ -13,12 +13,12 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
-import Libs.Models.Size as Size
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Position as Position
 import Models.Project.ColumnType as ColumnType
 import Models.Project.CustomTypeValue as CustomTypeValue
 import Models.Project.SchemaName exposing (SchemaName)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Models exposing (Msg(..), NotesMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
@@ -79,10 +79,10 @@ viewTable conf zoom args notes layout table =
             TableContextMenu.view platform conf index table layout notes.table
     in
     div
-        ([ css [ "select-none absolute", B.cond (layout.props.size == Size.zero) "invisible" "" ]
+        ([ css [ "select-none absolute", B.cond (layout.props.size == Size.zeroCanvas) "invisible" "" ]
          , style "z-index" (String.fromInt zIndex)
          ]
-            ++ Position.stylesGrid layout.props.position
+            ++ Position.stylesCanvasGrid layout.props.position
             ++ drag
         )
         [ Table.table

@@ -5,12 +5,13 @@ import Conf
 import Libs.Bool as B
 import Libs.List as List
 import Libs.Models.Position exposing (Position)
-import Libs.Models.Size exposing (Size)
 import Libs.Tailwind exposing (Color)
+import Models.Area as Area
 import Models.Position as Position
 import Models.Project.ColumnName exposing (ColumnName)
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.RelationStyle exposing (RelationStyle)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Models exposing (Msg(..))
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
@@ -63,21 +64,21 @@ viewRelation defaultSchema style conf dragging srcTable refTable relation =
                 viewEmptyRelation
 
             else
-                (s.table.position |> Position.offGrid |> Position.moveInCanvas { dx = s.table.size.width, dy = deltaTop s.index s.table.collapsed })
-                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( srcPos |> Position.moveInCanvas { dx = 20, dy = 0 }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + s.index + B.cond dragging 1000 0) onHover)
+                (s.table |> Area.topRightCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop s.index s.table.collapsed })
+                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( srcPos |> Position.moveCanvas { dx = 20, dy = 0 }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + s.index + B.cond dragging 1000 0) onHover)
 
         ( Nothing, Just r ) ->
             if r.table.collapsed then
                 viewEmptyRelation
 
             else
-                (r.table.position |> Position.offGrid |> Position.moveInCanvas { dx = 0, dy = deltaTop r.index r.table.collapsed })
-                    |> (\refPos -> Relation.straight relConf ( refPos |> Position.moveInCanvas { dx = -20, dy = 0 }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + r.index + B.cond dragging 1000 0) onHover)
+                (r.table |> Area.topLeftCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop r.index r.table.collapsed })
+                    |> (\refPos -> Relation.straight relConf ( refPos |> Position.moveCanvas { dx = -20, dy = 0 }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + r.index + B.cond dragging 1000 0) onHover)
 
         ( Just s, Just r ) ->
             let
                 ( sPos, rPos ) =
-                    ( s.table.position |> Position.extractGrid, r.table.position |> Position.extractGrid )
+                    ( s.table.position |> Position.extractCanvasGrid, r.table.position |> Position.extractCanvasGrid )
 
                 ( ( srcX, srcDir ), ( refX, refDir ) ) =
                     positionLeft s.table r.table
@@ -89,24 +90,24 @@ viewRelation defaultSchema style conf dragging srcTable refTable relation =
                 zIndex =
                     Conf.canvas.zIndex.tables - 1 + min s.index r.index
             in
-            Relation.show style relConf ( Position.buildInCanvas { left = srcX, top = srcY }, srcDir ) ( Position.buildInCanvas { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
+            Relation.show style relConf ( Position.buildCanvas { left = srcX, top = srcY }, srcDir ) ( Position.buildCanvas { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
 
 
-viewVirtualRelation : RelationStyle -> ( ( Maybe ColumnInfo, ErdColumn ), Position.InCanvas ) -> Svg Msg
+viewVirtualRelation : RelationStyle -> ( ( Maybe ColumnInfo, ErdColumn ), Position.Canvas ) -> Svg Msg
 viewVirtualRelation style ( ( maybeProps, column ), position ) =
     case maybeProps of
         Just props ->
             let
-                ( pos, tablePos ) =
-                    ( position |> Position.extractInCanvas, props.table.position |> Position.extractGrid )
+                ( pos, tablePos, tableSize ) =
+                    ( position |> Position.extractCanvas, props.table.position |> Position.extractCanvasGrid, props.table.size |> Size.extractCanvas )
 
                 isRight : Bool
                 isRight =
-                    pos.left > tablePos.left + props.table.size.width / 2
+                    pos.left > tablePos.left + tableSize.width / 2
             in
             Relation.show style
                 { hover = False }
-                ( props.table.position |> Position.offGrid |> Position.moveInCanvas { dx = B.cond isRight props.table.size.width 0, dy = deltaTop props.index props.table.collapsed }, B.cond isRight Relation.Right Relation.Left )
+                ( props.table.position |> Position.offGrid |> Position.moveCanvas { dx = B.cond isRight tableSize.width 0, dy = deltaTop props.index props.table.collapsed }, B.cond isRight Relation.Right Relation.Left )
                 ( position, B.cond isRight Relation.Left Relation.Right )
                 column.nullable
                 (Just props.table.color)
@@ -179,11 +180,15 @@ positionLeft src ref =
                    )
 
 
-leftCenterRight : { x | position : Position.Grid, size : Size } -> ( Float, Float, Float )
+leftCenterRight : { x | position : Position.CanvasGrid, size : Size.Canvas } -> ( Float, Float, Float )
 leftCenterRight { position, size } =
     let
         pos : Position
         pos =
-            position |> Position.offGrid |> Position.extractInCanvas
+            position |> Position.offGrid |> Position.extractCanvas
+
+        width : Float
+        width =
+            size |> Size.extractCanvas |> .width
     in
-    ( pos.left, pos.left + (size.width / 2), pos.left + size.width )
+    ( pos.left, pos.left + (width / 2), pos.left + width )

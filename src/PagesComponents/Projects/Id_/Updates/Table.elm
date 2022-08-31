@@ -7,7 +7,6 @@ import Libs.Delta exposing (Delta)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Position exposing (Position)
 import Libs.Task as T
 import Models.ColumnOrder as ColumnOrder exposing (ColumnOrder)
 import Models.Position as Position
@@ -18,6 +17,7 @@ import Models.Project.Relation as Relation
 import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Table as Table
 import Models.Project.TableId as TableId exposing (TableId)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Models exposing (Model, Msg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdColumnProps as ErdColumnProps exposing (ErdColumnProps)
@@ -99,7 +99,7 @@ showAllTables now erd =
         newTables =
             tablesToShow |> List.map (\t -> t |> ErdTableLayout.init erd.settings shownIds (erd.relationsByTable |> Dict.getOrElse t.id []) collapsed Nothing)
     in
-    ( erd |> Erd.mapCurrentLayout now (mapTables (\old -> newTables ++ old))
+    ( erd |> Erd.mapCurrentLayoutWithTime now (mapTables (\old -> newTables ++ old))
     , Cmd.batch [ Ports.observeTablesSize (newTables |> List.map .id) ]
     )
 
@@ -122,6 +122,10 @@ showRelatedTables id erd =
         |> Maybe.mapOrElse
             (\table ->
                 let
+                    padding : Delta
+                    padding =
+                        { dx = 50, dy = 20 }
+
                     related : List TableId
                     related =
                         erd.relationsByTable
@@ -140,17 +144,12 @@ showRelatedTables id erd =
                     toShow =
                         related |> List.filterNot (\t -> erd |> Erd.currentLayout |> .tables |> List.memberBy .id t) |> List.map (\t -> ( t, guessHeight t erd ))
 
-                    padding : Delta
-                    padding =
-                        { dx = 50, dy = 20 }
-
-                    tablePos : Position
-                    tablePos =
-                        table.props.position |> Position.extractGrid
+                    ( tablePos, tableSize ) =
+                        ( table.props.position |> Position.extractCanvasGrid, table.props.size |> Size.extractCanvas )
 
                     left : Float
                     left =
-                        tablePos.left + table.props.size.width + padding.dx
+                        tablePos.left + tableSize.width + padding.dx
 
                     height : Float
                     height =
@@ -158,11 +157,11 @@ showRelatedTables id erd =
 
                     top : Float
                     top =
-                        tablePos.top + (table.props.size.height / 2) - (height / 2)
+                        tablePos.top + (tableSize.height / 2) - (height / 2)
 
                     shows : List ( TableId, Maybe PositionHint )
                     shows =
-                        toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.buildGrid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
+                        toShow |> List.foldl (\( t, h ) ( cur, res ) -> ( cur + h + padding.dy, ( t, Just (PlaceAt (Position.buildCanvasGrid { left = left, top = cur })) ) :: res )) ( top, [] ) |> Tuple.second
                 in
                 ( erd, Cmd.batch (shows |> List.map (\( t, hint ) -> T.send (ShowTable t hint))) )
             )
@@ -197,12 +196,12 @@ hideRelatedTables id erd =
 
 showColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
 showColumn now table column erd =
-    erd |> Erd.mapCurrentLayout now (mapTablesL .id table (mapColumns (List.removeBy .name column >> List.prepend [ ErdColumnProps.create column ])))
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy .name column >> List.prepend [ ErdColumnProps.create column ])))
 
 
 hideColumn : Time.Posix -> TableId -> ColumnName -> Erd -> Erd
 hideColumn now table column erd =
-    erd |> Erd.mapCurrentLayout now (mapTablesL .id table (mapColumns (List.removeBy .name column)))
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTablesL .id table (mapColumns (List.removeBy .name column)))
 
 
 hoverNextColumn : TableId -> ColumnName -> Model -> Model
@@ -330,13 +329,13 @@ hoverColumn column enter erd tables =
 
 performHideTable : Time.Posix -> TableId -> Erd -> Erd
 performHideTable now table erd =
-    erd |> Erd.mapCurrentLayout now (mapTables (List.removeBy .id table) >> mapTables updateRelatedTables)
+    erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.removeBy .id table) >> mapTables updateRelatedTables)
 
 
 performShowTable : Time.Posix -> ErdTable -> Maybe PositionHint -> Erd -> Erd
 performShowTable now table hint erd =
     erd
-        |> Erd.mapCurrentLayout now
+        |> Erd.mapCurrentLayoutWithTime now
             (mapTables
                 (\tables ->
                     ErdTableLayout.init erd.settings
@@ -380,7 +379,7 @@ mapTablePropsOrSelectedColumns now id transform erd =
             erd |> Erd.currentLayout |> .tables |> List.findBy .id id |> Maybe.mapOrElse (.props >> .selected) False
     in
     erd
-        |> Erd.mapCurrentLayout now
+        |> Erd.mapCurrentLayoutWithTime now
             (mapTables
                 (List.map
                     (\props ->

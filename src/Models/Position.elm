@@ -1,4 +1,4 @@
-module Models.Position exposing (Canvas, Document, Grid, InCanvas, Viewport, buildCanvas, buildGrid, buildInCanvas, buildViewport, canvasToInCanvas, decodeCanvas, decodeDocument, decodeGrid, decodeViewport, diffInCanvas, diffViewport, divInCanvas, encodeCanvas, encodeGrid, extractCanvas, extractGrid, extractInCanvas, extractViewport, fromEventViewport, inCanvasToViewport, minInCanvas, moveCanvas, moveGrid, moveInCanvas, moveViewport, offGrid, onGrid, roundCanvas, sizeInCanvas, styleCanvas, stylesGrid, stylesTransformInCanvas, stylesViewport, subInCanvas, toStringRoundCanvas, toStringRoundViewport, viewportToInCanvas, zeroCanvas, zeroGrid, zeroInCanvas, zeroViewport)
+module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, buildCanvas, buildCanvasGrid, buildDiagram, buildViewport, canvasToViewport, decodeCanvasGrid, decodeDiagram, decodeDocument, decodeViewport, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeCanvasGrid, encodeDiagram, extractCanvas, extractCanvasGrid, extractViewport, fromEventViewport, minCanvas, moveCanvas, moveCanvasGrid, moveDiagram, moveViewport, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, stylesCanvasGrid, stylesViewport, subCanvas, toStringRoundDiagram, toStringRoundViewport, viewportToCanvas, zeroCanvas, zeroCanvasGrid, zeroDiagram, zeroViewport)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -8,8 +8,8 @@ import Json.Encode as Encode exposing (Value)
 import Libs.Delta exposing (Delta)
 import Libs.Json.Encode as Encode
 import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
+import Models.Size as Size
 
 
 type Viewport
@@ -20,16 +20,16 @@ type Document
     = Document Position -- position in the html document (same as Viewport if no scroll)
 
 
+type Diagram
+    = Diagram Position -- position in the erd (for the canvas)
+
+
 type Canvas
-    = Canvas Position -- position in the erd (for the canvas)
+    = Canvas Position -- position in the canvas (for tables, relations...)
 
 
-type InCanvas
-    = InCanvas Position -- position in the canvas (for tables, relations...)
-
-
-type Grid
-    = Grid Position -- same as InCanvas but with a grid step
+type CanvasGrid
+    = CanvasGrid Position -- same as Canvas but with a grid step
 
 
 gridStep : Int
@@ -65,6 +65,12 @@ extractViewport (Viewport pos) =
     pos
 
 
+buildDiagram : Position -> Diagram
+buildDiagram pos =
+    -- use it only in last resort in very narrow and explicit scope
+    pos |> Diagram
+
+
 buildCanvas : Position -> Canvas
 buildCanvas pos =
     -- use it only in last resort in very narrow and explicit scope
@@ -77,26 +83,14 @@ extractCanvas (Canvas pos) =
     pos
 
 
-buildInCanvas : Position -> InCanvas
-buildInCanvas pos =
+buildCanvasGrid : Position -> CanvasGrid
+buildCanvasGrid pos =
     -- use it only in last resort in very narrow and explicit scope
-    pos |> InCanvas
+    pos |> alignPos |> CanvasGrid
 
 
-extractInCanvas : InCanvas -> Position
-extractInCanvas (InCanvas pos) =
-    -- use it only in last resort in very narrow and explicit scope
-    pos
-
-
-buildGrid : Position -> Grid
-buildGrid pos =
-    -- use it only in last resort in very narrow and explicit scope
-    pos |> alignPos |> Grid
-
-
-extractGrid : Grid -> Position
-extractGrid (Grid pos) =
+extractCanvasGrid : CanvasGrid -> Position
+extractCanvasGrid (CanvasGrid pos) =
     -- use it only in last resort in very narrow and explicit scope
     pos
 
@@ -106,19 +100,19 @@ zeroViewport =
     Viewport Position.zero
 
 
+zeroDiagram : Diagram
+zeroDiagram =
+    Diagram Position.zero
+
+
 zeroCanvas : Canvas
 zeroCanvas =
     Canvas Position.zero
 
 
-zeroInCanvas : InCanvas
-zeroInCanvas =
-    InCanvas Position.zero
-
-
-zeroGrid : Grid
-zeroGrid =
-    Grid Position.zero
+zeroCanvasGrid : CanvasGrid
+zeroCanvasGrid =
+    CanvasGrid Position.zero
 
 
 fromEventViewport : Event -> Viewport
@@ -131,39 +125,39 @@ moveViewport delta (Viewport pos) =
     pos |> Position.move delta |> buildViewport
 
 
+moveDiagram : Delta -> Diagram -> Diagram
+moveDiagram delta (Diagram pos) =
+    pos |> Position.move delta |> buildDiagram
+
+
 moveCanvas : Delta -> Canvas -> Canvas
 moveCanvas delta (Canvas pos) =
     pos |> Position.move delta |> buildCanvas
 
 
-moveInCanvas : Delta -> InCanvas -> InCanvas
-moveInCanvas delta (InCanvas pos) =
-    pos |> Position.move delta |> buildInCanvas
+moveCanvasGrid : Delta -> CanvasGrid -> CanvasGrid
+moveCanvasGrid delta (CanvasGrid pos) =
+    pos |> Position.move delta |> buildCanvasGrid
 
 
-moveGrid : Delta -> Grid -> Grid
-moveGrid delta (Grid pos) =
-    pos |> Position.move delta |> buildGrid
+subCanvas : Canvas -> Canvas -> Canvas
+subCanvas (Canvas delta) (Canvas pos) =
+    Position.sub delta pos |> buildCanvas
 
 
-subInCanvas : InCanvas -> InCanvas -> InCanvas
-subInCanvas (InCanvas delta) (InCanvas pos) =
-    Position.sub delta pos |> buildInCanvas
+minCanvas : Canvas -> Canvas -> Canvas
+minCanvas (Canvas p1) (Canvas p2) =
+    Position.min p1 p2 |> buildCanvas
 
 
-minInCanvas : InCanvas -> InCanvas -> InCanvas
-minInCanvas (InCanvas p1) (InCanvas p2) =
-    Position.min p1 p2 |> buildInCanvas
+sizeCanvas : Canvas -> Canvas -> Size.Canvas
+sizeCanvas (Canvas p1) (Canvas p2) =
+    Position.size p1 p2 |> Size.buildCanvas
 
 
-sizeInCanvas : InCanvas -> InCanvas -> Size
-sizeInCanvas (InCanvas p1) (InCanvas p2) =
-    Position.size p1 p2
-
-
-divInCanvas : Float -> InCanvas -> InCanvas
-divInCanvas factor (InCanvas pos) =
-    Position.div factor pos |> buildInCanvas
+divCanvas : Float -> Canvas -> Canvas
+divCanvas factor (Canvas pos) =
+    Position.div factor pos |> buildCanvas
 
 
 diffViewport : Viewport -> Viewport -> Delta
@@ -171,39 +165,39 @@ diffViewport (Viewport to) (Viewport from) =
     from |> Position.diff to
 
 
-diffInCanvas : InCanvas -> InCanvas -> Delta
-diffInCanvas (InCanvas to) (InCanvas from) =
+diffCanvas : Canvas -> Canvas -> Delta
+diffCanvas (Canvas to) (Canvas from) =
     from |> Position.diff to
 
 
-roundCanvas : Canvas -> Canvas
-roundCanvas (Canvas pos) =
-    pos |> Position.round |> buildCanvas
+roundDiagram : Diagram -> Diagram
+roundDiagram (Diagram pos) =
+    pos |> Position.round |> buildDiagram
 
 
-onGrid : InCanvas -> Grid
-onGrid (InCanvas pos) =
-    buildGrid pos
+onGrid : Canvas -> CanvasGrid
+onGrid (Canvas pos) =
+    buildCanvasGrid pos
 
 
-offGrid : Grid -> InCanvas
-offGrid (Grid pos) =
-    buildInCanvas pos
+offGrid : CanvasGrid -> Canvas
+offGrid (CanvasGrid pos) =
+    buildCanvas pos
 
 
-viewportToInCanvas : Viewport -> Canvas -> ZoomLevel -> Viewport -> InCanvas
-viewportToInCanvas (Viewport erdPos) (Canvas canvasPos) canvasZoom (Viewport pos) =
-    pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div canvasZoom |> buildInCanvas
+viewportToCanvas : Viewport -> Diagram -> ZoomLevel -> Viewport -> Canvas
+viewportToCanvas (Viewport erdPos) (Diagram canvasPos) canvasZoom (Viewport pos) =
+    pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div canvasZoom |> buildCanvas
 
 
-inCanvasToViewport : Viewport -> Canvas -> ZoomLevel -> InCanvas -> Viewport
-inCanvasToViewport (Viewport erdPos) (Canvas canvasPos) canvasZoom (InCanvas pos) =
+canvasToViewport : Viewport -> Diagram -> ZoomLevel -> Canvas -> Viewport
+canvasToViewport (Viewport erdPos) (Diagram canvasPos) canvasZoom (Canvas pos) =
     pos |> Position.mult canvasZoom |> Position.add canvasPos |> Position.add erdPos |> buildViewport
 
 
-canvasToInCanvas : Canvas -> Canvas -> InCanvas
-canvasToInCanvas (Canvas canvasPos) (Canvas pos) =
-    pos |> Position.sub canvasPos |> buildInCanvas
+diagramToCanvas : Diagram -> Diagram -> Canvas
+diagramToCanvas (Diagram canvasPos) (Diagram pos) =
+    pos |> Position.sub canvasPos |> buildCanvas
 
 
 stylesViewport : Viewport -> List (Attribute msg)
@@ -211,18 +205,18 @@ stylesViewport (Viewport pos) =
     [ style "left" (String.fromFloat pos.left ++ "px"), style "top" (String.fromFloat pos.top ++ "px") ]
 
 
-styleCanvas : Canvas -> ZoomLevel -> Attribute msg
-styleCanvas (Canvas pos) zoom =
+styleTransformDiagram : Diagram -> ZoomLevel -> Attribute msg
+styleTransformDiagram (Diagram pos) zoom =
     style "transform" ("translate(" ++ String.fromFloat pos.left ++ "px, " ++ String.fromFloat pos.top ++ "px) scale(" ++ String.fromFloat zoom ++ ")")
 
 
-stylesTransformInCanvas : InCanvas -> Attribute msg
-stylesTransformInCanvas (InCanvas pos) =
+styleTransformCanvas : Canvas -> Attribute msg
+styleTransformCanvas (Canvas pos) =
     style "transform" ("translate(" ++ String.fromFloat pos.left ++ "px, " ++ String.fromFloat pos.top ++ "px)")
 
 
-stylesGrid : Grid -> List (Attribute msg)
-stylesGrid (Grid pos) =
+stylesCanvasGrid : CanvasGrid -> List (Attribute msg)
+stylesCanvasGrid (CanvasGrid pos) =
     [ style "left" (String.fromFloat pos.left ++ "px"), style "top" (String.fromFloat pos.top ++ "px") ]
 
 
@@ -231,8 +225,8 @@ toStringRoundViewport (Viewport pos) =
     Position.toStringRound pos
 
 
-toStringRoundCanvas : Canvas -> String
-toStringRoundCanvas (Canvas pos) =
+toStringRoundDiagram : Diagram -> String
+toStringRoundDiagram (Diagram pos) =
     Position.toStringRound pos
 
 
@@ -250,31 +244,31 @@ decodeDocument =
         (Decode.field "pageY" Decode.float)
 
 
-encodeCanvas : Canvas -> Value
-encodeCanvas (Canvas pos) =
+encodeDiagram : Diagram -> Value
+encodeDiagram (Diagram pos) =
     Encode.notNullObject
         [ ( "left", pos.left |> Encode.float )
         , ( "top", pos.top |> Encode.float )
         ]
 
 
-decodeCanvas : Decode.Decoder Canvas
-decodeCanvas =
-    Decode.map2 (\l t -> Position l t |> buildCanvas)
+decodeDiagram : Decode.Decoder Diagram
+decodeDiagram =
+    Decode.map2 (\l t -> Position l t |> buildDiagram)
         (Decode.field "left" Decode.float)
         (Decode.field "top" Decode.float)
 
 
-encodeGrid : Grid -> Value
-encodeGrid (Grid pos) =
+encodeCanvasGrid : CanvasGrid -> Value
+encodeCanvasGrid (CanvasGrid pos) =
     Encode.notNullObject
         [ ( "left", pos.left |> alignCoord |> Encode.float )
         , ( "top", pos.top |> alignCoord |> Encode.float )
         ]
 
 
-decodeGrid : Decode.Decoder Grid
-decodeGrid =
-    Decode.map2 (\l t -> Position l t |> buildGrid)
+decodeCanvasGrid : Decode.Decoder CanvasGrid
+decodeCanvasGrid =
+    Decode.map2 (\l t -> Position l t |> buildCanvasGrid)
         (Decode.field "left" Decode.float)
         (Decode.field "top" Decode.float)

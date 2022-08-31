@@ -1,20 +1,20 @@
 module PagesComponents.Projects.Id_.Models.ErdTableProps exposing (ErdTableProps, create, init)
 
 import Libs.List as List
-import Libs.Models.Size as Size exposing (Size)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color)
 import Models.Position as Position
 import Models.Project.TableId exposing (TableId)
 import Models.Project.TableProps exposing (TableProps)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
 import PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint)
 
 
 type alias ErdTableProps =
     { positionHint : Maybe PositionHint
-    , position : Position.Grid
-    , size : Size
+    , position : Position.CanvasGrid
+    , size : Size.Canvas
     , color : Color
     , selected : Bool
     , collapsed : Bool
@@ -37,8 +37,8 @@ create props =
 init : Bool -> Maybe PositionHint -> ErdTable -> ErdTableProps
 init collapsed hint table =
     { positionHint = hint
-    , position = Position.zeroGrid
-    , size = Size.zero
+    , position = Position.zeroCanvasGrid
+    , size = Size.zeroCanvas
     , color = computeColor table.id
     , selected = False
     , collapsed = collapsed
