@@ -14,7 +14,6 @@ import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind exposing (TwClass, batch, focus, hover)
-import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Models exposing (AmlSidebarMsg(..), Msg(..))
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode exposing (CursorMode)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
@@ -46,9 +45,9 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
             Html.none
         , if conf.update then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-                [ button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Menu "" ]
-                    |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "List tables"
-                , button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ]
+                [ -- button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Menu "" ]
+                  -- |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "List tables",
+                  button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ]
                     |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update schema"
                 ]
 

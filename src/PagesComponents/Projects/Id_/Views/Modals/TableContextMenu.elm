@@ -12,7 +12,6 @@ import Libs.Maybe as Maybe
 import Libs.Models.Platform exposing (Platform)
 import Libs.Tailwind as Color exposing (bg_500, focus, hover)
 import Models.ColumnOrder as ColumnOrder
-import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), Msg(..), NotesMsg(..))
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
@@ -25,8 +24,8 @@ import PagesComponents.Projects.Id_.Models.ShowColumns as ShowColumns
 view : Platform -> ErdConf -> Int -> ErdTable -> ErdTableLayout -> Maybe String -> Html Msg
 view platform conf index table layout notes =
     div [ class "z-max" ]
-        ([ Maybe.when conf.layout { label = "Show details", action = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id), platform = platform, hotkeys = [] } }
-         , Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = ContextMenu.Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "hide" [] } }
+        ([ -- Maybe.when conf.layout { label = "Show details", action = ContextMenu.Simple { action = DetailsSidebarMsg (DetailsSidebar.ShowTable table.id), platform = platform, hotkeys = [] } },
+           Maybe.when conf.layout { label = B.cond layout.props.selected "Hide selected tables" "Hide table", action = ContextMenu.Simple { action = HideTable table.id, platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "hide" [] } }
          , Maybe.when conf.layout { label = notes |> Maybe.mapOrElse (\_ -> "Update notes") "Add notes", action = ContextMenu.Simple { action = NotesMsg (NOpen (NoteRef.fromTable table.id)), platform = platform, hotkeys = Conf.hotkeys |> Dict.getOrElse "notes" [] } }
          , Maybe.when conf.layout
             { label = B.cond layout.props.selected "Set color of selected tables" "Set color"
