@@ -541,7 +541,7 @@ placeAtCenter erdViewport newSize =
             , Area.zeroCanvas |> setSize newSize |> Area.centerCanvas
             )
     in
-    canvasCenter |> Position.subCanvas tableCenter |> Position.onGrid
+    canvasCenter |> Position.moveCanvas (Position.zeroCanvas |> Position.diffCanvas tableCenter) |> Position.onGrid
 
 
 placeAtRandom : Area.Canvas -> Delta -> Size.Canvas -> Position.CanvasGrid

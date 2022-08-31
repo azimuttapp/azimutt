@@ -85,6 +85,10 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         canvas =
             dragging |> Maybe.filter (\d -> d.id == Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.canvas |> Drag.moveCanvas d) layout.canvas
 
+        -- TODO: use to render only visible tables => needs to handle size change to 0...
+        --canvasViewport : Area.Canvas
+        --canvasViewport =
+        --    canvas |> CanvasProps.viewport erdElem
         tableProps : List ErdTableLayout
         tableProps =
             dragging |> Maybe.filter (\d -> d.id /= Conf.ids.erd) |> Maybe.mapOrElse (\d -> layout.tables |> Drag.moveTables d canvas.zoom) layout.tables
@@ -132,8 +136,8 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (ErdContextMenu.view platform)))
         ]
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
-            [ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables tableProps erd.notes
-            , Lazy.lazy6 viewRelations conf erd.settings.defaultSchema dragging erd.settings.relationStyle displayedTables displayedRelations
+            [ tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables erd.notes
+            , displayedRelations |> Lazy.lazy6 viewRelations conf erd.settings.defaultSchema dragging erd.settings.relationStyle displayedTables
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
@@ -174,8 +178,8 @@ handleErdPointerDown conf cursorMode e =
         Noop "No match on erd pointer down"
 
 
-viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> Bool -> Dict TableId ErdTable -> List ErdTableLayout -> Dict TableId ErdTableNotes -> Html Msg
-viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema useBasicTypes tables tableLayouts notes =
+viewTables : Platform -> ErdConf -> CursorMode -> Maybe VirtualRelation -> HtmlId -> HtmlId -> Maybe TableId -> Maybe DragState -> ZoomLevel -> SchemaName -> Bool -> Dict TableId ErdTable -> Dict TableId ErdTableNotes -> List ErdTableLayout -> Html Msg
+viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging zoom defaultSchema useBasicTypes tables notes tableLayouts =
     Keyed.node "div"
         [ class "az-tables" ]
         (tableLayouts

@@ -1,4 +1,4 @@
-module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, min, move, mult, negate, round, size, sub, toString, toStringRound, zero)
+module Libs.Models.Position exposing (Position, decode, diff, distance, div, encode, min, move, mult, negate, round, size, toString, toStringRound, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -19,16 +19,6 @@ zero =
 move : Delta -> Position -> Position
 move delta position =
     Position (position.left + delta.dx) (position.top + delta.dy)
-
-
-add : Position -> Position -> Position
-add delta pos =
-    Position (pos.left + delta.left) (pos.top + delta.top)
-
-
-sub : Position -> Position -> Position
-sub delta pos =
-    Position (pos.left - delta.left) (pos.top - delta.top)
 
 
 min : Position -> Position -> Position
@@ -57,8 +47,8 @@ negate pos =
 
 
 diff : Position -> Position -> Delta
-diff to from =
-    ( from.left - to.left, from.top - to.top ) |> Delta.fromTuple
+diff b a =
+    Delta (a.left - b.left) (a.top - b.top)
 
 
 round : Position -> Position
@@ -67,8 +57,8 @@ round pos =
 
 
 distance : Position -> Position -> Float
-distance to from =
-    diff to from |> (\{ dx, dy } -> sqrt (dx * dx + dy * dy))
+distance b a =
+    diff b a |> (\{ dx, dy } -> sqrt (dx * dx + dy * dy))
 
 
 toString : Position -> String

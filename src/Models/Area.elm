@@ -1,4 +1,4 @@
-module Models.Area exposing (Canvas, CanvasGridLike, CanvasLike, Diagram, Viewport, ViewportLike, centerCanvas, centerViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, overlapCanvas, styleTransformCanvas, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
+module Models.Area exposing (Canvas, CanvasGridLike, CanvasLike, Diagram, Viewport, ViewportLike, centerCanvas, centerViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, offGrid, overlapCanvas, styleTransformCanvas, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
 
 import Html exposing (Attribute)
 import Libs.Delta as Delta
@@ -52,6 +52,11 @@ centerCanvas area =
     area.position |> Position.moveCanvas (area.size |> Size.divCanvas 2 |> Size.toTupleCanvas |> Delta.fromTuple)
 
 
+offGrid : CanvasGridLike a -> Canvas
+offGrid area =
+    Canvas (area.position |> Position.offGrid) area.size
+
+
 topLeftCanvasGrid : CanvasGridLike a -> Position.Canvas
 topLeftCanvasGrid area =
     area.position |> Position.offGrid
@@ -80,11 +85,11 @@ mergeCanvas areas =
         |> Maybe.map (\{ position, size } -> Canvas (Position.buildCanvas position) (Size.buildCanvas size))
 
 
-overlapCanvas : CanvasLike a -> CanvasLike b -> Bool
-overlapCanvas area1 area2 =
+overlapCanvas : CanvasLike b -> CanvasLike a -> Bool
+overlapCanvas area2 area1 =
     Area.overlap
-        (Area (Position.extractCanvas area1.position) (Size.extractCanvas area1.size))
         (Area (Position.extractCanvas area2.position) (Size.extractCanvas area2.size))
+        (Area (Position.extractCanvas area1.position) (Size.extractCanvas area1.size))
 
 
 styleTransformCanvas : Canvas -> List (Attribute msg)

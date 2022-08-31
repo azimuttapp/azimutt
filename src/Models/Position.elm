@@ -1,4 +1,4 @@
-module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, buildCanvas, buildCanvasGrid, buildDiagram, buildViewport, canvasToViewport, decodeCanvasGrid, decodeDiagram, decodeDocument, decodeViewport, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeCanvasGrid, encodeDiagram, extractCanvas, extractCanvasGrid, extractViewport, fromEventViewport, minCanvas, moveCanvas, moveCanvasGrid, moveDiagram, moveViewport, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, stylesCanvasGrid, stylesViewport, subCanvas, toStringRoundDiagram, toStringRoundViewport, viewportToCanvas, zeroCanvas, zeroCanvasGrid, zeroDiagram, zeroViewport)
+module Models.Position exposing (Canvas, CanvasGrid, Diagram, Document, Viewport, buildCanvas, buildCanvasGrid, buildDiagram, buildViewport, canvasToViewport, decodeCanvasGrid, decodeDiagram, decodeDocument, decodeViewport, diagramToCanvas, diffCanvas, diffViewport, divCanvas, encodeCanvasGrid, encodeDiagram, extractCanvas, extractCanvasGrid, extractViewport, fromEventViewport, minCanvas, moveCanvas, moveCanvasGrid, moveDiagram, moveViewport, offGrid, onGrid, roundDiagram, sizeCanvas, styleTransformCanvas, styleTransformDiagram, stylesCanvasGrid, stylesViewport, toStringRoundDiagram, toStringRoundViewport, viewportToCanvas, zeroCanvas, zeroCanvasGrid, zeroDiagram, zeroViewport)
 
 import Html exposing (Attribute)
 import Html.Attributes exposing (style)
@@ -140,11 +140,6 @@ moveCanvasGrid delta (CanvasGrid pos) =
     pos |> Position.move delta |> buildCanvasGrid
 
 
-subCanvas : Canvas -> Canvas -> Canvas
-subCanvas (Canvas delta) (Canvas pos) =
-    Position.sub delta pos |> buildCanvas
-
-
 minCanvas : Canvas -> Canvas -> Canvas
 minCanvas (Canvas p1) (Canvas p2) =
     Position.min p1 p2 |> buildCanvas
@@ -187,17 +182,27 @@ offGrid (CanvasGrid pos) =
 
 viewportToCanvas : Viewport -> Diagram -> ZoomLevel -> Viewport -> Canvas
 viewportToCanvas (Viewport erdPos) (Diagram canvasPos) canvasZoom (Viewport pos) =
-    pos |> Position.sub erdPos |> Position.sub canvasPos |> Position.div canvasZoom |> buildCanvas
+    pos
+        |> Position.move (Position.zero |> Position.diff erdPos)
+        |> Position.move (Position.zero |> Position.diff canvasPos)
+        |> Position.div canvasZoom
+        |> buildCanvas
 
 
 canvasToViewport : Viewport -> Diagram -> ZoomLevel -> Canvas -> Viewport
 canvasToViewport (Viewport erdPos) (Diagram canvasPos) canvasZoom (Canvas pos) =
-    pos |> Position.mult canvasZoom |> Position.add canvasPos |> Position.add erdPos |> buildViewport
+    pos
+        |> Position.mult canvasZoom
+        |> Position.move (canvasPos |> Position.diff Position.zero)
+        |> Position.move (erdPos |> Position.diff Position.zero)
+        |> buildViewport
 
 
 diagramToCanvas : Diagram -> Diagram -> Canvas
 diagramToCanvas (Diagram canvasPos) (Diagram pos) =
-    pos |> Position.sub canvasPos |> buildCanvas
+    pos
+        |> Position.move (Position.zero |> Position.diff canvasPos)
+        |> buildCanvas
 
 
 stylesViewport : Viewport -> List (Attribute msg)

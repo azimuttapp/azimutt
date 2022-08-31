@@ -6,6 +6,7 @@ import ElmBook.Custom exposing (Msg)
 import Html exposing (Html, div)
 import Html.Events exposing (onMouseEnter, onMouseLeave)
 import Libs.Bool as Bool
+import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
@@ -44,26 +45,26 @@ show style conf src ref nullable color label index onHover =
 straight : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 straight conf ( src, _ ) ( ref, _ ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 12 }
-        (\origin -> drawLine conf (src |> Position.subCanvas origin) (ref |> Position.subCanvas origin) onHover)
+        (\origin -> drawLine conf (src |> Position.moveCanvas origin) (ref |> Position.moveCanvas origin) onHover)
 
 
 bezier : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 bezier conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawCurve conf ( src |> Position.subCanvas origin, srcDir ) ( ref |> Position.subCanvas origin, refDir ) onHover)
+        (\origin -> drawCurve conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
 
 
 steps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 steps conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawSteps conf ( src |> Position.subCanvas origin, srcDir ) ( ref |> Position.subCanvas origin, refDir ) onHover)
+        (\origin -> drawSteps conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
 
 
 type alias SvgParams =
     { src : Position.Canvas, ref : Position.Canvas, nullable : Bool, color : Maybe Color, label : String, index : Int, padding : Float }
 
 
-buildSvg : SvgParams -> (Position.Canvas -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
+buildSvg : SvgParams -> (Delta -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
 buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
     let
         ( srcPos, refPos ) =
@@ -82,7 +83,7 @@ buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
         --, style ("transform: translate(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px); z-index: " ++ String.fromInt index ++ ";")
         --, style ("transform: translate3d(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px, 0); z-index: " ++ String.fromInt index ++ ";")
         ]
-        (text label :: svgContent (origin |> Position.buildCanvas) nullable color)
+        (text label :: svgContent (Position.zero |> Position.diff origin) nullable color)
 
 
 drawLine : RelationConf -> Position.Canvas -> Position.Canvas -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
@@ -119,9 +120,9 @@ drawCurve conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
         path =
             [ moveTo p1
             , lineTo (p1 |> add arrowSize dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = negate (arrowSize / 2) })
+            , moveTo (p1 |> Position.move { dx = 0, dy = -(arrowSize / 2) })
             , lineTo (p1 |> add arrowSize dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = arrowSize / 2 })
+            , moveTo (p1 |> Position.move { dx = 0, dy = arrowSize / 2 })
             , lineTo (p1 |> add arrowSize dir1)
             , moveTo (p1 |> add arrowSize dir1)
             , curveTo (p1 |> add (arrowSize + strength) dir1) (p2 |> add strength dir2) p2
@@ -179,8 +180,8 @@ drawSteps conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
                     p1
 
         ( break1a, break1b ) =
-            ( break1 |> Position.sub { left = arrowSize / 2 * apply dir1, top = 0 }
-            , break1 |> Position.sub { left = 0, top = arrowSize / 2 * Bool.cond (p1.top > p2.top) 1 -1 }
+            ( break1 |> Position.move { dx = -(arrowSize / 2 * apply dir1), dy = 0 }
+            , break1 |> Position.move { dx = 0, dy = -(arrowSize / 2 * Bool.cond (p1.top > p2.top) 1 -1) }
             )
 
         break2 : Position
@@ -188,15 +189,15 @@ drawSteps conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
             { left = break1.left, top = p2.top }
 
         ( break2a, break2b ) =
-            ( break2 |> Position.sub { left = 0, top = arrowSize / 2 * Bool.cond (p1.top < p2.top) 1 -1 }
-            , break2 |> Position.sub { left = arrowSize / 2 * apply dir2, top = 0 }
+            ( break2 |> Position.move { dx = 0, dy = -(arrowSize / 2 * Bool.cond (p1.top < p2.top) 1 -1) }
+            , break2 |> Position.move { dx = -(arrowSize / 2 * apply dir2), dy = 0 }
             )
 
         path : List String
         path =
-            [ moveTo (p1 |> Position.add { left = 0, top = negate (arrowSize / 2) })
+            [ moveTo (p1 |> Position.move { dx = 0, dy = -(arrowSize / 2) })
             , lineTo (p1 |> add arrowSize dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = arrowSize / 2 })
+            , moveTo (p1 |> Position.move { dx = 0, dy = arrowSize / 2 })
             , lineTo (p1 |> add arrowSize dir1)
             , moveTo p1
             , lineTo break1a
@@ -226,7 +227,7 @@ arrowSize =
 
 add : Float -> Direction -> Position -> Position
 add strength dir pos =
-    pos |> Position.add { left = strength * apply dir, top = 0 }
+    pos |> Position.move { dx = strength * apply dir, dy = 0 }
 
 
 apply : Direction -> Float

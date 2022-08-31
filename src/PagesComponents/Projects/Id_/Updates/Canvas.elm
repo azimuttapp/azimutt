@@ -110,7 +110,7 @@ computeFit erdViewport padding content zoom =
 
         newViewportCenter : Position.Canvas
         newViewportCenter =
-            newViewport |> Area.centerCanvas |> Position.subCanvas newViewport.position
+            newViewport |> Area.centerCanvas |> Position.moveCanvas (Position.zeroCanvas |> Position.diffCanvas newViewport.position)
 
         newContentCenter : Position.Canvas
         newContentCenter =
