@@ -117,7 +117,7 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
                                         |> Maybe.map
                                             (\ref ->
                                                 ( ( Relation.buildColumnInfo src.column (tableProps |> List.findBy .id src.table), ref )
-                                                , vr.mouse |> Erd.viewportToInCanvas erdElem canvas
+                                                , vr.mouse |> Erd.viewportToCanvas erdElem canvas
                                                 )
                                             )
                                 )

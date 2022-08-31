@@ -494,7 +494,7 @@ metadataSection styles items =
 
 
 
--- COLUMN DIRECTOR
+-- COLUMN DIRECTORY
 
 
 directory : Html msg

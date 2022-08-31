@@ -1,4 +1,4 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToInCanvas)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -140,8 +140,8 @@ defaultSchemaM erd =
     erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.empty
 
 
-viewportToInCanvas : ErdProps -> CanvasProps -> Position.Viewport -> Position.Canvas
-viewportToInCanvas erdElem canvas pos =
+viewportToCanvas : ErdProps -> CanvasProps -> Position.Viewport -> Position.Canvas
+viewportToCanvas erdElem canvas pos =
     pos |> Position.viewportToCanvas erdElem.position canvas.position canvas.zoom
 
 
