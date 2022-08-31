@@ -20,7 +20,6 @@ import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
 import Services.Backend as Backend
@@ -57,22 +56,22 @@ type Msg
     | UpdateTab Tab
 
 
-init : (String -> msg) -> SchemaName -> Maybe Source -> Model msg
-init noop defaultSchema source =
+init : (String -> msg) -> Maybe Source -> Model msg
+init noop source =
     { id = Conf.ids.sourceUpdateDialog
     , source = source
-    , databaseSource = DatabaseSource.init defaultSchema source (\_ -> noop "project-settings-database-source-callback")
-    , sqlSource = SqlSource.init defaultSchema source (\_ -> noop "project-settings-sql-source-callback")
-    , jsonSource = JsonSource.init defaultSchema source (\_ -> noop "project-settings-json-source-callback")
+    , databaseSource = DatabaseSource.init source (\_ -> noop "project-settings-database-source-callback")
+    , sqlSource = SqlSource.init source (\_ -> noop "project-settings-sql-source-callback")
+    , jsonSource = JsonSource.init source (\_ -> noop "project-settings-json-source-callback")
     , newSourceTab = TabDatabase
     }
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Backend.Url -> SchemaName -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
-update wrap modalOpen noop now backendUrl defaultSchema msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Backend.Url -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
+update wrap modalOpen noop now backendUrl msg model =
     case msg of
         Open source ->
-            ( Just (init noop defaultSchema source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
+            ( Just (init noop source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
 
         Close ->
             ( Nothing, Cmd.none )
@@ -357,9 +356,9 @@ localFileWarnings ( name1, name2 ) ( updated1, updated2 ) =
            )
 
 
-viewSourceDiff : { a | source : Maybe Source, defaultSchema : SchemaName, parsedSource : Maybe (Result String Source) } -> Html msg
+viewSourceDiff : { a | source : Maybe Source, parsedSource : Maybe (Result String Source) } -> Html msg
 viewSourceDiff model =
-    model.source |> Maybe.map2 (SourceDiff.view model.defaultSchema) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
+    model.source |> Maybe.map2 (SourceDiff.view Conf.schema.empty) (model.parsedSource |> Maybe.andThen Result.toMaybe) |> Maybe.withDefault (div [] [])
 
 
 updateSourceButtons : (Source -> msg) -> msg -> Maybe (Result String Source) -> Html msg

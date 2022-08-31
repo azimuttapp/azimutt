@@ -38,14 +38,16 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
         [ if conf.move && hasTables then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md" ]
                 [ button [ type_ "button", onClick FitContent, css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid ArrowsExpand "" ]
-                    |> Tooltip.t "Fit content in view"
+                    |> Tooltip.t "Fit diagram to screen"
                 ]
 
           else
             Html.none
         , if conf.update then
             span [ class "relative z-0 inline-flex shadow-sm rounded-md ml-2" ]
-                [ button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ]
+                [ -- button [ type_ "button", onClick (DetailsSidebarMsg DetailsSidebar.Toggle), css [ "rounded-l-md", buttonStyles, classic ] ] [ Icon.solid Menu "" ]
+                  -- |> B.cond (conf.select && hasTables) Tooltip.t Tooltip.tl "List tables",
+                  button [ type_ "button", onClick (AmlSidebarMsg AToggle), css [ "-ml-px rounded-l-md rounded-r-md", buttonStyles, classic ] ] [ Icon.solid Pencil "" ]
                     |> B.cond (conf.move && hasTables) Tooltip.t Tooltip.tl "Update schema"
                 ]
 
@@ -74,7 +76,9 @@ viewCommands conf cursorMode canvasZoom htmlId hasTables openedDropdown =
                             [ ContextMenu.btn "" (Zoom (Conf.canvas.zoom.min - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.min * 100) ++ " %") ]
                             , ContextMenu.btn "" (Zoom (0.25 - canvasZoom)) [ text "25%" ]
                             , ContextMenu.btn "" (Zoom (0.5 - canvasZoom)) [ text "50%" ]
+                            , ContextMenu.btn "" (Zoom (0.8 - canvasZoom)) [ text "80%" ]
                             , ContextMenu.btn "" (Zoom (1 - canvasZoom)) [ text "100%" ]
+                            , ContextMenu.btn "" (Zoom (1.2 - canvasZoom)) [ text "120%" ]
                             , ContextMenu.btn "" (Zoom (1.5 - canvasZoom)) [ text "150%" ]
                             , ContextMenu.btn "" (Zoom (2 - canvasZoom)) [ text "200%" ]
                             , ContextMenu.btn "" (Zoom (Conf.canvas.zoom.max - canvasZoom)) [ text (String.fromFloat (Conf.canvas.zoom.max * 100) ++ " %") ]

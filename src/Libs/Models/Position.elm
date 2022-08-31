@@ -1,8 +1,10 @@
-module Libs.Models.Position exposing (Position, add, decode, diff, distance, div, encode, fromTuple, mult, negate, stepBy, sub, toString, toStringRound, toTuple, zero)
+module Libs.Models.Position exposing (Position, decode, diff, distance, div, encode, min, move, mult, negate, round, size, toString, toStringRound, zero)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
+import Libs.Delta as Delta exposing (Delta)
 import Libs.Json.Encode as Encode
+import Libs.Models.Size exposing (Size)
 
 
 type alias Position =
@@ -14,24 +16,19 @@ zero =
     { left = 0, top = 0 }
 
 
-fromTuple : ( Float, Float ) -> Position
-fromTuple ( left, top ) =
-    Position left top
+move : Delta -> Position -> Position
+move delta position =
+    Position (position.left + delta.dx) (position.top + delta.dy)
 
 
-toTuple : Position -> ( Float, Float )
-toTuple pos =
-    ( pos.left, pos.top )
+min : Position -> Position -> Position
+min p1 p2 =
+    Position (Basics.min p1.left p2.left) (Basics.min p1.top p2.top)
 
 
-add : Position -> Position -> Position
-add delta pos =
-    Position (pos.left + delta.left) (pos.top + delta.top)
-
-
-sub : Position -> Position -> Position
-sub delta pos =
-    Position (pos.left - delta.left) (pos.top - delta.top)
+size : Position -> Position -> Size
+size p1 p2 =
+    Size (abs (p2.left - p1.left)) (abs (p2.top - p1.top))
 
 
 mult : Float -> Position -> Position
@@ -49,34 +46,29 @@ negate pos =
     Position -pos.left -pos.top
 
 
-stepBy : Int -> Position -> Position
-stepBy by pos =
-    let
-        mod : Float -> Float
-        mod =
-            \value -> value |> round |> (\v -> (v - modBy by v) |> toFloat)
-    in
-    Position (mod pos.left) (mod pos.top)
+diff : Position -> Position -> Delta
+diff b a =
+    Delta (a.left - b.left) (a.top - b.top)
 
 
-diff : Position -> Position -> ( Float, Float )
-diff to from =
-    ( from.left - to.left, from.top - to.top )
+round : Position -> Position
+round pos =
+    Position (pos.left |> Basics.round |> Basics.toFloat) (pos.top |> Basics.round |> Basics.toFloat)
 
 
 distance : Position -> Position -> Float
-distance to from =
-    diff to from |> (\( dx, dy ) -> sqrt (dx * dx + dy * dy))
+distance b a =
+    diff b a |> (\{ dx, dy } -> sqrt (dx * dx + dy * dy))
 
 
 toString : Position -> String
 toString pos =
-    "(" ++ String.fromFloat pos.left ++ ", " ++ String.fromFloat pos.top ++ ")"
+    "(" ++ String.fromFloat pos.left ++ "," ++ String.fromFloat pos.top ++ ")"
 
 
 toStringRound : Position -> String
 toStringRound pos =
-    "(" ++ String.fromInt (round pos.left) ++ ", " ++ String.fromInt (round pos.top) ++ ")"
+    pos |> round |> toString
 
 
 encode : Position -> Value

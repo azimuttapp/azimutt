@@ -47,13 +47,12 @@ init sourceParsed modalClose noop databaseSource sqlSource jsonSource =
         |> Maybe.map
             (\_ ->
                 { id = Conf.ids.sourceParsingDialog
-                , databaseSource = databaseSource |> Maybe.map (\_ -> DatabaseSource.init Conf.schema.default Nothing (Result.fold (\_ -> noop "embed-load-database-has-errors") (sourceParsed >> modalClose)))
+                , databaseSource = databaseSource |> Maybe.map (\_ -> DatabaseSource.init Nothing (Result.fold (\_ -> noop "embed-load-database-has-errors") (sourceParsed >> modalClose)))
                 , sqlSource =
                     sqlSource
                         |> Maybe.map
                             (\_ ->
                                 SqlSource.init
-                                    Conf.schema.default
                                     Nothing
                                     (\( parser, source ) ->
                                         if parser |> Maybe.any SqlSource.hasErrors then
@@ -63,7 +62,7 @@ init sourceParsed modalClose noop databaseSource sqlSource jsonSource =
                                             source |> Result.fold (\_ -> noop "embed-load-sql-has-errors") (sourceParsed >> modalClose)
                                     )
                             )
-                , jsonSource = jsonSource |> Maybe.map (\_ -> JsonSource.init Conf.schema.default Nothing (Result.fold (\_ -> noop "embed-load-json-has-errors") (sourceParsed >> modalClose)))
+                , jsonSource = jsonSource |> Maybe.map (\_ -> JsonSource.init Nothing (Result.fold (\_ -> noop "embed-load-json-has-errors") (sourceParsed >> modalClose)))
                 }
             )
 

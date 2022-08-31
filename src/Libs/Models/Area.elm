@@ -1,4 +1,4 @@
-module Libs.Area exposing (Area, AreaLike, center, div, from, inside, merge, move, mult, normalize, overlap, zero)
+module Libs.Models.Area exposing (Area, AreaLike, inside, merge, normalize, overlap, toStringRound, zero)
 
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size as Size exposing (Size)
@@ -15,31 +15,6 @@ type alias AreaLike x =
 zero : Area
 zero =
     { position = Position.zero, size = Size.zero }
-
-
-from : Position -> Position -> Area
-from p1 p2 =
-    { position = Position (min p1.left p2.left) (min p1.top p2.top), size = Size (abs (p2.left - p1.left)) (abs (p2.top - p1.top)) }
-
-
-center : AreaLike x -> Position
-center area =
-    area.position |> Position.add (area.size |> Size.div 2 |> Size.toTuple |> Position.fromTuple)
-
-
-move : Position -> Area -> Area
-move vector area =
-    Area (area.position |> Position.add vector) area.size
-
-
-mult : Float -> Area -> Area
-mult factor area =
-    Area (area.position |> Position.mult factor) (area.size |> Size.mult factor)
-
-
-div : Float -> Area -> Area
-div factor area =
-    Area (area.position |> Position.div factor) (area.size |> Size.div factor)
 
 
 merge : List (AreaLike a) -> Maybe Area
@@ -91,3 +66,8 @@ overlap area1 area2 =
             -- area2 is above of area1
             || (area2.position.top + area2.size.height <= area1.position.top)
         )
+
+
+toStringRound : AreaLike a -> String
+toStringRound { position, size } =
+    Position.toStringRound position ++ " / " ++ Size.toStringRound size

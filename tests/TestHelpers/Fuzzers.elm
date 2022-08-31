@@ -9,24 +9,43 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileSize exposing (FileSize)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
-import Libs.Models.Position as Position exposing (Position)
+import Libs.Models.Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Libs.Models.Uuid as Uuid exposing (Uuid)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Ned as Ned exposing (Ned)
 import Libs.Nel exposing (Nel)
 import Libs.Tailwind as Tw exposing (Color)
+import Models.Position as Position
 import Random
 import Time
 
 
+positionViewport : Fuzzer Position.Viewport
+positionViewport =
+    position |> Fuzz.map Position.buildViewport
+
+
+positionCanvas : Fuzzer Position.Diagram
+positionCanvas =
+    position |> Fuzz.map Position.buildDiagram
+
+
+positionInCanvas : Fuzzer Position.Canvas
+positionInCanvas =
+    position |> Fuzz.map Position.buildCanvas
+
+
+positionGrid : Fuzzer Position.CanvasGrid
+positionGrid =
+    position |> Fuzz.map Position.buildCanvasGrid
+
+
 position : Fuzzer Position
 position =
-    Fuzz.map (Position.stepBy Conf.canvas.grid)
-        (Fuzz.map2 Position
-            (Fuzz.floatRange -10000 10000)
-            (Fuzz.floatRange -10000 10000)
-        )
+    Fuzz.map2 Position
+        (Fuzz.floatRange -10000 10000)
+        (Fuzz.floatRange -10000 10000)
 
 
 size : Fuzzer Size

@@ -7,6 +7,7 @@ module Libs.List exposing
     , dropRight
     , dropUntil
     , dropWhile
+    , filterBy
     , filterNot
     , filterZip
     , find
@@ -20,6 +21,7 @@ module Libs.List exposing
     , last
     , maximumBy
     , memberBy
+    , memberWith
     , merge
     , mergeMaybe
     , minimumBy
@@ -28,6 +30,8 @@ module Libs.List exposing
     , moveByRel
     , moveIndex
     , nonEmpty
+    , nonEmptyMap
+    , prepend
     , prependIf
     , prependOn
     , remove
@@ -57,7 +61,11 @@ import Set
 
 get : Int -> List a -> Maybe a
 get index list =
-    list |> List.drop index |> List.head
+    if index < 0 then
+        Nothing
+
+    else
+        list |> List.drop index |> List.head
 
 
 last : List a -> Maybe a
@@ -76,6 +84,16 @@ last list =
 nonEmpty : List a -> Bool
 nonEmpty list =
     not (List.isEmpty list)
+
+
+nonEmptyMap : (List a -> b) -> b -> List a -> b
+nonEmptyMap f default list =
+    case list of
+        [] ->
+            default
+
+        _ ->
+            f list
 
 
 find : (a -> Bool) -> List a -> Maybe a
@@ -121,6 +139,11 @@ findIndexBy matcher value list =
     findIndex (\a -> matcher a == value) list
 
 
+filterBy : (a -> b) -> b -> List a -> List a
+filterBy matcher value list =
+    List.filter (\a -> matcher a == value) list
+
+
 filterNot : (a -> Bool) -> List a -> List a
 filterNot predicate list =
     list |> List.filter (\a -> not (predicate a))
@@ -134,6 +157,11 @@ indexedFilter p xs =
 memberBy : (a -> b) -> b -> List a -> Bool
 memberBy matcher value list =
     findBy matcher value list |> Maybe.isJust
+
+
+memberWith : (a -> Bool) -> List a -> Bool
+memberWith matcher list =
+    find matcher list |> Maybe.isJust
 
 
 indexOf : a -> List a -> Maybe Int
@@ -216,6 +244,11 @@ addAt item index list =
         -- list |> List.indexedMap (\i a -> ( i, a )) |> List.concatMap (\( i, a ) -> B.cond (i == index) [ item, a ] [ a ])
         -- list |> List.foldl (\a ( res, i ) -> ( List.concat [ res, B.cond (i == index) [ item, a ] [ a ] ], i + 1 )) ( [], 0 ) |> Tuple.first
         list |> List.foldr (\a ( res, i ) -> ( B.cond (i == index) (item :: a :: res) (a :: res), i - 1 )) ( [], List.length list - 1 ) |> Tuple.first
+
+
+prepend : List a -> List a -> List a
+prepend xs ys =
+    List.append ys xs
 
 
 prependIf : Bool -> a -> List a -> List a

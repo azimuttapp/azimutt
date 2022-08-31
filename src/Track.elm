@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableSettings, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableDropdown, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
@@ -47,9 +47,9 @@ openHelp =
     { name = "open-help", details = [], enabled = True }
 
 
-openTableSettings : TrackEvent
-openTableSettings =
-    { name = "open-table-settings", details = [], enabled = True }
+openTableDropdown : TrackEvent
+openTableDropdown =
+    { name = "open-table-dropdown", details = [], enabled = True }
 
 
 showTableWithForeignKey : TrackEvent

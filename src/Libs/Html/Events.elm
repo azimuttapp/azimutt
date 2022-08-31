@@ -5,9 +5,9 @@ import Html.Events exposing (preventDefaultOn, stopPropagationOn)
 import Html.Events.Extra.Mouse as Button exposing (Button)
 import Json.Decode as Decode
 import Libs.Bool as B
-import Libs.Delta exposing (Delta)
+import Libs.Delta as Delta exposing (Delta)
 import Libs.Models.Platform as Platform exposing (Platform)
-import Libs.Models.Position exposing (Position)
+import Models.Position as Position
 
 
 
@@ -15,7 +15,14 @@ import Libs.Models.Position exposing (Position)
 
 
 type alias PointerEvent =
-    { position : Position, ctrl : Bool, alt : Bool, shift : Bool, meta : Bool, button : Button }
+    { clientPos : Position.Viewport
+    , pagePos : Position.Document
+    , ctrl : Bool
+    , alt : Bool
+    , shift : Bool
+    , meta : Bool
+    , button : Button
+    }
 
 
 onContextMenu : Platform -> (PointerEvent -> msg) -> Attribute msg
@@ -70,7 +77,8 @@ onFileChange callback =
 
 
 type alias WheelEvent =
-    { position : Position
+    { clientPos : Position.Viewport
+    , pagePos : Position.Document
     , delta : Delta
     , ctrl : Bool
     , alt : Bool
@@ -110,11 +118,9 @@ stopPointerDown platform msg =
 
 pointerDecoder : Platform -> Decode.Decoder PointerEvent
 pointerDecoder platform =
-    Decode.map6 PointerEvent
-        (Decode.map2 Position
-            (Decode.field "pageX" Decode.float)
-            (Decode.field "pageY" Decode.float)
-        )
+    Decode.map7 PointerEvent
+        Position.decodeViewport
+        Position.decodeDocument
         (Decode.field (B.cond (platform == Platform.Mac) "metaKey" "ctrlKey") Decode.bool)
         (Decode.field "altKey" Decode.bool)
         (Decode.field "shiftKey" Decode.bool)
@@ -124,15 +130,10 @@ pointerDecoder platform =
 
 wheelDecoder : Platform -> Decode.Decoder WheelEvent
 wheelDecoder platform =
-    Decode.map6 WheelEvent
-        (Decode.map2 Position
-            (Decode.field "pageX" Decode.float)
-            (Decode.field "pageY" Decode.float)
-        )
-        (Decode.map2 Delta
-            (Decode.field "deltaX" Decode.float)
-            (Decode.field "deltaY" Decode.float)
-        )
+    Decode.map7 WheelEvent
+        Position.decodeViewport
+        Position.decodeDocument
+        Delta.decodeEvent
         (Decode.field (B.cond (platform == Platform.Mac) "metaKey" "ctrlKey") Decode.bool)
         (Decode.field "altKey" Decode.bool)
         (Decode.field "shiftKey" Decode.bool)

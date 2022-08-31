@@ -69,8 +69,8 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         features =
             [ Just
                 (virtualRelation
-                    |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel virtual relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] })
-                    |> Maybe.withDefault { action = Right (VirtualRelationMsg VRCreate), content = text "Create a virtual relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] }
+                    |> Maybe.map (\_ -> { action = Right (VirtualRelationMsg VRCancel), content = text "Cancel adding relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] })
+                    |> Maybe.withDefault { action = Right (VirtualRelationMsg (VRCreate Nothing)), content = text "Add a relation", hotkeys = Conf.hotkeys |> Dict.getOrElse "create-virtual-relation" [] }
                 )
             , Maybe.when eConf.findPath { action = Right (FindPathMsg (FPOpen Nothing Nothing)), content = text "Find path between tables", hotkeys = Conf.hotkeys |> Dict.getOrElse "find-path" [] }
             , Just { action = Right (SchemaAnalysisMsg SAOpen), content = text "Analyze your schema 🔎", hotkeys = [] }

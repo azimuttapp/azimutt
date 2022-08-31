@@ -1,7 +1,7 @@
-module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnRef, DocState, IndexConstraint, Model, Relation, SharedDocState, State, TableConf, TableRef, UniqueConstraint, doc, initDocState, table)
+module Components.Organisms.Table exposing (Actions, CheckConstraint, Column, ColumnName, ColumnRef, DocState, IndexConstraint, Model, Relation, SchemaName, SharedDocState, State, TableConf, TableName, TableRef, UniqueConstraint, doc, initDocState, table)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
-import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), ItemAction(..), MenuItem)
+import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..), ItemAction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Popover as Popover
 import Components.Molecules.Tooltip as Tooltip
@@ -23,12 +23,10 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform as Platform exposing (Platform)
-import Libs.Models.Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Nel as Nel
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, bg_50, border_500, focus, ring_500, text_500)
-import Models.Project.SchemaName exposing (SchemaName)
 import Set exposing (Set)
 import Track
 
@@ -42,7 +40,7 @@ type alias Model msg =
     , notes : Maybe String
     , columns : List Column
     , hiddenColumns : List Column
-    , settings : List (MenuItem msg)
+    , dropdown : Maybe (Html msg)
     , state : State
     , actions : Actions msg
     , zoom : ZoomLevel
@@ -52,9 +50,13 @@ type alias Model msg =
     }
 
 
+type alias TableRef =
+    { schema : String, table : String }
+
+
 type alias Column =
     { index : Int
-    , name : String
+    , name : ColumnName
     , kind : String
     , kindDetails : Maybe String
     , nullable : Bool
@@ -68,30 +70,6 @@ type alias Column =
     , indexes : List IndexConstraint
     , checks : List CheckConstraint
     }
-
-
-type alias TableRef =
-    { schema : String, table : String }
-
-
-type alias ColumnRef =
-    { schema : String, table : String, column : String }
-
-
-type alias Relation =
-    { column : ColumnRef, nullable : Bool, tableShown : Bool }
-
-
-type alias UniqueConstraint =
-    { name : String }
-
-
-type alias IndexConstraint =
-    { name : String }
-
-
-type alias CheckConstraint =
-    { name : String }
 
 
 type alias State =
@@ -108,17 +86,19 @@ type alias State =
 
 
 type alias Actions msg =
-    { hoverTable : Bool -> msg
-    , hoverColumn : String -> Bool -> msg
-    , clickHeader : Bool -> msg
-    , clickColumn : Maybe (String -> Position -> msg)
-    , clickNotes : Maybe String -> msg
-    , contextMenuColumn : Int -> String -> PointerEvent -> msg
-    , dblClickColumn : String -> msg
-    , clickRelations : List Relation -> Bool -> msg
-    , clickHiddenColumns : msg
-    , clickDropdown : HtmlId -> msg
-    , setPopover : HtmlId -> msg
+    { hover : Bool -> msg
+    , headerClick : PointerEvent -> msg
+    , headerDblClick : msg
+    , headerRightClick : PointerEvent -> msg
+    , headerDropdownClick : HtmlId -> msg
+    , columnHover : ColumnName -> Bool -> msg
+    , columnClick : Maybe (ColumnName -> PointerEvent -> msg)
+    , columnDblClick : ColumnName -> msg
+    , columnRightClick : Int -> ColumnName -> PointerEvent -> msg
+    , notesClick : Maybe ColumnName -> msg
+    , relationsIconClick : List Relation -> Bool -> msg
+    , hiddenColumnsHover : HtmlId -> Bool -> msg
+    , hiddenColumnsClick : msg
     }
 
 
@@ -126,12 +106,44 @@ type alias TableConf =
     { layout : Bool, move : Bool, select : Bool, hover : Bool }
 
 
+type alias Relation =
+    { column : ColumnRef, nullable : Bool, tableShown : Bool }
+
+
+type alias ColumnRef =
+    { schema : String, table : String, column : String }
+
+
+type alias UniqueConstraint =
+    { name : String }
+
+
+type alias IndexConstraint =
+    { name : String }
+
+
+type alias CheckConstraint =
+    { name : String }
+
+
+type alias SchemaName =
+    String
+
+
+type alias TableName =
+    String
+
+
+type alias ColumnName =
+    String
+
+
 table : Model msg -> Html msg
 table model =
     div
         [ id model.id
-        , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverTable True))
-        , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverTable False))
+        , Attributes.when model.conf.hover (onMouseEnter (model.actions.hover True))
+        , Attributes.when model.conf.hover (onMouseLeave (model.actions.hover False))
         , css
             [ "inline-block bg-white rounded-lg"
             , Bool.cond model.state.isHover "shadow-lg" "shadow-md"
@@ -158,7 +170,7 @@ viewHeader model =
     let
         dropdownId : HtmlId
         dropdownId =
-            model.id ++ "-settings"
+            model.id ++ "-dropdown"
 
         headerTextSize : List (Attribute msg)
         headerTextSize =
@@ -182,8 +194,10 @@ viewHeader model =
             ]
         ]
         [ div
-            [ Attributes.when model.conf.select (onPointerUp model.platform (\e -> model.actions.clickHeader (e.ctrl || e.shift)))
-            , class "flex-grow text-center"
+            [ Attributes.when model.conf.select (onPointerUp model.platform model.actions.headerClick)
+            , Attributes.when model.conf.layout (onDoubleClick model.actions.headerDblClick)
+            , Attributes.when model.conf.layout (onContextMenu model.platform model.actions.headerRightClick)
+            , class "flex-grow text-center whitespace-nowrap"
             ]
             ([ if model.isView then
                 span ([ class "text-xl italic underline decoration-dotted" ] ++ headerTextSize) [ text model.label ] |> Tooltip.t "This is a view"
@@ -194,27 +208,28 @@ viewHeader model =
                 |> List.appendOn model.comment viewComment
                 |> List.appendOn model.notes (viewNotes model Nothing)
             )
-        , if model.settings |> List.nonEmpty then
-            Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
-                (\m ->
-                    button
-                        ([ type_ "button"
-                         , id m.id
-                         , onClick (model.actions.clickDropdown m.id)
-                         , ariaExpanded m.isOpen
-                         , ariaHaspopup "true"
-                         , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
-                         ]
-                            ++ track Track.openTableSettings
+        , model.dropdown
+            |> Maybe.mapOrElse
+                (\dropdownContent ->
+                    Dropdown.dropdown { id = dropdownId, direction = BottomLeft, isOpen = model.state.openedDropdown == dropdownId }
+                        (\m ->
+                            button
+                                ([ type_ "button"
+                                 , id m.id
+                                 , onClick (model.actions.headerDropdownClick m.id)
+                                 , ariaExpanded m.isOpen
+                                 , ariaHaspopup "true"
+                                 , css [ "flex text-sm opacity-25", focus [ "outline-none" ] ]
+                                 ]
+                                    ++ track Track.openTableDropdown
+                                )
+                                [ span [ class "sr-only" ] [ text "Open table settings" ]
+                                , Icon.solid DotsVertical ""
+                                ]
                         )
-                        [ span [ class "sr-only" ] [ text "Open table settings" ]
-                        , Icon.solid DotsVertical ""
-                        ]
+                        (\_ -> dropdownContent)
                 )
-                (\_ -> div [ class "z-max" ] (model.settings |> List.map ContextMenu.btnSubmenu))
-
-          else
-            Html.none
+                Html.none
         ]
 
 
@@ -268,9 +283,9 @@ viewHiddenColumns model =
             (( label
              , div
                 [ title label
-                , Attributes.when model.conf.hover (onMouseEnter (model.actions.setPopover popoverId))
-                , Attributes.when model.conf.hover (onMouseLeave (model.actions.setPopover ""))
-                , Attributes.when model.conf.layout (onClick model.actions.clickHiddenColumns)
+                , Attributes.when model.conf.hover (onMouseEnter (model.actions.hiddenColumnsHover popoverId True))
+                , Attributes.when model.conf.hover (onMouseLeave (model.actions.hiddenColumnsHover popoverId False))
+                , Attributes.when model.conf.layout (onClick model.actions.hiddenColumnsClick)
                 , class "h-6 pl-7 pr-2 whitespace-nowrap text-default-500 opacity-50 hover:opacity-100"
                 , classList [ ( "cursor-pointer", model.conf.layout ) ]
                 ]
@@ -285,10 +300,10 @@ viewColumn : Model msg -> TwClass -> Bool -> Int -> Column -> Html msg
 viewColumn model styles isLast index column =
     div
         ([ title (column.name ++ " (" ++ column.kind ++ Bool.cond column.nullable "?" "" ++ ")")
-         , Attributes.when model.conf.hover (onMouseEnter (model.actions.hoverColumn column.name True))
-         , Attributes.when model.conf.hover (onMouseLeave (model.actions.hoverColumn column.name False))
-         , Attributes.when model.conf.layout (onContextMenu model.platform (model.actions.contextMenuColumn index column.name))
-         , Attributes.when model.conf.layout (onDoubleClick (model.actions.dblClickColumn column.name))
+         , Attributes.when model.conf.hover (onMouseEnter (model.actions.columnHover column.name True))
+         , Attributes.when model.conf.hover (onMouseLeave (model.actions.columnHover column.name False))
+         , Attributes.when model.conf.layout (onDoubleClick (model.actions.columnDblClick column.name))
+         , Attributes.when model.conf.layout (onContextMenu model.platform (model.actions.columnRightClick index column.name))
          , css
             [ "h-6 px-2 flex items-center align-middle whitespace-nowrap relative"
             , styles
@@ -296,7 +311,7 @@ viewColumn model styles isLast index column =
             , Bool.cond isLast "rounded-b-lg" ""
             ]
          ]
-            ++ (model.actions.clickColumn |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (.position >> action column.name) ]) [])
+            ++ (model.actions.columnClick |> Maybe.mapOrElse (\action -> [ onPointerUp model.platform (action column.name) ]) [])
         )
         [ viewColumnIcon model column |> viewColumnIconDropdown model column
         , viewColumnName model column
@@ -324,7 +339,7 @@ viewColumnIcon model column =
                 [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
 
         else
-            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.clickRelations column.outRelations True) ] ++ track Track.showTableWithForeignKey)
+            div ([ css [ "cursor-pointer", text_500 model.state.color ], onClick (model.actions.relationsIconClick column.outRelations True) ] ++ track Track.showTableWithForeignKey)
                 [ Icon.solid ExternalLink "w-4 h-4" |> Tooltip.t tooltip ]
 
     else if column.isPrimaryKey then
@@ -363,7 +378,7 @@ viewColumnIconDropdown model column icon =
                 button
                     ([ type_ "button"
                      , id m.id
-                     , onClick (model.actions.clickDropdown m.id)
+                     , onClick (model.actions.headerDropdownClick m.id)
                      , ariaExpanded m.isOpen
                      , ariaHaspopup "true"
                      , css [ Bool.cond (tablesToShow |> List.isEmpty) "" (text_500 model.state.color), focus [ "outline-none" ] ]
@@ -392,11 +407,11 @@ viewColumnIconDropdown model column icon =
                                     ContextMenu.btnDisabled "py-1" content
 
                                 else
-                                    viewColumnIconDropdownItem (model.actions.clickRelations [ rels.head ] False) content
+                                    viewColumnIconDropdownItem (model.actions.relationsIconClick [ rels.head ] False) content
                             )
                      )
                         ++ (if List.length tablesToShow > 1 then
-                                [ viewColumnIconDropdownItem (model.actions.clickRelations tablesToShow False) [ text ("Show all (" ++ (tablesToShow |> String.pluralizeL "table") ++ ")") ] ]
+                                [ viewColumnIconDropdownItem (model.actions.relationsIconClick tablesToShow False) [ text ("Show all (" ++ (tablesToShow |> String.pluralizeL "table") ++ ")") ] ]
 
                             else
                                 []
@@ -431,7 +446,7 @@ viewComment comment =
 viewNotes : Model msg -> Maybe String -> String -> Html msg
 viewNotes model column notes =
     span
-        [ Attributes.when model.conf.layout (onClick (model.actions.clickNotes column))
+        [ Attributes.when model.conf.layout (onClick (model.actions.notesClick column))
         , classList [ ( "cursor-pointer", model.conf.layout ) ]
         ]
         [ Icon.outline DocumentText "w-4 ml-1 opacity-50" |> Tooltip.t notes ]
@@ -451,7 +466,7 @@ viewColumnKind model column =
             ]
                 |> List.filterMap identity
                 |> String.join " / "
-                |> String.maybeNonEmpty
+                |> String.nonEmptyMaybe
 
         value : Html msg
         value =
@@ -473,7 +488,7 @@ viewColumnKind model column =
 
 showTableRef : SchemaName -> TableRef -> String
 showTableRef defaultSchema ref =
-    if ref.schema == defaultSchema then
+    if ref.schema == defaultSchema || ref.schema == Conf.schema.empty then
         ref.table
 
     else
@@ -482,7 +497,7 @@ showTableRef defaultSchema ref =
 
 showColumnRef : SchemaName -> ColumnRef -> String
 showColumnRef defaultSchema ref =
-    if ref.schema == defaultSchema then
+    if ref.schema == defaultSchema || ref.schema == Conf.schema.empty then
         ref.table ++ "." ++ ref.column
 
     else
@@ -538,16 +553,21 @@ sample =
         , { sampleColumn | name = "created", kind = "timestamp without time zone", default = Just "CURRENT_TIMESTAMP" }
         ]
     , hiddenColumns = []
-    , settings =
-        [ { label = "Menu item 1", action = Simple { action = logAction "menu item 1", platform = Platform.PC, hotkeys = [] } }
-        , { label = "Menu item 2"
-          , action =
-                SubMenu
-                    [ { label = "Menu item 2.1", action = logAction "menu item 2.1", platform = Platform.PC, hotkeys = [] }
-                    , { label = "Menu item 2.2", action = logAction "menu item 2.2", platform = Platform.PC, hotkeys = [] }
-                    ]
-          }
-        ]
+    , dropdown =
+        Just
+            (div [ class "z-max" ]
+                ([ { label = "Menu item 1", action = Simple { action = logAction "menu item 1", platform = Platform.PC, hotkeys = [] } }
+                 , { label = "Menu item 2"
+                   , action =
+                        SubMenu
+                            [ { label = "Menu item 2.1", action = logAction "menu item 2.1", platform = Platform.PC, hotkeys = [] }
+                            , { label = "Menu item 2.2", action = logAction "menu item 2.2", platform = Platform.PC, hotkeys = [] }
+                            ]
+                   }
+                 ]
+                    |> List.map ContextMenu.btnSubmenu
+                )
+            )
     , platform = Platform.PC
     , state =
         { color = Tw.indigo
@@ -561,17 +581,19 @@ sample =
         , showHiddenColumns = False
         }
     , actions =
-        { hoverTable = \h -> logAction ("hover table " ++ Bool.cond h "on" " off")
-        , hoverColumn = \c h -> logAction ("hover column " ++ c ++ " " ++ Bool.cond h "on" " off")
-        , clickHeader = \_ -> logAction "selected"
-        , clickColumn = Nothing
-        , clickNotes = \col -> logAction ("click notes: " ++ (col |> Maybe.withDefault "table"))
-        , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
-        , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
-        , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
-        , clickHiddenColumns = logAction "click hidden columns"
-        , clickDropdown = \id -> logAction ("open " ++ id)
-        , setPopover = \id -> logAction ("hover hidden columns: " ++ id)
+        { hover = \on -> logAction ("hover " ++ Bool.cond on "on" " off")
+        , headerClick = \_ -> logAction "headerClick"
+        , headerDblClick = logAction "headerDblClick"
+        , headerRightClick = \_ -> logAction "headerRightClick"
+        , headerDropdownClick = \id -> logAction ("headerDropdownClick " ++ id)
+        , columnHover = \c on -> logAction ("columnHover " ++ c ++ " " ++ Bool.cond on "on" " off")
+        , columnClick = Just (\col _ -> logAction ("columnClick " ++ col))
+        , columnDblClick = \col -> logAction ("columnDblClick " ++ col)
+        , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ col)
+        , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.withDefault "table"))
+        , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+        , hiddenColumnsHover = \id _ -> logAction ("hiddenColumnsHover " ++ id)
+        , hiddenColumnsClick = logAction "hiddenColumnsClick"
         }
     , zoom = 1
     , conf = { layout = True, move = True, select = True, hover = True }
@@ -590,17 +612,19 @@ doc =
                             | hiddenColumns = [ { sampleColumn | name = "created", kind = "timestamp without time zone" } ]
                             , state = tableDocState
                             , actions =
-                                { hoverTable = \h -> updateDocState (\s -> { s | isHover = h })
-                                , hoverColumn = \c h -> updateDocState (\s -> { s | highlightedColumns = Bool.cond h (Set.fromList [ c ]) Set.empty })
-                                , clickHeader = \_ -> updateDocState (\s -> { s | selected = not s.selected })
-                                , clickColumn = Nothing
-                                , clickNotes = \col -> logAction ("click notes: " ++ (col |> Maybe.withDefault "table"))
-                                , contextMenuColumn = \_ col _ -> logAction ("menu column: " ++ col)
-                                , dblClickColumn = \col -> logAction ("toggle column: " ++ col)
-                                , clickRelations = \refs _ -> logAction ("show tables: " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
-                                , clickHiddenColumns = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
-                                , clickDropdown = \id -> updateDocState (\s -> { s | openedDropdown = Bool.cond (id == s.openedDropdown) "" id })
-                                , setPopover = \id -> updateDocState (\s -> { s | openedPopover = id })
+                                { hover = \on -> updateDocState (\s -> { s | isHover = on })
+                                , headerClick = \_ -> updateDocState (\s -> { s | selected = not s.selected })
+                                , headerDblClick = updateDocState (\s -> s)
+                                , headerRightClick = \_ -> updateDocState (\s -> s)
+                                , headerDropdownClick = \id -> updateDocState (\s -> { s | openedDropdown = Bool.cond (id == s.openedDropdown) "" id })
+                                , columnHover = \c on -> updateDocState (\s -> { s | highlightedColumns = Bool.cond on (Set.fromList [ c ]) Set.empty })
+                                , columnClick = Just (\col _ -> logAction ("columnClick " ++ col))
+                                , columnDblClick = \col -> logAction ("columnDblClick " ++ col)
+                                , columnRightClick = \_ col _ -> logAction ("columnRightClick " ++ col)
+                                , notesClick = \col -> logAction ("notesClick " ++ (col |> Maybe.withDefault "table"))
+                                , relationsIconClick = \refs _ -> logAction ("relationsIconClick " ++ (refs |> List.map (\r -> r.column.schema ++ "." ++ r.column.table) |> String.join ", "))
+                                , hiddenColumnsHover = \id _ -> updateDocState (\s -> { s | openedPopover = id })
+                                , hiddenColumnsClick = updateDocState (\s -> { s | showHiddenColumns = not s.showHiddenColumns })
                                 }
                         }
               )

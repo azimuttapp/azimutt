@@ -52,7 +52,7 @@ handleProjectSettings now backendUrl msg model =
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send )
 
         PSSourceUpdate message ->
-            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now backendUrl (model.erd |> Erd.defaultSchemaM) message)
+            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now backendUrl message)
 
         PSSourceSet source ->
             if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then

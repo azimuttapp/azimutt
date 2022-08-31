@@ -106,7 +106,7 @@ tableDiff old new =
     ]
         |> List.filterMap identity
         |> String.join ", "
-        |> String.maybeNonEmpty
+        |> String.nonEmptyMaybe
 
 
 relationDiff : Relation -> Relation -> Maybe String
@@ -120,4 +120,4 @@ relationDiff old new =
     ]
         |> List.filterMap identity
         |> String.join ", "
-        |> String.maybeNonEmpty
+        |> String.nonEmptyMaybe

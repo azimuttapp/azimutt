@@ -1,4 +1,4 @@
-module Models.SourceInfo exposing (SourceInfo, jsonLocal, jsonRemote, sqlLocal, sqlRemote)
+module Models.SourceInfo exposing (SourceInfo, aml, jsonLocal, jsonRemote, sqlLocal, sqlRemote)
 
 import FileValue exposing (File)
 import Libs.Models exposing (FileContent)
@@ -19,6 +19,11 @@ type alias SourceInfo =
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
+
+
+aml : Time.Posix -> SourceId -> SourceName -> SourceInfo
+aml now sourceId name =
+    SourceInfo sourceId name AmlEditor True Nothing now now
 
 
 sqlLocal : Time.Posix -> SourceId -> File -> SourceInfo

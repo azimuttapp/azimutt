@@ -107,9 +107,9 @@ update : Request.With Params -> Time.Posix -> Backend.Url -> Msg -> Model -> ( M
 update req now backendUrl msg model =
     case msg of
         InitProject ->
-            ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
-                |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (Tuple.second >> Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
-                |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
+            ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
+                |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
+                |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
                 |> Maybe.withDefault model
                 |> setProjectName (req.query |> Dict.get "name" |> Maybe.withDefault Conf.constants.newProjectName |> String.unique (model.projects |> List.map .name))
             , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
@@ -162,7 +162,7 @@ handleJsMessage msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
-    Sub.batch [ Ports.onJsMessage Nothing JsMessage ]
+    Sub.batch [ Ports.onJsMessage JsMessage ]
 
 
 

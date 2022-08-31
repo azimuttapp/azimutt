@@ -169,22 +169,17 @@ function getLocalFile(msg: GetLocalFileMsg) {
 }
 
 const resizeObserver = new ResizeObserver(entries => {
-    const sizes = entries.map(entry => ({
-        id: entry.target.id,
-        position: {
-            left: (entry.target as HTMLElement).offsetLeft,
-            top: (entry.target as HTMLElement).offsetTop
-        },
-        size: {
-            width: entry.contentRect.width,
-            height: entry.contentRect.height
-        },
-        seeds: {
-            left: Math.random(),
-            top: Math.random()
+    app.updateSizes(entries.map(entry => {
+        const rect = entry.target.getBoundingClientRect() // viewport position & size
+        // const sizeCanvas = {width: entry.contentRect.width, height: entry.contentRect.height} // don't change with zoom
+        const sizeViewport = { width: rect.width, height: rect.height } // depend on zoom
+        return {
+            id: entry.target.id,
+            position: { clientX: rect.left, clientY: rect.top },
+            size: sizeViewport,
+            seeds: { dx: Math.random(), dy: Math.random() }
         }
     }))
-    app.updateSizes(sizes)
 })
 
 function observeSizes(msg: ObserveSizesMsg) {

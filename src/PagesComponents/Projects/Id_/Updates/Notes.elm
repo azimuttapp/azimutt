@@ -37,7 +37,7 @@ handleNotes msg model =
             ( model |> mapEditNotesM (setNotes notes), Cmd.none )
 
         NSave ref notes ->
-            ( model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdTableNotes.set ref (String.maybeNonEmpty notes))), Cmd.none )
+            ( model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdTableNotes.set ref (String.nonEmptyMaybe notes))), Cmd.none )
 
         NCancel ->
             ( model |> setEditNotes Nothing, Cmd.none )

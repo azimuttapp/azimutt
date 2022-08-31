@@ -4,16 +4,17 @@ import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
 import Dict exposing (Dict)
 import Html exposing (Html, text)
-import Libs.Area exposing (Area)
 import Libs.Delta exposing (Delta)
 import Libs.Html.Events exposing (PointerEvent, WheelEvent)
 import Libs.Models exposing (ZoomDelta)
 import Libs.Models.DragId exposing (DragId)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position exposing (Position)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Task as T
+import Models.Area as Area
 import Models.ColumnOrder exposing (ColumnOrder)
+import Models.ErdProps exposing (ErdProps)
+import Models.Position as Position
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -25,7 +26,7 @@ import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle exposing (RelationStyle)
-import Models.ScreenProps exposing (ScreenProps)
+import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -51,17 +52,18 @@ import Shared exposing (Confirm, Prompt)
 type alias Model =
     { conf : ErdConf
     , navbar : NavbarModel
-    , screen : ScreenProps
+    , erdElem : ErdProps
     , loaded : Bool
     , erd : Maybe Erd
     , projects : List ProjectInfo
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
-    , selectionBox : Maybe Area
+    , selectionBox : Maybe Area.Canvas
     , newLayout : Maybe LayoutDialog
     , editNotes : Maybe NotesDialog
     , amlSidebar : Maybe AmlSidebar
+    , detailsSidebar : Maybe DetailsSidebar.Model
     , virtualRelation : Maybe VirtualRelation
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
@@ -107,7 +109,7 @@ type alias AmlSidebar =
 
 
 type alias VirtualRelation =
-    { src : Maybe ColumnRef, mouse : Position }
+    { src : Maybe ColumnRef, mouse : Position.Viewport }
 
 
 type alias SchemaAnalysisDialog =
@@ -127,7 +129,7 @@ type alias HelpDialog =
 
 
 type alias ContextMenu =
-    { content : Html Msg, position : Position, show : Bool }
+    { content : Html Msg, position : Position.Viewport, show : Bool }
 
 
 type alias ConfirmDialog =
@@ -158,8 +160,9 @@ type Msg
     | SortColumns TableId ColumnOrder
     | ToggleHiddenColumns TableId
     | SelectTable TableId Bool
+    | SelectAllTables
     | TableMove TableId Delta
-    | TablePosition TableId Position
+    | TablePosition TableId Position.CanvasGrid
     | TableOrder TableId Int
     | TableColor TableId Color
     | MoveColumn ColumnRef Int
@@ -171,6 +174,7 @@ type Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
     | AmlSidebarMsg AmlSidebarMsg
+    | DetailsSidebarMsg DetailsSidebar.Msg
     | VirtualRelationMsg VirtualRelationMsg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
@@ -195,9 +199,9 @@ type Msg
     | ContextMenuCreate (Html Msg) PointerEvent
     | ContextMenuShow
     | ContextMenuClose
-    | DragStart DragId Position
-    | DragMove Position
-    | DragEnd Position
+    | DragStart DragId Position.Viewport
+    | DragMove Position.Viewport
+    | DragEnd Position.Viewport
     | DragCancel
     | Toast Toasts.Msg
     | ConfirmOpen (Confirm Msg)
@@ -237,9 +241,9 @@ type AmlSidebarMsg
 
 
 type VirtualRelationMsg
-    = VRCreate
-    | VRUpdate ColumnRef Position
-    | VRMove Position
+    = VRCreate (Maybe ColumnRef)
+    | VRUpdate ColumnRef Position.Viewport
+    | VRMove Position.Viewport
     | VRCancel
 
 

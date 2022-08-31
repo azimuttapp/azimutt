@@ -11,10 +11,10 @@ import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Task as T
+import Models.ErdProps as ErdProps
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
-import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
@@ -76,7 +76,7 @@ init : QueryString -> ( Model, Cmd Msg )
 init query =
     ( { conf = query.mode |> Maybe.andThen (\mode -> EmbedMode.all |> List.findBy .id mode) |> Maybe.mapOrElse .conf ErdConf.embedDefault
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
-      , screen = ScreenProps.zero
+      , erdElem = ErdProps.zero
       , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
       , erd = Nothing
       , projects = []
@@ -87,6 +87,7 @@ init query =
       , newLayout = Nothing
       , editNotes = Nothing
       , amlSidebar = Nothing
+      , detailsSidebar = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing

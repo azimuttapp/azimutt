@@ -2,18 +2,19 @@ module PagesComponents.Projects.Id_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf
-import Dict exposing (Dict)
 import Gen.Route as Route
-import Libs.Area as Area exposing (Area, AreaLike)
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Libs.Bool as B
-import Libs.Delta as Delta
+import Libs.Delta as Delta exposing (Delta)
 import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
-import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size as Size exposing (Size)
+import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
+import Models.Area as Area
+import Models.Position as Position
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId
@@ -21,9 +22,11 @@ import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
-import Models.Project.TableId as TableId exposing (TableId)
+import Models.Project.TableId as TableId
+import Models.Size as Size
 import Models.SourceInfo as SourceInfo
-import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
+import PagesComponents.Projects.Id_.Components.AmlSidebar as AmlSidebar
+import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
@@ -52,7 +55,7 @@ import Random
 import Request
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapScreen, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapTop, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
@@ -135,41 +138,44 @@ update req currentLayout now backendUrl msg model =
             model |> mapErdMCmd (sortColumns now id kind)
 
         ToggleHiddenColumns id ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.updateBy .id id (mapProps (mapShowHiddenColumns not))))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapShowHiddenColumns not))))), Cmd.none )
 
         SelectTable tableId ctrl ->
             if model.dragging |> Maybe.any DragState.hasMoved then
                 ( model, Cmd.none )
 
             else
-                ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))), Cmd.none )
+                ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (\t -> t |> mapProps (mapSelected (\s -> B.cond (t.id == tableId) (not s) (B.cond ctrl s False))))))), Cmd.none )
+
+        SelectAllTables ->
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (setSelected True))))), Cmd.none )
 
         TableMove id delta ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.updateBy .id id (mapProps (mapPosition (\p -> delta |> Delta.move p)))))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (mapPosition (Position.moveCanvasGrid delta)))))), Cmd.none )
 
         TablePosition id position ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (List.updateBy .id id (mapProps (setPosition position))))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id id (mapProps (setPosition position))))), Cmd.none )
 
         TableOrder id index ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (\tables -> tables |> List.moveBy .id id (List.length tables - 1 - index)))), Cmd.none )
 
         TableColor id color ->
             model |> mapErdMCmd (\erd -> erd |> Erd.mapCurrentLayoutCmd now (mapTablesCmd (mapTablePropOrSelected erd.settings.defaultSchema id (mapProps (setColor color)))))
 
         MoveColumn column position ->
-            ( model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayout now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))), Cmd.none )
+            ( model |> mapErdM (\erd -> erd |> Erd.mapCurrentLayoutWithTime now (mapTables (List.updateBy .id column.table (mapColumns (List.moveBy .name column.column position))))), Cmd.none )
 
         ToggleHoverTable table on ->
             ( model |> setHoverTable (B.cond on (Just table) Nothing), Cmd.none )
 
         ToggleHoverColumn column on ->
-            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayout now (mapTables (hoverColumn column on e))), Cmd.none )
+            ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn column on e))), Cmd.none )
 
         CreateUserSource name ->
             ( model, SourceId.generator |> Random.generate (\sourceId -> Source.aml sourceId name now |> CreateUserSourceWithId) )
 
         CreateUserSourceWithId source ->
-            ( model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSlidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
+            ( model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
 
         CreateRelation src ref ->
             model |> mapErdMCmd (Source.createRelation now src ref)
@@ -181,7 +187,10 @@ update req currentLayout now backendUrl msg model =
             model |> handleNotes message
 
         AmlSidebarMsg message ->
-            model |> AmlSlidebar.update now message
+            model |> AmlSidebar.update now message
+
+        DetailsSidebarMsg message ->
+            model.erd |> Maybe.mapOrElse (\erd -> model |> mapDetailsSidebarCmd (DetailsSidebar.update erd message)) ( model, Cmd.none )
 
         VirtualRelationMsg message ->
             model |> handleVirtualRelation message
@@ -220,16 +229,16 @@ update req currentLayout now backendUrl msg model =
             ( model |> setCursorMode mode, Cmd.none )
 
         FitContent ->
-            ( model |> mapErdM (fitCanvas now model.screen), Cmd.none )
+            model |> mapErdMCmd (fitCanvas now model.erdElem)
 
         Fullscreen maybeId ->
             ( model, Ports.fullscreen maybeId )
 
         OnWheel event ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (mapCanvas (handleWheel event))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))), Cmd.none )
 
         Zoom delta ->
-            ( model |> mapErdM (Erd.mapCurrentLayout now (mapCanvas (zoomCanvas delta model.screen))), Cmd.none )
+            ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))), Cmd.none )
 
         Logout ->
             B.cond (model.erd |> Maybe.mapOrElse (\e -> e.project.storage /= ProjectStorage.Browser) False) (Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ]) Ports.logout
@@ -251,7 +260,7 @@ update req currentLayout now backendUrl msg model =
             ( model |> setOpenedPopover id, Cmd.none )
 
         ContextMenuCreate content event ->
-            ( model |> setContextMenu (Just { content = content, position = event.position, show = False }), T.sendAfter 1 ContextMenuShow )
+            ( model |> setContextMenu (Just { content = content, position = event.clientPos, show = False }), T.sendAfter 1 ContextMenuShow )
 
         ContextMenuShow ->
             ( model |> mapContextMenuM (setShow True), Cmd.none )
@@ -266,14 +275,14 @@ update req currentLayout now backendUrl msg model =
 
         DragMove pos ->
             ( model.dragging
-                |> Maybe.map (DragState.setLast pos)
+                |> Maybe.map (setLast pos)
                 |> Maybe.mapOrElse (\d -> model |> setDragging (Just d) |> handleDrag now d False) model
             , Cmd.none
             )
 
         DragEnd pos ->
             ( model.dragging
-                |> Maybe.map (DragState.setLast pos)
+                |> Maybe.map (setLast pos)
                 |> Maybe.mapOrElse (\d -> model |> setDragging Nothing |> handleDrag now d True) model
             , Cmd.none
             )
@@ -367,7 +376,7 @@ handleJsMessage now currentLayout msg model =
 
                         amlSidebar : Maybe AmlSidebar
                         amlSidebar =
-                            B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSlidebar.init (Just erd))
+                            B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSidebar.init (Just erd))
                     in
                     ( { model | loaded = True, erd = Just erd, amlSidebar = amlSidebar } |> mapUploadM (\u -> { u | movingProject = False })
                     , Cmd.batch
@@ -456,8 +465,8 @@ handleJsMessage now currentLayout msg model =
         GotFitToScreen ->
             ( model, T.send FitContent )
 
-        Error err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
+        Error json err ->
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
 
 
 updateSizes : List SizeChange -> Model -> ( Model, Cmd Msg )
@@ -465,31 +474,15 @@ updateSizes changes model =
     let
         erdChanged : Model
         erdChanged =
-            changes |> List.findBy .id "erd" |> Maybe.mapOrElse (\c -> model |> mapScreen (setPosition c.position >> setSize c.size)) model
+            changes |> List.findBy .id "erd" |> Maybe.mapOrElse (\c -> { model | erdElem = { position = c.position, size = c.size } }) model
 
-        tableChanges : Dict TableId SizeChange
-        tableChanges =
-            changes |> List.filterMap (\c -> TableId.fromHtmlId c.id |> Maybe.map (\id -> ( id, c ))) |> Dict.fromList
+        erdViewport : Area.Canvas
+        erdViewport =
+            erdChanged.erd |> Erd.viewportM erdChanged.erdElem
 
         tablesChanged : Model
         tablesChanged =
-            erdChanged
-                |> mapErdM
-                    (\erd ->
-                        erd
-                            |> Erd.mapCurrentLayout (erd |> Erd.currentLayout |> .updatedAt)
-                                (mapTables
-                                    (\tables ->
-                                        tables
-                                            |> List.map
-                                                (\table ->
-                                                    tableChanges
-                                                        |> Dict.get table.id
-                                                        |> Maybe.mapOrElse (\change -> updateTable tables (erdChanged.erd |> Erd.viewportM erdChanged.screen) change table) table
-                                                )
-                                    )
-                                )
-                    )
+            erdChanged |> mapErdM (\erd -> erd |> Erd.mapCurrentLayout (\l -> l |> mapTables (updateTables l.canvas.zoom erdViewport changes)))
     in
     if model.conf.fitOnLoad then
         ( tablesChanged |> mapConf (\c -> { c | fitOnLoad = False }), T.send FitContent )
@@ -498,57 +491,82 @@ updateSizes changes model =
         ( tablesChanged, Cmd.none )
 
 
-updateTable : List ErdTableLayout -> Area -> SizeChange -> ErdTableLayout -> ErdTableLayout
-updateTable tables viewport change table =
-    if table.props.size == Size.zero && table.props.position == Position.zero then
-        table |> mapProps (setSize change.size >> setPosition (computeInitialPosition tables viewport change table.props.positionHint))
+updateTables : ZoomLevel -> Area.Canvas -> List SizeChange -> List ErdTableLayout -> List ErdTableLayout
+updateTables zoom erdViewport changes tables =
+    tables |> List.map (\table -> changes |> List.find (\c -> c.id == TableId.toHtmlId table.id) |> Maybe.mapOrElse (updateTable zoom tables erdViewport table) table)
+
+
+updateTable : ZoomLevel -> List ErdTableLayout -> Area.Canvas -> ErdTableLayout -> SizeChange -> ErdTableLayout
+updateTable zoom tables erdViewport table change =
+    let
+        newSize : Size.Canvas
+        newSize =
+            change.size |> Size.viewportToCanvas zoom
+    in
+    if table.props.size == Size.zeroCanvas && table.props.position == Position.zeroCanvasGrid then
+        table |> mapProps (setSize newSize >> setPosition (computeInitialPosition tables erdViewport newSize change.seeds table.props.positionHint))
 
     else
-        table |> mapProps (setSize change.size)
+        table |> mapProps (setSize newSize)
 
 
-computeInitialPosition : List ErdTableLayout -> Area -> SizeChange -> Maybe PositionHint -> Position
-computeInitialPosition tables viewport change hint =
+computeInitialPosition : List ErdTableLayout -> Area.Canvas -> Size.Canvas -> Delta -> Maybe PositionHint -> Position.CanvasGrid
+computeInitialPosition tables erdViewport newSize seeds hint =
     hint
         |> Maybe.mapOrElse
             (\h ->
                 case h of
                     PlaceLeft position ->
-                        position |> Position.sub { left = change.size.width + 50, top = 0 } |> moveDownIfExists tables change.size
+                        position |> Position.moveCanvasGrid { dx = (Size.extractCanvas newSize).width + 50 |> negate, dy = 0 } |> moveDownIfExists tables newSize
 
                     PlaceRight position size ->
-                        position |> Position.add { left = size.width + 50, top = 0 } |> moveDownIfExists tables change.size
+                        position |> Position.moveCanvasGrid { dx = (Size.extractCanvas size).width + 50, dy = 0 } |> moveDownIfExists tables newSize
 
                     PlaceAt position ->
                         position
             )
-            (if tables |> List.filter (\t -> t.props.size /= Size.zero) |> List.isEmpty then
-                viewport |> Area.center |> Position.sub (change |> Area.center) |> mapTop (max viewport.position.top)
+            (if tables |> List.filter (\t -> t.props.size /= Size.zeroCanvas) |> List.isEmpty then
+                newSize |> placeAtCenter erdViewport
 
              else
-                { left = viewport.position.left + change.seeds.left * max 0 (viewport.size.width - change.size.width)
-                , top = viewport.position.top + change.seeds.top * max 0 (viewport.size.height - change.size.height)
-                }
+                newSize |> placeAtRandom erdViewport seeds
             )
 
 
+placeAtCenter : Area.Canvas -> Size.Canvas -> Position.CanvasGrid
+placeAtCenter erdViewport newSize =
+    let
+        ( canvasCenter, tableCenter ) =
+            ( erdViewport |> Area.centerCanvas
+            , Area.zeroCanvas |> setSize newSize |> Area.centerCanvas
+            )
+    in
+    canvasCenter |> Position.moveCanvas (Position.zeroCanvas |> Position.diffCanvas tableCenter) |> Position.onGrid
 
---insideViewport : Area -> SizeChange -> Position -> Position
---insideViewport viewport change pos =
---    { left = pos.left |> Basics.inside viewport.position.left (viewport.position.left + viewport.size.width - change.size.width)
---    , top = pos.top |> Basics.inside viewport.position.top (viewport.position.top + viewport.size.height - change.size.height)
---    }
+
+placeAtRandom : Area.Canvas -> Delta -> Size.Canvas -> Position.CanvasGrid
+placeAtRandom erdViewport seeds newSize =
+    erdViewport.position
+        |> Position.moveCanvas (erdViewport.size |> Size.diffCanvas newSize |> Delta.max 0 |> Delta.multD seeds)
+        |> Position.onGrid
 
 
-moveDownIfExists : List ErdTableLayout -> Size -> Position -> Position
+moveDownIfExists : List ErdTableLayout -> Size.Canvas -> Position.CanvasGrid -> Position.CanvasGrid
 moveDownIfExists tables size position =
-    if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props (Area position size)) then
-        position |> Position.add { left = 0, top = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
+    if tables |> List.any (\t -> t.props.position == position || isSameTopRight t.props { position = position, size = size }) then
+        position |> Position.moveCanvasGrid { dx = 0, dy = Conf.ui.tableHeaderHeight } |> moveDownIfExists tables size
 
     else
         position
 
 
-isSameTopRight : AreaLike x -> AreaLike y -> Bool
+isSameTopRight : { x | position : Position.CanvasGrid, size : Size.Canvas } -> { y | position : Position.CanvasGrid, size : Size.Canvas } -> Bool
 isSameTopRight a b =
-    a.position.top == b.position.top && a.position.left + a.size.width == b.position.left + b.size.width
+    let
+        ( aPos, bPos ) =
+            ( a.position |> Position.extractCanvasGrid, b.position |> Position.extractCanvasGrid )
+
+        ( aSize, bSize ) =
+            ( a.size |> Size.extractCanvas, b.size |> Size.extractCanvas )
+    in
+    aPos.top == bPos.top && aPos.left + aSize.width == bPos.left + bSize.width

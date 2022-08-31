@@ -6,12 +6,14 @@ import ElmBook.Custom exposing (Msg)
 import Html exposing (Html, div)
 import Html.Events exposing (onMouseEnter, onMouseLeave)
 import Libs.Bool as Bool
+import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Svg.Attributes as Attributes exposing (css)
 import Libs.Svg.Utils exposing (circle, curveTo, lineTo, moveTo)
 import Libs.Tailwind as Tw exposing (Color, fill_500, stroke_500)
+import Models.Position as Position
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Svg exposing (Attribute, Svg, svg, text)
 import Svg.Attributes exposing (class, d, height, strokeDasharray, style, width, x1, x2, y1, y2)
@@ -27,7 +29,7 @@ type Direction
     | None
 
 
-show : RelationStyle -> RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+show : RelationStyle -> RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 show style conf src ref nullable color label index onHover =
     case style of
         RelationStyle.Bezier ->
@@ -40,49 +42,56 @@ show style conf src ref nullable color label index onHover =
             steps conf src ref nullable color label index onHover
 
 
-straight : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+straight : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 straight conf ( src, _ ) ( ref, _ ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 12 }
-        (\origin -> drawLine conf (src |> Position.sub origin) (ref |> Position.sub origin) onHover)
+        (\origin -> drawLine conf (src |> Position.moveCanvas origin) (ref |> Position.moveCanvas origin) onHover)
 
 
-bezier : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+bezier : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 bezier conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawCurve conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) onHover)
+        (\origin -> drawCurve conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
 
 
-steps : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
+steps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
 steps conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
     buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
-        (\origin -> drawSteps conf ( src |> Position.sub origin, srcDir ) ( ref |> Position.sub origin, refDir ) onHover)
+        (\origin -> drawSteps conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
 
 
 type alias SvgParams =
-    { src : Position, ref : Position, nullable : Bool, color : Maybe Color, label : String, index : Int, padding : Float }
+    { src : Position.Canvas, ref : Position.Canvas, nullable : Bool, color : Maybe Color, label : String, index : Int, padding : Float }
 
 
-buildSvg : SvgParams -> (Position -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
+buildSvg : SvgParams -> (Delta -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
 buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
     let
+        ( srcPos, refPos ) =
+            ( src |> Position.extractCanvas, ref |> Position.extractCanvas )
+
         origin : Position
         origin =
-            { left = min src.left ref.left - padding, top = min src.top ref.top - padding }
+            { left = min srcPos.left refPos.left - padding, top = min srcPos.top refPos.top - padding }
     in
     svg
         [ class "az-relation absolute select-none"
-        , width (String.fromFloat (abs (src.left - ref.left) + (padding * 2)))
-        , height (String.fromFloat (abs (src.top - ref.top) + (padding * 2)))
+        , width (String.fromFloat (abs (srcPos.left - refPos.left) + (padding * 2)))
+        , height (String.fromFloat (abs (srcPos.top - refPos.top) + (padding * 2)))
         , style ("left: " ++ String.fromFloat origin.left ++ "px; top: " ++ String.fromFloat origin.top ++ "px; z-index: " ++ String.fromInt index ++ ";")
 
         --, style ("transform: translate(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px); z-index: " ++ String.fromInt index ++ ";")
         --, style ("transform: translate3d(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px, 0); z-index: " ++ String.fromInt index ++ ";")
         ]
-        (text label :: svgContent origin nullable color)
+        (text label :: svgContent (Position.zero |> Position.diff origin) nullable color)
 
 
-drawLine : RelationConf -> Position -> Position -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawLine conf p1 p2 onHover nullable color =
+drawLine : RelationConf -> Position.Canvas -> Position.Canvas -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawLine conf pos1 pos2 onHover nullable color =
+    let
+        ( p1, p2 ) =
+            ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
+    in
     [ Svg.line
         ([ x1 (String.fromFloat p1.left)
          , y1 (String.fromFloat p1.top)
@@ -97,9 +106,12 @@ drawLine conf p1 p2 onHover nullable color =
     ]
 
 
-drawCurve : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawCurve conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
+drawCurve : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawCurve conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
     let
+        ( p1, p2 ) =
+            ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
+
         strength : Float
         strength =
             abs (p1.left - p2.left) / 2 |> max 15
@@ -108,9 +120,9 @@ drawCurve conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
         path =
             [ moveTo p1
             , lineTo (p1 |> add arrowSize dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = negate (arrowSize / 2) })
+            , moveTo (p1 |> Position.move { dx = 0, dy = -(arrowSize / 2) })
             , lineTo (p1 |> add arrowSize dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = arrowSize / 2 })
+            , moveTo (p1 |> Position.move { dx = 0, dy = arrowSize / 2 })
             , lineTo (p1 |> add arrowSize dir1)
             , moveTo (p1 |> add arrowSize dir1)
             , curveTo (p1 |> add (arrowSize + strength) dir1) (p2 |> add strength dir2) p2
@@ -129,9 +141,12 @@ drawCurve conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
     ]
 
 
-drawSteps : RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
-drawSteps conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
+drawSteps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> (Bool -> msg) -> Bool -> Maybe Color -> List (Svg msg)
+drawSteps conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
     let
+        ( p1, p2 ) =
+            ( pos1 |> Position.extractCanvas, pos2 |> Position.extractCanvas )
+
         break1 : Position
         break1 =
             case ( p1.left < p2.left, dir1, dir2 ) of
@@ -165,8 +180,8 @@ drawSteps conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
                     p1
 
         ( break1a, break1b ) =
-            ( break1 |> Position.sub { left = arrowSize / 2 * apply dir1, top = 0 }
-            , break1 |> Position.sub { left = 0, top = arrowSize / 2 * Bool.cond (p1.top > p2.top) 1 -1 }
+            ( break1 |> Position.move { dx = -(arrowSize / 2 * apply dir1), dy = 0 }
+            , break1 |> Position.move { dx = 0, dy = -(arrowSize / 2 * Bool.cond (p1.top > p2.top) 1 -1) }
             )
 
         break2 : Position
@@ -174,15 +189,15 @@ drawSteps conf ( p1, dir1 ) ( p2, dir2 ) onHover nullable color =
             { left = break1.left, top = p2.top }
 
         ( break2a, break2b ) =
-            ( break2 |> Position.sub { left = 0, top = arrowSize / 2 * Bool.cond (p1.top < p2.top) 1 -1 }
-            , break2 |> Position.sub { left = arrowSize / 2 * apply dir2, top = 0 }
+            ( break2 |> Position.move { dx = 0, dy = -(arrowSize / 2 * Bool.cond (p1.top < p2.top) 1 -1) }
+            , break2 |> Position.move { dx = -(arrowSize / 2 * apply dir2), dy = 0 }
             )
 
         path : List String
         path =
-            [ moveTo (p1 |> Position.add { left = 0, top = negate (arrowSize / 2) })
+            [ moveTo (p1 |> Position.move { dx = 0, dy = -(arrowSize / 2) })
             , lineTo (p1 |> add arrowSize dir1)
-            , moveTo (p1 |> Position.add { left = 0, top = arrowSize / 2 })
+            , moveTo (p1 |> Position.move { dx = 0, dy = arrowSize / 2 })
             , lineTo (p1 |> add arrowSize dir1)
             , moveTo p1
             , lineTo break1a
@@ -212,7 +227,7 @@ arrowSize =
 
 add : Float -> Direction -> Position -> Position
 add strength dir pos =
-    pos |> Position.add { left = strength * apply dir, top = 0 }
+    pos |> Position.move { dx = strength * apply dir, dy = 0 }
 
 
 apply : Direction -> Float
@@ -247,19 +262,19 @@ doc =
             [ ( "straight", samples straight )
             , ( "bezier", samples bezier )
             , ( "steps", samples steps )
-            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
-            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zero, Right ) ( Position 50 50, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
+            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
+            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
             ]
 
 
-samples : (RelationConf -> ( Position, Direction ) -> ( Position, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
+samples : (RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
 samples displayRelation =
     let
         ( p0, p55 ) =
-            ( Position 0 0, Position 50 50 )
+            ( Position 0 0 |> Position.buildCanvas, Position 50 50 |> Position.buildCanvas )
 
         ( p05, p50 ) =
-            ( Position 0 50, Position 50 0 )
+            ( Position 0 50 |> Position.buildCanvas, Position 50 0 |> Position.buildCanvas )
 
         dirs : List ( Direction, Direction )
         dirs =

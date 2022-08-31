@@ -4,8 +4,8 @@ import Conf
 import Dict
 import Gen.Params.Projects.Id_ exposing (Params)
 import Gen.Route as Route
+import Models.ErdProps as ErdProps
 import Models.Project.ProjectId exposing (ProjectId)
-import Models.ScreenProps as ScreenProps
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg)
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
@@ -45,7 +45,7 @@ init : ProjectId -> ( Model, Cmd Msg )
 init id =
     ( { conf = ErdConf.default
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
-      , screen = ScreenProps.zero
+      , erdElem = ErdProps.zero
       , loaded = False
       , erd = Nothing
       , projects = []
@@ -56,6 +56,7 @@ init id =
       , newLayout = Nothing
       , editNotes = Nothing
       , amlSidebar = Nothing
+      , detailsSidebar = Nothing
       , virtualRelation = Nothing
       , findPath = Nothing
       , schemaAnalysis = Nothing

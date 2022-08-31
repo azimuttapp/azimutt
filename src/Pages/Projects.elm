@@ -161,10 +161,7 @@ mapProjects f model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        ([ Ports.onJsMessage Nothing JsMessage ]
-            ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
-        )
+    Sub.batch (Ports.onJsMessage JsMessage :: Dropdown.subs model DropdownToggle (Noop "dropdown already opened"))
 
 
 

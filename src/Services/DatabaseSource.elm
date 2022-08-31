@@ -18,7 +18,6 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Ports
@@ -31,8 +30,7 @@ import Track
 
 
 type alias Model msg =
-    { defaultSchema : SchemaName
-    , source : Maybe Source
+    { source : Maybe Source
     , url : String
     , selectedUrl : Maybe (Result String String)
     , loadedSchema : Maybe (Result Backend.Error String)
@@ -56,10 +54,9 @@ type Msg
 -- INIT
 
 
-init : SchemaName -> Maybe Source -> (Result String Source -> msg) -> Model msg
-init defaultSchema src callback =
-    { defaultSchema = defaultSchema
-    , source = src
+init : Maybe Source -> (Result String Source -> msg) -> Model msg
+init src callback =
+    { source = src
     , url = ""
     , selectedUrl = Nothing
     , loadedSchema = Nothing
@@ -82,10 +79,10 @@ update wrap backendUrl now msg model =
 
         GetSchema schemaUrl ->
             if schemaUrl == "" then
-                ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
 
             else
-                ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Ok schemaUrl) })
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Ok schemaUrl) })
                 , Backend.getDatabaseSchema backendUrl schemaUrl (GotSchema >> wrap)
                 )
 
@@ -132,7 +129,7 @@ viewInput wrap htmlId model =
              , ( "oracle", Just (Conf.constants.azimuttNewIssue "Support oracle database import" "") )
              , ( "sql-server", Just "https://github.com/azimuttapp/azimutt/issues/113" )
              , ( "mariadb", Just (Conf.constants.azimuttNewIssue "Support mariadb database import" "") )
-             , ( "sqlite", Just (Conf.constants.azimuttNewIssue "Support sqlite database import" "") )
+             , ( "sqlite", Just "https://github.com/azimuttapp/azimutt/issues/115" )
              ]
                 |> List.map
                     (\( name, requestLink ) ->
@@ -181,7 +178,7 @@ viewParsing wrap model =
                     , SourceLogs.viewContainer
                         [ SourceLogs.viewFile UiToggle model.show dbName (model.loadedSchema |> Maybe.andThen Result.toMaybe) |> Html.map wrap
                         , model.loadedSchema |> Maybe.mapOrElse (Result.mapError Backend.errorToString >> SourceLogs.viewError) (div [] [])
-                        , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show model.defaultSchema) (div [] []) |> Html.map wrap
+                        , model.parsedSchema |> Maybe.mapOrElse (SourceLogs.viewParsedSchema UiToggle model.show) (div [] []) |> Html.map wrap
                         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]
                     , if model.parsedSource == Nothing then

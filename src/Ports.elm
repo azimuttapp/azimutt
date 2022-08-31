@@ -1,6 +1,5 @@
 port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
-import Conf
 import Dict exposing (Dict)
 import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
@@ -14,17 +13,15 @@ import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.HtmlId exposing (HtmlId)
-import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size as Size
 import Libs.Tailwind as Color exposing (Color)
+import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
-import Models.Project.GridPosition as GridPosition
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.Route as Route exposing (Route)
+import Models.Size as Size
 import Models.User as User exposing (User)
 import Models.UserId as UserId exposing (UserId)
 import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
@@ -264,10 +261,10 @@ type JsMsg
     | GotHotkey String
     | GotKeyHold String Bool
     | GotToast String String
-    | GotTableShow TableId (Maybe Position)
+    | GotTableShow TableId (Maybe Position.CanvasGrid)
     | GotTableHide TableId
     | GotTableToggleColumns TableId
-    | GotTablePosition TableId Position
+    | GotTablePosition TableId Position.CanvasGrid
     | GotTableMove TableId Delta
     | GotTableSelect TableId
     | GotTableColor TableId Color
@@ -275,7 +272,7 @@ type JsMsg
     | GotColumnHide ColumnRef
     | GotColumnMove ColumnRef Int
     | GotFitToScreen
-    | Error Decode.Error
+    | Error Value Decode.Error
 
 
 messageToJs : ElmMsg -> Cmd msg
@@ -283,16 +280,16 @@ messageToJs message =
     elmToJs (elmEncoder message)
 
 
-onJsMessage : Maybe SchemaName -> (JsMsg -> msg) -> Sub msg
-onJsMessage defaultSchema callback =
+onJsMessage : (JsMsg -> msg) -> Sub msg
+onJsMessage callback =
     jsToElm
         (\value ->
-            case Decode.decodeValue (jsDecoder (defaultSchema |> Maybe.withDefault Conf.schema.default)) value of
+            case Decode.decodeValue jsDecoder value of
                 Ok message ->
                     callback message
 
                 Err error ->
-                    callback (Error error)
+                    callback (Error value error)
         )
 
 
@@ -394,8 +391,8 @@ elmEncoder elm =
             Encode.object [ ( "kind", "TrackError" |> Encode.string ), ( "name", name |> Encode.string ), ( "details", details ) ]
 
 
-jsDecoder : SchemaName -> Decoder JsMsg
-jsDecoder defaultSchema =
+jsDecoder : Decoder JsMsg
+jsDecoder =
     Decode.matchOn "kind"
         (\kind ->
             case kind of
@@ -404,10 +401,9 @@ jsDecoder defaultSchema =
                         (Decode.field "sizes"
                             (Decode.map4 SizeChange
                                 (Decode.field "id" Decode.string)
-                                (Decode.field "position" GridPosition.decode)
-                                (Decode.field "size" Size.decode)
-                                -- don't round seeds, use Position instead of GridPosition
-                                (Decode.field "seeds" Position.decode)
+                                (Decode.field "position" Position.decodeViewport)
+                                (Decode.field "size" Size.decodeViewport)
+                                (Decode.field "seeds" Delta.decode)
                                 |> Decode.list
                             )
                         )
@@ -453,7 +449,7 @@ jsDecoder defaultSchema =
                     Decode.map2 GotToast (Decode.field "level" Decode.string) (Decode.field "message" Decode.string)
 
                 "GotTableShow" ->
-                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" GridPosition.decode)
+                    Decode.map2 GotTableShow (Decode.field "id" TableId.decode) (Decode.maybeField "position" Position.decodeCanvasGrid)
 
                 "GotTableHide" ->
                     Decode.map GotTableHide (Decode.field "id" TableId.decode)
@@ -462,7 +458,7 @@ jsDecoder defaultSchema =
                     Decode.map GotTableToggleColumns (Decode.field "id" TableId.decode)
 
                 "GotTablePosition" ->
-                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" GridPosition.decode)
+                    Decode.map2 GotTablePosition (Decode.field "id" TableId.decode) (Decode.field "position" Position.decodeCanvasGrid)
 
                 "GotTableMove" ->
                     Decode.map2 GotTableMove (Decode.field "id" TableId.decode) (Decode.field "delta" Delta.decode)
@@ -476,13 +472,13 @@ jsDecoder defaultSchema =
                         (Decode.field "color" Color.decodeColor)
 
                 "GotColumnShow" ->
-                    Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema))
+                    Decode.map GotColumnShow (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
 
                 "GotColumnHide" ->
-                    Decode.map GotColumnHide (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema))
+                    Decode.map GotColumnHide (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString)
 
                 "GotColumnMove" ->
-                    Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map (ColumnRef.fromStringWith defaultSchema)) (Decode.field "index" Decode.int)
+                    Decode.map2 GotColumnMove (Decode.field "ref" Decode.string |> Decode.map ColumnRef.fromString) (Decode.field "index" Decode.int)
 
                 "GotFitToScreen" ->
                     Decode.succeed GotFitToScreen
@@ -596,7 +592,7 @@ unhandledJsMsgError msg =
                 GotFitToScreen ->
                     "GotFitToScreen"
 
-                Error _ ->
+                Error _ _ ->
                     "Error"
            )
 

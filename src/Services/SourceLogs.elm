@@ -1,5 +1,6 @@
 module Services.SourceLogs exposing (SchemaLike, TableLike, viewContainer, viewError, viewFile, viewParsedSchema, viewResult)
 
+import Conf
 import Html exposing (Html, div, pre, text)
 import Html.Attributes exposing (class)
 import Html.Events exposing (onClick)
@@ -9,7 +10,6 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.TableId as TableId
 
 
@@ -43,8 +43,8 @@ viewFile toggle show filename content =
             (div [] [ div [] [ text ("Loading " ++ filename ++ ".") ] ])
 
 
-viewParsedSchema : (HtmlId -> msg) -> HtmlId -> SchemaName -> Result Decode.Error (SchemaLike x y z) -> Html msg
-viewParsedSchema toggle show defaultSchema result =
+viewParsedSchema : (HtmlId -> msg) -> HtmlId -> Result Decode.Error (SchemaLike x y z) -> Html msg
+viewParsedSchema toggle show result =
     case result of
         Ok schema ->
             let
@@ -72,7 +72,7 @@ viewParsedSchema toggle show defaultSchema result =
                                 (\i ( t, id ) ->
                                     div [ class "flex items-start" ]
                                         [ pre [ class "select-none" ] [ text (pad (i + 1) ++ ". ") ]
-                                        , pre [ class "whitespace-pre font-mono" ] [ text (TableId.show defaultSchema id ++ " (" ++ (t.columns |> String.pluralizeL "column") ++ ")") ]
+                                        , pre [ class "whitespace-pre font-mono" ] [ text (TableId.show Conf.schema.empty id ++ " (" ++ (t.columns |> String.pluralizeL "column") ++ ")") ]
                                         ]
                                 )
                         )

@@ -5,21 +5,14 @@ module Services.Lenses exposing
     , mapChecks
     , mapCollapseTableColumns
     , mapColumnBasicTypes
-    , mapColumnProps
     , mapColumns
-    , mapColumnsD
-    , mapComment
     , mapCommentM
     , mapConf
     , mapContent
     , mapContextMenuM
-    , mapDatabaseSource
     , mapDatabaseSourceCmd
-    , mapDatabaseSourceM
     , mapDatabaseSourceMCmd
-    , mapDefaultSchema
-    , mapEachProjectMLayoutTables
-    , mapEachTable
+    , mapDetailsSidebarCmd
     , mapEditNotesM
     , mapEmbedSourceParsingMCmd
     , mapEnabled
@@ -28,20 +21,12 @@ module Services.Lenses exposing
     , mapFindPath
     , mapFindPathM
     , mapHiddenColumns
-    , mapHiddenTables
-    , mapHighlighted
-    , mapHover
-    , mapHoverColumn
     , mapHoverTable
-    , mapImportProjectCmd
-    , mapImportProjectM
     , mapImportProjectMCmd
     , mapIndex
     , mapIndexes
     , mapJsonSourceCmd
-    , mapJsonSourceM
     , mapJsonSourceMCmd
-    , mapLayout
     , mapLayouts
     , mapLayoutsD
     , mapLayoutsDCmd
@@ -56,21 +41,10 @@ module Services.Lenses exposing
     , mapOpened
     , mapOpenedDialogs
     , mapOpenedDropdown
-    , mapOpenedPopover
-    , mapParsedSchema
     , mapParsedSchemaM
-    , mapParsing
-    , mapParsingCmd
     , mapPosition
-    , mapPrimaryKey
     , mapPrimaryKeyM
     , mapProject
-    , mapProjectM
-    , mapProjectMCmd
-    , mapProjectMLayout
-    , mapProjectMLayoutTable
-    , mapProjectMLayoutTables
-    , mapPrompt
     , mapPromptM
     , mapProps
     , mapRelatedTables
@@ -78,48 +52,30 @@ module Services.Lenses exposing
     , mapRemoveViews
     , mapRemovedSchemas
     , mapResult
-    , mapSampleProjectM
     , mapSampleProjectMCmd
     , mapSchemaAnalysisM
-    , mapScreen
     , mapSearch
     , mapSelected
-    , mapSelectionBox
     , mapSettings
-    , mapSharing
     , mapSharingM
     , mapShow
     , mapShowHiddenColumns
     , mapShowSettings
-    , mapShown
-    , mapShownColumns
-    , mapShownTables
     , mapSourceUpdateCmd
     , mapSources
-    , mapSourcesL
     , mapSqlSourceCmd
-    , mapSqlSourceM
     , mapSqlSourceMCmd
-    , mapSwitch
-    , mapTableInList
-    , mapTableProps
-    , mapTablePropsCmd
     , mapTables
     , mapTablesCmd
     , mapTablesL
     , mapTeamCmd
-    , mapTime
     , mapToasts
     , mapToastsCmd
     , mapTop
     , mapUniques
-    , mapUpload
     , mapUploadCmd
     , mapUploadM
-    , mapUsedLayout
-    , mapUser
     , mapUserM
-    , mapUsername
     , mapVirtualRelationM
     , setActive
     , setAmlSidebar
@@ -129,10 +85,8 @@ module Services.Lenses exposing
     , setCollapseTableColumns
     , setCollapsed
     , setColor
-    , setColumn
     , setColumnBasicTypes
     , setColumnOrder
-    , setColumnProps
     , setColumns
     , setComment
     , setCompany
@@ -144,7 +98,7 @@ module Services.Lenses exposing
     , setCursorMode
     , setDatabaseSource
     , setDefaultSchema
-    , setDragState
+    , setDetailsSidebar
     , setDragging
     , setEditNotes
     , setEmbedSourceParsing
@@ -155,10 +109,8 @@ module Services.Lenses exposing
     , setFrom
     , setGithub
     , setHiddenColumns
-    , setHiddenTables
     , setHighlight
     , setHighlighted
-    , setHover
     , setHoverColumn
     , setHoverTable
     , setId
@@ -171,10 +123,8 @@ module Services.Lenses exposing
     , setIsOpen
     , setJsonSource
     , setLast
-    , setLayout
     , setLayouts
     , setList
-    , setLoading
     , setLocation
     , setMax
     , setMobileMenuOpen
@@ -183,7 +133,6 @@ module Services.Lenses exposing
     , setNavbar
     , setNewLayout
     , setNotes
-    , setNow
     , setOpened
     , setOpenedDialogs
     , setOpenedDropdown
@@ -191,8 +140,6 @@ module Services.Lenses exposing
     , setOrigins
     , setParsedSchema
     , setParsedSource
-    , setParsing
-    , setPopover
     , setPosition
     , setPrimaryKey
     , setProject
@@ -208,10 +155,8 @@ module Services.Lenses exposing
     , setResult
     , setSampleProject
     , setSchemaAnalysis
-    , setScreen
     , setSearch
     , setSelected
-    , setSelection
     , setSelectionBox
     , setSettings
     , setSharing
@@ -219,46 +164,32 @@ module Services.Lenses exposing
     , setShowHiddenColumns
     , setShowSettings
     , setShown
-    , setShownColumns
-    , setShownTables
     , setSize
     , setSourceUpdate
     , setSources
     , setSqlSource
-    , setStatus
-    , setSwitch
     , setTable
-    , setTableProps
     , setTables
     , setTeam
     , setText
-    , setTime
     , setTo
-    , setToastIdx
     , setToasts
     , setTop
     , setTwitter
     , setUniques
     , setUpdatedAt
     , setUpload
-    , setUrl
-    , setUsedLayout
     , setUser
     , setUsername
     , setValue
+    , setView
     , setVirtualRelation
     , setWebsite
-    , setZone
     , setZoom
-    , updatePosition
     )
 
 import Dict exposing (Dict)
-import Libs.Bool as B
-import Libs.Delta exposing (Delta)
 import Libs.Maybe as Maybe
-import Libs.Models.Position exposing (Position)
-import Libs.Models.ZoomLevel exposing (ZoomLevel)
 
 
 
@@ -334,11 +265,6 @@ setColor =
     set_ .color (\value item -> { item | color = value })
 
 
-setColumn : v -> { item | column : v } -> { item | column : v }
-setColumn =
-    set_ .column (\value item -> { item | column = value })
-
-
 setColumns : v -> { item | columns : v } -> { item | columns : v }
 setColumns =
     set_ .columns (\value item -> { item | columns = value })
@@ -347,11 +273,6 @@ setColumns =
 mapColumns : (v -> v) -> { item | columns : v } -> { item | columns : v }
 mapColumns =
     map_ .columns setColumns
-
-
-mapColumnsD : comparable -> (v -> v) -> { item | columns : Dict comparable v } -> { item | columns : Dict comparable v }
-mapColumnsD =
-    mapD_ .columns setColumns
 
 
 setColumnBasicTypes : v -> { item | columnBasicTypes : v } -> { item | columnBasicTypes : v }
@@ -369,24 +290,9 @@ setColumnOrder =
     set_ .columnOrder (\value item -> { item | columnOrder = value })
 
 
-setColumnProps : v -> { item | columnProps : v } -> { item | columnProps : v }
-setColumnProps =
-    set_ .columnProps (\value item -> { item | columnProps = value })
-
-
-mapColumnProps : (v -> v) -> { item | columnProps : v } -> { item | columnProps : v }
-mapColumnProps =
-    map_ .columnProps setColumnProps
-
-
 setComment : v -> { item | comment : v } -> { item | comment : v }
 setComment =
     set_ .comment (\value item -> { item | comment = value })
-
-
-mapComment : (v -> v) -> { item | comment : v } -> { item | comment : v }
-mapComment =
-    map_ .comment setComment
 
 
 mapCommentM : (v -> v) -> { item | comment : Maybe v } -> { item | comment : Maybe v }
@@ -449,16 +355,6 @@ setDatabaseSource =
     set_ .databaseSource (\value item -> { item | databaseSource = value })
 
 
-mapDatabaseSource : (v -> v) -> { item | databaseSource : v } -> { item | databaseSource : v }
-mapDatabaseSource =
-    map_ .databaseSource setDatabaseSource
-
-
-mapDatabaseSourceM : (v -> v) -> { item | databaseSource : Maybe v } -> { item | databaseSource : Maybe v }
-mapDatabaseSourceM =
-    mapM_ .databaseSource setDatabaseSource
-
-
 mapDatabaseSourceCmd : (v -> ( v, Cmd msg )) -> { item | databaseSource : v } -> ( { item | databaseSource : v }, Cmd msg )
 mapDatabaseSourceCmd =
     mapCmd_ .databaseSource setDatabaseSource
@@ -474,19 +370,19 @@ setDragging =
     set_ .dragging (\value item -> { item | dragging = value })
 
 
-setDragState : v -> { item | dragState : v } -> { item | dragState : v }
-setDragState =
-    set_ .dragState (\value item -> { item | dragState = value })
-
-
 setDefaultSchema : v -> { item | defaultSchema : v } -> { item | defaultSchema : v }
 setDefaultSchema =
     set_ .defaultSchema (\value item -> { item | defaultSchema = value })
 
 
-mapDefaultSchema : (v -> v) -> { item | defaultSchema : v } -> { item | defaultSchema : v }
-mapDefaultSchema =
-    map_ .defaultSchema setDefaultSchema
+setDetailsSidebar : v -> { item | detailsSidebar : v } -> { item | detailsSidebar : v }
+setDetailsSidebar =
+    set_ .detailsSidebar (\value item -> { item | detailsSidebar = value })
+
+
+mapDetailsSidebarCmd : (v -> ( v, Cmd msg )) -> { item | detailsSidebar : v } -> ( { item | detailsSidebar : v }, Cmd msg )
+mapDetailsSidebarCmd =
+    mapCmd_ .detailsSidebar setDetailsSidebar
 
 
 setEditNotes : v -> { item | editNotes : v } -> { item | editNotes : v }
@@ -574,16 +470,6 @@ mapHiddenColumns =
     map_ .hiddenColumns setHiddenColumns
 
 
-setHiddenTables : v -> { item | hiddenTables : v } -> { item | hiddenTables : v }
-setHiddenTables =
-    set_ .hiddenTables (\value item -> { item | hiddenTables = value })
-
-
-mapHiddenTables : (v -> v) -> { item | hiddenTables : v } -> { item | hiddenTables : v }
-mapHiddenTables =
-    map_ .hiddenTables setHiddenTables
-
-
 setHighlight : v -> { item | highlight : v } -> { item | highlight : v }
 setHighlight =
     set_ .highlight (\value item -> { item | highlight = value })
@@ -594,29 +480,9 @@ setHighlighted =
     set_ .highlighted (\value item -> { item | highlighted = value })
 
 
-mapHighlighted : (v -> v) -> { item | highlighted : v } -> { item | highlighted : v }
-mapHighlighted =
-    map_ .highlighted setHighlighted
-
-
-setHover : v -> { item | hover : v } -> { item | hover : v }
-setHover =
-    set_ .hover (\value item -> { item | hover = value })
-
-
-mapHover : (v -> v) -> { item | hover : v } -> { item | hover : v }
-mapHover =
-    map_ .hover setHover
-
-
 setHoverColumn : v -> { item | hoverColumn : v } -> { item | hoverColumn : v }
 setHoverColumn =
     set_ .hoverColumn (\value item -> { item | hoverColumn = value })
-
-
-mapHoverColumn : (v -> v) -> { item | hoverColumn : v } -> { item | hoverColumn : v }
-mapHoverColumn =
-    map_ .hoverColumn setHoverColumn
 
 
 setHoverTable : v -> { item | hoverTable : v } -> { item | hoverTable : v }
@@ -647,16 +513,6 @@ setIgnoredTables =
 setImportProject : v -> { item | importProject : v } -> { item | importProject : v }
 setImportProject =
     set_ .importProject (\value item -> { item | importProject = value })
-
-
-mapImportProjectM : (v -> v) -> { item | importProject : Maybe v } -> { item | importProject : Maybe v }
-mapImportProjectM =
-    mapM_ .importProject setImportProject
-
-
-mapImportProjectCmd : (v -> ( v, Cmd msg )) -> { item | importProject : v } -> ( { item | importProject : v }, Cmd msg )
-mapImportProjectCmd =
-    mapCmd_ .importProject setImportProject
 
 
 mapImportProjectMCmd : (v -> ( v, Cmd msg )) -> { item | importProject : Maybe v } -> ( { item | importProject : Maybe v }, Cmd msg )
@@ -699,11 +555,6 @@ setJsonSource =
     set_ .jsonSource (\value item -> { item | jsonSource = value })
 
 
-mapJsonSourceM : (v -> v) -> { item | jsonSource : Maybe v } -> { item | jsonSource : Maybe v }
-mapJsonSourceM =
-    mapM_ .jsonSource setJsonSource
-
-
 mapJsonSourceCmd : (v -> ( v, Cmd msg )) -> { item | jsonSource : v } -> ( { item | jsonSource : v }, Cmd msg )
 mapJsonSourceCmd =
     mapCmd_ .jsonSource setJsonSource
@@ -717,16 +568,6 @@ mapJsonSourceMCmd =
 setLast : v -> { item | last : v } -> { item | last : v }
 setLast =
     set_ .last (\value item -> { item | last = value })
-
-
-setLayout : v -> { item | layout : v } -> { item | layout : v }
-setLayout =
-    set_ .layout (\value item -> { item | layout = value })
-
-
-mapLayout : (v -> v) -> { item | layout : v } -> { item | layout : v }
-mapLayout =
-    map_ .layout setLayout
 
 
 setLayouts : v -> { item | layouts : v } -> { item | layouts : v }
@@ -752,11 +593,6 @@ mapLayoutsDCmd =
 setList : v -> { item | list : v } -> { item | list : v }
 setList =
     set_ .list (\value item -> { item | list = value })
-
-
-setLoading : v -> { item | loading : v } -> { item | loading : v }
-setLoading =
-    set_ .loading (\value item -> { item | loading = value })
 
 
 setLocation : v -> { item | location : v } -> { item | location : v }
@@ -819,11 +655,6 @@ mapNotes =
     map_ .notes setNotes
 
 
-setNow : v -> { item | now : v } -> { item | now : v }
-setNow =
-    set_ .now (\value item -> { item | now = value })
-
-
 setOpened : v -> { item | opened : v } -> { item | opened : v }
 setOpened =
     set_ .opened (\value item -> { item | opened = value })
@@ -849,11 +680,6 @@ setOpenedPopover =
     set_ .openedPopover (\value item -> { item | openedPopover = value })
 
 
-mapOpenedPopover : (v -> v) -> { item | openedPopover : v } -> { item | openedPopover : v }
-mapOpenedPopover =
-    map_ .openedPopover setOpenedPopover
-
-
 setOpenedDialogs : v -> { item | openedDialogs : v } -> { item | openedDialogs : v }
 setOpenedDialogs =
     set_ .openedDialogs (\value item -> { item | openedDialogs = value })
@@ -874,11 +700,6 @@ setParsedSchema =
     set_ .parsedSchema (\value item -> { item | parsedSchema = value })
 
 
-mapParsedSchema : (v -> v) -> { item | parsedSchema : v } -> { item | parsedSchema : v }
-mapParsedSchema =
-    map_ .parsedSchema setParsedSchema
-
-
 mapParsedSchemaM : (v -> v) -> { item | parsedSchema : Maybe v } -> { item | parsedSchema : Maybe v }
 mapParsedSchemaM =
     mapM_ .parsedSchema setParsedSchema
@@ -887,26 +708,6 @@ mapParsedSchemaM =
 setParsedSource : v -> { item | parsedSource : v } -> { item | parsedSource : v }
 setParsedSource =
     set_ .parsedSource (\value item -> { item | parsedSource = value })
-
-
-setParsing : v -> { item | parsing : v } -> { item | parsing : v }
-setParsing =
-    set_ .parsing (\value item -> { item | parsing = value })
-
-
-mapParsing : (v -> v) -> { item | parsing : v } -> { item | parsing : v }
-mapParsing =
-    map_ .parsing setParsing
-
-
-mapParsingCmd : (v -> ( v, Cmd msg )) -> { item | parsing : v } -> ( { item | parsing : v }, Cmd msg )
-mapParsingCmd =
-    mapCmd_ .parsing setParsing
-
-
-setPopover : v -> { item | popover : v } -> { item | popover : v }
-setPopover =
-    set_ .popover (\value item -> { item | popover = value })
 
 
 setPosition : v -> { item | position : v } -> { item | position : v }
@@ -924,11 +725,6 @@ setPrimaryKey =
     set_ .primaryKey (\value item -> { item | primaryKey = value })
 
 
-mapPrimaryKey : (v -> v) -> { item | primaryKey : v } -> { item | primaryKey : v }
-mapPrimaryKey =
-    map_ .primaryKey setPrimaryKey
-
-
 mapPrimaryKeyM : (v -> v) -> { item | primaryKey : Maybe v } -> { item | primaryKey : Maybe v }
 mapPrimaryKeyM =
     mapM_ .primaryKey setPrimaryKey
@@ -944,16 +740,6 @@ mapProject =
     map_ .project setProject
 
 
-mapProjectM : (v -> v) -> { item | project : Maybe v } -> { item | project : Maybe v }
-mapProjectM =
-    mapM_ .project setProject
-
-
-mapProjectMCmd : (v -> ( v, Cmd msg )) -> { item | project : Maybe v } -> ( { item | project : Maybe v }, Cmd msg )
-mapProjectMCmd =
-    mapMCmd_ .project setProject
-
-
 setProjectName : v -> { item | projectName : v } -> { item | projectName : v }
 setProjectName =
     set_ .projectName (\value item -> { item | projectName = value })
@@ -962,11 +748,6 @@ setProjectName =
 setPrompt : v -> { item | prompt : v } -> { item | prompt : v }
 setPrompt =
     set_ .prompt (\value item -> { item | prompt = value })
-
-
-mapPrompt : (v -> v) -> { item | prompt : v } -> { item | prompt : v }
-mapPrompt =
-    map_ .prompt setPrompt
 
 
 mapPromptM : (v -> v) -> { item | prompt : Maybe v } -> { item | prompt : Maybe v }
@@ -1049,11 +830,6 @@ setSampleProject =
     set_ .sampleProject (\value item -> { item | sampleProject = value })
 
 
-mapSampleProjectM : (v -> v) -> { item | sampleProject : Maybe v } -> { item | sampleProject : Maybe v }
-mapSampleProjectM =
-    mapM_ .sampleProject setSampleProject
-
-
 mapSampleProjectMCmd : (v -> ( v, Cmd msg )) -> { item | sampleProject : Maybe v } -> ( { item | sampleProject : Maybe v }, Cmd msg )
 mapSampleProjectMCmd =
     mapMCmd_ .sampleProject setSampleProject
@@ -1069,16 +845,6 @@ mapSchemaAnalysisM =
     mapM_ .schemaAnalysis setSchemaAnalysis
 
 
-setScreen : v -> { item | screen : v } -> { item | screen : v }
-setScreen =
-    set_ .screen (\value item -> { item | screen = value })
-
-
-mapScreen : (v -> v) -> { item | screen : v } -> { item | screen : v }
-mapScreen =
-    map_ .screen setScreen
-
-
 setSearch : v -> { item | search : v } -> { item | search : v }
 setSearch =
     set_ .search (\value item -> { item | search = value })
@@ -1087,11 +853,6 @@ setSearch =
 mapSearch : (v -> v) -> { item | search : v } -> { item | search : v }
 mapSearch =
     map_ .search setSearch
-
-
-setSelection : v -> { item | selection : v } -> { item | selection : v }
-setSelection =
-    set_ .selection (\value item -> { item | selection = value })
 
 
 setSettings : v -> { item | settings : v } -> { item | settings : v }
@@ -1119,19 +880,9 @@ setSelectionBox =
     set_ .selectionBox (\value item -> { item | selectionBox = value })
 
 
-mapSelectionBox : (v -> v) -> { item | selectionBox : v } -> { item | selectionBox : v }
-mapSelectionBox =
-    map_ .selectionBox setSelectionBox
-
-
 setSharing : v -> { item | sharing : v } -> { item | sharing : v }
 setSharing =
     set_ .sharing (\value item -> { item | sharing = value })
-
-
-mapSharing : (v -> v) -> { item | sharing : v } -> { item | sharing : v }
-mapSharing =
-    map_ .sharing setSharing
 
 
 mapSharingM : (v -> v) -> { item | sharing : Maybe v } -> { item | sharing : Maybe v }
@@ -1152,31 +903,6 @@ mapShow =
 setShown : v -> { item | shown : v } -> { item | shown : v }
 setShown =
     set_ .shown (\value item -> { item | shown = value })
-
-
-mapShown : (v -> v) -> { item | shown : v } -> { item | shown : v }
-mapShown =
-    map_ .shown setShown
-
-
-setShownColumns : v -> { item | shownColumns : v } -> { item | shownColumns : v }
-setShownColumns =
-    set_ .shownColumns (\value item -> { item | shownColumns = value })
-
-
-mapShownColumns : (v -> v) -> { item | shownColumns : v } -> { item | shownColumns : v }
-mapShownColumns =
-    map_ .shownColumns setShownColumns
-
-
-setShownTables : v -> { item | shownTables : v } -> { item | shownTables : v }
-setShownTables =
-    set_ .shownTables (\value item -> { item | shownTables = value })
-
-
-mapShownTables : (v -> v) -> { item | shownTables : v } -> { item | shownTables : v }
-mapShownTables =
-    map_ .shownTables setShownTables
 
 
 setShowHiddenColumns : v -> { item | showHiddenColumns : v } -> { item | showHiddenColumns : v }
@@ -1214,11 +940,6 @@ mapSources =
     map_ .sources setSources
 
 
-mapSourcesL : (v -> k) -> k -> (v -> v) -> { item | sources : List v } -> { item | sources : List v }
-mapSourcesL =
-    mapL_ .sources setSources
-
-
 setSourceUpdate : v -> { item | sourceUpdate : v } -> { item | sourceUpdate : v }
 setSourceUpdate =
     set_ .sourceUpdate (\value item -> { item | sourceUpdate = value })
@@ -1234,11 +955,6 @@ setSqlSource =
     set_ .sqlSource (\value item -> { item | sqlSource = value })
 
 
-mapSqlSourceM : (v -> v) -> { item | sqlSource : Maybe v } -> { item | sqlSource : Maybe v }
-mapSqlSourceM =
-    mapM_ .sqlSource setSqlSource
-
-
 mapSqlSourceCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : v } -> ( { item | sqlSource : v }, Cmd msg )
 mapSqlSourceCmd =
     mapCmd_ .sqlSource setSqlSource
@@ -1247,21 +963,6 @@ mapSqlSourceCmd =
 mapSqlSourceMCmd : (v -> ( v, Cmd msg )) -> { item | sqlSource : Maybe v } -> ( { item | sqlSource : Maybe v }, Cmd msg )
 mapSqlSourceMCmd =
     mapMCmd_ .sqlSource setSqlSource
-
-
-setStatus : v -> { item | status : v } -> { item | status : v }
-setStatus =
-    set_ .status (\value item -> { item | status = value })
-
-
-setSwitch : v -> { item | switch : v } -> { item | switch : v }
-setSwitch =
-    set_ .switch (\value item -> { item | switch = value })
-
-
-mapSwitch : (v -> v) -> { item | switch : v } -> { item | switch : v }
-mapSwitch =
-    map_ .switch setSwitch
 
 
 setTable : v -> { item | table : v } -> { item | table : v }
@@ -1289,21 +990,6 @@ mapTablesCmd =
     mapCmd_ .tables setTables
 
 
-setTableProps : v -> { item | tableProps : v } -> { item | tableProps : v }
-setTableProps =
-    set_ .tableProps (\value item -> { item | tableProps = value })
-
-
-mapTableProps : (v -> v) -> { item | tableProps : v } -> { item | tableProps : v }
-mapTableProps =
-    map_ .tableProps setTableProps
-
-
-mapTablePropsCmd : (v -> ( v, Cmd msg )) -> { item | tableProps : v } -> ( { item | tableProps : v }, Cmd msg )
-mapTablePropsCmd =
-    mapCmd_ .tableProps setTableProps
-
-
 setTeam : v -> { item | team : v } -> { item | team : v }
 setTeam =
     set_ .team (\value item -> { item | team = value })
@@ -1324,16 +1010,6 @@ setText =
     set_ .text (\value item -> { item | text = value })
 
 
-setTime : v -> { item | time : v } -> { item | time : v }
-setTime =
-    set_ .time (\value item -> { item | time = value })
-
-
-mapTime : (v -> v) -> { item | time : v } -> { item | time : v }
-mapTime =
-    map_ .time setTime
-
-
 setTo : v -> { item | to : v } -> { item | to : v }
 setTo =
     set_ .to (\value item -> { item | to = value })
@@ -1352,11 +1028,6 @@ mapToasts =
 mapToastsCmd : (v -> ( v, Cmd msg )) -> { item | toasts : v } -> ( { item | toasts : v }, Cmd msg )
 mapToastsCmd =
     mapCmd_ .toasts setToasts
-
-
-setToastIdx : v -> { item | toastIdx : v } -> { item | toastIdx : v }
-setToastIdx =
-    set_ .toastIdx (\value item -> { item | toastIdx = value })
 
 
 setTop : v -> { item | top : v } -> { item | top : v }
@@ -1394,11 +1065,6 @@ setUpload =
     set_ .upload (\value item -> { item | upload = value })
 
 
-mapUpload : (v -> v) -> { item | upload : v } -> { item | upload : v }
-mapUpload =
-    map_ .upload setUpload
-
-
 mapUploadM : (v -> v) -> { item | upload : Maybe v } -> { item | upload : Maybe v }
 mapUploadM =
     mapM_ .upload setUpload
@@ -1409,29 +1075,9 @@ mapUploadCmd =
     mapCmd_ .upload setUpload
 
 
-setUrl : v -> { item | url : v } -> { item | url : v }
-setUrl =
-    set_ .url (\value item -> { item | url = value })
-
-
-setUsedLayout : v -> { item | usedLayout : v } -> { item | usedLayout : v }
-setUsedLayout =
-    set_ .usedLayout (\value item -> { item | usedLayout = value })
-
-
-mapUsedLayout : (v -> v) -> { item | usedLayout : v } -> { item | usedLayout : v }
-mapUsedLayout =
-    map_ .usedLayout setUsedLayout
-
-
 setUser : v -> { item | user : v } -> { item | user : v }
 setUser =
     set_ .user (\value item -> { item | user = value })
-
-
-mapUser : (v -> v) -> { item | user : v } -> { item | user : v }
-mapUser =
-    map_ .user setUser
 
 
 mapUserM : (v -> v) -> { item | user : Maybe v } -> { item | user : Maybe v }
@@ -1444,14 +1090,14 @@ setUsername =
     set_ .username (\value item -> { item | username = value })
 
 
-mapUsername : (v -> v) -> { item | username : v } -> { item | username : v }
-mapUsername =
-    map_ .username setUsername
-
-
 setValue : v -> { item | value : v } -> { item | value : v }
 setValue =
     set_ .value (\value item -> { item | value = value })
+
+
+setView : v -> { item | view : v } -> { item | view : v }
+setView =
+    set_ .view (\view item -> { item | view = view })
 
 
 setVirtualRelation : v -> { item | virtualRelation : v } -> { item | virtualRelation : v }
@@ -1474,9 +1120,8 @@ setZoom =
     set_ .zoom (\value item -> { item | zoom = value })
 
 
-setZone : v -> { item | zone : v } -> { item | zone : v }
-setZone =
-    set_ .zone (\value item -> { item | zone = value })
+
+-- specific methods
 
 
 mapM : (v -> v) -> Maybe v -> Maybe v
@@ -1487,6 +1132,23 @@ mapM transform item =
 mapMCmd : (v -> ( v, Cmd msg )) -> Maybe v -> ( Maybe v, Cmd msg )
 mapMCmd transform item =
     item |> Maybe.mapOrElse (transform >> Tuple.mapFirst Just) ( Nothing, Cmd.none )
+
+
+mapList : (item -> k) -> k -> (item -> item) -> List item -> List item
+mapList get key transform list =
+    list
+        |> List.map
+            (\item ->
+                if get item == key then
+                    transform item
+
+                else
+                    item
+            )
+
+
+
+-- HELPERS
 
 
 set_ : (item -> v) -> (v -> item -> item) -> v -> item -> item
@@ -1543,58 +1205,6 @@ mapMCmd_ get update transform item =
 mapDCmd_ : (item -> Dict comparable v) -> (Dict comparable v -> item -> item) -> comparable -> (v -> ( v, Cmd msg )) -> item -> ( item, Cmd msg )
 mapDCmd_ get update key transform item =
     item |> get |> Dict.get key |> Maybe.mapOrElse (transform >> Tuple.mapFirst (\n -> mapD_ get update key (\_ -> n) item)) ( item, Cmd.none )
-
-
-
--- specific methods
-
-
-mapList : (item -> k) -> k -> (item -> item) -> List item -> List item
-mapList get key transform list =
-    list
-        |> List.map
-            (\item ->
-                if get item == key then
-                    transform item
-
-                else
-                    item
-            )
-
-
-mapProjectMLayout : (l -> l) -> { m | project : Maybe { p | layout : l } } -> { m | project : Maybe { p | layout : l } }
-mapProjectMLayout transform item =
-    mapProjectM (mapLayout transform) item
-
-
-mapProjectMLayoutTables : (t -> t) -> { m | project : Maybe { p | layout : { l | tables : t } } } -> { m | project : Maybe { p | layout : { l | tables : t } } }
-mapProjectMLayoutTables transform item =
-    mapProjectM (mapLayout (mapTables transform)) item
-
-
-mapEachProjectMLayoutTables : ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
-mapEachProjectMLayoutTables transform item =
-    mapProjectMLayoutTables (List.map transform) item
-
-
-mapProjectMLayoutTable : comparable -> ({ t | id : comparable } -> { t | id : comparable }) -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } } -> { m | project : Maybe { p | layout : { l | tables : List { t | id : comparable } } } }
-mapProjectMLayoutTable id transform item =
-    mapProjectM (mapLayout (mapTableInList .id id transform)) item
-
-
-mapTableInList : (table -> comparable) -> comparable -> (table -> table) -> { item | tables : List table } -> { item | tables : List table }
-mapTableInList get id transform item =
-    mapEachTable (\t -> get t == id) transform item
-
-
-mapEachTable : (table -> Bool) -> (table -> table) -> { item | tables : List table } -> { item | tables : List table }
-mapEachTable predicate transform item =
-    mapTables (\tables -> tables |> List.map (\t -> B.cond (predicate t) (transform t) t)) item
-
-
-updatePosition : Delta -> ZoomLevel -> { item | position : Position } -> { item | position : Position }
-updatePosition delta zoom item =
-    { item | position = Position (item.position.left + (delta.dx / zoom)) (item.position.top + (delta.dy / zoom)) }
 
 
 

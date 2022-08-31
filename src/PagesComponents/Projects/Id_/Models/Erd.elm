@@ -1,14 +1,16 @@
-module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM)
+module PagesComponents.Projects.Id_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
-import Libs.Area exposing (Area)
 import Libs.Dict as Dict
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Time as Time
+import Models.Area as Area
+import Models.ErdProps exposing (ErdProps)
+import Models.Position as Position
 import Models.Project as Project exposing (Project)
-import Models.Project.CanvasProps as CanvasProps
+import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
@@ -20,6 +22,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.Size as Size
 import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Projects.Id_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Projects.Id_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
@@ -86,8 +89,13 @@ currentLayout erd =
     erd.layouts |> Dict.getOrElse erd.currentLayout (ErdLayout.empty Time.zero)
 
 
-mapCurrentLayout : Time.Posix -> (ErdLayout -> ErdLayout) -> Erd -> Erd
-mapCurrentLayout now transform erd =
+mapCurrentLayout : (ErdLayout -> ErdLayout) -> Erd -> Erd
+mapCurrentLayout transform erd =
+    erd |> mapLayoutsD erd.currentLayout transform
+
+
+mapCurrentLayoutWithTime : Time.Posix -> (ErdLayout -> ErdLayout) -> Erd -> Erd
+mapCurrentLayoutWithTime now transform erd =
     erd |> mapLayoutsD erd.currentLayout (transform >> (\l -> { l | updatedAt = now }))
 
 
@@ -101,6 +109,27 @@ getColumn ref erd =
     erd.tables |> Dict.get ref.table |> Maybe.andThen (\t -> t.columns |> Dict.get ref.column)
 
 
+getColumnPos : ColumnRef -> Erd -> Maybe Position.Canvas
+getColumnPos ref erd =
+    (currentLayout erd |> .tables)
+        |> List.find (\t -> t.id == ref.table)
+        |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.find (\( c, _ ) -> c.name == ref.column) |> Maybe.map (\( c, i ) -> ( t.props, c, i )))
+        |> Maybe.map
+            (\( t, _, index ) ->
+                (if t.collapsed then
+                    { dx = (Size.extractCanvas t.size).width / 2
+                    , dy = Conf.ui.tableHeaderHeight * 0.5
+                    }
+
+                 else
+                    { dx = (Size.extractCanvas t.size).width / 2
+                    , dy = Conf.ui.tableHeaderHeight + (Conf.ui.tableColumnHeight * (0.5 + (index |> toFloat)))
+                    }
+                )
+                    |> (\delta -> t.position |> Position.offGrid |> Position.moveCanvas delta)
+            )
+
+
 isShown : TableId -> Erd -> Bool
 isShown table erd =
     erd |> currentLayout |> .tables |> List.memberBy .id table
@@ -108,12 +137,17 @@ isShown table erd =
 
 defaultSchemaM : Maybe Erd -> SchemaName
 defaultSchemaM erd =
-    erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.default
+    erd |> Maybe.mapOrElse (.settings >> .defaultSchema) Conf.schema.empty
 
 
-viewportM : Area -> Maybe Erd -> Area
-viewportM screen erd =
-    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport screen) screen
+viewportToCanvas : ErdProps -> CanvasProps -> Position.Viewport -> Position.Canvas
+viewportToCanvas erdElem canvas pos =
+    pos |> Position.viewportToCanvas erdElem.position canvas.position canvas.zoom
+
+
+viewportM : ErdProps -> Maybe Erd -> Area.Canvas
+viewportM erdElem erd =
+    erd |> Maybe.mapOrElse (currentLayout >> .canvas >> CanvasProps.viewport erdElem) Area.zeroCanvas
 
 
 computeSources : ProjectSettings -> List Source -> ( ( Dict TableId ErdTable, List ErdRelation, Dict CustomTypeId CustomType ), Dict TableId (List Relation) )

@@ -1,23 +1,24 @@
 module PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..), move)
 
-import Libs.Models.Position as Position exposing (Position)
-import Libs.Models.Size exposing (Size)
+import Libs.Delta exposing (Delta)
+import Models.Position as Position
+import Models.Size as Size
 
 
 type PositionHint
-    = PlaceLeft Position
-    | PlaceRight Position Size
-    | PlaceAt Position
+    = PlaceLeft Position.CanvasGrid
+    | PlaceRight Position.CanvasGrid Size.Canvas
+    | PlaceAt Position.CanvasGrid
 
 
-move : Position -> PositionHint -> PositionHint
-move position hint =
+move : Delta -> PositionHint -> PositionHint
+move delta hint =
     case hint of
         PlaceLeft pos ->
-            PlaceLeft (pos |> Position.add position)
+            PlaceLeft (pos |> Position.moveCanvasGrid delta)
 
         PlaceRight pos size ->
-            PlaceRight (pos |> Position.add position) size
+            PlaceRight (pos |> Position.moveCanvasGrid delta) size
 
         PlaceAt pos ->
             PlaceAt pos

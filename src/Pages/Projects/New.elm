@@ -5,8 +5,9 @@ import Conf
 import Dict
 import Gen.Params.Projects.New exposing (Params)
 import Gen.Route as Route
+import Json.Decode as Decode
+import Json.Encode as Encode
 import Libs.Bool as B
-import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Random as Random
 import Libs.String as String
@@ -127,13 +128,13 @@ update req now backendUrl msg model =
               in
               case tab of
                 TabDatabase ->
-                    { clean | databaseSource = Just (DatabaseSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-database-source")) }
+                    { clean | databaseSource = Just (DatabaseSource.init Nothing (\_ -> Noop "select-tab-database-source")) }
 
                 TabSql ->
-                    { clean | sqlSource = Just (SqlSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-sql-source")) }
+                    { clean | sqlSource = Just (SqlSource.init Nothing (\_ -> Noop "select-tab-sql-source")) }
 
                 TabJson ->
-                    { clean | jsonSource = Just (JsonSource.init Conf.schema.default Nothing (\_ -> Noop "select-tab-json-source")) }
+                    { clean | jsonSource = Just (JsonSource.init Nothing (\_ -> Noop "select-tab-json-source")) }
 
                 TabEmptyProject ->
                     clean
@@ -245,8 +246,8 @@ handleJsMessage now msg model =
             -- handled in shared
             ( model, Cmd.none )
 
-        Error err ->
-            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
+        Error json err ->
+            ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
 
         _ ->
             ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )
@@ -258,10 +259,7 @@ handleJsMessage now msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        ([ Ports.onJsMessage Nothing JsMessage ]
-            ++ Dropdown.subs model DropdownToggle (Noop "dropdown already opened")
-        )
+    Sub.batch (Ports.onJsMessage JsMessage :: Dropdown.subs model DropdownToggle (Noop "dropdown already opened"))
 
 
 

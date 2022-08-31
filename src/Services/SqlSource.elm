@@ -32,7 +32,6 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass)
 import Libs.Task as T
 import Models.Project.Column exposing (Column)
-import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.SourceInfo as SourceInfo exposing (SourceInfo)
@@ -46,8 +45,7 @@ import Url exposing (percentEncode)
 
 
 type alias Model msg =
-    { defaultSchema : SchemaName
-    , source : Maybe Source
+    { source : Maybe Source
     , url : String
     , selectedLocalFile : Maybe File
     , selectedRemoteFile : Maybe (Result String FileUrl)
@@ -99,10 +97,9 @@ kind =
     "sql-source"
 
 
-init : SchemaName -> Maybe Source -> (( Maybe (SqlParsing msg), Result String Source ) -> msg) -> Model msg
-init defaultSchema source callback =
-    { defaultSchema = defaultSchema
-    , source = source
+init : Maybe Source -> (( Maybe (SqlParsing msg), Result String Source ) -> msg) -> Model msg
+init source callback =
+    { source = source
     , url = ""
     , selectedLocalFile = Nothing
     , selectedRemoteFile = Nothing
@@ -140,13 +137,13 @@ update wrap now msg model =
 
         GetRemoteFile schemaUrl ->
             if schemaUrl == "" then
-                ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl }), Cmd.none )
 
             else if schemaUrl |> String.startsWith "http" |> not then
-                ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Err "Invalid url, it should start with 'http'") }), Cmd.none )
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Err "Invalid url, it should start with 'http'") }), Cmd.none )
 
             else
-                ( init model.defaultSchema model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Ok schemaUrl) })
+                ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedRemoteFile = Just (Ok schemaUrl) })
                 , Http.get { url = schemaUrl, expect = Http.expectString (GotRemoteFile schemaUrl >> wrap) }
                 )
 
@@ -159,7 +156,7 @@ update wrap now msg model =
                     ( model |> setParsedSource (err |> Http.errorToString |> Err |> Just), T.send (model.callback ( Nothing, err |> Http.errorToString |> Err )) )
 
         GetLocalFile file ->
-            ( init model.defaultSchema model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
+            ( init model.source model.callback |> (\m -> { m | selectedLocalFile = Just file })
             , Ports.readLocalFile kind file
             )
 
@@ -347,7 +344,7 @@ viewLogs filename model =
         , model.parsedSchema |> Maybe.andThen .statements |> Maybe.mapOrElse (viewLogsStatements show) (div [] [])
         , model.parsedSchema |> Maybe.andThen .commands |> Maybe.mapOrElse (viewLogsCommands (model.parsedSchema |> Maybe.andThen .statements)) (div [] [])
         , viewLogsErrors (model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse .errors [])
-        , model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse (normalizeSchema >> Ok >> SourceLogs.viewParsedSchema UiToggle model.defaultSchema show) (div [] [])
+        , model.parsedSchema |> Maybe.andThen .schema |> Maybe.mapOrElse (normalizeSchema >> Ok >> SourceLogs.viewParsedSchema UiToggle show) (div [] [])
         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewError (div [] [])
         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
         ]

@@ -16,12 +16,14 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import Models.Position as Position
 import Models.User exposing (User)
-import PagesComponents.Projects.Id_.Components.AmlSlidebar as AmlSlidebar
+import PagesComponents.Projects.Id_.Components.AmlSidebar as AmlSidebar
+import PagesComponents.Projects.Id_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Projects.Id_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Projects.Id_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Projects.Id_.Models exposing (ContextMenu, Model, Msg(..), ProjectSettingsMsg(..))
+import PagesComponents.Projects.Id_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Projects.Id_.Models.ErdLayout exposing (ErdLayout)
@@ -80,10 +82,10 @@ viewApp currentUrl shared model htmlId erd =
             div [] []
         , main_
             [ class "flex-1 flex overflow-hidden"
-            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ String.fromFloat Conf.ui.navbarHeight ++ "px)") "100%")
+            , style "height" (B.cond model.conf.showNavbar ("calc(100% - " ++ (model.erdElem.position |> Position.extractViewport |> .top |> String.fromFloat) ++ "px)") "100%")
             ]
             [ section [ class "relative min-w-0 flex-1 h-full flex flex-col overflow-y-auto" ]
-                [ Lazy.lazy8 viewErd model.conf model.screen model.hoverTable erd model.selectionBox model.virtualRelation (Erd.argsToString shared.conf.platform model.cursorMode model.openedDropdown model.openedPopover) model.dragging
+                [ Lazy.lazy8 viewErd model.conf model.erdElem model.hoverTable erd model.selectionBox model.virtualRelation (Erd.argsToString shared.conf.platform model.cursorMode model.openedDropdown model.openedPopover) model.dragging
                 , if model.conf.fullscreen || model.conf.move then
                     let
                         layout : ErdLayout
@@ -100,7 +102,22 @@ viewApp currentUrl shared model htmlId erd =
                   else
                     div [] []
                 ]
+            , viewLeftSidebar model
             , viewRightSidebar model
+            ]
+        ]
+
+
+viewLeftSidebar : Model -> Html Msg
+viewLeftSidebar model =
+    let
+        content : Maybe (Html Msg)
+        content =
+            model.detailsSidebar |> Maybe.map2 (DetailsSidebar.view DetailsSidebarMsg (\id -> ShowTable id Nothing) HideTable ShowColumn HideColumn (LLoad >> LayoutMsg)) model.erd
+    in
+    aside [ css [ "block flex-shrink-0 order-first" ] ]
+        [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
+            [ content |> Maybe.withDefault (div [] [])
             ]
         ]
 
@@ -110,10 +127,10 @@ viewRightSidebar model =
     let
         content : Maybe (Html Msg)
         content =
-            Maybe.map2 AmlSlidebar.view model.erd model.amlSidebar
+            model.amlSidebar |> Maybe.map2 AmlSidebar.view model.erd
     in
     aside [ css [ "block flex-shrink-0 order-last" ] ]
-        [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-r border-gray-200 bg-white overflow-y-auto" ] ]
+        [ div [ css [ B.cond (content == Nothing) "-mr-112" "", "w-112 transition-[margin] ease-in-out duration-200 h-full relative flex flex-col border-l border-gray-200 bg-white overflow-y-auto" ] ]
             [ content |> Maybe.withDefault (div [] [])
             ]
         ]
@@ -146,11 +163,7 @@ viewContextMenu menu =
     menu
         |> Maybe.mapOrElse
             (\m ->
-                div
-                    [ class "az-context-menu absolute"
-                    , style "left" (String.fromFloat m.position.left ++ "px")
-                    , style "top" (String.fromFloat m.position.top ++ "px")
-                    ]
+                div ([ class "az-context-menu absolute" ] ++ Position.stylesViewport m.position)
                     [ ContextMenu.menu "" BottomRight 0 m.show m.content ]
             )
             (div [ class "az-context-menu" ] [])
