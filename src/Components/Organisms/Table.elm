@@ -156,12 +156,10 @@ table model =
             div [] []
 
           else
-            Lazy.lazy viewColumns model
-        , if model.state.collapsed then
-            div [] []
-
-          else
-            Lazy.lazy viewHiddenColumns model
+            div []
+                [ Lazy.lazy viewColumns model
+                , Lazy.lazy viewHiddenColumns model
+                ]
         ]
 
 

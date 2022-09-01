@@ -58,28 +58,16 @@ handleHotkey _ model hotkey =
             ( model, T.send SaveProject )
 
         "move-up" ->
-            ( model, model |> moveTables { dx = 0, dy = -1 } |> Maybe.orElse (model |> upDetails) |> Maybe.withDefault Cmd.none )
+            ( model, model |> moveTables { dx = 0, dy = -10 } |> Maybe.orElse (model |> upDetails) |> Maybe.withDefault Cmd.none )
 
         "move-right" ->
-            ( model, model |> moveTables { dx = 1, dy = 0 } |> Maybe.orElse (model |> nextDetails) |> Maybe.withDefault Cmd.none )
+            ( model, model |> moveTables { dx = 10, dy = 0 } |> Maybe.orElse (model |> nextDetails) |> Maybe.withDefault Cmd.none )
 
         "move-down" ->
-            ( model, model |> moveTables { dx = 0, dy = 1 } |> Maybe.withDefault Cmd.none )
-
-        "move-left" ->
-            ( model, model |> moveTables { dx = -1, dy = 0 } |> Maybe.orElse (model |> prevDetails) |> Maybe.withDefault Cmd.none )
-
-        "move-up-big" ->
-            ( model, model |> moveTables { dx = 0, dy = -10 } |> Maybe.withDefault Cmd.none )
-
-        "move-right-big" ->
-            ( model, model |> moveTables { dx = 10, dy = 0 } |> Maybe.withDefault Cmd.none )
-
-        "move-down-big" ->
             ( model, model |> moveTables { dx = 0, dy = 10 } |> Maybe.withDefault Cmd.none )
 
-        "move-left-big" ->
-            ( model, model |> moveTables { dx = -10, dy = 0 } |> Maybe.withDefault Cmd.none )
+        "move-left" ->
+            ( model, model |> moveTables { dx = -10, dy = 0 } |> Maybe.orElse (model |> prevDetails) |> Maybe.withDefault Cmd.none )
 
         "move-forward" ->
             ( model, moveTablesOrder 1 model )

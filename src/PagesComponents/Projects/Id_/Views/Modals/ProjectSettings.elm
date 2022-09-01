@@ -125,22 +125,18 @@ viewSchemasSection htmlId erd =
         schemas =
             erd.sources |> List.concatMap (.tables >> Dict.values) |> List.groupBy .schema |> Dict.toList |> List.map (\( name, tables ) -> ( name, tables )) |> List.sortBy Tuple.first
     in
-    if List.length schemas > 1 then
-        fieldset [ class "mt-6" ]
-            [ legend [ class "font-medium text-gray-900" ] [ text "Project schemas" ]
-            , p [ class "text-sm text-gray-500" ] [ text "Allow you to enable or not SQL schemas in your project." ]
-            , div [ class "list-group" ] (schemas |> List.map (viewSchema htmlId erd.settings.removedSchemas))
-            , Input.textWithLabelAndHelp "mt-3"
-                (htmlId ++ "-default-schema")
-                "Default schema"
-                "Hide it in diagram to make it cleaner."
-                "ex: public, dto..."
-                erd.settings.defaultSchema
-                (PSDefaultSchemaUpdate >> ProjectSettingsMsg)
-            ]
-
-    else
-        fieldset [] []
+    fieldset [ class "mt-6" ]
+        [ legend [ class "font-medium text-gray-900" ] [ text "Project schemas" ]
+        , p [ class "text-sm text-gray-500" ] [ text "Allow you to enable or not SQL schemas in your project." ]
+        , div [ class "list-group" ] (schemas |> List.map (viewSchema htmlId erd.settings.removedSchemas))
+        , Input.textWithLabelAndHelp "mt-3"
+            (htmlId ++ "-default-schema")
+            "Default schema"
+            "Hide it in diagram to make it cleaner."
+            "ex: public, dto..."
+            erd.settings.defaultSchema
+            (PSDefaultSchemaUpdate >> ProjectSettingsMsg)
+        ]
 
 
 viewSchema : HtmlId -> List SchemaName -> ( SchemaName, List Table ) -> Html Msg

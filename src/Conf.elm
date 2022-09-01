@@ -181,10 +181,6 @@ hotkeys =
         , ( "move-right", [ { hotkey | key = "ArrowRight" } ] )
         , ( "move-down", [ { hotkey | key = "ArrowDown" } ] )
         , ( "move-left", [ { hotkey | key = "ArrowLeft" } ] )
-        , ( "move-up-big", [ { hotkey | key = "ArrowUp", shift = True } ] )
-        , ( "move-right-big", [ { hotkey | key = "ArrowRight", shift = True } ] )
-        , ( "move-down-big", [ { hotkey | key = "ArrowDown", shift = True } ] )
-        , ( "move-left-big", [ { hotkey | key = "ArrowLeft", shift = True } ] )
         , ( "move-forward", [ { hotkey | key = "ArrowUp", ctrl = True } ] )
         , ( "move-backward", [ { hotkey | key = "ArrowDown", ctrl = True } ] )
         , ( "move-to-top", [ { hotkey | key = "ArrowUp", ctrl = True, shift = True } ] )
@@ -214,6 +210,7 @@ blogPosts =
     , "stop-using-auto-increment-for-primary-keys"
     , "changelog-2022-06"
     , "changelog-2022-07"
+    , "changelog-2022-08"
 
     --, "make-your-app-hackable"
     ]
