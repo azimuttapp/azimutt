@@ -7,7 +7,7 @@ author: loic
 published: 2022-09-01
 ---
 
-The feature train for Azimutt is still strong, even during the summer!
+The feature train for Azimutt is still strong, even during summer time!
 
 This month big change was to extract custom type declaration from your schema and display it in Azimutt diagram. This is especially useful for enums, so you can see all possible values for a column without leaving Azimutt!
 If you follow us on Twitter ([@azimuttapp]({{azimutt_twitter}})), you know our biggest work is still not released and will bring Azimutt to a completely new level. **Stay tuned!**
@@ -57,12 +57,12 @@ This is done now, [the AML documentation](https://github.com/azimuttapp/azimutt/
 
 One goal for Azimutt is to offer you a very pleasant experience while exploring your database.
 
-We added contextual menus (right click) for the tables and the whole diagram, and re-worked a bit the one on columns. We also improve keyboard shortcuts so everything is now much more accessible and consistent.
+We added contextual menus (right click) for the tables and the whole diagram, and re-worked a bit the one on columns. We also improved keyboard shortcuts so everything is now much more accessible and consistent.
 Just try them 😉
 
-We also fixed two annoying bugs: the zoom on cursor and tables little move on click. Your experience should be much smoother now. Why these problems were not fixed earlier? Let's dig a bit as it's quite interesting I think ^^
+We also fixed two annoying bugs: the zoom on cursor and tables little move on click. Your experience should be much smoother now. Why these problems were not fixed earlier? Let's dig a bit as, I think,  it's quite interesting ^^
 
-As we aim for a very pleasant experience and these problems were very annoying, we already have tried to fix them several times before, but without any success. What changed and allowed us to finally succeed? **We added types!** Yes, that simple! Let's dig in 👇️
+As we aim for a very pleasant experience and these problems were very annoying, we already tried to fix them several times before, but without any success. What changed and allowed us to finally succeed? **We added types!** Yes, that simple! Let's dig in 👇️
 
 In order to have an easier alignement, tables coordinates are rounded to multiples of 10 to create a (small) grid effect. But sometimes, a computation escaped this rule and created coordinates that were not multiples of 10 (couldn't figure out which one 😥). So when you click on a table, the position is recomputed and aligned on the grid, creating this small, but very annoying, move of the table ([Jérémy Buget](https://twitter.com/jbuget) even mentioned it in [his article](https://jbuget.fr/posts/outils-sql-en-ligne/#visualiser-une-base-de-donn%c3%a9es)).
 The *definitive fix* was to create a *type* for grid positions (`Position.Grid`). It has only one creation function that does the grid alignement. This way, using it for table positions, it's guaranteed to be aligned on the grid, no matter what.
@@ -87,7 +87,7 @@ So please, if you see something, report it by sending the suggested email or ope
 
 ## See you next month
 
-Can't wait for the next month release with all the new features we are working on already and the new opened horizons...
+Can't wait for next month release with all the new features we are working on already and the new opened horizons...
 It will be the biggest month for Azimutt and I hope you will be with us for it!
 
 Cheers!
