@@ -136,8 +136,9 @@ viewErd conf erdElem hoverTable erd selectionBox virtualRelation args dragging =
         , Attributes.when conf.layout (onContextMenu platform (ContextMenuCreate (ErdContextMenu.view platform)))
         ]
         [ div [ class "az-canvas origin-top-left", Position.styleTransformDiagram canvas.position canvas.zoom ]
-            [ tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables erd.notes
-            , displayedRelations |> Lazy.lazy6 viewRelations conf erd.settings.defaultSchema dragging erd.settings.relationStyle displayedTables
+            -- use HTML order instead of z-index, must be careful with it, this allows to have tooltips & popovers always on top
+            [ displayedRelations |> Lazy.lazy5 viewRelations conf erd.settings.defaultSchema erd.settings.relationStyle displayedTables
+            , tableProps |> viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover hoverTable dragging canvas.zoom erd.settings.defaultSchema erd.settings.columnBasicTypes erd.tables erd.notes
             , selectionBox |> Maybe.filterNot (\_ -> tableProps |> List.isEmpty) |> Maybe.mapOrElse viewSelectionBox (div [] [])
             , virtualRelationInfo |> Maybe.mapOrElse (viewVirtualRelation erd.settings.relationStyle) viewEmptyRelation
             ]
@@ -212,19 +213,18 @@ viewTables platform conf cursorMode virtualRelation openedDropdown openedPopover
         )
 
 
-viewRelations : ErdConf -> SchemaName -> Maybe DragState -> RelationStyle -> List ErdTableLayout -> List ErdRelation -> Html Msg
-viewRelations conf defaultSchema dragging style tableLayouts relations =
+viewRelations : ErdConf -> SchemaName -> RelationStyle -> List ErdTableLayout -> List ErdRelation -> Html Msg
+viewRelations conf defaultSchema style tableLayouts relations =
     Keyed.node "div"
         [ class "az-relations" ]
         (relations
             |> List.map
                 (\r ->
                     ( r.name
-                    , Lazy.lazy7 viewRelation
+                    , Lazy.lazy6 viewRelation
                         defaultSchema
                         style
                         conf
-                        (dragging |> Maybe.any (\d -> ((d.id == TableId.toHtmlId r.src.table) || (d.id == TableId.toHtmlId r.ref.table)) && d.init /= d.last))
                         (tableLayouts |> List.findBy .id r.src.table)
                         (tableLayouts |> List.findBy .id r.ref.table)
                         r

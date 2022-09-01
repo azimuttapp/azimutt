@@ -29,43 +29,43 @@ type Direction
     | None
 
 
-show : RelationStyle -> RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-show style conf src ref nullable color label index onHover =
+show : RelationStyle -> RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+show style conf src ref nullable color label onHover =
     case style of
         RelationStyle.Bezier ->
-            bezier conf src ref nullable color label index onHover
+            bezier conf src ref nullable color label onHover
 
         RelationStyle.Straight ->
-            straight conf src ref nullable color label index onHover
+            straight conf src ref nullable color label onHover
 
         RelationStyle.Steps ->
-            steps conf src ref nullable color label index onHover
+            steps conf src ref nullable color label onHover
 
 
-straight : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-straight conf ( src, _ ) ( ref, _ ) nullable color label index onHover =
-    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 12 }
+straight : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+straight conf ( src, _ ) ( ref, _ ) nullable color label onHover =
+    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, padding = 12 }
         (\origin -> drawLine conf (src |> Position.moveCanvas origin) (ref |> Position.moveCanvas origin) onHover)
 
 
-bezier : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-bezier conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
-    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
+bezier : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+bezier conf ( src, srcDir ) ( ref, refDir ) nullable color label onHover =
+    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, padding = 50 }
         (\origin -> drawCurve conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
 
 
-steps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> msg) -> Svg msg
-steps conf ( src, srcDir ) ( ref, refDir ) nullable color label index onHover =
-    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, index = index, padding = 50 }
+steps : RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> msg) -> Svg msg
+steps conf ( src, srcDir ) ( ref, refDir ) nullable color label onHover =
+    buildSvg { src = src, ref = ref, nullable = nullable, color = color, label = label, padding = 50 }
         (\origin -> drawSteps conf ( src |> Position.moveCanvas origin, srcDir ) ( ref |> Position.moveCanvas origin, refDir ) onHover)
 
 
 type alias SvgParams =
-    { src : Position.Canvas, ref : Position.Canvas, nullable : Bool, color : Maybe Color, label : String, index : Int, padding : Float }
+    { src : Position.Canvas, ref : Position.Canvas, nullable : Bool, color : Maybe Color, label : String, padding : Float }
 
 
 buildSvg : SvgParams -> (Delta -> Bool -> Maybe Color -> List (Svg msg)) -> Svg msg
-buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
+buildSvg { src, ref, nullable, color, label, padding } svgContent =
     let
         ( srcPos, refPos ) =
             ( src |> Position.extractCanvas, ref |> Position.extractCanvas )
@@ -78,10 +78,10 @@ buildSvg { src, ref, nullable, color, label, index, padding } svgContent =
         [ class "az-relation absolute select-none"
         , width (String.fromFloat (abs (srcPos.left - refPos.left) + (padding * 2)))
         , height (String.fromFloat (abs (srcPos.top - refPos.top) + (padding * 2)))
-        , style ("left: " ++ String.fromFloat origin.left ++ "px; top: " ++ String.fromFloat origin.top ++ "px; z-index: " ++ String.fromInt index ++ ";")
+        , style ("left: " ++ String.fromFloat origin.left ++ "px; top: " ++ String.fromFloat origin.top ++ "px;")
 
-        --, style ("transform: translate(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px); z-index: " ++ String.fromInt index ++ ";")
-        --, style ("transform: translate3d(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px, 0); z-index: " ++ String.fromInt index ++ ";")
+        --, style ("transform: translate(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px);")
+        --, style ("transform: translate3d(" ++ String.fromFloat origin.left ++ "px, " ++ String.fromFloat origin.top ++ "px, 0);")
         ]
         (text label :: svgContent (Position.zero |> Position.diff origin) nullable color)
 
@@ -262,12 +262,12 @@ doc =
             [ ( "straight", samples straight )
             , ( "bezier", samples bezier )
             , ( "steps", samples steps )
-            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) False (Just Tw.green) "relation" 10 (\_ -> logAction "hover relation") ] )
-            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) True Nothing "relation" 10 (\_ -> logAction "hover relation") ] )
+            , ( "green", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) False (Just Tw.green) "relation" (\_ -> logAction "hover relation") ] )
+            , ( "nullable", div [ class "h-12" ] [ straight { hover = True } ( Position.zeroCanvas, Right ) ( Position 50 50 |> Position.buildCanvas, Left ) True Nothing "relation" (\_ -> logAction "hover relation") ] )
             ]
 
 
-samples : (RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> Int -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
+samples : (RelationConf -> ( Position.Canvas, Direction ) -> ( Position.Canvas, Direction ) -> Bool -> Maybe Color -> String -> (Bool -> Msg state) -> Svg (Msg state)) -> Html (Msg state)
 samples displayRelation =
     let
         ( p0, p55 ) =
@@ -288,11 +288,11 @@ samples displayRelation =
         [ div [ class "flex flex-row h-12" ]
             ([ ( p0, p55 ), ( p05, p50 ) ]
                 |> List.concatMap (\( src, ref ) -> dirs |> List.map (\( dir1, dir2 ) -> ( ( src, dir1 ), ( ref, dir2 ) )))
-                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" 10 (\_ -> logAction "hover relation") ])
+                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" (\_ -> logAction "hover relation") ])
             )
         , div [ class "flex flex-row h-12 mt-6" ]
             ([ ( p55, p0 ), ( p50, p05 ) ]
                 |> List.concatMap (\( src, ref ) -> dirs |> List.map (\( dir1, dir2 ) -> ( ( src, dir1 ), ( ref, dir2 ) )))
-                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" 10 (\_ -> logAction "hover relation") ])
+                |> List.map (\( src, ref ) -> div [ class "relative w-28" ] [ displayRelation { hover = True } src ref False Nothing "relation" (\_ -> logAction "hover relation") ])
             )
         ]

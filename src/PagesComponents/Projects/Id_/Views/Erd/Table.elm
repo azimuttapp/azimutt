@@ -4,7 +4,7 @@ import Components.Organisms.Table as Table
 import Conf
 import Dict
 import Html exposing (Attribute, Html, div)
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (classList)
 import Html.Events.Extra.Mouse exposing (Button(..))
 import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
@@ -69,21 +69,11 @@ viewTable conf zoom args notes layout table =
         drag =
             B.cond (cursorMode == CursorMode.Drag || not conf.move) [] [ stopPointerDown platform (handleTablePointerDown table.htmlId) ]
 
-        zIndex : Int
-        zIndex =
-            Conf.canvas.zIndex.tables + index + B.cond (layout.props.selected || dragging || (openedDropdown |> String.startsWith table.htmlId)) 1000 0
-
         dropdown : Html Msg
         dropdown =
             TableContextMenu.view platform conf index table layout notes.table
     in
-    div
-        ([ css [ "select-none absolute", B.cond (layout.props.size == Size.zeroCanvas) "invisible" "" ]
-         , style "z-index" (String.fromInt zIndex)
-         ]
-            ++ Position.stylesCanvasGrid layout.props.position
-            ++ drag
-        )
+    div ([ css [ "select-none absolute" ], classList [ ( "z-max", layout.props.selected ), ( "invisible", layout.props.size == Size.zeroCanvas ) ] ] ++ Position.stylesCanvasGrid layout.props.position ++ drag)
         [ Table.table
             { id = table.htmlId
             , ref = { schema = table.schema, table = table.name }

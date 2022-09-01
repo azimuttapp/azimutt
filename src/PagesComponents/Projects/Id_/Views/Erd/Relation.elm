@@ -32,9 +32,9 @@ buildColumnInfo column layout =
     layout |> Maybe.andThen (\t -> t.columns |> List.zipWithIndex |> List.findBy (Tuple.first >> .name) column |> Maybe.map (\( c, i ) -> ColumnInfo t.props c i))
 
 
-viewRelation : SchemaName -> RelationStyle -> ErdConf -> Bool -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg
-viewRelation defaultSchema style conf dragging srcTable refTable relation =
-    -- FIXME: all relations are always rendered, don't know why :(
+viewRelation : SchemaName -> RelationStyle -> ErdConf -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg
+viewRelation defaultSchema style conf srcTable refTable relation =
+    -- FIXME: all relations are always re-rendered, don't know why :(
     let
         label : String
         label =
@@ -65,7 +65,7 @@ viewRelation defaultSchema style conf dragging srcTable refTable relation =
 
             else
                 (s.table |> Area.topRightCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop s.index s.table.collapsed })
-                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( srcPos |> Position.moveCanvas { dx = 20, dy = 0 }, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + s.index + B.cond dragging 1000 0) onHover)
+                    |> (\srcPos -> Relation.straight relConf ( srcPos, Left ) ( srcPos |> Position.moveCanvas { dx = 20, dy = 0 }, Right ) relation.src.nullable color label onHover)
 
         ( Nothing, Just r ) ->
             if r.table.collapsed then
@@ -73,7 +73,7 @@ viewRelation defaultSchema style conf dragging srcTable refTable relation =
 
             else
                 (r.table |> Area.topLeftCanvasGrid |> Position.moveCanvas { dx = 0, dy = deltaTop r.index r.table.collapsed })
-                    |> (\refPos -> Relation.straight relConf ( refPos |> Position.moveCanvas { dx = -20, dy = 0 }, Left ) ( refPos, Right ) relation.src.nullable color label (Conf.canvas.zIndex.tables + r.index + B.cond dragging 1000 0) onHover)
+                    |> (\refPos -> Relation.straight relConf ( refPos |> Position.moveCanvas { dx = -20, dy = 0 }, Left ) ( refPos, Right ) relation.src.nullable color label onHover)
 
         ( Just s, Just r ) ->
             let
@@ -85,12 +85,8 @@ viewRelation defaultSchema style conf dragging srcTable refTable relation =
 
                 ( srcY, refY ) =
                     ( sPos.top + deltaTop s.index s.table.collapsed, rPos.top + deltaTop r.index r.table.collapsed )
-
-                zIndex : Int
-                zIndex =
-                    Conf.canvas.zIndex.tables - 1 + min s.index r.index
             in
-            Relation.show style relConf ( Position.buildCanvas { left = srcX, top = srcY }, srcDir ) ( Position.buildCanvas { left = refX, top = refY }, refDir ) relation.src.nullable color label zIndex onHover
+            Relation.show style relConf ( Position.buildCanvas { left = srcX, top = srcY }, srcDir ) ( Position.buildCanvas { left = refX, top = refY }, refDir ) relation.src.nullable color label onHover
 
 
 viewVirtualRelation : RelationStyle -> ( ( Maybe ColumnInfo, ErdColumn ), Position.Canvas ) -> Svg Msg
@@ -112,7 +108,6 @@ viewVirtualRelation style ( ( maybeProps, column ), position ) =
                 column.nullable
                 (Just props.table.color)
                 "virtual relation"
-                (Conf.canvas.zIndex.tables - 1)
                 (\_ -> Noop "hover new virtual relation")
 
         Nothing ->
