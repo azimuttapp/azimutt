@@ -4,7 +4,7 @@ export interface Project {
     id: ProjectId
     name: ProjectName
     sources: Source[]
-    layout: Layout
+    usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
     storage?: ProjectStorage
