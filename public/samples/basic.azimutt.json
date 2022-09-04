@@ -6,7 +6,7 @@
       "id": "25c50288-54c1-47e9-b92d-b1c2c8d9772b",
       "name": "basic.sql",
       "kind": {
-        "kind": "RemoteFile",
+        "kind": "SqlRemoteFile",
         "url": "/samples/basic.sql",
         "size": 1764
       },
@@ -638,8 +638,8 @@
     "initial layout": {
       "canvas": {
         "position": {
-          "left": 0,
-          "top": 0
+          "left": -271,
+          "top": -106
         },
         "zoom": 1
       },
@@ -719,6 +719,9 @@
       "createdAt": 1649492400000,
       "updatedAt": 1649492400000
     }
+  },
+  "settings": {
+    "defaultSchema": "public"
   },
   "createdAt": 1649492400000,
   "updatedAt": 1649492400000,

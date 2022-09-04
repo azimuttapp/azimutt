@@ -6,7 +6,7 @@
       "id": "b2dec12a-d301-4dbc-a0d9-a05450df2f82",
       "name": "wordpress.sql",
       "kind": {
-        "kind": "RemoteFile",
+        "kind": "SqlRemoteFile",
         "url": "/samples/wordpress.sql",
         "size": 11438
       },
@@ -2763,7 +2763,7 @@
       "id": "ec01090d-3ac7-44d8-800b-808b24f0e782",
       "name": "default",
       "kind": {
-        "kind": "UserDefined"
+        "kind": "AmlEditor"
       },
       "content": [
         "fk term_taxonomy.term_id -> terms.term_id",
@@ -3198,6 +3198,9 @@
       "createdAt": 1649492400000,
       "updatedAt": 1649492400000
     }
+  },
+  "settings": {
+    "defaultSchema": "public"
   },
   "createdAt": 1649492400000,
   "updatedAt": 1649492400000,

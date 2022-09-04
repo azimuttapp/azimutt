@@ -6,7 +6,7 @@
       "id": "e55270bb-3b11-449c-90d3-b63982e3d932",
       "name": "gospeak.sql",
       "kind": {
-        "kind": "RemoteFile",
+        "kind": "SqlRemoteFile",
         "url": "/samples/gospeak.sql",
         "size": 49487
       },
@@ -8609,7 +8609,7 @@
       "id": "21a1500a-8b3b-452f-b077-32574d6fed63",
       "name": "default",
       "kind": {
-        "kind": "UserDefined"
+        "kind": "AmlEditor"
       },
       "content": [
         "fk talks.speakers -> users.id",
@@ -9621,6 +9621,7 @@
     }
   },
   "settings": {
+    "defaultSchema": "public",
     "removedTables": "user_requests, env, flyway_schema_history",
     "hiddenColumns": {
       "list": "created_.+, .*updated_.+, location_.+, social_.+, address_.+"

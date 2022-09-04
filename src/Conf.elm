@@ -84,6 +84,7 @@ schemaSamples =
     , { url = "/samples/wordpress.azimutt.json", color = Tw.yellow, icon = Template, key = "wordpress", name = "Wordpress", description = "The well known CMS powering most of the web. An interesting schema, but with no foreign keys!", tables = 12 }
     , { url = "/samples/gladys.azimutt.json", color = Tw.cyan, icon = Home, key = "gladys", name = "Gladys Assistant", description = "A privacy-first, open-source home assistant with many features and integrations", tables = 21 }
     , { url = "/samples/gospeak.azimutt.json", color = Tw.purple, icon = ClipboardList, key = "gospeak", name = "Gospeak.io", description = "SaaS for meetup organizers. Good real world example to explore and see the power of Azimutt.", tables = 26 }
+    , { url = "/samples/postgresql.azimutt.json", color = Tw.blue, icon = Database, key = "postgresql", name = "PostgreSQL", description = "Explore 'pg_catalog' and 'information_schema' with tables, relations and documentation.", tables = 194 }
     ]
         |> List.map (\sample -> ( sample.key, sample ))
         |> Dict.fromList
@@ -211,6 +212,7 @@ blogPosts =
     , "changelog-2022-06"
     , "changelog-2022-07"
     , "changelog-2022-08"
+    , "explore-postgresql-internals"
 
     --, "make-your-app-hackable"
     ]

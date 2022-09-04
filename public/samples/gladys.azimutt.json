@@ -6,7 +6,7 @@
       "id": "72e0dd17-ff3a-43b2-8b75-6d6d1819d62b",
       "name": "gladys.sql",
       "kind": {
-        "kind": "LocalFile",
+        "kind": "SqlLocalFile",
         "name": "gladys.sql",
         "size": 11796,
         "modified": 1649492400000
@@ -5717,6 +5717,9 @@
       "createdAt": 1649492400000,
       "updatedAt": 1649492400000
     }
+  },
+  "settings": {
+    "defaultSchema": "public"
   },
   "createdAt": 1649492400000,
   "updatedAt": 1649492400000,
