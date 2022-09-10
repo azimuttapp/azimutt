@@ -7,7 +7,7 @@ author: loic
 published: 2022-09-05
 ---
 
-During the summer we [added a way to import your database schema in Azimutt using your PostgreSQL connection url](./changelog-2022-07). The connection url is sent to the server which connects to the database to extract the schema and return it as JSON. For that I had to dig into the PostgreSQL internals and that's the story I'm about to tell you. Buckle up your seat belt, it will be a big journey...
+During the summer we [added a way to import your database schema in Azimutt using your PostgreSQL connection url](./changelog-2022-07). The connection url is sent to the server which connects to the database to extract the schema and return it as JSON. To do that, I had to dig into the PostgreSQL internals and that's the story I'm about to tell you. Buckle up your seat belt, it will be a big journey...
 
 ![PostgreSQL internals]({{base_link}}/postgresql-internals.jpg)
 
@@ -33,12 +33,12 @@ And then imported them into [Azimutt](/projects/new?sql):
 
 **Wait what?** Do you see the problem?
 
-Yeah, no relation, at all 🤯
+Yeah, no relations, at all 🤯
 My wonderful application is falling flat and won't help much...
 
 So I continued to tweak my queries to extract all the information I wanted, a bit with the schema in Azimutt, but mostly with samples queries found on stackoverflow and [the documentation](https://www.postgresql.org/docs/current/catalogs.html), exploring it either to understand what the query is doing or to extend it with additional data (joins and columns). Fortunately, the documentation was quite clear as you can see on the [pg_class](https://www.postgresql.org/docs/current/catalog-pg-class.html) table (which is a key one).
 
-This wasn't ideal, I had a lot of opened tabs, several on stackoverflow and also a lot with tables documentation... It was not very convenient to navigate and find the one I wanted. After a while, I noticed the documentation is very regular: a title with the table name, then a description of it and after a table with all the columns, their name, type and description. And there was even references between columns 🤩 (ex: [pg_enum](https://www.postgresql.org/docs/current/catalog-pg-enum.html)). I thought it won't be too hard to extract it and then, thanks to [AML](./aml-a-language-to-define-your-database-schema), inject it into my Azimutt schema.
+This wasn't ideal, I had a lot of opened tabs, several on stackoverflow and also a lot with tables documentation... It was not very convenient to navigate and find the one I wanted. After a while, I noticed the documentation was very regular: a title with the table name, then a description of it and after a table with all the columns, their name, type and description. And there was even references between columns 🤩 (ex: [pg_enum](https://www.postgresql.org/docs/current/catalog-pg-enum.html)). I thought it won't be too hard to extract it and then, thanks to [AML](./aml-a-language-to-define-your-database-schema), inject it into my Azimutt schema.
 
 After half an hour... TADA 🎉
 
@@ -75,7 +75,7 @@ function extractTableToAml(elt, table_schema, url) {
 extractTableToAml(document, 'pg_catalog', window.location.href)
 ```
 
-This code extract the documentation from the page and format it in AML, ready to be used in Azimutt. If you execute this JavaScript in the console of [pg_enum documentation](https://www.postgresql.org/docs/current/catalog-pg-enum.html), you will get this very nice result:
+This code extracts the documentation from the page and format it in AML, ready to be used in Azimutt. If you execute this JavaScript in the console of [pg_enum documentation](https://www.postgresql.org/docs/current/catalog-pg-enum.html), you will get this very nice result:
 
 ```aml
 pg_catalog.pg_enum | The pg_enum catalog contains entries showing the values and labels for each enum type. The internal representation of a given enum value is actually the OID of its associated row in pg_enum.\\nhttps://www.postgresql.org/docs/current/catalog-pg-enum.html
@@ -91,7 +91,7 @@ That's the *awesomeness* to have a very simple DSL to define your schema (instea
 ![pg_catalog schema in Azimutt with AML documentation]({{base_link}}/pg_catalog-schema-in-azimutt-with-doc.png)
 
 Much better, don't you think?
-I have all the links, and also the documentation of tables and columns right inside Azimutt, with the search, tables and layouts I needed to understand better!
+I have all the links, and also the documentation of tables and columns right inside Azimutt, with the search, tables and layouts I needed to understand it better!
 
 Generating AML and copying it into Azimutt was great, but only until it got quite repetitive... And I noticed there is 160 tables in total... **Boring!**
 
@@ -169,7 +169,7 @@ WHERE c.relkind IN ('r', 'v', 'm') AND a.attnum > 0 AND n.nspname NOT IN ('infor
 ORDER BY table_schema, table_name, column_index
 ```
 
-The [pg_attribute](https://www.postgresql.org/docs/current/catalog-pg-attribute.html) table stores information about all the table columns, I just need to make a join to [pg_class](https://www.postgresql.org/docs/current/catalog-pg-class.html) on *attrelid*, storing the table it belongs to have almost all I need. But as you can see, there is a few tricky things (at least hard to figure out): I need some [functions](https://www.postgresql.org/docs/current/functions-info.html) to get properly formatted type and default value.
+The [pg_attribute](https://www.postgresql.org/docs/current/catalog-pg-attribute.html) table stores information about all the table columns, I just need to make a join to [pg_class](https://www.postgresql.org/docs/current/catalog-pg-class.html) on *attrelid*, storing the table it belongs to, to have almost all I need. But as you can see, there is a few tricky things (at least hard to figure out): I need some [functions](https://www.postgresql.org/docs/current/functions-info.html) to get properly formatted type and default value.
 
 So now you may start to understand why it was not very trivial to build this. The result is not very complex but each time I had to figure out and adjust a lot of small details.
 
@@ -190,9 +190,9 @@ WHERE cn.contype IN ('p', 'c') AND n.nspname NOT IN ('information_schema', 'pg_c
 ORDER BY table_schema, table_name, constraint_name
 ```
 
-The query is quite similar to the previous one but with the [pg_constraint](https://www.postgresql.org/docs/current/catalog-pg-constraint.html) table as primary source. What was hard was to figure out is I needed to exclude *unique* and *foreign key* constraints from this query as they need a more specific treatment. But maybe you won't...
+The query is quite similar to the previous one but with the [pg_constraint](https://www.postgresql.org/docs/current/catalog-pg-constraint.html) table as primary source. What was hard was to figure out if I needed to exclude *unique* and *foreign key* constraints from this query as they need a more specific treatment. But maybe you won't...
 
-Next stop is for *indexes*. PostgreSQL store every index in [pg_index](https://www.postgresql.org/docs/current/catalog-pg-index.html), this also include *uniques* and *primary keys*, as they are based on indexes:
+Next stop is for *indexes*. PostgreSQL stores every index in [pg_index](https://www.postgresql.org/docs/current/catalog-pg-index.html), this also includes *uniques* and *primary keys*, as they are based on indexes:
 
 ```sql
 -- fetch indexes & uniques
@@ -210,7 +210,7 @@ WHERE i.indisprimary = false AND tn.nspname NOT IN ('information_schema', 'pg_ca
 ORDER BY table_schema, table_name, index_name
 ```
 
-Here I discard primary key indexes as I got them from previous query. And again, to get the proper definition to show in Azimutt, I had to find the correct function (after a lot of trial and error ^^). The `indkey` column was quite tricky, it's encoded as a vector but my SQL client don't understand it, so I needed this explicit cast as array. But trust me, it was all but obvious 😵‍💫
+Here I discarded primary key indexes as I got them from previous query. And again, to get the proper definition to show in Azimutt, I had to find the correct function (after a lot of trial and errors ^^). The `indkey` column was quite tricky, it's encoded as a vector but my SQL client doesn't understand it, so I needed this explicit cast as array. But trust me, it was all but obvious 😵‍💫
 
 Now it's time for *foreign keys*, again using the [pg_constraint](https://www.postgresql.org/docs/current/catalog-pg-constraint.html) table:
 
@@ -232,7 +232,7 @@ WHERE cn.contype IN ('f') AND n.nspname NOT IN ('information_schema', 'pg_catalo
 ORDER BY table_schema, table_name, constraint_name
 ```
 
-For this one, I need to join with `pg_class` twice to get the source and destination tables, not too hard 🙂. But as always, column names are not very clear not readable (sometimes just one letter of difference ^^).
+For this one, I needed to join with `pg_class` twice to get the source and destination tables, not too hard 🙂. But as always, column names are not very clear nor readable (sometimes just one letter of difference ^^).
 
 The last entity I needed to extract from PostgreSQL schema was custom types:
 
@@ -284,6 +284,6 @@ And for even more immediate access, here is its embed version (use the fullscree
 
 <iframe width="100%" height="800px" src="/embed?project-url=%2Fsamples%2Fpostgresql.azimutt.json&layout=extract%20schema%20tables&mode=advanced" title="PostgreSQL internals" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
 
-Thanks for following me until there, it's a very long post ^^
-Don't hesitate if you have any question and if you didn't try Azimutt yet, that's your perfect occasion to [discover it](/projects)!
+Thanks for following me until there, on such a long post ^^
+Don't hesitate if you have any questions and if you haven't tried Azimutt yet, that's your perfect occasion to [discover it](/projects)!
 See you soon and **happy hacking!**
