@@ -1,7 +1,6 @@
-module Conf exposing (SampleSchema, blogPosts, canvas, constants, hotkeys, ids, newsletter, schema, schemaSamples, ui)
+module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, schema, schemaSamples, ui)
 
 import Components.Atoms.Icon exposing (Icon(..))
-import Components.Slices.Newsletter as Newsletter
 import Dict exposing (Dict)
 import Libs.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -15,6 +14,7 @@ import Models.Project.SourceName exposing (SourceName)
 
 constants :
     { azimuttWebsite : String
+    , azimuttBlog : String
     , azimuttTwitter : String
     , azimuttGithub : String
     , azimuttDiscussions : String
@@ -37,6 +37,7 @@ constants :
     }
 constants =
     { azimuttWebsite = "https://azimutt.app"
+    , azimuttBlog = "/blog"
     , azimuttTwitter = "https://twitter.com/" ++ twitter
     , azimuttGithub = github
     , azimuttDiscussions = github ++ "/discussions"
@@ -67,11 +68,6 @@ twitter =
 github : String
 github =
     "https://github.com/azimuttapp/azimutt"
-
-
-newsletter : Newsletter.Form
-newsletter =
-    { method = "post", url = "https://www.getrevue.co/profile/azimuttapp/add_subscriber", placeholder = "Enter your email", cta = "Subscribe" }
 
 
 type alias SampleSchema =
@@ -197,22 +193,3 @@ hotkeys =
         , ( "cancel", [ { hotkey | key = "Escape" } ] )
         , ( "help", [ { hotkey | key = "?" } ] )
         ]
-
-
-blogPosts : List String
-blogPosts =
-    [ "the-story-behind-azimutt"
-    , "how-to-explore-your-database-schema-with-azimutt"
-    , "why-you-should-avoid-tables-with-many-columns-and-how-to-fix-them"
-    , "embed-your-database-diagram-anywhere"
-    , "how-to-choose-your-entity-relationship-diagram"
-    , "improve-your-database-design-with-azimutt-analyzer"
-    , "aml-a-language-to-define-your-database-schema"
-    , "stop-using-auto-increment-for-primary-keys"
-    , "changelog-2022-06"
-    , "changelog-2022-07"
-    , "changelog-2022-08"
-    , "explore-postgresql-internals"
-
-    --, "make-your-app-hackable"
-    ]

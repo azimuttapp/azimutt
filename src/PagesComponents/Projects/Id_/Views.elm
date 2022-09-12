@@ -190,6 +190,6 @@ viewNotFound currentUrl user conf =
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }
-            , { url = Route.toHref Route.Blog, text = "Blog" }
+            , { url = Conf.constants.azimuttBlog, text = "Blog" }
             ]
         }

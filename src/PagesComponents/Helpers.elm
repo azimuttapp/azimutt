@@ -1,13 +1,10 @@
-module PagesComponents.Helpers exposing (appShell, newsletterSection, publicFooter, publicHeader, viewProfileIcon)
+module PagesComponents.Helpers exposing (appShell, viewProfileIcon)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
-import Components.Organisms.Footer as Footer
-import Components.Organisms.Header as Header
 import Components.Organisms.Navbar as Navbar
-import Components.Slices.Newsletter as Newsletter
 import Conf
 import Gen.Route as Route
 import Html exposing (Html, a, button, div, footer, h1, header, img, main_, p, span, text)
@@ -23,36 +20,6 @@ import Models.User as User exposing (User)
 import Router
 import Shared exposing (GlobalConf)
 import Url exposing (Url)
-
-
-publicHeader : Html msg
-publicHeader =
-    Header.rightLinksWhite
-        { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
-        , links =
-            [ { url = Route.toHref Route.Blog, content = [ text "Blog" ], external = False }
-            , { url = Conf.constants.azimuttDiscussions, content = [ text "Discussions" ], external = True }
-            , { url = Conf.constants.azimuttRoadmap, content = [ text "Roadmap" ], external = True }
-            , { url = Conf.constants.azimuttGithub, content = [ text "Source code" ], external = True }
-            , { url = Conf.constants.azimuttBugReport, content = [ text "Bug reports" ], external = True }
-            , { url = Conf.constants.azimuttTwitter, content = [ Icon.twitter "", span [ class "sr-only" ] [ text "Twitter" ] ], external = True }
-            ]
-        }
-
-
-newsletterSection : Html msg
-newsletterSection =
-    Newsletter.basicSlice
-        { form = Conf.newsletter |> (\n -> { n | cta = "Get onboard" })
-        , title = "Sign up for Azimutt newsletter"
-        , description = "Stay in touch with Azimutt news, features, articles or offers, directly in your mail box. Once a week at most, no spam guarantee."
-        , legalText = []
-        }
-
-
-publicFooter : Html msg
-publicFooter =
-    Footer.slice
 
 
 appShell :
