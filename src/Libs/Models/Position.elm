@@ -2,8 +2,8 @@ module Libs.Models.Position exposing (Position, decode, diff, distance, div, enc
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Delta as Delta exposing (Delta)
 import Libs.Json.Encode as Encode
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Size exposing (Size)
 
 

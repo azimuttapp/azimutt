@@ -6,11 +6,11 @@ import Gen.Route as Route
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
-import Libs.Delta as Delta exposing (Delta)
 import Libs.Json.Decode as Decode
 import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area

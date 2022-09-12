@@ -1,9 +1,9 @@
 module PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 
 import Conf
-import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Delta exposing (Delta)
 import Libs.Task as T
 import Libs.Tuple as Tuple
 import Models.Project.ColumnRef exposing (ColumnRef)

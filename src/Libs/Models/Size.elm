@@ -2,8 +2,8 @@ module Libs.Models.Size exposing (Size, decode, diff, div, encode, fromTuple, mu
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Delta exposing (Delta)
 import Libs.Json.Encode as Encode
+import Libs.Models.Delta exposing (Delta)
 
 
 type alias Size =

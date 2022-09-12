@@ -4,14 +4,14 @@ import Dict exposing (Dict)
 import FileValue exposing (File)
 import Json.Decode as Decode exposing (Decoder, Value, errorToString)
 import Json.Encode as Encode
-import Libs.Delta as Delta exposing (Delta)
-import Libs.Hotkey exposing (Hotkey, hotkeyEncoder)
 import Libs.Json.Decode as Decode
 import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
+import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
 import Models.Position as Position
@@ -373,7 +373,7 @@ elmEncoder elm =
             Encode.object [ ( "kind", "ObserveSizes" |> Encode.string ), ( "ids", ids |> Encode.list Encode.string ) ]
 
         ListenKeys keys ->
-            Encode.object [ ( "kind", "ListenKeys" |> Encode.string ), ( "keys", keys |> Encode.dict identity (Encode.list hotkeyEncoder) ) ]
+            Encode.object [ ( "kind", "ListenKeys" |> Encode.string ), ( "keys", keys |> Encode.dict identity (Encode.list Hotkey.encode) ) ]
 
         Confetti id ->
             Encode.object [ ( "kind", "Confetti" |> Encode.string ), ( "id", id |> Encode.string ) ]

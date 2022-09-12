@@ -9,7 +9,7 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "Libs.Area"
+    describe "Libs.Models.Area"
         [ describe "overlap"
             [ test "distinct" (\_ -> Area Position.zero (Size 10 10) |> overlap (Area (Position 20 20) (Size 30 30)) |> Expect.equal False)
             , test "inside" (\_ -> Area Position.zero (Size 10 10) |> overlap (Area (Position 5 5) (Size 30 30)) |> Expect.equal True)

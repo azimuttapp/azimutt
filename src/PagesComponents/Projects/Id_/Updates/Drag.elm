@@ -1,9 +1,9 @@
 module PagesComponents.Projects.Id_.Updates.Drag exposing (handleDrag, moveCanvas, moveTables)
 
 import Conf
-import Libs.Delta as Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)

@@ -1,6 +1,6 @@
 module Libs.Models exposing (FileContent, FileLine, FileLineContent, Image, Link, ListIndex, Millis, SizeChange, Text, TrackEvent, TrackedLink, ZoomDelta)
 
-import Libs.Delta exposing (Delta)
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.FileLineIndex exposing (FileLineIndex)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Position as Position

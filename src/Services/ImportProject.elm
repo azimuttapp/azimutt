@@ -11,13 +11,13 @@ import Html.Attributes exposing (class)
 import Http
 import Json.Decode as Decode
 import Libs.Bool as B
-import Libs.DateTime as DateTime
 import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models exposing (FileContent)
+import Libs.Models.DateTime as DateTime
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result

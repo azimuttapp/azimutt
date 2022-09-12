@@ -7,7 +7,7 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "Libs.HtmlId"
+    describe "Libs.Models.HtmlId"
         [ describe "from"
             [ test "basic" (\_ -> "hello" |> HtmlId.from |> Expect.equal "hello")
             , test "with -" (\_ -> "hello-you" |> HtmlId.from |> Expect.equal "hello-you")

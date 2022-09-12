@@ -1,4 +1,4 @@
-module Libs.Hotkey exposing (Hotkey, HotkeyTarget, hotkey, hotkeyEncoder, keys, target)
+module Libs.Models.Hotkey exposing (Hotkey, HotkeyTarget, encode, hotkey, keys, target)
 
 import Json.Encode as Encode exposing (Value)
 import Libs.Bool as B
@@ -51,22 +51,22 @@ keys platform h =
         |> List.filterMap identity
 
 
-hotkeyEncoder : Hotkey -> Value
-hotkeyEncoder key =
+encode : Hotkey -> Value
+encode key =
     Encode.object
         [ ( "key", key.key |> Encode.string )
         , ( "ctrl", key.ctrl |> Encode.bool )
         , ( "shift", key.shift |> Encode.bool )
         , ( "alt", key.alt |> Encode.bool )
         , ( "meta", key.meta |> Encode.bool )
-        , ( "target", key.target |> Encode.maybe hotkeyTargetEncoder )
+        , ( "target", key.target |> Encode.maybe targetEncoder )
         , ( "onInput", key.onInput |> Encode.bool )
         , ( "preventDefault", key.preventDefault |> Encode.bool )
         ]
 
 
-hotkeyTargetEncoder : HotkeyTarget -> Value
-hotkeyTargetEncoder t =
+targetEncoder : HotkeyTarget -> Value
+targetEncoder t =
     Encode.object
         [ ( "id", t.id |> Encode.maybe Encode.string )
         , ( "class", t.class |> Encode.maybe Encode.string )

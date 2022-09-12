@@ -2,7 +2,7 @@ module Conf exposing (SampleSchema, canvas, constants, hotkeys, ids, schema, sch
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Dict exposing (Dict)
-import Libs.Hotkey exposing (Hotkey, hotkey, target)
+import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)

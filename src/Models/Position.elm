@@ -5,8 +5,8 @@ import Html.Attributes exposing (style)
 import Html.Events.Extra.Mouse exposing (Event)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Delta exposing (Delta)
 import Libs.Json.Encode as Encode
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Size as Size

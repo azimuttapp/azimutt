@@ -4,8 +4,8 @@ import Html exposing (Attribute)
 import Html.Attributes exposing (style)
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
-import Libs.Delta exposing (Delta)
 import Libs.Json.Encode as Encode
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Size as Size exposing (Size)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 

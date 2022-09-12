@@ -6,9 +6,9 @@ import ElmBook.Custom exposing (Msg)
 import Html exposing (Html, div)
 import Html.Events exposing (onMouseEnter, onMouseLeave)
 import Libs.Bool as Bool
-import Libs.Delta exposing (Delta)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Svg.Attributes as Attributes exposing (css)
 import Libs.Svg.Utils exposing (circle, curveTo, lineTo, moveTo)

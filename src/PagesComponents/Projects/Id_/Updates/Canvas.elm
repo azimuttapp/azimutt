@@ -2,8 +2,8 @@ module PagesComponents.Projects.Id_.Updates.Canvas exposing (computeFit, fitCanv
 
 import Conf
 import Libs.Bool as B
-import Libs.Delta as Delta exposing (Delta)
 import Libs.Html.Events exposing (WheelEvent)
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area

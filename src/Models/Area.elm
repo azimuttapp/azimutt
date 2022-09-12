@@ -1,8 +1,8 @@
 module Models.Area exposing (Canvas, CanvasGridLike, CanvasLike, Diagram, Viewport, ViewportLike, centerCanvas, centerViewport, diagramToCanvas, divCanvas, fromCanvas, mergeCanvas, offGrid, overlapCanvas, styleTransformCanvas, toStringRoundCanvas, toStringRoundViewport, topLeftCanvasGrid, topRightCanvasGrid, zeroCanvas)
 
 import Html exposing (Attribute)
-import Libs.Delta as Delta
 import Libs.Models.Area as Area exposing (Area)
+import Libs.Models.Delta as Delta
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Models.Position as Position
 import Models.Size as Size

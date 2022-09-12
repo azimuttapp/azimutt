@@ -7,7 +7,7 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "Libs.Position"
+    describe "Libs.Models.Position"
         [ describe "min"
             [ test "case 1" (\_ -> { left = 0, top = 0 } |> Position.min { left = 10, top = 10 } |> Expect.equal { left = 0, top = 0 })
             , test "case 2" (\_ -> { left = 10, top = 0 } |> Position.min { left = 0, top = 10 } |> Expect.equal { left = 0, top = 0 })

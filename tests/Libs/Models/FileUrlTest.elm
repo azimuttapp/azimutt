@@ -7,7 +7,7 @@ import Test exposing (Test, describe, test)
 
 suite : Test
 suite =
-    describe "Libs.FileUrl"
+    describe "Libs.Models.FileUrl"
         [ describe "filename"
             [ test "basic" (\_ -> "https://example.com/test.php" |> FileUrl.filename |> Expect.equal "test.php")
             , test "with query" (\_ -> "https://example.com/test.php?q=test" |> FileUrl.filename |> Expect.equal "test.php")

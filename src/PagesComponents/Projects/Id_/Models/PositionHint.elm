@@ -1,6 +1,6 @@
 module PagesComponents.Projects.Id_.Models.PositionHint exposing (PositionHint(..), move)
 
-import Libs.Delta exposing (Delta)
+import Libs.Models.Delta exposing (Delta)
 import Models.Position as Position
 import Models.Size as Size
 

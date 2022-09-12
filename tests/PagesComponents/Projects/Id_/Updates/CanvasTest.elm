@@ -2,7 +2,7 @@ module PagesComponents.Projects.Id_.Updates.CanvasTest exposing (..)
 
 import Expect
 import Fuzz exposing (tuple)
-import Libs.Delta as Delta exposing (Delta)
+import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.Position as Position exposing (Position)
 import Libs.Models.Size exposing (Size)
 import Models.Area as Area
