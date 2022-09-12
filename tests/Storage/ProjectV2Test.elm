@@ -92,7 +92,7 @@ project0 =
     , usedLayout = "initial layout"
     , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
     , settings = ProjectSettings.init defaultSchema
-    , storage = ProjectStorage.Browser
+    , storage = ProjectStorage.Local
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -126,7 +126,7 @@ project1 =
             , ( "empty", Layout (CanvasProps Position.zeroDiagram 0.5) [] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
-    , storage = ProjectStorage.Browser
+    , storage = ProjectStorage.Local
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -235,7 +235,7 @@ project2 =
             , ( "users", Layout (CanvasProps (canvasPos 120 320) 1.5) [ TableProps ( "public", "users" ) (gridPos 90 100) Size.zeroCanvas Tw.red [ "id", "name" ] True False False ] [] (time 1202) (time 1203) )
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
-    , storage = ProjectStorage.Browser
+    , storage = ProjectStorage.Local
     , createdAt = time 1000
     , updatedAt = time 1001
     }

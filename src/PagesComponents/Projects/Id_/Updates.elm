@@ -241,8 +241,8 @@ update req currentLayout now backendUrl msg model =
             ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))), Cmd.none )
 
         Logout ->
-            B.cond (model.erd |> Maybe.mapOrElse (\e -> e.project.storage /= ProjectStorage.Browser) False) (Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ]) Ports.logout
-                |> (\cmd -> ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Browser) }, cmd ))
+            B.cond (model.erd |> Maybe.mapOrElse (\e -> e.project.storage /= ProjectStorage.Local) False) (Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ]) Ports.logout
+                |> (\cmd -> ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Local) }, cmd ))
 
         Focus id ->
             ( model, Ports.focus id )
@@ -368,7 +368,7 @@ handleJsMessage now currentLayout msg model =
                             if model.upload == Nothing then
                                 []
 
-                            else if project.storage == ProjectStorage.Cloud then
+                            else if project.storage == ProjectStorage.Azimutt then
                                 [ Ports.getOwners project.id, Ports.confettiPride ]
 
                             else

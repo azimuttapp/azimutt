@@ -54,7 +54,7 @@ update modalOpen erd msg model =
             ( Just { id = dialogId, movingProject = False, team = ProjectTeam.init }
             , Cmd.batch
                 ([ T.sendAfter 1 (modalOpen dialogId), Ports.track Track.openProjectUploadDialog ]
-                    ++ (erd |> Maybe.mapOrElse (\e -> Bool.cond (e.project.storage == ProjectStorage.Cloud) [ Ports.getOwners e.project.id ] []) [])
+                    ++ (erd |> Maybe.mapOrElse (\e -> Bool.cond (e.project.storage == ProjectStorage.Azimutt) [ Ports.getOwners e.project.id ] []) [])
                 )
             )
 
@@ -85,7 +85,7 @@ view confirm onDelete wrap moveProject modalClose currentUrl user opened project
         [ user
             |> Maybe.mapOrElse
                 (\u ->
-                    if project.storage == ProjectStorage.Browser then
+                    if project.storage == ProjectStorage.Local then
                         uploadModal close moveProject titleId model.movingProject project
 
                     else
@@ -150,7 +150,7 @@ uploadModal modalClose moveProjectTo titleId movingProject project =
                 Button.primary3 Tw.emerald [ disabled True ] [ text "Can't upload samples" ]
 
               else
-                Button.primary3 Tw.emerald [ onClick (moveProjectTo ProjectStorage.Cloud) ] [ text "Upload to Azimutt" ]
+                Button.primary3 Tw.emerald [ onClick (moveProjectTo ProjectStorage.Azimutt) ] [ text "Upload to Azimutt" ]
             ]
         , p [ class "mt-2 text-xs text-right text-gray-500" ] [ text "You can revert this decision at any time." ]
         ]
@@ -190,6 +190,6 @@ moveToLocal moveProjectTo movingProject owners =
                 Button.primary1 Tw.red [ disabled True ] [ Icon.loading "animate-spin mr-3", text "Go local only" ]
 
               else
-                Button.primary1 Tw.red [ onClick (moveProjectTo ProjectStorage.Browser), class "ml-8" ] [ text "Go local only" ]
+                Button.primary1 Tw.red [ onClick (moveProjectTo ProjectStorage.Local), class "ml-8" ] [ text "Go local only" ]
             ]
         ]

@@ -6,13 +6,13 @@ import Json.Encode as Encode exposing (Value)
 
 
 type ProjectStorage
-    = Browser
-    | Cloud
+    = Local
+    | Azimutt
 
 
 icon : ProjectStorage -> Icon.Icon
 icon storage =
-    if storage == Browser then
+    if storage == Local then
         Icon.Folder
 
     else
@@ -22,11 +22,11 @@ icon storage =
 encode : ProjectStorage -> Value
 encode value =
     case value of
-        Browser ->
-            "browser" |> Encode.string
+        Local ->
+            "local" |> Encode.string
 
-        Cloud ->
-            "cloud" |> Encode.string
+        Azimutt ->
+            "azimutt" |> Encode.string
 
 
 decode : Decode.Decoder ProjectStorage
@@ -35,11 +35,18 @@ decode =
         |> Decode.andThen
             (\value ->
                 case value of
+                    "local" ->
+                        Local |> Decode.succeed
+
+                    "azimutt" ->
+                        Azimutt |> Decode.succeed
+
+                    -- legacy values:
                     "browser" ->
-                        Browser |> Decode.succeed
+                        Local |> Decode.succeed
 
                     "cloud" ->
-                        Cloud |> Decode.succeed
+                        Azimutt |> Decode.succeed
 
                     _ ->
                         Decode.fail ("invalid ProjectStorage '" ++ value ++ "'")

@@ -115,7 +115,7 @@ update req now backendUrl msg model =
             ( { model | selectedMenu = menu }, Cmd.none )
 
         Logout ->
-            ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Browser) }, Ports.logout )
+            ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Local) }, Ports.logout )
 
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )

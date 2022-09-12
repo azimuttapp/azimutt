@@ -84,7 +84,7 @@ update req msg model =
             ( { model | selectedMenu = menu }, Cmd.none )
 
         Logout ->
-            ( model |> mapProjects (List.filter (\p -> p.storage == ProjectStorage.Browser)), Ports.logout )
+            ( model |> mapProjects (List.filter (\p -> p.storage == ProjectStorage.Local)), Ports.logout )
 
         DeleteProject project ->
             ( model, Ports.dropProject project )

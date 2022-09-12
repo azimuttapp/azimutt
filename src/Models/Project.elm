@@ -72,7 +72,7 @@ create id name source =
         Conf.constants.defaultLayout
         (Dict.fromList [ ( Conf.constants.defaultLayout, Layout.empty source.createdAt ) ])
         (ProjectSettings.init (mostUsedSchema source.tables))
-        ProjectStorage.Browser
+        ProjectStorage.Local
         source.createdAt
         source.updatedAt
 
@@ -180,7 +180,7 @@ encode value =
         , ( "usedLayout", value.usedLayout |> LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
-        , ( "storage", value.storage |> Encode.withDefault ProjectStorage.encode ProjectStorage.Browser )
+        , ( "storage", value.storage |> Encode.withDefault ProjectStorage.encode ProjectStorage.Local )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
         , ( "version", currentVersion |> Encode.int )
@@ -198,7 +198,7 @@ decode =
         (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
         (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Conf.schema.empty))
-        (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Browser)
+        (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Local)
         (Decode.defaultField "createdAt" Time.decode Time.zero)
         (Decode.defaultField "updatedAt" Time.decode Time.zero)
 

@@ -36,9 +36,9 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
     div [ class "flex justify-center items-center text-white" ]
         ([ if gConf.enableCloud && eConf.projectManagement then
             button [ onClick (ProjectUploadMsg ProjectUploadDialog.Open), css [ "mx-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
-                [ Icon.outline (B.cond (project.storage == ProjectStorage.Browser) CloudUpload Cloud) ""
+                [ Icon.outline (B.cond (project.storage == ProjectStorage.Local) CloudUpload Cloud) ""
                 ]
-                |> Tooltip.b (B.cond (project.storage == ProjectStorage.Browser) "Sync your project" "Sync in Azimutt")
+                |> Tooltip.b (B.cond (project.storage == ProjectStorage.Local) "Sync your project" "Sync in Azimutt")
 
            else
             div [] []

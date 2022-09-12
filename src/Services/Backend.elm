@@ -1,11 +1,18 @@
-module Services.Backend exposing (Error, Url, errorToString, getDatabaseSchema, urlFromString)
+module Services.Backend exposing (Error, Url, errorToString, getCurrentUser, getDatabaseSchema, getProjects, urlFromString)
 
-import Http
+import Http exposing (Error(..))
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Http as Http
+import Libs.Json.Decode as Decode
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
+import Libs.Result as Result
+import Libs.Time as Time
+import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
+import Models.ProjectInfo2 exposing (ProjectInfo2)
+import Models.User2 as User2 exposing (User2)
+import Time
 
 
 type Url
@@ -24,6 +31,22 @@ urlFromString url =
 errorToString : Error -> String
 errorToString (Error err) =
     err
+
+
+getCurrentUser : (Result Error (Maybe User2) -> msg) -> Cmd msg
+getCurrentUser toMsg =
+    Http.get
+        { url = "/api/v1/users/current"
+        , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User2.decode
+        }
+
+
+getProjects : (Result Error (List ProjectInfo2) -> msg) -> Cmd msg
+getProjects toMsg =
+    Http.get
+        { url = "/api/v1/organizations?expand=projects"
+        , expect = Http.expectJson (Result.bimap buildError orgasToProjectInfos >> toMsg) (Decode.list decodeOrga)
+        }
 
 
 getDatabaseSchema : Url -> DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
@@ -45,17 +68,124 @@ databaseSchemaBody url =
 -- HELPERS
 
 
+orgasToProjectInfos : List OrgaWithProjects -> List ProjectInfo2
+orgasToProjectInfos orgas =
+    orgas
+        |> List.concatMap
+            (\o ->
+                o.projects
+                    |> List.map
+                        (\p ->
+                            { organization =
+                                { id = o.id
+                                , slug = o.slug
+                                , name = o.name
+                                , activePlan = o.activePlan
+                                , logo = o.logo
+                                , location = o.location
+                                , description = o.description
+                                }
+                            , id = p.id
+                            , slug = p.slug
+                            , name = p.name
+                            , description = p.description
+                            , encodingVersion = p.encodingVersion
+                            , storage = p.storage
+                            , nbSources = p.nbSources
+                            , nbTables = p.nbTables
+                            , nbColumns = p.nbColumns
+                            , nbRelations = p.nbRelations
+                            , nbTypes = p.nbTypes
+                            , nbComments = p.nbComments
+                            , nbNotes = p.nbNotes
+                            , nbLayouts = p.nbLayouts
+                            , createdAt = p.createdAt
+                            , updatedAt = p.updatedAt
+                            , archivedAt = p.archivedAt
+                            }
+                        )
+            )
+
+
+type alias OrgaWithProjects =
+    { id : String
+    , slug : String
+    , name : String
+    , activePlan : String
+    , logo : String
+    , location : Maybe String
+    , description : Maybe String
+    , projects : List OrgaProject
+    }
+
+
+type alias OrgaProject =
+    { id : String
+    , slug : String
+    , name : String
+    , description : Maybe String
+    , encodingVersion : Int
+    , storage : ProjectStorage
+    , nbSources : Int
+    , nbTables : Int
+    , nbColumns : Int
+    , nbRelations : Int
+    , nbTypes : Int
+    , nbComments : Int
+    , nbNotes : Int
+    , nbLayouts : Int
+    , createdAt : Time.Posix
+    , updatedAt : Time.Posix
+    , archivedAt : Maybe Time.Posix
+    }
+
+
+decodeOrga : Decode.Decoder OrgaWithProjects
+decodeOrga =
+    Decode.map8 OrgaWithProjects
+        (Decode.field "id" Decode.string)
+        (Decode.field "slug" Decode.string)
+        (Decode.field "name" Decode.string)
+        (Decode.field "active_plan" Decode.string)
+        (Decode.defaultField "logo" Decode.string "")
+        (Decode.maybeField "location" Decode.string)
+        (Decode.maybeField "description" Decode.string)
+        (Decode.field "projects" (Decode.list decodeProject))
+
+
+decodeProject : Decode.Decoder OrgaProject
+decodeProject =
+    Decode.map17 OrgaProject
+        (Decode.field "id" Decode.string)
+        (Decode.field "slug" Decode.string)
+        (Decode.field "name" Decode.string)
+        (Decode.maybeField "description" Decode.string)
+        (Decode.field "encoding_version" Decode.int)
+        (Decode.field "storage_kind" ProjectStorage.decode)
+        (Decode.field "nb_sources" Decode.int)
+        (Decode.field "nb_tables" Decode.int)
+        (Decode.field "nb_columns" Decode.int)
+        (Decode.field "nb_relations" Decode.int)
+        (Decode.field "nb_types" Decode.int)
+        (Decode.field "nb_comments" Decode.int)
+        (Decode.field "nb_notes" Decode.int)
+        (Decode.field "nb_layouts" Decode.int)
+        (Decode.field "created_at" Time.decode)
+        (Decode.field "updated_at" Time.decode)
+        (Decode.maybeField "archived_at" Time.decode)
+
+
 handleResponse : Http.Response String -> Result Error String
 handleResponse response =
     case response of
         Http.BadUrl_ badUrl ->
-            Http.BadUrl badUrl |> Http.errorToString |> Error |> Err
+            Http.BadUrl badUrl |> buildError |> Err
 
         Http.Timeout_ ->
-            Http.Timeout |> Http.errorToString |> Error |> Err
+            Http.Timeout |> buildError |> Err
 
         Http.NetworkError_ ->
-            Http.NetworkError |> Http.errorToString |> Error |> Err
+            Http.NetworkError |> buildError |> Err
 
         Http.BadStatus_ metadata body ->
             case body |> Decode.decodeString errorDecoder of
@@ -67,6 +197,24 @@ handleResponse response =
 
         Http.GoodStatus_ _ body ->
             Ok body
+
+
+recoverUnauthorized : Result Http.Error a -> Result Http.Error (Maybe a)
+recoverUnauthorized r =
+    case r of
+        Ok a ->
+            Ok (Just a)
+
+        Err (BadStatus 401) ->
+            Ok Nothing
+
+        Err e ->
+            Err e
+
+
+buildError : Http.Error -> Error
+buildError error =
+    error |> Http.errorToString |> Error
 
 
 errorDecoder : Decode.Decoder String

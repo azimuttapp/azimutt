@@ -281,7 +281,7 @@ upgrade project =
     , usedLayout = project.currentLayout |> Maybe.withDefault Conf.constants.defaultLayout
     , layouts = project.layouts |> Dict.insert Conf.constants.defaultLayout project.schema.layout |> Dict.map (\_ -> upgradeLayout)
     , settings = ProjectSettings.init Conf.schema.default |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
-    , storage = ProjectStorage.Browser
+    , storage = ProjectStorage.Local
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }

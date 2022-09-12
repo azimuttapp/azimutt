@@ -192,10 +192,10 @@ projectStorage =
     Fuzz.map
         (\b ->
             if b then
-                ProjectStrorage.Browser
+                ProjectStrorage.Local
 
             else
-                ProjectStrorage.Cloud
+                ProjectStrorage.Azimutt
         )
         Fuzz.bool
 
