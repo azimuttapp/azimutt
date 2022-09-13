@@ -1,5 +1,6 @@
 import {
     GetLocalFileMsg,
+    GetProjectMsg,
     Hotkey,
     HotkeyId,
     ListenKeysMsg,
@@ -9,7 +10,7 @@ import {
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {Project, ProjectId} from "./types/project";
+import {Project, ProjectId, ProjectInfoWithContent} from "./types/project";
 import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
@@ -18,6 +19,10 @@ import {Utils} from "./utils/utils";
 import {Supabase} from "./services/supabase";
 import {StorageManager} from "./storages/manager";
 import {Conf} from "./conf";
+import {IndexedDBStorage} from "./storages/indexeddb";
+import {LocalStorageStorage} from "./storages/localstorage";
+import {InMemoryStorage} from "./storages/inmemory";
+import {StorageApi} from "./storages/api";
 
 const env = Utils.getEnv()
 const platform = Utils.getPlatform()
@@ -30,6 +35,7 @@ const supabase = Supabase.init(conf.supabase).onLogin(user => {
     analytics.login(user)
     listProjects()
 }, err => app.toast('error', err))
+const storage: Promise<StorageApi> = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
 const store = new StorageManager(supabase, fs.enableCloud, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
@@ -70,6 +76,7 @@ app.on('Logout', _ => supabase.logout().then(() => {
     app.logout()
     analytics.logout()
 }).then(listProjects).catch(logger.warn))
+app.on('GetProject', getProject)
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))
 app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProject))
@@ -122,6 +129,31 @@ function setMeta(meta: SetMetaMsg) {
     if (typeof meta.body === 'string') {
         document.getElementsByTagName('body')[0]?.setAttribute('class', meta.body)
     }
+}
+
+function getProject(msg: GetProjectMsg) {
+    Utils.fetchJson<ProjectInfoWithContent>(`/api/v1/organizations/${msg.organization}/projects/${msg.project}?expand=content`).then(res => {
+        if(res.status === 200) {
+            if(res.json.storage_kind === 'azimutt') {
+                if(typeof res.json.content === 'string') {
+                    return app.gotProject(JSON.parse(res.json.content))
+                } else {
+                    return Promise.reject(`missing content`)
+                }
+            } else if (res.json.storage_kind === 'local') {
+                return storage.then(s => s.loadProject(msg.project)).then(app.gotProject)
+            } else {
+                return Promise.reject(`unknown storage '${res.json.storage_kind}'`)
+            }
+        } else if(res.status === 404) {
+            return storage.then(s => s.loadProject(msg.project)).then(app.gotProject)
+        } else {
+            return Promise.reject(`unknown status ${res.status}`)
+        }
+    }).catch(err => {
+        app.gotProject(undefined)
+        app.toast('error', `Can't load project: ${err}`)
+    })
 }
 
 function listProjects() {

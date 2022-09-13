@@ -1,4 +1,5 @@
-export type Timestamp = number // date in numerical format
+export type Timestamp = number // date in numerical format (1663007946750)
+export type DateTime = string // date in iso format ("2022-09-12T11:13:02.611616Z")
 export type Px = number // number of pixels
 export type Uuid = string
 export type Email = string

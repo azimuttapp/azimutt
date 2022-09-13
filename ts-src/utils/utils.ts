@@ -44,6 +44,17 @@ export const Utils = {
             return undefined
         }
     },
+    fetchJson<T>(url: string): Promise<JsonResponse<T>> {
+        return fetch(url).then(res => res.json().then(json => ({
+            type: res.type,
+            url: res.url,
+            ok: res.ok,
+            status: res.status,
+            statusText: res.statusText,
+            redirected: res.redirected,
+            json: json
+        })))
+    },
     fullscreen(id: HtmlId | undefined) {
         const element = id ? Utils.getElementById(id) : document.body
         const result = element.requestFullscreen ? element.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available'))
@@ -105,4 +116,14 @@ export const Utils = {
             }
         }());
     }
+}
+
+interface JsonResponse<T> {
+    type: string
+    url: string
+    ok: boolean
+    status: number
+    statusText: string
+    redirected: boolean
+    json: T
 }

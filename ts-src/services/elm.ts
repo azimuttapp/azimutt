@@ -29,6 +29,7 @@ export class ElmApp {
         AutofocusWithin: [],
         Login: [],
         Logout: [],
+        GetProject: [],
         ListProjects: [],
         LoadProject: [],
         CreateProject: [],

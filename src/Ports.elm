@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getUser, listProjects, listenHotkeys, loadProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -14,6 +14,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.ColumnRef as ColumnRef exposing (ColumnRef)
@@ -77,6 +78,11 @@ logout =
 setMeta : MetaInfos -> Cmd msg
 setMeta payload =
     messageToJs (SetMeta payload)
+
+
+getProject : OrganizationId -> ProjectId -> Cmd msg
+getProject organization project =
+    messageToJs (GetProject organization project)
 
 
 listProjects : Cmd msg
@@ -222,6 +228,7 @@ type ElmMsg
     | AutofocusWithin HtmlId
     | Login LoginInfo (Maybe String)
     | Logout
+    | GetProject OrganizationId ProjectId
     | ListProjects
     | LoadProject ProjectId
     | CreateProject Project
@@ -332,6 +339,9 @@ elmEncoder elm =
 
         Logout ->
             Encode.object [ ( "kind", "Logout" |> Encode.string ) ]
+
+        GetProject organization project ->
+            Encode.object [ ( "kind", "GetProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> ProjectId.encode ) ]
 
         ListProjects ->
             Encode.object [ ( "kind", "ListProjects" |> Encode.string ) ]

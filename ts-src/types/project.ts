@@ -1,4 +1,25 @@
-import {Timestamp, Uuid} from "./basics";
+import {DateTime, Timestamp, Uuid} from "./basics";
+
+export interface ProjectInfoWithContent {
+    id: ProjectId
+    slug: string
+    name: ProjectName
+    description: string | null
+    encoding_version: 1 | 2
+    storage_kind: 'azimutt' | 'local'
+    content: string | undefined
+    nb_sources: number
+    nb_tables: number
+    nb_columns: number
+    nb_relations: number
+    nb_types: number
+    nb_comments: number
+    nb_notes: number
+    nb_layouts: number
+    created_at: DateTime
+    updated_at: DateTime
+    archived_at: DateTime | null
+}
 
 export interface Project {
     id: ProjectId

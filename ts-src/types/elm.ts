@@ -25,6 +25,7 @@ import {
 } from "./project";
 import {LoginInfo} from "../services/supabase";
 import {Profile, UserId} from "./profile";
+import {OrganizationId} from "./organization";
 
 export interface GlobalConf {
     env: Env
@@ -121,6 +122,7 @@ export type ElmMsg =
     | AutofocusWithinMsg
     | LoginMsg
     | LogoutMsg
+    | GetProjectMsg
     | ListProjectsMsg
     | LoadProjectMsg
     | CreateProjectMsg
@@ -150,6 +152,7 @@ export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string
 export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
 export type LoginMsg = { kind: 'Login', info: LoginInfo, redirect?: string }
 export type LogoutMsg = { kind: 'Logout' }
+export type GetProjectMsg = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
 export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
 export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
