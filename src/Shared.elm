@@ -4,8 +4,11 @@ import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
 import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
+import Libs.Result as Result
 import Libs.Tailwind exposing (Color)
+import Models.ProjectInfo2 exposing (ProjectInfo2)
 import Models.User exposing (User)
+import Models.User2 exposing (User2)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
@@ -16,12 +19,12 @@ import Time
 
 type alias Flags =
     { now : Int
-    , conf : { env : String, platform : String, backendUrl : String, enableCloud : Bool }
+    , conf : { env : String, platform : String, backendUrl : String }
     }
 
 
 type alias GlobalConf =
-    { env : Env, platform : Platform, backendUrl : Backend.Url, enableCloud : Bool }
+    { env : Env, platform : Platform, backendUrl : Backend.Url }
 
 
 type alias Model =
@@ -30,12 +33,18 @@ type alias Model =
     , conf : GlobalConf
     , user : Maybe User
     , projects : StoredProjects
+    , user2 : Maybe User2
+    , projects2 : List ProjectInfo2
+    , userLoaded : Bool
+    , projectsLoaded : Bool
     }
 
 
 type Msg
     = ZoneChanged Time.Zone
     | TimeChanged Time.Posix
+    | GotUser (Result Backend.Error (Maybe User2))
+    | GotProjects (Result Backend.Error (List ProjectInfo2))
     | JsMessage JsMsg
 
 
@@ -78,12 +87,19 @@ init _ flags =
             { env = Env.fromString flags.conf.env
             , platform = Platform.fromString flags.conf.platform
             , backendUrl = Backend.urlFromString flags.conf.backendUrl
-            , enableCloud = flags.conf.enableCloud
             }
       , user = Nothing
       , projects = Loading
+      , user2 = Nothing
+      , projects2 = []
+      , userLoaded = False
+      , projectsLoaded = False
       }
-    , Task.perform ZoneChanged Time.here
+    , Cmd.batch
+        [ Task.perform ZoneChanged Time.here
+        , Backend.getCurrentUser GotUser
+        , Backend.getProjects GotProjects
+        ]
     )
 
 
@@ -100,14 +116,20 @@ update _ msg model =
         TimeChanged time ->
             ( { model | now = time }, Cmd.none )
 
-        JsMessage (GotLogin user) ->
+        GotUser userR ->
+            ( userR |> Result.fold (\_ -> model) (\user -> { model | user2 = user, userLoaded = True }), Cmd.none )
+
+        GotProjects projectsR ->
+            ( projectsR |> Result.fold (\_ -> model) (\projects -> { model | projects2 = projects |> List.sortBy (\p -> -(Time.posixToMillis p.updatedAt)), projectsLoaded = True }), Cmd.none )
+
+        JsMessage (Ports.GotLogin user) ->
             ( { model | user = Just user }, Cmd.none )
 
-        JsMessage GotLogout ->
+        JsMessage Ports.GotLogout ->
             ( { model | user = Nothing }, Cmd.none )
 
-        JsMessage (GotProjects ( _, projects )) ->
-            ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
+        JsMessage (Ports.GotProjects ( _, projects )) ->
+            ( { model | projects = Loaded (projects |> List.sortBy (\p -> -(Time.posixToMillis p.updatedAt))) }, Cmd.none )
 
         JsMessage _ ->
             ( model, Cmd.none )

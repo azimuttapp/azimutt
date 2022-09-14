@@ -20,6 +20,7 @@ import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.ProjectInfo2 exposing (ProjectInfo2)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
@@ -33,7 +34,7 @@ import Url exposing (Url)
 
 viewProjects : Url -> Shared.Model -> Model -> List (Html Msg)
 viewProjects currentUrl shared model =
-    appShell shared.conf
+    appShell
         currentUrl
         shared.user
         (\link -> SelectMenu link.text)
@@ -51,7 +52,7 @@ viewContent : Url -> Shared.Model -> Model -> Html Msg
 viewContent currentUrl shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
-        , if shared.conf.enableCloud && model.projects /= Loading && shared.user == Nothing then
+        , if model.projects /= Loading && shared.user == Nothing then
             div [ class "mt-3" ]
                 [ Alert.withActions
                     { color = Tw.blue
@@ -73,7 +74,16 @@ viewContent currentUrl shared model =
 viewProjectList : Shared.Model -> Model -> Html Msg
 viewProjectList shared model =
     div []
-        [ h3 [ css [ "text-lg font-medium" ] ] [ text "Projects" ]
+        [ h3 [ css [ "text-lg font-medium" ] ] [ text "Projects 2" ]
+        , if not shared.projectsLoaded then
+            div [ css [ "mt-6" ] ] [ projectList [ viewProjectPlaceholder ] ]
+
+          else if List.isEmpty shared.projects2 then
+            viewNoProjects
+
+          else
+            div [ css [ "mt-6" ] ] [ projectList ((shared.projects2 |> List.map (legacyProjectInfo >> viewProjectCard shared.zone)) ++ [ viewNewProject ]) ]
+        , h3 [ css [ "mt-6 text-lg font-medium" ] ] [ text "Projects" ]
         , case model.projects of
             Loading ->
                 div [ css [ "mt-6" ] ] [ projectList [ viewProjectPlaceholder ] ]
@@ -154,6 +164,19 @@ viewTextPlaceholder styles =
 viewIconPlaceholder : TwClass -> Html msg
 viewIconPlaceholder styles =
     span [ css [ "h-6 w-6 rounded-full bg-gray-300", styles ] ] []
+
+
+legacyProjectInfo : ProjectInfo2 -> ProjectInfo
+legacyProjectInfo p =
+    { id = p.id
+    , name = p.name
+    , tables = p.nbTables
+    , relations = p.nbRelations
+    , layouts = p.nbLayouts
+    , storage = p.storage
+    , createdAt = p.createdAt
+    , updatedAt = p.updatedAt
+    }
 
 
 viewProjectCard : Time.Zone -> ProjectInfo -> Html Msg

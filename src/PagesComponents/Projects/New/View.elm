@@ -40,7 +40,7 @@ import Url exposing (Url)
 
 viewNewProject : Url -> Shared.Model -> Model -> List (Html Msg)
 viewNewProject currentUrl shared model =
-    appShell shared.conf
+    appShell
         currentUrl
         shared.user
         (\link -> SelectMenu link.text)

@@ -18,13 +18,11 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
 import Models.User as User exposing (User)
 import Router
-import Shared exposing (GlobalConf)
 import Url exposing (Url)
 
 
 appShell :
-    GlobalConf
-    -> Url
+    Url
     -> Maybe User
     -> (Link -> msg)
     -> (HtmlId -> msg)
@@ -34,7 +32,7 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell gConf currentUrl maybeUser onNavigationClick onProfileClick onLogout model title content footer =
+appShell currentUrl maybeUser onNavigationClick onProfileClick onLogout model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -49,11 +47,7 @@ appShell gConf currentUrl maybeUser onNavigationClick onProfileClick onLogout mo
                 }
             , search = Nothing
             , rightIcons =
-                if gConf.enableCloud then
-                    [ viewProfileIcon currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick onLogout ]
-
-                else
-                    []
+                [ viewProfileIcon currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick onLogout ]
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown

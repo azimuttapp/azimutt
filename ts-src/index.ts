@@ -28,7 +28,7 @@ const env = Utils.getEnv()
 const platform = Utils.getPlatform()
 const conf = Conf.get(env)
 const logger = new ConsoleLogger(env)
-const fs = {env, platform, backendUrl: conf.supabase.backendUrl, enableCloud: !!localStorage.getItem('enable-cloud')}
+const fs = {env, platform, backendUrl: conf.supabase.backendUrl}
 const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
 const supabase = Supabase.init(conf.supabase).onLogin(user => {
     app.login(user)
@@ -36,7 +36,7 @@ const supabase = Supabase.init(conf.supabase).onLogin(user => {
     listProjects()
 }, err => app.toast('error', err))
 const storage: Promise<StorageApi> = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
-const store = new StorageManager(supabase, fs.enableCloud, logger)
+const store = new StorageManager(supabase, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
 const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)

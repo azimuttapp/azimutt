@@ -19,32 +19,32 @@ export class StorageManager {
     public kind: StorageKind = 'manager'
     private browser: Promise<StorageApi>
 
-    constructor(private cloud: Supabase, private enableCloud: boolean, private logger: Logger) {
+    constructor(private cloud: Supabase, private logger: Logger) {
         this.browser = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
     }
 
     listProjects = async (): Promise<ProjectInfo[]> => await Promise.all([
         this.browser.then(s => s.listProjects()).then(browserProjects),
-        this.enableCloud ? this.cloud.listProjects().then(cloudProjects) : Promise.resolve([])
+        this.cloud.listProjects().then(cloudProjects)
     ]).then(projects => projects.flat())
     loadProject = (id: ProjectId): Promise<Project> =>
         this.browser.then(s => s.loadProject(id)).then(browserProject)
-            .catch(e => this.enableCloud ? this.cloud.loadProject(id).then(cloudProject) : Promise.reject(e))
+            .catch(_ => this.cloud.loadProject(id).then(cloudProject))
     createProject = ({storage, ...p}: Project): Promise<Project> => {
         const now = Date.now()
         const prj = {...p, createdAt: now, updatedAt: now}
-        return storage === 'cloud' && this.enableCloud ?
+        return storage === 'cloud' || storage === 'azimutt' ?
             this.cloud.createProject(prj).then(cloudProject) :
             this.browser.then(s => s.createProject(prj)).then(browserProject)
     }
     updateProject = ({storage, ...p}: Project): Promise<Project> => {
         const prj = {...p, updatedAt: Date.now()}
-        return storage === 'cloud' && this.enableCloud ?
+        return storage === 'cloud' || storage === 'azimutt' ?
             this.cloud.updateProject(prj).then(cloudProject) :
             this.browser.then(s => s.updateProject(prj)).then(browserProject)
     }
     dropProject = (p: ProjectInfo): Promise<void> =>
-        p.storage === 'cloud' && this.enableCloud ?
+        p.storage === 'cloud' || p.storage === 'azimutt' ?
             this.cloud.dropProject(p.id) :
             this.browser.then(s => s.dropProject(p.id))
 

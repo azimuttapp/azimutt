@@ -192,9 +192,12 @@ export interface Settings {
     removedTables?: string
 }
 
-export type ProjectStorage = 'browser' | 'cloud'
+// 'browser' was changed for 'local' and 'cloud' for 'azimutt', keep them here for legacy projects
+export type ProjectStorage = 'local' | 'azimutt' | 'browser' | 'cloud'
 
 export const ProjectStorage: {[key in ProjectStorage]: key} = {
+    local: 'local',
+    azimutt: 'azimutt',
     browser: 'browser',
     cloud: 'cloud'
 }
