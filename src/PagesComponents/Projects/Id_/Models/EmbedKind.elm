@@ -1,5 +1,7 @@
 module PagesComponents.Projects.Id_.Models.EmbedKind exposing (EmbedKind(..), all, databaseSource, fromValue, jsonSource, label, placeholder, projectId, projectUrl, sourceUrl, sqlSource, value)
 
+import Libs.Models.Uuid as Uuid
+
 
 type EmbedKind
     = EmbedProjectId
@@ -37,7 +39,7 @@ placeholder : EmbedKind -> String
 placeholder kind =
     case kind of
         EmbedProjectId ->
-            "00000000-0000-0000-0000-000000000000"
+            Uuid.zero
 
         EmbedProjectUrl ->
             "https://azimutt.app/samples/gospeak.azimutt.json"

@@ -9,11 +9,8 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
 import Libs.Maybe as Maybe
-import Libs.Random as Random
-import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
-import Models.Project.ProjectId as ProjectId
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.SourceInfo as SourceInfo
@@ -174,22 +171,8 @@ update req now backendUrl msg model =
         CreateProject project ->
             ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = project.id }) req ] )
 
-        CreateProjectNew project ->
-            ( model, ProjectId.generator |> Random.generate (\projectId -> project |> Project.duplicate (model.projects |> List.map .name) projectId |> CreateProject) )
-
-        CreateProjectFromSource source ->
-            ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId (String.unique (model.projects |> List.map .name) source.name) source |> CreateProject) )
-
         CreateEmptyProject name ->
-            ( model
-            , Random.generate2
-                (\projectId sourceId ->
-                    Source.aml sourceId Conf.constants.virtualRelationSourceName now
-                        |> (\source -> Project.create projectId (String.unique (model.projects |> List.map .name) name) source |> CreateProject)
-                )
-                ProjectId.generator
-                SourceId.generator
-            )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProject) )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )

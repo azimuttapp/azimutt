@@ -819,5 +819,5 @@ demo.test
         |> AmlParser.parse
         |> AmlAdapter.buildSource (SourceInfo.aml Time.zero SourceId.zero "test")
         |> Tuple.second
-        |> Project.create "project-id" "Project name"
+        |> Project.create [] "Project name"
         |> Erd.create

@@ -26,13 +26,7 @@ createRelation now src ref erd =
         Nothing ->
             ( erd
             , Cmd.batch
-                [ SourceId.generator
-                    |> Random.generate
-                        (\sourceId ->
-                            Source.aml sourceId Conf.constants.virtualRelationSourceName now
-                                |> Source.addRelation now src ref
-                                |> CreateUserSourceWithId
-                        )
+                [ SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Source.addRelation now src ref >> CreateUserSourceWithId)
                 , "Created " ++ Conf.constants.virtualRelationSourceName ++ " source to add the relation." |> Toasts.info |> Toast |> T.send
                 ]
             )

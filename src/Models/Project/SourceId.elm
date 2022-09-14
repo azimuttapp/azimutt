@@ -11,7 +11,7 @@ type SourceId
 
 zero : SourceId
 zero =
-    SourceId "00000000-00000000-00000000-00000000"
+    SourceId Uuid.zero
 
 
 new : String -> SourceId

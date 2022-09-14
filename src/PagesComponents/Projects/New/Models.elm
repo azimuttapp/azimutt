@@ -7,7 +7,6 @@ import Libs.Tailwind as Tw
 import Libs.Task as T
 import Models.Project exposing (Project)
 import Models.Project.ProjectName exposing (ProjectName)
-import Models.Project.Source exposing (Source)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.DatabaseSource as DatabaseSource
@@ -61,8 +60,6 @@ type Msg
     | ImportProjectMsg ImportProject.Msg
     | SampleProjectMsg ImportProject.Msg
     | CreateProject Project
-    | CreateProjectNew Project
-    | CreateProjectFromSource Source
     | CreateEmptyProject ProjectName
       -- global messages
     | DropdownToggle HtmlId

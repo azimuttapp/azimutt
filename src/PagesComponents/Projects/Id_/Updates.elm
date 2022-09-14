@@ -16,7 +16,6 @@ import Models.Area as Area
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
@@ -170,7 +169,7 @@ update currentLayout now backendUrl msg model =
             ( model |> setHoverColumn (B.cond on (Just column) Nothing) |> mapErdM (\e -> e |> Erd.mapCurrentLayoutWithTime now (mapTables (hoverColumn column on e))), Cmd.none )
 
         CreateUserSource name ->
-            ( model, SourceId.generator |> Random.generate (\sourceId -> Source.aml sourceId name now |> CreateUserSourceWithId) )
+            ( model, SourceId.generator |> Random.generate (Source.aml name now >> CreateUserSourceWithId) )
 
         CreateUserSourceWithId source ->
             ( model |> mapErdM (Erd.mapSources (List.add source)) |> (\updated -> updated |> mapAmlSidebarM (AmlSidebar.setSource (updated.erd |> Maybe.andThen (.sources >> List.last)))), Cmd.none )
@@ -218,7 +217,7 @@ update currentLayout now backendUrl msg model =
             model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg backendUrl now message)
 
         SourceParsed source ->
-            ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId source.name source |> Ok |> Just |> GotProject |> JsMessage) )
+            ( model, Project.create model.projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
 
         HelpMsg message ->
             model |> handleHelp message

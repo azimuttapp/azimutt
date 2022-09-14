@@ -24,6 +24,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
+import Models.Project as Project
 import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
@@ -103,13 +104,13 @@ viewTabContent : HtmlId -> Time.Zone -> Model -> Html Msg
 viewTabContent htmlId zone model =
     case model.selectedTab of
         TabDatabase ->
-            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database")) (div [] [])
+            model.databaseSource |> Maybe.mapOrElse (viewDatabaseSourceTab (htmlId ++ "-database") model.projects) (div [] [])
 
         TabSql ->
-            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse) (div [] [])
+            model.sqlSource |> Maybe.mapOrElse (viewSqlSourceTab (htmlId ++ "-sql") model.openedCollapse model.projects) (div [] [])
 
         TabJson ->
-            model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse) (div [] [])
+            model.jsonSource |> Maybe.mapOrElse (viewJsonSourceTab (htmlId ++ "-json") model.openedCollapse model.projects) (div [] [])
 
         TabEmptyProject ->
             viewEmptyProjectTab
@@ -121,36 +122,36 @@ viewTabContent htmlId zone model =
             model.sampleProject |> Maybe.mapOrElse (viewSampleProjectTab zone model.projects) (div [] [])
 
 
-viewDatabaseSourceTab : HtmlId -> DatabaseSource.Model Msg -> Html Msg
-viewDatabaseSourceTab htmlId model =
+viewDatabaseSourceTab : HtmlId -> List ProjectInfo -> DatabaseSource.Model Msg -> Html Msg
+viewDatabaseSourceTab htmlId projects model =
     div []
         [ viewHeading "Extract your database schema" [ text "Sadly browsers can't directly connect to a database so this extraction will be made through Azimutt servers but nothing is stored." ]
         , div [ class "mt-6" ] [ DatabaseSource.viewInput DatabaseSourceMsg htmlId model ]
         , DatabaseSource.viewParsing DatabaseSourceMsg model
-        , viewSourceActionButtons (InitTab TabDatabase) model.parsedSource
+        , viewSourceActionButtons (InitTab TabDatabase) projects model.parsedSource
         ]
 
 
-viewSqlSourceTab : HtmlId -> HtmlId -> SqlSource.Model Msg -> Html Msg
-viewSqlSourceTab htmlId openedCollapse model =
+viewSqlSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> SqlSource.Model Msg -> Html Msg
+viewSqlSourceTab htmlId openedCollapse projects model =
     div []
         [ viewHeading "Import your SQL schema" [ text "Everything stay on your machine, don't worry about your schema privacy." ]
         , div [ class "mt-6" ] [ SqlSource.viewInput SqlSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewHowToGetSchemaCollapse htmlId openedCollapse ]
         , viewDataPrivacyCollapse htmlId openedCollapse
         , SqlSource.viewParsing SqlSourceMsg model
-        , viewSourceActionButtons (InitTab TabSql) model.parsedSource
+        , viewSourceActionButtons (InitTab TabSql) projects model.parsedSource
         ]
 
 
-viewJsonSourceTab : HtmlId -> HtmlId -> JsonSource.Model Msg -> Html Msg
-viewJsonSourceTab htmlId openedCollapse model =
+viewJsonSourceTab : HtmlId -> HtmlId -> List ProjectInfo -> JsonSource.Model Msg -> Html Msg
+viewJsonSourceTab htmlId openedCollapse projects model =
     div []
         [ viewHeading "Import your custom source in JSON" [ text "If you have a data source not (yet) supported by Azimutt, you can extract and format its schema into JSON to import it here." ]
         , div [ class "mt-6" ] [ JsonSource.viewInput JsonSourceMsg Noop htmlId model ]
         , div [ class "mt-3" ] [ viewJsonSourceSchemaCollapse htmlId openedCollapse ]
         , JsonSource.viewParsing JsonSourceMsg model
-        , viewSourceActionButtons (InitTab TabJson) model.parsedSource
+        , viewSourceActionButtons (InitTab TabJson) projects model.parsedSource
         ]
 
 
@@ -184,8 +185,8 @@ viewImportProjectTab htmlId zone projects model =
                                         |> List.find (\p -> p.id == project.id)
                                         |> Maybe.map
                                             (\p ->
-                                                [ Button.secondary3 Tw.red [ onClick (CreateProject project |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
-                                                , Button.primary3 Tw.primary [ onClick (CreateProjectNew project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
+                                                [ Button.secondary3 Tw.red [ onClick (project |> CreateProject |> confirm ("Replace " ++ p.name ++ " project?") (text "This operation can't be undone")), css [ "ml-3" ] ] [ text "Replace existing project" ]
+                                                , Button.primary3 Tw.primary [ onClick (project |> Project.duplicate projects |> CreateProject), id "create-project-btn", css [ "ml-3" ] ] [ text "Import in new project!" ]
                                                 ]
                                             )
                                         |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Import project!" ] ]
@@ -294,8 +295,8 @@ viewJsonSourceSchemaCollapse htmlId openedCollapse =
         ]
 
 
-viewSourceActionButtons : Msg -> Maybe (Result String Source) -> Html Msg
-viewSourceActionButtons drop parsedSource =
+viewSourceActionButtons : Msg -> List ProjectInfo -> Maybe (Result String Source) -> Html Msg
+viewSourceActionButtons drop projects parsedSource =
     parsedSource
         |> Maybe.mapOrElse
             (\source ->
@@ -305,7 +306,7 @@ viewSourceActionButtons drop parsedSource =
                             |> Result.fold (\_ -> [ Button.white3 Tw.primary [ onClick drop ] [ text "Clear" ] ])
                                 (\src ->
                                     [ Button.white3 Tw.primary [ onClick drop ] [ text "Trash this" ]
-                                    , Button.primary3 Tw.primary [ onClick (CreateProjectFromSource src), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
+                                    , Button.primary3 Tw.primary [ onClick (CreateProject (Project.create projects src.name src)), id "create-project-btn", css [ "ml-3" ] ] [ text "Create project!" ]
                                     ]
                                 )
                         )

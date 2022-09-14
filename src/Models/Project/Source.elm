@@ -43,8 +43,8 @@ type alias Source =
     }
 
 
-aml : SourceId -> SourceName -> Time.Posix -> Source
-aml id name now =
+aml : SourceName -> Time.Posix -> SourceId -> Source
+aml name now id =
     { id = id
     , name = name
     , kind = AmlEditor

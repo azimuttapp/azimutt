@@ -11,7 +11,6 @@ import Libs.Result as Result
 import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project exposing (Project)
-import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
@@ -60,7 +59,6 @@ type Msg
     | SqlSourceMsg SqlSource.Msg
     | JsonSourceMsg JsonSource.Msg
     | AmlSourceMsg
-    | CreateProjectFromSource Source
     | CreateProject Project
       -- global messages
     | Toast Toasts.Msg
@@ -107,9 +105,9 @@ update : Request.With Params -> Time.Posix -> Backend.Url -> Msg -> Model -> ( M
 update req now backendUrl msg model =
     case msg of
         InitProject ->
-            ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
-                |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
-                |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (Result.fold (Toasts.error >> Toast) CreateProjectFromSource)) }))
+            ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject model)) }))
+                |> Maybe.orElse (req.query |> Dict.get "sql" |> Maybe.map (\_ -> { model | sqlSource = Just (SqlSource.init Nothing (Tuple.second >> createProject model)) }))
+                |> Maybe.orElse (req.query |> Dict.get "json" |> Maybe.map (\_ -> { model | jsonSource = Just (JsonSource.init Nothing (createProject model)) }))
                 |> Maybe.withDefault model
                 |> setProjectName (req.query |> Dict.get "name" |> Maybe.withDefault Conf.constants.newProjectName |> String.unique (model.projects |> List.map .name))
             , (req.query |> Dict.get "database" |> Maybe.map (DatabaseSource.GetSchema >> DatabaseSourceMsg >> T.send))
@@ -128,10 +126,7 @@ update req now backendUrl msg model =
             model |> mapSqlSourceMCmd (SqlSource.update SqlSourceMsg now message)
 
         AmlSourceMsg ->
-            ( model, SourceId.generator |> Random.generate (\sourceId -> Source.aml sourceId Conf.constants.virtualRelationSourceName now |> CreateProjectFromSource) )
-
-        CreateProjectFromSource source ->
-            ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId model.projectName source |> CreateProject) )
+            ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects model.projectName >> CreateProject) )
 
         CreateProject project ->
             ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = project.id }) req ] )
@@ -141,6 +136,11 @@ update req now backendUrl msg model =
 
         JsMessage message ->
             model |> handleJsMessage message
+
+
+createProject : Model -> Result String Source -> Msg
+createProject model =
+    Result.fold (Toasts.error >> Toast) (Project.create model.projects model.projectName >> CreateProject)
 
 
 handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )

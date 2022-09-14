@@ -63,10 +63,10 @@ new id name sources notes usedLayout layouts settings storage createdAt updatedA
         |> compute
 
 
-create : ProjectId -> ProjectName -> Source -> Project
-create id name source =
-    new id
-        name
+create : List { a | name : ProjectName } -> ProjectName -> Source -> Project
+create projects name source =
+    new ProjectId.zero
+        (String.unique (projects |> List.map .name) name)
         [ source ]
         Dict.empty
         Conf.constants.defaultLayout
@@ -77,9 +77,9 @@ create id name source =
         source.updatedAt
 
 
-duplicate : List ProjectName -> ProjectId -> Project -> Project
-duplicate takenNames projectId project =
-    { project | id = projectId, name = String.unique takenNames project.name }
+duplicate : List { a | name : ProjectName } -> Project -> Project
+duplicate projects project =
+    { project | id = ProjectId.zero, name = String.unique (projects |> List.map .name) project.name }
 
 
 mostUsedSchema : Dict TableId Table -> SchemaName
