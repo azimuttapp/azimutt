@@ -1,11 +1,10 @@
-module Pages.Projects.Id_ exposing (Model, Msg, page)
+module Pages.Organization_.Project_ exposing (Model, Msg, page)
 
 import Conf
 import Dict
-import Gen.Params.Projects.Id_ exposing (Params)
+import Gen.Params.Organization_.Project_ exposing (Params)
 import Gen.Route as Route
 import Models.ErdProps as ErdProps
-import Models.Project.ProjectId exposing (ProjectId)
 import Page
 import PagesComponents.Projects.Id_.Models as Models exposing (Msg)
 import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
@@ -19,10 +18,14 @@ import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 
 
+
+-- TODO: if fail to load local project, propose to delete it
+
+
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init req.params.id
+        { init = init req.params
         , update = Updates.update req Nothing shared.now shared.conf.backendUrl
         , view = Views.view (Request.pushRoute Route.Projects req) req.url shared
         , subscriptions = Subscriptions.subscriptions
@@ -41,8 +44,8 @@ type alias Msg =
 -- INIT
 
 
-init : ProjectId -> ( Model, Cmd Msg )
-init id =
+init : Params -> ( Model, Cmd Msg )
+init params =
     ( { conf = ErdConf.default
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , erdElem = ErdProps.zero
@@ -79,13 +82,15 @@ init id =
         [ Ports.setMeta
             { title = Just (Views.title Nothing)
             , description = Just Conf.constants.defaultDescription
-            , canonical = Just { route = Route.Projects__Id_ { id = id }, query = Dict.empty }
+            , canonical = Just { route = Route.Organization___Project_ params, query = Dict.empty }
             , html = Just "h-full"
             , body = Just "h-full overflow-hidden"
             }
         , Ports.trackPage "app"
         , Ports.listenHotkeys Conf.hotkeys
-        , Ports.loadProject id
+
+        -- , Ports.loadProject id
+        , Ports.getProject params.organization params.project
         , Ports.listProjects
         ]
     )

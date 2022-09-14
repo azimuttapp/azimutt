@@ -28,6 +28,7 @@ constants :
     , azimuttEmail : String
     , defaultTitle : String
     , defaultDescription : String
+    , unknownOrg : String
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
     , virtualRelationSourceName : SourceName
@@ -51,6 +52,7 @@ constants =
     , azimuttEmail = "hey@azimutt.app"
     , defaultTitle = "Azimutt - Database explorer and analyzer"
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
+    , unknownOrg = "unknown"
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
     , virtualRelationSourceName = "default"

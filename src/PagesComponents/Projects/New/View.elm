@@ -227,7 +227,7 @@ viewSampleProjectTab zone projects model =
                             (Button.white3 Tw.primary [ onClick (InitTab TabSamples) ] [ text "Cancel" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
-                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Projects__Id_ { id = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
                                         |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )

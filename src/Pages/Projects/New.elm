@@ -176,7 +176,7 @@ update req now backendUrl msg model =
                 |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         CreateProject project ->
-            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = project.id }) req ] )
 
         CreateProjectNew project ->
             ( model, ProjectId.generator |> Random.generate (\projectId -> project |> Project.duplicate (model.projects |> List.map .name) projectId |> CreateProject) )

@@ -177,7 +177,7 @@ viewProjectCard zone project =
             [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
                 [ Icon.outline Icon.Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
-            , a ([ href (Route.toHref (Route.Projects__Id_ { id = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
+            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
                 [ Icon.outline Icon.ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]

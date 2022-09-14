@@ -134,7 +134,7 @@ update req now backendUrl msg model =
             ( model, ProjectId.generator |> Random.generate (\projectId -> Project.create projectId model.projectName source |> CreateProject) )
 
         CreateProject project ->
-            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Projects__Id_ { id = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = project.id }) req ] )
 
         Toast message ->
             model |> mapToastsCmd (Toasts.update Toast message)

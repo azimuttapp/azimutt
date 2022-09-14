@@ -77,7 +77,7 @@ viewProjectsDropdown platform projects project htmlId openedDropdown =
                         [ otherProjects
                             |> List.map
                                 (\p ->
-                                    ContextMenu.linkHtml (Route.toHref (Route.Projects__Id_ { id = p.id }))
+                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = p.id }))
                                         [ class "flex" ]
                                         [ Icon.outline (ProjectStorage.icon p.storage) "mr-1"
                                         , text p.name

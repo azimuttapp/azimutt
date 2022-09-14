@@ -133,19 +133,22 @@ function setMeta(meta: SetMetaMsg) {
 
 function getProject(msg: GetProjectMsg) {
     Utils.fetchJson<ProjectInfoWithContent>(`/api/v1/organizations/${msg.organization}/projects/${msg.project}?expand=content`).then(res => {
-        if(res.status === 200) {
-            if(res.json.storage_kind === 'azimutt') {
-                if(typeof res.json.content === 'string') {
+        if (res.status === 200) {
+            if (res.json.storage_kind === 'azimutt') {
+                if (typeof res.json.content === 'string') {
                     return app.gotProject(JSON.parse(res.json.content))
                 } else {
                     return Promise.reject(`missing content`)
                 }
             } else if (res.json.storage_kind === 'local') {
+                // TODO: if fail: add message to sync to Azimutt to have the project everywhere
                 return storage.then(s => s.loadProject(msg.project)).then(app.gotProject)
             } else {
                 return Promise.reject(`unknown storage '${res.json.storage_kind}'`)
             }
-        } else if(res.status === 404) {
+        } else if (res.status === 404) {
+            app.toast('warning', 'Unregistered project: create an Azimutt account and save it again to keep it. '
+                + 'Your data will stay local, only statistics will be shared with Azimutt.')
             return storage.then(s => s.loadProject(msg.project)).then(app.gotProject)
         } else {
             return Promise.reject(`unknown status ${res.status}`)
@@ -204,12 +207,12 @@ const resizeObserver = new ResizeObserver(entries => {
     app.updateSizes(entries.map(entry => {
         const rect = entry.target.getBoundingClientRect() // viewport position & size
         // const sizeCanvas = {width: entry.contentRect.width, height: entry.contentRect.height} // don't change with zoom
-        const sizeViewport = { width: rect.width, height: rect.height } // depend on zoom
+        const sizeViewport = {width: rect.width, height: rect.height} // depend on zoom
         return {
             id: entry.target.id,
-            position: { clientX: rect.left, clientY: rect.top },
+            position: {clientX: rect.left, clientY: rect.top},
             size: sizeViewport,
-            seeds: { dx: Math.random(), dy: Math.random() }
+            seeds: {dx: Math.random(), dy: Math.random()}
         }
     }))
 })
