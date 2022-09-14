@@ -42,10 +42,9 @@ viewNewProject : Url -> Shared.Model -> Model -> List (Html Msg)
 viewNewProject currentUrl shared model =
     appShell
         currentUrl
-        shared.user
+        shared.user2
         (\link -> SelectMenu link.text)
         DropdownToggle
-        Logout
         model
         [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"

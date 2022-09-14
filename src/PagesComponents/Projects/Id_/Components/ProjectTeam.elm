@@ -14,6 +14,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Libs.Task as T
 import Models.User as User exposing (User)
+import Models.User2 exposing (User2)
 import Models.UserId exposing (UserId)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports
@@ -72,7 +73,7 @@ update msg model =
             ( { model | shareInput = "", shareUser = Nothing, addingOwner = False, removingOwner = Nothing, owners = value }, Cmd.none )
 
 
-view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> HtmlId -> User -> ProjectInfo -> Model -> Html msg
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> HtmlId -> User2 -> ProjectInfo -> Model -> Html msg
 view confirm onDelete wrap htmlId user project model =
     div []
         [ shareWithForm wrap htmlId model project
@@ -167,7 +168,7 @@ shareWithForm wrap htmlId model project =
         ]
 
 
-listOwners : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> User -> List User -> Maybe UserId -> ProjectInfo -> Html msg
+listOwners : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> User2 -> List User -> Maybe UserId -> ProjectInfo -> Html msg
 listOwners confirm onDelete wrap user owners removingOwner project =
     div [ class "mt-3" ]
         [ div [ class "text-sm font-semibold text-gray-800" ] [ text "Project owners:" ]

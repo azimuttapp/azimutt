@@ -2,7 +2,6 @@ module PagesComponents.Projects.Id_.Updates exposing (update)
 
 import Components.Molecules.Dropdown as Dropdown
 import Conf
-import Gen.Route as Route
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
@@ -52,7 +51,6 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
-import Request
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
@@ -62,8 +60,8 @@ import Time
 import Track
 
 
-update : Request.With params -> Maybe LayoutName -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
-update req currentLayout now backendUrl msg model =
+update : Maybe LayoutName -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout now backendUrl msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -240,10 +238,6 @@ update req currentLayout now backendUrl msg model =
         Zoom delta ->
             ( model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (zoomCanvas delta model.erdElem))), Cmd.none )
 
-        Logout ->
-            B.cond (model.erd |> Maybe.mapOrElse (\e -> e.project.storage /= ProjectStorage.Local) False) (Cmd.batch [ Ports.logout, Request.pushRoute Route.Projects req ]) Ports.logout
-                |> (\cmd -> ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Local) }, cmd ))
-
         Focus id ->
             ( model, Ports.focus id )
 
@@ -329,12 +323,6 @@ handleJsMessage now currentLayout msg model =
     case msg of
         GotSizes sizes ->
             model |> updateSizes sizes
-
-        GotLogin _ ->
-            ( model, Cmd.none )
-
-        GotLogout ->
-            ( model, Cmd.none )
 
         GotProjects ( errors, projects ) ->
             ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }

@@ -27,8 +27,6 @@ export class ElmApp {
         Fullscreen: [],
         SetMeta: [],
         AutofocusWithin: [],
-        Login: [],
-        Logout: [],
         GetProject: [],
         ListProjects: [],
         LoadProject: [],
@@ -36,7 +34,6 @@ export class ElmApp {
         UpdateProject: [],
         MoveProjectTo: [],
         GetUser: [],
-        UpdateUser: [],
         GetOwners: [],
         SetOwners: [],
         DownloadFile: [],
@@ -74,8 +71,6 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
 
-    login = (user: Profile): void => this.send({kind: 'GotLogin', user})
-    logout = (): void => this.send({kind: 'GotLogout'})
     updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
     loadProjects = (projects: ProjectInfo[]): void => this.send({
         kind: 'GotProjects',

@@ -53,7 +53,6 @@ type alias ConfirmDialog =
 
 type Msg
     = SelectMenu String
-    | Logout
     | ToggleCollapse HtmlId
     | InitTab Tab
     | DatabaseSourceMsg DatabaseSource.Msg

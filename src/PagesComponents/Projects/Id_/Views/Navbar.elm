@@ -24,7 +24,7 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Libs.Url as Url
-import Models.User exposing (User)
+import Models.User2 exposing (User2)
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Projects.Id_.Models exposing (FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
@@ -59,7 +59,7 @@ stringToArgs args =
             ( Url.empty, "", "" )
 
 
-viewNavbar : GlobalConf -> Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
+viewNavbar : GlobalConf -> Maybe User2 -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
 viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
     let
         ( currentUrl, htmlId, openedDropdown ) =
@@ -95,7 +95,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                         [ viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
-                        , Helpers.viewProfileIcon currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle Logout
+                        , Helpers.viewProfileIcon currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle
                         ]
                     ]
                 ]

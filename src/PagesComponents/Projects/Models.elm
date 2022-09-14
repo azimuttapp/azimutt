@@ -26,7 +26,6 @@ type alias Model =
 
 type Msg
     = SelectMenu String
-    | Logout
     | DeleteProject ProjectInfo
       -- global messages
     | DropdownToggle HtmlId

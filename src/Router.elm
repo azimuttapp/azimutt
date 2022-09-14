@@ -1,6 +1,6 @@
 module Router exposing (login)
 
-import Gen.Route as Route
+import Conf
 import Libs.Url as Url
 import Url exposing (Url)
 
@@ -13,7 +13,7 @@ login redirect =
             Url.asString redirect
     in
     if path == "" then
-        Route.toHref Route.Login
+        Conf.constants.loginUrl
 
     else
-        Route.toHref Route.Login ++ "?redirect=" ++ Url.percentEncode path
+        Conf.constants.loginUrl ++ "?redirect=" ++ Url.percentEncode path

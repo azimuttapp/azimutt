@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), LoginInfo(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, login, logout, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateUser)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -65,16 +65,6 @@ autofocusWithin id =
     messageToJs (AutofocusWithin id)
 
 
-login : LoginInfo -> Maybe String -> Cmd msg
-login info redirect =
-    messageToJs (Login info redirect)
-
-
-logout : Cmd msg
-logout =
-    messageToJs Logout
-
-
 setMeta : MetaInfos -> Cmd msg
 setMeta payload =
     messageToJs (SetMeta payload)
@@ -113,11 +103,6 @@ moveProjectTo project storage =
 getUser : Email -> Cmd msg
 getUser email =
     messageToJs (GetUser email)
-
-
-updateUser : User -> Cmd msg
-updateUser user =
-    messageToJs (UpdateUser user)
 
 
 getOwners : ProjectId -> Cmd msg
@@ -226,8 +211,6 @@ type ElmMsg
     | Fullscreen (Maybe HtmlId)
     | SetMeta MetaInfos
     | AutofocusWithin HtmlId
-    | Login LoginInfo (Maybe String)
-    | Logout
     | GetProject OrganizationId ProjectId
     | ListProjects
     | LoadProject ProjectId
@@ -235,7 +218,6 @@ type ElmMsg
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | GetUser Email
-    | UpdateUser User
     | GetOwners ProjectId
     | SetOwners ProjectId (List UserId)
     | DownloadFile FileName FileContent
@@ -250,15 +232,8 @@ type ElmMsg
     | TrackError String Value
 
 
-type LoginInfo
-    = Github
-    | MagicLink Email
-
-
 type JsMsg
     = GotSizes (List SizeChange)
-    | GotLogin User
-    | GotLogout
     | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
     | GotProject (Maybe (Result Decode.Error Project))
     | GotUser Email (Maybe User)
@@ -334,12 +309,6 @@ elmEncoder elm =
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
-        Login info redirect ->
-            Encode.object [ ( "kind", "Login" |> Encode.string ), ( "info", info |> encodeLoginInfo ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
-
-        Logout ->
-            Encode.object [ ( "kind", "Logout" |> Encode.string ) ]
-
         GetProject organization project ->
             Encode.object [ ( "kind", "GetProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> ProjectId.encode ) ]
 
@@ -360,9 +329,6 @@ elmEncoder elm =
 
         GetUser email ->
             Encode.object [ ( "kind", "GetUser" |> Encode.string ), ( "email", email |> Encode.string ) ]
-
-        UpdateUser user ->
-            Encode.object [ ( "kind", "UpdateUser" |> Encode.string ), ( "user", user |> User.encode ) ]
 
         GetOwners project ->
             Encode.object [ ( "kind", "GetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ) ]
@@ -417,12 +383,6 @@ jsDecoder =
                                 |> Decode.list
                             )
                         )
-
-                "GotLogin" ->
-                    Decode.map GotLogin (Decode.field "user" User.decode)
-
-                "GotLogout" ->
-                    Decode.succeed GotLogout
 
                 "GotProjects" ->
                     Decode.map GotProjects (Decode.field "projects" projectInfosDecoder)
@@ -519,28 +479,12 @@ projectDecoder =
     Decode.map (Decode.decodeValue decodeProject) Decode.value
 
 
-encodeLoginInfo : LoginInfo -> Encode.Value
-encodeLoginInfo info =
-    case info of
-        Github ->
-            Encode.object [ ( "kind", "Github" |> Encode.string ) ]
-
-        MagicLink email ->
-            Encode.object [ ( "kind", "MagicLink" |> Encode.string ), ( "email", email |> Encode.string ) ]
-
-
 unhandledJsMsgError : JsMsg -> String
 unhandledJsMsgError msg =
     "Unhandled JsMessage: "
         ++ (case msg of
                 GotSizes _ ->
                     "GotSizes"
-
-                GotLogin _ ->
-                    "GotLogin"
-
-                GotLogout ->
-                    "GotLogout"
 
                 GotProjects _ ->
                     "GotProjects"

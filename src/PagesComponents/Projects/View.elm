@@ -36,10 +36,9 @@ viewProjects : Url -> Shared.Model -> Model -> List (Html Msg)
 viewProjects currentUrl shared model =
     appShell
         currentUrl
-        shared.user
+        shared.user2
         (\link -> SelectMenu link.text)
         DropdownToggle
-        Logout
         model
         [ text model.selectedMenu ]
         [ viewContent currentUrl shared model ]
@@ -52,7 +51,7 @@ viewContent : Url -> Shared.Model -> Model -> Html Msg
 viewContent currentUrl shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
-        , if model.projects /= Loading && shared.user == Nothing then
+        , if model.projects /= Loading && shared.user2 == Nothing then
             div [ class "mt-3" ]
                 [ Alert.withActions
                     { color = Tw.blue

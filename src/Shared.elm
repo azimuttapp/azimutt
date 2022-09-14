@@ -7,7 +7,6 @@ import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Result as Result
 import Libs.Tailwind exposing (Color)
 import Models.ProjectInfo2 exposing (ProjectInfo2)
-import Models.User exposing (User)
 import Models.User2 exposing (User2)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
@@ -31,7 +30,6 @@ type alias Model =
     { zone : Time.Zone
     , now : Time.Posix
     , conf : GlobalConf
-    , user : Maybe User
     , projects : StoredProjects
     , user2 : Maybe User2
     , projects2 : List ProjectInfo2
@@ -88,7 +86,6 @@ init _ flags =
             , platform = Platform.fromString flags.conf.platform
             , backendUrl = Backend.urlFromString flags.conf.backendUrl
             }
-      , user = Nothing
       , projects = Loading
       , user2 = Nothing
       , projects2 = []
@@ -121,12 +118,6 @@ update _ msg model =
 
         GotProjects projectsR ->
             ( projectsR |> Result.fold (\_ -> model) (\projects -> { model | projects2 = projects |> List.sortBy (\p -> -(Time.posixToMillis p.updatedAt)), projectsLoaded = True }), Cmd.none )
-
-        JsMessage (Ports.GotLogin user) ->
-            ( { model | user = Just user }, Cmd.none )
-
-        JsMessage Ports.GotLogout ->
-            ( { model | user = Nothing }, Cmd.none )
 
         JsMessage (Ports.GotProjects ( _, projects )) ->
             ( { model | projects = Loaded (projects |> List.sortBy (\p -> -(Time.posixToMillis p.updatedAt))) }, Cmd.none )

@@ -14,7 +14,6 @@ import Libs.String as String
 import Libs.Task as T
 import Models.Project as Project
 import Models.Project.ProjectId as ProjectId
-import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.SourceInfo as SourceInfo
@@ -113,9 +112,6 @@ update req now backendUrl msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
-
-        Logout ->
-            ( { model | projects = model.projects |> List.filter (\p -> p.storage == ProjectStorage.Local) }, Ports.logout )
 
         ToggleCollapse id ->
             ( { model | openedCollapse = B.cond (model.openedCollapse == id) "" id }, Cmd.none )
@@ -241,10 +237,6 @@ handleJsMessage now msg model =
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )
-
-        GotLogin _ ->
-            -- handled in shared
-            ( model, Cmd.none )
 
         Error json err ->
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )

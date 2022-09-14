@@ -61,9 +61,7 @@ export interface OutPort<T> {
 }
 
 export type JsMsg =
-    GotLogin
-    | GotLogout
-    | GotSizes
+    GotSizes
     | GotProjects
     | GotProject
     | GotUser
@@ -85,8 +83,6 @@ export type JsMsg =
     | GotColumnMove
     | GotFitToScreen
     | Error
-export type GotLogin = { kind: 'GotLogin', user: Profile }
-export type GotLogout = { kind: 'GotLogout' }
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
 export type GotProject = { kind: 'GotProject', project?: Project }
@@ -119,8 +115,6 @@ export type ElmMsg =
     | FullscreenMsg
     | SetMetaMsg
     | AutofocusWithinMsg
-    | LoginMsg
-    | LogoutMsg
     | GetProjectMsg
     | ListProjectsMsg
     | LoadProjectMsg
@@ -128,7 +122,6 @@ export type ElmMsg =
     | UpdateProjectMsg
     | MoveProjectToMsg
     | GetUserMsg
-    | UpdateUserMsg
     | GetOwnersMsg
     | SetOwnersMsg
     | DownloadFileMsg
@@ -149,8 +142,6 @@ export type ScrollToMsg = { kind: 'ScrollTo', id: HtmlId, position: ViewPosition
 export type FullscreenMsg = { kind: 'Fullscreen', maybeId?: HtmlId }
 export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string, canonical?: string, html?: string, body?: string }
 export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
-export type LoginMsg = { kind: 'Login', info: LoginInfo, redirect?: string }
-export type LogoutMsg = { kind: 'Logout' }
 export type GetProjectMsg = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
 export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
@@ -158,7 +149,6 @@ export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type GetUserMsg = { kind: 'GetUser', email: Email }
-export type UpdateUserMsg = { kind: 'UpdateUser', user: Profile }
 export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
 export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }

@@ -31,7 +31,6 @@ const logger = new ConsoleLogger(env)
 const fs = {env, platform, backendUrl: conf.supabase.backendUrl}
 const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
 const supabase = Supabase.init(conf.supabase).onLogin(user => {
-    app.login(user)
     analytics.login(user)
     listProjects()
 }, err => app.toast('error', err))
@@ -68,14 +67,6 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
-app.on('Login', msg => supabase.login(msg.info, msg.redirect).then(user => {
-    app.login(user)
-    analytics.login(user)
-}).then(listProjects).catch(logger.warn))
-app.on('Logout', _ => supabase.logout().then(() => {
-    app.logout()
-    analytics.logout()
-}).then(listProjects).catch(logger.warn))
 app.on('GetProject', getProject)
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))
@@ -83,10 +74,6 @@ app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProj
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
 app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
 app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)).catch(_ => app.gotUser(msg.email, undefined)))
-app.on('UpdateUser', msg => store.updateUser(msg.user).then(_ => {
-    app.login(msg.user)
-    app.toast('success', 'Profile updated!')
-}))
 app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
 app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners => app.gotOwners(msg.project, owners)))
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))

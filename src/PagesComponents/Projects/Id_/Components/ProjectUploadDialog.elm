@@ -18,6 +18,7 @@ import Libs.Task as T
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.User exposing (User)
+import Models.User2 exposing (User2)
 import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
@@ -65,7 +66,7 @@ update modalOpen erd msg model =
             model |> mapMTeamCmd (ProjectTeam.update message)
 
 
-view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> (msg -> msg) -> Url -> Maybe User -> Bool -> ProjectInfo -> Model -> Html msg
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> (msg -> msg) -> Url -> Maybe User2 -> Bool -> ProjectInfo -> Model -> Html msg
 view confirm onDelete wrap moveProject modalClose currentUrl user opened project model =
     let
         titleId : HtmlId
@@ -156,7 +157,7 @@ uploadModal modalClose moveProjectTo titleId movingProject project =
         ]
 
 
-cloudModal : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> HtmlId -> HtmlId -> User -> ProjectTeam.Model -> Bool -> ProjectInfo -> Html msg
+cloudModal : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> HtmlId -> HtmlId -> User2 -> ProjectTeam.Model -> Bool -> ProjectInfo -> Html msg
 cloudModal confirm onDelete wrap moveProject htmlId titleId user team movingProject project =
     div [ class "px-4 pt-5 pb-4 sm:max-w-3xl sm:p-6" ]
         [ div []

@@ -8,7 +8,6 @@ import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Task as T
-import Models.Project.ProjectStorage as ProjectStorage
 import Page
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
@@ -83,9 +82,6 @@ update req msg model =
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
 
-        Logout ->
-            ( model |> mapProjects (List.filter (\p -> p.storage == ProjectStorage.Local)), Ports.logout )
-
         DeleteProject project ->
             ( model, Ports.dropProject project )
 
@@ -128,14 +124,6 @@ handleJsMessage msg model =
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )
-
-        GotLogin _ ->
-            -- handled in shared update
-            ( model, Cmd.none )
-
-        GotLogout ->
-            -- handled in shared update
-            ( model, Cmd.none )
 
         GotSizes _ ->
             -- useless here but avoid waring toast

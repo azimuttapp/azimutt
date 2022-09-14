@@ -16,23 +16,22 @@ import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
-import Models.User as User exposing (User)
+import Models.User2 exposing (User2)
 import Router
 import Url exposing (Url)
 
 
 appShell :
     Url
-    -> Maybe User
+    -> Maybe User2
     -> (Link -> msg)
     -> (HtmlId -> msg)
-    -> msg
     -> { x | selectedMenu : String, mobileMenuOpen : Bool, openedDropdown : HtmlId }
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell currentUrl maybeUser onNavigationClick onProfileClick onLogout model title content footer =
+appShell currentUrl maybeUser onNavigationClick onProfileClick model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -47,7 +46,7 @@ appShell currentUrl maybeUser onNavigationClick onProfileClick onLogout model ti
                 }
             , search = Nothing
             , rightIcons =
-                [ viewProfileIcon currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick onLogout ]
+                [ viewProfileIcon currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick ]
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown
@@ -63,8 +62,8 @@ appShell currentUrl maybeUser onNavigationClick onProfileClick onLogout model ti
         ++ (viewFooter :: footer)
 
 
-viewProfileIcon : Url -> Maybe User -> HtmlId -> HtmlId -> (HtmlId -> msg) -> msg -> Html msg
-viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle onLogout =
+viewProfileIcon : Url -> Maybe User2 -> HtmlId -> HtmlId -> (HtmlId -> msg) -> Html msg
+viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle =
     maybeUser
         |> Maybe.mapOrElse
             (\user ->
@@ -72,16 +71,16 @@ viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle onLog
                     (\m ->
                         button [ type_ "button", id m.id, onClick (toggle profileDropdown), css [ "mx-1 flex-shrink-0 p-0.5 rounded-full flex text-sm", hover [ "animate-jello-h" ], focus_ring_offset_600 Tw.primary ], ariaExpanded m.isOpen, ariaHaspopup "true" ]
                             [ span [ css [ "sr-only" ] ] [ text "Open user menu" ]
-                            , img [ css [ "rounded-full h-7 w-7" ], src (user |> User.avatar), alt user.name, width 28, height 28 ] []
+                            , img [ css [ "rounded-full h-7 w-7" ], src user.avatar, alt user.name, width 28, height 28 ] []
                             ]
                             |> Tooltip.bl user.name
                     )
                     (\_ ->
                         div []
-                            [ ContextMenu.link { url = Route.toHref Route.Profile, text = "Your profile" }
+                            [ ContextMenu.link { url = Conf.constants.profileUrl, text = "Your profile" }
 
                             --, ContextMenu.link { url = "#", text = "Settings" }
-                            , ContextMenu.btn "" onLogout [ text "Logout" ]
+                            , ContextMenu.link { url = Conf.constants.logoutUrl, text = "Logout" }
                             ]
                     )
             )
