@@ -19,10 +19,10 @@ import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Random
 import Request
-import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapDatabaseSourceMCmd, mapJsonSourceMCmd, mapSqlSourceMCmd, mapToastsCmd, setProjectName)
+import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Shared
@@ -35,7 +35,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = update req shared.now shared.conf.backendUrl
+        , update = update req shared.now
         , view = view
         , subscriptions = subscriptions
         }
@@ -101,8 +101,8 @@ init =
 -- UPDATE
 
 
-update : Request.With Params -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
-update req now backendUrl msg model =
+update : Request.With Params -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update req now msg model =
     case msg of
         InitProject ->
             ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject model)) }))
@@ -117,7 +117,7 @@ update req now backendUrl msg model =
             )
 
         DatabaseSourceMsg message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg backendUrl now message)
+            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now message)
 
         JsonSourceMsg message ->
             model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message)
@@ -129,7 +129,7 @@ update req now backendUrl msg model =
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects model.projectName >> CreateProject) )
 
         CreateProject project ->
-            ( model, Cmd.batch [ Ports.createProject project, Ports.track (Track.createProject project), Request.pushRoute (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project), Request.pushRoute (Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = project.id }) req ] )
 
         Toast message ->
             model |> mapToastsCmd (Toasts.update Toast message)
@@ -147,7 +147,7 @@ handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
     case msg of
         GotProjects ( _, projects ) ->
-            ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }, T.send InitProject )
+            ( { model | projects = Sort.lastUpdatedFirst projects }, T.send InitProject )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )

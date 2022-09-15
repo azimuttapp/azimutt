@@ -6,24 +6,26 @@ import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Result as Result
 import Libs.Tailwind exposing (Color)
+import Models.Organization exposing (Organization)
 import Models.ProjectInfo2 exposing (ProjectInfo2)
 import Models.User2 exposing (User2)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
 import Services.Backend as Backend
+import Services.Sort as Sort
 import Task
 import Time
 
 
 type alias Flags =
     { now : Int
-    , conf : { env : String, platform : String, backendUrl : String }
+    , conf : { env : String, platform : String }
     }
 
 
 type alias GlobalConf =
-    { env : Env, platform : Platform, backendUrl : Backend.Url }
+    { env : Env, platform : Platform }
 
 
 type alias Model =
@@ -32,8 +34,9 @@ type alias Model =
     , conf : GlobalConf
     , projects : StoredProjects
     , user2 : Maybe User2
-    , projects2 : List ProjectInfo2
     , userLoaded : Bool
+    , organizations : List Organization
+    , projects2 : List ProjectInfo2
     , projectsLoaded : Bool
     }
 
@@ -42,7 +45,7 @@ type Msg
     = ZoneChanged Time.Zone
     | TimeChanged Time.Posix
     | GotUser (Result Backend.Error (Maybe User2))
-    | GotProjects (Result Backend.Error (List ProjectInfo2))
+    | GotProjects (Result Backend.Error ( List Organization, List ProjectInfo2 ))
     | JsMessage JsMsg
 
 
@@ -84,18 +87,18 @@ init _ flags =
       , conf =
             { env = Env.fromString flags.conf.env
             , platform = Platform.fromString flags.conf.platform
-            , backendUrl = Backend.urlFromString flags.conf.backendUrl
             }
       , projects = Loading
       , user2 = Nothing
-      , projects2 = []
       , userLoaded = False
+      , projects2 = []
+      , organizations = []
       , projectsLoaded = False
       }
     , Cmd.batch
         [ Task.perform ZoneChanged Time.here
         , Backend.getCurrentUser GotUser
-        , Backend.getProjects GotProjects
+        , Backend.getOrganizationsAndProjects GotProjects
         ]
     )
 
@@ -116,11 +119,14 @@ update _ msg model =
         GotUser userR ->
             ( userR |> Result.fold (\_ -> model) (\user -> { model | user2 = user, userLoaded = True }), Cmd.none )
 
-        GotProjects projectsR ->
-            ( projectsR |> Result.fold (\_ -> model) (\projects -> { model | projects2 = projects |> List.sortBy (\p -> -(Time.posixToMillis p.updatedAt)), projectsLoaded = True }), Cmd.none )
+        GotProjects result ->
+            ( result |> Result.fold (\_ -> model) (\( orgas, projects ) -> { model | organizations = orgas, projects2 = Sort.lastUpdatedFirst projects, projectsLoaded = True }), Cmd.none )
 
         JsMessage (Ports.GotProjects ( _, projects )) ->
-            ( { model | projects = Loaded (projects |> List.sortBy (\p -> -(Time.posixToMillis p.updatedAt))) }, Cmd.none )
+            ( { model | projects = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
+
+        JsMessage (Ports.ProjectDeleted _) ->
+            ( model, Backend.getOrganizationsAndProjects GotProjects )
 
         JsMessage _ ->
             ( model, Cmd.none )

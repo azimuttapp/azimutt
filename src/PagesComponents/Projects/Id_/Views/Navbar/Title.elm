@@ -68,7 +68,7 @@ viewProjectsDropdown platform projects project htmlId openedDropdown =
         )
         (\_ ->
             div [ class "divide-y divide-gray-100" ]
-                (([ [ ContextMenu.btnHotkey "" SaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
+                (([ [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
                     ]
                   ]
@@ -77,7 +77,7 @@ viewProjectsDropdown platform projects project htmlId openedDropdown =
                         [ otherProjects
                             |> List.map
                                 (\p ->
-                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = p.id }))
+                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = p.id }))
                                         [ class "flex" ]
                                         [ Icon.outline (ProjectStorage.icon p.storage) "mr-1"
                                         , text p.name

@@ -26,7 +26,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init req.params
-        , update = Updates.update Nothing shared.now shared.conf.backendUrl
+        , update = Updates.update Nothing shared.now shared.organizations
         , view = Views.view (Request.pushRoute Route.Projects req) req.url shared
         , subscriptions = Subscriptions.subscriptions
         }

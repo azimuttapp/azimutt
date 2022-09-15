@@ -22,7 +22,6 @@ import Libs.Tailwind as Tw exposing (sm)
 import Libs.Task as T
 import Models.Project.Source exposing (Source)
 import Models.Project.SourceKind exposing (SourceKind(..))
-import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapDatabaseSourceCmd, mapJsonSourceCmd, mapMCmd, mapSqlSourceCmd)
@@ -67,8 +66,8 @@ init noop source =
     }
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Backend.Url -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
-update wrap modalOpen noop now backendUrl msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
+update wrap modalOpen noop now msg model =
     case msg of
         Open source ->
             ( Just (init noop source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
@@ -77,7 +76,7 @@ update wrap modalOpen noop now backendUrl msg model =
             ( Nothing, Cmd.none )
 
         DatabaseSourceMsg message ->
-            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) backendUrl now message))
+            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) now message))
 
         SqlSourceMsg message ->
             model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now message))

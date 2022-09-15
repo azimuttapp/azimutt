@@ -14,6 +14,7 @@ import Libs.Task as T
 import Models.Area as Area
 import Models.ColumnOrder exposing (ColumnOrder)
 import Models.ErdProps exposing (ErdProps)
+import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.FindPathSettings exposing (FindPathSettings)
@@ -143,7 +144,8 @@ type alias PromptDialog =
 type Msg
     = ToggleMobileMenu
     | SearchUpdated String
-    | SaveProject
+    | TriggerSaveProject
+    | SaveProject Organization
     | MoveProjectTo ProjectStorage
     | RenameProject ProjectName
     | ShowTable TableId (Maybe PositionHint)

@@ -13,6 +13,7 @@ import Libs.Models.Email as Email
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Libs.Task as T
+import Models.Organization exposing (Organization)
 import Models.User as User exposing (User)
 import Models.User2 exposing (User2)
 import Models.UserId exposing (UserId)
@@ -73,11 +74,11 @@ update msg model =
             ( { model | shareInput = "", shareUser = Nothing, addingOwner = False, removingOwner = Nothing, owners = value }, Cmd.none )
 
 
-view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> HtmlId -> User2 -> ProjectInfo -> Model -> Html msg
-view confirm onDelete wrap htmlId user project model =
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> HtmlId -> User2 -> Maybe Organization -> ProjectInfo -> Model -> Html msg
+view confirm onDelete wrap htmlId user organization project model =
     div []
         [ shareWithForm wrap htmlId model project
-        , listOwners confirm onDelete wrap user model.owners model.removingOwner project
+        , listOwners confirm onDelete wrap user model.owners model.removingOwner organization project
         ]
 
 
@@ -168,8 +169,8 @@ shareWithForm wrap htmlId model project =
         ]
 
 
-listOwners : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> User2 -> List User -> Maybe UserId -> ProjectInfo -> Html msg
-listOwners confirm onDelete wrap user owners removingOwner project =
+listOwners : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> User2 -> List User -> Maybe UserId -> Maybe Organization -> ProjectInfo -> Html msg
+listOwners confirm onDelete wrap user owners removingOwner organization project =
     div [ class "mt-3" ]
         [ div [ class "text-sm font-semibold text-gray-800" ] [ text "Project owners:" ]
         , if owners == [] then
@@ -195,7 +196,7 @@ listOwners confirm onDelete wrap user owners removingOwner project =
 
                                   else if List.length owners == 1 then
                                     Button.primary1 Tw.red
-                                        [ onClick (deleteProject confirm onDelete project), class "ml-3 whitespace-nowrap" ]
+                                        [ onClick (deleteProject confirm onDelete organization project), class "ml-3 whitespace-nowrap" ]
                                         [ text "Leave and delete" ]
                                         |> Tooltip.tl "This project will be deleted!"
 
@@ -262,8 +263,8 @@ removeYou confirm project owners user =
         }
 
 
-deleteProject : (Confirm msg -> msg) -> Cmd msg -> ProjectInfo -> msg
-deleteProject confirm onDelete project =
+deleteProject : (Confirm msg -> msg) -> Cmd msg -> Maybe Organization -> ProjectInfo -> msg
+deleteProject confirm onDelete organization project =
     confirm
         { color = Tw.red
         , icon = Icon.UserRemove
@@ -279,5 +280,5 @@ deleteProject confirm onDelete project =
                 ]
         , confirm = "Delete " ++ project.name ++ " project"
         , cancel = "Cancel"
-        , onConfirm = Cmd.batch [ Ports.dropProject project, onDelete ]
+        , onConfirm = Cmd.batch [ Ports.deleteProject organization project, onDelete ]
         }

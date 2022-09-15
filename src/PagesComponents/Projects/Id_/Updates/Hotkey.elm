@@ -55,7 +55,7 @@ handleHotkey _ model hotkey =
             ( model, hideElement model )
 
         "save" ->
-            ( model, T.send SaveProject )
+            ( model, T.send TriggerSaveProject )
 
         "move-up" ->
             ( model, model |> moveTables { dx = 0, dy = -10 } |> Maybe.orElse (model |> upDetails) |> Maybe.withDefault Cmd.none )

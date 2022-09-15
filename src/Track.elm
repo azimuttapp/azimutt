@@ -1,4 +1,4 @@
-module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, loadLayout, loadProject, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableDropdown, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
+module Track exposing (SQLParsing, addSource, createLayout, createProject, deleteLayout, deleteProject, externalLink, findPathResult, initProject, loadLayout, loadProject, openAppCta, openEditNotes, openFindPath, openHelp, openIncomingRelationsDropdown, openProjectUploadDialog, openSaveLayout, openSchemaAnalysis, openSettings, openSharing, openTableDropdown, openUpdateSchema, parsedDatabaseSource, parsedJsonSource, parsedSqlSource, refreshSource, showTableWithForeignKey, showTableWithIncomingRelationsDropdown, updateProject)
 
 import DataSources.Helpers exposing (SourceLine)
 import DataSources.SqlMiner.SqlAdapter exposing (SqlSchema)
@@ -97,14 +97,19 @@ parsedJsonSource =
     parseJsonEvent
 
 
-createProject : Project -> TrackEvent
-createProject project =
-    projectEvent "create" (ProjectInfo.create project)
-
-
 loadProject : ProjectInfo -> TrackEvent
 loadProject =
     projectEvent "load"
+
+
+initProject : Project -> TrackEvent
+initProject project =
+    projectEvent "init" (ProjectInfo.create project)
+
+
+createProject : Project -> TrackEvent
+createProject project =
+    projectEvent "create" (ProjectInfo.create project)
 
 
 updateProject : Project -> TrackEvent

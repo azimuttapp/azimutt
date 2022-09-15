@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, downloadFile, dropProject, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProjectLocal, createProjectRemote, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -14,6 +14,7 @@ import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Color exposing (Color)
+import Models.Organization exposing (Organization)
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
@@ -85,9 +86,19 @@ loadProject id =
     messageToJs (LoadProject id)
 
 
-createProject : Project -> Cmd msg
-createProject project =
-    messageToJs (CreateProject project)
+createProjectTmp : Project -> Cmd msg
+createProjectTmp project =
+    messageToJs (CreateProjectTmp project)
+
+
+createProjectLocal : OrganizationId -> Project -> Cmd msg
+createProjectLocal organization project =
+    messageToJs (CreateProjectLocal organization project)
+
+
+createProjectRemote : Project -> Cmd msg
+createProjectRemote project =
+    messageToJs (CreateProjectRemote project)
 
 
 updateProject : Project -> Cmd msg
@@ -120,9 +131,9 @@ downloadFile filename content =
     messageToJs (DownloadFile filename content)
 
 
-dropProject : ProjectInfo -> Cmd msg
-dropProject project =
-    Cmd.batch [ messageToJs (DropProject project), track (Track.deleteProject project) ]
+deleteProject : Maybe Organization -> ProjectInfo -> Cmd msg
+deleteProject organization project =
+    Cmd.batch [ messageToJs (DeleteProject (organization |> Maybe.map .id) project), track (Track.deleteProject project) ]
 
 
 readLocalFile : String -> File -> Cmd msg
@@ -214,14 +225,16 @@ type ElmMsg
     | GetProject OrganizationId ProjectId
     | ListProjects
     | LoadProject ProjectId
-    | CreateProject Project
+    | CreateProjectTmp Project
+    | CreateProjectLocal OrganizationId Project
+    | CreateProjectRemote Project
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
+    | DeleteProject (Maybe OrganizationId) ProjectInfo
     | GetUser Email
     | GetOwners ProjectId
     | SetOwners ProjectId (List UserId)
     | DownloadFile FileName FileContent
-    | DropProject ProjectInfo
     | GetLocalFile String File
     | ObserveSizes (List HtmlId)
     | ListenKeys (Dict String (List Hotkey))
@@ -236,9 +249,9 @@ type JsMsg
     = GotSizes (List SizeChange)
     | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
     | GotProject (Maybe (Result Decode.Error Project))
+    | ProjectDeleted ProjectId
     | GotUser Email (Maybe User)
     | GotOwners ProjectId (List User)
-    | ProjectDropped ProjectId
     | GotLocalFile String File FileContent
     | GotHotkey String
     | GotKeyHold String Bool
@@ -318,14 +331,23 @@ elmEncoder elm =
         LoadProject id ->
             Encode.object [ ( "kind", "LoadProject" |> Encode.string ), ( "id", id |> ProjectId.encode ) ]
 
-        CreateProject project ->
-            Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
+        CreateProjectTmp project ->
+            Encode.object [ ( "kind", "CreateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        CreateProjectLocal organization project ->
+            Encode.object [ ( "kind", "CreateProjectLocal" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> Project.encode ) ]
+
+        CreateProjectRemote project ->
+            Encode.object [ ( "kind", "CreateProjectRemote" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         UpdateProject project ->
             Encode.object [ ( "kind", "UpdateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         MoveProjectTo project storage ->
             Encode.object [ ( "kind", "MoveProjectTo" |> Encode.string ), ( "project", project |> Project.encode ), ( "storage", storage |> ProjectStorage.encode ) ]
+
+        DeleteProject organization project ->
+            Encode.object [ ( "kind", "DeleteProject" |> Encode.string ), ( "organization", organization |> Encode.maybe OrganizationId.encode ), ( "project", project |> ProjectInfo.encode ) ]
 
         GetUser email ->
             Encode.object [ ( "kind", "GetUser" |> Encode.string ), ( "email", email |> Encode.string ) ]
@@ -338,9 +360,6 @@ elmEncoder elm =
 
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]
-
-        DropProject project ->
-            Encode.object [ ( "kind", "DropProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ) ]
 
         GetLocalFile sourceKind file ->
             Encode.object [ ( "kind", "GetLocalFile" |> Encode.string ), ( "sourceKind", sourceKind |> Encode.string ), ( "file", file |> FileValue.encode ) ]
@@ -390,6 +409,9 @@ jsDecoder =
                 "GotProject" ->
                     Decode.map GotProject (Decode.maybeField "project" projectDecoder)
 
+                "ProjectDeleted" ->
+                    Decode.map ProjectDeleted (Decode.field "id" ProjectId.decode)
+
                 "GotUser" ->
                     Decode.map2 GotUser
                         (Decode.field "email" Decode.string)
@@ -399,9 +421,6 @@ jsDecoder =
                     Decode.map2 GotOwners
                         (Decode.field "project" ProjectId.decode)
                         (Decode.field "owners" (Decode.list User.decode))
-
-                "ProjectDropped" ->
-                    Decode.map ProjectDropped (Decode.field "id" ProjectId.decode)
 
                 "GotLocalFile" ->
                     Decode.map3 GotLocalFile
@@ -492,14 +511,14 @@ unhandledJsMsgError msg =
                 GotProject _ ->
                     "GotProject"
 
+                ProjectDeleted _ ->
+                    "ProjectDeleted"
+
                 GotUser _ _ ->
                     "GotUser"
 
                 GotOwners _ _ ->
                     "GotOwners"
-
-                ProjectDropped _ ->
-                    "ProjectDropped"
 
                 GotLocalFile _ _ _ ->
                     "GotLocalFile"

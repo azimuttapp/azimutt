@@ -1,9 +1,9 @@
-import {ElmInit, ElmRuntime} from "./elm";
+import {ElmFlags, ElmMsg, ElmProgram, JsMsg} from "./elm";
 import {AzimuttApi} from "../services/api";
 
 declare global {
     export interface Window {
-        Elm: { Main: { init: (f: ElmInit) => ElmRuntime } }
+        Elm: { Main: ElmProgram<ElmFlags, JsMsg, ElmMsg> }
         azimutt: AzimuttApi
     }
 }

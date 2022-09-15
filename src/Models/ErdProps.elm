@@ -12,4 +12,6 @@ type alias ErdProps =
 
 zero : ErdProps
 zero =
-    { position = Position.zeroViewport, size = Size.zeroViewport }
+    { position = Position.zeroViewport |> Position.moveViewport { dx = 0, dy = 64 } -- default height of the navbar
+    , size = Size.zeroViewport
+    }

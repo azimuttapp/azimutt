@@ -71,8 +71,8 @@ init src callback =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Backend.Url -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
-update wrap backendUrl now msg model =
+update : (Msg -> msg) -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap now msg model =
     case msg of
         UpdateUrl url ->
             ( { model | url = url }, Cmd.none )
@@ -83,7 +83,7 @@ update wrap backendUrl now msg model =
 
             else
                 ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Ok schemaUrl) })
-                , Backend.getDatabaseSchema backendUrl schemaUrl (GotSchema >> wrap)
+                , Backend.getDatabaseSchema schemaUrl (GotSchema >> wrap)
                 )
 
         GotSchema result ->

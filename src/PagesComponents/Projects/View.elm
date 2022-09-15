@@ -19,12 +19,13 @@ import Libs.Models.DateTime exposing (formatDate)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
+import Models.Organization exposing (Organization)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo2 exposing (ProjectInfo2)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
-import Router
+import Services.Backend as Backend
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Time
@@ -34,7 +35,7 @@ import Url exposing (Url)
 
 viewProjects : Url -> Shared.Model -> Model -> List (Html Msg)
 viewProjects currentUrl shared model =
-    appShell
+    appShell shared.conf.env
         currentUrl
         shared.user2
         (\link -> SelectMenu link.text)
@@ -58,7 +59,7 @@ viewContent currentUrl shared model =
                     , icon = Icon.InformationCircle
                     , title = "You are not signed in"
                     , actions =
-                        [ Link.secondary3 Tw.blue [ href (Router.login currentUrl) ] [ text "Sign in now" ]
+                        [ Link.secondary3 Tw.blue [ href (Backend.loginUrl shared.conf.env currentUrl) ] [ text "Sign in now" ]
                         ]
                     }
                     [ text "Sign in to store your projects in your account, access them from anywhere and even share them with your team."
@@ -81,7 +82,7 @@ viewProjectList shared model =
             viewNoProjects
 
           else
-            div [ css [ "mt-6" ] ] [ projectList ((shared.projects2 |> List.map (legacyProjectInfo >> viewProjectCard shared.zone)) ++ [ viewNewProject ]) ]
+            div [ css [ "mt-6" ] ] [ projectList ((shared.projects2 |> List.map (\p -> viewProjectCard shared.zone (Just p.organization) (legacyProjectInfo p))) ++ [ viewNewProject ]) ]
         , h3 [ css [ "mt-6 text-lg font-medium" ] ] [ text "Projects" ]
         , case model.projects of
             Loading ->
@@ -91,7 +92,7 @@ viewProjectList shared model =
                 viewNoProjects
 
             Loaded projects ->
-                div [ css [ "mt-6" ] ] [ projectList ((projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject ]) ]
+                div [ css [ "mt-6" ] ] [ projectList ((projects |> List.map (viewProjectCard shared.zone Nothing)) ++ [ viewNewProject ]) ]
         ]
 
 
@@ -178,8 +179,8 @@ legacyProjectInfo p =
     }
 
 
-viewProjectCard : Time.Zone -> ProjectInfo -> Html Msg
-viewProjectCard zone project =
+viewProjectCard : Time.Zone -> Maybe Organization -> ProjectInfo -> Html Msg
+viewProjectCard zone organization project =
     li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium flex" ] ]
@@ -196,17 +197,17 @@ viewProjectCard zone project =
                 ]
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
-            [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
+            [ button [ type_ "button", onClick (confirmDeleteProject organization project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
                 [ Icon.outline Icon.Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
-            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
+            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
                 [ Icon.outline Icon.ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]
 
 
-confirmDeleteProject : ProjectInfo -> Msg
-confirmDeleteProject project =
+confirmDeleteProject : Maybe Organization -> ProjectInfo -> Msg
+confirmDeleteProject organization project =
     ConfirmOpen
         { color = Tw.red
         , icon = Icon.Trash
@@ -214,7 +215,7 @@ confirmDeleteProject project =
         , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
         , confirm = "Delete " ++ project.name
         , cancel = "Cancel"
-        , onConfirm = T.send (DeleteProject project)
+        , onConfirm = T.send (DeleteProject organization project)
         }
 
 

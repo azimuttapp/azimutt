@@ -93,7 +93,7 @@ export class Supabase implements StorageApi {
     loadProject = (id: ProjectId): Promise<ProjectNoStorage> => this.waitLogin(500, _ => this.store.getProject(id))
     createProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => this.waitLogin(500, _ => this.store.createProject(p))
     updateProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => this.waitLogin(500, _ => this.store.updateProject(p))
-    dropProject = (id: ProjectId): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(id))
+    deleteProject = (id: ProjectId): Promise<void> => this.waitLogin(500, _ => this.store.dropProject(id))
 
     getUser = (email: Email): Promise<Profile> => this.store.fetchProfile(email)
     updateUser = (user: Profile): Promise<void> => this.store.updateProfile(user)

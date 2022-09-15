@@ -23,88 +23,27 @@ import {
     Size,
     TableId
 } from "./project";
-import {LoginInfo} from "../services/supabase";
 import {Profile, UserId} from "./profile";
 import {OrganizationId} from "./organization";
 
-export interface GlobalConf {
-    env: Env
-    platform: Platform
-    backendUrl: string
+export interface ElmProgram<F, I, O> {
+    init: (f: { flags: F, node?: HTMLElement }) => ElmRuntime<I, O>
+}
+
+export interface ElmRuntime<I, O> {
+    ports?: {
+        jsToElm: { send: (msg: I) => void }
+        elmToJs: { subscribe: (callback: (msg: O) => void) => void }
+    }
 }
 
 export interface ElmFlags {
     now: Timestamp
-    conf: GlobalConf
+    conf: {
+        env: Env
+        platform: Platform
+    }
 }
-
-export interface ElmInit {
-    flags: ElmFlags
-    node?: HTMLElement
-}
-
-export interface ElmRuntime {
-    ports?: ElmPorts
-}
-
-export interface ElmPorts {
-    jsToElm: InPort<JsMsg>
-    elmToJs: OutPort<ElmMsg>
-}
-
-export interface InPort<T> {
-    send: (msg: T) => void
-}
-
-export interface OutPort<T> {
-    subscribe: (callback: (msg: T) => void) => void
-}
-
-export type JsMsg =
-    GotSizes
-    | GotProjects
-    | GotProject
-    | GotUser
-    | GotOwners
-    | ProjectDropped
-    | GotLocalFile
-    | GotHotkey
-    | GotKeyHold
-    | GotToast
-    | GotTableShow
-    | GotTableHide
-    | GotTableToggleColumns
-    | GotTablePosition
-    | GotTableMove
-    | GotTableSelect
-    | GotTableColor
-    | GotColumnShow
-    | GotColumnHide
-    | GotColumnMove
-    | GotFitToScreen
-    | Error
-export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
-export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
-export type GotProject = { kind: 'GotProject', project?: Project }
-export type GotUser = { kind: 'GotUser', email: Email, user: Profile | undefined }
-export type GotOwners = { kind: 'GotOwners', project: ProjectId, owners: Profile[] }
-export type ProjectDropped = { kind: 'ProjectDropped', id: ProjectId }
-export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: string, file: File, content: string }
-export type GotHotkey = { kind: 'GotHotkey', id: string }
-export type GotKeyHold = { kind: 'GotKeyHold', key: string, start: boolean }
-export type GotToast = { kind: 'GotToast', level: ToastLevel, message: string }
-export type GotTableShow = { kind: 'GotTableShow', id: TableId, position?: Position }
-export type GotTableHide = { kind: 'GotTableHide', id: TableId }
-export type GotTableToggleColumns = { kind: 'GotTableToggleColumns', id: TableId }
-export type GotTablePosition = { kind: 'GotTablePosition', id: TableId, position: Position }
-export type GotTableMove = { kind: 'GotTableMove', id: TableId, delta: Delta }
-export type GotTableSelect = { kind: 'GotTableSelect', id: TableId }
-export type GotTableColor = { kind: 'GotTableColor', id: TableId, color: Color }
-export type GotColumnShow = { kind: 'GotColumnShow', ref: ColumnId }
-export type GotColumnHide = { kind: 'GotColumnHide', ref: ColumnId }
-export type GotColumnMove = { kind: 'GotColumnMove', ref: ColumnId, index: number }
-export type GotFitToScreen = { kind: 'GotFitToScreen' }
-export type Error = { kind: 'Error', message: string }
 
 export type ElmMsg =
     ClickMsg
@@ -118,14 +57,16 @@ export type ElmMsg =
     | GetProjectMsg
     | ListProjectsMsg
     | LoadProjectMsg
-    | CreateProjectMsg
+    | CreateProjectTmpMsg
+    | CreateProjectLocalMsg
+    | CreateProjectRemoteMsg
     | UpdateProjectMsg
     | MoveProjectToMsg
+    | DeleteProjectMsg
     | GetUserMsg
     | GetOwnersMsg
     | SetOwnersMsg
     | DownloadFileMsg
-    | DropProjectMsg
     | GetLocalFileMsg
     | ObserveSizesMsg
     | ListenKeysMsg
@@ -145,14 +86,16 @@ export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
 export type GetProjectMsg = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
 export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
-export type CreateProjectMsg = { kind: 'CreateProject', project: Project }
+export type CreateProjectTmpMsg = { kind: 'CreateProjectTmp', project: Project }
+export type CreateProjectLocalMsg = { kind: 'CreateProjectLocal', organization: OrganizationId, project: Project }
+export type CreateProjectRemoteMsg = { kind: 'CreateProjectRemote', organization: OrganizationId, project: Project }
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
+export type DeleteProjectMsg = { kind: 'DeleteProject', organization: OrganizationId | undefined, project: ProjectInfo }
 export type GetUserMsg = { kind: 'GetUser', email: Email }
 export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
 export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
-export type DropProjectMsg = { kind: 'DropProject', project: ProjectInfo }
 export type GetLocalFileMsg = { kind: 'GetLocalFile', sourceKind: string, file: File }
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
 export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
@@ -162,10 +105,55 @@ export type TrackPageMsg = { kind: 'TrackPage', name: string }
 export type TrackEventMsg = { kind: 'TrackEvent', name: string, details?: Data }
 export type TrackErrorMsg = { kind: 'TrackError', name: string, details?: Data }
 
+export type JsMsg =
+    GotSizes
+    | GotProjects
+    | GotProject
+    | ProjectDeleted
+    | GotUser
+    | GotOwners
+    | GotLocalFile
+    | GotHotkey
+    | GotKeyHold
+    | GotToast
+    | GotTableShow
+    | GotTableHide
+    | GotTableToggleColumns
+    | GotTablePosition
+    | GotTableMove
+    | GotTableSelect
+    | GotTableColor
+    | GotColumnShow
+    | GotColumnHide
+    | GotColumnMove
+    | GotFitToScreen
+    | Error
+export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
+export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
+export type GotProject = { kind: 'GotProject', project?: Project }
+export type ProjectDeleted = { kind: 'ProjectDeleted', id: ProjectId }
+export type GotUser = { kind: 'GotUser', email: Email, user: Profile | undefined }
+export type GotOwners = { kind: 'GotOwners', project: ProjectId, owners: Profile[] }
+export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: string, file: File, content: string }
+export type GotHotkey = { kind: 'GotHotkey', id: string }
+export type GotKeyHold = { kind: 'GotKeyHold', key: string, start: boolean }
+export type GotToast = { kind: 'GotToast', level: ToastLevel, message: string }
+export type GotTableShow = { kind: 'GotTableShow', id: TableId, position?: Position }
+export type GotTableHide = { kind: 'GotTableHide', id: TableId }
+export type GotTableToggleColumns = { kind: 'GotTableToggleColumns', id: TableId }
+export type GotTablePosition = { kind: 'GotTablePosition', id: TableId, position: Position }
+export type GotTableMove = { kind: 'GotTableMove', id: TableId, delta: Delta }
+export type GotTableSelect = { kind: 'GotTableSelect', id: TableId }
+export type GotTableColor = { kind: 'GotTableColor', id: TableId, color: Color }
+export type GotColumnShow = { kind: 'GotColumnShow', ref: ColumnId }
+export type GotColumnHide = { kind: 'GotColumnHide', ref: ColumnId }
+export type GotColumnMove = { kind: 'GotColumnMove', ref: ColumnId, index: number }
+export type GotFitToScreen = { kind: 'GotFitToScreen' }
+export type Error = { kind: 'Error', message: string }
+
+
 // from node_modules/@splitbee/web/src/types.ts but not exported :(
 export type Data = { [key: string]: string | number | boolean | undefined | null };
-
-export type SampleKey = string
 
 export interface ElementSize {
     id: HtmlId,

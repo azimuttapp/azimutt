@@ -18,28 +18,30 @@ export class LocalStorageStorage implements StorageApi {
     listProjects = (): Promise<ProjectInfoNoStorage[]> => {
         const projects = Object.keys(this.storage)
             .filter(key => key.startsWith(this.prefix))
-            .flatMap(key => [this.getProject(key)].filter(p => p) as ProjectNoStorage[])
-            .map(projectToInfo)
+            .flatMap(key => [this.getProject(key)].filter(p => p).map(p => [key.replace(this.prefix, ''), p]) as [ProjectId, ProjectNoStorage][])
+            .map(([id, p]) => projectToInfo(id, p))
         return Promise.resolve(projects)
     }
-    loadProject = (id: ProjectId): Promise<ProjectNoStorage> => Promise.resolve(this.getProject(this.prefix + id)).then(p => p ? p : Promise.reject(`Project ${id} not found`))
-    createProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
-        const key = this.prefix + p.id
+    loadProject = (id: ProjectId): Promise<ProjectNoStorage> => {
+        return Promise.resolve(this.getProject(this.prefix + id)).then(p => p ? p : Promise.reject(`Project ${id} not found`))
+    }
+    createProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+        const key = this.prefix + id
         if (this.storage.getItem(key) === null) {
             return this.setProject(key, p)
         } else {
-            return Promise.reject(`Project ${p.id} already exists in ${this.kind}`)
+            return Promise.reject(`Project ${id} already exists in ${this.kind}`)
         }
     }
-    updateProject = (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
-        const key = this.prefix + p.id
+    updateProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+        const key = this.prefix + id
         if (this.storage.getItem(key) === null) {
-            return Promise.reject(`Project ${p.id} doesn't exists in ${this.kind}`)
+            return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)
         } else {
             return this.setProject(key, p)
         }
     }
-    dropProject = (id: ProjectId): Promise<void> => {
+    deleteProject = (id: ProjectId): Promise<void> => {
         this.storage.removeItem(this.prefix + id)
         return Promise.resolve()
     }

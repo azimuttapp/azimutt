@@ -12,9 +12,9 @@ import Page
 import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (mapToastsCmd)
+import Services.Sort as Sort
 import Services.Toasts as Toasts
 import Shared
-import Time
 import View exposing (View)
 
 
@@ -84,9 +84,9 @@ handleJsMessage req msg model =
             ( model
             , Request.pushRoute
                 (projects
-                    |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))
+                    |> Sort.lastUpdatedFirst
                     |> List.head
-                    |> Maybe.mapOrElse (\p -> Route.Organization___Project_ { organization = Conf.constants.unknownOrg, project = p.id }) Route.Projects
+                    |> Maybe.mapOrElse (\p -> Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = p.id }) Route.Projects
                 )
                 req
             )

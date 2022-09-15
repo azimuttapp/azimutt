@@ -1,4 +1,8 @@
 import {
+    CreateProjectLocalMsg,
+    CreateProjectRemoteMsg,
+    CreateProjectTmpMsg,
+    DeleteProjectMsg,
     GetLocalFileMsg,
     GetProjectMsg,
     Hotkey,
@@ -10,32 +14,25 @@ import {
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {Project, ProjectId, ProjectInfoWithContent} from "./types/project";
+import {Project, ProjectId, ProjectInfoWithContent, ProjectStorage} from "./types/project";
 import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
-import {Supabase} from "./services/supabase";
-import {StorageManager} from "./storages/manager";
+import {Storage} from "./services/storage";
 import {Conf} from "./conf";
-import {IndexedDBStorage} from "./storages/indexeddb";
-import {LocalStorageStorage} from "./storages/localstorage";
-import {InMemoryStorage} from "./storages/inmemory";
-import {StorageApi} from "./storages/api";
+import {Backend} from "./services/backend";
+import * as Uuid from "./types/uuid";
+import * as Http from "./utils/http";
 
 const env = Utils.getEnv()
 const platform = Utils.getPlatform()
-const conf = Conf.get(env)
+const conf = Conf.get()
 const logger = new ConsoleLogger(env)
-const fs = {env, platform, backendUrl: conf.supabase.backendUrl}
-const app = ElmApp.init({now: Date.now(), conf: fs}, logger)
-const supabase = Supabase.init(conf.supabase).onLogin(user => {
-    analytics.login(user)
-    listProjects()
-}, err => app.toast('error', err))
-const storage: Promise<StorageApi> = IndexedDBStorage.init(logger).catch(() => LocalStorageStorage.init(logger)).catch(() => new InMemoryStorage())
-const store = new StorageManager(supabase, logger)
+const app = ElmApp.init({now: Date.now(), conf: {env, platform}}, logger)
+const storage = new Storage(logger)
+const backend = new Backend(logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
 const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
@@ -70,14 +67,16 @@ app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTM
 app.on('GetProject', getProject)
 app.on('ListProjects', listProjects)
 app.on('LoadProject', msg => loadProject(msg.id))
-app.on('CreateProject', msg => store.createProject(msg.project).then(app.gotProject))
+app.on('CreateProjectTmp', createProjectTmp)
+app.on('CreateProjectLocal', createProjectLocal)
+app.on('CreateProjectRemote', createProjectRemote)
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
-app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
-app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)).catch(_ => app.gotUser(msg.email, undefined)))
-app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
-app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners => app.gotOwners(msg.project, owners)))
+// app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
+app.on('DeleteProject', deleteProject)
+// app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)).catch(_ => app.gotUser(msg.email, undefined)))
+// app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
+// app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners => app.gotOwners(msg.project, owners)))
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
-app.on('DropProject', msg => store.dropProject(msg.project).then(_ => app.dropProject(msg.project.id)))
 app.on('GetLocalFile', getLocalFile)
 app.on('ObserveSizes', observeSizes)
 app.on('ListenKeys', listenHotkeys)
@@ -118,70 +117,122 @@ function setMeta(meta: SetMetaMsg) {
     }
 }
 
-function getProject(msg: GetProjectMsg) {
-    Utils.fetchJson<ProjectInfoWithContent>(`/api/v1/organizations/${msg.organization}/projects/${msg.project}?expand=content`).then(res => {
-        if (res.status === 200) {
-            if (res.json.storage_kind === 'azimutt') {
-                if (typeof res.json.content === 'string') {
-                    return app.gotProject(JSON.parse(res.json.content))
-                } else {
-                    return Promise.reject(`missing content`)
-                }
-            } else if (res.json.storage_kind === 'local') {
-                // TODO: if fail: add message to sync to Azimutt to have the project everywhere
-                return storage.then(s => s.loadProject(msg.project)).then(app.gotProject)
+function getProject({organization, project}: GetProjectMsg) {
+    Http.getJson<ProjectInfoWithContent>(`/api/v1/organizations/${organization}/projects/${project}?expand=content`).then(res => {
+        if (res.json.storage_kind === ProjectStorage.azimutt) {
+            if (typeof res.json.content === 'string') {
+                return app.gotProject(JSON.parse(res.json.content))
             } else {
-                return Promise.reject(`unknown storage '${res.json.storage_kind}'`)
+                return Promise.reject(`missing content`)
             }
-        } else if (res.status === 404) {
-            app.toast('warning', 'Unregistered project: create an Azimutt account and save it again to keep it. '
-                + 'Your data will stay local, only statistics will be shared with Azimutt.')
-            return storage.then(s => s.loadProject(msg.project)).then(app.gotProject)
+        } else if (res.json.storage_kind === ProjectStorage.local) {
+            // TODO: if fail: add message to sync to Azimutt to have the project everywhere
+            return loadProject(project)
         } else {
-            return Promise.reject(`unknown status ${res.status}`)
+            return Promise.reject(`unknown storage '${res.json.storage_kind}'`)
         }
-    }).catch(err => {
-        app.gotProject(undefined)
-        app.toast('error', `Can't load project: ${err}`)
+    }).catch(res => {
+        if (res.status === 404) {
+            if (project !== Uuid.zero) {
+                app.toast('warning', 'Unregistered project: create an Azimutt account and save it again to keep it. '
+                    + 'Your data will stay local, only statistics will be shared with Azimutt.')
+            }
+            return loadProject(project)
+        } else {
+            app.gotProject(undefined)
+            app.toast('error', `Can't load project: ${JSON.stringify(res)}`)
+        }
     })
 }
 
 function listProjects() {
-    store.listProjects().then(app.loadProjects).catch(err => {
+    storage.listProjects().then(app.loadProjects).catch(err => {
         app.loadProjects([])
         app.toast('error', `Can't list projects: ${err}`)
     })
 }
 
 function loadProject(id: ProjectId) {
-    store.loadProject(id).then(app.gotProject).catch(err => {
+    storage.loadProject(id).then(app.gotProject).catch(err => {
         app.gotProject(undefined)
         app.toast('error', `Can't load project: ${err}`)
     })
 }
 
+function createProjectTmp({project}: CreateProjectTmpMsg): void {
+    storage.deleteProject(Uuid.zero)
+        .then(_ => storage.createProject(Uuid.zero, project))
+        .then(app.gotProject)
+}
+
+function createProjectLocal({organization, project}: CreateProjectLocalMsg): void {
+    backend.createProjectLocal(organization, project).catch(err => {
+        app.toast('error', `Can't save project to backend: ${JSON.stringify(err)}`)
+        return Promise.reject(err)
+    }).then(info => {
+        return storage.createProject(info.id, project).catch(err => {
+            app.toast('error', `Can't save project locally: ${JSON.stringify(err)}`)
+            return backend.deleteProject(organization, info.id).then(_ => Promise.reject(err))
+        })
+    }).then(p => {
+        return storage.deleteProject(Uuid.zero).catch(err => {
+            app.toast('error', `Can't delete temporary project: ${JSON.stringify(err)}`)
+            return Promise.resolve()
+        }).then(_ => app.gotProject(p)) // FIXME: add orga to `gotProject` and redirect to new url
+    })
+}
+
+function createProjectRemote({organization, project}: CreateProjectRemoteMsg): void {
+    backend.createProjectRemote(organization, project)
+    // FIXME .then(app.gotProject)
+}
+
 function updateProject(msg: UpdateProjectMsg): Promise<Project> {
-    return store.updateProject(msg.project)
-        .then(p => {
-            app.toast('success', 'Project saved')
-            return p
-        })
-        .catch(e => {
-            let message
-            if (typeof e === 'string') {
-                message = e
-            } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-                message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
-            } else {
-                message = 'Unknown storage error: ' + e.message
+    // TODO: handle where to save the project: azimutt or local
+    console.log('TODO updateProject', msg)
+    return Promise.reject('updateProject not implemented')
+    // return store.updateProject(msg.project)
+    //     .then(p => {
+    //         app.toast('success', 'Project saved')
+    //         return p
+    //     })
+    //     .catch(e => {
+    //         let message
+    //         if (typeof e === 'string') {
+    //             message = e
+    //         } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
+    //             message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
+    //         } else {
+    //             message = 'Unknown storage error: ' + e.message
+    //         }
+    //         app.toast('error', message)
+    //         const name = 'storage'
+    //         const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
+    //         analytics.trackError(name, details)
+    //         errorTracking.trackError(name, details)
+    //         return msg.project
+    //     })
+}
+
+function deleteProject({organization, project}: DeleteProjectMsg): void {
+    if(organization) {
+        backend.deleteProject(organization, project.id).catch(err => {
+            app.toast('error', `Can't delete project in backend: ${JSON.stringify(err)}`)
+            return Promise.reject(err)
+        }).then(_ => {
+            if (project.storage == ProjectStorage.local || project.storage == ProjectStorage.browser) {
+                return storage.deleteProject(project.id).catch(err => {
+                    app.toast('error', `Can't delete project locally: ${JSON.stringify(err)}`)
+                    return Promise.reject(err)
+                })
             }
-            app.toast('error', message)
-            const name = 'storage'
-            const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
-            analytics.trackError(name, details)
-            errorTracking.trackError(name, details)
-            return msg.project
-        })
+        }).then(_ => app.dropProject(project.id))
+    } else {
+        storage.deleteProject(project.id).catch(err => {
+            app.toast('error', `Can't delete project locally: ${JSON.stringify(err)}`)
+            return Promise.reject(err)
+        }).then(_ => app.dropProject(project.id))
+    }
 }
 
 function getLocalFile(msg: GetLocalFileMsg) {

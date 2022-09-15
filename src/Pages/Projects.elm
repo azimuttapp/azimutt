@@ -15,9 +15,9 @@ import PagesComponents.Projects.View exposing (viewProjects)
 import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (mapToastsCmd)
+import Services.Sort as Sort
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
-import Time
 import View exposing (View)
 
 
@@ -82,8 +82,8 @@ update req msg model =
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
 
-        DeleteProject project ->
-            ( model, Ports.dropProject project )
+        DeleteProject organization project ->
+            ( model, Ports.deleteProject organization project )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )
@@ -117,9 +117,9 @@ handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
     case msg of
         GotProjects ( _, projects ) ->
-            ( { model | projects = Loaded (projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt))) }, Cmd.none )
+            ( { model | projects = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
 
-        ProjectDropped projectId ->
+        ProjectDeleted projectId ->
             ( model |> mapProjects (List.filter (\p -> p.id /= projectId)), Cmd.none )
 
         GotToast level message ->

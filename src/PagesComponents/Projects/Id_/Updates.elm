@@ -13,6 +13,7 @@ import Libs.Models.Delta as Delta exposing (Delta)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area
+import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
@@ -42,6 +43,7 @@ import PagesComponents.Projects.Id_.Updates.Help exposing (handleHelp)
 import PagesComponents.Projects.Id_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Projects.Id_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Projects.Id_.Updates.Notes exposing (handleNotes)
+import PagesComponents.Projects.Id_.Updates.Project exposing (moveProject, saveProject)
 import PagesComponents.Projects.Id_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Projects.Id_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Projects.Id_.Updates.Source as Source
@@ -50,17 +52,17 @@ import PagesComponents.Projects.Id_.Updates.VirtualRelation exposing (handleVirt
 import PagesComponents.Projects.Id_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
-import Services.Backend as Backend
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Posix -> Backend.Url -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout now backendUrl msg model =
+update : Maybe LayoutName -> Time.Posix -> List Organization -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout now organizations msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -68,27 +70,15 @@ update currentLayout now backendUrl msg model =
         SearchUpdated search ->
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
-        SaveProject ->
-            if model.conf.save then
-                ( model, Cmd.batch (model.erd |> Maybe.map Erd.unpack |> Maybe.mapOrElse (\p -> [ Ports.updateProject p, Ports.track (Track.updateProject p) ]) [ "No project to save" |> Toasts.warning |> Toast |> T.send ]) )
+        TriggerSaveProject ->
+            -- FIXME: open create project modal (choose orga & save mode)
+            ( model, organizations |> List.head |> Maybe.mapOrElse (SaveProject >> T.send) Cmd.none )
 
-            else
-                ( model, Cmd.none )
+        SaveProject organization ->
+            model |> saveProject organization
 
         MoveProjectTo storage ->
-            if model.conf.save then
-                ( model |> mapUploadM (\u -> { u | movingProject = True })
-                , Cmd.batch
-                    (model.erd
-                        |> Maybe.map Erd.unpack
-                        |> Maybe.mapOrElse
-                            (\p -> [ Ports.moveProjectTo p storage ])
-                            [ "No project to move" |> Toasts.warning |> Toast |> T.send ]
-                    )
-                )
-
-            else
-                ( model, Cmd.none )
+            model |> moveProject storage
 
         RenameProject name ->
             ( model |> mapErdM (mapProject (setName name)), Cmd.none )
@@ -211,10 +201,10 @@ update currentLayout now backendUrl msg model =
             model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings now backendUrl message
+            model |> handleProjectSettings now message
 
         EmbedSourceParsingMsg message ->
-            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg backendUrl now message)
+            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now message)
 
         SourceParsed source ->
             ( model, Project.create model.projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
@@ -324,7 +314,7 @@ handleJsMessage now currentLayout msg model =
             model |> updateSizes sizes
 
         GotProjects ( errors, projects ) ->
-            ( { model | projects = projects |> List.sortBy (\p -> negate (Time.posixToMillis p.updatedAt)) }
+            ( { model | projects = Sort.lastUpdatedFirst projects }
             , Cmd.batch
                 (errors
                     |> List.concatMap
@@ -375,6 +365,9 @@ handleJsMessage now currentLayout msg model =
                         )
                     )
 
+        ProjectDeleted projectId ->
+            ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
+
         GotUser email user ->
             if model.upload == Nothing then
                 ( model, Cmd.none )
@@ -388,9 +381,6 @@ handleJsMessage now currentLayout msg model =
 
             else
                 ( model, T.send (ProjectUploadMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
-
-        ProjectDropped projectId ->
-            ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then

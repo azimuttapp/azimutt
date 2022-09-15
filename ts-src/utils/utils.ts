@@ -44,17 +44,6 @@ export const Utils = {
             return undefined
         }
     },
-    fetchJson<T>(url: string): Promise<JsonResponse<T>> {
-        return fetch(url).then(res => res.json().then(json => ({
-            type: res.type,
-            url: res.url,
-            ok: res.ok,
-            status: res.status,
-            statusText: res.statusText,
-            redirected: res.redirected,
-            json: json
-        })))
-    },
     fullscreen(id: HtmlId | undefined) {
         const element = id ? Utils.getElementById(id) : document.body
         const result = element.requestFullscreen ? element.requestFullscreen() : Promise.reject(new Error('requestFullscreen not available'))
@@ -98,7 +87,7 @@ export const Utils = {
                 particleCount: 2,
                 angle: 60,
                 spread: 55,
-                origin: { x: 0 },
+                origin: {x: 0},
                 colors: colors,
                 zIndex: 20000
             });
@@ -106,7 +95,7 @@ export const Utils = {
                 particleCount: 2,
                 angle: 120,
                 spread: 55,
-                origin: { x: 1 },
+                origin: {x: 1},
                 colors: colors,
                 zIndex: 20000
             });
@@ -116,14 +105,4 @@ export const Utils = {
             }
         }());
     }
-}
-
-interface JsonResponse<T> {
-    type: string
-    url: string
-    ok: boolean
-    status: number
-    statusText: string
-    redirected: boolean
-    json: T
 }

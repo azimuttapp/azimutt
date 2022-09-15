@@ -15,7 +15,7 @@ zero =
 
 isSample : ProjectId -> Bool
 isSample id =
-    id |> String.startsWith "0000"
+    String.startsWith "0000" id && not (String.endsWith "0000" id)
 
 
 encode : ProjectId -> Value

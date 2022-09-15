@@ -1,4 +1,5 @@
-import {DateTime, Timestamp, Uuid} from "./basics";
+import {DateTime, Timestamp} from "./basics";
+import {Uuid} from "./uuid";
 
 export interface ProjectInfoWithContent {
     id: ProjectId
@@ -22,9 +23,9 @@ export interface ProjectInfoWithContent {
 }
 
 export interface Project {
-    id: ProjectId
     name: ProjectName
     sources: Source[]
+    notes: { [ref: string]: string } | undefined
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
@@ -55,6 +56,7 @@ export interface Source {
     content: Line[]
     tables: Table[]
     relations: Relation[]
+    types: Type[] | undefined
     enabled?: boolean
     createdAt: Timestamp
     updatedAt: Timestamp
@@ -147,6 +149,14 @@ export interface ColumnRef {
     column: ColumnName
 }
 
+
+export interface Type {
+    schema: SchemaName
+    name: TypeName
+    value: { enum: string[] } | { definition: string }
+    origins: Origin[]
+}
+
 export interface Origin {
     id: SourceId
     lines: LineIndex[]
@@ -195,7 +205,7 @@ export interface Settings {
 // 'browser' was changed for 'local' and 'cloud' for 'azimutt', keep them here for legacy projects
 export type ProjectStorage = 'local' | 'azimutt' | 'browser' | 'cloud'
 
-export const ProjectStorage: {[key in ProjectStorage]: key} = {
+export const ProjectStorage: { [key in ProjectStorage]: key } = {
     local: 'local',
     azimutt: 'azimutt',
     browser: 'browser',
@@ -203,6 +213,7 @@ export const ProjectStorage: {[key in ProjectStorage]: key} = {
 }
 
 export type ProjectId = Uuid
+export type ProjectSlug = string
 export type ProjectName = string
 export type SourceId = Uuid
 export type SourceName = string
@@ -213,6 +224,7 @@ export type ColumnId = string
 export type ColumnName = string
 export type ColumnType = string
 export type RelationName = string
+export type TypeName = string
 export type LayoutName = string
 export type ZoomLevel = number
 export type Line = string

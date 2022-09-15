@@ -1,3 +1,3 @@
-import {Uuid} from "./basics";
+import {Uuid} from "./uuid";
 
 export type OrganizationId = Uuid

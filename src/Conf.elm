@@ -26,12 +26,9 @@ constants :
     , azimuttDiscussionSearch : String
     , azimuttDiscussionCanvas : String
     , azimuttEmail : String
-    , loginUrl : String
-    , logoutUrl : String
-    , profileUrl : String
     , defaultTitle : String
     , defaultDescription : String
-    , unknownOrg : String
+    , tmpOrg : String
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
     , virtualRelationSourceName : SourceName
@@ -53,12 +50,9 @@ constants =
     , azimuttDiscussionSearch = github ++ "/discussions/8"
     , azimuttDiscussionCanvas = github ++ "/discussions/9"
     , azimuttEmail = "hey@azimutt.app"
-    , loginUrl = "http://localhost:4000/auth/github" -- FIXME for prod
-    , logoutUrl = "http://localhost:4000/users/log_out" -- FIXME for prod
-    , profileUrl = "http://localhost:4000/home" -- FIXME for prod
     , defaultTitle = "Azimutt - Database explorer and analyzer"
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
-    , unknownOrg = "unknown"
+    , tmpOrg = "tmp"
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
     , virtualRelationSourceName = "default"

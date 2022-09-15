@@ -43,7 +43,7 @@ page shared req =
     in
     Page.element
         { init = init query
-        , update = Updates.update query.layout shared.now shared.conf.backendUrl
+        , update = Updates.update query.layout shared.now shared.organizations
         , view = Views.view (Request.pushRoute Route.NotFound req) req.url shared
         , subscriptions = Subscriptions.subscriptions
         }

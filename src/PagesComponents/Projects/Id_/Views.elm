@@ -14,6 +14,7 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.Position as Position
@@ -40,7 +41,7 @@ import PagesComponents.Projects.Id_.Views.Modals.SchemaAnalysis exposing (viewSc
 import PagesComponents.Projects.Id_.Views.Modals.Sharing exposing (viewSharing)
 import PagesComponents.Projects.Id_.Views.Navbar as Navbar exposing (viewNavbar)
 import PagesComponents.Projects.Id_.Views.Watermark exposing (viewWatermark)
-import Router
+import Services.Backend as Backend
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import Url exposing (Url)
@@ -62,7 +63,7 @@ view onDelete currentUrl shared model =
 viewProject : Cmd Msg -> Url -> Shared.Model -> Model -> List (Html Msg)
 viewProject onDelete currentUrl shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl shared model "app") (viewNotFound currentUrl shared.user2 model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl shared model "app") (viewNotFound shared.conf.env currentUrl shared.user2 model.conf)
 
       else
         Loader.fullScreen
@@ -147,7 +148,7 @@ viewModal currentUrl shared model onDelete =
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.member m.id) e m )) model.erd
-         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadMsg MoveProjectTo ModalClose currentUrl shared.user2 (model.openedDialogs |> List.member m.id) e.project m )) model.erd
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadMsg MoveProjectTo ModalClose shared.conf.env currentUrl shared.user2 (model.openedDialogs |> List.member m.id) Nothing e.project m )) model.erd -- FIXME: define organization or delete this
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))
          , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (model.openedDialogs |> List.member m.id) m ))
@@ -169,8 +170,8 @@ viewContextMenu menu =
             (div [ class "az-context-menu" ] [])
 
 
-viewNotFound : Url -> Maybe User2 -> ErdConf -> Html msg
-viewNotFound currentUrl user conf =
+viewNotFound : Env -> Url -> Maybe User2 -> ErdConf -> Html msg
+viewNotFound env currentUrl user conf =
     NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
@@ -186,7 +187,7 @@ viewNotFound currentUrl user conf =
              else
                 [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
             )
-                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Router.login currentUrl, text = "Sign in" } ])
+                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Backend.loginUrl env currentUrl, text = "Sign in" } ])
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }

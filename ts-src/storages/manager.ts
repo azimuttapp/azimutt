@@ -45,18 +45,18 @@ export class StorageManager {
     }
     dropProject = (p: ProjectInfo): Promise<void> =>
         p.storage === 'cloud' || p.storage === 'azimutt' ?
-            this.cloud.dropProject(p.id) :
-            this.browser.then(s => s.dropProject(p.id))
+            this.cloud.deleteProject(p.id) :
+            this.browser.then(s => s.deleteProject(p.id))
 
     moveProjectTo = async ({storage, ...p}: Project, toStorage: ProjectStorage): Promise<Project> => {
         const prj = {...p, updatedAt: Date.now()}
         if (storage === ProjectStorage.cloud && toStorage === ProjectStorage.browser) {
             return await this.browser.then(s => s.createProject(prj))
-                .then(_ => this.cloud.dropProject(prj.id))
+                .then(_ => this.cloud.deleteProject(prj.id))
                 .then(_ => browserProject(prj))
         } else if ((storage === ProjectStorage.browser || storage === undefined) && toStorage === ProjectStorage.cloud) {
             return await this.cloud.createProject(prj)
-                .then(_ => this.browser.then(s => s.dropProject(prj.id)))
+                .then(_ => this.browser.then(s => s.deleteProject(prj.id)))
                 .then(_ => cloudProject(prj))
         } else {
             return Promise.reject(`Unable to move project from ${storage} to ${toStorage}`)

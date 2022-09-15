@@ -95,7 +95,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                         [ viewNavbarFeatures gConf.platform features (htmlId ++ "-features") (openedDropdown |> String.filterStartsWith (htmlId ++ "-features"))
                         , B.cond eConf.sharing viewNavbarShare Html.none
                         , viewNavbarSettings
-                        , Helpers.viewProfileIcon currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle
+                        , Helpers.viewProfileIcon gConf.env currentUrl maybeUser (htmlId ++ "-profile") openedDropdown DropdownToggle
                         ]
                     ]
                 ]

@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, Url, errorToString, getCurrentUser, getDatabaseSchema, getProjects, urlFromString)
+module Services.Backend exposing (Error, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, loginUrl, logoutUrl, profileUrl)
 
 import Http exposing (Error(..))
 import Json.Decode as Decode
@@ -7,30 +7,57 @@ import Libs.Bool as Bool
 import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
+import Libs.Models.Env as Env exposing (Env)
 import Libs.Result as Result
 import Libs.Time as Time
+import Libs.Url as Url
+import Models.Organization exposing (Organization)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.ProjectInfo2 exposing (ProjectInfo2)
 import Models.User2 as User2 exposing (User2)
 import Time
-
-
-type Url
-    = BackendUrl String
+import Url exposing (Url)
 
 
 type Error
     = Error String
 
 
-urlFromString : String -> Url
-urlFromString url =
-    BackendUrl url
-
-
 errorToString : Error -> String
 errorToString (Error err) =
     err
+
+
+loginUrl : Env -> Url -> String
+loginUrl env currentUrl =
+    let
+        ( url, redirect ) =
+            ( "/auth/github" |> buildUrl env, Url.asString currentUrl )
+    in
+    if redirect == "" then
+        url
+
+    else
+        url ++ "?redirect=" ++ Url.percentEncode redirect
+
+
+logoutUrl : Env -> String
+logoutUrl env =
+    "/users/log_out" |> buildUrl env
+
+
+profileUrl : Env -> String
+profileUrl env =
+    "/home" |> buildUrl env
+
+
+buildUrl : Env -> String -> String
+buildUrl env path =
+    if env == Env.Dev then
+        "http://localhost:4000" ++ path
+
+    else
+        path
 
 
 getCurrentUser : (Result Error (Maybe User2) -> msg) -> Cmd msg
@@ -41,18 +68,18 @@ getCurrentUser toMsg =
         }
 
 
-getProjects : (Result Error (List ProjectInfo2) -> msg) -> Cmd msg
-getProjects toMsg =
+getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo2 ) -> msg) -> Cmd msg
+getOrganizationsAndProjects toMsg =
     Http.get
         { url = "/api/v1/organizations?expand=projects"
-        , expect = Http.expectJson (Result.bimap buildError orgasToProjectInfos >> toMsg) (Decode.list decodeOrga)
+        , expect = Http.expectJson (Result.bimap buildError formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga)
         }
 
 
-getDatabaseSchema : Url -> DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
-getDatabaseSchema (BackendUrl backendUrl) url toMsg =
+getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
+getDatabaseSchema url toMsg =
     Http.post
-        { url = backendUrl ++ "/database/schema"
+        { url = "/api/v1/analyzer/schema"
         , body = url |> databaseSchemaBody |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
         }
@@ -68,23 +95,16 @@ databaseSchemaBody url =
 -- HELPERS
 
 
-orgasToProjectInfos : List OrgaWithProjects -> List ProjectInfo2
-orgasToProjectInfos orgas =
-    orgas
+formatOrgasAndProjects : List OrgaWithProjects -> ( List Organization, List ProjectInfo2 )
+formatOrgasAndProjects orgas =
+    ( orgas |> List.map buildOrganization
+    , orgas
         |> List.concatMap
             (\o ->
                 o.projects
                     |> List.map
                         (\p ->
-                            { organization =
-                                { id = o.id
-                                , slug = o.slug
-                                , name = o.name
-                                , activePlan = o.activePlan
-                                , logo = o.logo
-                                , location = o.location
-                                , description = o.description
-                                }
+                            { organization = buildOrganization o
                             , id = p.id
                             , slug = p.slug
                             , name = p.name
@@ -105,6 +125,19 @@ orgasToProjectInfos orgas =
                             }
                         )
             )
+    )
+
+
+buildOrganization : OrgaWithProjects -> Organization
+buildOrganization o =
+    { id = o.id
+    , slug = o.slug
+    , name = o.name
+    , activePlan = o.activePlan
+    , logo = o.logo
+    , location = o.location
+    , description = o.description
+    }
 
 
 type alias OrgaWithProjects =

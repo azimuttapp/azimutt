@@ -1,4 +1,5 @@
-import {Email, FileUrl, Username, Uuid} from "./basics";
+import {Email, FileUrl, Username} from "./basics";
+import {Uuid} from "./uuid";
 
 export type UserId = Uuid
 export interface Profile {

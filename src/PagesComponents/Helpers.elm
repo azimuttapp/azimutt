@@ -14,15 +14,17 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css)
 import Libs.Maybe as Maybe
 import Libs.Models exposing (Link)
+import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
 import Models.User2 exposing (User2)
-import Router
+import Services.Backend as Backend
 import Url exposing (Url)
 
 
 appShell :
-    Url
+    Env
+    -> Url
     -> Maybe User2
     -> (Link -> msg)
     -> (HtmlId -> msg)
@@ -31,7 +33,7 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell currentUrl maybeUser onNavigationClick onProfileClick model title content footer =
+appShell env currentUrl maybeUser onNavigationClick onProfileClick model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -46,7 +48,7 @@ appShell currentUrl maybeUser onNavigationClick onProfileClick model title conte
                 }
             , search = Nothing
             , rightIcons =
-                [ viewProfileIcon currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick ]
+                [ viewProfileIcon env currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick ]
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown
@@ -62,8 +64,8 @@ appShell currentUrl maybeUser onNavigationClick onProfileClick model title conte
         ++ (viewFooter :: footer)
 
 
-viewProfileIcon : Url -> Maybe User2 -> HtmlId -> HtmlId -> (HtmlId -> msg) -> Html msg
-viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle =
+viewProfileIcon : Env -> Url -> Maybe User2 -> HtmlId -> HtmlId -> (HtmlId -> msg) -> Html msg
+viewProfileIcon env currentUrl maybeUser profileDropdown openedDropdown toggle =
     maybeUser
         |> Maybe.mapOrElse
             (\user ->
@@ -77,14 +79,14 @@ viewProfileIcon currentUrl maybeUser profileDropdown openedDropdown toggle =
                     )
                     (\_ ->
                         div []
-                            [ ContextMenu.link { url = Conf.constants.profileUrl, text = "Your profile" }
+                            [ ContextMenu.link { url = Backend.profileUrl env, text = "Your profile" }
 
                             --, ContextMenu.link { url = "#", text = "Settings" }
-                            , ContextMenu.link { url = Conf.constants.logoutUrl, text = "Logout" }
+                            , ContextMenu.link { url = Backend.logoutUrl env, text = "Logout" }
                             ]
                     )
             )
-            (a [ href (Router.login currentUrl), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
+            (a [ href (Backend.loginUrl env currentUrl), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
                 [ span [ class "sr-only" ] [ text "Sign in" ]
                 , Icon.outline Icon.User ""
                 ]

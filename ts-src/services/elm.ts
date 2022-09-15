@@ -30,14 +30,16 @@ export class ElmApp {
         GetProject: [],
         ListProjects: [],
         LoadProject: [],
-        CreateProject: [],
+        CreateProjectTmp: [],
+        CreateProjectLocal: [],
+        CreateProjectRemote: [],
         UpdateProject: [],
         MoveProjectTo: [],
+        DeleteProject: [],
         GetUser: [],
         GetOwners: [],
         SetOwners: [],
         DownloadFile: [],
-        DropProject: [],
         GetLocalFile: [],
         ObserveSizes: [],
         ListenKeys: [],
@@ -48,7 +50,7 @@ export class ElmApp {
         TrackError: [],
     }
 
-    constructor(private elm: ElmRuntime, private logger: Logger) {
+    constructor(private elm: ElmRuntime<JsMsg, ElmMsg>, private logger: Logger) {
         this.elm.ports?.elmToJs.subscribe(msg => {
             // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
             // FIXME: use requestAnimationFrame instead!
@@ -80,9 +82,9 @@ export class ElmApp {
         window.azimutt.project = project
         project ? this.send({kind: 'GotProject', project}) : this.send({kind: 'GotProject'})
     }
+    dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDeleted', id})
     gotUser = (email: Email, user: Profile | undefined): void => this.send({kind: 'GotUser', email, user})
     gotOwners = (project: ProjectId, owners: Profile[]): void => this.send({kind: 'GotOwners', project, owners})
-    dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDropped', id})
     gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
         sourceKind: msg.sourceKind,

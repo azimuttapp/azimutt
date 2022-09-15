@@ -12,9 +12,11 @@ import Html.Events exposing (onClick)
 import Libs.Bool as Bool
 import Libs.Html exposing (bText)
 import Libs.Maybe as Maybe
+import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw
 import Libs.Task as T
+import Models.Organization exposing (Organization)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.User exposing (User)
@@ -23,7 +25,7 @@ import PagesComponents.Projects.Id_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Projects.Id_.Models.Erd exposing (Erd)
 import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports
-import Router
+import Services.Backend as Backend
 import Services.Lenses exposing (mapMTeamCmd)
 import Shared exposing (Confirm)
 import Track
@@ -66,8 +68,8 @@ update modalOpen erd msg model =
             model |> mapMTeamCmd (ProjectTeam.update message)
 
 
-view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> (msg -> msg) -> Url -> Maybe User2 -> Bool -> ProjectInfo -> Model -> Html msg
-view confirm onDelete wrap moveProject modalClose currentUrl user opened project model =
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> (msg -> msg) -> Env -> Url -> Maybe User2 -> Bool -> Maybe Organization -> ProjectInfo -> Model -> Html msg
+view confirm onDelete wrap moveProject modalClose env currentUrl user opened organization project model =
     let
         titleId : HtmlId
         titleId =
@@ -90,14 +92,14 @@ view confirm onDelete wrap moveProject modalClose currentUrl user opened project
                         uploadModal close moveProject titleId model.movingProject project
 
                     else
-                        cloudModal confirm onDelete wrap moveProject model.id titleId u model.team model.movingProject project
+                        cloudModal confirm onDelete wrap moveProject model.id titleId u model.team model.movingProject organization project
                 )
-                (signInModal close currentUrl titleId project)
+                (signInModal close env currentUrl titleId project)
         ]
 
 
-signInModal : msg -> Url -> HtmlId -> ProjectInfo -> Html msg
-signInModal modalClose currentUrl titleId project =
+signInModal : msg -> Env -> Url -> HtmlId -> ProjectInfo -> Html msg
+signInModal modalClose env currentUrl titleId project =
     div [ class "px-4 pt-5 pb-4 sm:max-w-md sm:p-6" ]
         [ div []
             [ div [ class "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100" ]
@@ -117,7 +119,7 @@ signInModal modalClose currentUrl titleId project =
             ]
         , div [ class "mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "No thanks" ]
-            , Link.primary3 Tw.emerald [ href (Router.login currentUrl), class "w-full" ] [ text "Sign in to sync" ]
+            , Link.primary3 Tw.emerald [ href (Backend.loginUrl env currentUrl), class "w-full" ] [ text "Sign in to sync" ]
             ]
         ]
 
@@ -157,8 +159,8 @@ uploadModal modalClose moveProjectTo titleId movingProject project =
         ]
 
 
-cloudModal : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> HtmlId -> HtmlId -> User2 -> ProjectTeam.Model -> Bool -> ProjectInfo -> Html msg
-cloudModal confirm onDelete wrap moveProject htmlId titleId user team movingProject project =
+cloudModal : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> (ProjectStorage -> msg) -> HtmlId -> HtmlId -> User2 -> ProjectTeam.Model -> Bool -> Maybe Organization -> ProjectInfo -> Html msg
+cloudModal confirm onDelete wrap moveProject htmlId titleId user team movingProject organization project =
     div [ class "px-4 pt-5 pb-4 sm:max-w-3xl sm:p-6" ]
         [ div []
             [ div [ class "mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100" ]
@@ -169,7 +171,7 @@ cloudModal confirm onDelete wrap moveProject htmlId titleId user team movingProj
                     [ text (project.name ++ " is stored in Azimutt 👍️") ]
                 ]
             , div [ class "mt-8" ]
-                [ ProjectTeam.view confirm onDelete (ProjectTeamMsg >> wrap) htmlId user project team
+                [ ProjectTeam.view confirm onDelete (ProjectTeamMsg >> wrap) htmlId user organization project team
                 ]
             ]
         , div [ class "mt-3 w-full border-t border-gray-300" ] []

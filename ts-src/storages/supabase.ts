@@ -1,4 +1,3 @@
-import {computeRelations, computeTables} from "./api";
 import {SupabaseClient} from "@supabase/supabase-js";
 import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../types/project";
 import {Profile, UserId} from "../types/profile";
@@ -51,22 +50,22 @@ export class SupabaseStorage {
         this.projects[id] = project
         return project
     }
-    createProject = async (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
-        if (isSample(p.id)) return Promise.reject("Sample projects can't be uploaded!")
+    createProject = async (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+        if (isSample(id)) return Promise.reject("Sample projects can't be uploaded!")
         await this.post(`/projects`, {
-            id: p.id,
+            id: id,
             name: p.name,
-            tables: computeTables(p.sources),
-            relations: computeRelations(p.sources),
+            tables: 0,
+            relations: 0,
             layouts: Object.keys(p.layouts).length,
             project: p
         })
-        this.projects[p.id] = p
+        this.projects[id] = p
         return p
     }
-    updateProject = async (p: ProjectNoStorage): Promise<ProjectNoStorage> => {
-        const initial = this.projects[p.id]
-        const current = await this.get<ProjectNoStorage>(`/projects/${p.id}`)
+    updateProject = async (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+        const initial = this.projects[id]
+        const current = await this.get<ProjectNoStorage>(`/projects/${id}`)
         if (initial.updatedAt !== current.updatedAt) {
             try {
                 const patch = jiff.diff(initial, p)
@@ -76,15 +75,15 @@ export class SupabaseStorage {
                 return Promise.reject("Project has been updated by another user! Please reload and save again (you will have to do you changes again).")
             }
         }
-        await this.put(`/projects/${p.id}`, {
-            id: p.id,
+        await this.put(`/projects/${id}`, {
+            id: id,
             name: p.name,
-            tables: computeTables(p.sources),
-            relations: computeRelations(p.sources),
+            tables: 0,
+            relations: 0,
             layouts: Object.keys(p.layouts).length,
             project: p
         })
-        this.projects[p.id] = p
+        this.projects[id] = p
         return p
     }
     dropProject = async (id: ProjectId): Promise<void> => {
