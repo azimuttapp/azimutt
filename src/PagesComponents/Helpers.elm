@@ -6,7 +6,6 @@ import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
 import Components.Organisms.Navbar as Navbar
 import Conf
-import Gen.Route as Route
 import Html exposing (Html, a, button, div, footer, h1, header, img, main_, p, span, text)
 import Html.Attributes exposing (alt, class, height, href, id, src, type_, width)
 import Html.Events exposing (onClick)
@@ -41,9 +40,9 @@ appShell env currentUrl maybeUser onNavigationClick onProfileClick model title c
     in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
-            { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Route.toHref Route.Home_, text = "Azimutt" } }
+            { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Backend.profileUrl env, text = "Azimutt" } }
             , navigation =
-                { links = [ { url = Route.toHref Route.Projects, text = "Dashboard" } ]
+                { links = [ { url = Backend.profileUrl env, text = "Dashboard" } ]
                 , onClick = onNavigationClick
                 }
             , search = Nothing

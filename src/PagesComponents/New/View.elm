@@ -29,6 +29,7 @@ import Models.Project.Source exposing (Source)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
 import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
+import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.ImportProject as ImportProject
 import Services.JsonSource as JsonSource
@@ -47,7 +48,7 @@ viewNewProject currentUrl shared model =
         (\link -> SelectMenu link.text)
         DropdownToggle
         model
-        [ a [ href (Route.toHref Route.Projects) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
+        [ a [ href (Backend.profileUrl shared.conf.env) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
             model

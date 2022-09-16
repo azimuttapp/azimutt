@@ -15,8 +15,8 @@ import {
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
 import {Project, ProjectId, ProjectInfoWithContent, ProjectStorage} from "./types/project";
-import {Analytics, LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
-import {ErrLogger, LogErrLogger, SentryErrLogger} from "./services/errors";
+import {LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
+import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
 import {loadPolyfills} from "./utils/polyfills";
 import {Utils} from "./utils/utils";
@@ -35,8 +35,8 @@ const app = ElmApp.init({now: Date.now(), conf: {env, platform}}, logger)
 const storage = new Storage(logger)
 const backend = new Backend(logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics: Analytics = env === Env.prod && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
-const errorTracking: ErrLogger = env === Env.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
+const analytics = env === Env.prod && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
+const errorTracking = env === Env.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +

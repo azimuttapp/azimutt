@@ -16,6 +16,7 @@ import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
+import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
@@ -28,6 +29,7 @@ import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Ms
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
+import Services.Backend as Backend
 import Shared exposing (GlobalConf)
 
 
@@ -43,7 +45,7 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
            else
             div [] []
          , if eConf.projectManagement then
-            Lazy.lazy5 viewProjectsDropdown gConf.platform projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy6 viewProjectsDropdown gConf.platform gConf.env projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -52,8 +54,8 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
         )
 
 
-viewProjectsDropdown : Platform -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown platform projects project htmlId openedDropdown =
+viewProjectsDropdown : Platform -> Env -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown platform env projects project htmlId openedDropdown =
     let
         otherProjects : List ProjectInfo
         otherProjects =
@@ -84,7 +86,7 @@ viewProjectsDropdown platform projects project htmlId openedDropdown =
                                         ]
                                 )
                         ]
-                    ++ [ [ ContextMenu.link { url = Route.toHref Route.Projects, text = "Back to dashboard" } ] ]
+                    ++ [ [ ContextMenu.link { url = Backend.profileUrl env, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)

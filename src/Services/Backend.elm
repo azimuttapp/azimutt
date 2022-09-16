@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, loginUrl, logoutUrl, profileUrl)
+module Services.Backend exposing (Error, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, loginUrl, logoutUrl, profileUrl)
 
 import Http exposing (Error(..))
 import Json.Decode as Decode
@@ -26,6 +26,11 @@ type Error
 errorToString : Error -> String
 errorToString (Error err) =
     err
+
+
+homeUrl : Env -> String
+homeUrl env =
+    "/" |> buildUrl env
 
 
 loginUrl : Env -> Url -> String

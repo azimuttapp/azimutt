@@ -5,7 +5,6 @@ import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
 import Components.Slices.NotFound as NotFound
 import Conf
 import Dict
-import Gen.Route as Route
 import Html exposing (Html, aside, div, main_, section)
 import Html.Attributes exposing (class, style)
 import Html.Keyed as Keyed
@@ -175,14 +174,14 @@ viewNotFound env currentUrl user conf =
     NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
-            , link = { url = Route.toHref Route.Home_, text = "Azimutt" }
+            , link = { url = Backend.homeUrl env, text = "Azimutt" }
             }
         , header = "404 error"
         , title = "Project not found."
         , message = "Sorry, we couldn't find the project you’re looking for."
         , links =
             (if conf.projectManagement then
-                [ { url = Route.toHref Route.Projects, text = "Back to dashboard" } ]
+                [ { url = Backend.profileUrl env, text = "Back to dashboard" } ]
 
              else
                 [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]

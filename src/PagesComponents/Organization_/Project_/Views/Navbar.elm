@@ -6,7 +6,6 @@ import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Tooltip as Tooltip
 import Conf
 import Either exposing (Either(..))
-import Gen.Route as Route
 import Html exposing (Attribute, Html, a, button, div, img, nav, span, text)
 import Html.Attributes exposing (alt, class, height, href, id, src, tabindex, type_, width)
 import Html.Events exposing (onClick)
@@ -18,6 +17,7 @@ import Libs.Html as Html exposing (extLink)
 import Libs.Html.Attributes exposing (ariaControls, ariaExpanded, css, hrefBlank, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Env exposing (Env)
 import Libs.Models.Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
@@ -32,6 +32,7 @@ import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (viewNavbarTitle)
+import Services.Backend as Backend
 import Shared exposing (GlobalConf)
 import Url exposing (Url)
 
@@ -82,7 +83,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
-                    [ viewNavbarBrand eConf
+                    [ viewNavbarBrand gConf.env eConf
                     , Lazy.lazy8 viewNavbarSearch erd.settings.defaultSchema model.search erd.tables erd.relations erd.notes (erd |> Erd.currentLayout |> .tables) (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
@@ -104,13 +105,13 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         ]
 
 
-viewNavbarBrand : ErdConf -> Html msg
-viewNavbarBrand conf =
+viewNavbarBrand : Env -> ErdConf -> Html msg
+viewNavbarBrand env conf =
     let
         attrs : List (Attribute msg)
         attrs =
             if conf.dashboardLink then
-                [ href (Route.toHref Route.Projects) ]
+                [ href (Backend.profileUrl env) ]
 
             else
                 hrefBlank Conf.constants.azimuttWebsite
