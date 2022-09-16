@@ -1,5 +1,5 @@
-import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../types/project";
-import * as Array from "../utils/array";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../../types/project";
+import * as Array from "../../utils/array";
 
 export type StorageKind = 'indexedDb' | 'localStorage' | 'inMemory' | 'manager'
 

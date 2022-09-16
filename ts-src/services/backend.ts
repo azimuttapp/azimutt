@@ -1,9 +1,18 @@
 import {Logger} from "./logger";
-import {Project, ProjectId, ProjectInfo, ProjectName, ProjectSlug, ProjectStorage} from "../types/project";
+import {
+    Project,
+    ProjectId,
+    ProjectInfo,
+    ProjectName,
+    ProjectNoStorage,
+    ProjectSlug,
+    ProjectStorage
+} from "../types/project";
 import {OrganizationId} from "../types/organization";
-import {computeStats, ProjectStats} from "../storages/api";
+import {computeStats, ProjectStats} from "./storage/api";
 import {DateTime} from "../types/basics";
 import * as Http from "../utils/http";
+import jiff from "jiff";
 
 export class Backend {
     constructor(private logger: Logger) {
@@ -32,6 +41,30 @@ export class Backend {
     createProjectRemote = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
         return Promise.reject('not implemented')
     }
+
+    // updateProject = async (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+    //     const initial = this.projects[id]
+    //     const current = await this.get<ProjectNoStorage>(`/projects/${id}`)
+    //     if (initial.updatedAt !== current.updatedAt) {
+    //         try {
+    //             const patch = jiff.diff(initial, p)
+    //             p = jiff.patch(patch, current)
+    //         } catch (e) {
+    //             console.warn('patch failed', e)
+    //             return Promise.reject("Project has been updated by another user! Please reload and save again (you will have to do you changes again).")
+    //         }
+    //     }
+    //     await this.put(`/projects/${id}`, {
+    //         id: id,
+    //         name: p.name,
+    //         tables: 0,
+    //         relations: 0,
+    //         layouts: Object.keys(p.layouts).length,
+    //         project: p
+    //     })
+    //     this.projects[id] = p
+    //     return p
+    // }
 
     deleteProject = (o: OrganizationId, p: ProjectId): Promise<void> => {
         return Http.deleteNoContent(`/api/v1/organizations/${o}/projects/${p}`).then(_ => undefined)

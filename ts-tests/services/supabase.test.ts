@@ -1,4 +1,3 @@
-import {Supabase} from "../../ts-src/services/supabase";
 import jiff from "jiff";
 
 function sum(a: number, b: number): number {

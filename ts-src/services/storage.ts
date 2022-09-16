@@ -1,8 +1,8 @@
-import {IndexedDBStorage} from "../storages/indexeddb";
-import {LocalStorageStorage} from "../storages/localstorage";
-import {InMemoryStorage} from "../storages/inmemory";
+import {IndexedDBStorage} from "./storage/indexeddb";
+import {LocalStorageStorage} from "./storage/localstorage";
+import {InMemoryStorage} from "./storage/inmemory";
+import {StorageKind} from "./storage/api";
 import {Logger} from "./logger";
-import {StorageKind} from "../storages/api";
 import {
     Project,
     ProjectId,

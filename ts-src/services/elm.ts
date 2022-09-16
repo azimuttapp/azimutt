@@ -72,7 +72,6 @@ export class ElmApp {
 
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
-
     updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
     loadProjects = (projects: ProjectInfo[]): void => this.send({
         kind: 'GotProjects',
