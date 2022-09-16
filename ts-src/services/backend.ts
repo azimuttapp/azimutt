@@ -19,7 +19,6 @@ export class Backend {
     }
 
     createProjectLocal = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
-        console.log(`backend.createProjectLocal(${o})`, p)
         return Http.postJson<CreateLocalProjectPayload, CreateProjectResponse>(`/api/v1/organizations/${o}/projects`, {
             name: p.name,
             description: undefined,
@@ -40,7 +39,6 @@ export class Backend {
         })
     }
     createProjectRemote = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
-        console.log(`backend.createProjectRemote(${o})`, p)
         return Promise.reject('not implemented')
     }
 
@@ -69,7 +67,6 @@ export class Backend {
     // }
 
     deleteProject = (o: OrganizationId, p: ProjectId): Promise<void> => {
-        console.log(`backend.deleteProject(${o}, ${p})`)
         return Http.deleteNoContent(`/api/v1/organizations/${o}/projects/${p}`).then(_ => undefined)
     }
 }

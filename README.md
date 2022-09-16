@@ -39,7 +39,7 @@ I really miss an interactive exploration tool with features like:
 
 For me, this tool is the missing piece between a classic ERD tools and a Data catalogs:
 
-![screenshot](public/assets/images/screenshot-gospeak-schema.png)
+![screenshot](docs/_assets/screenshot-gospeak-schema.png)
 
 ## Installation
 

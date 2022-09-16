@@ -25,7 +25,6 @@ export class Storage {
     }
 
     listProjects = (): Promise<ProjectInfo[]> => {
-        console.log(`storage.listProjects()`)
         return Promise.all([
             this.indexedDb.then(s => s.listProjects()),
             this.localStorage.then(s => s.listProjects()),
@@ -34,7 +33,6 @@ export class Storage {
     }
 
     loadProject = (id: ProjectId): Promise<Project> => {
-        console.log(`storage.loadProject(${id})`)
         return this.indexedDb.then(s => s.loadProject(id))
             .catch(_ => this.localStorage.then(s => s.loadProject(id)))
             .catch(_ => this.inMemory.loadProject(id))
@@ -42,21 +40,18 @@ export class Storage {
     }
 
     createProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
-        console.log(`storage.createProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
             .then(s => s.createProject(id, {...p, createdAt: Date.now(), updatedAt: Date.now()}))
             .then(browserProject)
     }
 
     updateProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
-        console.log(`storage.updateProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
             .then(s => s.updateProject(id, {...p, updatedAt: Date.now()}))
             .then(browserProject)
     }
 
     deleteProject = (id: ProjectId): Promise<void> => {
-        console.log(`storage.deleteProject(${id})`)
         return Promise.all([
             this.indexedDb.then(s => s.deleteProject(id)),
             this.localStorage.then(s => s.deleteProject(id)),

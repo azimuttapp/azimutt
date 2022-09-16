@@ -182,7 +182,7 @@ viewParsing wrap model =
                         , model.parsedSource |> Maybe.mapOrElse SourceLogs.viewResult (div [] [])
                         ]
                     , if model.parsedSource == Nothing then
-                        div [] [ img [ class "mt-1 rounded-l-lg", src "/assets/images/illustrations/exploration.gif" ] [] ]
+                        div [] [ img [ class "mt-1 rounded-l-lg", src "/assets/images/exploration.gif" ] [] ]
 
                       else
                         div [] []

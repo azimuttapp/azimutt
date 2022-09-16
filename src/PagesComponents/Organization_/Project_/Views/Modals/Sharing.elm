@@ -53,7 +53,7 @@ viewIframe : Maybe String -> Html msg
 viewIframe iframeUrl =
     iframeUrl
         |> Maybe.map (\url -> div [ style "width" "1000px" ] [ iframe [ attribute "width" "100%", height 800, src url, title "Embedded Azimutt diagram", attribute "frameborder" "0", attribute "allowtransparency" "true", attribute "allowfullscreen" "true", attribute "scrolling" "no", style "box-shadow" "0 2px 8px 0 rgba(63,69,81,0.16)", style "border-radius" "5px" ] [] ])
-        |> Maybe.withDefault (div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src "/assets/images/illustrations/education.gif" ] [] ])
+        |> Maybe.withDefault (div [ class "flex items-center" ] [ img [ class "rounded-l-lg", src "/assets/images/education.gif" ] [] ])
 
 
 buildIframeHtml : String -> String

@@ -128,13 +128,6 @@ update _ msg model =
         JsMessage (Ports.ProjectDeleted _) ->
             ( model, Backend.getOrganizationsAndProjects GotProjects )
 
-        --JsMessage m ->
-        --    -- TODO: show warning toast
-        --    let
-        --        _ =
-        --            Debug.log (Ports.unhandledJsMsgError m) ""
-        --    in
-        --    ( model, Cmd.none )
         JsMessage _ ->
             ( model, Cmd.none )
 

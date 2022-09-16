@@ -22,7 +22,8 @@ import View exposing (View)
 
 
 
--- DEV ONLY PAGE: list of projects will be in the backend!
+-- legacy page to access unregistered local projects
+-- remove it by Jan. 2023
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
