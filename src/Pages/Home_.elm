@@ -9,7 +9,7 @@ import Html.Attributes exposing (href)
 import Libs.Tailwind as Tw
 import Page
 import Request
-import Shared exposing (StoredProjects(..))
+import Shared
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
@@ -20,7 +20,7 @@ page _ _ =
         , view =
             \_ ->
                 { title = Conf.constants.defaultTitle
-                , body = [ Link.primary5 Tw.indigo [ href (Route.toHref Route.Projects) ] [ text "Open Dashboard" ] ]
+                , body = [ Link.primary5 Tw.indigo [ href (Route.toHref Route.Projects) ] [ text "Open projects" ] ]
                 }
         , subscriptions = \_ -> Sub.none
         }

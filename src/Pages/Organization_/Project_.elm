@@ -6,12 +6,12 @@ import Gen.Params.Organization_.Project_ exposing (Params)
 import Gen.Route as Route
 import Models.ErdProps as ErdProps
 import Page
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg)
-import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
-import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf
-import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
-import PagesComponents.Projects.Id_.Updates as Updates
-import PagesComponents.Projects.Id_.Views as Views
+import PagesComponents.Organization_.Project_.Models as Models exposing (Msg)
+import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
+import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
+import PagesComponents.Organization_.Project_.Subscriptions as Subscriptions
+import PagesComponents.Organization_.Project_.Updates as Updates
+import PagesComponents.Organization_.Project_.Views as Views
 import Ports
 import Request
 import Services.Toasts as Toasts

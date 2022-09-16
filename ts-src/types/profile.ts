@@ -2,6 +2,7 @@ import {Email, FileUrl, Username} from "./basics";
 import {Uuid} from "./uuid";
 
 export type UserId = Uuid
+// TODO delete!
 export interface Profile {
     id: UserId
     username: Username

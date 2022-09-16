@@ -9,7 +9,7 @@ import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Task as T
 import Page
-import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
 import Ports exposing (JsMsg(..))
@@ -19,6 +19,10 @@ import Services.Sort as Sort
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import View exposing (View)
+
+
+
+-- DEV ONLY PAGE: list of projects will be in the backend!
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg

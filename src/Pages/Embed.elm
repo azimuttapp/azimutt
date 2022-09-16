@@ -16,15 +16,15 @@ import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Page
-import PagesComponents.Projects.Id_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
-import PagesComponents.Projects.Id_.Models as Models exposing (Msg(..))
-import PagesComponents.Projects.Id_.Models.CursorMode as CursorMode
-import PagesComponents.Projects.Id_.Models.EmbedKind as EmbedKind
-import PagesComponents.Projects.Id_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
-import PagesComponents.Projects.Id_.Models.ErdConf as ErdConf
-import PagesComponents.Projects.Id_.Subscriptions as Subscriptions
-import PagesComponents.Projects.Id_.Updates as Updates
-import PagesComponents.Projects.Id_.Views as Views
+import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
+import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
+import PagesComponents.Organization_.Project_.Models.EmbedKind as EmbedKind
+import PagesComponents.Organization_.Project_.Models.EmbedMode as EmbedMode exposing (EmbedModeId)
+import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
+import PagesComponents.Organization_.Project_.Subscriptions as Subscriptions
+import PagesComponents.Organization_.Project_.Updates as Updates
+import PagesComponents.Organization_.Project_.Views as Views
 import Ports exposing (JsMsg(..))
 import Request
 import Services.DatabaseSource as DatabaseSource

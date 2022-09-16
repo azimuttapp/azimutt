@@ -9,7 +9,7 @@ import Libs.Tailwind exposing (Color)
 import Models.Organization exposing (Organization)
 import Models.ProjectInfo2 exposing (ProjectInfo2)
 import Models.User2 exposing (User2)
-import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
 import Services.Backend as Backend
@@ -128,6 +128,13 @@ update _ msg model =
         JsMessage (Ports.ProjectDeleted _) ->
             ( model, Backend.getOrganizationsAndProjects GotProjects )
 
+        --JsMessage m ->
+        --    -- TODO: show warning toast
+        --    let
+        --        _ =
+        --            Debug.log (Ports.unhandledJsMsgError m) ""
+        --    in
+        --    ( model, Cmd.none )
         JsMessage _ ->
             ( model, Cmd.none )
 

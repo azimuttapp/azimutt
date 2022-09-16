@@ -52,6 +52,7 @@ export class ElmApp {
 
     constructor(private elm: ElmRuntime<JsMsg, ElmMsg>, private logger: Logger) {
         this.elm.ports?.elmToJs.subscribe(msg => {
+            console.log('ElmMsg', msg)
             // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
             // FIXME: use requestAnimationFrame instead!
             setTimeout(() => {
@@ -106,6 +107,7 @@ export class ElmApp {
     fitToScreen = (): void => this.send({kind: 'GotFitToScreen'})
 
     private send(msg: JsMsg): void {
+        console.log('JsMsg', msg)
         this.elm.ports?.jsToElm.send(msg)
     }
 }

@@ -2,7 +2,7 @@ module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
 import Libs.Models.HtmlId exposing (HtmlId)
 import Models.Organization exposing (Organization)
-import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts exposing (Model, Msg)
 import Shared exposing (Confirm, StoredProjects)

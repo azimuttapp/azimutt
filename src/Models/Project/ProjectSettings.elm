@@ -13,7 +13,7 @@ import Models.Project.FindPathSettings as FindPathSettings exposing (FindPathSet
 import Models.Project.SchemaName as SchemaName exposing (SchemaName)
 import Models.Project.TableId exposing (TableId)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
-import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import Services.Lenses exposing (mapFindPath, setIgnoredColumns, setIgnoredTables)
 
 

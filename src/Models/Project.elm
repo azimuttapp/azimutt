@@ -23,7 +23,7 @@ import Models.Project.SchemaName exposing (SchemaName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.Table as Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
-import PagesComponents.Projects.Id_.Models.Notes exposing (Notes, NotesKey)
+import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesKey)
 import Time
 
 

@@ -26,6 +26,58 @@ import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
 import * as Http from "./utils/http";
 
+/*
+Workflow:
+- go to /new (or /create, or /:orga/new & /:orga/create)
+- create a temporary project (Ports.createProjectTmp => store locally with 0000... id)
+- when leaving, if still temporary, prompt user to save it or delete it (anyway it won't be visible and will be erased by the next created one)
+- when saving, if not logged, redirect to /login?redirect=#{current_url}?save, so after login it can come back with the save action
+- when saving, if logged and temporary or legacy (existing projects not referenced in azimutt), open a prompt:
+  - choose the organization (if multiple), if an orga id is in the url it's pre-selected
+  - choose between local and remote storage (with explanations) (Ports.createProjectLocal or Ports.createProjectRemote)
+  - when saved, redirect to new url: /:orga/:project
+- when saving, if logged and registered, save where it belongs (Ports.updateProject)
+- allow to move projects from local to remote and remote to local
+
+Et sinon j'ai essayé de décrire le workflow de création de projet, t'en penses quoi? ^^
+
+TODO:
+- remove id from project json
+- remove images from /public
+
+PROBLEM: public assets? (elm vs elixir)
+
+Azimutt urls:
+- Public site (Elixir)
+  - /
+  - /features (later)
+  - /testimonials (later)
+  - /pricing
+  - /blog
+  - /blog/:article
+- Backend (Elixir)
+  - /login                          => page to choose your login method (even if just one, like supabase)
+  - /logout                         => accessible with get?
+  - /home                           => user home, can be a redirect to his personal orga, or the first orga he created
+  - /settings (later)               => user settings
+  - /:orga
+  - /:orga/members
+  - /:orga/billing
+  - /:orga/settings
+  - /invites/:id /accept /refuse
+  - /admin/... (later)              => everything for admins
+- App (Elm)
+  - /new                            => page to create a project
+  - /create?database=postgres://... => create a project from url params (works with db, remote files, empty...)
+  - /last                           => redirect to last opened project
+  - /embed?project-url=...
+  - /:orga/new                      => same as /new but with a pre-selected org
+  - /:orga/create                   => same as /create but with a pre-selected org
+  - /:orga/:project                 => erd
+- Api (Elixir)
+  - /api/...
+ */
+
 const env = Utils.getEnv()
 const platform = Utils.getPlatform()
 const conf = Conf.get()

@@ -12,6 +12,10 @@ import Models.UserId as UserId exposing (UserId)
 import Models.Username as Username exposing (Username)
 
 
+
+-- TODO: remove user as well as project sharing (handled in backend)
+
+
 type alias User =
     { id : UserId
     , username : Username

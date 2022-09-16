@@ -23,7 +23,7 @@ import Models.Organization exposing (Organization)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo2 exposing (ProjectInfo2)
 import PagesComponents.Helpers exposing (appShell)
-import PagesComponents.Projects.Id_.Models.ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Services.Backend as Backend
 import Services.Toasts as Toasts
@@ -117,7 +117,7 @@ viewNoProjects =
                         , title = s.name ++ " (" ++ (s.tables |> String.fromInt) ++ " tables)"
                         , description = s.description
                         , active = True
-                        , onClick = NavigateTo (Route.toHref Route.Projects__New ++ "?sample=" ++ s.key)
+                        , onClick = NavigateTo (Route.toHref Route.New ++ "?sample=" ++ s.key)
                         }
                     )
             )
@@ -126,7 +126,7 @@ viewNoProjects =
 
 viewFirstProject : Html msg
 viewFirstProject =
-    a [ href (Route.toHref Route.Projects__New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover [ "border-gray-400" ], focus [ "outline-none ring-2 ring-offset-2 ring-primary-500" ] ] ]
+    a [ href (Route.toHref Route.New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover [ "border-gray-400" ], focus [ "outline-none ring-2 ring-offset-2 ring-primary-500" ] ] ]
         [ Icon.outline2x Icon.DocumentAdd "mx-auto"
         , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
         ]
@@ -222,7 +222,7 @@ confirmDeleteProject organization project =
 viewNewProject : Html msg
 viewNewProject =
     li [ css [ "col-span-1" ] ]
-        [ a [ href (Route.toHref Route.Projects__New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Tw.primary ] ]
+        [ a [ href (Route.toHref Route.New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Tw.primary ] ]
             [ Icon.outline2x Icon.DocumentAdd "mx-auto"
             , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
             ]

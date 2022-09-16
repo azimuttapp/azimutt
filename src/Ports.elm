@@ -26,7 +26,7 @@ import Models.Route as Route exposing (Route)
 import Models.Size as Size
 import Models.User as User exposing (User)
 import Models.UserId as UserId exposing (UserId)
-import PagesComponents.Projects.Id_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
+import PagesComponents.Organization_.Project_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Storage.ProjectV2 exposing (decodeProject)
 import Track
 

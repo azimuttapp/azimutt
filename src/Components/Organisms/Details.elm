@@ -30,12 +30,12 @@ import Models.Project.SourceId as SourceId exposing (SourceId)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId as TableId exposing (TableId)
 import Models.SourceInfo as SourceInfo
-import PagesComponents.Projects.Id_.Models.Erd as Erd exposing (Erd)
-import PagesComponents.Projects.Id_.Models.ErdColumn exposing (ErdColumn)
-import PagesComponents.Projects.Id_.Models.ErdColumnProps exposing (ErdColumnProps)
-import PagesComponents.Projects.Id_.Models.ErdColumnRef exposing (ErdColumnRef)
-import PagesComponents.Projects.Id_.Models.ErdTable exposing (ErdTable)
-import PagesComponents.Projects.Id_.Models.ErdTableLayout exposing (ErdTableLayout)
+import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
+import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
+import PagesComponents.Organization_.Project_.Models.ErdColumnProps exposing (ErdColumnProps)
+import PagesComponents.Organization_.Project_.Models.ErdColumnRef exposing (ErdColumnRef)
+import PagesComponents.Organization_.Project_.Models.ErdTable exposing (ErdTable)
+import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import Simple.Fuzzy
 
 
