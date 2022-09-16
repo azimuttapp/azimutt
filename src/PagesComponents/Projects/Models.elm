@@ -1,8 +1,7 @@
 module PagesComponents.Projects.Models exposing (Model, Msg(..))
 
 import Libs.Models.HtmlId exposing (HtmlId)
-import Models.Organization exposing (Organization)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts exposing (Model, Msg)
 import Shared exposing (Confirm, StoredProjects)
@@ -27,7 +26,7 @@ type alias Model =
 
 type Msg
     = SelectMenu String
-    | DeleteProject (Maybe Organization) ProjectInfo
+    | DeleteProject ProjectInfo
       -- global messages
     | DropdownToggle HtmlId
     | Toast Toasts.Msg

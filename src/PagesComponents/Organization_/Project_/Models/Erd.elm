@@ -22,13 +22,13 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.Table exposing (Table)
 import Models.Project.TableId exposing (TableId)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.Size as Size
 import PagesComponents.Organization_.Project_.Models.ErdColumn exposing (ErdColumn)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.ErdRelation as ErdRelation exposing (ErdRelation)
 import PagesComponents.Organization_.Project_.Models.ErdTable as ErdTable exposing (ErdTable)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes exposing (ErdTableNotes)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Services.Lenses exposing (mapLayoutsD, mapLayoutsDCmd)
 import Time
 
@@ -53,7 +53,7 @@ create project =
         ( ( tables, relations, types ), relationsByTable ) =
             computeSources project.settings project.sources
     in
-    { project = ProjectInfo.create project
+    { project = ProjectInfo.fromProject project
     , tables = tables
     , relations = relations
     , types = types

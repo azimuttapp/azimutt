@@ -30,7 +30,7 @@ export class Storage {
             this.indexedDb.then(s => s.listProjects()),
             this.localStorage.then(s => s.listProjects()),
             this.inMemory.listProjects()
-        ]).then(projects => projects.flat()).then(browserProjects)
+        ]).then(projects => projects.flat()).then(localProjects)
     }
 
     loadProject = (id: ProjectId): Promise<Project> => {
@@ -38,21 +38,21 @@ export class Storage {
         return this.indexedDb.then(s => s.loadProject(id))
             .catch(_ => this.localStorage.then(s => s.loadProject(id)))
             .catch(_ => this.inMemory.loadProject(id))
-            .then(browserProject)
+            .then(localProject)
     }
 
     createProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
         this.logger.debug(`storage.createProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
-            .then(s => s.createProject(id, {...p, createdAt: Date.now(), updatedAt: Date.now()}))
-            .then(browserProject)
+            .then(s => s.createProject(id, {...p, id, createdAt: Date.now(), updatedAt: Date.now()}))
+            .then(localProject)
     }
 
     updateProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
         this.logger.debug(`storage.updateProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
             .then(s => s.updateProject(id, {...p, updatedAt: Date.now()}))
-            .then(browserProject)
+            .then(localProject)
     }
 
     deleteProject = (id: ProjectId): Promise<void> => {
@@ -65,6 +65,6 @@ export class Storage {
     }
 }
 
-const browserProjects = (projects: ProjectInfoNoStorage[]): ProjectInfo[] =>
+const localProjects = (projects: ProjectInfoNoStorage[]): ProjectInfo[] =>
     projects.map(p => ({...p, storage: ProjectStorage.local}))
-const browserProject = (p: ProjectNoStorage): Project => ({...p, storage: ProjectStorage.local})
+const localProject = (p: ProjectNoStorage): Project => ({...p, storage: ProjectStorage.local})

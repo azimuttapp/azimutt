@@ -26,6 +26,7 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
@@ -43,7 +44,6 @@ import PagesComponents.Organization_.Project_.Models.FindPathDialog exposing (Fi
 import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideColumns)
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts

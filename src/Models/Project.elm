@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, compute, computeRelations, computeTables, computeTypes, create, decode, downloadContent, downloadFilename, duplicate, encode, new)
+module Models.Project exposing (Project, compute, computeRelations, computeTables, computeTypes, create, currentVersion, decode, downloadContent, downloadFilename, duplicate, encode, new)
 
 import Conf
 import Dict exposing (Dict)

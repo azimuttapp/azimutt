@@ -13,9 +13,9 @@ import Libs.Result as Result
 import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.Source exposing (Source)
+import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import PagesComponents.Organization_.Project_.Models.FindPathResult exposing (FindPathResult)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 
 
 
@@ -104,17 +104,17 @@ loadProject =
 
 initProject : Project -> TrackEvent
 initProject project =
-    projectEvent "init" (ProjectInfo.create project)
+    projectEvent "init" (ProjectInfo.fromProject project)
 
 
 createProject : Project -> TrackEvent
 createProject project =
-    projectEvent "create" (ProjectInfo.create project)
+    projectEvent "create" (ProjectInfo.fromProject project)
 
 
 updateProject : Project -> TrackEvent
 updateProject project =
-    projectEvent "update" (ProjectInfo.create project)
+    projectEvent "update" (ProjectInfo.fromProject project)
 
 
 deleteProject : ProjectInfo -> TrackEvent
@@ -229,9 +229,14 @@ projectEvent : String -> ProjectInfo -> TrackEvent
 projectEvent eventName project =
     { name = eventName ++ Bool.cond (ProjectId.isSample project.id) "-sample" "" ++ "-project"
     , details =
-        [ ( "table-count", project.tables |> String.fromInt )
-        , ( "relation-count", project.relations |> String.fromInt )
-        , ( "layout-count", project.layouts |> String.fromInt )
+        [ ( "source-count", project.nbSources |> String.fromInt )
+        , ( "table-count", project.nbTables |> String.fromInt )
+        , ( "column-count", project.nbColumns |> String.fromInt )
+        , ( "relation-count", project.nbRelations |> String.fromInt )
+        , ( "type-count", project.nbTypes |> String.fromInt )
+        , ( "comment-count", project.nbComments |> String.fromInt )
+        , ( "note-count", project.nbNotes |> String.fromInt )
+        , ( "layout-count", project.nbLayouts |> String.fromInt )
         ]
     , enabled = True
     }

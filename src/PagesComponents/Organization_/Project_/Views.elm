@@ -17,7 +17,7 @@ import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.Position as Position
-import Models.User2 exposing (User2)
+import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
@@ -62,7 +62,7 @@ view onDelete currentUrl shared model =
 viewProject : Cmd Msg -> Url -> Shared.Model -> Model -> List (Html Msg)
 viewProject onDelete currentUrl shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl shared model "app") (viewNotFound shared.conf.env currentUrl shared.user2 model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl shared model "app") (viewNotFound shared.conf.env currentUrl shared.user model.conf)
 
       else
         Loader.fullScreen
@@ -76,7 +76,7 @@ viewApp : Url -> Shared.Model -> Model -> HtmlId -> Erd -> Html Msg
 viewApp currentUrl shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy8 viewNavbar shared.conf shared.user2 model.conf model.virtualRelation erd model.projects model.navbar (Navbar.argsToString currentUrl (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd model.projects model.navbar (Navbar.argsToString currentUrl (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
 
           else
             div [] []
@@ -147,7 +147,7 @@ viewModal currentUrl shared model onDelete =
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.member m.id) e m )) model.erd
-         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadMsg MoveProjectTo ModalClose shared.conf.env currentUrl shared.user2 (model.openedDialogs |> List.member m.id) Nothing e.project m )) model.erd -- FIXME: define organization or delete this
+         , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadMsg MoveProjectTo ModalClose shared.conf.env currentUrl shared.user (model.openedDialogs |> List.member m.id) e.project m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))
          , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (model.openedDialogs |> List.member m.id) m ))
@@ -169,7 +169,7 @@ viewContextMenu menu =
             (div [ class "az-context-menu" ] [])
 
 
-viewNotFound : Env -> Url -> Maybe User2 -> ErdConf -> Html msg
+viewNotFound : Env -> Url -> Maybe User -> ErdConf -> Html msg
 viewNotFound env currentUrl user conf =
     NotFound.simple
         { brand =

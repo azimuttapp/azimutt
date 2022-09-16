@@ -21,11 +21,10 @@ import Libs.Models.DateTime exposing (formatDate)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
-import Models.Organization exposing (Organization)
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
-import Models.ProjectInfo2 exposing (ProjectInfo2)
+import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Helpers exposing (appShell)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models exposing (Model, Msg(..))
 import Services.Backend as Backend
 import Services.Toasts as Toasts
@@ -39,7 +38,7 @@ viewProjects : Url -> Shared.Model -> Model -> List (Html Msg)
 viewProjects currentUrl shared model =
     appShell shared.conf.env
         currentUrl
-        shared.user2
+        shared.user
         (\link -> SelectMenu link.text)
         DropdownToggle
         model
@@ -54,7 +53,7 @@ viewContent : Url -> Shared.Model -> Model -> Html Msg
 viewContent currentUrl shared model =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
         [ viewProjectList shared model
-        , if model.projects /= Loading && shared.user2 == Nothing then
+        , if model.projects /= Loading && shared.user == Nothing then
             div [ class "mt-3" ]
                 [ Alert.withActions
                     { color = Tw.blue
@@ -80,11 +79,11 @@ viewProjectList shared model =
         , if not shared.projectsLoaded then
             div [ css [ "mt-6" ] ] [ projectList [ viewProjectPlaceholder ] ]
 
-          else if List.isEmpty shared.projects2 then
+          else if List.isEmpty shared.projects then
             viewNoProjects
 
           else
-            div [ css [ "mt-6" ] ] [ projectList ((shared.projects2 |> List.map (\p -> viewProjectCard shared.zone (Just p.organization) (legacyProjectInfo p))) ++ [ viewNewProject ]) ]
+            div [ css [ "mt-6" ] ] [ projectList ((shared.projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject ]) ]
         , case model.projects of
             Loading ->
                 div [] []
@@ -93,7 +92,7 @@ viewProjectList shared model =
                 let
                     legacyProjects : List ProjectInfo
                     legacyProjects =
-                        projects |> List.filterNot (\p -> shared.projects2 |> List.memberBy .id p.id)
+                        projects |> List.filterNot (\p -> p.id == ProjectId.zero || List.memberBy .id p.id shared.projects)
                 in
                 if List.isEmpty legacyProjects then
                     div [] []
@@ -101,7 +100,7 @@ viewProjectList shared model =
                 else
                     div []
                         [ h3 [ css [ "mt-6 text-lg font-medium" ] ] [ text "Legacy projects" ]
-                        , div [ css [ "mt-6" ] ] [ projectList (legacyProjects |> List.map (viewProjectCard shared.zone Nothing)) ]
+                        , div [ css [ "mt-6" ] ] [ projectList (legacyProjects |> List.map (viewProjectCard shared.zone)) ]
                         ]
         ]
 
@@ -176,21 +175,8 @@ viewIconPlaceholder styles =
     span [ css [ "h-6 w-6 rounded-full bg-gray-300", styles ] ] []
 
 
-legacyProjectInfo : ProjectInfo2 -> ProjectInfo
-legacyProjectInfo p =
-    { id = p.id
-    , name = p.name
-    , tables = p.nbTables
-    , relations = p.nbRelations
-    , layouts = p.nbLayouts
-    , storage = p.storage
-    , createdAt = p.createdAt
-    , updatedAt = p.updatedAt
-    }
-
-
-viewProjectCard : Time.Zone -> Maybe Organization -> ProjectInfo -> Html Msg
-viewProjectCard zone organization project =
+viewProjectCard : Time.Zone -> ProjectInfo -> Html Msg
+viewProjectCard zone project =
     li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium flex" ] ]
@@ -202,22 +188,22 @@ viewProjectCard zone organization project =
                 , span [ class "ml-1" ] [ text project.name ]
                 ]
             , ul [ css [ "mt-1 text-gray-500 text-sm" ] ]
-                [ li [] [ text ((project.tables |> String.pluralize "table") ++ ", " ++ (project.layouts |> String.pluralize "layout")) ]
+                [ li [] [ text ((project.nbTables |> String.pluralize "table") ++ ", " ++ (project.nbLayouts |> String.pluralize "layout")) ]
                 , li [] [ text ("Edited on " ++ formatDate zone project.createdAt) ]
                 ]
             ]
         , div [ css [ "flex divide-x divide-gray-200" ] ]
-            [ button [ type_ "button", onClick (confirmDeleteProject organization project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
+            [ button [ type_ "button", onClick (confirmDeleteProject project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
                 [ Icon.outline Icon.Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
-            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
+            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = project.organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
                 [ Icon.outline Icon.ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]
 
 
-confirmDeleteProject : Maybe Organization -> ProjectInfo -> Msg
-confirmDeleteProject organization project =
+confirmDeleteProject : ProjectInfo -> Msg
+confirmDeleteProject project =
     ConfirmOpen
         { color = Tw.red
         , icon = Icon.Trash
@@ -225,7 +211,7 @@ confirmDeleteProject organization project =
         , message = span [] [ text "Are you sure you want to delete ", bText project.name, text " project?" ]
         , confirm = "Delete " ++ project.name
         , cancel = "Cancel"
-        , onConfirm = T.send (DeleteProject organization project)
+        , onConfirm = T.send (DeleteProject project)
         }
 
 

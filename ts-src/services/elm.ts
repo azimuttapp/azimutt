@@ -1,13 +1,4 @@
-import {
-    ElementSize,
-    ElmFlags,
-    ElmMsg,
-    ElmRuntime,
-    GetLocalFileMsg,
-    Hotkey,
-    HotkeyId,
-    JsMsg
-} from "../types/elm";
+import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFileMsg, Hotkey, HotkeyId, JsMsg} from "../types/elm";
 import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
 import {Email, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";

@@ -8,8 +8,8 @@ import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Task as T
+import Models.ProjectInfo exposing (ProjectInfo)
 import Page
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
 import Ports exposing (JsMsg(..))
@@ -57,7 +57,7 @@ init : Shared.Model -> ( Model, Cmd Msg )
 init shared =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
-      , projects = shared.projects
+      , projects = shared.projectsLegacy
       , openedDropdown = ""
       , toasts = Toasts.init
       , confirm = Nothing
@@ -87,8 +87,8 @@ update req msg model =
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
 
-        DeleteProject organization project ->
-            ( model, Ports.deleteProject organization project )
+        DeleteProject project ->
+            ( model, Ports.deleteProject project )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )

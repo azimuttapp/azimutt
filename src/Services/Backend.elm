@@ -13,8 +13,8 @@ import Libs.Time as Time
 import Libs.Url as Url
 import Models.Organization exposing (Organization)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
-import Models.ProjectInfo2 exposing (ProjectInfo2)
-import Models.User2 as User2 exposing (User2)
+import Models.ProjectInfo exposing (ProjectInfo)
+import Models.User as User2 exposing (User)
 import Time
 import Url exposing (Url)
 
@@ -65,7 +65,7 @@ buildUrl env path =
         path
 
 
-getCurrentUser : (Result Error (Maybe User2) -> msg) -> Cmd msg
+getCurrentUser : (Result Error (Maybe User) -> msg) -> Cmd msg
 getCurrentUser toMsg =
     Http.get
         { url = "/api/v1/users/current"
@@ -73,7 +73,7 @@ getCurrentUser toMsg =
         }
 
 
-getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo2 ) -> msg) -> Cmd msg
+getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
 getOrganizationsAndProjects toMsg =
     Http.get
         { url = "/api/v1/organizations?expand=projects"
@@ -100,7 +100,7 @@ databaseSchemaBody url =
 -- HELPERS
 
 
-formatOrgasAndProjects : List OrgaWithProjects -> ( List Organization, List ProjectInfo2 )
+formatOrgasAndProjects : List OrgaWithProjects -> ( List Organization, List ProjectInfo )
 formatOrgasAndProjects orgas =
     ( orgas |> List.map buildOrganization
     , orgas
@@ -109,7 +109,7 @@ formatOrgasAndProjects orgas =
                 o.projects
                     |> List.map
                         (\p ->
-                            { organization = buildOrganization o
+                            { organization = Just (buildOrganization o)
                             , id = p.id
                             , slug = p.slug
                             , name = p.name

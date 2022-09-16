@@ -16,7 +16,7 @@ import Libs.Models exposing (Link)
 import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
-import Models.User2 exposing (User2)
+import Models.User exposing (User)
 import Services.Backend as Backend
 import Url exposing (Url)
 
@@ -24,7 +24,7 @@ import Url exposing (Url)
 appShell :
     Env
     -> Url
-    -> Maybe User2
+    -> Maybe User
     -> (Link -> msg)
     -> (HtmlId -> msg)
     -> { x | selectedMenu : String, mobileMenuOpen : Bool, openedDropdown : HtmlId }
@@ -63,7 +63,7 @@ appShell env currentUrl maybeUser onNavigationClick onProfileClick model title c
         ++ (viewFooter :: footer)
 
 
-viewProfileIcon : Env -> Url -> Maybe User2 -> HtmlId -> HtmlId -> (HtmlId -> msg) -> Html msg
+viewProfileIcon : Env -> Url -> Maybe User -> HtmlId -> HtmlId -> (HtmlId -> msg) -> Html msg
 viewProfileIcon env currentUrl maybeUser profileDropdown openedDropdown toggle =
     maybeUser
         |> Maybe.mapOrElse

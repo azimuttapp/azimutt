@@ -14,7 +14,7 @@ import {
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {Project, ProjectId, ProjectInfoWithContent, ProjectStorage} from "./types/project";
+import {Project, ProjectId, ProjectStorage} from "./types/project";
 import {LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
@@ -24,7 +24,6 @@ import {Storage} from "./services/storage";
 import {Conf} from "./conf";
 import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
-import * as Http from "./utils/http";
 import {Env, Platform, ToastLevel, ViewPosition} from "./types/basics";
 
 const env = Utils.getEnv()
@@ -119,21 +118,21 @@ function setMeta(meta: SetMetaMsg) {
 }
 
 function getProject({organization, project}: GetProjectMsg) {
-    Http.getJson<ProjectInfoWithContent>(`/api/v1/organizations/${organization}/projects/${project}?expand=content`).then(res => {
-        if (res.json.storage_kind === ProjectStorage.azimutt) {
-            if (typeof res.json.content === 'string') {
-                return app.gotProject(JSON.parse(res.json.content))
+    backend.getProject(organization, project).then(res => {
+        if (res.storage === ProjectStorage.azimutt) {
+            if (typeof res.content === 'string') {
+                return app.gotProject(JSON.parse(res.content))
             } else {
                 return Promise.reject(`missing content`)
             }
-        } else if (res.json.storage_kind === ProjectStorage.local) {
+        } else if (res.storage === ProjectStorage.local) {
             // TODO: if fail: add message to sync to Azimutt to have the project everywhere
             return loadProject(project)
         } else {
-            return Promise.reject(`unknown storage '${res.json.storage_kind}'`)
+            return Promise.reject(`unknown storage '${res.storage}'`)
         }
-    }).catch(res => {
-        if (res.status === 404) {
+    }).catch(err => {
+        if (err.status === 404) {
             if (project !== Uuid.zero) {
                 app.toast(ToastLevel.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
@@ -141,7 +140,7 @@ function getProject({organization, project}: GetProjectMsg) {
             return loadProject(project)
         } else {
             app.gotProject(undefined)
-            app.toast(ToastLevel.error, `Can't load project: ${JSON.stringify(res)}`)
+            app.toast(ToastLevel.error, `Can't load project: ${JSON.stringify(err)}`)
         }
     })
 }
@@ -179,7 +178,11 @@ function createProjectLocal({organization, project}: CreateProjectLocalMsg): voi
         return storage.deleteProject(Uuid.zero).catch(err => {
             app.toast(ToastLevel.error, `Can't delete temporary project: ${JSON.stringify(err)}`)
             return Promise.resolve()
-        }).then(_ => app.gotProject(p)) // FIXME: add orga to `gotProject` and redirect to new url
+        }).then(_ => {
+            app.toast(ToastLevel.success, `Project created!`)
+            window.history.replaceState("", "", `/${organization}/${p.id}`) // FIXME use Router to build url
+            app.gotProject(p)
+        })
     })
 }
 
@@ -191,6 +194,7 @@ function createProjectRemote({organization, project}: CreateProjectRemoteMsg): v
 function updateProject(msg: UpdateProjectMsg): Promise<Project> {
     // TODO: handle where to save the project: azimutt or local
     logger.debug('TODO updateProject', msg)
+    app.toast(ToastLevel.error, `updateProject not implemented`)
     return Promise.reject('updateProject not implemented')
     // return store.updateProject(msg.project)
     //     .then(p => {
@@ -215,9 +219,9 @@ function updateProject(msg: UpdateProjectMsg): Promise<Project> {
     //     })
 }
 
-function deleteProject({organization, project}: DeleteProjectMsg): void {
-    if(organization) {
-        backend.deleteProject(organization, project.id).catch(err => {
+function deleteProject({project}: DeleteProjectMsg): void {
+    if(project.organization) {
+        backend.deleteProject(project.organization.id, project.id).catch(err => {
             app.toast(ToastLevel.error, `Can't delete project in backend: ${JSON.stringify(err)}`)
             return Promise.reject(err)
         }).then(_ => {

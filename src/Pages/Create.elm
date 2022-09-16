@@ -14,8 +14,8 @@ import Models.Project as Project exposing (Project)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.Source as Source exposing (Source)
 import Models.Project.SourceId as SourceId
+import Models.ProjectInfo exposing (ProjectInfo)
 import Page
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg(..))
 import Random
 import Request

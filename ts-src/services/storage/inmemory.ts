@@ -1,5 +1,5 @@
-import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../../types/project";
-import {projectToInfo, StorageApi, StorageKind} from "./api";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage, projectToInfo} from "../../types/project";
+import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
 
 export class InMemoryStorage implements StorageApi {

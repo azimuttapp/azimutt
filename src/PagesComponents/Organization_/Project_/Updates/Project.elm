@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Updates.Project exposing (moveProject, saveProject)
+module PagesComponents.Organization_.Project_.Updates.Project exposing (moveProject, saveProject, triggerSaveProject)
 
 import Libs.Maybe as Maybe
 import Libs.Task as T
@@ -11,6 +11,12 @@ import Ports
 import Services.Lenses exposing (mapUploadM)
 import Services.Toasts as Toasts
 import Track
+
+
+triggerSaveProject : List Organization -> Model -> ( Model, Cmd Msg )
+triggerSaveProject organizations model =
+    -- FIXME: open create project modal (choose orga & save mode)
+    ( model, organizations |> List.head |> Maybe.mapOrElse (SaveProject >> T.send) Cmd.none )
 
 
 saveProject : Organization -> Model -> ( Model, Cmd Msg )

@@ -13,11 +13,10 @@ import Libs.Models.Email as Email
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Libs.Task as T
-import Models.Organization exposing (Organization)
-import Models.User as User exposing (User)
-import Models.User2 exposing (User2)
+import Models.ProjectInfo exposing (ProjectInfo)
+import Models.User exposing (User)
 import Models.UserId exposing (UserId)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
+import Models.UserLegacy as UserLegacy exposing (UserLegacy)
 import Ports
 import Shared exposing (Confirm)
 
@@ -25,20 +24,20 @@ import Shared exposing (Confirm)
 type alias Model =
     { shareInput : String
     , searching : Bool
-    , shareUser : Maybe ( String, Maybe User )
+    , shareUser : Maybe ( String, Maybe UserLegacy )
     , addingOwner : Bool
     , removingOwner : Maybe UserId
-    , owners : List User
+    , owners : List UserLegacy
     }
 
 
 type Msg
     = ShareUpdate String
     | SearchUser String
-    | UpdateShareUser (Maybe ( String, Maybe User ))
-    | AddOwner ProjectInfo User
-    | RemoveOwner ProjectInfo (List User) User
-    | UpdateOwners (List User)
+    | UpdateShareUser (Maybe ( String, Maybe UserLegacy ))
+    | AddOwner ProjectInfo UserLegacy
+    | RemoveOwner ProjectInfo (List UserLegacy) UserLegacy
+    | UpdateOwners (List UserLegacy)
 
 
 init : Model
@@ -74,11 +73,11 @@ update msg model =
             ( { model | shareInput = "", shareUser = Nothing, addingOwner = False, removingOwner = Nothing, owners = value }, Cmd.none )
 
 
-view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> HtmlId -> User2 -> Maybe Organization -> ProjectInfo -> Model -> Html msg
-view confirm onDelete wrap htmlId user organization project model =
+view : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> HtmlId -> User -> ProjectInfo -> Model -> Html msg
+view confirm onDelete wrap htmlId user project model =
     div []
         [ shareWithForm wrap htmlId model project
-        , listOwners confirm onDelete wrap user model.owners model.removingOwner organization project
+        , listOwners confirm onDelete wrap user model.owners model.removingOwner project
         ]
 
 
@@ -169,8 +168,8 @@ shareWithForm wrap htmlId model project =
         ]
 
 
-listOwners : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> User2 -> List User -> Maybe UserId -> Maybe Organization -> ProjectInfo -> Html msg
-listOwners confirm onDelete wrap user owners removingOwner organization project =
+listOwners : (Confirm msg -> msg) -> Cmd msg -> (Msg -> msg) -> User -> List UserLegacy -> Maybe UserId -> ProjectInfo -> Html msg
+listOwners confirm onDelete wrap user owners removingOwner project =
     div [ class "mt-3" ]
         [ div [ class "text-sm font-semibold text-gray-800" ] [ text "Project owners:" ]
         , if owners == [] then
@@ -196,7 +195,7 @@ listOwners confirm onDelete wrap user owners removingOwner organization project 
 
                                   else if List.length owners == 1 then
                                     Button.primary1 Tw.red
-                                        [ onClick (deleteProject confirm onDelete organization project), class "ml-3 whitespace-nowrap" ]
+                                        [ onClick (deleteProject confirm onDelete project), class "ml-3 whitespace-nowrap" ]
                                         [ text "Leave and delete" ]
                                         |> Tooltip.tl "This project will be deleted!"
 
@@ -211,10 +210,10 @@ listOwners confirm onDelete wrap user owners removingOwner organization project 
         ]
 
 
-showUser : User -> Html msg
+showUser : UserLegacy -> Html msg
 showUser user =
     div [ class "py-4 flex" ]
-        [ img [ class "h-10 w-10 rounded-full", src (user |> User.avatar), alt user.name ] []
+        [ img [ class "h-10 w-10 rounded-full", src (user |> UserLegacy.avatar), alt user.name ] []
         , div [ class "ml-3" ]
             [ p [ class "text-sm font-medium text-gray-900" ] [ text user.name ]
             , p [ class "text-sm text-gray-500" ] [ text user.email ]
@@ -222,7 +221,7 @@ showUser user =
         ]
 
 
-removeOwner : (Confirm msg -> msg) -> (Msg -> msg) -> ProjectInfo -> List User -> User -> msg
+removeOwner : (Confirm msg -> msg) -> (Msg -> msg) -> ProjectInfo -> List UserLegacy -> UserLegacy -> msg
 removeOwner confirm wrap project owners user =
     confirm
         { color = Tw.red
@@ -243,7 +242,7 @@ removeOwner confirm wrap project owners user =
         }
 
 
-removeYou : (Confirm msg -> msg) -> ProjectInfo -> List User -> User -> msg
+removeYou : (Confirm msg -> msg) -> ProjectInfo -> List UserLegacy -> UserLegacy -> msg
 removeYou confirm project owners user =
     confirm
         { color = Tw.red
@@ -263,8 +262,8 @@ removeYou confirm project owners user =
         }
 
 
-deleteProject : (Confirm msg -> msg) -> Cmd msg -> Maybe Organization -> ProjectInfo -> msg
-deleteProject confirm onDelete organization project =
+deleteProject : (Confirm msg -> msg) -> Cmd msg -> ProjectInfo -> msg
+deleteProject confirm onDelete project =
     confirm
         { color = Tw.red
         , icon = Icon.UserRemove
@@ -280,5 +279,5 @@ deleteProject confirm onDelete organization project =
                 ]
         , confirm = "Delete " ++ project.name ++ " project"
         , cancel = "Cancel"
-        , onConfirm = Cmd.batch [ Ports.deleteProject organization project, onDelete ]
+        , onConfirm = Cmd.batch [ Ports.deleteProject project, onDelete ]
         }

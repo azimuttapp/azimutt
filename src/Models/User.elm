@@ -1,65 +1,45 @@
-module Models.User exposing (User, avatar, decode, encode)
+module Models.User exposing (User, decode)
 
-import Conf
-import Json.Decode as Decode exposing (Value)
-import Json.Encode as Encode
+import Json.Decode as Decode
 import Libs.Json.Decode as Decode
-import Libs.Json.Encode as Encode
 import Libs.Models.Email as Email exposing (Email)
-import Libs.Models.Website as Website exposing (Website)
-import Libs.String as String
-import Models.UserId as UserId exposing (UserId)
+import Libs.Time as Time
+import Models.UserId exposing (UserId)
+import Models.UserSlug as UserSlug exposing (UserSlug)
 import Models.Username as Username exposing (Username)
+import Time
 
 
 type alias User =
     { id : UserId
-    , username : Username
+    , slug : UserSlug
+    , name : Username
     , email : Email
-    , name : String
-    , avatar : Maybe String
-    , bio : Maybe String
+    , avatar : String
     , company : Maybe String
     , location : Maybe String
-    , website : Maybe Website
+    , description : Maybe String
     , github : Maybe Username
     , twitter : Maybe Username
+    , isAdmin : Bool
+    , lastSignedIn : Time.Posix
+    , createdAt : Time.Posix
     }
-
-
-avatar : User -> String
-avatar user =
-    user.avatar |> Maybe.withDefault (Conf.constants.externalAssets ++ "/funny-cartoon-monsters/" ++ (user.email |> String.hashCode |> modBy 40 |> String.fromInt) ++ ".jpg")
-
-
-encode : User -> Value
-encode value =
-    Encode.notNullObject
-        [ ( "id", value.id |> UserId.encode )
-        , ( "username", value.username |> Username.encode )
-        , ( "email", value.email |> Email.encode )
-        , ( "name", value.name |> Encode.string )
-        , ( "avatar", value.avatar |> Encode.maybe Encode.string )
-        , ( "bio", value.bio |> Encode.maybe Encode.string )
-        , ( "company", value.company |> Encode.maybe Encode.string )
-        , ( "location", value.location |> Encode.maybe Encode.string )
-        , ( "website", value.website |> Encode.maybe Website.encode )
-        , ( "github", value.github |> Encode.maybe Username.encode )
-        , ( "twitter", value.twitter |> Encode.maybe Username.encode )
-        ]
 
 
 decode : Decode.Decoder User
 decode =
-    Decode.map11 User
+    Decode.map13 User
         (Decode.field "id" Decode.string)
-        (Decode.field "username" Username.decode)
+        (Decode.field "slug" UserSlug.decode)
+        (Decode.field "name" Username.decode)
         (Decode.field "email" Email.decode)
-        (Decode.field "name" Decode.string)
-        (Decode.maybeField "avatar" Decode.string)
-        (Decode.maybeField "bio" Decode.string)
+        (Decode.field "avatar" Decode.string)
         (Decode.maybeField "company" Decode.string)
         (Decode.maybeField "location" Decode.string)
-        (Decode.maybeField "website" Website.decode)
-        (Decode.maybeField "github" Username.decode)
-        (Decode.maybeField "twitter" Username.decode)
+        (Decode.maybeField "description" Decode.string)
+        (Decode.maybeField "github_username" Username.decode)
+        (Decode.maybeField "twitter_username" Username.decode)
+        (Decode.field "is_admin" Decode.bool)
+        (Decode.field "last_signin" Time.decode)
+        (Decode.field "created_at" Time.decode)

@@ -24,12 +24,12 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Libs.Url as Url
-import Models.User2 exposing (User2)
+import Models.ProjectInfo exposing (ProjectInfo)
+import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
 import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), HelpMsg(..), Msg(..), NavbarModel, ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelation, VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
 import PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (viewNavbarTitle)
 import Services.Backend as Backend
@@ -60,7 +60,7 @@ stringToArgs args =
             ( Url.empty, "", "" )
 
 
-viewNavbar : GlobalConf -> Maybe User2 -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
+viewNavbar : GlobalConf -> Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
 viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
     let
         ( currentUrl, htmlId, openedDropdown ) =

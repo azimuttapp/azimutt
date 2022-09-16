@@ -24,11 +24,11 @@ import Libs.Tailwind as Tw exposing (focus, focus_ring_offset_600)
 import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
+import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..), prompt)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import Services.Backend as Backend
 import Shared exposing (GlobalConf)
 

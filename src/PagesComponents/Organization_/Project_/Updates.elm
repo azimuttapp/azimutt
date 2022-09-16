@@ -43,7 +43,7 @@ import PagesComponents.Organization_.Project_.Updates.Help exposing (handleHelp)
 import PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Organization_.Project_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNotes)
-import PagesComponents.Organization_.Project_.Updates.Project exposing (moveProject, saveProject)
+import PagesComponents.Organization_.Project_.Updates.Project exposing (moveProject, saveProject, triggerSaveProject)
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
@@ -71,8 +71,7 @@ update currentLayout now organizations msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         TriggerSaveProject ->
-            -- FIXME: open create project modal (choose orga & save mode)
-            ( model, organizations |> List.head |> Maybe.mapOrElse (SaveProject >> T.send) Cmd.none )
+            model |> triggerSaveProject organizations
 
         SaveProject organization ->
             model |> saveProject organization

@@ -7,9 +7,8 @@ import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Result as Result
 import Libs.Tailwind exposing (Color)
 import Models.Organization exposing (Organization)
-import Models.ProjectInfo2 exposing (ProjectInfo2)
-import Models.User2 exposing (User2)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
+import Models.ProjectInfo exposing (ProjectInfo)
+import Models.User exposing (User)
 import Ports exposing (JsMsg(..))
 import Request exposing (Request)
 import Services.Backend as Backend
@@ -32,20 +31,20 @@ type alias Model =
     { zone : Time.Zone
     , now : Time.Posix
     , conf : GlobalConf
-    , projects : StoredProjects
-    , user2 : Maybe User2
+    , user : Maybe User
     , userLoaded : Bool
     , organizations : List Organization
-    , projects2 : List ProjectInfo2
+    , projects : List ProjectInfo
     , projectsLoaded : Bool
+    , projectsLegacy : StoredProjects
     }
 
 
 type Msg
     = ZoneChanged Time.Zone
     | TimeChanged Time.Posix
-    | GotUser (Result Backend.Error (Maybe User2))
-    | GotProjects (Result Backend.Error ( List Organization, List ProjectInfo2 ))
+    | GotUser (Result Backend.Error (Maybe User))
+    | GotProjects (Result Backend.Error ( List Organization, List ProjectInfo ))
     | JsMessage JsMsg
 
 
@@ -88,12 +87,12 @@ init _ flags =
             { env = Env.fromString flags.conf.env
             , platform = Platform.fromString flags.conf.platform
             }
-      , projects = Loading
-      , user2 = Nothing
+      , user = Nothing
       , userLoaded = False
-      , projects2 = []
+      , projects = []
       , organizations = []
       , projectsLoaded = False
+      , projectsLegacy = Loading
       }
     , Cmd.batch
         [ Task.perform ZoneChanged Time.here
@@ -116,14 +115,14 @@ update _ msg model =
         TimeChanged time ->
             ( { model | now = time }, Cmd.none )
 
-        GotUser userR ->
-            ( userR |> Result.fold (\_ -> model) (\user -> { model | user2 = user, userLoaded = True }), Cmd.none )
+        GotUser result ->
+            ( result |> Result.fold (\_ -> model) (\user -> { model | user = user, userLoaded = True }), Cmd.none )
 
         GotProjects result ->
-            ( result |> Result.fold (\_ -> model) (\( orgas, projects ) -> { model | organizations = orgas, projects2 = Sort.lastUpdatedFirst projects, projectsLoaded = True }), Cmd.none )
+            ( result |> Result.fold (\_ -> model) (\( orgas, projects ) -> { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }), Cmd.none )
 
         JsMessage (Ports.GotProjects ( _, projects )) ->
-            ( { model | projects = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
+            ( { model | projectsLegacy = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
 
         JsMessage (Ports.ProjectDeleted _) ->
             ( model, Backend.getOrganizationsAndProjects GotProjects )

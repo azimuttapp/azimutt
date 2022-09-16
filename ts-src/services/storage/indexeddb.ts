@@ -1,5 +1,5 @@
-import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage} from "../../types/project";
-import {projectToInfo, StorageApi, StorageKind} from "./api";
+import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage, projectToInfo} from "../../types/project";
+import {StorageApi, StorageKind} from "./api";
 import {LocalStorageStorage} from "./localstorage";
 import {Logger} from "../logger";
 

@@ -1,14 +1,17 @@
 import {Logger} from "./logger";
 import {
+    computeStats,
     Project,
     ProjectId,
     ProjectInfo,
+    ProjectInfoWithContent,
     ProjectName,
     ProjectSlug,
-    ProjectStorage
+    ProjectStats,
+    ProjectStorage,
+    ProjectVersion
 } from "../types/project";
-import {OrganizationId} from "../types/organization";
-import {computeStats, ProjectStats} from "./storage/api";
+import {Organization, OrganizationId, OrganizationSlug} from "../types/organization";
 import {DateTime} from "../types/basics";
 import * as Http from "../utils/http";
 import jiff from "jiff";
@@ -17,26 +20,20 @@ export class Backend {
     constructor(private logger: Logger) {
     }
 
+    getProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
+        return Http.getJson<ProjectWithOrgaContentResponse>(`/api/v1/organizations/${o}/projects/${p}?expand=organization,content`)
+            .then(res => ({...formatProjectResponse(res.json), content: res.json.content}))
+    }
+
     createProjectLocal = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, p)
-        return Http.postJson<CreateLocalProjectPayload, CreateProjectResponse>(`/api/v1/organizations/${o}/projects`, {
+        return Http.postJson<CreateLocalProjectPayload, ProjectWithOrgaResponse>(`/api/v1/organizations/${o}/projects?expand=organization`, {
             name: p.name,
             description: undefined,
             storage_kind: ProjectStorage.local,
             encoding_version: p.version,
-            ...computeStats(p)
-        }).then(res => {
-            return {
-                id: res.json.id,
-                name: res.json.name,
-                tables: res.json.nb_tables,
-                relations: res.json.nb_relations,
-                layouts: res.json.nb_layouts,
-                storage: res.json.storage_kind,
-                createdAt: new Date(res.json.created_at).getTime(),
-                updatedAt: new Date(res.json.updated_at).getTime()
-            }
-        })
+            ...adaptStats(computeStats(p))
+        }).then(res => formatProjectResponse(res.json))
     }
     createProjectRemote = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, p)
@@ -73,21 +70,105 @@ export class Backend {
     }
 }
 
-interface CreateLocalProjectPayload extends ProjectStats {
+export interface ProjectStatsResponse {
+    nb_sources: number
+    nb_tables: number
+    nb_columns: number
+    nb_relations: number
+    nb_types: number
+    nb_comments: number
+    nb_notes: number
+    nb_layouts: number
+}
+
+interface CreateLocalProjectPayload extends ProjectStatsResponse {
     name: ProjectName
     description: string | undefined
     storage_kind: 'local'
     encoding_version: number
 }
 
-interface CreateProjectResponse extends ProjectStats {
+interface ProjectResponse extends ProjectStatsResponse {
     id: ProjectId
     slug: ProjectSlug
     name: ProjectName
-    description: string | undefined
-    encoding_version: number
+    description: string | null
+    encoding_version: ProjectVersion
     storage_kind: ProjectStorage
     created_at: DateTime
     updated_at: DateTime
-    archived_at: DateTime | undefined
+    archived_at: DateTime | null
+}
+
+interface ProjectWithOrgaResponse extends ProjectResponse {
+    organization: OrganizationResponse
+}
+
+interface ProjectWithOrgaContentResponse extends ProjectResponse {
+    organization: OrganizationResponse
+    content: string | undefined
+}
+
+export interface OrganizationResponse {
+    id: OrganizationId
+    slug: OrganizationSlug
+    name: string
+    active_plan: string
+    logo: string
+    location: string | null
+    description: string | null
+}
+
+function adaptStats(s: ProjectStats): ProjectStatsResponse {
+    return {
+        nb_sources: s.nbSources,
+        nb_tables: s.nbTables,
+        nb_columns: s.nbColumns,
+        nb_relations: s.nbRelations,
+        nb_types: s.nbTypes,
+        nb_comments: s.nbComments,
+        nb_notes: s.nbNotes,
+        nb_layouts: s.nbLayouts
+    }
+}
+
+function formatStats(s: ProjectStatsResponse): ProjectStats {
+    return {
+        nbSources: s.nb_sources,
+        nbTables: s.nb_tables,
+        nbColumns: s.nb_columns,
+        nbRelations: s.nb_relations,
+        nbTypes: s.nb_types,
+        nbComments: s.nb_comments,
+        nbNotes: s.nb_notes,
+        nbLayouts: s.nb_layouts
+    }
+}
+
+function formatProjectResponse(p: ProjectWithOrgaResponse): ProjectInfo {
+    return {
+        organization: formatOrganizationResponse(p.organization),
+        id: p.id,
+        slug: p.slug,
+        name: p.name,
+        description: p.description,
+        encodingVersion: p.encoding_version,
+        storage: p.storage_kind,
+        createdAt: new Date(p.created_at).getTime(),
+        updatedAt: new Date(p.updated_at).getTime(),
+        archivedAt: p.archived_at ? new Date(p.archived_at).getTime() : null,
+        ...formatStats(p)
+    }
+}
+
+function formatOrganizationResponse(o: OrganizationResponse): Organization {
+    return {
+        id: o.id,
+        slug: o.slug,
+        name: o.name,
+        activePlan: o.active_plan,
+        logo: o.logo,
+        location: o.location,
+        description: o.description
+    }
 }

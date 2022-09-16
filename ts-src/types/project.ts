@@ -1,28 +1,38 @@
-import {DateTime, Timestamp} from "./basics";
+import {Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
+import {Organization} from "./organization";
+import * as Array from "../utils/array";
 
-export interface ProjectInfoWithContent {
+export interface ProjectStats {
+    nbSources: number
+    nbTables: number
+    nbColumns: number
+    nbRelations: number
+    nbTypes: number
+    nbComments: number
+    nbNotes: number
+    nbLayouts: number
+}
+
+export interface ProjectInfo extends ProjectStats {
+    organization: Organization | undefined
     id: ProjectId
-    slug: string
+    slug: ProjectSlug
     name: ProjectName
     description: string | null
-    encoding_version: 1 | 2
-    storage_kind: 'azimutt' | 'local'
+    encodingVersion: ProjectVersion
+    storage: ProjectStorage
+    createdAt: Timestamp
+    updatedAt: Timestamp
+    archivedAt: Timestamp | null
+}
+
+export interface ProjectInfoWithContent extends ProjectInfo {
     content: string | undefined
-    nb_sources: number
-    nb_tables: number
-    nb_columns: number
-    nb_relations: number
-    nb_types: number
-    nb_comments: number
-    nb_notes: number
-    nb_layouts: number
-    created_at: DateTime
-    updated_at: DateTime
-    archived_at: DateTime | null
 }
 
 export interface Project {
+    id: ProjectId
     name: ProjectName
     sources: Source[]
     notes: { [ref: string]: string } | undefined
@@ -32,18 +42,7 @@ export interface Project {
     storage?: ProjectStorage
     createdAt: Timestamp
     updatedAt: Timestamp
-    version: number
-}
-
-export interface ProjectInfo {
-    id: ProjectId
-    name: ProjectName
-    tables: number
-    relations: number
-    layouts: number
-    storage: ProjectStorage
-    createdAt: Timestamp
-    updatedAt: Timestamp
+    version: ProjectVersion
 }
 
 export type ProjectNoStorage = Omit<Project, 'storage'>
@@ -202,6 +201,8 @@ export interface Settings {
     removedTables?: string
 }
 
+export type ProjectVersion = 1 | 2
+
 // 'browser' was changed for 'local' and 'cloud' for 'azimutt', keep them here for legacy projects
 export type ProjectStorage = 'local' | 'azimutt' | 'browser' | 'cloud'
 
@@ -213,7 +214,7 @@ export const ProjectStorage: { [key in ProjectStorage]: key } = {
 }
 
 export type ProjectId = Uuid
-export type ProjectSlug = string
+export type ProjectSlug = Slug
 export type ProjectName = string
 export type SourceId = Uuid
 export type SourceName = string
@@ -249,3 +250,35 @@ export type Color =
     | 'sky'
     | 'blue'
     | 'gray'
+
+export function computeStats(p: ProjectNoStorage): ProjectStats {
+    // should be the same as `fromProject` in src/Models/ProjectInfo.elm
+    const tables = Array.groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
+    const types = Array.groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
+
+    return {
+        nbSources: p.sources.length,
+        nbTables: Object.keys(tables).length,
+        nbColumns: Object.values(tables).map(same => Math.max(...same.map(t => t.columns.length))).reduce((acc, cols) => acc + cols, 0),
+        nbRelations: p.sources.reduce((acc, src) => acc + src.relations.length, 0),
+        nbTypes: Object.keys(types).length,
+        nbComments: p.sources.flatMap(s => s.tables.flatMap(t => [t.comment].concat(t.columns.map(c => c.comment)).filter(c => !!c))).length,
+        nbNotes: Object.keys(p.notes || {}).length,
+        nbLayouts: Object.keys(p.layouts).length
+    }
+}
+
+export function projectToInfo(id: ProjectId, p: ProjectNoStorage): ProjectInfoNoStorage {
+    return {
+        organization: undefined,
+        id: id,
+        slug: id,
+        name: p.name,
+        description: null,
+        encodingVersion: p.version,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        archivedAt: null,
+        ...computeStats(p)
+    }
+}

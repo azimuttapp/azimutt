@@ -26,9 +26,9 @@ import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
 import Models.Project as Project
 import Models.Project.Source exposing (Source)
+import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Helpers exposing (appShell)
 import PagesComponents.New.Models exposing (ConfirmDialog, Model, Msg(..), Tab(..), confirm)
-import PagesComponents.Organization_.Project_.Models.ProjectInfo exposing (ProjectInfo)
 import Services.Backend as Backend
 import Services.DatabaseSource as DatabaseSource
 import Services.ImportProject as ImportProject
@@ -44,7 +44,7 @@ viewNewProject : Url -> Shared.Model -> Model -> List (Html Msg)
 viewNewProject currentUrl shared model =
     appShell shared.conf.env
         currentUrl
-        shared.user2
+        shared.user
         (\link -> SelectMenu link.text)
         DropdownToggle
         model
