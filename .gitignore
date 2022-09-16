@@ -8,7 +8,3 @@
 /public/script.js
 /public/script.js.map
 /public/blog/drafts/
-
-# Supabase
-**/supabase/.branches
-**/supabase/.temp

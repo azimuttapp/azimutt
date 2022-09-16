@@ -37,7 +37,6 @@
     "@sentry/browser": "^7.1.1",
     "@sentry/tracing": "^7.1.1",
     "@splitbee/web": "^0.3.0",
-    "@supabase/supabase-js": "^1.35.3",
     "canvas-confetti": "^1.5.1",
     "jiff": "^0.7.3"
   },
