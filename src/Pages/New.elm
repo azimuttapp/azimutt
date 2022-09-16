@@ -3,7 +3,7 @@ module Pages.New exposing (Model, Msg, page)
 import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict
-import Gen.Params.Projects.New exposing (Params)
+import Gen.Params.New exposing (Params)
 import Gen.Route as Route
 import Json.Decode as Decode
 import Json.Encode as Encode

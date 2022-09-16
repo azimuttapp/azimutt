@@ -3,7 +3,7 @@ module Pages.Last exposing (Model, Msg, page)
 import Components.Atoms.Loader as Loader
 import Conf
 import Dict
-import Gen.Params.Projects.Last exposing (Params)
+import Gen.Params.Last exposing (Params)
 import Gen.Route as Route
 import Html.Lazy as Lazy
 import Libs.Maybe as Maybe

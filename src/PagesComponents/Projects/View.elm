@@ -15,6 +15,8 @@ import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
+import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.DateTime exposing (formatDate)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
@@ -74,7 +76,7 @@ viewContent currentUrl shared model =
 viewProjectList : Shared.Model -> Model -> Html Msg
 viewProjectList shared model =
     div []
-        [ h3 [ css [ "text-lg font-medium" ] ] [ text "Projects 2" ]
+        [ h3 [ css [ "text-lg font-medium" ] ] [ text "Projects" ]
         , if not shared.projectsLoaded then
             div [ css [ "mt-6" ] ] [ projectList [ viewProjectPlaceholder ] ]
 
@@ -83,16 +85,24 @@ viewProjectList shared model =
 
           else
             div [ css [ "mt-6" ] ] [ projectList ((shared.projects2 |> List.map (\p -> viewProjectCard shared.zone (Just p.organization) (legacyProjectInfo p))) ++ [ viewNewProject ]) ]
-        , h3 [ css [ "mt-6 text-lg font-medium" ] ] [ text "Projects" ]
         , case model.projects of
             Loading ->
-                div [ css [ "mt-6" ] ] [ projectList [ viewProjectPlaceholder ] ]
-
-            Loaded [] ->
-                viewNoProjects
+                div [] []
 
             Loaded projects ->
-                div [ css [ "mt-6" ] ] [ projectList ((projects |> List.map (viewProjectCard shared.zone Nothing)) ++ [ viewNewProject ]) ]
+                let
+                    legacyProjects : List ProjectInfo
+                    legacyProjects =
+                        projects |> List.filterNot (\p -> shared.projects2 |> List.memberBy .id p.id)
+                in
+                if List.isEmpty legacyProjects then
+                    div [] []
+
+                else
+                    div []
+                        [ h3 [ css [ "mt-6 text-lg font-medium" ] ] [ text "Legacy projects" ]
+                        , div [ css [ "mt-6" ] ] [ projectList (legacyProjects |> List.map (viewProjectCard shared.zone Nothing)) ]
+                        ]
         ]
 
 
@@ -200,7 +210,7 @@ viewProjectCard zone organization project =
             [ button [ type_ "button", onClick (confirmDeleteProject organization project), css [ "flex-grow-0 inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium px-4", hover [ "text-gray-500" ] ] ]
                 [ Icon.outline Icon.Trash "text-gray-400" ]
                 |> Tooltip.t "Delete this project"
-            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
+            , a ([ href (Route.toHref (Route.Organization___Project_ { organization = organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = project.id })), css [ "flex-grow inline-flex items-center justify-center py-4 text-sm text-gray-700 font-medium", hover [ "text-gray-500" ] ] ] ++ track (Track.loadProject project))
                 [ Icon.outline Icon.ArrowCircleRight "text-gray-400", span [ css [ "ml-3" ] ] [ text "Open project" ] ]
             ]
         ]
