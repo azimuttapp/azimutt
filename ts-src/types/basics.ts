@@ -7,16 +7,41 @@ export type HtmlId = string
 export type FileUrl = string
 export type FileName = string
 export type FileContent = string
+
 export interface File {
     name: string
     mime: string
     size: number
     lastModified: Timestamp
 }
+
 export type ViewPosition = 'start' | 'end'
+export const ViewPosition: { [key in ViewPosition]: key } = {
+    start: 'start',
+    end: 'end'
+}
+
 export type ToastLevel = 'info' | 'success' | 'warning' | 'error'
+export const ToastLevel: { [key in ToastLevel]: key } = {
+    info: 'info',
+    success: 'success',
+    warning: 'warning',
+    error: 'error'
+}
+
 export type Env = 'dev' | 'staging' | 'prod'
+export const Env: { [key in Env]: key } = {
+    dev: 'dev',
+    staging: 'staging',
+    prod: 'prod'
+}
+
 export type Platform = 'mac' | 'pc'
+export const Platform: { [key in Platform]: key } = {
+    mac: 'mac',
+    pc: 'pc'
+}
+
 export interface PositionViewport {
     clientX: number
     clientY: number

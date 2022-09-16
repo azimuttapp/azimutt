@@ -25,6 +25,7 @@ import {Conf} from "./conf";
 import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
 import * as Http from "./utils/http";
+import {Env, Platform, ToastLevel, ViewPosition} from "./types/basics";
 
 const env = Utils.getEnv()
 const platform = Utils.getPlatform()
@@ -34,8 +35,8 @@ const app = ElmApp.init({now: Date.now(), conf: {env, platform}}, logger)
 const storage = new Storage(logger)
 const backend = new Backend(logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics: Analytics = env === 'prod' && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
-const errorTracking: ErrLogger = env === 'prod' ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
+const analytics: Analytics = env === Env.prod && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
+const errorTracking: ErrLogger = env === Env.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -48,7 +49,7 @@ window.azimutt = new AzimuttApi(app, logger)
 
 /* PWA service worker */
 
-if ('serviceWorker' in navigator && env === 'prod') {
+if ('serviceWorker' in navigator && env === Env.prod) {
     navigator.serviceWorker.register("/service-worker.js")
     // .then(reg => logger.debug('service-worker registered!', reg))
     // .catch(err => logger.debug('service-worker failed to register!', err))
@@ -60,7 +61,7 @@ app.on('Click', msg => Utils.getElementById(msg.id).click())
 app.on('MouseDown', msg => Utils.getElementById(msg.id).dispatchEvent(new Event('mousedown')))
 app.on('Focus', msg => Utils.getElementById(msg.id).focus())
 app.on('Blur', msg => Utils.getElementById(msg.id).blur())
-app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== 'end')))
+app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== ViewPosition.end)))
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
@@ -71,7 +72,7 @@ app.on('CreateProjectTmp', createProjectTmp)
 app.on('CreateProjectLocal', createProjectLocal)
 app.on('CreateProjectRemote', createProjectRemote)
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
-// app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast('error', err)))
+// app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.error, err)))
 app.on('DeleteProject', deleteProject)
 // app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)).catch(_ => app.gotUser(msg.email, undefined)))
 // app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
@@ -134,13 +135,13 @@ function getProject({organization, project}: GetProjectMsg) {
     }).catch(res => {
         if (res.status === 404) {
             if (project !== Uuid.zero) {
-                app.toast('warning', 'Unregistered project: create an Azimutt account and save it again to keep it. '
+                app.toast(ToastLevel.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
             }
             return loadProject(project)
         } else {
             app.gotProject(undefined)
-            app.toast('error', `Can't load project: ${JSON.stringify(res)}`)
+            app.toast(ToastLevel.error, `Can't load project: ${JSON.stringify(res)}`)
         }
     })
 }
@@ -148,14 +149,14 @@ function getProject({organization, project}: GetProjectMsg) {
 function listProjects() {
     storage.listProjects().then(app.loadProjects).catch(err => {
         app.loadProjects([])
-        app.toast('error', `Can't list projects: ${err}`)
+        app.toast(ToastLevel.error, `Can't list projects: ${err}`)
     })
 }
 
 function loadProject(id: ProjectId) {
     storage.loadProject(id).then(app.gotProject).catch(err => {
         app.gotProject(undefined)
-        app.toast('error', `Can't load project: ${err}`)
+        app.toast(ToastLevel.error, `Can't load project: ${err}`)
     })
 }
 
@@ -167,16 +168,16 @@ function createProjectTmp({project}: CreateProjectTmpMsg): void {
 
 function createProjectLocal({organization, project}: CreateProjectLocalMsg): void {
     backend.createProjectLocal(organization, project).catch(err => {
-        app.toast('error', `Can't save project to backend: ${JSON.stringify(err)}`)
+        app.toast(ToastLevel.error, `Can't save project to backend: ${JSON.stringify(err)}`)
         return Promise.reject(err)
     }).then(info => {
         return storage.createProject(info.id, project).catch(err => {
-            app.toast('error', `Can't save project locally: ${JSON.stringify(err)}`)
+            app.toast(ToastLevel.error, `Can't save project locally: ${JSON.stringify(err)}`)
             return backend.deleteProject(organization, info.id).then(_ => Promise.reject(err))
         })
     }).then(p => {
         return storage.deleteProject(Uuid.zero).catch(err => {
-            app.toast('error', `Can't delete temporary project: ${JSON.stringify(err)}`)
+            app.toast(ToastLevel.error, `Can't delete temporary project: ${JSON.stringify(err)}`)
             return Promise.resolve()
         }).then(_ => app.gotProject(p)) // FIXME: add orga to `gotProject` and redirect to new url
     })
@@ -189,11 +190,11 @@ function createProjectRemote({organization, project}: CreateProjectRemoteMsg): v
 
 function updateProject(msg: UpdateProjectMsg): Promise<Project> {
     // TODO: handle where to save the project: azimutt or local
-    console.log('TODO updateProject', msg)
+    logger.debug('TODO updateProject', msg)
     return Promise.reject('updateProject not implemented')
     // return store.updateProject(msg.project)
     //     .then(p => {
-    //         app.toast('success', 'Project saved')
+    //         app.toast(ToastLevel.success, 'Project saved')
     //         return p
     //     })
     //     .catch(e => {
@@ -205,7 +206,7 @@ function updateProject(msg: UpdateProjectMsg): Promise<Project> {
     //         } else {
     //             message = 'Unknown storage error: ' + e.message
     //         }
-    //         app.toast('error', message)
+    //         app.toast(ToastLevel.error, message)
     //         const name = 'storage'
     //         const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
     //         analytics.trackError(name, details)
@@ -217,19 +218,19 @@ function updateProject(msg: UpdateProjectMsg): Promise<Project> {
 function deleteProject({organization, project}: DeleteProjectMsg): void {
     if(organization) {
         backend.deleteProject(organization, project.id).catch(err => {
-            app.toast('error', `Can't delete project in backend: ${JSON.stringify(err)}`)
+            app.toast(ToastLevel.error, `Can't delete project in backend: ${JSON.stringify(err)}`)
             return Promise.reject(err)
         }).then(_ => {
             if (project.storage == ProjectStorage.local || project.storage == ProjectStorage.browser) {
                 return storage.deleteProject(project.id).catch(err => {
-                    app.toast('error', `Can't delete project locally: ${JSON.stringify(err)}`)
+                    app.toast(ToastLevel.error, `Can't delete project locally: ${JSON.stringify(err)}`)
                     return Promise.reject(err)
                 })
             }
         }).then(_ => app.dropProject(project.id))
     } else {
         storage.deleteProject(project.id).catch(err => {
-            app.toast('error', `Can't delete project locally: ${JSON.stringify(err)}`)
+            app.toast(ToastLevel.error, `Can't delete project locally: ${JSON.stringify(err)}`)
             return Promise.reject(err)
         }).then(_ => app.dropProject(project.id))
     }
@@ -269,7 +270,7 @@ function isInput(elt: Element) {
 function keydownHotkey(e: KeyboardEvent) {
     const target = e.target as HTMLElement
     const matches = (hotkeys[e.key] || []).filter(hotkey => {
-        return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === 'mac' && hotkey.ctrl === e.metaKey)) &&
+        return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === Platform.mac && hotkey.ctrl === e.metaKey)) &&
             (!hotkey.shift || e.shiftKey) &&
             (hotkey.alt === e.altKey) &&
             (hotkey.meta === e.metaKey) &&

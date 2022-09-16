@@ -4,7 +4,6 @@ import {
     ProjectId,
     ProjectInfo,
     ProjectName,
-    ProjectNoStorage,
     ProjectSlug,
     ProjectStorage
 } from "../types/project";
@@ -19,6 +18,7 @@ export class Backend {
     }
 
     createProjectLocal = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
+        this.logger.debug(`backend.createProjectLocal(${o})`, p)
         return Http.postJson<CreateLocalProjectPayload, CreateProjectResponse>(`/api/v1/organizations/${o}/projects`, {
             name: p.name,
             description: undefined,
@@ -39,6 +39,7 @@ export class Backend {
         })
     }
     createProjectRemote = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
+        this.logger.debug(`backend.createProjectRemote(${o})`, p)
         return Promise.reject('not implemented')
     }
 
@@ -50,7 +51,7 @@ export class Backend {
     //             const patch = jiff.diff(initial, p)
     //             p = jiff.patch(patch, current)
     //         } catch (e) {
-    //             console.warn('patch failed', e)
+    //             this.logger.warn('patch failed', e)
     //             return Promise.reject("Project has been updated by another user! Please reload and save again (you will have to do you changes again).")
     //         }
     //     }
@@ -67,6 +68,7 @@ export class Backend {
     // }
 
     deleteProject = (o: OrganizationId, p: ProjectId): Promise<void> => {
+        this.logger.debug(`backend.deleteProject(${o}, ${p})`)
         return Http.deleteNoContent(`/api/v1/organizations/${o}/projects/${p}`).then(_ => undefined)
     }
 }

@@ -3,13 +3,13 @@ import confetti from "canvas-confetti";
 
 export const Utils = {
     getEnv(): Env {
-        return window.location.hostname === 'localhost' ? 'dev' :
-            window.location.hostname === 'azimutt.app' ? 'prod' :
-                'staging'
+        return window.location.hostname === 'localhost' ? Env.dev :
+            window.location.hostname === 'azimutt.app' ? Env.prod :
+                Env.staging
     },
     getPlatform(): Platform {
-        // return window.navigator.platform.indexOf('Mac') !== -1 ? 'Mac' : 'PC'
-        return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? 'mac' : 'pc'
+        // return window.navigator.platform.indexOf('Mac') !== -1 ? Platform.mac : Platform.pc
+        return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? Platform.mac : Platform.pc
     },
     randomId() {
         return crypto.randomUUID()

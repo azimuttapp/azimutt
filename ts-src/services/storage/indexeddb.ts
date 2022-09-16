@@ -29,6 +29,7 @@ export class IndexedDBStorage implements StorageApi {
     }
 
     listProjects = (): Promise<ProjectInfoNoStorage[]> => {
+        this.logger.debug(`indexedDb.listProjects()`)
         return this.migrateLegacyProjects().then(_ => this.openStore('readonly')).then(store => {
             return new Promise<ProjectInfoNoStorage[]>((resolve, reject) => {
                 const projects: ProjectInfoNoStorage[] = []
@@ -46,12 +47,14 @@ export class IndexedDBStorage implements StorageApi {
         })
     }
     loadProject = (id: ProjectId): Promise<ProjectNoStorage> => {
+        this.logger.debug(`indexedDb.loadProject(${id})`)
         return this.migrateLegacyProjects()
             .then(_ => this.openStore('readonly'))
             .then(store => this.getProject(store, id))
             .then(p => p ? p : Promise.reject(`Not found`))
     }
     createProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+        this.logger.debug(`indexedDb.createProject(${id})`, p)
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
                 if (project) {
@@ -63,6 +66,7 @@ export class IndexedDBStorage implements StorageApi {
         })
     }
     updateProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+        this.logger.debug(`indexedDb.updateProject(${id})`, p)
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
                 if (project) {
@@ -74,6 +78,7 @@ export class IndexedDBStorage implements StorageApi {
         })
     }
     deleteProject = (id: ProjectId): Promise<void> => {
+        this.logger.debug(`indexedDb.deleteProject(${id})`)
         return this.openStore('readwrite').then(store => reqToPromise(store.delete(id)))
     }
 

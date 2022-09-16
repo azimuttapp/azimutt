@@ -19,12 +19,13 @@ export class Storage {
     private inMemory: InMemoryStorage
 
     constructor(private logger: Logger) {
-        this.indexedDb = IndexedDBStorage.init(logger)
-        this.localStorage = LocalStorageStorage.init(logger)
-        this.inMemory = new InMemoryStorage()
+        this.indexedDb = IndexedDBStorage.init(logger.disableDebug())
+        this.localStorage = LocalStorageStorage.init(logger.disableDebug())
+        this.inMemory = new InMemoryStorage(logger.disableDebug())
     }
 
     listProjects = (): Promise<ProjectInfo[]> => {
+        this.logger.debug(`storage.listProjects()`)
         return Promise.all([
             this.indexedDb.then(s => s.listProjects()),
             this.localStorage.then(s => s.listProjects()),
@@ -33,6 +34,7 @@ export class Storage {
     }
 
     loadProject = (id: ProjectId): Promise<Project> => {
+        this.logger.debug(`storage.loadProject(${id})`)
         return this.indexedDb.then(s => s.loadProject(id))
             .catch(_ => this.localStorage.then(s => s.loadProject(id)))
             .catch(_ => this.inMemory.loadProject(id))
@@ -40,18 +42,21 @@ export class Storage {
     }
 
     createProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
+        this.logger.debug(`storage.createProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
             .then(s => s.createProject(id, {...p, createdAt: Date.now(), updatedAt: Date.now()}))
             .then(browserProject)
     }
 
     updateProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
+        this.logger.debug(`storage.updateProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
             .then(s => s.updateProject(id, {...p, updatedAt: Date.now()}))
             .then(browserProject)
     }
 
     deleteProject = (id: ProjectId): Promise<void> => {
+        this.logger.debug(`storage.deleteProject(${id})`)
         return Promise.all([
             this.indexedDb.then(s => s.deleteProject(id)),
             this.localStorage.then(s => s.deleteProject(id)),
