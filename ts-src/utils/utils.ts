@@ -3,9 +3,15 @@ import confetti from "canvas-confetti";
 
 export const Utils = {
     getEnv(): Env {
-        return window.location.hostname === 'localhost' ? Env.dev :
-            window.location.hostname === 'azimutt.app' ? Env.prod :
-                Env.staging
+        if (window.location.hostname.endsWith('localhost')) {
+            return Env.dev
+        } else if (window.location.hostname.endsWith('azimutt.dev')) {
+            return Env.staging
+        } else if (window.location.hostname.endsWith('azimutt.app')) {
+            return Env.prod
+        } else {
+            throw `Invalid hostname '${window.location.hostname}'`
+        }
     },
     getPlatform(): Platform {
         // return window.navigator.platform.indexOf('Mac') !== -1 ? Platform.mac : Platform.pc

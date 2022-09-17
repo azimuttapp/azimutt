@@ -1,4 +1,4 @@
-module Libs.Models.Env exposing (Env(..), fromString)
+module Libs.Models.Env exposing (Env(..), fromString, toString)
 
 
 type Env
@@ -21,3 +21,16 @@ fromString value =
 
         _ ->
             Dev
+
+
+toString : Env -> String
+toString value =
+    case value of
+        Dev ->
+            "Dev"
+
+        Staging ->
+            "Staging"
+
+        Prod ->
+            "Prod"
