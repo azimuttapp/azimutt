@@ -1,18 +1,7 @@
-import {Env, HtmlId, Platform} from "../types/basics";
+import {HtmlId, Platform} from "../types/basics";
 import confetti from "canvas-confetti";
 
 export const Utils = {
-    getEnv(): Env {
-        if (window.location.hostname.endsWith('localhost')) {
-            return Env.dev
-        } else if (window.location.hostname.endsWith('azimutt.dev')) {
-            return Env.staging
-        } else if (window.location.hostname.endsWith('azimutt.app')) {
-            return Env.prod
-        } else {
-            throw `Invalid hostname '${window.location.hostname}'`
-        }
-    },
     getPlatform(): Platform {
         // return window.navigator.platform.indexOf('Mac') !== -1 ? Platform.mac : Platform.pc
         return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? Platform.mac : Platform.pc

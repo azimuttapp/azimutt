@@ -1,4 +1,4 @@
-import {Env} from "../types/basics";
+import {Env} from "../utils/env";
 
 export class Logger {
     error(...args: any[]): void {

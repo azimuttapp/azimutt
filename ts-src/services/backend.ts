@@ -12,7 +12,8 @@ import {
     ProjectVersion
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug} from "../types/organization";
-import {DateTime, Env} from "../types/basics";
+import {DateTime} from "../types/basics";
+import {Env} from "../utils/env";
 import * as Http from "../utils/http";
 import jiff from "jiff";
 

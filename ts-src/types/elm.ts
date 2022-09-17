@@ -1,6 +1,5 @@
 import {
     Email,
-    Env,
     File,
     FileContent,
     FileName,
@@ -25,6 +24,7 @@ import {
 } from "./project";
 import {Profile, UserId} from "./profile";
 import {OrganizationId} from "./organization";
+import {Env} from "../utils/env";
 
 export interface ElmProgram<F, I, O> {
     init: (f: { flags: F, node?: HTMLElement }) => ElmRuntime<I, O>

@@ -25,9 +25,10 @@ import {Storage} from "./services/storage";
 import {Conf} from "./conf";
 import {Backend} from "./services/backend";
 import * as Uuid from "./types/uuid";
-import {Env, Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {Platform, ToastLevel, ViewPosition} from "./types/basics";
+import {Env, getEnv} from "./utils/env";
 
-const env = Utils.getEnv()
+const env = getEnv()
 const platform = Utils.getPlatform()
 const conf = Conf.get()
 const logger = new ConsoleLogger(env)

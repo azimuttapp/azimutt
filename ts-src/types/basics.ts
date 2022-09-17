@@ -30,13 +30,6 @@ export const ToastLevel: { [key in ToastLevel]: key } = {
     error: 'error'
 }
 
-export type Env = 'dev' | 'staging' | 'prod'
-export const Env: { [key in Env]: key } = {
-    dev: 'dev',
-    staging: 'staging',
-    prod: 'prod'
-}
-
 export type Platform = 'mac' | 'pc'
 export const Platform: { [key in Platform]: key } = {
     mac: 'mac',
