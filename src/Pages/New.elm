@@ -9,6 +9,7 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
 import Libs.Maybe as Maybe
+import Libs.Models.Env exposing (Env)
 import Libs.Task as T
 import Models.Project as Project
 import Models.Project.Source as Source
@@ -37,7 +38,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init req
-        , update = update req shared.now
+        , update = update req shared.conf.env shared.now
         , view = view shared req
         , subscriptions = subscriptions
         }
@@ -104,8 +105,8 @@ init req =
 -- UPDATE
 
 
-update : Request.With Params -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update req now msg model =
+update : Request.With Params -> Env -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update req env now msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -141,7 +142,7 @@ update req now msg model =
             )
 
         DatabaseSourceMsg message ->
-            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now message))
+            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg env now message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of

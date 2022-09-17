@@ -12,22 +12,25 @@ import {
     ProjectVersion
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug} from "../types/organization";
-import {DateTime} from "../types/basics";
+import {DateTime, Env} from "../types/basics";
 import * as Http from "../utils/http";
 import jiff from "jiff";
 
 export class Backend {
-    constructor(private logger: Logger) {
+    constructor(private env: Env, private logger: Logger) {
     }
 
     getProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
-        return Http.getJson<ProjectWithOrgaContentResponse>(`/api/v1/organizations/${o}/projects/${p}?expand=organization,content`)
+        this.logger.debug(`backend.getProject(${o}, ${p})`)
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,content`)
+        return Http.getJson<ProjectWithOrgaContentResponse>(url)
             .then(res => ({...formatProjectResponse(res.json), content: res.json.content}))
     }
 
     createProjectLocal = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, p)
-        return Http.postJson<CreateLocalProjectPayload, ProjectWithOrgaResponse>(`/api/v1/organizations/${o}/projects?expand=organization`, {
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
+        return Http.postJson<CreateLocalProjectPayload, ProjectWithOrgaResponse>(url, {
             name: p.name,
             description: undefined,
             storage_kind: ProjectStorage.local,
@@ -66,7 +69,18 @@ export class Backend {
 
     deleteProject = (o: OrganizationId, p: ProjectId): Promise<void> => {
         this.logger.debug(`backend.deleteProject(${o}, ${p})`)
-        return Http.deleteNoContent(`/api/v1/organizations/${o}/projects/${p}`).then(_ => undefined)
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}`)
+        return Http.deleteNoContent(url).then(_ => undefined)
+    }
+
+    private withXhrHost(path: string): string {
+        if (this.env == Env.dev) {
+            return `${path}`
+        } else if (this.env == Env.staging) {
+            return `https://azimutt.dev${path}`
+        } else {
+            return `https://azimutt.app${path}`
+        }
     }
 }
 

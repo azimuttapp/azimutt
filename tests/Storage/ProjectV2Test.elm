@@ -21,6 +21,7 @@ import Models.Project.Index as Index exposing (Index)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectSettings as ProjectSettings exposing (HiddenColumns, ProjectSettings)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Relation as Relation exposing (Relation)
@@ -82,7 +83,8 @@ src1 =
 
 project0 : Project
 project0 =
-    { id = "00000000-0000-0000-0000-000000000000"
+    { organization = Nothing
+    , id = ProjectId.zero
     , name = "Project 0"
     , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 1102)) Array.empty Dict.empty [] Dict.empty True Nothing (time 1100) (time 1101) ]
     , tables = Dict.empty
@@ -112,7 +114,8 @@ tables1 =
 
 project1 : Project
 project1 =
-    { id = "00000000-0000-0000-0000-000000000000"
+    { organization = Nothing
+    , id = ProjectId.zero
     , name = "Project 0"
     , sources = [ Source src1 "source 1" (SqlLocalFile "structure.sql" 10000 (time 200)) Array.empty tables1 [] Dict.empty True (Just "basic") (time 1100) (time 1101) ]
     , tables = tables1
@@ -187,7 +190,8 @@ relations2 =
 
 project2 : Project
 project2 =
-    { id = "00000000-0000-0000-0000-000000000000"
+    { organization = Nothing
+    , id = ProjectId.zero
     , name = "Project 0"
     , sources =
         [ Source src1

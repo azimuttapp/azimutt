@@ -32,6 +32,7 @@ export interface ProjectInfoWithContent extends ProjectInfo {
 }
 
 export interface Project {
+    organization: Organization | undefined
     id: ProjectId
     name: ProjectName
     sources: Source[]

@@ -8,6 +8,7 @@ import Html.Attributes exposing (class, disabled)
 import Html.Events exposing (onClick)
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl
+import Libs.Models.Env exposing (Env)
 import Libs.Models.FileUrl as FileUrl
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
@@ -70,11 +71,11 @@ init sourceParsed modalClose noop databaseSource sqlSource jsonSource =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
-update wrap now msg model =
+update : (Msg -> msg) -> Env -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap env now msg model =
     case msg of
         EmbedDatabaseSource message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update (EmbedDatabaseSource >> wrap) now message)
+            model |> mapDatabaseSourceMCmd (DatabaseSource.update (EmbedDatabaseSource >> wrap) env now message)
 
         EmbedSqlSource message ->
             model |> mapSqlSourceMCmd (SqlSource.update (EmbedSqlSource >> wrap) now message)

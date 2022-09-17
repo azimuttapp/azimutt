@@ -10,6 +10,7 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.String as String
 import Libs.Time as Time
+import Models.Organization as Organization exposing (Organization)
 import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Layout as Layout exposing (Layout)
@@ -28,7 +29,8 @@ import Time
 
 
 type alias Project =
-    { id : ProjectId
+    { organization : Maybe Organization
+    , id : ProjectId
     , name : ProjectName
     , sources : List Source
     , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
@@ -44,9 +46,10 @@ type alias Project =
     }
 
 
-new : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
-new id name sources notes usedLayout layouts settings storage createdAt updatedAt =
-    { id = id
+new : Maybe Organization -> ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
+new organization id name sources notes usedLayout layouts settings storage createdAt updatedAt =
+    { organization = organization
+    , id = id
     , name = name
     , sources = sources
     , tables = Dict.empty
@@ -65,7 +68,8 @@ new id name sources notes usedLayout layouts settings storage createdAt updatedA
 
 create : List { a | name : ProjectName } -> ProjectName -> Source -> Project
 create projects name source =
-    new ProjectId.zero
+    new Nothing
+        ProjectId.zero
         (String.unique (projects |> List.map .name) name)
         [ source ]
         Dict.empty
@@ -173,7 +177,8 @@ downloadContent project =
 encode : Project -> Value
 encode value =
     Encode.notNullObject
-        [ ( "id", value.id |> ProjectId.encode )
+        [ ( "organization", value.organization |> Encode.maybe Organization.encode )
+        , ( "id", value.id |> ProjectId.encode )
         , ( "name", value.name |> ProjectName.encode )
         , ( "sources", value.sources |> Encode.list Source.encode )
         , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
@@ -189,7 +194,8 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map11 decodeProject
+    Decode.map12 decodeProject
+        (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.field "sources" (Decode.list Source.decode))
@@ -203,8 +209,8 @@ decode =
         (Decode.defaultField "updatedAt" Time.decode Time.zero)
 
 
-decodeProject : ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
-decodeProject id name sources notes layout usedLayout layouts settings storage createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id name sources notes layout usedLayout layouts settings storage createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -215,4 +221,4 @@ decodeProject id name sources notes layout usedLayout layouts settings storage c
             else
                 layouts |> Dict.insert Conf.constants.defaultLayout layout
     in
-    new id name sources notes usedLayout allLayouts settings storage createdAt updatedAt
+    new organization id name sources notes usedLayout allLayouts settings storage createdAt updatedAt

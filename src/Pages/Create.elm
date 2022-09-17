@@ -7,6 +7,7 @@ import Gen.Params.Create exposing (Params)
 import Gen.Route as Route
 import Html.Lazy as Lazy
 import Libs.Maybe as Maybe
+import Libs.Models.Env exposing (Env)
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Task as T
@@ -35,7 +36,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = update req shared.now
+        , update = update req shared.conf.env shared.now
         , view = view
         , subscriptions = subscriptions
         }
@@ -101,8 +102,8 @@ init =
 -- UPDATE
 
 
-update : Request.With Params -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
-update req now msg model =
+update : Request.With Params -> Env -> Time.Posix -> Msg -> Model -> ( Model, Cmd Msg )
+update req env now msg model =
     case msg of
         InitProject ->
             ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject model)) }))
@@ -117,7 +118,7 @@ update req now msg model =
             )
 
         DatabaseSourceMsg message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now message)
+            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg env now message)
 
         JsonSourceMsg message ->
             model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message)

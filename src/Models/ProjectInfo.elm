@@ -48,7 +48,7 @@ fromProject p =
         tables =
             p.sources |> List.concatMap (\s -> s.tables |> Dict.values) |> List.groupBy .id
     in
-    { organization = Nothing -- FIXME FIXME: add organization to project!
+    { organization = p.organization
     , id = p.id
     , slug = p.id
     , name = p.name

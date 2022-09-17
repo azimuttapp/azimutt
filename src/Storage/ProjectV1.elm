@@ -271,7 +271,8 @@ defaultProjectSettings =
 
 upgrade : ProjectV1 -> Project
 upgrade project =
-    { id = project.id
+    { organization = Nothing
+    , id = project.id
     , name = project.name
     , sources = project.sources |> Nel.toList |> List.map (upgradeProjectSource project.schema.tables project.schema.relations project.fromSample)
     , tables = project.schema.tables |> Dict.map (\_ -> upgradeTable)

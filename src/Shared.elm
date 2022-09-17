@@ -81,10 +81,15 @@ type alias Prompt msg =
 
 init : Request -> Flags -> ( Model, Cmd Msg )
 init _ flags =
+    let
+        env : Env
+        env =
+            Env.fromString flags.conf.env
+    in
     ( { zone = Time.utc
       , now = Time.millisToPosix flags.now
       , conf =
-            { env = Env.fromString flags.conf.env
+            { env = env
             , platform = Platform.fromString flags.conf.platform
             }
       , user = Nothing
@@ -96,8 +101,8 @@ init _ flags =
       }
     , Cmd.batch
         [ Task.perform ZoneChanged Time.here
-        , Backend.getCurrentUser GotUser
-        , Backend.getOrganizationsAndProjects GotProjects
+        , Backend.getCurrentUser env GotUser
+        , Backend.getOrganizationsAndProjects env GotProjects
         ]
     )
 
@@ -125,7 +130,7 @@ update _ msg model =
             ( { model | projectsLegacy = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
 
         JsMessage (Ports.ProjectDeleted _) ->
-            ( model, Backend.getOrganizationsAndProjects GotProjects )
+            ( model, Backend.getOrganizationsAndProjects model.conf.env GotProjects )
 
         JsMessage _ ->
             ( model, Cmd.none )

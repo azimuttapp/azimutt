@@ -14,6 +14,7 @@ import Libs.Html exposing (extLink)
 import Libs.Html.Attributes exposing (css)
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
+import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (TwClass)
@@ -71,8 +72,8 @@ init src callback =
 -- UPDATE
 
 
-update : (Msg -> msg) -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
-update wrap now msg model =
+update : (Msg -> msg) -> Env -> Time.Posix -> Msg -> Model msg -> ( Model msg, Cmd msg )
+update wrap env now msg model =
     case msg of
         UpdateUrl url ->
             ( { model | url = url }, Cmd.none )
@@ -83,7 +84,7 @@ update wrap now msg model =
 
             else
                 ( init model.source model.callback |> (\m -> { m | url = schemaUrl, selectedUrl = Just (Ok schemaUrl) })
-                , Backend.getDatabaseSchema schemaUrl (GotSchema >> wrap)
+                , Backend.getDatabaseSchema env schemaUrl (GotSchema >> wrap)
                 )
 
         GotSchema result ->

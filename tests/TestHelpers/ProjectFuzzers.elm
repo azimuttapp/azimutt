@@ -52,16 +52,17 @@ import Models.Project.UniqueName exposing (UniqueName)
 import Models.RelationStyle as RelationStyle exposing (RelationStyle)
 import Models.Size as Size
 import TestHelpers.Fuzzers exposing (color, dictSmall, fileLineIndex, fileModified, fileName, fileSize, fileUrl, identifier, intPosSmall, listSmall, nelSmall, positionCanvas, positionGrid, posix, stringSmall, text, uuid, zoomLevel)
+import TestHelpers.OrganizationFuzzers exposing (organization)
 
 
 project : Fuzzer Project
 project =
-    Fuzz.map10 Project.new projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
+    Fuzz.map11 Project.new (Fuzz.maybe organization) projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
 
 
 source : Fuzzer Source
 source =
-    Fuzz.map11 Source sourceId sourceName sourceKind sourceLines tables (listSmall relation) types Fuzz.bool sampleName posix posix
+    Fuzz.map11 Source sourceId sourceName sourceKind sourceLines tables (listSmall relation) types Fuzz.bool (Fuzz.maybe sampleName) posix posix
 
 
 sourceKind : Fuzzer SourceKind
@@ -295,6 +296,6 @@ layoutName =
     identifier
 
 
-sampleName : Fuzzer (Maybe SampleKey)
+sampleName : Fuzzer SampleKey
 sampleName =
-    Fuzz.oneOf [ Fuzz.constant (Just "basic"), Fuzz.constant Nothing ]
+    Fuzz.oneOf ([ "basic", "gospeak", "postgres" ] |> List.map Fuzz.constant)

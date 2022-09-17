@@ -8,13 +8,14 @@ import {
     Hotkey,
     HotkeyId,
     ListenKeysMsg,
+    LoadProjectMsg,
     ObserveSizesMsg,
     SetMetaMsg,
     UpdateProjectMsg
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {Project, ProjectId, ProjectStorage} from "./types/project";
+import {Project, ProjectStorage} from "./types/project";
 import {LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
@@ -32,7 +33,7 @@ const conf = Conf.get()
 const logger = new ConsoleLogger(env)
 const app = ElmApp.init({now: Date.now(), conf: {env, platform}}, logger)
 const storage = new Storage(logger)
-const backend = new Backend(logger)
+const backend = new Backend(env, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
 const analytics = env === Env.prod && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
 const errorTracking = env === Env.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
@@ -66,7 +67,7 @@ app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
 app.on('GetProject', getProject)
 app.on('ListProjects', listProjects)
-app.on('LoadProject', msg => loadProject(msg.id))
+app.on('LoadProject', loadProject) // FIXME: is it useful? => problem to get orga :(
 app.on('CreateProjectTmp', createProjectTmp)
 app.on('CreateProjectLocal', createProjectLocal)
 app.on('CreateProjectRemote', createProjectRemote)
@@ -120,28 +121,29 @@ function setMeta(meta: SetMetaMsg) {
 function getProject({organization, project}: GetProjectMsg) {
     backend.getProject(organization, project).then(res => {
         if (res.storage === ProjectStorage.azimutt) {
-            if (typeof res.content === 'string') {
-                return app.gotProject(JSON.parse(res.content))
-            } else {
-                return Promise.reject(`missing content`)
-            }
+            return typeof res.content === 'string' ?
+                {...JSON.parse(res.content), organization: res.organization, id: project, storage: ProjectStorage.azimutt} :
+                Promise.reject(`missing content`)
         } else if (res.storage === ProjectStorage.local) {
-            // TODO: if fail: add message to sync to Azimutt to have the project everywhere
-            return loadProject(project)
+            return storage.getProject(project).then(p => ({...p, organization: res.organization, id: project, storage: ProjectStorage.local}))
         } else {
             return Promise.reject(`unknown storage '${res.storage}'`)
         }
-    }).catch(err => {
+    }, err => {
         if (err.status === 404) {
             if (project !== Uuid.zero) {
                 app.toast(ToastLevel.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
             }
-            return loadProject(project)
+            return storage.getProject(project).then(p => ({...p, organization: undefined, id: project, storage: ProjectStorage.local}))
         } else {
-            app.gotProject(undefined)
-            app.toast(ToastLevel.error, `Can't load project: ${JSON.stringify(err)}`)
+            return Promise.reject(err)
         }
+    }).then(project => {
+        app.gotProject(project)
+    }, err => {
+        app.gotProject(undefined)
+        app.toast(ToastLevel.error, `Can't load project: ${typeof err === 'string' ? err : JSON.stringify(err)}`)
     })
 }
 
@@ -152,10 +154,13 @@ function listProjects() {
     })
 }
 
-function loadProject(id: ProjectId) {
-    storage.loadProject(id).then(app.gotProject).catch(err => {
+function loadProject(msg: LoadProjectMsg) {
+    // FIXME: is orga really not present???
+    storage.getProject(msg.id).then(p => ({...p, organization: undefined, id: msg.id, storage: ProjectStorage.local})).then(p => {
+        app.gotProject(p)
+    }, err => {
         app.gotProject(undefined)
-        app.toast(ToastLevel.error, `Can't load project: ${err}`)
+        app.toast(ToastLevel.error, `Can't load project: ${typeof err === 'string' ? err : JSON.stringify(err)}`)
     })
 }
 

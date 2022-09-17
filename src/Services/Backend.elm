@@ -30,14 +30,14 @@ errorToString (Error err) =
 
 homeUrl : Env -> String
 homeUrl env =
-    "/" |> buildUrl env
+    "/" |> withLinkHost env
 
 
 loginUrl : Env -> Url -> String
 loginUrl env currentUrl =
     let
         ( url, redirect ) =
-            ( "/auth/github" |> buildUrl env, Url.asString currentUrl )
+            ( "/auth/github" |> withLinkHost env, Url.asString currentUrl )
     in
     if redirect == "" then
         url
@@ -48,43 +48,46 @@ loginUrl env currentUrl =
 
 logoutUrl : Env -> String
 logoutUrl env =
-    "/users/log_out" |> buildUrl env
+    "/users/log_out" |> withLinkHost env
 
 
 profileUrl : Env -> String
 profileUrl env =
-    "/home" |> buildUrl env
+    "/home" |> withLinkHost env
 
 
-buildUrl : Env -> String -> String
-buildUrl env path =
+withLinkHost : Env -> String -> String
+withLinkHost env path =
     if env == Env.Dev then
         "http://localhost:4000" ++ path
 
+    else if env == Env.Staging then
+        "https://azimutt.dev" ++ path
+
     else
-        path
+        "https://azimutt.app" ++ path
 
 
-getCurrentUser : (Result Error (Maybe User) -> msg) -> Cmd msg
-getCurrentUser toMsg =
+getCurrentUser : Env -> (Result Error (Maybe User) -> msg) -> Cmd msg
+getCurrentUser env toMsg =
     Http.get
-        { url = "/api/v1/users/current"
+        { url = "/api/v1/users/current" |> withXhrHost env
         , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User2.decode
         }
 
 
-getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
-getOrganizationsAndProjects toMsg =
+getOrganizationsAndProjects : Env -> (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
+getOrganizationsAndProjects env toMsg =
     Http.get
-        { url = "/api/v1/organizations?expand=projects"
+        { url = "/api/v1/organizations?expand=projects" |> withXhrHost env
         , expect = Http.expectJson (Result.bimap buildError formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga)
         }
 
 
-getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
-getDatabaseSchema url toMsg =
+getDatabaseSchema : Env -> DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
+getDatabaseSchema env url toMsg =
     Http.post
-        { url = "/api/v1/analyzer/schema"
+        { url = "/api/v1/analyzer/schema" |> withXhrHost env
         , body = url |> databaseSchemaBody |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
         }
@@ -94,6 +97,18 @@ databaseSchemaBody : DatabaseUrl -> Encode.Value
 databaseSchemaBody url =
     Encode.object
         [ ( "url", url |> DatabaseUrl.encode ) ]
+
+
+withXhrHost : Env -> String -> String
+withXhrHost env path =
+    if env == Env.Dev then
+        path
+
+    else if env == Env.Staging then
+        "https://azimutt.dev" ++ path
+
+    else
+        "https://azimutt.app" ++ path
 
 
 

@@ -4,6 +4,7 @@ import Conf
 import Libs.Bool as B
 import Libs.List as List
 import Libs.Maybe as Maybe
+import Libs.Models.Env exposing (Env)
 import Libs.Task as T
 import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.Source as Source
@@ -26,8 +27,8 @@ type alias Model x =
     }
 
 
-handleProjectSettings : Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
-handleProjectSettings now msg model =
+handleProjectSettings : Env -> Time.Posix -> ProjectSettingsMsg -> Model x -> ( Model x, Cmd Msg )
+handleProjectSettings env now msg model =
     case msg of
         PSOpen ->
             ( model |> setSettings (Just { id = Conf.ids.settingsDialog }), Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.settingsDialog), Ports.track Track.openSettings ] )
@@ -51,7 +52,7 @@ handleProjectSettings now msg model =
             ( model |> mapErdM (Erd.mapSources (List.filter (\s -> s.id /= source.id))), "Source " ++ source.name ++ " has been deleted from your project." |> Toasts.info |> Toast |> T.send )
 
         PSSourceUpdate message ->
-            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop now message)
+            model |> mapSourceUpdateCmd (SourceUpdateDialog.update (PSSourceUpdate >> ProjectSettingsMsg) ModalOpen Noop env now message)
 
         PSSourceSet source ->
             if model.erd |> Maybe.mapOrElse (\erd -> erd.sources |> List.memberBy .id source.id) False then

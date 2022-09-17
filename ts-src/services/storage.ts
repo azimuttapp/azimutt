@@ -33,7 +33,7 @@ export class Storage {
         ]).then(projects => projects.flat()).then(localProjects)
     }
 
-    loadProject = (id: ProjectId): Promise<Project> => {
+    getProject = (id: ProjectId): Promise<Project> => {
         this.logger.debug(`storage.loadProject(${id})`)
         return this.indexedDb.then(s => s.loadProject(id))
             .catch(_ => this.localStorage.then(s => s.loadProject(id)))

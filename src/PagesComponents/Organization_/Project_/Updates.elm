@@ -10,6 +10,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
 import Libs.Models.Delta as Delta exposing (Delta)
+import Libs.Models.Env exposing (Env)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area
@@ -61,8 +62,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Time.Posix -> List Organization -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout now organizations msg model =
+update : Maybe LayoutName -> Env -> Time.Posix -> List Organization -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout env now organizations msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -200,10 +201,10 @@ update currentLayout now organizations msg model =
             model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings now message
+            model |> handleProjectSettings env now message
 
         EmbedSourceParsingMsg message ->
-            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now message)
+            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg env now message)
 
         SourceParsed source ->
             ( model, Project.create model.projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )

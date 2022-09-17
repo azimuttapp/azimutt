@@ -68,7 +68,8 @@ create project =
 
 unpack : Erd -> Project
 unpack erd =
-    { id = erd.project.id
+    { organization = erd.project.organization
+    , id = erd.project.id
     , name = erd.project.name
     , sources = erd.sources
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
