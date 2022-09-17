@@ -70,7 +70,7 @@ withLinkHost env path =
 
 getCurrentUser : Env -> (Result Error (Maybe User) -> msg) -> Cmd msg
 getCurrentUser env toMsg =
-    Http.get
+    riskyGet
         { url = "/api/v1/users/current" |> withXhrHost env
         , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User2.decode
         }
@@ -78,7 +78,7 @@ getCurrentUser env toMsg =
 
 getOrganizationsAndProjects : Env -> (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
 getOrganizationsAndProjects env toMsg =
-    Http.get
+    riskyGet
         { url = "/api/v1/organizations?expand=projects" |> withXhrHost env
         , expect = Http.expectJson (Result.bimap buildError formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga)
         }
@@ -86,7 +86,7 @@ getOrganizationsAndProjects env toMsg =
 
 getDatabaseSchema : Env -> DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
 getDatabaseSchema env url toMsg =
-    Http.post
+    riskyPost
         { url = "/api/v1/analyzer/schema" |> withXhrHost env
         , body = url |> databaseSchemaBody |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
@@ -109,6 +109,16 @@ withXhrHost env path =
 
     else
         "https://azimutt.app" ++ path
+
+
+riskyGet : { url : String, expect : Http.Expect msg } -> Cmd msg
+riskyGet r =
+    Http.riskyRequest { method = "GET", url = r.url, headers = [], body = Http.emptyBody, expect = r.expect, timeout = Nothing, tracker = Nothing }
+
+
+riskyPost : { url : String, body : Http.Body, expect : Http.Expect msg } -> Cmd msg
+riskyPost r =
+    Http.riskyRequest { method = "POST", url = r.url, headers = [], body = r.body, expect = r.expect, timeout = Nothing, tracker = Nothing }
 
 
 

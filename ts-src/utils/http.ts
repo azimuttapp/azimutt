@@ -1,21 +1,22 @@
 export function getJson<Response>(url: string): Promise<JsonResponse<Response>> {
-    return fetch(url).then(buildJsonResponse<Response>)
+    return fetch(url, {credentials: 'include'}).then(buildJsonResponse<Response>)
 }
 
 export function postJson<Body, Response>(url: string, body: Body): Promise<JsonResponse<Response>> {
     return fetch(url, {
         method: 'POST',
         headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+        credentials: 'include',
         body: JSON.stringify(body)
     }).then(buildJsonResponse<Response>)
 }
 
 export function deleteJson<Response>(url: string): Promise<JsonResponse<Response>> {
-    return fetch(url, {method: 'DELETE'}).then(buildJsonResponse<Response>)
+    return fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildJsonResponse<Response>)
 }
 
 export function deleteNoContent(url: string): Promise<NoContentResponse> {
-    return fetch(url, {method: 'DELETE'}).then(buildNoContentResponse)
+    return fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildNoContentResponse)
 }
 
 interface NoContentResponse {
