@@ -180,7 +180,7 @@ viewProjectCard zone project =
     li [ class "az-project", css [ "col-span-1 flex flex-col border border-gray-200 rounded-lg divide-y divide-gray-200", hover [ "shadow-lg" ] ] ]
         [ div [ css [ "p-6" ] ]
             [ h3 [ css [ "text-lg font-medium flex" ] ]
-                [ if project.storage == ProjectStorage.Azimutt then
+                [ if project.storage == ProjectStorage.Remote then
                     Icon.outline Icon.Cloud "" |> Tooltip.t "Sync in Azimutt"
 
                   else

@@ -122,9 +122,9 @@ function setMeta(meta: SetMetaMsg) {
 
 function getProject({organization, project}: GetProjectMsg) {
     backend.getProject(organization, project).then(res => {
-        if (res.storage === ProjectStorage.azimutt) {
+        if (res.storage === ProjectStorage.remote) {
             return typeof res.content === 'string' ?
-                {...JSON.parse(res.content), organization: res.organization, id: project, storage: ProjectStorage.azimutt} :
+                {...JSON.parse(res.content), organization: res.organization, id: project, storage: ProjectStorage.remote} :
                 Promise.reject(`missing content`)
         } else if (res.storage === ProjectStorage.local) {
             return storage.getProject(project).then(p => ({...p, organization: res.organization, id: project, storage: ProjectStorage.local}))
@@ -192,7 +192,7 @@ function createProject(msg: CreateProjectMsg): void {
                 app.gotProject(p)
             })
         })
-    } else if (msg.storage == ProjectStorage.azimutt) {
+    } else if (msg.storage == ProjectStorage.remote) {
         backend.createProjectRemote(msg.organization, msg.project).then(p => {
             app.toast(ToastLevel.success, `Project created!`)
             window.history.replaceState("", "", `/${msg.organization}/${p.id}`) // FIXME use Elm Router to build url

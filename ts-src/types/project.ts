@@ -204,12 +204,12 @@ export interface Settings {
 
 export type ProjectVersion = 1 | 2
 
-// 'browser' was changed for 'local' and 'cloud' for 'azimutt', keep them here for legacy projects
-export type ProjectStorage = 'local' | 'azimutt' | 'browser' | 'cloud'
+// 'browser' was changed for 'local' and 'cloud' for 'remote', keep them here for legacy projects
+export type ProjectStorage = 'local' | 'remote' | 'browser' | 'cloud'
 
 export const ProjectStorage: { [key in ProjectStorage]: key } = {
     local: 'local',
-    azimutt: 'azimutt',
+    remote: 'remote',
     browser: 'browser',
     cloud: 'cloud'
 }

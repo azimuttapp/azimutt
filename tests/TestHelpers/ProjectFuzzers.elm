@@ -196,7 +196,7 @@ projectStorage =
                 ProjectStrorage.Local
 
             else
-                ProjectStrorage.Azimutt
+                ProjectStrorage.Remote
         )
         Fuzz.bool
 

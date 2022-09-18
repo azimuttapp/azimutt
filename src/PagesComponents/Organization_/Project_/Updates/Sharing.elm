@@ -20,7 +20,7 @@ handleSharing msg model =
                 |> setSharing
                     (Just
                         (model.erd
-                            |> Maybe.filter (\erd -> erd.project.storage == ProjectStorage.Azimutt)
+                            |> Maybe.filter (\erd -> erd.project.storage == ProjectStorage.Remote)
                             |> Maybe.mapOrElse
                                 (\erd ->
                                     { id = Conf.ids.sharingDialog

@@ -7,7 +7,7 @@ import Json.Encode as Encode exposing (Value)
 
 type ProjectStorage
     = Local
-    | Azimutt
+    | Remote
 
 
 icon : ProjectStorage -> Icon.Icon
@@ -25,8 +25,8 @@ encode value =
         Local ->
             "local" |> Encode.string
 
-        Azimutt ->
-            "azimutt" |> Encode.string
+        Remote ->
+            "remote" |> Encode.string
 
 
 decode : Decode.Decoder ProjectStorage
@@ -38,15 +38,15 @@ decode =
                     "local" ->
                         Local |> Decode.succeed
 
-                    "azimutt" ->
-                        Azimutt |> Decode.succeed
+                    "remote" ->
+                        Remote |> Decode.succeed
 
                     -- legacy values:
                     "browser" ->
                         Local |> Decode.succeed
 
                     "cloud" ->
-                        Azimutt |> Decode.succeed
+                        Remote |> Decode.succeed
 
                     _ ->
                         Decode.fail ("invalid ProjectStorage '" ++ value ++ "'")

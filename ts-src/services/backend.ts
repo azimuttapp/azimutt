@@ -46,7 +46,7 @@ export class Backend {
         const payload = {
             name: p.name,
             description: undefined,
-            storage_kind: ProjectStorage.azimutt,
+            storage_kind: ProjectStorage.remote,
             encoding_version: p.version,
             ...adaptStats(computeStats(p))
         }

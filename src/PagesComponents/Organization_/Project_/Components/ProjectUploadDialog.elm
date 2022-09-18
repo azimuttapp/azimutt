@@ -56,7 +56,7 @@ update modalOpen erd msg model =
             ( Just { id = dialogId, movingProject = False, team = ProjectTeam.init }
             , Cmd.batch
                 ([ T.sendAfter 1 (modalOpen dialogId), Ports.track Track.openProjectUploadDialog ]
-                    ++ (erd |> Maybe.mapOrElse (\e -> Bool.cond (e.project.storage == ProjectStorage.Azimutt) [ Ports.getOwners e.project.id ] []) [])
+                    ++ (erd |> Maybe.mapOrElse (\e -> Bool.cond (e.project.storage == ProjectStorage.Remote) [ Ports.getOwners e.project.id ] []) [])
                 )
             )
 
@@ -152,7 +152,7 @@ uploadModal modalClose moveProjectTo titleId movingProject project =
                 Button.primary3 Tw.emerald [ disabled True ] [ text "Can't upload samples" ]
 
               else
-                Button.primary3 Tw.emerald [ onClick (moveProjectTo ProjectStorage.Azimutt) ] [ text "Upload to Azimutt" ]
+                Button.primary3 Tw.emerald [ onClick (moveProjectTo ProjectStorage.Remote) ] [ text "Upload to Azimutt" ]
             ]
         , p [ class "mt-2 text-xs text-right text-gray-500" ] [ text "You can revert this decision at any time." ]
         ]

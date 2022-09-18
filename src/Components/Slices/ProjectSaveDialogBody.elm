@@ -122,7 +122,7 @@ type alias Card =
 radioCards : HtmlId -> (String -> msg) -> Maybe ProjectStorage -> Html msg
 radioCards fieldId fieldChange fieldValue =
     div [ class "grid grid-cols-1 gap-y-2" ]
-        ([ Card (storageToString ProjectStorage.Azimutt) "Save your project in Azimutt server to share it" "Needs pro account"
+        ([ Card (storageToString ProjectStorage.Remote) "Save your project in Azimutt server to share it" "Needs pro account"
          , Card (storageToString ProjectStorage.Local) "Keep your project locally" "Free"
          ]
             |> List.indexedMap (radioCardLabel fieldId (fieldValue |> Maybe.mapOrElse storageToString "") fieldChange)
@@ -159,7 +159,7 @@ storageToString s =
         ProjectStorage.Local ->
             "Local"
 
-        ProjectStorage.Azimutt ->
+        ProjectStorage.Remote ->
             "Remote"
 
 
@@ -170,7 +170,7 @@ stringToStorage s =
             Just ProjectStorage.Local
 
         "Remote" ->
-            Just ProjectStorage.Azimutt
+            Just ProjectStorage.Remote
 
         _ ->
             Nothing
