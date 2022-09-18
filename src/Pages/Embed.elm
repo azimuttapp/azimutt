@@ -93,6 +93,7 @@ init query =
       , schemaAnalysis = Nothing
       , sharing = Nothing
       , upload = Nothing
+      , save = Nothing
       , settings = Nothing
       , sourceUpdate = Nothing
       , embedSourceParsing = EmbedSourceParsingDialog.init SourceParsed ModalClose Noop query.databaseSource query.sqlSource query.jsonSource

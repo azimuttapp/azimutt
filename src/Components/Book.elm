@@ -12,6 +12,8 @@ import Components.Molecules.Divider as Divider
 import Components.Molecules.Dropdown as Dropdown
 import Components.Molecules.Editor as Editor
 import Components.Molecules.FileInput as FileInput
+import Components.Molecules.FormLabel as FormLabel
+import Components.Molecules.InputText as InputText
 import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Popover as Popover
@@ -24,6 +26,7 @@ import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
 import Components.Slices.NotFound as NotFound
+import Components.Slices.ProjectSaveDialogBody as ProjectSaveDialogBody
 import ElmBook
 import ElmBook.Chapter as Chapter exposing (Chapter)
 import ElmBook.ComponentOptions
@@ -38,10 +41,13 @@ import Libs.Tailwind as Tw
 type alias DocState =
     { detailsDocState : Details.DocState
     , dropdownDocState : Dropdown.DocState
+    , formLabelDocState : FormLabel.DocState
     , inputDocState : Input.DocState
+    , inputTextDocState : InputText.DocState
     , modalDocState : Modal.DocState
     , navbarDocState : Navbar.DocState
     , popoverDocState : Popover.DocState
+    , projectSaveDocState : ProjectSaveDialogBody.DocState
     , selectDocState : Select.DocState
     , slideoverDocState : Slideover.DocState
     , tableDocState : Table.DocState
@@ -53,10 +59,13 @@ init : DocState
 init =
     { detailsDocState = Details.initDocState
     , dropdownDocState = Dropdown.initDocState
+    , formLabelDocState = FormLabel.initDocState
     , inputDocState = Input.initDocState
+    , inputTextDocState = InputText.initDocState
     , modalDocState = Modal.initDocState
     , navbarDocState = Navbar.initDocState
     , popoverDocState = Popover.initDocState
+    , projectSaveDocState = ProjectSaveDialogBody.initDocState
     , selectDocState = Select.initDocState
     , slideoverDocState = Slideover.initDocState
     , tableDocState = Table.initDocState
@@ -78,9 +87,9 @@ main =
             -- sorted alphabetically
             [ ( "", [ docs ] )
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc ] )
-            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, ItemList.doc, Modal.doc, Popover.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
+            , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Organisms", [ Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
-            , ( "Slices", [ NotFound.doc ] )
+            , ( "Slices", [ NotFound.doc, ProjectSaveDialogBody.doc ] )
             ]
 
 

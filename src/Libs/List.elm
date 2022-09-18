@@ -31,6 +31,7 @@ module Libs.List exposing
     , moveIndex
     , nonEmpty
     , nonEmptyMap
+    , one
     , prepend
     , prependIf
     , prependOn
@@ -66,6 +67,20 @@ get index list =
 
     else
         list |> List.drop index |> List.head
+
+
+one : List a -> Maybe a
+one list =
+    -- return first list item when list has only one item (like List.head but for list of 1)
+    case list of
+        [] ->
+            Nothing
+
+        [ a ] ->
+            Just a
+
+        _ ->
+            Nothing
 
 
 last : List a -> Maybe a

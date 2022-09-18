@@ -9,6 +9,7 @@ import Libs.Tuple as Tuple
 import Models.Project.ColumnRef exposing (ColumnRef)
 import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
+import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
@@ -181,6 +182,7 @@ cancelElement model =
         |> Maybe.orElse (model.sourceUpdate |> Maybe.map (\_ -> ModalClose (SourceUpdateDialog.Close |> PSSourceUpdate |> ProjectSettingsMsg)))
         |> Maybe.orElse (model.sharing |> Maybe.map (\_ -> ModalClose (SharingMsg SClose)))
         |> Maybe.orElse (model.upload |> Maybe.map (\_ -> ModalClose (ProjectUploadMsg ProjectUploadDialog.Close)))
+        |> Maybe.orElse (model.save |> Maybe.map (\_ -> ModalClose (ProjectSaveMsg ProjectSaveDialog.Close)))
         |> Maybe.orElse (model.settings |> Maybe.map (\_ -> ModalClose (ProjectSettingsMsg PSClose)))
         |> Maybe.orElse (model.help |> Maybe.map (\_ -> ModalClose (HelpMsg HClose)))
         |> Maybe.orElse (model.erd |> Maybe.andThen (Erd.currentLayout >> .tables >> List.find (.props >> .selected)) |> Maybe.map (\p -> SelectTable p.id False))

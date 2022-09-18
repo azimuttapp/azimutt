@@ -1,13 +1,13 @@
-module Components.Molecules.Select exposing (DocState, Item, Model, SharedDocState, doc, indicator, initDocState)
+module Components.Molecules.Select exposing (DocState, Item, Model, SharedDocState, SimpleItem, doc, indicator, initDocState, simple)
 
 import Components.Atoms.Icon as Icon
 import Dict exposing (Dict)
 import ElmBook exposing (Msg)
 import ElmBook.Actions as Actions
 import ElmBook.Chapter as Chapter exposing (Chapter)
-import Html exposing (Html, button, div, label, li, span, text, ul)
-import Html.Attributes exposing (class, id, tabindex, type_)
-import Html.Events exposing (onClick, onMouseEnter, onMouseLeave)
+import Html exposing (Html, button, div, label, li, option, select, span, text, ul)
+import Html.Attributes exposing (class, id, name, selected, tabindex, type_, value)
+import Html.Events exposing (onClick, onInput, onMouseEnter, onMouseLeave)
 import Libs.Bool as Bool
 import Libs.Dict as Dict
 import Libs.Html.Attributes exposing (ariaActivedescendant, ariaExpanded, ariaHaspopup, ariaHidden, ariaLabel, ariaLabelledby, css, role)
@@ -17,6 +17,16 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (Color, bg_400, focus)
 import Libs.Tuple as Tuple
 import Services.Lenses exposing (setHighlight, setIsOpen, setValue)
+
+
+type alias SimpleItem =
+    { value : String, label : String }
+
+
+simple : HtmlId -> List SimpleItem -> String -> (String -> msg) -> Html msg
+simple fieldId items fieldValue fieldChange =
+    select [ name fieldId, id fieldId, onInput fieldChange, class "block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm" ]
+        (items |> List.map (\i -> option [ value i.value, selected (i.value == fieldValue) ] [ text i.label ]))
 
 
 type alias Model =
@@ -51,8 +61,8 @@ indicator htmlId inputLabel values onInput onStatus onHover model =
                 "transition-opacity ease-out duration-300 opacity-0 pointer-events-none"
     in
     div []
-        [ label [ id labelId, class "block text-sm font-medium text-gray-700" ] [ text inputLabel ]
-        , div [ class "mt-1 relative" ]
+        [ label [ id labelId, class "block mb-1 text-sm font-medium text-gray-700" ] [ text inputLabel ]
+        , div [ class "relative" ]
             [ button
                 [ type_ "button"
                 , ariaHaspopup "listbox"
@@ -78,7 +88,7 @@ indicator htmlId inputLabel values onInput onStatus onHover model =
                 , ariaActivedescendant (optionId (selected |> Maybe.mapOrElse Tuple.first 0))
                 , css [ visibility, "absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm focus:outline-none" ]
                 ]
-                (items
+                (sampleItems
                     |> List.indexedMap
                         (\i item ->
                             {- Select option, manage highlight styles based on mouseenter/mouseleave and keyboard navigation.
@@ -120,16 +130,49 @@ type alias SharedDocState x =
 
 
 type alias DocState =
-    { selects : Dict String Model }
+    { simple : String, selects : Dict String Model }
 
 
 initDocState : DocState
 initDocState =
-    { selects = Dict.empty }
+    { simple = "", selects = Dict.empty }
 
 
-items : List Item
-items =
+updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
+updateDocState transform =
+    Actions.updateState (\s -> { s | selectDocState = s.selectDocState |> transform })
+
+
+updateModel : String -> (Model -> Model) -> Msg (SharedDocState x)
+updateModel name transform =
+    updateDocState (\s -> { s | selects = s.selects |> Dict.update name (Maybe.withDefault emptyModel >> transform >> Just) })
+
+
+component : String -> (DocState -> Html msg) -> ( String, SharedDocState x -> Html msg )
+component name render =
+    ( name, \{ selectDocState } -> render selectDocState )
+
+
+componentRich : String -> (((Model -> Model) -> Msg (SharedDocState x)) -> Model -> Html msg) -> ( String, SharedDocState x -> Html msg )
+componentRich name render =
+    ( name, \{ selectDocState } -> render (updateModel name) (selectDocState.selects |> Dict.getOrElse name emptyModel) )
+
+
+sampleSimpleItems : List SimpleItem
+sampleSimpleItems =
+    [ { value = "United States", label = "United States" }
+    , { value = "Canada", label = "Canada" }
+    , { value = "Mexico", label = "Mexico" }
+    ]
+
+
+emptyModel : Model
+emptyModel =
+    { isOpen = False, value = "", highlight = Nothing }
+
+
+sampleItems : List Item
+sampleItems =
     [ { value = "Wade Cooper", label = "Wade Cooper", indicatorColor = Tw.green, indicatorLabel = "is online" }
     , { value = "Arlene Mccoy", label = "Arlene Mccoy", indicatorColor = Tw.gray, indicatorLabel = "is offline" }
     , { value = "Devon Webb", label = "Devon Webb", indicatorColor = Tw.gray, indicatorLabel = "is offline" }
@@ -143,29 +186,10 @@ items =
     ]
 
 
-emptyModel : Model
-emptyModel =
-    { isOpen = False, value = "", highlight = Nothing }
-
-
-updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
-updateDocState transform =
-    Actions.updateState (\s -> { s | selectDocState = s.selectDocState |> transform })
-
-
-updateModel : String -> (Model -> Model) -> Msg (SharedDocState x)
-updateModel name transform =
-    updateDocState (\s -> { s | selects = s.selects |> Dict.update name (Maybe.withDefault emptyModel >> transform >> Just) })
-
-
-component : String -> (((Model -> Model) -> Msg (SharedDocState x)) -> Model -> Html msg) -> ( String, SharedDocState x -> Html msg )
-component name render =
-    ( name, \{ selectDocState } -> render (updateModel name) (selectDocState.selects |> Dict.getOrElse name emptyModel) )
-
-
 doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Select"
         |> Chapter.renderStatefulComponentList
-            [ component "indicator" (\update -> indicator "listbox" "Assigned to" items (\v -> (setValue v >> setIsOpen False) |> update) (setIsOpen >> update) (setHighlight >> update))
+            [ component "simple" (\model -> simple "simple-id" sampleSimpleItems model.simple (\v -> updateDocState (\m -> { m | simple = v })))
+            , componentRich "indicator" (\update -> indicator "listbox" "Assigned to" sampleItems (\v -> (setValue v >> setIsOpen False) |> update) (setIsOpen >> update) (setHighlight >> update))
             ]

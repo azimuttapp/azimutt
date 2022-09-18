@@ -21,6 +21,7 @@ import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (ContextMenu, LayoutMsg(..), Model, Msg(..), ProjectSettingsMsg(..))
@@ -148,6 +149,7 @@ viewModal currentUrl shared model onDelete =
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.upload |> Maybe.map2 (\e m -> ( m.id, ProjectUploadDialog.view ConfirmOpen onDelete ProjectUploadMsg MoveProjectTo ModalClose shared.conf.env currentUrl shared.user (model.openedDialogs |> List.member m.id) e.project m )) model.erd
+         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject shared.conf.env currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))
          , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (model.openedDialogs |> List.member m.id) m ))

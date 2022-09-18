@@ -65,6 +65,7 @@ init params =
       , schemaAnalysis = Nothing
       , sharing = Nothing
       , upload = Nothing
+      , save = Nothing
       , settings = Nothing
       , sourceUpdate = Nothing
       , embedSourceParsing = Nothing

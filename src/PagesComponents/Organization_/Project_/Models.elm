@@ -30,6 +30,7 @@ import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
@@ -70,6 +71,7 @@ type alias Model =
     , schemaAnalysis : Maybe SchemaAnalysisDialog
     , sharing : Maybe SharingDialog
     , upload : Maybe ProjectUploadDialog.Model
+    , save : Maybe ProjectSaveDialog.Model
     , settings : Maybe ProjectSettingsDialog
     , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
     , embedSourceParsing : Maybe (EmbedSourceParsingDialog.Model Msg)
@@ -145,7 +147,8 @@ type Msg
     = ToggleMobileMenu
     | SearchUpdated String
     | TriggerSaveProject
-    | SaveProject Organization
+    | CreateProject ProjectName Organization ProjectStorage
+    | UpdateProject
     | MoveProjectTo ProjectStorage
     | RenameProject ProjectName
     | ShowTable TableId (Maybe PositionHint)
@@ -182,6 +185,7 @@ type Msg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
     | ProjectUploadMsg ProjectUploadDialog.Msg
+    | ProjectSaveMsg ProjectSaveDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg
     | SourceParsed Source

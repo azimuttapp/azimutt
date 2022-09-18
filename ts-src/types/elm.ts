@@ -58,8 +58,7 @@ export type ElmMsg =
     | ListProjectsMsg
     | LoadProjectMsg
     | CreateProjectTmpMsg
-    | CreateProjectLocalMsg
-    | CreateProjectRemoteMsg
+    | CreateProjectMsg
     | UpdateProjectMsg
     | MoveProjectToMsg
     | DeleteProjectMsg
@@ -87,8 +86,7 @@ export type GetProjectMsg = { kind: 'GetProject', organization: OrganizationId, 
 export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
 export type CreateProjectTmpMsg = { kind: 'CreateProjectTmp', project: Project }
-export type CreateProjectLocalMsg = { kind: 'CreateProjectLocal', organization: OrganizationId, project: Project }
-export type CreateProjectRemoteMsg = { kind: 'CreateProjectRemote', organization: OrganizationId, project: Project }
+export type CreateProjectMsg = { kind: 'CreateProject', organization: OrganizationId, storage: ProjectStorage, project: Project }
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type DeleteProjectMsg = { kind: 'DeleteProject', project: ProjectInfo }

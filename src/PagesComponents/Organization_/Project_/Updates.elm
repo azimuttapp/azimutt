@@ -18,7 +18,6 @@ import Models.Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
-import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
@@ -28,6 +27,7 @@ import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
+import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.ProjectTeam as ProjectTeam
 import PagesComponents.Organization_.Project_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
@@ -44,7 +44,7 @@ import PagesComponents.Organization_.Project_.Updates.Help exposing (handleHelp)
 import PagesComponents.Organization_.Project_.Updates.Hotkey exposing (handleHotkey)
 import PagesComponents.Organization_.Project_.Updates.Layout exposing (handleLayout)
 import PagesComponents.Organization_.Project_.Updates.Notes exposing (handleNotes)
-import PagesComponents.Organization_.Project_.Updates.Project exposing (moveProject, saveProject, triggerSaveProject)
+import PagesComponents.Organization_.Project_.Updates.Project exposing (createProject, moveProject, triggerSaveProject, updateProject)
 import PagesComponents.Organization_.Project_.Updates.ProjectSettings exposing (handleProjectSettings)
 import PagesComponents.Organization_.Project_.Updates.Sharing exposing (handleSharing)
 import PagesComponents.Organization_.Project_.Updates.Source as Source
@@ -54,7 +54,7 @@ import PagesComponents.Organization_.Project_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -74,8 +74,11 @@ update currentLayout env now organizations msg model =
         TriggerSaveProject ->
             model |> triggerSaveProject organizations
 
-        SaveProject organization ->
-            model |> saveProject organization
+        CreateProject name organization storage ->
+            model |> createProject name organization storage
+
+        UpdateProject ->
+            model |> updateProject
 
         MoveProjectTo storage ->
             model |> moveProject storage
@@ -199,6 +202,9 @@ update currentLayout env now organizations msg model =
 
         ProjectUploadMsg message ->
             model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
+
+        ProjectSaveMsg message ->
+            model |> mapSaveCmd (ProjectSaveDialog.update ModalOpen message)
 
         ProjectSettingsMsg message ->
             model |> handleProjectSettings env now message
@@ -340,17 +346,6 @@ handleJsMessage now currentLayout msg model =
                         erd =
                             currentLayout |> Maybe.mapOrElse (\l -> { project | usedLayout = l }) project |> Erd.create
 
-                        uploadCmd : List (Cmd msg)
-                        uploadCmd =
-                            if model.upload == Nothing then
-                                []
-
-                            else if project.storage == ProjectStorage.Azimutt then
-                                [ Ports.getOwners project.id, Ports.confettiPride ]
-
-                            else
-                                []
-
                         amlSidebar : Maybe AmlSidebar
                         amlSidebar =
                             B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSidebar.init (Just erd))
@@ -361,7 +356,7 @@ handleJsMessage now currentLayout msg model =
                          , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
                          , Ports.setMeta { title = Just (Views.title (Just erd)), description = Nothing, canonical = Nothing, html = Nothing, body = Nothing }
                          ]
-                            ++ uploadCmd
+                            ++ B.cond (model.save == Nothing) [] [ ProjectSaveDialog.Close |> ProjectSaveMsg |> ModalClose |> T.send, Ports.confettiPride ]
                         )
                     )
 

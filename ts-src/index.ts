@@ -1,6 +1,5 @@
 import {
-    CreateProjectLocalMsg,
-    CreateProjectRemoteMsg,
+    CreateProjectMsg,
     CreateProjectTmpMsg,
     DeleteProjectMsg,
     GetLocalFileMsg,
@@ -72,8 +71,7 @@ app.on('GetProject', getProject)
 app.on('ListProjects', listProjects)
 app.on('LoadProject', loadProject) // FIXME: is it useful? => problem to get orga :(
 app.on('CreateProjectTmp', createProjectTmp)
-app.on('CreateProjectLocal', createProjectLocal)
-app.on('CreateProjectRemote', createProjectRemote)
+app.on('CreateProject', createProject)
 app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
 // app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.error, err)))
 app.on('DeleteProject', deleteProject)
@@ -173,30 +171,32 @@ function createProjectTmp({project}: CreateProjectTmpMsg): void {
         .then(app.gotProject)
 }
 
-function createProjectLocal({organization, project}: CreateProjectLocalMsg): void {
-    backend.createProjectLocal(organization, project).catch(err => {
-        app.toast(ToastLevel.error, `Can't save project to backend: ${JSON.stringify(err)}`)
-        return Promise.reject(err)
-    }).then(info => {
-        return storage.createProject(info.id, project).catch(err => {
-            app.toast(ToastLevel.error, `Can't save project locally: ${JSON.stringify(err)}`)
-            return backend.deleteProject(organization, info.id).then(_ => Promise.reject(err))
+function createProject(msg: CreateProjectMsg): void {
+    if (msg.storage == ProjectStorage.local) {
+        backend.createProjectLocal(msg.organization, msg.project).catch(err => {
+            app.toast(ToastLevel.error, `Can't save project to backend: ${JSON.stringify(err)}`)
+            return Promise.reject(err)
+        }).then(info => {
+            return storage.createProject(info.id, msg.project).catch(err => {
+                app.toast(ToastLevel.error, `Can't save project locally: ${JSON.stringify(err)}`)
+                return backend.deleteProject(msg.organization, info.id).then(_ => Promise.reject(err))
+            })
+        }).then(p => {
+            return storage.deleteProject(Uuid.zero).catch(err => {
+                app.toast(ToastLevel.error, `Can't delete temporary project: ${JSON.stringify(err)}`)
+                return Promise.resolve()
+            }).then(_ => {
+                app.toast(ToastLevel.success, `Project created!`)
+                window.history.replaceState("", "", `/${msg.organization}/${p.id}`) // FIXME use Router to build url
+                app.gotProject(p)
+            })
         })
-    }).then(p => {
-        return storage.deleteProject(Uuid.zero).catch(err => {
-            app.toast(ToastLevel.error, `Can't delete temporary project: ${JSON.stringify(err)}`)
-            return Promise.resolve()
-        }).then(_ => {
-            app.toast(ToastLevel.success, `Project created!`)
-            window.history.replaceState("", "", `/${organization}/${p.id}`) // FIXME use Router to build url
-            app.gotProject(p)
-        })
-    })
-}
-
-function createProjectRemote({organization, project}: CreateProjectRemoteMsg): void {
-    backend.createProjectRemote(organization, project)
-    // FIXME .then(app.gotProject)
+    } else if (msg.storage == ProjectStorage.azimutt) {
+        backend.createProjectRemote(msg.organization, msg.project)
+        // FIXME .then(app.gotProject)
+    } else {
+        app.toast(ToastLevel.error, `Unknown ProjectStorage: ${JSON.stringify(storage)}`)
+    }
 }
 
 function updateProject(msg: UpdateProjectMsg): Promise<Project> {

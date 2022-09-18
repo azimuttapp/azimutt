@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProjectLocal, createProjectRemote, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -90,14 +90,9 @@ createProjectTmp project =
     messageToJs (CreateProjectTmp project)
 
 
-createProjectLocal : OrganizationId -> Project -> Cmd msg
-createProjectLocal organization project =
-    messageToJs (CreateProjectLocal organization project)
-
-
-createProjectRemote : Project -> Cmd msg
-createProjectRemote project =
-    messageToJs (CreateProjectRemote project)
+createProject : OrganizationId -> ProjectStorage -> Project -> Cmd msg
+createProject organization storage project =
+    messageToJs (CreateProject organization storage project)
 
 
 updateProject : Project -> Cmd msg
@@ -225,8 +220,7 @@ type ElmMsg
     | ListProjects
     | LoadProject ProjectId
     | CreateProjectTmp Project
-    | CreateProjectLocal OrganizationId Project
-    | CreateProjectRemote Project
+    | CreateProject OrganizationId ProjectStorage Project
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | DeleteProject ProjectInfo
@@ -333,11 +327,8 @@ elmEncoder elm =
         CreateProjectTmp project ->
             Encode.object [ ( "kind", "CreateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
-        CreateProjectLocal organization project ->
-            Encode.object [ ( "kind", "CreateProjectLocal" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> Project.encode ) ]
-
-        CreateProjectRemote project ->
-            Encode.object [ ( "kind", "CreateProjectRemote" |> Encode.string ), ( "project", project |> Project.encode ) ]
+        CreateProject organization storage project ->
+            Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "storage", storage |> ProjectStorage.encode ), ( "project", project |> Project.encode ) ]
 
         UpdateProject project ->
             Encode.object [ ( "kind", "UpdateProject" |> Encode.string ), ( "project", project |> Project.encode ) ]

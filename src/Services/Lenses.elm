@@ -53,6 +53,8 @@ module Services.Lenses exposing
     , mapRemovedSchemas
     , mapResult
     , mapSampleProjectMCmd
+    , mapSaveCmd
+    , mapSaveM
     , mapSchemaAnalysisM
     , mapSearch
     , mapSelected
@@ -154,6 +156,7 @@ module Services.Lenses exposing
     , setRemovedTables
     , setResult
     , setSampleProject
+    , setSave
     , setSchemaAnalysis
     , setSearch
     , setSelected
@@ -833,6 +836,21 @@ setSampleProject =
 mapSampleProjectMCmd : (v -> ( v, Cmd msg )) -> { item | sampleProject : Maybe v } -> ( { item | sampleProject : Maybe v }, Cmd msg )
 mapSampleProjectMCmd =
     mapMCmd_ .sampleProject setSampleProject
+
+
+setSave : v -> { item | save : v } -> { item | save : v }
+setSave =
+    set_ .save (\value item -> { item | save = value })
+
+
+mapSaveM : (v -> v) -> { item | save : Maybe v } -> { item | save : Maybe v }
+mapSaveM =
+    mapM_ .save setSave
+
+
+mapSaveCmd : (v -> ( v, Cmd msg )) -> { item | save : v } -> ( { item | save : v }, Cmd msg )
+mapSaveCmd =
+    mapCmd_ .save setSave
 
 
 setSchemaAnalysis : v -> { item | schemaAnalysis : v } -> { item | schemaAnalysis : v }
