@@ -28,8 +28,6 @@ import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSideba
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
-import PagesComponents.Organization_.Project_.Components.ProjectTeam as ProjectTeam
-import PagesComponents.Organization_.Project_.Components.ProjectUploadDialog as ProjectUploadDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, Model, Msg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -54,7 +52,7 @@ import PagesComponents.Organization_.Project_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
 import Services.JsonSource as JsonSource
-import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, mapUploadCmd, mapUploadM, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
+import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
@@ -199,9 +197,6 @@ update currentLayout env now organizations msg model =
 
         SharingMsg message ->
             model |> handleSharing message
-
-        ProjectUploadMsg message ->
-            model |> mapUploadCmd (ProjectUploadDialog.update ModalOpen model.erd message)
 
         ProjectSaveMsg message ->
             model |> mapSaveCmd (ProjectSaveDialog.update ModalOpen message)
@@ -350,7 +345,7 @@ handleJsMessage now currentLayout msg model =
                         amlSidebar =
                             B.maybe (project.sources |> List.all (\s -> s.kind == SourceKind.AmlEditor)) (AmlSidebar.init (Just erd))
                     in
-                    ( { model | loaded = True, erd = Just erd, amlSidebar = amlSidebar } |> mapUploadM (\u -> { u | movingProject = False })
+                    ( { model | loaded = True, erd = Just erd, amlSidebar = amlSidebar }
                     , Cmd.batch
                         ([ Ports.observeSize Conf.ids.erd
                          , Ports.observeTablesSize (erd |> Erd.currentLayout |> .tables |> List.map .id)
@@ -362,20 +357,6 @@ handleJsMessage now currentLayout msg model =
 
         ProjectDeleted projectId ->
             ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
-
-        GotUser email user ->
-            if model.upload == Nothing then
-                ( model, Cmd.none )
-
-            else
-                ( model, T.send (ProjectUploadMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateShareUser (Just ( email, user ))))) )
-
-        GotOwners _ owners ->
-            if model.upload == Nothing then
-                ( model, Cmd.none )
-
-            else
-                ( model, T.send (ProjectUploadMsg (ProjectUploadDialog.ProjectTeamMsg (ProjectTeam.UpdateOwners owners))) )
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then

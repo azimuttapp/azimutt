@@ -31,7 +31,6 @@ import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
-import PagesComponents.Organization_.Project_.Components.ProjectUploadDialog as ProjectUploadDialog exposing (Model, Msg)
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
 import PagesComponents.Organization_.Project_.Models.CursorMode exposing (CursorMode)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
@@ -70,7 +69,6 @@ type alias Model =
     , findPath : Maybe FindPathDialog
     , schemaAnalysis : Maybe SchemaAnalysisDialog
     , sharing : Maybe SharingDialog
-    , upload : Maybe ProjectUploadDialog.Model
     , save : Maybe ProjectSaveDialog.Model
     , settings : Maybe ProjectSettingsDialog
     , sourceUpdate : Maybe (SourceUpdateDialog.Model Msg)
@@ -184,7 +182,6 @@ type Msg
     | FindPathMsg FindPathMsg
     | SchemaAnalysisMsg SchemaAnalysisMsg
     | SharingMsg SharingMsg
-    | ProjectUploadMsg ProjectUploadDialog.Msg
     | ProjectSaveMsg ProjectSaveDialog.Msg
     | ProjectSettingsMsg ProjectSettingsMsg
     | EmbedSourceParsingMsg EmbedSourceParsingDialog.Msg

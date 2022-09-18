@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getOwners, getProject, getUser, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, setOwners, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getProject, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -9,7 +9,6 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Models exposing (FileContent, SizeChange, TrackEvent)
 import Libs.Models.Delta as Delta exposing (Delta)
-import Libs.Models.Email exposing (Email)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.Hotkey as Hotkey exposing (Hotkey)
 import Libs.Models.HtmlId exposing (HtmlId)
@@ -24,8 +23,6 @@ import Models.Project.TableId as TableId exposing (TableId)
 import Models.ProjectInfo as ProjectInfo exposing (ProjectInfo)
 import Models.Route as Route exposing (Route)
 import Models.Size as Size
-import Models.UserId as UserId exposing (UserId)
-import Models.UserLegacy as UserLegacy exposing (UserLegacy)
 import Storage.ProjectV2 exposing (decodeProject)
 import Track
 
@@ -103,21 +100,6 @@ updateProject project =
 moveProjectTo : Project -> ProjectStorage -> Cmd msg
 moveProjectTo project storage =
     messageToJs (MoveProjectTo project storage)
-
-
-getUser : Email -> Cmd msg
-getUser email =
-    messageToJs (GetUser email)
-
-
-getOwners : ProjectId -> Cmd msg
-getOwners projectId =
-    messageToJs (GetOwners projectId)
-
-
-setOwners : ProjectId -> List UserId -> Cmd msg
-setOwners projectId owners =
-    messageToJs (SetOwners projectId owners)
 
 
 downloadFile : FileName -> FileContent -> Cmd msg
@@ -224,9 +206,6 @@ type ElmMsg
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
     | DeleteProject ProjectInfo
-    | GetUser Email
-    | GetOwners ProjectId
-    | SetOwners ProjectId (List UserId)
     | DownloadFile FileName FileContent
     | GetLocalFile String File
     | ObserveSizes (List HtmlId)
@@ -243,8 +222,6 @@ type JsMsg
     | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
     | GotProject (Maybe (Result Decode.Error Project))
     | ProjectDeleted ProjectId
-    | GotUser Email (Maybe UserLegacy)
-    | GotOwners ProjectId (List UserLegacy)
     | GotLocalFile String File FileContent
     | GotHotkey String
     | GotKeyHold String Bool
@@ -339,15 +316,6 @@ elmEncoder elm =
         DeleteProject project ->
             Encode.object [ ( "kind", "DeleteProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ) ]
 
-        GetUser email ->
-            Encode.object [ ( "kind", "GetUser" |> Encode.string ), ( "email", email |> Encode.string ) ]
-
-        GetOwners project ->
-            Encode.object [ ( "kind", "GetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ) ]
-
-        SetOwners project users ->
-            Encode.object [ ( "kind", "SetOwners" |> Encode.string ), ( "project", project |> ProjectId.encode ), ( "owners", users |> Encode.list UserId.encode ) ]
-
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]
 
@@ -401,16 +369,6 @@ jsDecoder =
 
                 "ProjectDeleted" ->
                     Decode.map ProjectDeleted (Decode.field "id" ProjectId.decode)
-
-                "GotUser" ->
-                    Decode.map2 GotUser
-                        (Decode.field "email" Decode.string)
-                        (Decode.maybeField "user" UserLegacy.decode)
-
-                "GotOwners" ->
-                    Decode.map2 GotOwners
-                        (Decode.field "project" ProjectId.decode)
-                        (Decode.field "owners" (Decode.list UserLegacy.decode))
 
                 "GotLocalFile" ->
                     Decode.map3 GotLocalFile
@@ -503,12 +461,6 @@ unhandledJsMsgError msg =
 
                 ProjectDeleted _ ->
                     "ProjectDeleted"
-
-                GotUser _ _ ->
-                    "GotUser"
-
-                GotOwners _ _ ->
-                    "GotOwners"
 
                 GotLocalFile _ _ _ ->
                     "GotLocalFile"

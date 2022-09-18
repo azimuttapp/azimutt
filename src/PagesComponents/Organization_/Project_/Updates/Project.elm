@@ -10,7 +10,6 @@ import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as Pr
 import PagesComponents.Organization_.Project_.Models exposing (Model, Msg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import Ports
-import Services.Lenses exposing (mapUploadM)
 import Services.Toasts as Toasts
 import Track
 
@@ -63,7 +62,7 @@ updateProject model =
 moveProject : ProjectStorage -> Model -> ( Model, Cmd Msg )
 moveProject storage model =
     if model.conf.save then
-        ( model |> mapUploadM (\u -> { u | movingProject = True })
+        ( model
         , Cmd.batch
             (model.erd
                 |> Maybe.map Erd.unpack

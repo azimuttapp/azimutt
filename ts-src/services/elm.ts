@@ -1,8 +1,7 @@
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFileMsg, Hotkey, HotkeyId, JsMsg} from "../types/elm";
 import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
-import {Email, ToastLevel} from "../types/basics";
+import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
-import {Profile} from "../types/profile";
 
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {
@@ -26,9 +25,6 @@ export class ElmApp {
         UpdateProject: [],
         MoveProjectTo: [],
         DeleteProject: [],
-        GetUser: [],
-        GetOwners: [],
-        SetOwners: [],
         DownloadFile: [],
         GetLocalFile: [],
         ObserveSizes: [],
@@ -73,8 +69,6 @@ export class ElmApp {
         project ? this.send({kind: 'GotProject', project}) : this.send({kind: 'GotProject'})
     }
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDeleted', id})
-    gotUser = (email: Email, user: Profile | undefined): void => this.send({kind: 'GotUser', email, user})
-    gotOwners = (project: ProjectId, owners: Profile[]): void => this.send({kind: 'GotOwners', project, owners})
     gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
         kind: 'GotLocalFile',
         sourceKind: msg.sourceKind,

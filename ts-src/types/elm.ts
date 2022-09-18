@@ -1,5 +1,4 @@
 import {
-    Email,
     File,
     FileContent,
     FileName,
@@ -23,7 +22,6 @@ import {
     Size,
     TableId
 } from "./project";
-import {Profile, UserId} from "./profile";
 import {OrganizationId} from "./organization";
 import {Env} from "../utils/env";
 
@@ -63,9 +61,6 @@ export type ElmMsg =
     | UpdateProjectMsg
     | MoveProjectToMsg
     | DeleteProjectMsg
-    | GetUserMsg
-    | GetOwnersMsg
-    | SetOwnersMsg
     | DownloadFileMsg
     | GetLocalFileMsg
     | ObserveSizesMsg
@@ -91,9 +86,6 @@ export type CreateProjectMsg = { kind: 'CreateProject', organization: Organizati
 export type UpdateProjectMsg = { kind: 'UpdateProject', project: ProjectWithOrga }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type DeleteProjectMsg = { kind: 'DeleteProject', project: ProjectInfo }
-export type GetUserMsg = { kind: 'GetUser', email: Email }
-export type GetOwnersMsg = { kind: 'GetOwners', project: ProjectId }
-export type SetOwnersMsg = { kind: 'SetOwners', project: ProjectId, owners: UserId[] }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
 export type GetLocalFileMsg = { kind: 'GetLocalFile', sourceKind: string, file: File }
 export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
@@ -109,8 +101,6 @@ export type JsMsg =
     | GotProjects
     | GotProject
     | ProjectDeleted
-    | GotUser
-    | GotOwners
     | GotLocalFile
     | GotHotkey
     | GotKeyHold
@@ -131,8 +121,6 @@ export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
 export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
 export type GotProject = { kind: 'GotProject', project?: Project }
 export type ProjectDeleted = { kind: 'ProjectDeleted', id: ProjectId }
-export type GotUser = { kind: 'GotUser', email: Email, user: Profile | undefined }
-export type GotOwners = { kind: 'GotOwners', project: ProjectId, owners: Profile[] }
 export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: string, file: File, content: string }
 export type GotHotkey = { kind: 'GotHotkey', id: string }
 export type GotKeyHold = { kind: 'GotKeyHold', key: string, start: boolean }

@@ -75,8 +75,6 @@ module Services.Lenses exposing
     , mapToastsCmd
     , mapTop
     , mapUniques
-    , mapUploadCmd
-    , mapUploadM
     , mapUserM
     , mapVirtualRelationM
     , setActive
@@ -181,7 +179,6 @@ module Services.Lenses exposing
     , setTwitter
     , setUniques
     , setUpdatedAt
-    , setUpload
     , setUser
     , setUsername
     , setValue
@@ -1076,21 +1073,6 @@ mapUniques =
 setUpdatedAt : v -> { item | updatedAt : v } -> { item | updatedAt : v }
 setUpdatedAt =
     set_ .updatedAt (\value item -> { item | updatedAt = value })
-
-
-setUpload : v -> { item | upload : v } -> { item | upload : v }
-setUpload =
-    set_ .upload (\value item -> { item | upload = value })
-
-
-mapUploadM : (v -> v) -> { item | upload : Maybe v } -> { item | upload : Maybe v }
-mapUploadM =
-    mapM_ .upload setUpload
-
-
-mapUploadCmd : (v -> ( v, Cmd msg )) -> { item | upload : v } -> ( { item | upload : v }, Cmd msg )
-mapUploadCmd =
-    mapCmd_ .upload setUpload
 
 
 setUser : v -> { item | user : v } -> { item | user : v }

@@ -64,7 +64,6 @@ init params =
       , findPath = Nothing
       , schemaAnalysis = Nothing
       , sharing = Nothing
-      , upload = Nothing
       , save = Nothing
       , settings = Nothing
       , sourceUpdate = Nothing

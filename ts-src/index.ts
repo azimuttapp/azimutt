@@ -14,7 +14,7 @@ import {
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {Project, ProjectStorage} from "./types/project";
+import {ProjectStorage} from "./types/project";
 import {LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
@@ -76,9 +76,6 @@ app.on('CreateProject', createProject)
 app.on('UpdateProject', updateProject)
 // app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.error, err)))
 app.on('DeleteProject', deleteProject)
-// app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)).catch(_ => app.gotUser(msg.email, undefined)))
-// app.on('GetOwners', msg => store.getOwners(msg.project).then(owners => app.gotOwners(msg.project, owners)))
-// app.on('SetOwners', msg => store.setOwners(msg.project, msg.owners).then(owners => app.gotOwners(msg.project, owners)))
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)
 app.on('ObserveSizes', observeSizes)
