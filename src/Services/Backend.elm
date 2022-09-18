@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, loginUrl, logoutUrl, profileUrl)
+module Services.Backend exposing (Error, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, loginUrl, logoutUrl, organizationUrl)
 
 import Http exposing (Error(..))
 import Json.Decode as Decode
@@ -6,12 +6,14 @@ import Json.Encode as Encode
 import Libs.Bool as Bool
 import Libs.Http as Http
 import Libs.Json.Decode as Decode
+import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.Env as Env exposing (Env)
 import Libs.Result as Result
 import Libs.Time as Time
 import Libs.Url as Url
 import Models.Organization exposing (Organization)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User as User2 exposing (User)
@@ -51,9 +53,9 @@ logoutUrl env =
     "/users/log_out" |> withLinkHost env
 
 
-profileUrl : Env -> String
-profileUrl env =
-    "/home" |> withLinkHost env
+organizationUrl : Env -> Maybe OrganizationId -> String
+organizationUrl env organization =
+    organization |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home" |> withLinkHost env
 
 
 withLinkHost : Env -> String -> String

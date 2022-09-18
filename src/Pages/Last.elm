@@ -86,7 +86,7 @@ handleJsMessage req msg model =
                 (projects
                     |> Sort.lastUpdatedFirst
                     |> List.head
-                    |> Maybe.mapOrElse (\p -> Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = p.id }) Route.Projects
+                    |> Maybe.mapOrElse (\p -> Route.Organization___Project_ { organization = p.organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = p.id }) Route.Projects
                 )
                 req
             )

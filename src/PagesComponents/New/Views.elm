@@ -1,4 +1,4 @@
-module PagesComponents.New.View exposing (viewNewProject)
+module PagesComponents.New.Views exposing (title, view)
 
 import Components.Atoms.Badge as Badge
 import Components.Atoms.Button as Button
@@ -24,6 +24,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (hover, lg, sm)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.Source exposing (Source)
 import Models.ProjectInfo exposing (ProjectInfo)
@@ -38,17 +39,29 @@ import Services.Toasts as Toasts
 import Shared
 import Time
 import Url exposing (Url)
+import View exposing (View)
 
 
-viewNewProject : Url -> Shared.Model -> Model -> List (Html Msg)
-viewNewProject currentUrl shared model =
+title : String
+title =
+    Conf.constants.defaultTitle
+
+
+view : Shared.Model -> Url -> Maybe OrganizationId -> Model -> View Msg
+view shared currentUrl urlOrganization model =
+    { title = title, body = model |> viewNewProject shared currentUrl urlOrganization }
+
+
+viewNewProject : Shared.Model -> Url -> Maybe OrganizationId -> Model -> List (Html Msg)
+viewNewProject shared currentUrl urlOrganization model =
     appShell shared.conf.env
         currentUrl
+        urlOrganization
         shared.user
         (\link -> SelectMenu link.text)
         DropdownToggle
         model
-        [ a [ href (Backend.profileUrl shared.conf.env) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
+        [ a [ href (urlOrganization |> Backend.organizationUrl shared.conf.env) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
             model
@@ -228,7 +241,7 @@ viewSampleProjectTab zone projects model =
                             (Button.white3 Tw.primary [ onClick (InitTab TabSamples) ] [ text "Cancel" ]
                                 :: (projects
                                         |> List.find (\p -> p.id == project.id)
-                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
+                                        |> Maybe.map (\p -> [ Link.primary3 Tw.primary [ href (Route.toHref (Route.Organization___Project_ { organization = p.organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = p.id })), id "create-project-btn", css [ "ml-3" ] ] [ text "View this project" ] ])
                                         |> Maybe.withDefault [ Button.primary3 Tw.primary [ onClick (CreateProject project), id "create-project-btn", css [ "ml-3" ] ] [ text "Load sample" ] ]
                                    )
                             )
@@ -243,9 +256,9 @@ viewSampleProjectTab zone projects model =
 
 
 viewHeading : String -> List (Html msg) -> Html msg
-viewHeading title description =
+viewHeading heading description =
     div []
-        [ h2 [ css [ "text-lg leading-6 font-medium text-gray-900" ] ] [ text title ]
+        [ h2 [ css [ "text-lg leading-6 font-medium text-gray-900" ] ] [ text heading ]
         , p [ css [ "mt-1 text-sm text-gray-500" ] ] description
         ]
 

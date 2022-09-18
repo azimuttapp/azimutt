@@ -5,6 +5,7 @@ import Dict
 import Gen.Params.Organization_.Project_ exposing (Params)
 import Gen.Route as Route
 import Models.ErdProps as ErdProps
+import Models.OrganizationId exposing (OrganizationId)
 import Page
 import PagesComponents.Organization_.Project_.Models as Models exposing (Msg)
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
@@ -24,10 +25,15 @@ import Shared exposing (StoredProjects(..))
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
+    let
+        urlOrganization : Maybe OrganizationId
+        urlOrganization =
+            Just req.params.organization
+    in
     Page.element
         { init = init req.params
-        , update = Updates.update Nothing shared.conf.env shared.now shared.organizations
-        , view = Views.view (Request.pushRoute Route.Projects req) req.url shared
+        , update = Updates.update Nothing shared.conf.env shared.now urlOrganization shared.organizations
+        , view = Views.view (Request.pushRoute Route.Projects req) req.url urlOrganization shared
         , subscriptions = Subscriptions.subscriptions
         }
 

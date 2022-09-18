@@ -129,7 +129,7 @@ viewNotFound env model =
         , header = "404 error"
         , title = "Page not found."
         , message = "Sorry, we couldn't find the page you’re looking for."
-        , links = [ { url = Backend.profileUrl env, text = "Go back home" } ]
+        , links = [ { url = Backend.homeUrl env, text = "Go back home" } ]
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }

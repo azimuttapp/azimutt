@@ -16,6 +16,7 @@ import Libs.Dict as Dict
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
+import Libs.Maybe as Maybe
 import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
@@ -79,14 +80,14 @@ viewProjectsDropdown platform env projects project htmlId openedDropdown =
                         [ otherProjects
                             |> List.map
                                 (\p ->
-                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = Conf.constants.tmpOrg, project = p.id }))
+                                    ContextMenu.linkHtml (Route.toHref (Route.Organization___Project_ { organization = p.organization |> Maybe.mapOrElse .id Conf.constants.tmpOrg, project = p.id }))
                                         [ class "flex" ]
                                         [ Icon.outline (ProjectStorage.icon p.storage) "mr-1"
                                         , text p.name
                                         ]
                                 )
                         ]
-                    ++ [ [ ContextMenu.link { url = Backend.profileUrl env, text = "Back to dashboard" } ] ]
+                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Backend.organizationUrl env, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)

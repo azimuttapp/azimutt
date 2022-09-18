@@ -16,6 +16,7 @@ import Libs.Maybe as Maybe
 import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.User exposing (User)
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
@@ -52,17 +53,17 @@ title erd =
     erd |> Maybe.mapOrElse (\e -> e.project.name ++ " - Azimutt") Conf.constants.defaultTitle
 
 
-view : Cmd Msg -> Url -> Shared.Model -> Model -> View Msg
-view onDelete currentUrl shared model =
+view : Cmd Msg -> Url -> Maybe OrganizationId -> Shared.Model -> Model -> View Msg
+view onDelete currentUrl urlOrganization shared model =
     { title = model.erd |> title
-    , body = model |> viewProject onDelete currentUrl shared
+    , body = model |> viewProject onDelete currentUrl urlOrganization shared
     }
 
 
-viewProject : Cmd Msg -> Url -> Shared.Model -> Model -> List (Html Msg)
-viewProject onDelete currentUrl shared model =
+viewProject : Cmd Msg -> Url -> Maybe OrganizationId -> Shared.Model -> Model -> List (Html Msg)
+viewProject onDelete currentUrl urlOrganization shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl shared model "app") (viewNotFound shared.conf.env currentUrl shared.user model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl shared model "app") (viewNotFound shared.conf.env currentUrl urlOrganization shared.user model.conf)
 
       else
         Loader.fullScreen
@@ -169,8 +170,8 @@ viewContextMenu menu =
             (div [ class "az-context-menu" ] [])
 
 
-viewNotFound : Env -> Url -> Maybe User -> ErdConf -> Html msg
-viewNotFound env currentUrl user conf =
+viewNotFound : Env -> Url -> Maybe OrganizationId -> Maybe User -> ErdConf -> Html msg
+viewNotFound env currentUrl urlOrganization user conf =
     NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
@@ -181,7 +182,7 @@ viewNotFound env currentUrl user conf =
         , message = "Sorry, we couldn't find the project you’re looking for."
         , links =
             (if conf.projectManagement then
-                [ { url = Backend.profileUrl env, text = "Back to dashboard" } ]
+                [ { url = urlOrganization |> Backend.organizationUrl env, text = "Back to dashboard" } ]
 
              else
                 [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]

@@ -1,6 +1,6 @@
-module Pages.Create exposing (Model, Msg, page)
+module Pages.Organization_.Create exposing (Model, Msg, page)
 
-import Gen.Params.Create exposing (Params)
+import Gen.Params.Organization_.Create exposing (Params)
 import Models.OrganizationId exposing (OrganizationId)
 import Page
 import PagesComponents.Create.Init as Init
@@ -17,7 +17,7 @@ page shared req =
     let
         urlOrganization : Maybe OrganizationId
         urlOrganization =
-            Nothing
+            Just req.params.organization
     in
     Page.element
         { init = Init.init urlOrganization

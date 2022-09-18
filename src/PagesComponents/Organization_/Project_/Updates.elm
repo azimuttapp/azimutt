@@ -15,6 +15,7 @@ import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area
 import Models.Organization exposing (Organization)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Position as Position
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
@@ -60,8 +61,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Env -> Time.Posix -> List Organization -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout env now organizations msg model =
+update : Maybe LayoutName -> Env -> Time.Posix -> Maybe OrganizationId -> List Organization -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout env now urlOrganization organizations msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -70,7 +71,7 @@ update currentLayout env now organizations msg model =
             ( model |> mapNavbar (mapSearch (setText search >> setActive 0)), Cmd.none )
 
         TriggerSaveProject ->
-            model |> triggerSaveProject organizations
+            model |> triggerSaveProject urlOrganization organizations
 
         CreateProject name organization storage ->
             model |> createProject name organization storage

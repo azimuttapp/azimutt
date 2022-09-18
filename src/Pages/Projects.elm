@@ -163,4 +163,4 @@ subscriptions model =
 
 view : Shared.Model -> Request.With Params -> Model -> View Msg
 view shared req model =
-    { title = title, body = model |> viewProjects req.url shared }
+    { title = title, body = model |> viewProjects shared req.url Nothing }

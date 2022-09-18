@@ -16,6 +16,7 @@ import Libs.Models exposing (Link)
 import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus_ring_offset_600, hover, lg, md, sm)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.User exposing (User)
 import Services.Backend as Backend
 import Url exposing (Url)
@@ -24,6 +25,7 @@ import Url exposing (Url)
 appShell :
     Env
     -> Url
+    -> Maybe OrganizationId
     -> Maybe User
     -> (Link -> msg)
     -> (HtmlId -> msg)
@@ -32,7 +34,7 @@ appShell :
     -> List (Html msg)
     -> List (Html msg)
     -> List (Html msg)
-appShell env currentUrl maybeUser onNavigationClick onProfileClick model title content footer =
+appShell env currentUrl urlOrganization user onNavigationClick onProfileClick model title content footer =
     let
         profileDropdown : HtmlId
         profileDropdown =
@@ -40,14 +42,14 @@ appShell env currentUrl maybeUser onNavigationClick onProfileClick model title c
     in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
-            { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = Backend.profileUrl env, text = "Azimutt" } }
+            { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = urlOrganization |> Backend.organizationUrl env, text = "Azimutt" } }
             , navigation =
-                { links = [ { url = Backend.profileUrl env, text = "Dashboard" } ]
+                { links = [ { url = urlOrganization |> Backend.organizationUrl env, text = "Dashboard" } ]
                 , onClick = onNavigationClick
                 }
             , search = Nothing
             , rightIcons =
-                [ viewProfileIcon env currentUrl maybeUser profileDropdown model.openedDropdown onProfileClick ]
+                [ viewProfileIcon env currentUrl user profileDropdown model.openedDropdown onProfileClick ]
             }
             { selectedMenu = model.selectedMenu
             , profileOpen = model.openedDropdown == profileDropdown
@@ -78,10 +80,9 @@ viewProfileIcon env currentUrl maybeUser profileDropdown openedDropdown toggle =
                     )
                     (\_ ->
                         div []
-                            [ ContextMenu.link { url = Backend.profileUrl env, text = "Your profile" }
-
-                            --, ContextMenu.link { url = "#", text = "Settings" }
-                            , ContextMenu.link { url = Backend.logoutUrl env, text = "Logout" }
+                            [ -- ContextMenu.link { url = Backend.organizationUrl env, text = "Your profile" }
+                              --, ContextMenu.link { url = "#", text = "Settings" }
+                              ContextMenu.link { url = Backend.logoutUrl env, text = "Logout" }
                             ]
                     )
             )

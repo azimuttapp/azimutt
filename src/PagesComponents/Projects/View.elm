@@ -21,6 +21,7 @@ import Libs.Models.DateTime exposing (formatDate)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo exposing (ProjectInfo)
@@ -34,10 +35,11 @@ import Track
 import Url exposing (Url)
 
 
-viewProjects : Url -> Shared.Model -> Model -> List (Html Msg)
-viewProjects currentUrl shared model =
+viewProjects : Shared.Model -> Url -> Maybe OrganizationId -> Model -> List (Html Msg)
+viewProjects shared currentUrl urlOrganization model =
     appShell shared.conf.env
         currentUrl
+        urlOrganization
         shared.user
         (\link -> SelectMenu link.text)
         DropdownToggle

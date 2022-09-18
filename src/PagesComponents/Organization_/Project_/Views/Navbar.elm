@@ -24,6 +24,7 @@ import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, batch, focus, focus_ring_offset_600, hover, lg, sm)
 import Libs.Url as Url
+import Models.OrganizationId exposing (OrganizationId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
 import PagesComponents.Helpers as Helpers
@@ -83,7 +84,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         [ div [ css [ "mx-auto px-2", sm [ "px-4" ], lg [ "px-8" ] ] ]
             [ div [ class "relative flex items-center justify-between h-16" ]
                 [ div [ css [ "flex items-center px-2", lg [ "px-0" ] ] ]
-                    [ viewNavbarBrand gConf.env eConf
+                    [ viewNavbarBrand gConf.env (erd.project.organization |> Maybe.map .id) eConf
                     , Lazy.lazy8 viewNavbarSearch erd.settings.defaultSchema model.search erd.tables erd.relations erd.notes (erd |> Erd.currentLayout |> .tables) (htmlId ++ "-search") (openedDropdown |> String.filterStartsWith (htmlId ++ "-search"))
                     , viewNavbarHelp
                     ]
@@ -105,13 +106,13 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
         ]
 
 
-viewNavbarBrand : Env -> ErdConf -> Html msg
-viewNavbarBrand env conf =
+viewNavbarBrand : Env -> Maybe OrganizationId -> ErdConf -> Html msg
+viewNavbarBrand env organization conf =
     let
         attrs : List (Attribute msg)
         attrs =
             if conf.dashboardLink then
-                [ href (Backend.profileUrl env) ]
+                [ href (organization |> Backend.organizationUrl env) ]
 
             else
                 hrefBlank Conf.constants.azimuttWebsite

@@ -4,6 +4,7 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Organization exposing (Organization)
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
@@ -14,9 +15,14 @@ import Services.Toasts as Toasts
 import Track
 
 
-triggerSaveProject : List Organization -> Model -> ( Model, Cmd Msg )
-triggerSaveProject organizations model =
-    ( model, model.erd |> Maybe.mapOrElse (\e -> e.project.organization |> Maybe.mapOrElse (\_ -> UpdateProject) (ProjectSaveDialog.Open e.project.name (List.one organizations) |> ProjectSaveMsg) |> T.send) Cmd.none )
+triggerSaveProject : Maybe OrganizationId -> List Organization -> Model -> ( Model, Cmd Msg )
+triggerSaveProject urlOrganization organizations model =
+    let
+        preselectedOrg : Maybe Organization
+        preselectedOrg =
+            urlOrganization |> Maybe.andThen (\id -> organizations |> List.findBy .id id) |> Maybe.orElse (organizations |> List.one)
+    in
+    ( model, model.erd |> Maybe.mapOrElse (\e -> e.project.organization |> Maybe.mapOrElse (\_ -> UpdateProject) (ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg) |> T.send) Cmd.none )
 
 
 createProject : ProjectName -> Organization -> ProjectStorage -> Model -> ( Model, Cmd Msg )

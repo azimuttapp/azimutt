@@ -12,6 +12,7 @@ import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Task as T
 import Models.ErdProps as ErdProps
+import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -40,11 +41,15 @@ page shared req =
         query : QueryString
         query =
             parseQueryString req.query
+
+        urlOrganization : Maybe OrganizationId
+        urlOrganization =
+            Nothing
     in
     Page.element
         { init = init query
-        , update = Updates.update query.layout shared.conf.env shared.now shared.organizations
-        , view = Views.view (Request.pushRoute Route.NotFound req) req.url shared
+        , update = Updates.update query.layout shared.conf.env shared.now urlOrganization shared.organizations
+        , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlOrganization shared
         , subscriptions = Subscriptions.subscriptions
         }
 
