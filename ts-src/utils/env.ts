@@ -13,6 +13,6 @@ export function getEnv(): Env {
     } else if (window.location.hostname.endsWith('azimutt.app')) {
         return Env.prod
     } else {
-        throw `Invalid hostname '${window.location.hostname}'`
+        return Env.staging
     }
 }
