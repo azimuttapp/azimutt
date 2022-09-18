@@ -19,6 +19,7 @@ import {
     ProjectId,
     ProjectInfo,
     ProjectStorage,
+    ProjectWithOrga,
     Size,
     TableId
 } from "./project";
@@ -87,7 +88,7 @@ export type ListProjectsMsg = { kind: 'ListProjects' }
 export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
 export type CreateProjectTmpMsg = { kind: 'CreateProjectTmp', project: Project }
 export type CreateProjectMsg = { kind: 'CreateProject', organization: OrganizationId, storage: ProjectStorage, project: Project }
-export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
+export type UpdateProjectMsg = { kind: 'UpdateProject', project: ProjectWithOrga }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type DeleteProjectMsg = { kind: 'DeleteProject', project: ProjectInfo }
 export type GetUserMsg = { kind: 'GetUser', email: Email }

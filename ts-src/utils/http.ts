@@ -1,30 +1,28 @@
-export function getJson<Response>(url: string): Promise<JsonResponse<Response>> {
-    return fetch(url, {credentials: 'include'}).then(buildJsonResponse<Response>)
-}
+export const getJson = <Response>(url: string): Promise<JsonResponse<Response>> => fetch(url, {credentials: 'include'}).then(buildJsonResponse<Response>)
+export const postJson = <Body, Response>(url: string, body: Body): Promise<JsonResponse<Response>> => fetchJson('POST', url, body)
+export const postMultipart = <Response>(url: string, formData: FormData): Promise<JsonResponse<Response>> => fetchMultipart('POST', url, formData)
+export const putJson = <Body, Response>(url: string, body: Body): Promise<JsonResponse<Response>> => fetchJson('PUT', url, body)
+export const putMultipart = <Response>(url: string, formData: FormData): Promise<JsonResponse<Response>> => fetchMultipart('PUT', url, formData)
+export const deleteJson = <Response>(url: string): Promise<JsonResponse<Response>> => fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildJsonResponse<Response>)
+export const deleteNoContent = (url: string): Promise<NoContentResponse> => fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildNoContentResponse)
 
-export function postJson<Body, Response>(url: string, body: Body): Promise<JsonResponse<Response>> {
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
+
+function fetchJson<Body, Response>(method: Method, url: string, body: Body): Promise<JsonResponse<Response>> {
     return fetch(url, {
-        method: 'POST',
+        method,
         headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
         credentials: 'include',
         body: JSON.stringify(body)
     }).then(buildJsonResponse<Response>)
 }
 
-export function postMultipart<Response>(url: string, formData: FormData): Promise<JsonResponse<Response>> {
+function fetchMultipart<Response>(method: Method, url: string, formData: FormData): Promise<JsonResponse<Response>> {
     return fetch(url, {
-        method: 'POST',
+        method,
         credentials: 'include',
         body: formData
     }).then(buildJsonResponse<Response>)
-}
-
-export function deleteJson<Response>(url: string): Promise<JsonResponse<Response>> {
-    return fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildJsonResponse<Response>)
-}
-
-export function deleteNoContent(url: string): Promise<NoContentResponse> {
-    return fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildNoContentResponse)
 }
 
 interface NoContentResponse {

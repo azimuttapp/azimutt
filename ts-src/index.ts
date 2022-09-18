@@ -73,7 +73,7 @@ app.on('ListProjects', listProjects)
 app.on('LoadProject', loadProject) // FIXME: is it useful? => problem to get orga :(
 app.on('CreateProjectTmp', createProjectTmp)
 app.on('CreateProject', createProject)
-app.on('UpdateProject', msg => updateProject(msg).then(app.gotProject))
+app.on('UpdateProject', updateProject)
 // app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.error, err)))
 app.on('DeleteProject', deleteProject)
 // app.on('GetUser', msg => store.getUser(msg.email).then(user => app.gotUser(msg.email, user)).catch(_ => app.gotUser(msg.email, undefined)))
@@ -124,10 +124,21 @@ function getProject({organization, project}: GetProjectMsg) {
     backend.getProject(organization, project).then(res => {
         if (res.storage === ProjectStorage.remote) {
             return typeof res.content === 'string' ?
-                {...JSON.parse(res.content), organization: res.organization, id: project, storage: ProjectStorage.remote} :
+                {
+                    ...JSON.parse(res.content),
+                    organization: res.organization,
+                    id: project,
+                    storage: ProjectStorage.remote,
+                    updatedAt: res.updatedAt
+                } :
                 Promise.reject(`missing content`)
         } else if (res.storage === ProjectStorage.local) {
-            return storage.getProject(project).then(p => ({...p, organization: res.organization, id: project, storage: ProjectStorage.local}))
+            return storage.getProject(project).then(p => ({
+                ...p,
+                organization: res.organization,
+                id: project,
+                storage: ProjectStorage.local
+            }))
         } else {
             return Promise.reject(`unknown storage '${res.storage}'`)
         }
@@ -137,7 +148,12 @@ function getProject({organization, project}: GetProjectMsg) {
                 app.toast(ToastLevel.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
             }
-            return storage.getProject(project).then(p => ({...p, organization: undefined, id: project, storage: ProjectStorage.local}))
+            return storage.getProject(project).then(p => ({
+                ...p,
+                organization: undefined,
+                id: project,
+                storage: ProjectStorage.local
+            }))
         } else {
             return Promise.reject(err)
         }
@@ -158,7 +174,12 @@ function listProjects() {
 
 function loadProject(msg: LoadProjectMsg) {
     // FIXME: is orga really not present???
-    storage.getProject(msg.id).then(p => ({...p, organization: undefined, id: msg.id, storage: ProjectStorage.local})).then(p => {
+    storage.getProject(msg.id).then(p => ({
+        ...p,
+        organization: undefined,
+        id: msg.id,
+        storage: ProjectStorage.local
+    })).then(p => {
         app.gotProject(p)
     }, err => {
         app.gotProject(undefined)
@@ -174,16 +195,16 @@ function createProjectTmp({project}: CreateProjectTmpMsg): void {
 
 function createProject(msg: CreateProjectMsg): void {
     if (msg.storage == ProjectStorage.local) {
-        backend.createProjectLocal(msg.organization, msg.project).catch(err => {
-            app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`)
-            return Promise.reject(err)
-        }).then(info => {
+        backend.createProjectLocal(msg.organization, msg.project).then(info => {
             return storage.createProject(info.id, msg.project).catch(err => {
                 app.toast(ToastLevel.error, `Can't save project locally: ${formatError(err)}`)
                 return backend.deleteProject(msg.organization, info.id).then(_ => Promise.reject(err))
             })
+        }, err => {
+            app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`)
+            return Promise.reject(err)
         }).then(p => {
-            return storage.deleteProject(Uuid.zero).catch(err => {
+            return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
                 app.toast(ToastLevel.error, `Can't delete temporary project: ${formatError(err)}`)
                 return Promise.resolve()
             }).then(_ => {
@@ -197,44 +218,42 @@ function createProject(msg: CreateProjectMsg): void {
             app.toast(ToastLevel.success, `Project created!`)
             window.history.replaceState("", "", `/${msg.organization}/${p.id}`) // FIXME use Elm Router to build url
             app.gotProject(p)
-        }, err => {
-            app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`)
-        })
+        }, err => app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`))
     } else {
         app.toast(ToastLevel.error, `Unknown ProjectStorage: ${formatError(storage)}`)
     }
 }
 
-function updateProject(msg: UpdateProjectMsg): Promise<Project> {
-    // TODO: handle where to save the project: azimutt or local
-    logger.debug('TODO updateProject', msg)
-    app.toast(ToastLevel.error, `updateProject not implemented`)
-    return Promise.reject('updateProject not implemented')
-    // return store.updateProject(msg.project)
-    //     .then(p => {
-    //         app.toast(ToastLevel.success, 'Project saved')
-    //         return p
-    //     })
-    //     .catch(e => {
-    //         let message
-    //         if (typeof e === 'string') {
-    //             message = e
-    //         } else if (e.code === DOMException.QUOTA_EXCEEDED_ERR) {
-    //             message = "Can't save project, storage quota exceeded. Use a smaller schema or clean unused ones."
-    //         } else {
-    //             message = 'Unknown storage error: ' + e.message
-    //         }
-    //         app.toast(ToastLevel.error, message)
-    //         const name = 'storage'
-    //         const details = typeof e === 'string' ? {error: e} : {error: e.name, message: e.message}
-    //         analytics.trackError(name, details)
-    //         errorTracking.trackError(name, details)
-    //         return msg.project
-    //     })
+function updateProject(msg: UpdateProjectMsg): void {
+    if (msg.project.storage == ProjectStorage.local) {
+        backend.updateProjectLocal(msg.project).then(info => {
+            return storage.updateProject(info.id, msg.project).then(p => {
+                app.toast(ToastLevel.success, 'Project saved')
+                app.gotProject(p)
+            }, err => {
+                app.toast(ToastLevel.error, `Can't update project locally: ${formatError(err)}`)
+            })
+        }, err => {
+            app.toast(ToastLevel.error, `Can't update project to backend: ${formatError(err)}`)
+        })
+    } else if (msg.project.storage == ProjectStorage.remote) {
+        backend.getProject(msg.project.organization.id, msg.project.id).then(current => {
+            if (current.updatedAt === msg.project.updatedAt) {
+                backend.updateProjectRemote(msg.project).then(p => {
+                    app.toast(ToastLevel.success, 'Project saved')
+                    app.gotProject(p)
+                }, err => app.toast(ToastLevel.error, `Can't update project: ${formatError(err)}`))
+            } else {
+                app.toast(ToastLevel.error, `Project was updated by someone else, please refresh to get the new version.`)
+            }
+        }, err => app.toast(ToastLevel.error, `Can't fetch current project from backend: ${formatError(err)}`))
+    } else {
+        app.toast(ToastLevel.error, `Unknown ProjectStorage: ${formatError(msg.project.storage)}`)
+    }
 }
 
 function deleteProject({project}: DeleteProjectMsg): void {
-    if(project.organization) {
+    if (project.organization) {
         backend.deleteProject(project.organization.id, project.id).catch(err => {
             app.toast(ToastLevel.error, `Can't delete project in backend: ${formatError(err)}`)
             return Promise.reject(err)

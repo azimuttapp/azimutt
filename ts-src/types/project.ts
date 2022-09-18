@@ -46,6 +46,7 @@ export interface Project {
     version: ProjectVersion
 }
 
+export type ProjectWithOrga = Omit<Project, 'organization'> & { organization: Organization }
 export type ProjectNoStorage = Omit<Project, 'storage'>
 export type ProjectInfoNoStorage = Omit<ProjectInfo, 'storage'>
 

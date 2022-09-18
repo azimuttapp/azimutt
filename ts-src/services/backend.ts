@@ -9,13 +9,13 @@ import {
     ProjectSlug,
     ProjectStats,
     ProjectStorage,
-    ProjectVersion
+    ProjectVersion,
+    ProjectWithOrga
 } from "../types/project";
 import {Organization, OrganizationId, OrganizationSlug} from "../types/organization";
 import {DateTime} from "../types/basics";
 import {Env} from "../utils/env";
 import * as Http from "../utils/http";
-import jiff from "jiff";
 
 export class Backend {
     constructor(private env: Env, private logger: Logger) {
@@ -62,6 +62,43 @@ export class Backend {
             updatedAt: res.updatedAt
         }))
     }
+
+    updateProjectLocal = (p: ProjectWithOrga): Promise<ProjectInfo> => {
+        this.logger.debug(`backend.updateProjectLocal(${p.organization.id}, ${p.id})`, p)
+        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
+        return Http.putJson<CreateLocalProjectPayload, ProjectWithOrgaResponse>(url, {
+            name: p.name,
+            description: undefined,
+            storage_kind: ProjectStorage.local,
+            encoding_version: p.version,
+            ...adaptStats(computeStats(p))
+        }).then(res => formatProjectResponse(res.json))
+    }
+
+    updateProjectRemote = (p: ProjectWithOrga): Promise<Project> => {
+        this.logger.debug(`backend.updateProjectRemote(${p.organization.id}, ${p.id})`, p)
+        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
+        const payload = {
+            name: p.name,
+            description: undefined,
+            storage_kind: ProjectStorage.remote,
+            encoding_version: p.version,
+            ...adaptStats(computeStats(p))
+        }
+        const formData: FormData = new FormData()
+        Object.entries(payload)
+            .filter(([_, value]) => value !== null && value !== undefined)
+            .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
+        formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
+        return Http.putMultipart<ProjectWithOrgaResponse>(url, formData).then(res => formatProjectResponse(res.json)).then(res => {
+            console.log('backend', new Date(res.updatedAt))
+            return {
+                ...p,
+                updatedAt: res.updatedAt
+            }
+        })
+    }
+
 
     // updateProject = async (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
     //     const initial = this.projects[id]
