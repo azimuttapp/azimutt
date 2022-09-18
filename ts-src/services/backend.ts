@@ -39,9 +39,28 @@ export class Backend {
             ...adaptStats(computeStats(p))
         }).then(res => formatProjectResponse(res.json))
     }
-    createProjectRemote = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
+
+    createProjectRemote = (o: OrganizationId, p: Project): Promise<Project> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, p)
-        return Promise.reject('not implemented')
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
+        const payload = {
+            name: p.name,
+            description: undefined,
+            storage_kind: ProjectStorage.azimutt,
+            encoding_version: p.version,
+            ...adaptStats(computeStats(p))
+        }
+        const formData: FormData = new FormData()
+        Object.entries(payload)
+            .filter(([_, value]) => value !== null && value !== undefined)
+            .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
+        formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${o}-${p.name}.json`)
+        return Http.postMultipart<ProjectWithOrgaResponse>(url, formData).then(res => formatProjectResponse(res.json)).then(res => ({
+            ...p,
+            id: res.id,
+            createdAt: res.createdAt,
+            updatedAt: res.updatedAt
+        }))
     }
 
     // updateProject = async (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {

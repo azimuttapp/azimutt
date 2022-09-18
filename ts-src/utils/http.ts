@@ -11,6 +11,14 @@ export function postJson<Body, Response>(url: string, body: Body): Promise<JsonR
     }).then(buildJsonResponse<Response>)
 }
 
+export function postMultipart<Response>(url: string, formData: FormData): Promise<JsonResponse<Response>> {
+    return fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData
+    }).then(buildJsonResponse<Response>)
+}
+
 export function deleteJson<Response>(url: string): Promise<JsonResponse<Response>> {
     return fetch(url, {method: 'DELETE', credentials: 'include'}).then(buildJsonResponse<Response>)
 }
