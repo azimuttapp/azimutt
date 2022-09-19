@@ -4,7 +4,7 @@ import Libs.Models.HtmlId exposing (HtmlId)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts exposing (Model, Msg)
-import Shared exposing (Confirm, StoredProjects)
+import Shared exposing (Confirm)
 
 
 
@@ -14,7 +14,6 @@ import Shared exposing (Confirm, StoredProjects)
 type alias Model =
     { selectedMenu : String
     , mobileMenuOpen : Bool
-    , projects : StoredProjects
 
     -- global attrs
     , openedDropdown : HtmlId

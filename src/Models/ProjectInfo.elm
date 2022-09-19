@@ -8,7 +8,7 @@ import Libs.Json.Encode as Encode
 import Libs.List as List
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
-import Models.Project as Project exposing (Project)
+import Models.Project exposing (Project)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSlug as ProjectSlug exposing (ProjectSlug)
@@ -24,7 +24,6 @@ type alias ProjectInfo =
     , slug : ProjectSlug
     , name : ProjectName
     , description : Maybe String
-    , encodingVersion : Int
     , storage : ProjectStorage
     , nbSources : Int
     , nbTables : Int
@@ -36,7 +35,6 @@ type alias ProjectInfo =
     , nbLayouts : Int
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
-    , archivedAt : Maybe Time.Posix
     }
 
 
@@ -50,10 +48,9 @@ fromProject p =
     in
     { organization = p.organization
     , id = p.id
-    , slug = p.id
+    , slug = p.slug
     , name = p.name
-    , description = Nothing
-    , encodingVersion = Project.currentVersion -- FIXME: remove? (meaningless as it's not serialized)
+    , description = p.description
     , storage = p.storage
     , nbSources = p.sources |> List.length
     , nbTables = tables |> Dict.size
@@ -65,7 +62,6 @@ fromProject p =
     , nbLayouts = p.layouts |> Dict.size
     , createdAt = p.createdAt
     , updatedAt = p.updatedAt
-    , archivedAt = Nothing
     }
 
 
@@ -77,7 +73,6 @@ encode value =
         , ( "slug", value.slug |> ProjectSlug.encode )
         , ( "name", value.name |> ProjectName.encode )
         , ( "description", value.description |> Encode.maybe Encode.string )
-        , ( "encodingVersion", value.encodingVersion |> Encode.int )
         , ( "storage", value.storage |> ProjectStorage.encode )
         , ( "nbSources", value.nbSources |> Encode.int )
         , ( "nbTables", value.nbTables |> Encode.int )
@@ -89,19 +84,17 @@ encode value =
         , ( "nbLayouts", value.nbLayouts |> Encode.int )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
-        , ( "archivedAt", value.archivedAt |> Encode.maybe Time.encode )
         ]
 
 
 decode : Decode.Decoder ProjectInfo
 decode =
-    Decode.map18 ProjectInfo
+    Decode.map16 ProjectInfo
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.field "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.maybeField "description" Decode.string)
-        (Decode.field "encodingVersion" Decode.int)
         (Decode.field "storage" ProjectStorage.decode)
         (Decode.field "nbSources" Decode.int)
         (Decode.field "nbTables" Decode.int)
@@ -113,4 +106,3 @@ decode =
         (Decode.field "nbLayouts" Decode.int)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)
-        (Decode.maybeField "archivedAt" Time.decode)

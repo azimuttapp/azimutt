@@ -1,5 +1,14 @@
 import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFileMsg, Hotkey, HotkeyId, JsMsg} from "../types/elm";
-import {Color, ColumnId, Delta, Position, Project, ProjectId, ProjectInfo, TableId} from "../types/project";
+import {
+    Color,
+    ColumnId,
+    Delta,
+    Project,
+    ProjectInfoLocalLegacy,
+    Position,
+    ProjectId,
+    TableId
+} from "../types/project";
 import {ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
 
@@ -17,9 +26,8 @@ export class ElmApp {
         Fullscreen: [],
         SetMeta: [],
         AutofocusWithin: [],
+        GetLegacyProjects: [],
         GetProject: [],
-        ListProjects: [],
-        LoadProject: [],
         CreateProjectTmp: [],
         CreateProject: [],
         UpdateProject: [],
@@ -60,8 +68,8 @@ export class ElmApp {
     noListeners = (): ElmMsg['kind'][] => (Object.keys(this.callbacks) as ElmMsg['kind'][]).filter(c => this.callbacks[c].length === 0)
 
     updateSizes = (sizes: ElementSize[]): void => this.send({kind: 'GotSizes', sizes})
-    loadProjects = (projects: ProjectInfo[]): void => this.send({
-        kind: 'GotProjects',
+    gotLegacyProjects = (projects: ProjectInfoLocalLegacy[]): void => this.send({
+        kind: 'GotLegacyProjects',
         projects: projects.map(p => [p.id, p])
     })
     gotProject = (project: Project | undefined): void => {

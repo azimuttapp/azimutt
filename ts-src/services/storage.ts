@@ -4,13 +4,15 @@ import {InMemoryStorage} from "./storage/inmemory";
 import {StorageKind} from "./storage/api";
 import {Logger} from "./logger";
 import {
-    Project,
+    computeStats,
+    isLegacy,
+    ProjectInfoLocalLegacy,
+    ProjectJson,
+    ProjectJsonLegacy, ProjectStored,
     ProjectId,
-    ProjectInfo,
-    ProjectInfoNoStorage,
-    ProjectNoStorage,
     ProjectStorage
 } from "../types/project";
+import {successes} from "../utils/promise";
 
 export class Storage {
     public kind: StorageKind = 'manager'
@@ -24,47 +26,75 @@ export class Storage {
         this.inMemory = new InMemoryStorage(logger.disableDebug())
     }
 
-    listProjects = (): Promise<ProjectInfo[]> => {
-        this.logger.debug(`storage.listProjects()`)
-        return Promise.all([
+    getLegacyProjects = (): Promise<ProjectInfoLocalLegacy[]> => {
+        this.logger.debug(`storage.getLegacyProjects()`)
+        return successes([
             this.indexedDb.then(s => s.listProjects()),
             this.localStorage.then(s => s.listProjects()),
             this.inMemory.listProjects()
-        ]).then(projects => projects.flat()).then(localProjects)
+        ]).then(res => filterLegacy(res.flat())).then(projects => projects.map(legacyProjectInfo))
     }
 
-    getProject = (id: ProjectId): Promise<Project> => {
-        this.logger.debug(`storage.loadProject(${id})`)
+    getLegacyProject = (id: ProjectId): Promise<ProjectJsonLegacy> => {
+        this.logger.debug(`storage.getLegacyProject(${id})`)
+        return this.indexedDb.then(s => s.loadProject(id))
+            .catch(_ => this.localStorage.then(s => s.loadProject(id)))
+            .then(toLegacy)
+    }
+
+    getProject = (id: ProjectId): Promise<ProjectJson> => {
+        this.logger.debug(`storage.getProject(${id})`)
         return this.indexedDb.then(s => s.loadProject(id))
             .catch(_ => this.localStorage.then(s => s.loadProject(id)))
             .catch(_ => this.inMemory.loadProject(id))
-            .then(localProject)
+            .then(notLegacy)
     }
 
-    createProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
+    createProject = (id: ProjectId, p: ProjectJson): Promise<void> => {
         this.logger.debug(`storage.createProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
-            .then(s => s.createProject(id, {...p, id, createdAt: Date.now(), updatedAt: Date.now()}))
-            .then(localProject)
+            .then(s => s.createProject(id, p))
+            .then(_ => undefined)
     }
 
-    updateProject = (id: ProjectId, {storage, ...p}: Project): Promise<Project> => {
+    updateProject = (id: ProjectId, p: ProjectJson): Promise<void> => {
         this.logger.debug(`storage.updateProject(${id})`, p)
         return this.indexedDb.catch(_ => this.localStorage).catch(_ => this.inMemory)
-            .then(s => s.updateProject(id, {...p, updatedAt: Date.now()}))
-            .then(localProject)
+            .then(s => s.updateProject(id, p))
+            .then(_ => undefined)
     }
 
     deleteProject = (id: ProjectId): Promise<void> => {
         this.logger.debug(`storage.deleteProject(${id})`)
-        return Promise.all([
+        return successes([
             this.indexedDb.then(s => s.deleteProject(id)),
             this.localStorage.then(s => s.deleteProject(id)),
             this.inMemory.deleteProject(id)
-        ]).then(_ => undefined).catch(_ => undefined)
+        ]).then(_ => undefined)
     }
 }
 
-const localProjects = (projects: ProjectInfoNoStorage[]): ProjectInfo[] =>
-    projects.map(p => ({...p, storage: ProjectStorage.local}))
-const localProject = (p: ProjectNoStorage): Project => ({...p, storage: ProjectStorage.local})
+function filterLegacy(projects: [ProjectId, ProjectStored][]): [ProjectId, ProjectJsonLegacy][] {
+    return projects.flatMap(([id, p]) => isLegacy(p) ? [[id, p]] : [])
+}
+
+function legacyProjectInfo([id, p]: [ProjectId, ProjectJsonLegacy]): ProjectInfoLocalLegacy {
+    return {
+        id: id,
+        slug: id,
+        name: p.name,
+        encodingVersion: p.version,
+        storage: ProjectStorage.local,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+        ...computeStats(p)
+    }
+}
+
+function notLegacy(p: ProjectStored): Promise<ProjectJson> {
+    return isLegacy(p) ? Promise.reject(`Project ${p.name} is legacy!`) : Promise.resolve(p)
+}
+
+function toLegacy(p: ProjectStored): Promise<ProjectJsonLegacy> {
+    return isLegacy(p) ? Promise.resolve(p) : Promise.reject(`Project ${p.name} is not legacy!`)
+}

@@ -126,7 +126,7 @@ update req env now urlOrganization msg model =
 handleJsMessage : Time.Posix -> JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage now msg model =
     case msg of
-        GotProjects ( _, projects ) ->
+        GotLegacyProjects ( _, projects ) ->
             ( { model | projects = Sort.lastUpdatedFirst projects }, Cmd.none )
 
         GotLocalFile kind file content ->

@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getProject, listProjects, listenHotkeys, loadProject, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -67,19 +67,14 @@ setMeta payload =
     messageToJs (SetMeta payload)
 
 
+getLegacyProjects : Cmd msg
+getLegacyProjects =
+    messageToJs GetLegacyProjects
+
+
 getProject : OrganizationId -> ProjectId -> Cmd msg
 getProject organization project =
     messageToJs (GetProject organization project)
-
-
-listProjects : Cmd msg
-listProjects =
-    messageToJs ListProjects
-
-
-loadProject : ProjectId -> Cmd msg
-loadProject id =
-    messageToJs (LoadProject id)
 
 
 createProjectTmp : Project -> Cmd msg
@@ -198,9 +193,8 @@ type ElmMsg
     | Fullscreen (Maybe HtmlId)
     | SetMeta MetaInfos
     | AutofocusWithin HtmlId
+    | GetLegacyProjects
     | GetProject OrganizationId ProjectId
-    | ListProjects
-    | LoadProject ProjectId
     | CreateProjectTmp Project
     | CreateProject OrganizationId ProjectStorage Project
     | UpdateProject Project
@@ -219,7 +213,7 @@ type ElmMsg
 
 type JsMsg
     = GotSizes (List SizeChange)
-    | GotProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
+    | GotLegacyProjects ( List ( ProjectId, Decode.Error ), List ProjectInfo )
     | GotProject (Maybe (Result Decode.Error Project))
     | ProjectDeleted ProjectId
     | GotLocalFile String File FileContent
@@ -292,14 +286,11 @@ elmEncoder elm =
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
 
+        GetLegacyProjects ->
+            Encode.object [ ( "kind", "GetLegacyProjects" |> Encode.string ) ]
+
         GetProject organization project ->
             Encode.object [ ( "kind", "GetProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "project", project |> ProjectId.encode ) ]
-
-        ListProjects ->
-            Encode.object [ ( "kind", "ListProjects" |> Encode.string ) ]
-
-        LoadProject id ->
-            Encode.object [ ( "kind", "LoadProject" |> Encode.string ), ( "id", id |> ProjectId.encode ) ]
 
         CreateProjectTmp project ->
             Encode.object [ ( "kind", "CreateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]
@@ -361,8 +352,8 @@ jsDecoder =
                             )
                         )
 
-                "GotProjects" ->
-                    Decode.map GotProjects (Decode.field "projects" projectInfosDecoder)
+                "GotLegacyProjects" ->
+                    Decode.map GotLegacyProjects (Decode.field "projects" projectInfosDecoder)
 
                 "GotProject" ->
                     Decode.map GotProject (Decode.maybeField "project" projectDecoder)
@@ -453,8 +444,8 @@ unhandledJsMsgError msg =
                 GotSizes _ ->
                     "GotSizes"
 
-                GotProjects _ ->
-                    "GotProjects"
+                GotLegacyProjects _ ->
+                    "GotLegacyProjects"
 
                 GotProject _ ->
                     "GotProject"

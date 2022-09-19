@@ -141,7 +141,6 @@ formatOrgasAndProjects orgas =
                             , slug = p.slug
                             , name = p.name
                             , description = p.description
-                            , encodingVersion = p.encodingVersion
                             , storage = p.storage
                             , nbSources = p.nbSources
                             , nbTables = p.nbTables
@@ -153,7 +152,6 @@ formatOrgasAndProjects orgas =
                             , nbLayouts = p.nbLayouts
                             , createdAt = p.createdAt
                             , updatedAt = p.updatedAt
-                            , archivedAt = p.archivedAt
                             }
                         )
             )

@@ -1,4 +1,7 @@
-export function formatError(err: any) {
+export type AnyError = any
+export type StrError = string
+
+export function formatError(err: AnyError) {
     if (err instanceof Error) {
         return err.message
     } else if (typeof err === 'string') {

@@ -42,7 +42,7 @@ init urlOrganization query =
             , body = Just "h-full"
             }
          , Ports.trackPage "new-project"
-         , Ports.listProjects
+         , Ports.getLegacyProjects
          ]
             ++ ((query |> Dict.get "database" |> Maybe.map (\value -> [ T.send (InitTab TabDatabase), T.sendAfter 1 (DatabaseSourceMsg (DatabaseSource.GetSchema value)) ]))
                     |> Maybe.orElse (query |> Dict.get "sql" |> Maybe.map (\value -> [ T.send (InitTab TabSql), T.sendAfter 1 (SqlSourceMsg (SqlSource.GetRemoteFile value)) ]))

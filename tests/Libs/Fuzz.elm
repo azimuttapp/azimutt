@@ -1,4 +1,4 @@
-module Libs.Fuzz exposing (letter, listN, map10, map11, map12, map6, map7, map8, map9, nel, nelN)
+module Libs.Fuzz exposing (letter, listN, map10, map11, map12, map13, map14, map15, map6, map7, map8, map9, nel, nelN)
 
 import Fuzz exposing (Fuzzer)
 import Libs.Nel exposing (Nel)
@@ -95,3 +95,33 @@ map12 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI fuzzJ fuzz
         (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
         (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
         (Fuzz.tuple3 ( fuzzJ, fuzzK, fuzzL ))
+
+
+map13 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l -> m -> n) -> Fuzzer a -> Fuzzer b -> Fuzzer c -> Fuzzer d -> Fuzzer e -> Fuzzer f -> Fuzzer g -> Fuzzer h -> Fuzzer i -> Fuzzer j -> Fuzzer k -> Fuzzer l -> Fuzzer m -> Fuzzer n
+map13 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI fuzzJ fuzzK fuzzL fuzzM =
+    Fuzz.map5 (\( a, b, c ) ( d, e, f ) ( g, h, i ) ( j, k, l ) m -> transform a b c d e f g h i j k l m)
+        (Fuzz.tuple3 ( fuzzA, fuzzB, fuzzC ))
+        (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
+        (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
+        (Fuzz.tuple3 ( fuzzJ, fuzzK, fuzzL ))
+        fuzzM
+
+
+map14 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l -> m -> n -> o) -> Fuzzer a -> Fuzzer b -> Fuzzer c -> Fuzzer d -> Fuzzer e -> Fuzzer f -> Fuzzer g -> Fuzzer h -> Fuzzer i -> Fuzzer j -> Fuzzer k -> Fuzzer l -> Fuzzer m -> Fuzzer n -> Fuzzer o
+map14 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI fuzzJ fuzzK fuzzL fuzzM fuzzN =
+    Fuzz.map5 (\( a, b, c ) ( d, e, f ) ( g, h, i ) ( j, k, l ) ( m, n ) -> transform a b c d e f g h i j k l m n)
+        (Fuzz.tuple3 ( fuzzA, fuzzB, fuzzC ))
+        (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
+        (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
+        (Fuzz.tuple3 ( fuzzJ, fuzzK, fuzzL ))
+        (Fuzz.tuple ( fuzzM, fuzzN ))
+
+
+map15 : (a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l -> m -> n -> o -> p) -> Fuzzer a -> Fuzzer b -> Fuzzer c -> Fuzzer d -> Fuzzer e -> Fuzzer f -> Fuzzer g -> Fuzzer h -> Fuzzer i -> Fuzzer j -> Fuzzer k -> Fuzzer l -> Fuzzer m -> Fuzzer n -> Fuzzer o -> Fuzzer p
+map15 transform fuzzA fuzzB fuzzC fuzzD fuzzE fuzzF fuzzG fuzzH fuzzI fuzzJ fuzzK fuzzL fuzzM fuzzN fuzzO =
+    Fuzz.map5 (\( a, b, c ) ( d, e, f ) ( g, h, i ) ( j, k, l ) ( m, n, o ) -> transform a b c d e f g h i j k l m n o)
+        (Fuzz.tuple3 ( fuzzA, fuzzB, fuzzC ))
+        (Fuzz.tuple3 ( fuzzD, fuzzE, fuzzF ))
+        (Fuzz.tuple3 ( fuzzG, fuzzH, fuzzI ))
+        (Fuzz.tuple3 ( fuzzJ, fuzzK, fuzzL ))
+        (Fuzz.tuple3 ( fuzzM, fuzzN, fuzzO ))

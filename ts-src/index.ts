@@ -7,14 +7,20 @@ import {
     Hotkey,
     HotkeyId,
     ListenKeysMsg,
-    LoadProjectMsg,
     ObserveSizesMsg,
     SetMetaMsg,
     UpdateProjectMsg
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
-import {ProjectStorage} from "./types/project";
+import {
+    buildProjectJson,
+    buildProjectLocal,
+    buildProjectLocalDraft,
+    buildProjectLocalLegacy,
+    buildProjectRemote,
+    ProjectStorage
+} from "./types/project";
 import {LogAnalytics, SplitbeeAnalytics} from "./services/analytics";
 import {LogErrLogger, SentryErrLogger} from "./services/errors";
 import {ConsoleLogger} from "./services/logger";
@@ -68,9 +74,8 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
+app.on('GetLegacyProjects', getLegacyProjects)
 app.on('GetProject', getProject)
-app.on('ListProjects', listProjects)
-app.on('LoadProject', loadProject) // FIXME: is it useful? => problem to get orga :(
 app.on('CreateProjectTmp', createProjectTmp)
 app.on('CreateProject', createProject)
 app.on('UpdateProject', updateProject)
@@ -117,43 +122,32 @@ function setMeta(meta: SetMetaMsg) {
     }
 }
 
-// FIXME: remove from JSON: updatedAt, createdAt, orga, storage
-// FIXME: should I make Orga required in Project using a default one on legacy/draft projects?
-function getProject({organization, project}: GetProjectMsg) {
-    backend.getProject(organization, project).then(res => {
+function getLegacyProjects() {
+    storage.getLegacyProjects().then(app.gotLegacyProjects).catch(err => {
+        app.gotLegacyProjects([])
+        app.toast(ToastLevel.error, `Can't list legacy projects: ${err}`)
+    })
+}
+
+function getProject(msg: GetProjectMsg) {
+    backend.getProject(msg.organization, msg.project).then(res => {
         if (res.storage === ProjectStorage.remote) {
-            return typeof res.content === 'string' ?
-                {
-                    ...JSON.parse(res.content),
-                    organization: res.organization,
-                    id: project,
-                    storage: ProjectStorage.remote,
-                    updatedAt: res.updatedAt
-                } :
-                Promise.reject(`missing content`)
+            return buildProjectRemote(res, res.content)
         } else if (res.storage === ProjectStorage.local) {
-            return storage.getProject(project).then(p => ({
-                ...p,
-                organization: res.organization,
-                id: project,
-                storage: ProjectStorage.local
-            }))
+            return storage.getProject(msg.project).then(p => buildProjectLocal(res, p))
         } else {
-            return Promise.reject(`unknown storage '${res.storage}'`)
+            return Promise.reject('Invalid storage')
         }
     }, err => {
         // FIXME: handle 401 (Unauthorized) errors, save orga in project to know if it's legacy or not, or change storage key?
         if (err.status === 404) {
-            if (project !== Uuid.zero) {
+            if (msg.project === Uuid.zero) {
+                return storage.getProject(msg.project).then(p => buildProjectLocalDraft(msg.project, p))
+            } else {
                 app.toast(ToastLevel.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
+                return storage.getLegacyProject(msg.project).then(p => buildProjectLocalLegacy(msg.project, p))
             }
-            return storage.getProject(project).then(p => ({
-                ...p,
-                organization: undefined,
-                id: project,
-                storage: ProjectStorage.local
-            }))
         } else {
             return Promise.reject(err)
         }
@@ -165,40 +159,20 @@ function getProject({organization, project}: GetProjectMsg) {
     })
 }
 
-function listProjects() {
-    storage.listProjects().then(app.loadProjects).catch(err => {
-        app.loadProjects([])
-        app.toast(ToastLevel.error, `Can't list projects: ${err}`)
-    })
-}
-
-function loadProject(msg: LoadProjectMsg) {
-    // FIXME: is orga really not present???
-    storage.getProject(msg.id).then(p => ({
-        ...p,
-        organization: undefined,
-        id: msg.id,
-        storage: ProjectStorage.local
-    })).then(p => {
-        app.gotProject(p)
-    }, err => {
-        app.gotProject(undefined)
-        app.toast(ToastLevel.error, `Can't load project: ${formatError(err)}`)
-    })
-}
-
-function createProjectTmp({project}: CreateProjectTmpMsg): void {
+function createProjectTmp(msg: CreateProjectTmpMsg): void {
     storage.deleteProject(Uuid.zero)
-        .then(_ => storage.createProject(Uuid.zero, project))
-        .then(app.gotProject)
+        .then(_ => storage.createProject(Uuid.zero, buildProjectJson(msg.project)))
+        .then(_ => app.gotProject(msg.project),
+            err => app.toast(ToastLevel.error, `Can't save draft project: ${formatError(err)}`))
 }
 
 function createProject(msg: CreateProjectMsg): void {
+    const json = buildProjectJson(msg.project)
     if (msg.storage == ProjectStorage.local) {
-        backend.createProjectLocal(msg.organization, msg.project).then(info => {
-            return storage.createProject(info.id, msg.project).catch(err => {
+        backend.createProjectLocal(msg.organization, json).then(res => {
+            return storage.createProject(res.id, json).then(_ => buildProjectLocal(res, json), err => {
                 app.toast(ToastLevel.error, `Can't save project locally: ${formatError(err)}`)
-                return backend.deleteProject(msg.organization, info.id).then(_ => Promise.reject(err))
+                return backend.deleteProject(msg.organization, res.id).then(_ => Promise.reject(err))
             })
         }, err => {
             app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`)
@@ -214,10 +188,10 @@ function createProject(msg: CreateProjectMsg): void {
             })
         })
     } else if (msg.storage == ProjectStorage.remote) {
-        backend.createProjectRemote(msg.organization, msg.project).then(p => {
+        backend.createProjectRemote(msg.organization, json).then(res => {
             app.toast(ToastLevel.success, `Project created!`)
-            window.history.replaceState("", "", `/${msg.organization}/${p.id}`) // FIXME use Elm Router to build url
-            app.gotProject(p)
+            window.history.replaceState("", "", `/${msg.organization}/${res.id}`) // FIXME use Elm Router to build url
+            app.gotProject(buildProjectRemote(res, json))
         }, err => app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`))
     } else {
         app.toast(ToastLevel.error, `Unknown ProjectStorage: ${formatError(storage)}`)
@@ -225,23 +199,20 @@ function createProject(msg: CreateProjectMsg): void {
 }
 
 function updateProject(msg: UpdateProjectMsg): void {
+    const json = buildProjectJson(msg.project)
     if (msg.project.storage == ProjectStorage.local) {
-        backend.updateProjectLocal(msg.project).then(info => {
-            return storage.updateProject(info.id, msg.project).then(p => {
+        backend.updateProjectLocal(msg.project).then(res => {
+            return storage.updateProject(res.id, json).then(_ => {
                 app.toast(ToastLevel.success, 'Project saved')
-                app.gotProject(p)
-            }, err => {
-                app.toast(ToastLevel.error, `Can't update project locally: ${formatError(err)}`)
-            })
-        }, err => {
-            app.toast(ToastLevel.error, `Can't update project to backend: ${formatError(err)}`)
-        })
+                app.gotProject(buildProjectLocal(res, json))
+            }, err => app.toast(ToastLevel.error, `Can't update project locally: ${formatError(err)}`))
+        }, err => app.toast(ToastLevel.error, `Can't update project to backend: ${formatError(err)}`))
     } else if (msg.project.storage == ProjectStorage.remote) {
         backend.getProject(msg.project.organization.id, msg.project.id).then(current => {
             if (current.updatedAt === msg.project.updatedAt) {
-                backend.updateProjectRemote(msg.project).then(p => {
+                backend.updateProjectRemote(msg.project).then(res => {
                     app.toast(ToastLevel.success, 'Project saved')
-                    app.gotProject(p)
+                    app.gotProject(buildProjectRemote(res, json))
                 }, err => app.toast(ToastLevel.error, `Can't update project: ${formatError(err)}`))
             } else {
                 app.toast(ToastLevel.error, `Project was updated by someone else, please refresh to get the new version.`)
@@ -252,24 +223,24 @@ function updateProject(msg: UpdateProjectMsg): void {
     }
 }
 
-function deleteProject({project}: DeleteProjectMsg): void {
-    if (project.organization) {
-        backend.deleteProject(project.organization.id, project.id).catch(err => {
+function deleteProject(msg: DeleteProjectMsg): void {
+    if (msg.project.organization) {
+        backend.deleteProject(msg.project.organization.id, msg.project.id).catch(err => {
             app.toast(ToastLevel.error, `Can't delete project in backend: ${formatError(err)}`)
             return Promise.reject(err)
         }).then(_ => {
-            if (project.storage == ProjectStorage.local || project.storage == ProjectStorage.browser) {
-                return storage.deleteProject(project.id).catch(err => {
+            if (msg.project.storage == ProjectStorage.local) {
+                return storage.deleteProject(msg.project.id).catch(err => {
                     app.toast(ToastLevel.error, `Can't delete project locally: ${formatError(err)}`)
                     return Promise.reject(err)
                 })
             }
-        }).then(_ => app.dropProject(project.id))
+        }).then(_ => app.dropProject(msg.project.id))
     } else {
-        storage.deleteProject(project.id).catch(err => {
+        storage.deleteProject(msg.project.id).catch(err => {
             app.toast(ToastLevel.error, `Can't delete project locally: ${formatError(err)}`)
             return Promise.reject(err)
-        }).then(_ => app.dropProject(project.id))
+        }).then(_ => app.dropProject(msg.project.id))
     }
 }
 

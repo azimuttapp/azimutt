@@ -12,7 +12,7 @@ import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.FileUrl exposing (FileUrl)
 import Libs.Task as T
 import Models.ErdProps as ErdProps
-import Models.OrganizationId exposing (OrganizationId)
+import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.Project as Project
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectId exposing (ProjectId)
@@ -122,7 +122,8 @@ init query =
          , Ports.trackPage "embed"
          , Ports.listenHotkeys Conf.hotkeys
          ]
-            ++ ((query.projectId |> Maybe.map (\id -> [ Ports.loadProject id ]))
+            -- org id is not used to get the project ^^
+            ++ ((query.projectId |> Maybe.map (\id -> [ Ports.getProject OrganizationId.zero id ]))
                     |> Maybe.orElse (query.projectUrl |> Maybe.map (\url -> [ Http.get { url = url, expect = Http.decodeJson (Result.toMaybe >> GotProject >> JsMessage) Project.decode } ]))
                     |> Maybe.orElse (query.databaseSource |> Maybe.map (\url -> [ T.send (url |> DatabaseSource.GetSchema |> EmbedSourceParsingDialog.EmbedDatabaseSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))
                     |> Maybe.orElse (query.sqlSource |> Maybe.map (\url -> [ T.send (url |> SqlSource.GetRemoteFile |> EmbedSourceParsingDialog.EmbedSqlSource |> EmbedSourceParsingMsg), T.sendAfter 1 (ModalOpen Conf.ids.sourceParsingDialog) ]))

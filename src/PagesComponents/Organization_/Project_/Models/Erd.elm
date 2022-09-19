@@ -70,7 +70,9 @@ unpack : Erd -> Project
 unpack erd =
     { organization = erd.project.organization
     , id = erd.project.id
+    , slug = erd.project.slug
     , name = erd.project.name
+    , description = erd.project.description
     , sources = erd.sources
     , tables = erd.tables |> Dict.map (\_ -> ErdTable.unpack)
     , relations = erd.relations |> List.map ErdRelation.unpack

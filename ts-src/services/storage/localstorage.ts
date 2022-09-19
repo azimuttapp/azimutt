@@ -1,45 +1,44 @@
-import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage, projectToInfo} from "../../types/project";
+import {ProjectJson, ProjectStored, ProjectStoredWithId, ProjectId} from "../../types/project";
 import {StorageApi, StorageKind} from "./api";
 import {Logger} from "../logger";
+import {formatError} from "../../utils/error";
+import {successes} from "../../utils/promise";
 
 export class LocalStorageStorage implements StorageApi {
     static init(logger: Logger): Promise<LocalStorageStorage> {
         return window.localStorage ?
-            Promise.resolve(new LocalStorageStorage(window.localStorage, logger)) :
+            Promise.resolve(new LocalStorageStorage(logger)) :
             Promise.reject('localStorage not available')
     }
 
     public kind: StorageKind = 'localStorage'
     private prefix = 'project-'
 
-    constructor(private storage: Storage, private logger: Logger) {
+    constructor(private logger: Logger) {
     }
 
-    listProjects = (): Promise<ProjectInfoNoStorage[]> => {
+    listProjects = (): Promise<ProjectStoredWithId[]> => {
         this.logger.debug(`localStorage.listProjects()`)
-        const projects = Object.keys(this.storage)
-            .filter(key => key.startsWith(this.prefix))
-            .flatMap(key => [this.getProject(key)].filter(p => p).map(p => [key.replace(this.prefix, ''), p]) as [ProjectId, ProjectNoStorage][])
-            .map(([id, p]) => projectToInfo(id, p))
-        return Promise.resolve(projects)
+        const keys = Object.keys(window.localStorage).filter(key => key.startsWith(this.prefix))
+        return successes(keys.map(k => this.getProject(k).then(p => [k.replace(this.prefix, ''), p])))
     }
-    loadProject = (id: ProjectId): Promise<ProjectNoStorage> => {
+    loadProject = (id: ProjectId): Promise<ProjectStored> => {
         this.logger.debug(`localStorage.loadProject(${id})`)
         return Promise.resolve(this.getProject(this.prefix + id)).then(p => p ? p : Promise.reject(`Project ${id} not found`))
     }
-    createProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+    createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`localStorage.createProject(${id})`, p)
         const key = this.prefix + id
-        if (this.storage.getItem(key) === null) {
+        if (window.localStorage.getItem(key) === null) {
             return this.setProject(key, p)
         } else {
             return Promise.reject(`Project ${id} already exists in ${this.kind}`)
         }
     }
-    updateProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+    updateProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`localStorage.updateProject(${id})`, p)
         const key = this.prefix + id
-        if (this.storage.getItem(key) === null) {
+        if (window.localStorage.getItem(key) === null) {
             return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)
         } else {
             return this.setProject(key, p)
@@ -47,25 +46,24 @@ export class LocalStorageStorage implements StorageApi {
     }
     deleteProject = (id: ProjectId): Promise<void> => {
         this.logger.debug(`localStorage.deleteProject(${id})`)
-        this.storage.removeItem(this.prefix + id)
+        window.localStorage.removeItem(this.prefix + id)
         return Promise.resolve()
     }
 
-    private getProject = (key: string): ProjectNoStorage | undefined => {
-        const value = this.storage.getItem(key)
+    private getProject = (key: string): Promise<ProjectStored> => {
+        const value = window.localStorage.getItem(key)
         if (value === null) {
-            return undefined
+            return Promise.reject(`Nothing in localStorage ${JSON.stringify(key)}`)
         }
         try {
-            return JSON.parse(value) as ProjectNoStorage
+            return Promise.resolve(JSON.parse(value) as ProjectStored)
         } catch (e) {
-            this.logger.warn(`Invalid JSON in localStorage ${key}`)
-            return undefined
+            return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${formatError(e)}`)
         }
     }
-    private setProject = (key: string, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+    private setProject = (key: string, p: ProjectJson): Promise<ProjectJson> => {
         try {
-            this.storage.setItem(key, JSON.stringify(p))
+            window.localStorage.setItem(key, JSON.stringify(p))
             return Promise.resolve(p)
         } catch (e) {
             return Promise.reject(e)

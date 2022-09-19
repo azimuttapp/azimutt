@@ -1,7 +1,8 @@
-import {ProjectId, ProjectInfoNoStorage, ProjectNoStorage, projectToInfo} from "../../types/project";
+import {ProjectJson, ProjectStored, ProjectStoredWithId, ProjectId} from "../../types/project";
 import {StorageApi, StorageKind} from "./api";
 import {LocalStorageStorage} from "./localstorage";
 import {Logger} from "../logger";
+import {successes} from "../../utils/promise";
 
 export class IndexedDBStorage implements StorageApi {
     static databaseName = 'azimutt'
@@ -28,15 +29,15 @@ export class IndexedDBStorage implements StorageApi {
     constructor(private db: IDBDatabase, private logger: Logger) {
     }
 
-    listProjects = (): Promise<ProjectInfoNoStorage[]> => {
+    listProjects = (): Promise<ProjectStoredWithId[]> => {
         this.logger.debug(`indexedDb.listProjects()`)
         return this.migrateLegacyProjects().then(_ => this.openStore('readonly')).then(store => {
-            return new Promise<ProjectInfoNoStorage[]>((resolve, reject) => {
-                const projects: ProjectInfoNoStorage[] = []
+            return new Promise<ProjectStoredWithId[]>((resolve, reject) => {
+                const projects: ProjectStoredWithId[] = []
                 store.openCursor().onsuccess = (event: any) => {
                     const cursor = event.target.result
                     if (cursor) {
-                        projects.push(projectToInfo(cursor.key, cursor.value))
+                        projects.push([cursor.key, cursor.value])
                         cursor.continue()
                     } else {
                         resolve(projects)
@@ -46,14 +47,14 @@ export class IndexedDBStorage implements StorageApi {
             })
         })
     }
-    loadProject = (id: ProjectId): Promise<ProjectNoStorage> => {
+    loadProject = (id: ProjectId): Promise<ProjectStored> => {
         this.logger.debug(`indexedDb.loadProject(${id})`)
         return this.migrateLegacyProjects()
             .then(_ => this.openStore('readonly'))
             .then(store => this.getProject(store, id))
             .then(p => p ? p : Promise.reject(`Not found`))
     }
-    createProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+    createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`indexedDb.createProject(${id})`, p)
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
@@ -65,7 +66,7 @@ export class IndexedDBStorage implements StorageApi {
             })
         })
     }
-    updateProject = (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
+    updateProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`indexedDb.updateProject(${id})`, p)
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
@@ -86,8 +87,8 @@ export class IndexedDBStorage implements StorageApi {
         return new Promise<IDBObjectStore>(resolve => resolve(this.db.transaction(IndexedDBStorage.dbProjects, mode).objectStore(IndexedDBStorage.dbProjects)))
     }
 
-    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectNoStorage | undefined> {
-        return new Promise<ProjectNoStorage>((resolve, reject) => {
+    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectJson | undefined> {
+        return new Promise<ProjectJson>((resolve, reject) => {
             store.get(id).onsuccess = (event: any) => resolve(event.target.result);
             (store as any).onerror = (err: any) => reject(`Unable to load project: ${err}`)
         })
@@ -97,11 +98,10 @@ export class IndexedDBStorage implements StorageApi {
         if (this.migrated) return Promise.resolve()
         this.migrated = true
         return LocalStorageStorage.init(this.logger).then(legacyStorage =>
-            legacyStorage.listProjects().then(projectInfos =>
-                Promise.all(projectInfos.map(p =>
-                    legacyStorage.loadProject(p.id)
-                        .then(project => this.createProject(p.id, project))
-                        .then(_ => legacyStorage.deleteProject(p.id))
+            legacyStorage.listProjects().then(projects =>
+                successes(projects.map(([id, project]) =>
+                    // just migrate projects from a storage to another
+                    this.createProject(id, project as ProjectJson).then(_ => legacyStorage.deleteProject(id))
                 )).then(_ => undefined)
             )
         )

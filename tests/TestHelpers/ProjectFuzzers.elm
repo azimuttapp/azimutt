@@ -33,6 +33,7 @@ import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings)
+import Models.Project.ProjectSlug exposing (ProjectSlug)
 import Models.Project.ProjectStorage as ProjectStrorage exposing (ProjectStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.RelationName exposing (RelationName)
@@ -57,7 +58,7 @@ import TestHelpers.OrganizationFuzzers exposing (organization)
 
 project : Fuzzer Project
 project =
-    Fuzz.map11 Project.new (Fuzz.maybe organization) projectId projectName (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
+    Fuzz.map13 Project.new (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
 
 
 source : Fuzzer Source
@@ -204,6 +205,11 @@ projectStorage =
 projectId : Fuzzer ProjectId
 projectId =
     uuid
+
+
+projectSlug : Fuzzer ProjectSlug
+projectSlug =
+    identifier
 
 
 projectName : Fuzzer ProjectName

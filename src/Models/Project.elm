@@ -18,6 +18,7 @@ import Models.Project.LayoutName as LayoutName exposing (LayoutName)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
+import Models.Project.ProjectSlug as ProjectSlug exposing (ProjectSlug)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.Project.Relation as Relation exposing (Relation)
 import Models.Project.SchemaName exposing (SchemaName)
@@ -31,7 +32,9 @@ import Time
 type alias Project =
     { organization : Maybe Organization
     , id : ProjectId
+    , slug : ProjectSlug
     , name : ProjectName
+    , description : Maybe String
     , sources : List Source
     , tables : Dict TableId Table -- computed from sources, do not update directly (see compute function)
     , relations : List Relation -- computed from sources, do not update directly (see compute function)
@@ -46,11 +49,13 @@ type alias Project =
     }
 
 
-new : Maybe Organization -> ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
-new organization id name sources notes usedLayout layouts settings storage createdAt updatedAt =
+new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
+new organization id slug name description sources notes usedLayout layouts settings storage createdAt updatedAt =
     { organization = organization
     , id = id
+    , slug = slug
     , name = name
+    , description = description
     , sources = sources
     , tables = Dict.empty
     , relations = []
@@ -70,7 +75,9 @@ create : List { a | name : ProjectName } -> ProjectName -> Source -> Project
 create projects name source =
     new Nothing
         ProjectId.zero
+        ProjectSlug.zero
         (String.unique (projects |> List.map .name) name)
+        Nothing
         [ source ]
         Dict.empty
         Conf.constants.defaultLayout
@@ -179,7 +186,9 @@ encode value =
     Encode.notNullObject
         [ ( "organization", value.organization |> Encode.maybe Organization.encode )
         , ( "id", value.id |> ProjectId.encode )
+        , ( "slug", value.slug |> ProjectSlug.encode )
         , ( "name", value.name |> ProjectName.encode )
+        , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "sources", value.sources |> Encode.list Source.encode )
         , ( "notes", value.notes |> Encode.withDefault (Encode.dict identity Encode.string) Dict.empty )
         , ( "usedLayout", value.usedLayout |> LayoutName.encode )
@@ -194,10 +203,12 @@ encode value =
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map12 decodeProject
+    Decode.map14 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
+        (Decode.field "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
+        (Decode.maybeField "description" Decode.string)
         (Decode.field "sources" (Decode.list Source.decode))
         (Decode.defaultField "notes" (Decode.dict Decode.string) Dict.empty)
         (Decode.defaultField "layout" Layout.decode (Layout.empty Time.zero))
@@ -209,8 +220,8 @@ decode =
         (Decode.defaultField "updatedAt" Time.decode Time.zero)
 
 
-decodeProject : Maybe Organization -> ProjectId -> ProjectName -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id name sources notes layout usedLayout layouts settings storage createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id slug name description sources notes layout usedLayout layouts settings storage createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -221,4 +232,4 @@ decodeProject organization id name sources notes layout usedLayout layouts setti
             else
                 layouts |> Dict.insert Conf.constants.defaultLayout layout
     in
-    new organization id name sources notes usedLayout allLayouts settings storage createdAt updatedAt
+    new organization id slug name description sources notes usedLayout allLayouts settings storage createdAt updatedAt

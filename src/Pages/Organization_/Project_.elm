@@ -96,7 +96,7 @@ init params =
         , Ports.listenHotkeys Conf.hotkeys
 
         -- , Ports.loadProject id
+        , Ports.getLegacyProjects
         , Ports.getProject params.organization params.project
-        , Ports.listProjects
         ]
     )

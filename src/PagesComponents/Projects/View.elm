@@ -15,14 +15,12 @@ import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
-import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models.DateTime exposing (formatDate)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
 import Libs.Task as T
 import Models.OrganizationId exposing (OrganizationId)
-import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Helpers exposing (appShell)
@@ -45,17 +43,17 @@ viewProjects shared currentUrl urlOrganization model =
         DropdownToggle
         model
         [ text model.selectedMenu ]
-        [ viewContent currentUrl shared model ]
+        [ viewContent currentUrl shared ]
         [ viewModal model
         , Lazy.lazy2 Toasts.view Toast model.toasts
         ]
 
 
-viewContent : Url -> Shared.Model -> Model -> Html Msg
-viewContent currentUrl shared model =
+viewContent : Url -> Shared.Model -> Html Msg
+viewContent currentUrl shared =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
-        [ viewProjectList shared model
-        , if model.projects /= Loading && shared.user == Nothing then
+        [ viewProjectList shared
+        , if shared.legacyProjects /= Loading && shared.user == Nothing then
             div [ class "mt-3" ]
                 [ Alert.withActions
                     { color = Tw.blue
@@ -74,8 +72,8 @@ viewContent currentUrl shared model =
         ]
 
 
-viewProjectList : Shared.Model -> Model -> Html Msg
-viewProjectList shared model =
+viewProjectList : Shared.Model -> Html Msg
+viewProjectList shared =
     div []
         [ h3 [ css [ "text-lg font-medium" ] ] [ text "Projects" ]
         , if not shared.projectsLoaded then
@@ -86,23 +84,18 @@ viewProjectList shared model =
 
           else
             div [ css [ "mt-6" ] ] [ projectList ((shared.projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject ]) ]
-        , case model.projects of
+        , case shared.legacyProjects of
             Loading ->
                 div [] []
 
             Loaded projects ->
-                let
-                    legacyProjects : List ProjectInfo
-                    legacyProjects =
-                        projects |> List.filterNot (\p -> p.id == ProjectId.zero || List.memberBy .id p.id shared.projects)
-                in
-                if List.isEmpty legacyProjects then
+                if List.isEmpty projects then
                     div [] []
 
                 else
                     div []
                         [ h3 [ css [ "mt-6 text-lg font-medium" ] ] [ text "Legacy projects" ]
-                        , div [ css [ "mt-6" ] ] [ projectList (legacyProjects |> List.map (viewProjectCard shared.zone)) ]
+                        , div [ css [ "mt-6" ] ] [ projectList (projects |> List.map (viewProjectCard shared.zone)) ]
                         ]
         ]
 

@@ -273,7 +273,9 @@ upgrade : ProjectV1 -> Project
 upgrade project =
     { organization = Nothing
     , id = project.id
+    , slug = project.id
     , name = project.name
+    , description = Nothing
     , sources = project.sources |> Nel.toList |> List.map (upgradeProjectSource project.schema.tables project.schema.relations project.fromSample)
     , tables = project.schema.tables |> Dict.map (\_ -> upgradeTable)
     , relations = project.schema.relations |> List.map upgradeRelation

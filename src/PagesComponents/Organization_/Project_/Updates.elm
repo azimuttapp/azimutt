@@ -315,7 +315,7 @@ handleJsMessage now currentLayout msg model =
         GotSizes sizes ->
             model |> updateSizes sizes
 
-        GotProjects ( errors, projects ) ->
+        GotLegacyProjects ( errors, projects ) ->
             ( { model | projects = Sort.lastUpdatedFirst projects }
             , Cmd.batch
                 (errors

@@ -1,9 +1,5 @@
 import jiff from "jiff";
 
-function sum(a: number, b: number): number {
-    return a + b;
-}
-
 describe('JSON patch', () => {
     test('should work', () => {
         const initial = {name: 'a', value: 'a', updatedAt: 1}

@@ -9,7 +9,7 @@ import Libs.Tailwind exposing (Color)
 import Models.Organization exposing (Organization)
 import Models.ProjectInfo exposing (ProjectInfo)
 import Models.User exposing (User)
-import Ports exposing (JsMsg(..))
+import Ports exposing (JsMsg)
 import Request exposing (Request)
 import Services.Backend as Backend
 import Services.Sort as Sort
@@ -36,7 +36,7 @@ type alias Model =
     , organizations : List Organization
     , projects : List ProjectInfo
     , projectsLoaded : Bool
-    , projectsLegacy : StoredProjects
+    , legacyProjects : StoredProjects
     }
 
 
@@ -44,7 +44,7 @@ type Msg
     = ZoneChanged Time.Zone
     | TimeChanged Time.Posix
     | GotUser (Result Backend.Error (Maybe User))
-    | GotProjects (Result Backend.Error ( List Organization, List ProjectInfo ))
+    | GotBackendProjects (Result Backend.Error ( List Organization, List ProjectInfo ))
     | JsMessage JsMsg
 
 
@@ -97,12 +97,13 @@ init _ flags =
       , projects = []
       , organizations = []
       , projectsLoaded = False
-      , projectsLegacy = Loading
+      , legacyProjects = Loading
       }
     , Cmd.batch
         [ Task.perform ZoneChanged Time.here
         , Backend.getCurrentUser env GotUser
-        , Backend.getOrganizationsAndProjects env GotProjects
+        , Backend.getOrganizationsAndProjects env GotBackendProjects
+        , Ports.getLegacyProjects
         ]
     )
 
@@ -123,14 +124,14 @@ update _ msg model =
         GotUser result ->
             ( result |> Result.fold (\_ -> model) (\user -> { model | user = user, userLoaded = True }), Cmd.none )
 
-        GotProjects result ->
+        GotBackendProjects result ->
             ( result |> Result.fold (\_ -> model) (\( orgas, projects ) -> { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }), Cmd.none )
 
-        JsMessage (Ports.GotProjects ( _, projects )) ->
-            ( { model | projectsLegacy = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
+        JsMessage (Ports.GotLegacyProjects ( _, projects )) ->
+            ( { model | legacyProjects = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
 
         JsMessage (Ports.ProjectDeleted _) ->
-            ( model, Backend.getOrganizationsAndProjects model.conf.env GotProjects )
+            ( model, Cmd.batch [ Backend.getOrganizationsAndProjects model.conf.env GotBackendProjects, Ports.getLegacyProjects ] )
 
         JsMessage _ ->
             ( model, Cmd.none )

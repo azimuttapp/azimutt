@@ -71,7 +71,7 @@ createProject model =
 handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
     case msg of
-        GotProjects ( _, projects ) ->
+        GotLegacyProjects ( _, projects ) ->
             ( { model | projects = Sort.lastUpdatedFirst projects }, T.send InitProject )
 
         GotToast level message ->

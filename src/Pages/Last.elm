@@ -58,7 +58,7 @@ init =
             , body = Just "h-full"
             }
         , Ports.trackPage "last-project"
-        , Ports.listProjects
+        , Ports.getLegacyProjects
         ]
     )
 
@@ -80,7 +80,7 @@ update req msg model =
 handleJsMessage : Request.With Params -> JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage req msg model =
     case msg of
-        GotProjects ( _, projects ) ->
+        GotLegacyProjects ( _, projects ) ->
             ( model
             , Request.pushRoute
                 (projects

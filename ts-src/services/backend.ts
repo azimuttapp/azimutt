@@ -1,21 +1,37 @@
 import {Logger} from "./logger";
 import {
+    buildProjectJson,
     computeStats,
+    isLocal,
+    isRemote,
     Project,
     ProjectId,
     ProjectInfo,
+    ProjectInfoLocal,
+    ProjectInfoRemote,
     ProjectInfoWithContent,
+    ProjectJson,
     ProjectName,
     ProjectSlug,
     ProjectStats,
     ProjectStorage,
     ProjectVersion,
-    ProjectWithOrga
+    validStorage
 } from "../types/project";
-import {Organization, OrganizationId, OrganizationSlug} from "../types/organization";
+import {Organization, OrganizationId, OrganizationSlug, validPlan} from "../types/organization";
 import {DateTime} from "../types/basics";
 import {Env} from "../utils/env";
 import * as Http from "../utils/http";
+
+function buildPayload(p: ProjectJson, storage: ProjectStorage): CreateProjectPayload {
+    return {
+        name: p.name,
+        description: undefined,
+        storage_kind: storage,
+        encoding_version: p.version,
+        ...adaptStats(computeStats(p))
+    }
+}
 
 export class Backend {
     constructor(private env: Env, private logger: Logger) {
@@ -24,105 +40,50 @@ export class Backend {
     getProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p})`)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,content`)
-        return Http.getJson<ProjectWithOrgaContentResponse>(url)
-            .then(res => ({...formatProjectResponse(res.json), content: res.json.content}))
+        return Http.getJson<ProjectWithOrgaContentResponse>(url).then(res => formatProjectResponseWithContent(res.json))
     }
 
-    createProjectLocal = (o: OrganizationId, p: Project): Promise<ProjectInfo> => {
+    createProjectLocal = (o: OrganizationId, p: ProjectJson): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
-        return Http.postJson<CreateLocalProjectPayload, ProjectWithOrgaResponse>(url, {
-            name: p.name,
-            description: undefined,
-            storage_kind: ProjectStorage.local,
-            encoding_version: p.version,
-            ...adaptStats(computeStats(p))
-        }).then(res => formatProjectResponse(res.json))
+        return Http.postJson<CreateProjectPayload, ProjectWithOrgaResponse>(url, buildPayload(p, ProjectStorage.local))
+            .then(res => formatProjectResponse(res.json))
+            .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    createProjectRemote = (o: OrganizationId, p: Project): Promise<Project> => {
+    createProjectRemote = (o: OrganizationId, p: ProjectJson): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
-        const payload = {
-            name: p.name,
-            description: undefined,
-            storage_kind: ProjectStorage.remote,
-            encoding_version: p.version,
-            ...adaptStats(computeStats(p))
-        }
         const formData: FormData = new FormData()
-        Object.entries(payload)
+        Object.entries(buildPayload(p, ProjectStorage.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
-        formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${o}-${p.name}.json`)
-        return Http.postMultipart<ProjectWithOrgaResponse>(url, formData).then(res => formatProjectResponse(res.json)).then(res => ({
-            ...p,
-            id: res.id,
-            createdAt: res.createdAt,
-            updatedAt: res.updatedAt
-        }))
+        formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${o}-${p.name}.json`) // FIXME remove filename
+        return Http.postMultipart<ProjectWithOrgaResponse>(url, formData)
+            .then(res => formatProjectResponse(res.json))
+            .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
     }
 
-    updateProjectLocal = (p: ProjectWithOrga): Promise<ProjectInfo> => {
+    updateProjectLocal = (p: Project): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.updateProjectLocal(${p.organization.id}, ${p.id})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
-        return Http.putJson<CreateLocalProjectPayload, ProjectWithOrgaResponse>(url, {
-            name: p.name,
-            description: undefined,
-            storage_kind: ProjectStorage.local,
-            encoding_version: p.version,
-            ...adaptStats(computeStats(p))
-        }).then(res => formatProjectResponse(res.json))
+        return Http.putJson<CreateProjectPayload, ProjectWithOrgaResponse>(url, buildPayload(buildProjectJson(p), ProjectStorage.local))
+            .then(res => formatProjectResponse(res.json))
+            .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    updateProjectRemote = (p: ProjectWithOrga): Promise<Project> => {
+    updateProjectRemote = (p: Project): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.updateProjectRemote(${p.organization.id}, ${p.id})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
-        const payload = {
-            name: p.name,
-            description: undefined,
-            storage_kind: ProjectStorage.remote,
-            encoding_version: p.version,
-            ...adaptStats(computeStats(p))
-        }
         const formData: FormData = new FormData()
-        Object.entries(payload)
+        Object.entries(buildPayload(buildProjectJson(p), ProjectStorage.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
-        return Http.putMultipart<ProjectWithOrgaResponse>(url, formData).then(res => formatProjectResponse(res.json)).then(res => {
-            console.log('backend', new Date(res.updatedAt))
-            return {
-                ...p,
-                updatedAt: res.updatedAt
-            }
-        })
+        return Http.putMultipart<ProjectWithOrgaResponse>(url, formData)
+            .then(res => formatProjectResponse(res.json))
+            .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
     }
-
-
-    // updateProject = async (id: ProjectId, p: ProjectNoStorage): Promise<ProjectNoStorage> => {
-    //     const initial = this.projects[id]
-    //     const current = await this.get<ProjectNoStorage>(`/projects/${id}`)
-    //     if (initial.updatedAt !== current.updatedAt) {
-    //         try {
-    //             const patch = jiff.diff(initial, p)
-    //             p = jiff.patch(patch, current)
-    //         } catch (e) {
-    //             this.logger.warn('patch failed', e)
-    //             return Promise.reject("Project has been updated by another user! Please reload and save again (you will have to do you changes again).")
-    //         }
-    //     }
-    //     await this.put(`/projects/${id}`, {
-    //         id: id,
-    //         name: p.name,
-    //         tables: 0,
-    //         relations: 0,
-    //         layouts: Object.keys(p.layouts).length,
-    //         project: p
-    //     })
-    //     this.projects[id] = p
-    //     return p
-    // }
 
     deleteProject = (o: OrganizationId, p: ProjectId): Promise<void> => {
         this.logger.debug(`backend.deleteProject(${o}, ${p})`)
@@ -152,10 +113,10 @@ export interface ProjectStatsResponse {
     nb_layouts: number
 }
 
-interface CreateLocalProjectPayload extends ProjectStatsResponse {
+interface CreateProjectPayload extends ProjectStatsResponse {
     name: ProjectName
     description: string | undefined
-    storage_kind: 'local'
+    storage_kind: ProjectStorage
     encoding_version: number
 }
 
@@ -222,13 +183,25 @@ function formatProjectResponse(p: ProjectWithOrgaResponse): ProjectInfo {
         id: p.id,
         slug: p.slug,
         name: p.name,
-        description: p.description,
+        description: p.description || undefined,
         encodingVersion: p.encoding_version,
-        storage: p.storage_kind,
+        storage: validStorage(p.storage_kind),
         createdAt: new Date(p.created_at).getTime(),
         updatedAt: new Date(p.updated_at).getTime(),
-        archivedAt: p.archived_at ? new Date(p.archived_at).getTime() : null,
         ...formatStats(p)
+    }
+}
+
+function formatProjectResponseWithContent(p: ProjectWithOrgaContentResponse): ProjectInfoWithContent {
+    const res = formatProjectResponse(p)
+    return res.storage === ProjectStorage.remote ? {...res, content: decodeContent(p)} : res
+}
+
+function decodeContent(p: ProjectWithOrgaContentResponse): ProjectJson {
+    if (typeof p.content === 'string') {
+        return JSON.parse(p.content)
+    } else {
+        throw 'Missing content in backend response!'
     }
 }
 
@@ -237,7 +210,7 @@ function formatOrganizationResponse(o: OrganizationResponse): Organization {
         id: o.id,
         slug: o.slug,
         name: o.name,
-        activePlan: o.active_plan,
+        activePlan: validPlan(o.active_plan),
         logo: o.logo,
         location: o.location,
         description: o.description

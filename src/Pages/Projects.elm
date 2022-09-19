@@ -8,14 +8,12 @@ import Gen.Params.Projects exposing (Params)
 import Gen.Route as Route
 import Libs.Bool as B
 import Libs.Task as T
-import Models.ProjectInfo exposing (ProjectInfo)
 import Page
 import PagesComponents.Projects.Models as Models exposing (Msg(..))
 import PagesComponents.Projects.View exposing (viewProjects)
 import Ports exposing (JsMsg(..))
 import Request
 import Services.Lenses exposing (mapToastsCmd)
-import Services.Sort as Sort
 import Services.Toasts as Toasts
 import Shared exposing (StoredProjects(..))
 import View exposing (View)
@@ -29,7 +27,7 @@ import View exposing (View)
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
-        { init = init shared
+        { init = init
         , update = update req
         , view = view shared req
         , subscriptions = subscriptions
@@ -53,11 +51,10 @@ title =
     Conf.constants.defaultTitle
 
 
-init : Shared.Model -> ( Model, Cmd Msg )
-init shared =
+init : ( Model, Cmd Msg )
+init =
     ( { selectedMenu = "Dashboard"
       , mobileMenuOpen = False
-      , projects = shared.projectsLegacy
       , openedDropdown = ""
       , toasts = Toasts.init
       , confirm = Nothing
@@ -72,7 +69,7 @@ init shared =
             , body = Just "h-full"
             }
         , Ports.trackPage "dashboard"
-        , Ports.listProjects
+        , Ports.getLegacyProjects -- to update legacyProjects in Shared
         ]
     )
 
@@ -121,11 +118,13 @@ update req msg model =
 handleJsMessage : JsMsg -> Model -> ( Model, Cmd Msg )
 handleJsMessage msg model =
     case msg of
-        GotProjects ( _, projects ) ->
-            ( { model | projects = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
+        GotLegacyProjects _ ->
+            -- do nothing, handled in Shared
+            ( model, Cmd.none )
 
-        ProjectDeleted projectId ->
-            ( model |> mapProjects (List.filter (\p -> p.id /= projectId)), Cmd.none )
+        ProjectDeleted _ ->
+            -- do nothing, handled in Shared
+            ( model, Cmd.none )
 
         GotToast level message ->
             ( model, message |> Toasts.create level |> Toast |> T.send )
@@ -136,16 +135,6 @@ handleJsMessage msg model =
 
         _ ->
             ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )
-
-
-mapProjects : (List ProjectInfo -> List ProjectInfo) -> Model -> Model
-mapProjects f model =
-    case model.projects of
-        Loading ->
-            model
-
-        Loaded projects ->
-            { model | projects = Loaded (f projects) }
 
 
 

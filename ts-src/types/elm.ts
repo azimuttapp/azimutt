@@ -17,8 +17,8 @@ import {
     Project,
     ProjectId,
     ProjectInfo,
+    ProjectInfoLocalLegacy,
     ProjectStorage,
-    ProjectWithOrga,
     Size,
     TableId
 } from "./project";
@@ -53,9 +53,8 @@ export type ElmMsg =
     | FullscreenMsg
     | SetMetaMsg
     | AutofocusWithinMsg
+    | GetLegacyProjectsMsg
     | GetProjectMsg
-    | ListProjectsMsg
-    | LoadProjectMsg
     | CreateProjectTmpMsg
     | CreateProjectMsg
     | UpdateProjectMsg
@@ -78,12 +77,11 @@ export type ScrollToMsg = { kind: 'ScrollTo', id: HtmlId, position: ViewPosition
 export type FullscreenMsg = { kind: 'Fullscreen', maybeId?: HtmlId }
 export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string, canonical?: string, html?: string, body?: string }
 export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
+export type GetLegacyProjectsMsg = { kind: 'GetLegacyProjects' }
 export type GetProjectMsg = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
-export type ListProjectsMsg = { kind: 'ListProjects' }
-export type LoadProjectMsg = { kind: 'LoadProject', id: ProjectId }
 export type CreateProjectTmpMsg = { kind: 'CreateProjectTmp', project: Project }
 export type CreateProjectMsg = { kind: 'CreateProject', organization: OrganizationId, storage: ProjectStorage, project: Project }
-export type UpdateProjectMsg = { kind: 'UpdateProject', project: ProjectWithOrga }
+export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
 export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
 export type DeleteProjectMsg = { kind: 'DeleteProject', project: ProjectInfo }
 export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
@@ -98,7 +96,7 @@ export type TrackErrorMsg = { kind: 'TrackError', name: string, details?: Data }
 
 export type JsMsg =
     GotSizes
-    | GotProjects
+    | GotLegacyProjects
     | GotProject
     | ProjectDeleted
     | GotLocalFile
@@ -118,7 +116,7 @@ export type JsMsg =
     | GotFitToScreen
     | Error
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
-export type GotProjects = { kind: 'GotProjects', projects: [ProjectId, ProjectInfo][] }
+export type GotLegacyProjects = { kind: 'GotLegacyProjects', projects: [ProjectId, ProjectInfoLocalLegacy][] }
 export type GotProject = { kind: 'GotProject', project?: Project }
 export type ProjectDeleted = { kind: 'ProjectDeleted', id: ProjectId }
 export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: string, file: File, content: string }
