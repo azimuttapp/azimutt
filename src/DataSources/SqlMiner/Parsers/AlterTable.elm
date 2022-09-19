@@ -55,8 +55,8 @@ parseAlterTable : SqlStatement -> Result (List ParseError) TableUpdate
 parseAlterTable statement =
     case statement |> buildSqlLine |> Regex.matches "^ALTER TABLE(?:\\s+ONLY)?(?:\\s+IF EXISTS)?\\s+(?:(?<schema>[^ .]+)\\.\\s*)?(?<table>[^ .]+)\\s+(?<command>.*);$" of
         schema :: (Just table) :: (Just command) :: [] ->
-            -- FIXME manage multiple commands, ex: "ADD PRIMARY KEY (`id`), ADD KEY `IDX_ABC` (`user_id`), ADD KEY `IDX_DEF` (`event_id`)"
-            -- TODO try to merge "ADD PRIMARY KEY" with "ADD CONSTRAINT" (make CONSTRAINT optional)
+            -- TODO: manage multiple commands, ex: "ADD PRIMARY KEY (`id`), ADD KEY `IDX_ABC` (`user_id`), ADD KEY `IDX_DEF` (`event_id`)"
+            -- TODO: try to merge "ADD PRIMARY KEY" with "ADD CONSTRAINT" (make CONSTRAINT optional)
             let
                 schemaName : Maybe SqlSchemaName
                 schemaName =

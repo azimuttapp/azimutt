@@ -20,7 +20,7 @@ import Shared exposing (StoredProjects(..))
 
 
 
--- TODO: if fail to load local project, propose to delete it
+-- FIXME: if fail to load local project, propose to delete it
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg

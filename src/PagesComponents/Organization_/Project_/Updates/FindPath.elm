@@ -101,7 +101,7 @@ filterRelations settings relations =
 
 buildPaths : Dict TableId ErdTable -> List ErdRelation -> FindPathSettings -> TableId -> (ErdTable -> Bool) -> List FindPathStep -> List FindPathPath
 buildPaths tables relations settings tableId isDone curPath =
-    -- FIXME improve algo complexity
+    -- TODO: improve algo complexity
     tables
         |> Dict.get tableId
         |> Maybe.mapOrElse

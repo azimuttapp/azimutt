@@ -8,7 +8,7 @@ import Shared exposing (Confirm, StoredProjects)
 
 
 
--- TODO migrate these common properties to shared model? How to trigger shared Msg from Projects view?
+-- TODO: migrate these common properties to shared model? How to trigger shared Msg from Projects view?
 
 
 type alias Model =

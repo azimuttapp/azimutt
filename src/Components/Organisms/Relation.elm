@@ -160,11 +160,11 @@ drawSteps conf ( pos1, dir1 ) ( pos2, dir2 ) onHover nullable color =
                     p1 |> add (arrowSize * 2) dir1
 
                 ( True, Left, Right ) ->
-                    -- FIXME
+                    -- TODO: bad drawing but should not happen
                     p1 |> add (arrowSize * 2) dir1
 
                 ( False, Right, Left ) ->
-                    -- FIXME
+                    -- TODO: bad drawing but should not happen
                     p1 |> add (arrowSize * 2) dir1
 
                 ( False, Right, Right ) ->

@@ -34,7 +34,7 @@ buildColumnInfo column layout =
 
 viewRelation : SchemaName -> RelationStyle -> ErdConf -> Maybe ErdTableLayout -> Maybe ErdTableLayout -> ErdRelation -> Svg Msg
 viewRelation defaultSchema style conf srcTable refTable relation =
-    -- FIXME: all relations are always re-rendered, don't know why :(
+    -- TODO: all relations are always re-rendered, don't know why :(
     let
         label : String
         label =

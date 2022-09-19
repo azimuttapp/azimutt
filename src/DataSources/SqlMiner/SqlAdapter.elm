@@ -99,7 +99,7 @@ evolve source ( statement, command ) content =
             updateTable schema table (\t -> t.primaryKey |> Maybe.mapOrElse (\_ -> ( t, [ "Primary key already defined for '" ++ TableId.show Conf.schema.empty t.id ++ "' table" ] )) ( { t | primaryKey = Just (PrimaryKey constraintName pk [ origin ]) }, [] )) statement content
 
         AlterTable (AddTableConstraint schema table (AlterTable.ParsedForeignKey constraint fks)) ->
-            -- FIXME: handle multi-column foreign key!
+            -- TODO: handle multi-column foreign key!
             createRelation origin content.tables table constraint (ColumnRef (createTableId schema table) fks.head.column) fks.head.ref
                 |> (\( relation, errors ) ->
                         { content
@@ -272,7 +272,7 @@ buildViewColumn origin tables index column =
     case column of
         BasicColumn c ->
             c.table
-                -- FIXME should handle table alias (when table is renamed in select)
+                -- TODO: should handle table alias (when table is renamed in select)
                 |> Maybe.andThen (\t -> tables |> Dict.get (createTableId Nothing t))
                 |> Maybe.andThen (\t -> t.columns |> Dict.get c.column)
                 |> Maybe.mapOrElse

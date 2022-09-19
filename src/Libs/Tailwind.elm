@@ -415,5 +415,5 @@ decodeColor =
 
 extractColor : Color -> String
 extractColor (Color color) =
-    -- FIXME this function should be removed when possible
+    -- TODO: this function should be removed when possible
     color

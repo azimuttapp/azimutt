@@ -117,6 +117,8 @@ function setMeta(meta: SetMetaMsg) {
     }
 }
 
+// FIXME: remove from JSON: updatedAt, createdAt, orga, storage
+// FIXME: should I make Orga required in Project using a default one on legacy/draft projects?
 function getProject({organization, project}: GetProjectMsg) {
     backend.getProject(organization, project).then(res => {
         if (res.storage === ProjectStorage.remote) {
@@ -140,6 +142,7 @@ function getProject({organization, project}: GetProjectMsg) {
             return Promise.reject(`unknown storage '${res.storage}'`)
         }
     }, err => {
+        // FIXME: handle 401 (Unauthorized) errors, save orga in project to know if it's legacy or not, or change storage key?
         if (err.status === 404) {
             if (project !== Uuid.zero) {
                 app.toast(ToastLevel.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '

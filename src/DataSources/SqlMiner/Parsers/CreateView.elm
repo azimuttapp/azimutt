@@ -24,7 +24,7 @@ parseView statement =
                 { schema = schema |> Maybe.map buildSchemaName
                 , table = table |> buildTableName
 
-                -- FIXME: allow to send warnings along with the result
+                -- TODO: allow to send warnings along with the result
                 , select = parseSelect select |> Result.withDefault { columns = [], tables = [], whereClause = Nothing }
                 , replace = not (replace == Nothing)
                 , materialized = not (materialized == Nothing)

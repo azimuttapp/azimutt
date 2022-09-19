@@ -35,7 +35,7 @@ update : (HtmlId -> msg) -> Msg -> Maybe Model -> ( Maybe Model, Cmd msg )
 update modalOpen msg model =
     case msg of
         Open name orga ->
-            ( Just { id = dialogId, name = name, organization = orga, storage = Nothing }
+            ( ProjectSaveDialogBody.init dialogId name orga |> Just
             , Cmd.batch [ T.sendAfter 1 (modalOpen dialogId) ]
             )
 

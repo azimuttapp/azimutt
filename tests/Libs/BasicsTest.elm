@@ -29,7 +29,7 @@ suite =
             , test "timestamp ms 62" (\_ -> "1628861814000" |> convertBase 10 62 |> Expect.equal (Ok "Xz10Pw"))
             , test "timestamp min 62" (\_ -> (1628861814 // 60) |> String.fromInt |> convertBase 10 62 |> Expect.equal (Ok "1puM4"))
 
-            -- TODO , test "uuid to base 62" (\_ -> "ddd21a83-1c7c-4cb0-8813-996c647154b5" |> String.replace "-" "" |> convertBase 16 62 |> Expect.equal (Ok "6kZJxEQe5U4UXndtQ9ceqT"))
+            -- TODO: , test "uuid to base 62" (\_ -> "ddd21a83-1c7c-4cb0-8813-996c647154b5" |> String.replace "-" "" |> convertBase 16 62 |> Expect.equal (Ok "6kZJxEQe5U4UXndtQ9ceqT"))
             ]
         , describe "fromDec & toDec"
             [ fuzz (Fuzz.tuple ( Fuzz.int, Fuzz.intRange 2 62 )) "round-trip" (\( i, base ) -> i |> fromDec base |> Result.andThen (toDec base) |> Expect.equal (Ok i))

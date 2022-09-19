@@ -100,11 +100,11 @@ handleHotkey _ model hotkey =
             ( model, T.send FitContent )
 
         "undo" ->
-            -- FIXME
+            -- TODO: implement undo
             ( model, "Undo action not handled yet" |> Toasts.info |> Toast |> T.send )
 
         "redo" ->
-            -- FIXME
+            -- TODO: implement redo
             ( model, "Redo action not handled yet" |> Toasts.info |> Toast |> T.send )
 
         "cancel" ->

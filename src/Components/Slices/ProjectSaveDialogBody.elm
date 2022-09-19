@@ -1,4 +1,4 @@
-module Components.Slices.ProjectSaveDialogBody exposing (DocState, Model, Msg(..), SharedDocState, doc, initDocState, selectSave, signIn, update)
+module Components.Slices.ProjectSaveDialogBody exposing (DocState, Model, Msg(..), SharedDocState, doc, init, initDocState, selectSave, signIn, update)
 
 import Components.Atoms.Button as Button
 import Components.Atoms.Icon as Icon
@@ -29,14 +29,19 @@ type alias Model =
     { id : HtmlId
     , name : ProjectName
     , organization : Maybe Organization
-    , storage : Maybe ProjectStorage
+    , storage : ProjectStorage
     }
 
 
 type Msg
     = UpdateProjectName ProjectName
     | UpdateOrganization (Maybe Organization)
-    | UpdateStorage String
+    | UpdateStorage ProjectStorage
+
+
+init : HtmlId -> ProjectName -> Maybe Organization -> Model
+init id name organization =
+    { id = id, name = name, organization = organization, storage = ProjectStorage.Remote }
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
@@ -49,7 +54,7 @@ update msg model =
             ( { model | organization = value }, Cmd.none )
 
         UpdateStorage value ->
-            ( { model | storage = stringToStorage value }, Cmd.none )
+            ( { model | storage = value }, Cmd.none )
 
 
 signIn : msg -> String -> HtmlId -> Html msg
@@ -102,13 +107,13 @@ selectSave wrap modalClose save titleId organizations projectName model =
                     , FormLabel.bold "mt-3"
                         (model.id ++ "-storage")
                         "How do you want to save?"
-                        (\fieldId -> radioCards fieldId (UpdateStorage >> wrap) model.storage)
+                        (\fieldId -> radioCards fieldId (stringToStorage >> UpdateStorage >> wrap) model.storage)
                     ]
                 ]
             ]
         , div [ class "mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "Stay in draft" ]
-            , Maybe.map3 save (String.nonEmptyMaybe model.name) model.organization model.storage
+            , Maybe.map2 (\name orga -> save name orga model.storage) (String.nonEmptyMaybe model.name) model.organization
                 |> Maybe.map (\msg -> Button.primary3 Tw.primary [ onClick msg, class "w-full" ] [ text "Save project" ])
                 |> Maybe.withDefault (Button.primary3 Tw.primary [ disabled True, class "w-full" ] [ text "Save project" ])
             ]
@@ -119,13 +124,13 @@ type alias Card =
     { value : String, description : String, notes : String }
 
 
-radioCards : HtmlId -> (String -> msg) -> Maybe ProjectStorage -> Html msg
+radioCards : HtmlId -> (String -> msg) -> ProjectStorage -> Html msg
 radioCards fieldId fieldChange fieldValue =
     div [ class "grid grid-cols-1 gap-y-2" ]
         ([ Card (storageToString ProjectStorage.Remote) "Save your project in Azimutt server to share it" "Needs pro account"
          , Card (storageToString ProjectStorage.Local) "Keep your project locally" "Free"
          ]
-            |> List.indexedMap (radioCardLabel fieldId (fieldValue |> Maybe.mapOrElse storageToString "") fieldChange)
+            |> List.indexedMap (radioCardLabel fieldId (storageToString fieldValue) fieldChange)
         )
 
 
@@ -154,8 +159,8 @@ radioCardLabel htmlId fieldValue fieldChange index card =
 
 
 storageToString : ProjectStorage -> String
-storageToString s =
-    case s of
+storageToString storage =
+    case storage of
         ProjectStorage.Local ->
             "Local"
 
@@ -163,17 +168,17 @@ storageToString s =
             "Remote"
 
 
-stringToStorage : String -> Maybe ProjectStorage
-stringToStorage s =
-    case s of
+stringToStorage : String -> ProjectStorage
+stringToStorage value =
+    case value of
         "Local" ->
-            Just ProjectStorage.Local
+            ProjectStorage.Local
 
         "Remote" ->
-            Just ProjectStorage.Remote
+            ProjectStorage.Remote
 
         _ ->
-            Nothing
+            ProjectStorage.Remote
 
 
 
@@ -190,7 +195,7 @@ type alias DocState =
 
 initDocState : DocState
 initDocState =
-    { id = "modal-id", name = "MyProject", organization = Nothing, storage = Nothing }
+    { id = "modal-id", name = "MyProject", organization = Nothing, storage = ProjectStorage.Remote }
 
 
 updateDocState : Msg -> ElmBook.Msg (SharedDocState x)
