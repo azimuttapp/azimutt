@@ -2,6 +2,425 @@ import {Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
 import {legacy, Organization} from "./organization";
 import * as Array from "../utils/array";
+import {z} from "zod";
+
+export type ProjectId = Uuid
+export const ProjectId = Uuid
+export type ProjectSlug = Slug
+export const ProjectSlug = Slug
+export type ProjectName = string
+export const ProjectName = z.string()
+export type SourceId = Uuid
+export const SourceId = Uuid
+export type SourceName = string
+export const SourceName = z.string()
+export type TableId = string
+export const TableId = z.string()
+export type SchemaName = string
+export const SchemaName = z.string()
+export type TableName = string
+export const TableName = z.string()
+export type ColumnId = string
+export type ColumnName = string
+export const ColumnName = z.string()
+export type ColumnType = string
+export const ColumnType = z.string()
+export type Line = string
+export const Line = z.string()
+export type LineIndex = number
+export const LineIndex = z.number()
+export type RelationName = string
+export const RelationName = z.string()
+export type TypeName = string
+export const TypeName = z.string()
+export type LayoutName = string
+export const LayoutName = z.string()
+export type ZoomLevel = number
+export const ZoomLevel = z.number()
+
+export interface DatabaseConnection {
+    kind: 'DatabaseConnection',
+    url: string
+}
+
+export const DatabaseConnection = z.object({
+    kind: z.literal('DatabaseConnection'),
+    url: z.string()
+}).strict()
+
+export interface SqlLocalFile {
+    kind: 'SqlLocalFile',
+    name: string,
+    size: number,
+    modified: Timestamp
+}
+
+export const SqlLocalFile = z.object({
+    kind: z.literal('SqlLocalFile'),
+    name: z.string(),
+    size: z.number(),
+    modified: Timestamp
+}).strict()
+
+export interface SqlRemoteFile {
+    kind: 'SqlRemoteFile',
+    url: string,
+    size: number
+}
+
+export const SqlRemoteFile = z.object({
+    kind: z.literal('SqlRemoteFile'),
+    url: z.string(),
+    size: z.number()
+}).strict()
+
+export interface JsonLocalFile {
+    kind: 'JsonLocalFile',
+    name: string,
+    size: number,
+    modified: Timestamp
+}
+
+export const JsonLocalFile = z.object({
+    kind: z.literal('JsonLocalFile'),
+    name: z.string(),
+    size: z.number(),
+    modified: Timestamp
+}).strict()
+
+export interface JsonRemoteFile {
+    kind: 'JsonRemoteFile',
+    url: string,
+    size: number
+}
+
+export const JsonRemoteFile = z.object({
+    kind: z.literal('JsonRemoteFile'),
+    url: z.string(),
+    size: z.number()
+}).strict()
+
+export interface AmlEditor {
+    kind: 'AmlEditor'
+}
+
+export const AmlEditor = z.object({
+    kind: z.literal('AmlEditor')
+}).strict()
+
+export type SourceKind = DatabaseConnection | SqlLocalFile | SqlRemoteFile | JsonLocalFile | JsonRemoteFile | AmlEditor
+export const SourceKind = z.discriminatedUnion('kind', [DatabaseConnection, SqlLocalFile, SqlRemoteFile, JsonLocalFile, JsonRemoteFile, AmlEditor])
+
+export interface Origin {
+    id: SourceId
+    lines: LineIndex[]
+}
+
+export const Origin = z.object({
+    id: SourceId,
+    lines: LineIndex.array()
+}).strict()
+
+export interface Comment {
+    text: string
+    origins: Origin[]
+}
+
+export const Comment = z.object({
+    text: z.string(),
+    origins: Origin.array()
+}).strict()
+
+export interface Column {
+    name: ColumnName
+    type: ColumnType
+    nullable?: boolean
+    default?: string
+    comment?: Comment
+    origins: Origin[]
+}
+
+export const Column = z.object({
+    name: ColumnName,
+    type: ColumnType,
+    nullable: z.boolean().optional(),
+    default: z.string().optional(),
+    comment: Comment.optional(),
+    origins: Origin.array()
+}).strict()
+
+export interface PrimaryKey {
+    name?: string
+    columns: ColumnName[]
+    origins: Origin[]
+}
+
+export const PrimaryKey = z.object({
+    name: z.string().optional(),
+    columns: ColumnName.array(),
+    origins: Origin.array()
+}).strict()
+
+export interface Unique {
+    name: string
+    columns: ColumnName[]
+    definition?: string
+    origins: Origin[]
+}
+
+export const Unique = z.object({
+    name: z.string(),
+    columns: ColumnName.array(),
+    definition: z.string().optional(),
+    origins: Origin.array()
+}).strict()
+
+export interface Index {
+    name: string
+    columns: ColumnName[]
+    definition?: string
+    origins: Origin[]
+}
+
+export const Index = z.object({
+    name: z.string(),
+    columns: ColumnName.array(),
+    definition: z.string().optional(),
+    origins: Origin.array()
+}).strict()
+
+export interface Check {
+    name: string
+    columns: ColumnName[]
+    predicate?: string
+    origins: Origin[]
+}
+
+export const Check = z.object({
+    name: z.string(),
+    columns: ColumnName.array(),
+    predicate: z.string().optional(),
+    origins: Origin.array()
+}).strict()
+
+export interface Table {
+    schema: SchemaName
+    table: TableName
+    view?: boolean
+    columns: Column[]
+    primaryKey?: PrimaryKey
+    uniques?: Unique[]
+    indexes?: Index[]
+    checks?: Check[]
+    comment?: Comment
+    origins: Origin[]
+}
+
+export const Table = z.object({
+    schema: SchemaName,
+    table: TableName,
+    view: z.boolean().optional(),
+    columns: Column.array(),
+    primaryKey: PrimaryKey.optional(),
+    uniques: Unique.array().optional(),
+    indexes: Index.array().optional(),
+    checks: Check.array().optional(),
+    comment: Comment.optional(),
+    origins: Origin.array()
+}).strict()
+
+export interface ColumnRef {
+    table: TableId
+    column: ColumnName
+}
+
+export const ColumnRef = z.object({
+    table: TableId,
+    column: ColumnName
+}).strict()
+
+export interface Relation {
+    name: RelationName
+    src: ColumnRef
+    ref: ColumnRef
+    origins: Origin[]
+}
+
+export const Relation = z.object({
+    name: RelationName,
+    src: ColumnRef,
+    ref: ColumnRef,
+    origins: Origin.array()
+}).strict()
+
+export interface Type {
+    schema: SchemaName
+    name: TypeName
+    value: { enum: string[] } | { definition: string }
+    origins: Origin[]
+}
+
+export const Type = z.object({
+    schema: SchemaName,
+    name: TypeName,
+    value: z.union([z.object({enum: z.string().array()}).strict(), z.object({definition: z.string()}).strict()]),
+    origins: Origin.array()
+}).strict()
+
+export interface Source {
+    id: SourceId
+    name: SourceName
+    kind: SourceKind
+    content: Line[]
+    tables: Table[]
+    relations: Relation[]
+    types?: Type[]
+    enabled?: boolean
+    fromSample?: string
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
+export const Source = z.object({
+    id: SourceId,
+    name: SourceName,
+    kind: SourceKind,
+    content: Line.array(),
+    tables: Table.array(),
+    relations: Relation.array(),
+    types: Type.array().optional(),
+    enabled: z.boolean().optional(),
+    fromSample: z.string().optional(),
+    createdAt: Timestamp,
+    updatedAt: Timestamp
+}).strict()
+
+export interface Position {
+    left: number
+    top: number
+}
+
+export const Position = z.object({
+    left: z.number(),
+    top: z.number()
+}).strict()
+
+export interface Size {
+    width: number
+    height: number
+}
+
+export const Size = z.object({
+    width: z.number(),
+    height: z.number()
+}).strict()
+
+export type Color =
+    'indigo'
+    | 'violet'
+    | 'purple'
+    | 'fuchsia'
+    | 'pink'
+    | 'rose'
+    | 'red'
+    | 'orange'
+    | 'amber'
+    | 'yellow'
+    | 'lime'
+    | 'green'
+    | 'emerald'
+    | 'teal'
+    | 'cyan'
+    | 'sky'
+    | 'blue'
+    | 'gray'
+
+export const Color = z.enum(['indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'gray'])
+
+export interface CanvasProps {
+    position: Position
+    zoom: ZoomLevel
+}
+
+export const CanvasProps = z.object({
+    position: Position,
+    zoom: ZoomLevel
+}).strict()
+
+export interface TableProps {
+    id: TableId
+    position: Position
+    size: Size
+    color: Color
+    columns: ColumnName[]
+    selected?: boolean
+    collapsed?: boolean
+}
+
+export const TableProps = z.object({
+    id: TableId,
+    position: Position,
+    size: Size,
+    color: Color,
+    columns: ColumnName.array(),
+    selected: z.boolean().optional(),
+    collapsed: z.boolean().optional()
+}).strict()
+
+export interface Layout {
+    canvas: CanvasProps
+    tables: TableProps[]
+    createdAt: Timestamp
+    updatedAt: Timestamp
+}
+
+export const Layout = z.object({
+    canvas: CanvasProps,
+    tables: TableProps.array(),
+    createdAt: Timestamp,
+    updatedAt: Timestamp
+}).strict()
+
+export interface Settings {
+    findPath?: { maxPathLength?: number, ignoredTables?: string, ignoredColumns?: string }
+    defaultSchema?: SchemaName
+    removedSchemas?: SchemaName[]
+    removeViews?: boolean
+    removedTables?: string
+    hiddenColumns?: { list?: string, max?: number, props?: boolean, relations?: boolean }
+    columnOrder?: 'sql' | 'property' | 'name' | 'type'
+    relationStyle?: 'Bezier' | 'Straight' | 'Steps'
+    columnBasicTypes?: boolean
+    collapseTableColumns?: boolean
+}
+
+export const Settings = z.object({
+    findPath: z.object({
+        maxPathLength: z.number().optional(),
+        ignoredTables: z.string().optional(),
+        ignoredColumns: z.string().optional()
+    }).strict().optional(),
+    defaultSchema: SchemaName.optional(),
+    removedSchemas: SchemaName.array().optional(),
+    removeViews: z.boolean().optional(),
+    removedTables: z.string().optional(),
+    hiddenColumns: z.object({
+        list: z.string().optional(),
+        max: z.number().optional(),
+        props: z.boolean().optional(),
+        relations: z.boolean().optional()
+    }).strict().optional(),
+    columnOrder: z.enum(['sql', 'property', 'name', 'type']).optional(),
+    relationStyle: z.enum(['Bezier', 'Straight', 'Steps']).optional(),
+    columnBasicTypes: z.boolean().optional(),
+    collapseTableColumns: z.boolean().optional()
+}).strict()
+
+export type ProjectStorage = 'local' | 'remote'
+export const ProjectStorage = z.enum(['local', 'remote'])
+
+export type ProjectVersion = 1 | 2
+export const ProjectVersion = z.union([z.literal(1), z.literal(2)])
 
 export interface Project {
     organization: Organization
@@ -10,7 +429,7 @@ export interface Project {
     name: ProjectName
     description?: string
     sources: Source[]
-    notes: { [ref: string]: string } | undefined
+    notes?: { [ref: string]: string }
     usedLayout: LayoutName
     layouts: { [name: LayoutName]: Layout }
     settings?: Settings
@@ -20,10 +439,60 @@ export interface Project {
     version: ProjectVersion
 }
 
-export type ProjectJson = Omit<Project, 'organization' | 'id' | 'storage' | 'createdAt' | 'updatedAt'> & { _type: 'json' }
+export const Project = z.object({
+    organization: Organization,
+    id: ProjectId,
+    slug: ProjectSlug,
+    name: ProjectName,
+    description: z.string().optional(),
+    sources: Source.array(),
+    notes: z.record(z.string()).optional(),
+    usedLayout: LayoutName,
+    layouts: z.record(LayoutName, Layout),
+    settings: Settings.optional(),
+    storage: ProjectStorage,
+    createdAt: Timestamp,
+    updatedAt: Timestamp,
+    version: ProjectVersion
+}).strict()
+
+export type ProjectJson =
+    Omit<Project, 'organization' | 'id' | 'storage' | 'createdAt' | 'updatedAt'>
+    & { _type: 'json' }
+export const ProjectJson = Project.omit({
+    organization: true,
+    id: true,
+    storage: true,
+    createdAt: true,
+    updatedAt: true
+}).extend({_type: z.literal('json')}).strict()
 export type ProjectJsonLegacy = Omit<Project, 'organization' | 'slug' | 'description' | 'storage'>
+export const ProjectJsonLegacy = Project.omit({
+    organization: true,
+    slug: true,
+    description: true,
+    storage: true
+}).strict()
 export type ProjectStored = ProjectJson | ProjectJsonLegacy
+export const ProjectStored = z.union([ProjectJson, ProjectJsonLegacy])
 export type ProjectStoredWithId = [ProjectId, ProjectStored]
+export const ProjectStoredWithId = z.tuple([ProjectId, ProjectStored])
+
+// required read transformations to satisfy Zod validations
+export function migrateLegacyProject(p: any): any {
+    if (p.storage === 'browser') {
+        p.storage = ProjectStorage.enum.local
+    }
+    if (p.storage === 'cloud') {
+        p.storage = ProjectStorage.enum.remote
+    }
+    if (p.createdAt) {
+        return p
+    } else {
+        const {id, ...res} = p
+        return res
+    }
+}
 
 export interface ProjectInfoLocal extends ProjectStats {
     organization: Organization
@@ -54,144 +523,6 @@ export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
 export type ProjectInfoWithContent = ProjectInfoLocal | ProjectInfoRemoteWithContent
 export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
 
-export interface Source {
-    id: SourceId
-    name: SourceName
-    kind: SourceKind
-    content: Line[]
-    tables: Table[]
-    relations: Relation[]
-    types: Type[] | undefined
-    enabled?: boolean
-    createdAt: Timestamp
-    updatedAt: Timestamp
-}
-
-export type SourceKind = SourceLocale | SourceRemote | SourceUser
-
-export interface SourceLocale {
-    kind: 'LocalFile',
-    name: string,
-    size: number,
-    modified: Timestamp
-}
-
-export interface SourceRemote {
-    kind: 'RemoteFile',
-    url: string,
-    size: number
-}
-
-export interface SourceUser {
-    kind: 'UserDefined'
-}
-
-export interface Table {
-    schema: SchemaName
-    table: TableName
-    view?: boolean
-    columns: Column[]
-    primaryKey?: PrimaryKey
-    uniques?: Unique[]
-    indexes?: Index[]
-    checks?: Check[]
-    comment?: Comment
-    origins: Origin[]
-}
-
-
-export interface PrimaryKey {
-    name?: string
-    columns: ColumnName[]
-    origins: Origin[]
-}
-
-export interface Unique {
-    name: string
-    columns: ColumnName[]
-    definition?: string
-    origins: Origin[]
-}
-
-export interface Index {
-    name: string
-    columns: ColumnName[]
-    definition?: string
-    origins: Origin[]
-}
-
-export interface Check {
-    name: string
-    columns: ColumnName[]
-    predicate?: string
-    origins: Origin[]
-}
-
-export interface Column {
-    name: ColumnName
-    type: ColumnType
-    nullable?: boolean
-    default?: string
-    comment?: Comment
-    origins: Origin[]
-}
-
-export interface Comment {
-    text: string
-    origins: Origin[]
-}
-
-
-export interface Relation {
-    name: RelationName
-    src: ColumnRef
-    ref: ColumnRef
-    origins: Origin[]
-}
-
-export interface ColumnRef {
-    table: TableId
-    column: ColumnName
-}
-
-
-export interface Type {
-    schema: SchemaName
-    name: TypeName
-    value: { enum: string[] } | { definition: string }
-    origins: Origin[]
-}
-
-export interface Origin {
-    id: SourceId
-    lines: LineIndex[]
-}
-
-export interface Layout {
-    canvas: CanvasProps
-    tables: TableProps[]
-    createdAt: Timestamp
-    updatedAt: Timestamp
-}
-
-export interface CanvasProps {
-    position: Position
-    zoom: ZoomLevel
-}
-
-export interface TableProps {
-    id: TableId
-    position: Position
-    color: Color
-    columns: ColumnName[]
-    selected?: boolean
-    collapsed?: boolean
-}
-
-export interface Position {
-    left: number
-    top: number
-}
 
 export interface Size {
     width: number
@@ -203,72 +534,13 @@ export interface Delta {
     dy: number
 }
 
-export interface Settings {
-    removedTables?: string
-}
-
-export type ProjectVersion = 1 | 2
-export type ProjectStorage = 'local' | 'remote'
-export const ProjectStorage: { [key in ProjectStorage]: key } = {
-    local: 'local',
-    remote: 'remote'
-}
-
-export function validStorage(value: string): ProjectStorage {
-    // 'browser' was changed for 'local' and 'cloud' for 'remote', keep them here for legacy projects
-    if (value === ProjectStorage.local || value === 'browser') {
-        return ProjectStorage.local
-    } else if (value === ProjectStorage.remote || value === 'cloud') {
-        return ProjectStorage.remote
-    } else {
-        throw `Invalid storage ${JSON.stringify(value)}`
-    }
-}
-
-export type ProjectId = Uuid
-export type ProjectSlug = Slug
-export type ProjectName = string
-export type SourceId = Uuid
-export type SourceName = string
-export type SchemaName = string
-export type TableId = string
-export type TableName = string
-export type ColumnId = string
-export type ColumnName = string
-export type ColumnType = string
-export type RelationName = string
-export type TypeName = string
-export type LayoutName = string
-export type ZoomLevel = number
-export type Line = string
-export type LineIndex = number
-
-export type Color =
-    'indigo'
-    | 'violet'
-    | 'purple'
-    | 'fuchsia'
-    | 'pink'
-    | 'rose'
-    | 'red'
-    | 'orange'
-    | 'amber'
-    | 'yellow'
-    | 'lime'
-    | 'green'
-    | 'emerald'
-    | 'teal'
-    | 'cyan'
-    | 'sky'
-    | 'blue'
-    | 'gray'
 
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {
-    return p.storage === ProjectStorage.local
+    return p.storage === ProjectStorage.enum.local
 }
 
 export function isRemote(p: ProjectInfo): p is ProjectInfoRemote {
-    return p.storage === ProjectStorage.remote
+    return p.storage === ProjectStorage.enum.remote
 }
 
 export function isLegacy(p: ProjectStored): p is ProjectJsonLegacy {
@@ -280,7 +552,7 @@ export function buildProjectRemote(p: ProjectInfoRemote, content: ProjectJson): 
         ...content,
         organization: p.organization,
         id: p.id,
-        storage: ProjectStorage.remote,
+        storage: ProjectStorage.enum.remote,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt
     }
@@ -291,18 +563,26 @@ export function buildProjectLocal(p: ProjectInfoLocal, content: ProjectJson): Pr
         ...content,
         organization: p.organization,
         id: p.id,
-        storage: ProjectStorage.local,
+        storage: ProjectStorage.enum.local,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt
     }
 }
 
 export function buildProjectLocalDraft(id: ProjectId, {_type, ...p}: ProjectJson): Project {
-    return {...p, organization: legacy, id, slug: id, storage: ProjectStorage.local, createdAt: Date.now(), updatedAt: Date.now()}
+    return {
+        ...p,
+        organization: legacy,
+        id,
+        slug: id,
+        storage: ProjectStorage.enum.local,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+    }
 }
 
 export function buildProjectLocalLegacy(id: ProjectId, p: ProjectJsonLegacy): Project {
-    return {...p, organization: legacy, id, slug: id, storage: ProjectStorage.local}
+    return {...p, organization: legacy, id, slug: id, storage: ProjectStorage.enum.local}
 }
 
 export function buildProjectJson({organization, id, storage, createdAt, updatedAt, ...p}: Project): ProjectJson {

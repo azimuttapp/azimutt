@@ -1,7 +1,12 @@
+import {z} from "zod";
+
 export type Timestamp = number // date in numerical format (1663007946750)
+export const Timestamp = z.number()
 export type DateTime = string // date in iso format ("2022-09-12T11:13:02.611616Z")
+export const DateTime = z.string()
 export type Px = number // number of pixels
 export type Slug = string
+export const Slug = z.string()
 export type Email = string
 export type Username = string
 export type HtmlId = string

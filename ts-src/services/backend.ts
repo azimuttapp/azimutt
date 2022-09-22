@@ -15,23 +15,15 @@ import {
     ProjectSlug,
     ProjectStats,
     ProjectStorage,
-    ProjectVersion,
-    validStorage
+    ProjectVersion
 } from "../types/project";
-import {Organization, OrganizationId, OrganizationSlug, validPlan} from "../types/organization";
+import {Organization, OrganizationId, OrganizationPlan, OrganizationSlug} from "../types/organization";
 import {DateTime} from "../types/basics";
 import {Env} from "../utils/env";
 import * as Http from "../utils/http";
+import {z} from "zod";
+import * as Zod from "../utils/zod";
 
-function buildPayload(p: ProjectJson, storage: ProjectStorage): CreateProjectPayload {
-    return {
-        name: p.name,
-        description: undefined,
-        storage_kind: storage,
-        encoding_version: p.version,
-        ...adaptStats(computeStats(p))
-    }
-}
 
 export class Backend {
     constructor(private env: Env, private logger: Logger) {
@@ -40,14 +32,13 @@ export class Backend {
     getProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p})`)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,content`)
-        return Http.getJson<ProjectWithOrgaContentResponse>(url).then(res => formatProjectResponseWithContent(res.json))
+        return Http.getJson(url, ProjectWithContentResponse).then(toProjectInfoWithContent)
     }
 
     createProjectLocal = (o: OrganizationId, p: ProjectJson): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
-        return Http.postJson<CreateProjectPayload, ProjectWithOrgaResponse>(url, buildPayload(p, ProjectStorage.local))
-            .then(res => formatProjectResponse(res.json))
+        return Http.postJson(url, toProjectBody(p, ProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
@@ -55,20 +46,18 @@ export class Backend {
         this.logger.debug(`backend.createProjectRemote(${o})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
         const formData: FormData = new FormData()
-        Object.entries(buildPayload(p, ProjectStorage.remote))
+        Object.entries(toProjectBody(p, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
-        formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${o}-${p.name}.json`) // FIXME remove filename
-        return Http.postMultipart<ProjectWithOrgaResponse>(url, formData)
-            .then(res => formatProjectResponse(res.json))
+        formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${p.name}.json`)
+        return Http.postMultipart(url, formData, ProjectResponse).then(toProjectInfo)
             .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
     }
 
     updateProjectLocal = (p: Project): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.updateProjectLocal(${p.organization.id}, ${p.id})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
-        return Http.putJson<CreateProjectPayload, ProjectWithOrgaResponse>(url, buildPayload(buildProjectJson(p), ProjectStorage.local))
-            .then(res => formatProjectResponse(res.json))
+        return Http.putJson(url, toProjectBody(buildProjectJson(p), ProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
@@ -76,19 +65,18 @@ export class Backend {
         this.logger.debug(`backend.updateProjectRemote(${p.organization.id}, ${p.id})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
         const formData: FormData = new FormData()
-        Object.entries(buildPayload(buildProjectJson(p), ProjectStorage.remote))
+        Object.entries(toProjectBody(buildProjectJson(p), ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
-        return Http.putMultipart<ProjectWithOrgaResponse>(url, formData)
-            .then(res => formatProjectResponse(res.json))
+        return Http.putMultipart(url, formData, ProjectResponse).then(toProjectInfo)
             .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
     }
 
     deleteProject = (o: OrganizationId, p: ProjectId): Promise<void> => {
         this.logger.debug(`backend.deleteProject(${o}, ${p})`)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}`)
-        return Http.deleteNoContent(url).then(_ => undefined)
+        return Http.deleteNoContent(url)
     }
 
     private withXhrHost(path: string): string {
@@ -113,14 +101,46 @@ export interface ProjectStatsResponse {
     nb_layouts: number
 }
 
-interface CreateProjectPayload extends ProjectStatsResponse {
+export const ProjectStatsResponse = z.object({
+    nb_sources: z.number(),
+    nb_tables: z.number(),
+    nb_columns: z.number(),
+    nb_relations: z.number(),
+    nb_types: z.number(),
+    nb_comments: z.number(),
+    nb_notes: z.number(),
+    nb_layouts: z.number()
+}).strict()
+
+interface ProjectBody extends ProjectStatsResponse {
     name: ProjectName
     description: string | undefined
     storage_kind: ProjectStorage
     encoding_version: number
 }
 
+export interface OrganizationResponse {
+    id: OrganizationId
+    slug: OrganizationSlug
+    name: string
+    active_plan: OrganizationPlan
+    logo: string
+    location: string | null
+    description: string | null
+}
+
+export const OrganizationResponse = z.object({
+    id: OrganizationId,
+    slug: OrganizationSlug,
+    name: z.string(),
+    active_plan: OrganizationPlan,
+    logo: z.string(),
+    location: z.string().nullable(),
+    description: z.string().nullable()
+}).strict()
+
 interface ProjectResponse extends ProjectStatsResponse {
+    organization: OrganizationResponse
     id: ProjectId
     slug: ProjectSlug
     name: ProjectName
@@ -132,39 +152,28 @@ interface ProjectResponse extends ProjectStatsResponse {
     archived_at: DateTime | null
 }
 
-interface ProjectWithOrgaResponse extends ProjectResponse {
-    organization: OrganizationResponse
+export const ProjectResponse = ProjectStatsResponse.extend({
+    organization: OrganizationResponse,
+    id: ProjectId,
+    slug: ProjectSlug,
+    name: ProjectName,
+    description: z.string().nullable(),
+    encoding_version: ProjectVersion,
+    storage_kind: ProjectStorage,
+    created_at: DateTime,
+    updated_at: DateTime,
+    archived_at: DateTime.nullable()
+}).strict()
+
+interface ProjectWithContentResponse extends ProjectResponse {
+    content?: string
 }
 
-interface ProjectWithOrgaContentResponse extends ProjectResponse {
-    organization: OrganizationResponse
-    content: string | undefined
-}
+export const ProjectWithContentResponse = ProjectResponse.extend({
+    content: z.string().optional()
+}).strict()
 
-export interface OrganizationResponse {
-    id: OrganizationId
-    slug: OrganizationSlug
-    name: string
-    active_plan: string
-    logo: string
-    location: string | null
-    description: string | null
-}
-
-function adaptStats(s: ProjectStats): ProjectStatsResponse {
-    return {
-        nb_sources: s.nbSources,
-        nb_tables: s.nbTables,
-        nb_columns: s.nbColumns,
-        nb_relations: s.nbRelations,
-        nb_types: s.nbTypes,
-        nb_comments: s.nbComments,
-        nb_notes: s.nbNotes,
-        nb_layouts: s.nbLayouts
-    }
-}
-
-function formatStats(s: ProjectStatsResponse): ProjectStats {
+function toStats(s: ProjectStatsResponse): ProjectStats {
     return {
         nbSources: s.nb_sources,
         nbTables: s.nb_tables,
@@ -177,42 +186,65 @@ function formatStats(s: ProjectStatsResponse): ProjectStats {
     }
 }
 
-function formatProjectResponse(p: ProjectWithOrgaResponse): ProjectInfo {
+function toStatsResponse(s: ProjectStats): ProjectStatsResponse {
     return {
-        organization: formatOrganizationResponse(p.organization),
+        nb_sources: s.nbSources,
+        nb_tables: s.nbTables,
+        nb_columns: s.nbColumns,
+        nb_relations: s.nbRelations,
+        nb_types: s.nbTypes,
+        nb_comments: s.nbComments,
+        nb_notes: s.nbNotes,
+        nb_layouts: s.nbLayouts
+    }
+}
+
+function toProjectBody(p: ProjectJson, storage: ProjectStorage): ProjectBody {
+    return {
+        name: p.name,
+        description: undefined,
+        storage_kind: storage,
+        encoding_version: p.version,
+        ...toStatsResponse(computeStats(p))
+    }
+}
+
+function toOrganization(o: OrganizationResponse): Organization {
+    return {
+        id: o.id,
+        slug: o.slug,
+        name: o.name,
+        activePlan: o.active_plan,
+        logo: o.logo,
+        location: o.location,
+        description: o.description
+    }
+}
+
+function toProjectInfo(p: ProjectResponse): ProjectInfo {
+    return {
+        organization: toOrganization(p.organization),
         id: p.id,
         slug: p.slug,
         name: p.name,
         description: p.description || undefined,
         encodingVersion: p.encoding_version,
-        storage: validStorage(p.storage_kind),
+        storage: p.storage_kind,
         createdAt: new Date(p.created_at).getTime(),
         updatedAt: new Date(p.updated_at).getTime(),
-        ...formatStats(p)
+        ...toStats(p)
     }
 }
 
-function formatProjectResponseWithContent(p: ProjectWithOrgaContentResponse): ProjectInfoWithContent {
-    const res = formatProjectResponse(p)
-    return res.storage === ProjectStorage.remote ? {...res, content: decodeContent(p)} : res
+function toProjectInfoWithContent(p: ProjectWithContentResponse): ProjectInfoWithContent {
+    const res = toProjectInfo(p)
+    return res.storage === ProjectStorage.enum.remote ? {...res, content: decodeContent(p)} : res
 }
 
-function decodeContent(p: ProjectWithOrgaContentResponse): ProjectJson {
+function decodeContent(p: ProjectWithContentResponse): ProjectJson {
     if (typeof p.content === 'string') {
-        return JSON.parse(p.content)
+        return Zod.validate(JSON.parse(p.content), ProjectJson)
     } else {
         throw 'Missing content in backend response!'
-    }
-}
-
-function formatOrganizationResponse(o: OrganizationResponse): Organization {
-    return {
-        id: o.id,
-        slug: o.slug,
-        name: o.name,
-        activePlan: validPlan(o.active_plan),
-        logo: o.logo,
-        location: o.location,
-        description: o.description
     }
 }

@@ -84,7 +84,7 @@ function legacyProjectInfo([id, p]: [ProjectId, ProjectJsonLegacy]): ProjectInfo
         slug: id,
         name: p.name,
         encodingVersion: p.version,
-        storage: ProjectStorage.local,
+        storage: ProjectStorage.enum.local,
         createdAt: p.createdAt,
         updatedAt: p.updatedAt,
         ...computeStats(p)

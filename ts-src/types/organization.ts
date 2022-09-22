@@ -1,39 +1,41 @@
 import {Uuid, zero} from "./uuid";
 import {Slug} from "./basics";
+import {z} from "zod";
 
 export type OrganizationId = Uuid
+export const OrganizationId = Uuid
 export type OrganizationSlug = Slug
+export const OrganizationSlug = Slug
+export type OrganizationName = string
+export const OrganizationName = z.string()
 export type OrganizationPlan = 'free' | 'pro'
-export const OrganizationPlan: { [key in OrganizationPlan]: key } = {
-    free: 'free',
-    pro: 'pro'
-}
-
-export function validPlan(value: string): OrganizationPlan {
-    if (value === OrganizationPlan.free) {
-        return OrganizationPlan.free
-    } else if (value === OrganizationPlan.pro) {
-        return OrganizationPlan.pro
-    } else {
-        throw `Invalid plan ${JSON.stringify(value)}`
-    }
-}
+export const OrganizationPlan = z.enum(['free', 'pro'])
 
 export interface Organization {
     id: OrganizationId
     slug: OrganizationSlug
-    name: string
+    name: OrganizationName
     activePlan: OrganizationPlan
     logo: string
     location: string | null
     description: string | null
 }
 
-export const legacy = {
+export const Organization = z.object({
+    id: OrganizationId,
+    slug: OrganizationSlug,
+    name: OrganizationName,
+    activePlan: OrganizationPlan,
+    logo: z.string().url(),
+    location: z.string().nullable(),
+    description: z.string().nullable(),
+}).strict()
+
+export const legacy: Organization = {
     id: zero,
     slug: zero,
     name: 'Legacy',
-    activePlan: OrganizationPlan.free,
+    activePlan: OrganizationPlan.enum.free,
     logo: 'https://azimutt.app/logo.png',
     location: null,
     description: null
