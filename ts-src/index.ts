@@ -70,7 +70,7 @@ app.on('Click', msg => Utils.getElementById(msg.id).click())
 app.on('MouseDown', msg => Utils.getElementById(msg.id).dispatchEvent(new Event('mousedown')))
 app.on('Focus', msg => Utils.getElementById(msg.id).focus())
 app.on('Blur', msg => Utils.getElementById(msg.id).blur())
-app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== ViewPosition.end)))
+app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== ViewPosition.enum.end)))
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
@@ -79,7 +79,7 @@ app.on('GetProject', getProject)
 app.on('CreateProjectTmp', createProjectTmp)
 app.on('CreateProject', createProject)
 app.on('UpdateProject', updateProject)
-// app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.error, err)))
+// app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.enum.error, err)))
 app.on('DeleteProject', deleteProject)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)
@@ -125,7 +125,7 @@ function setMeta(meta: SetMetaMsg) {
 function getLegacyProjects() {
     storage.getLegacyProjects().then(app.gotLegacyProjects).catch(err => {
         app.gotLegacyProjects([])
-        app.toast(ToastLevel.error, `Can't list legacy projects: ${err}`)
+        app.toast(ToastLevel.enum.error, `Can't list legacy projects: ${err}`)
     })
 }
 
@@ -144,7 +144,7 @@ function getProject(msg: GetProjectMsg) {
             if (msg.project === Uuid.zero) {
                 return storage.getProject(msg.project).then(p => buildProjectLocalDraft(msg.project, p))
             } else {
-                app.toast(ToastLevel.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
+                app.toast(ToastLevel.enum.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
                 return storage.getLegacyProject(msg.project).then(p => buildProjectLocalLegacy(msg.project, p))
             }
@@ -155,7 +155,7 @@ function getProject(msg: GetProjectMsg) {
         app.gotProject(project)
     }, err => {
         app.gotProject(undefined)
-        app.toast(ToastLevel.error, `Can't load project: ${formatError(err)}`)
+        app.toast(ToastLevel.enum.error, `Can't load project: ${formatError(err)}`)
     })
 }
 
@@ -163,7 +163,7 @@ function createProjectTmp(msg: CreateProjectTmpMsg): void {
     storage.deleteProject(Uuid.zero)
         .then(_ => storage.createProject(Uuid.zero, buildProjectJson(msg.project)))
         .then(_ => app.gotProject(msg.project),
-            err => app.toast(ToastLevel.error, `Can't save draft project: ${formatError(err)}`))
+            err => app.toast(ToastLevel.enum.error, `Can't save draft project: ${formatError(err)}`))
 }
 
 function createProject(msg: CreateProjectMsg): void {
@@ -171,30 +171,30 @@ function createProject(msg: CreateProjectMsg): void {
     if (msg.storage == ProjectStorage.enum.local) {
         backend.createProjectLocal(msg.organization, json).then(res => {
             return storage.createProject(res.id, json).then(_ => buildProjectLocal(res, json), err => {
-                app.toast(ToastLevel.error, `Can't save project locally: ${formatError(err)}`)
+                app.toast(ToastLevel.enum.error, `Can't save project locally: ${formatError(err)}`)
                 return backend.deleteProject(msg.organization, res.id).then(_ => Promise.reject(err))
             })
         }, err => {
-            app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`)
+            app.toast(ToastLevel.enum.error, `Can't save project to backend: ${formatError(err)}`)
             return Promise.reject(err)
         }).then(p => {
             return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
-                app.toast(ToastLevel.error, `Can't delete temporary project: ${formatError(err)}`)
+                app.toast(ToastLevel.enum.error, `Can't delete temporary project: ${formatError(err)}`)
                 return Promise.resolve()
             }).then(_ => {
-                app.toast(ToastLevel.success, `Project created!`)
+                app.toast(ToastLevel.enum.success, `Project created!`)
                 window.history.replaceState("", "", `/${msg.organization}/${p.id}`) // FIXME use Elm Router to build url
                 app.gotProject(p)
             })
         })
     } else if (msg.storage == ProjectStorage.enum.remote) {
         backend.createProjectRemote(msg.organization, json).then(res => {
-            app.toast(ToastLevel.success, `Project created!`)
+            app.toast(ToastLevel.enum.success, `Project created!`)
             window.history.replaceState("", "", `/${msg.organization}/${res.id}`) // FIXME use Elm Router to build url
             app.gotProject(buildProjectRemote(res, json))
-        }, err => app.toast(ToastLevel.error, `Can't save project to backend: ${formatError(err)}`))
+        }, err => app.toast(ToastLevel.enum.error, `Can't save project to backend: ${formatError(err)}`))
     } else {
-        app.toast(ToastLevel.error, `Unknown ProjectStorage: ${formatError(storage)}`)
+        app.toast(ToastLevel.enum.error, `Unknown ProjectStorage: ${formatError(storage)}`)
     }
 }
 
@@ -203,42 +203,42 @@ function updateProject(msg: UpdateProjectMsg): void {
     if (msg.project.storage == ProjectStorage.enum.local) {
         backend.updateProjectLocal(msg.project).then(res => {
             return storage.updateProject(res.id, json).then(_ => {
-                app.toast(ToastLevel.success, 'Project saved')
+                app.toast(ToastLevel.enum.success, 'Project saved')
                 app.gotProject(buildProjectLocal(res, json))
-            }, err => app.toast(ToastLevel.error, `Can't update project locally: ${formatError(err)}`))
-        }, err => app.toast(ToastLevel.error, `Can't update project to backend: ${formatError(err)}`))
+            }, err => app.toast(ToastLevel.enum.error, `Can't update project locally: ${formatError(err)}`))
+        }, err => app.toast(ToastLevel.enum.error, `Can't update project to backend: ${formatError(err)}`))
     } else if (msg.project.storage == ProjectStorage.enum.remote) {
         backend.getProject(msg.project.organization.id, msg.project.id).then(current => {
             if (current.updatedAt === msg.project.updatedAt) {
                 backend.updateProjectRemote(msg.project).then(res => {
-                    app.toast(ToastLevel.success, 'Project saved')
+                    app.toast(ToastLevel.enum.success, 'Project saved')
                     app.gotProject(buildProjectRemote(res, json))
-                }, err => app.toast(ToastLevel.error, `Can't update project: ${formatError(err)}`))
+                }, err => app.toast(ToastLevel.enum.error, `Can't update project: ${formatError(err)}`))
             } else {
-                app.toast(ToastLevel.error, `Project was updated by someone else, please refresh to get the new version.`)
+                app.toast(ToastLevel.enum.error, `Project was updated by someone else, please refresh to get the new version.`)
             }
-        }, err => app.toast(ToastLevel.error, `Can't fetch current project from backend: ${formatError(err)}`))
+        }, err => app.toast(ToastLevel.enum.error, `Can't fetch current project from backend: ${formatError(err)}`))
     } else {
-        app.toast(ToastLevel.error, `Unknown ProjectStorage: ${formatError(msg.project.storage)}`)
+        app.toast(ToastLevel.enum.error, `Unknown ProjectStorage: ${formatError(msg.project.storage)}`)
     }
 }
 
 function deleteProject(msg: DeleteProjectMsg): void {
     if (msg.project.organization) {
         backend.deleteProject(msg.project.organization.id, msg.project.id).catch(err => {
-            app.toast(ToastLevel.error, `Can't delete project in backend: ${formatError(err)}`)
+            app.toast(ToastLevel.enum.error, `Can't delete project in backend: ${formatError(err)}`)
             return Promise.reject(err)
         }).then(_ => {
             if (msg.project.storage == ProjectStorage.enum.local) {
                 return storage.deleteProject(msg.project.id).catch(err => {
-                    app.toast(ToastLevel.error, `Can't delete project locally: ${formatError(err)}`)
+                    app.toast(ToastLevel.enum.error, `Can't delete project locally: ${formatError(err)}`)
                     return Promise.reject(err)
                 })
             }
         }).then(_ => app.dropProject(msg.project.id))
     } else {
         storage.deleteProject(msg.project.id).catch(err => {
-            app.toast(ToastLevel.error, `Can't delete project locally: ${formatError(err)}`)
+            app.toast(ToastLevel.enum.error, `Can't delete project locally: ${formatError(err)}`)
             return Promise.reject(err)
         }).then(_ => app.dropProject(msg.project.id))
     }

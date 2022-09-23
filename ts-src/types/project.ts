@@ -21,6 +21,7 @@ export const SchemaName = z.string()
 export type TableName = string
 export const TableName = z.string()
 export type ColumnId = string
+export const ColumnId = z.string()
 export type ColumnName = string
 export const ColumnName = z.string()
 export type ColumnType = string
@@ -110,6 +111,9 @@ export const AmlEditor = z.object({
 
 export type SourceKind = DatabaseConnection | SqlLocalFile | SqlRemoteFile | JsonLocalFile | JsonRemoteFile | AmlEditor
 export const SourceKind = z.discriminatedUnion('kind', [DatabaseConnection, SqlLocalFile, SqlRemoteFile, JsonLocalFile, JsonRemoteFile, AmlEditor])
+
+export type SourceOrigin = 'import-project' | 'sql-source' | 'json-source'
+export const SourceOrigin = z.enum(['import-project', 'sql-source', 'json-source'])
 
 export interface Origin {
     id: SourceId
@@ -494,6 +498,28 @@ export function migrateLegacyProject(p: any): any {
     }
 }
 
+export interface ProjectStats {
+    nbSources: number
+    nbTables: number
+    nbColumns: number
+    nbRelations: number
+    nbTypes: number
+    nbComments: number
+    nbNotes: number
+    nbLayouts: number
+}
+
+export const ProjectStats = z.object({
+    nbSources: z.number(),
+    nbTables: z.number(),
+    nbColumns: z.number(),
+    nbRelations: z.number(),
+    nbTypes: z.number(),
+    nbComments: z.number(),
+    nbNotes: z.number(),
+    nbLayouts: z.number()
+}).strict()
+
 export interface ProjectInfoLocal extends ProjectStats {
     organization: Organization
     id: ProjectId
@@ -506,22 +532,26 @@ export interface ProjectInfoLocal extends ProjectStats {
     updatedAt: Timestamp
 }
 
-export interface ProjectStats {
-    nbSources: number
-    nbTables: number
-    nbColumns: number
-    nbRelations: number
-    nbTypes: number
-    nbComments: number
-    nbNotes: number
-    nbLayouts: number
-}
+export const ProjectInfoLocal = ProjectStats.extend({
+    organization: Organization,
+    id: ProjectId,
+    slug: ProjectSlug,
+    name: ProjectName,
+    description: z.string().optional(),
+    storage: z.literal(ProjectStorage.enum.local),
+    encodingVersion: ProjectVersion,
+    createdAt: Timestamp,
+    updatedAt: Timestamp
+}).strict()
 
 export type ProjectInfoRemote = Omit<ProjectInfoLocal, 'storage'> & { storage: 'remote' }
+export const ProjectInfoRemote = ProjectInfoLocal.omit({storage: true}).extend({storage: z.literal(ProjectStorage.enum.remote)}).strict()
 export type ProjectInfoRemoteWithContent = ProjectInfoRemote & { content: ProjectJson }
 export type ProjectInfo = ProjectInfoLocal | ProjectInfoRemote
+export const ProjectInfo = z.discriminatedUnion('storage', [ProjectInfoLocal, ProjectInfoRemote])
 export type ProjectInfoWithContent = ProjectInfoLocal | ProjectInfoRemoteWithContent
 export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
+export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).strict()
 
 
 export interface Size {
@@ -533,6 +563,11 @@ export interface Delta {
     dx: number
     dy: number
 }
+
+export const Delta = z.object({
+    dx: z.number(),
+    dy: z.number()
+}).strict()
 
 
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {
