@@ -30,6 +30,7 @@ import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
 import Models.Project.PrimaryKeyName exposing (PrimaryKeyName)
+import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId exposing (ProjectId)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings exposing (HiddenColumns, ProjectSettings)
@@ -58,7 +59,7 @@ import TestHelpers.OrganizationFuzzers exposing (organization)
 
 project : Fuzzer Project
 project =
-    Fuzz.map13 Project.new (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage posix posix
+    Fuzz.map14 Project.new (Fuzz.maybe organization) projectId projectSlug projectName (Fuzz.maybe stringSmall) (listSmall source) (dictSmall stringSmall stringSmall) layoutName (dictSmall layoutName layout) projectSettings projectStorage projectEncodingVersion posix posix
 
 
 source : Fuzzer Source
@@ -191,15 +192,12 @@ findHiddenColumns =
 
 projectStorage : Fuzzer ProjectStorage
 projectStorage =
-    Fuzz.map
-        (\b ->
-            if b then
-                ProjectStrorage.Local
+    Fuzz.oneOf ([ ProjectStrorage.Local, ProjectStrorage.Remote ] |> List.map Fuzz.constant)
 
-            else
-                ProjectStrorage.Remote
-        )
-        Fuzz.bool
+
+projectEncodingVersion : Fuzzer ProjectEncodingVersion
+projectEncodingVersion =
+    Fuzz.constant ProjectEncodingVersion.current
 
 
 projectId : Fuzzer ProjectId

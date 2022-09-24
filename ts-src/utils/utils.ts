@@ -3,8 +3,8 @@ import confetti from "canvas-confetti";
 
 export const Utils = {
     getPlatform(): Platform {
-        // return window.navigator.platform.indexOf('Mac') !== -1 ? Platform.mac : Platform.pc
-        return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? Platform.mac : Platform.pc
+        // return window.navigator.platform.indexOf('Mac') !== -1 ? Platform.enum.mac : Platform.enum.pc
+        return window.navigator.userAgent.indexOf('Mac OS X') !== -1 ? Platform.enum.mac : Platform.enum.pc
     },
     randomId() {
         return crypto.randomUUID()

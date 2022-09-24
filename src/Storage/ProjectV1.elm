@@ -25,6 +25,7 @@ import Models.Project.Index exposing (Index)
 import Models.Project.Layout exposing (Layout)
 import Models.Project.Origin exposing (Origin)
 import Models.Project.PrimaryKey exposing (PrimaryKey)
+import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion
 import Models.Project.ProjectSettings as ProjectSettings
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.Project.Relation as Relation exposing (Relation)
@@ -285,6 +286,7 @@ upgrade project =
     , layouts = project.layouts |> Dict.insert Conf.constants.defaultLayout project.schema.layout |> Dict.map (\_ -> upgradeLayout)
     , settings = ProjectSettings.init Conf.schema.default |> (\s -> { s | findPath = upgradeFindPath project.settings.findPath })
     , storage = ProjectStorage.Local
+    , version = ProjectEncodingVersion.current
     , createdAt = project.createdAt
     , updatedAt = project.updatedAt
     }

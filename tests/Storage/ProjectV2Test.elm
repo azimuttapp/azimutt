@@ -22,6 +22,7 @@ import Models.Project.Index as Index exposing (Index)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.Origin as Origin exposing (Origin)
 import Models.Project.PrimaryKey as PrimaryKey exposing (PrimaryKey)
+import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion
 import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectSettings as ProjectSettings exposing (HiddenColumns, ProjectSettings)
 import Models.Project.ProjectStorage as ProjectStorage
@@ -98,6 +99,7 @@ project0 =
     , layouts = Dict.fromList [ ( "initial layout", Layout (CanvasProps (canvasPos 10 20) 0.75) [] [] (time 1200) (time 1201) ) ]
     , settings = ProjectSettings.init defaultSchema
     , storage = ProjectStorage.Local
+    , version = ProjectEncodingVersion.current
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -107,7 +109,7 @@ project0Json : String
 project0Json =
     """{"id":"00000000-0000-0000-0000-000000000000","slug":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
         ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":1102},"content":[],"tables":[],"relations":[],"createdAt":1100,"updatedAt":1101}],"""
-        ++ """"usedLayout":"initial layout","layouts":{"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[],"createdAt":1200,"updatedAt":1201}},"settings":{"defaultSchema":"public"},"createdAt":1000,"updatedAt":1001,"version":2}"""
+        ++ """"usedLayout":"initial layout","layouts":{"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[],"createdAt":1200,"updatedAt":1201}},"settings":{"defaultSchema":"public"},"storage":"local","createdAt":1000,"updatedAt":1001,"version":2}"""
 
 
 tables1 : Dict TableId Table
@@ -135,6 +137,7 @@ project1 =
             ]
     , settings = ProjectSettings (FindPathSettings 4 "" "") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Local
+    , version = ProjectEncodingVersion.current
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -145,7 +148,7 @@ project1Json =
     """{"id":"00000000-0000-0000-0000-000000000000","slug":"00000000-0000-0000-0000-000000000000","name":"Project 0","""
         ++ """"sources":[{"id":"00000000-0000-0000-0000-000000000001","name":"source 1","kind":{"kind":"SqlLocalFile","name":"structure.sql","size":10000,"modified":200},"content":[],"tables":[{"schema":"public","table":"users","columns":[{"name":"id","type":"int"}]}],"relations":[],"fromSample":"basic","createdAt":1100,"updatedAt":1101}],"""
         ++ """"usedLayout":"initial layout","layouts":{"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203},"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201}},"""
-        ++ """"settings":{"findPath":{"maxPathLength":4},"defaultSchema":"public"},"createdAt":1000,"updatedAt":1001,"version":2}"""
+        ++ """"settings":{"findPath":{"maxPathLength":4},"defaultSchema":"public"},"storage":"local","createdAt":1000,"updatedAt":1001,"version":2}"""
 
 
 tables2 : Dict TableId Table
@@ -247,6 +250,7 @@ project2 =
             ]
     , settings = ProjectSettings (FindPathSettings 4 "users" "created_by") defaultSchema [] False "" (HiddenColumns "created_.+, updated_.+" 15 False False) OrderByProperty Bezier True False
     , storage = ProjectStorage.Local
+    , version = ProjectEncodingVersion.current
     , createdAt = time 1000
     , updatedAt = time 1001
     }
@@ -263,7 +267,7 @@ project2Json =
         ++ """"empty":{"canvas":{"position":{"left":0,"top":0},"zoom":0.5},"tables":[],"createdAt":1202,"updatedAt":1203},"""
         ++ """"initial layout":{"canvas":{"position":{"left":10,"top":20},"zoom":0.75},"tables":[{"id":"public.users","position":{"left":30,"top":40},"color":"red","columns":["id"],"selected":true}],"createdAt":1200,"updatedAt":1201},"""
         ++ """"users":{"canvas":{"position":{"left":120,"top":320},"zoom":1.5},"tables":[{"id":"public.users","position":{"left":90,"top":100},"color":"red","columns":["id","name"],"selected":true}],"createdAt":1202,"updatedAt":1203}},"""
-        ++ """"settings":{"findPath":{"maxPathLength":4,"ignoredTables":"users","ignoredColumns":"created_by"},"defaultSchema":"public"},"createdAt":1000,"updatedAt":1001,"version":2}"""
+        ++ """"settings":{"findPath":{"maxPathLength":4,"ignoredTables":"users","ignoredColumns":"created_by"},"defaultSchema":"public"},"storage":"local","createdAt":1000,"updatedAt":1001,"version":2}"""
 
 
 canvasPos : Float -> Float -> Position.Diagram

@@ -1,3 +1,4 @@
+import {z} from "zod";
 import {Env} from "../utils/env";
 
 export class Logger {
@@ -22,7 +23,7 @@ export class Logger {
     }
 
     disableDebug(): Logger {
-        return new ProxyLogger(this, LoggerLevel.debug)
+        return new ProxyLogger(this, LoggerLevel.enum.debug)
     }
 }
 
@@ -48,20 +49,14 @@ export class ConsoleLogger extends Logger {
     }
 
     debug(...args: any[]): void {
-        if (this.env !== Env.prod) {
+        if (this.env !== Env.enum.prod) {
             console.debug(...args)
         }
     }
 }
 
 export type LoggerLevel = 'error' | 'warn' | 'info' | 'log' | 'debug'
-export const LoggerLevel: { [key in LoggerLevel]: key } = {
-    error: 'error',
-    warn: 'warn',
-    info: 'info',
-    log: 'log',
-    debug: 'debug'
-}
+export const LoggerLevel = z.enum(['error', 'warn', 'info', 'log', 'debug'])
 
 export class ProxyLogger extends Logger {
     constructor(private underlying: Logger, private disabled: LoggerLevel) {
@@ -69,31 +64,31 @@ export class ProxyLogger extends Logger {
     }
 
     error(...args: any[]): void {
-        if (this.disabled !== LoggerLevel.error) {
+        if (this.disabled !== LoggerLevel.enum.error) {
             this.underlying.error(...args)
         }
     }
 
     warn(...args: any[]): void {
-        if (this.disabled !== LoggerLevel.warn) {
+        if (this.disabled !== LoggerLevel.enum.warn) {
             this.underlying.warn(...args)
         }
     }
 
     info(...args: any[]): void {
-        if (this.disabled !== LoggerLevel.info) {
+        if (this.disabled !== LoggerLevel.enum.info) {
             this.underlying.info(...args)
         }
     }
 
     log(...args: any[]): void {
-        if (this.disabled !== LoggerLevel.log) {
+        if (this.disabled !== LoggerLevel.enum.log) {
             this.underlying.log(...args)
         }
     }
 
     debug(...args: any[]): void {
-        if (this.disabled !== LoggerLevel.debug) {
+        if (this.disabled !== LoggerLevel.enum.debug) {
             this.underlying.debug(...args)
         }
     }

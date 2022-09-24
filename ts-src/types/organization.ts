@@ -1,4 +1,4 @@
-import {Uuid, zero} from "./uuid";
+import {Uuid} from "./uuid";
 import {Slug} from "./basics";
 import {z} from "zod";
 
@@ -30,13 +30,3 @@ export const Organization = z.object({
     location: z.string().nullable(),
     description: z.string().nullable(),
 }).strict()
-
-export const legacy: Organization = {
-    id: zero,
-    slug: zero,
-    name: 'Legacy',
-    activePlan: OrganizationPlan.enum.free,
-    logo: 'https://azimutt.app/logo.png',
-    location: null,
-    description: null
-}

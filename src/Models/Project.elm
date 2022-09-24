@@ -1,4 +1,4 @@
-module Models.Project exposing (Project, compute, computeRelations, computeTables, computeTypes, create, currentVersion, decode, downloadContent, downloadFilename, duplicate, encode, new)
+module Models.Project exposing (Project, compute, computeRelations, computeTables, computeTypes, create, decode, downloadContent, downloadFilename, duplicate, encode, new)
 
 import Conf
 import Dict exposing (Dict)
@@ -15,6 +15,7 @@ import Models.Project.CustomType as CustomType exposing (CustomType)
 import Models.Project.CustomTypeId exposing (CustomTypeId)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName as LayoutName exposing (LayoutName)
+import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSettings as ProjectSettings exposing (ProjectSettings)
@@ -44,13 +45,14 @@ type alias Project =
     , layouts : Dict LayoutName Layout
     , settings : ProjectSettings
     , storage : ProjectStorage
+    , version : ProjectEncodingVersion
     , createdAt : Time.Posix
     , updatedAt : Time.Posix
     }
 
 
-new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
-new organization id slug name description sources notes usedLayout layouts settings storage createdAt updatedAt =
+new : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+new organization id slug name description sources notes usedLayout layouts settings storage version createdAt updatedAt =
     { organization = organization
     , id = id
     , slug = slug
@@ -65,6 +67,7 @@ new organization id slug name description sources notes usedLayout layouts setti
     , layouts = layouts
     , settings = settings
     , storage = storage
+    , version = version
     , createdAt = createdAt
     , updatedAt = updatedAt
     }
@@ -84,6 +87,7 @@ create projects name source =
         (Dict.fromList [ ( Conf.constants.defaultLayout, Layout.empty source.createdAt ) ])
         (ProjectSettings.init (mostUsedSchema source.tables))
         ProjectStorage.Local
+        ProjectEncodingVersion.current
         source.createdAt
         source.updatedAt
 
@@ -165,12 +169,6 @@ computeTypes sources =
         |> List.foldr (Dict.fuse CustomType.merge) Dict.empty
 
 
-currentVersion : Int
-currentVersion =
-    -- compatibility version for Project JSON, when you have breaking change, increment it and handle needed migrations
-    2
-
-
 downloadFilename : Project -> String
 downloadFilename project =
     (project.name |> String.replace ".sql" "") ++ ".azimutt.json"
@@ -194,16 +192,16 @@ encode value =
         , ( "usedLayout", value.usedLayout |> LayoutName.encode )
         , ( "layouts", value.layouts |> Encode.dict LayoutName.toString Layout.encode )
         , ( "settings", value.settings |> Encode.withDefaultDeep ProjectSettings.encode (ProjectSettings.init Conf.schema.empty) )
-        , ( "storage", value.storage |> Encode.withDefault ProjectStorage.encode ProjectStorage.Local )
+        , ( "storage", value.storage |> ProjectStorage.encode )
         , ( "createdAt", value.createdAt |> Time.encode )
         , ( "updatedAt", value.updatedAt |> Time.encode )
-        , ( "version", currentVersion |> Encode.int )
+        , ( "version", ProjectEncodingVersion.current |> Encode.int )
         ]
 
 
 decode : Decode.Decoder Project
 decode =
-    Decode.map14 decodeProject
+    Decode.map15 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.field "slug" ProjectSlug.decode)
@@ -215,13 +213,14 @@ decode =
         (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
         (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Conf.schema.empty))
-        (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Local)
-        (Decode.defaultField "createdAt" Time.decode Time.zero)
-        (Decode.defaultField "updatedAt" Time.decode Time.zero)
+        (Decode.field "storage" ProjectStorage.decode)
+        (Decode.field "version" ProjectEncodingVersion.decode)
+        (Decode.field "createdAt" Time.decode)
+        (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id slug name description sources notes layout usedLayout layouts settings storage createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id slug name description sources notes layout usedLayout layouts settings storage version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -232,4 +231,4 @@ decodeProject organization id slug name description sources notes layout usedLay
             else
                 layouts |> Dict.insert Conf.constants.defaultLayout layout
     in
-    new organization id slug name description sources notes usedLayout allLayouts settings storage createdAt updatedAt
+    new organization id slug name description sources notes usedLayout allLayouts settings storage version createdAt updatedAt

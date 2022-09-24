@@ -21,7 +21,7 @@ export class LocalStorageStorage implements StorageApi {
     listProjects = (): Promise<ProjectStoredWithId[]> => {
         this.logger.debug(`localStorage.listProjects()`)
         const keys = Object.keys(window.localStorage).filter(this.isKey)
-        return successes(keys.map(k => this.getProject(k).then(p => Zod.validate([this.keyToId(k), p], ProjectStoredWithId))))
+        return successes(keys.map(k => this.getProject(k).then(p => Zod.validate([this.keyToId(k), p], ProjectStoredWithId, 'ProjectStoredWithId'))))
     }
     loadProject = (id: ProjectId): Promise<ProjectStored> => {
         this.logger.debug(`localStorage.loadProject(${id})`)
@@ -53,21 +53,21 @@ export class LocalStorageStorage implements StorageApi {
 
     private isKey = (key: string): boolean => key.startsWith(this.prefix)
     private idToKey = (id: ProjectId): string => this.prefix + id
-    private keyToId = (key: string): ProjectId => Zod.validate(key.replace(this.prefix, ''), ProjectId)
+    private keyToId = (key: string): ProjectId => Zod.validate(key.replace(this.prefix, ''), ProjectId, 'ProjectId')
     private getProject = (key: string): Promise<ProjectStored> => {
         const value = window.localStorage.getItem(key)
         if (value === null) {
             return Promise.reject(`Nothing in localStorage ${JSON.stringify(key)}`)
         }
         try {
-            return Promise.resolve(Zod.validate(migrateLegacyProject(JSON.parse(value)), ProjectStored))
+            return Promise.resolve(Zod.validate(migrateLegacyProject(JSON.parse(value)), ProjectStored, 'ProjectStored'))
         } catch (e) {
             return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${formatError(e)}`)
         }
     }
     private setProject = (key: string, p: ProjectJson): Promise<ProjectJson> => {
         try {
-            window.localStorage.setItem(key, JSON.stringify(Zod.validate(p, ProjectJson)))
+            window.localStorage.setItem(key, JSON.stringify(Zod.validate(p, ProjectJson, 'ProjectJson')))
             return Promise.resolve(p)
         } catch (e) {
             return Promise.reject(e)

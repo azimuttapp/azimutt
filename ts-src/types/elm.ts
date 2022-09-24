@@ -1,25 +1,25 @@
 import {
-    File,
+    Color,
+    Delta,
     FileContent,
     FileName,
+    FileObject,
     HtmlId,
     Platform,
+    Position,
     PositionViewport,
+    Size,
     Timestamp,
     ToastLevel,
     ViewPosition
 } from "./basics";
 import {
-    Color,
     ColumnId,
-    Delta,
-    Position,
     Project,
     ProjectId,
     ProjectInfo,
     ProjectInfoLocalLegacy,
     ProjectStorage,
-    Size,
     SourceOrigin,
     TableId
 } from "./project";
@@ -69,7 +69,7 @@ export interface Hotkey {
     shift: boolean
     alt: boolean
     meta: boolean
-    target?: { id?: string, class?: string, tag?: string }
+    target: { id: string | null, class: string | null, tag: string | null } | null
     onInput: boolean
     preventDefault: boolean
 }
@@ -81,10 +81,10 @@ export const Hotkey = z.object({
     alt: z.boolean(),
     meta: z.boolean(),
     target: z.object({
-        id: z.string().optional(),
-        class: z.string().optional(),
-        tag: z.string().optional()
-    }).strict().optional(),
+        id: z.string().nullable(),
+        class: z.string().nullable(),
+        tag: z.string().nullable()
+    }).strict().nullable(),
     onInput: z.boolean(),
     preventDefault: z.boolean()
 }).strict()
@@ -94,56 +94,56 @@ export type Data = { [key: string]: string | number | boolean | undefined | null
 export const Data = z.record(z.union([z.string(), z.number(), z.boolean(), z.undefined(), z.null()]))
 
 
-export type ClickMsg = { kind: 'Click', id: HtmlId }
-export const ClickMsg = z.object({kind: z.literal('Click'), id: HtmlId}).strict()
-export type MouseDownMsg = { kind: 'MouseDown', id: HtmlId }
-export const MouseDownMsg = z.object({kind: z.literal('MouseDown'), id: HtmlId}).strict()
-export type FocusMsg = { kind: 'Focus', id: HtmlId }
-export const FocusMsg = z.object({kind: z.literal('Focus'), id: HtmlId}).strict()
-export type BlurMsg = { kind: 'Blur', id: HtmlId }
-export const BlurMsg = z.object({kind: z.literal('Blur'), id: HtmlId}).strict()
-export type ScrollToMsg = { kind: 'ScrollTo', id: HtmlId, position: ViewPosition }
-export const ScrollToMsg = z.object({kind: z.literal('ScrollTo'), id: HtmlId, position: ViewPosition}).strict()
-export type FullscreenMsg = { kind: 'Fullscreen', maybeId?: HtmlId }
-export const FullscreenMsg = z.object({kind: z.literal('Fullscreen'), maybeId: HtmlId.optional()}).strict()
-export type SetMetaMsg = { kind: 'SetMeta', title?: string, description?: string, canonical?: string, html?: string, body?: string }
-export const SetMetaMsg = z.object({kind: z.literal('SetMeta'), title: z.string().optional(), description: z.string().optional(), canonical: z.string().optional(), html: z.string().optional(), body: z.string().optional()}).strict()
-export type AutofocusWithinMsg = { kind: 'AutofocusWithin', id: HtmlId }
-export const AutofocusWithinMsg = z.object({kind: z.literal('AutofocusWithin'), id: HtmlId}).strict()
-export type GetLegacyProjectsMsg = { kind: 'GetLegacyProjects' }
-export const GetLegacyProjectsMsg = z.object({kind: z.literal('GetLegacyProjects')}).strict()
-export type GetProjectMsg = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
-export const GetProjectMsg = z.object({kind: z.literal('GetProject'), organization: OrganizationId, project: ProjectId}).strict()
-export type CreateProjectTmpMsg = { kind: 'CreateProjectTmp', project: Project }
-export const CreateProjectTmpMsg = z.object({kind: z.literal('CreateProjectTmp'), project: Project}).strict()
-export type CreateProjectMsg = { kind: 'CreateProject', organization: OrganizationId, storage: ProjectStorage, project: Project }
-export const CreateProjectMsg = z.object({kind: z.literal('CreateProject'), organization: OrganizationId, storage: ProjectStorage, project: Project}).strict()
-export type UpdateProjectMsg = { kind: 'UpdateProject', project: Project }
-export const UpdateProjectMsg = z.object({kind: z.literal('UpdateProject'), project: Project}).strict()
-export type MoveProjectToMsg = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
-export const MoveProjectToMsg = z.object({kind: z.literal('MoveProjectTo'), project: Project, storage: ProjectStorage}).strict()
-export type DeleteProjectMsg = { kind: 'DeleteProject', project: ProjectInfo }
-export const DeleteProjectMsg = z.object({kind: z.literal('DeleteProject'), project: ProjectInfo}).strict()
-export type DownloadFileMsg = { kind: 'DownloadFile', filename: FileName, content: FileContent }
-export const DownloadFileMsg = z.object({kind: z.literal('DownloadFile'), filename: FileName, content: FileContent}).strict()
-export type GetLocalFileMsg = { kind: 'GetLocalFile', sourceKind: SourceOrigin, file: File }
-export const GetLocalFileMsg = z.object({kind: z.literal('GetLocalFile'), sourceKind: SourceOrigin, file: File}).strict()
-export type ObserveSizesMsg = { kind: 'ObserveSizes', ids: HtmlId[] }
-export const ObserveSizesMsg = z.object({kind: z.literal('ObserveSizes'), ids: HtmlId.array()}).strict()
-export type ListenKeysMsg = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
-export const ListenKeysMsg = z.object({kind: z.literal('ListenKeys'), keys: z.record(HotkeyId, Hotkey.array())}).strict()
-export type ConfettiMsg = { kind: 'Confetti', id: HtmlId }
-export const ConfettiMsg = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
-export type ConfettiPrideMsg = { kind: 'ConfettiPride' }
-export const ConfettiPrideMsg = z.object({kind: z.literal('ConfettiPride')}).strict()
-export type TrackPageMsg = { kind: 'TrackPage', name: string }
-export const TrackPageMsg = z.object({kind: z.literal('TrackPage'), name: z.string()}).strict()
-export type TrackEventMsg = { kind: 'TrackEvent', name: string, details?: Data }
-export const TrackEventMsg = z.object({kind: z.literal('TrackEvent'), name: z.string(), details: Data.optional()}).strict()
-export type TrackErrorMsg = { kind: 'TrackError', name: string, details?: Data }
-export const TrackErrorMsg = z.object({kind: z.literal('TrackError'), name: z.string(), details: Data.optional()}).strict()
-export type ElmMsg = ClickMsg | MouseDownMsg | FocusMsg | BlurMsg | ScrollToMsg | FullscreenMsg | SetMetaMsg | AutofocusWithinMsg | GetLegacyProjectsMsg | GetProjectMsg | CreateProjectTmpMsg | CreateProjectMsg | UpdateProjectMsg | MoveProjectToMsg | DeleteProjectMsg | DownloadFileMsg | GetLocalFileMsg | ObserveSizesMsg | ListenKeysMsg | ConfettiMsg | ConfettiPrideMsg | TrackPageMsg | TrackEventMsg | TrackErrorMsg
-export const ElmMsg = z.discriminatedUnion('kind', [ClickMsg, MouseDownMsg, FocusMsg, BlurMsg, ScrollToMsg, FullscreenMsg, SetMetaMsg, AutofocusWithinMsg, GetLegacyProjectsMsg, GetProjectMsg, CreateProjectTmpMsg, CreateProjectMsg, UpdateProjectMsg, MoveProjectToMsg, DeleteProjectMsg, DownloadFileMsg, GetLocalFileMsg, ObserveSizesMsg, ListenKeysMsg, ConfettiMsg, ConfettiPrideMsg, TrackPageMsg, TrackEventMsg, TrackErrorMsg])
+export type Click = { kind: 'Click', id: HtmlId }
+export const Click = z.object({kind: z.literal('Click'), id: HtmlId}).strict()
+export type MouseDown = { kind: 'MouseDown', id: HtmlId }
+export const MouseDown = z.object({kind: z.literal('MouseDown'), id: HtmlId}).strict()
+export type Focus = { kind: 'Focus', id: HtmlId }
+export const Focus = z.object({kind: z.literal('Focus'), id: HtmlId}).strict()
+export type Blur = { kind: 'Blur', id: HtmlId }
+export const Blur = z.object({kind: z.literal('Blur'), id: HtmlId}).strict()
+export type ScrollTo = { kind: 'ScrollTo', id: HtmlId, position: ViewPosition }
+export const ScrollTo = z.object({kind: z.literal('ScrollTo'), id: HtmlId, position: ViewPosition}).strict()
+export type Fullscreen = { kind: 'Fullscreen', maybeId?: HtmlId }
+export const Fullscreen = z.object({kind: z.literal('Fullscreen'), maybeId: HtmlId.optional()}).strict()
+export type SetMeta = { kind: 'SetMeta', title: string | null, description: string | null, canonical: string | null, html: string | null, body: string | null }
+export const SetMeta = z.object({kind: z.literal('SetMeta'), title: z.string().nullable(), description: z.string().nullable(), canonical: z.string().nullable(), html: z.string().nullable(), body: z.string().nullable()}).strict()
+export type AutofocusWithin = { kind: 'AutofocusWithin', id: HtmlId }
+export const AutofocusWithin = z.object({kind: z.literal('AutofocusWithin'), id: HtmlId}).strict()
+export type GetLegacyProjects = { kind: 'GetLegacyProjects' }
+export const GetLegacyProjects = z.object({kind: z.literal('GetLegacyProjects')}).strict()
+export type GetProject = { kind: 'GetProject', organization: OrganizationId, project: ProjectId }
+export const GetProject = z.object({kind: z.literal('GetProject'), organization: OrganizationId, project: ProjectId}).strict()
+export type CreateProjectTmp = { kind: 'CreateProjectTmp', project: Project }
+export const CreateProjectTmp = z.object({kind: z.literal('CreateProjectTmp'), project: Project}).strict()
+export type CreateProject = { kind: 'CreateProject', organization: OrganizationId, storage: ProjectStorage, project: Project }
+export const CreateProject = z.object({kind: z.literal('CreateProject'), organization: OrganizationId, storage: ProjectStorage, project: Project}).strict()
+export type UpdateProject = { kind: 'UpdateProject', project: Project }
+export const UpdateProject = z.object({kind: z.literal('UpdateProject'), project: Project}).strict()
+export type MoveProjectTo = { kind: 'MoveProjectTo', project: Project, storage: ProjectStorage }
+export const MoveProjectTo = z.object({kind: z.literal('MoveProjectTo'), project: Project, storage: ProjectStorage}).strict()
+export type DeleteProject = { kind: 'DeleteProject', project: ProjectInfo }
+export const DeleteProject = z.object({kind: z.literal('DeleteProject'), project: ProjectInfo}).strict()
+export type DownloadFile = { kind: 'DownloadFile', filename: FileName, content: FileContent }
+export const DownloadFile = z.object({kind: z.literal('DownloadFile'), filename: FileName, content: FileContent}).strict()
+export type GetLocalFile = { kind: 'GetLocalFile', sourceKind: SourceOrigin, file: File }
+export const GetLocalFile = z.object({kind: z.literal('GetLocalFile'), sourceKind: SourceOrigin, file: FileObject}).strict()
+export type ObserveSizes = { kind: 'ObserveSizes', ids: HtmlId[] }
+export const ObserveSizes = z.object({kind: z.literal('ObserveSizes'), ids: HtmlId.array()}).strict()
+export type ListenKeys = { kind: 'ListenKeys', keys: { [id: HotkeyId]: Hotkey[] } }
+export const ListenKeys = z.object({kind: z.literal('ListenKeys'), keys: z.record(HotkeyId, Hotkey.array())}).strict()
+export type Confetti = { kind: 'Confetti', id: HtmlId }
+export const Confetti = z.object({kind: z.literal('Confetti'), id: HtmlId}).strict()
+export type ConfettiPride = { kind: 'ConfettiPride' }
+export const ConfettiPride = z.object({kind: z.literal('ConfettiPride')}).strict()
+export type TrackPage = { kind: 'TrackPage', name: string }
+export const TrackPage = z.object({kind: z.literal('TrackPage'), name: z.string()}).strict()
+export type TrackEvent = { kind: 'TrackEvent', name: string, details?: Data }
+export const TrackEvent = z.object({kind: z.literal('TrackEvent'), name: z.string(), details: Data.optional()}).strict()
+export type TrackError = { kind: 'TrackError', name: string, details?: Data }
+export const TrackError = z.object({kind: z.literal('TrackError'), name: z.string(), details: Data.optional()}).strict()
+export type ElmMsg = Click | MouseDown | Focus | Blur | ScrollTo | Fullscreen | SetMeta | AutofocusWithin | GetLegacyProjects | GetProject | CreateProjectTmp | CreateProject | UpdateProject | MoveProjectTo | DeleteProject | DownloadFile | GetLocalFile | ObserveSizes | ListenKeys | Confetti | ConfettiPride | TrackPage | TrackEvent | TrackError
+export const ElmMsg = z.discriminatedUnion('kind', [Click, MouseDown, Focus, Blur, ScrollTo, Fullscreen, SetMeta, AutofocusWithin, GetLegacyProjects, GetProject, CreateProjectTmp, CreateProject, UpdateProject, MoveProjectTo, DeleteProject, DownloadFile, GetLocalFile, ObserveSizes, ListenKeys, Confetti, ConfettiPride, TrackPage, TrackEvent, TrackError])
 
 
 export type GotSizes = { kind: 'GotSizes', sizes: ElementSize[] }
@@ -155,7 +155,7 @@ export const GotProject = z.object({kind: z.literal('GotProject'), project: Proj
 export type ProjectDeleted = { kind: 'ProjectDeleted', id: ProjectId }
 export const ProjectDeleted = z.object({kind: z.literal('ProjectDeleted'), id: ProjectId}).strict()
 export type GotLocalFile = { kind: 'GotLocalFile', sourceKind: SourceOrigin, file: File, content: string }
-export const GotLocalFile = z.object({kind: z.literal('GotLocalFile'), sourceKind: SourceOrigin, file: File, content: z.string()}).strict()
+export const GotLocalFile = z.object({kind: z.literal('GotLocalFile'), sourceKind: SourceOrigin, file: FileObject, content: z.string()}).strict()
 export type GotHotkey = { kind: 'GotHotkey', id: string }
 export const GotHotkey = z.object({kind: z.literal('GotHotkey'), id: z.string()}).strict()
 export type GotKeyHold = { kind: 'GotKeyHold', key: string, start: boolean }

@@ -32,13 +32,13 @@ export class Backend {
     getProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p})`)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,content`)
-        return Http.getJson(url, ProjectWithContentResponse).then(toProjectInfoWithContent)
+        return Http.getJson(url, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
     }
 
     createProjectLocal = (o: OrganizationId, p: ProjectJson): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, p)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
-        return Http.postJson(url, toProjectBody(p, ProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
+        return Http.postJson(url, toProjectBody(p, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
@@ -50,26 +50,28 @@ export class Backend {
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${p.name}.json`)
-        return Http.postMultipart(url, formData, ProjectResponse).then(toProjectInfo)
+        return Http.postMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
     }
 
     updateProjectLocal = (p: Project): Promise<ProjectInfoLocal> => {
-        this.logger.debug(`backend.updateProjectLocal(${p.organization.id}, ${p.id})`, p)
+        this.logger.debug(`backend.updateProjectLocal(${p.organization?.id}, ${p.id})`, p)
+        if(!p.organization) return Promise.reject('Expecting an organization to update project')
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
-        return Http.putJson(url, toProjectBody(buildProjectJson(p), ProjectStorage.enum.local), ProjectResponse).then(toProjectInfo)
+        return Http.putJson(url, toProjectBody(buildProjectJson(p), ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
     updateProjectRemote = (p: Project): Promise<ProjectInfoRemote> => {
-        this.logger.debug(`backend.updateProjectRemote(${p.organization.id}, ${p.id})`, p)
+        this.logger.debug(`backend.updateProjectRemote(${p.organization?.id}, ${p.id})`, p)
+        if(!p.organization) return Promise.reject('Expecting an organization to update project')
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(buildProjectJson(p), ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([JSON.stringify(p)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
-        return Http.putMultipart(url, formData, ProjectResponse).then(toProjectInfo)
+        return Http.putMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
     }
 
@@ -80,9 +82,9 @@ export class Backend {
     }
 
     private withXhrHost(path: string): string {
-        if (this.env == Env.dev) {
+        if (this.env == Env.enum.dev) {
             return `${path}`
-        } else if (this.env == Env.staging) {
+        } else if (this.env == Env.enum.staging) {
             return `https://azimutt.dev${path}`
         } else {
             return `https://azimutt.app${path}`
@@ -243,7 +245,7 @@ function toProjectInfoWithContent(p: ProjectWithContentResponse): ProjectInfoWit
 
 function decodeContent(p: ProjectWithContentResponse): ProjectJson {
     if (typeof p.content === 'string') {
-        return Zod.validate(JSON.parse(p.content), ProjectJson)
+        return Zod.validate(JSON.parse(p.content), ProjectJson, 'ProjectJson')
     } else {
         throw 'Missing content in backend response!'
     }

@@ -1,8 +1,9 @@
-import {Slug, Timestamp} from "./basics";
+import {Color, Position, Size, Slug, Timestamp} from "./basics";
 import {Uuid} from "./uuid";
-import {legacy, Organization} from "./organization";
+import {Organization} from "./organization";
 import * as Array from "../utils/array";
 import {z} from "zod";
+import * as Zod from "../utils/zod";
 
 export type ProjectId = Uuid
 export const ProjectId = Uuid
@@ -299,48 +300,6 @@ export const Source = z.object({
     updatedAt: Timestamp
 }).strict()
 
-export interface Position {
-    left: number
-    top: number
-}
-
-export const Position = z.object({
-    left: z.number(),
-    top: z.number()
-}).strict()
-
-export interface Size {
-    width: number
-    height: number
-}
-
-export const Size = z.object({
-    width: z.number(),
-    height: z.number()
-}).strict()
-
-export type Color =
-    'indigo'
-    | 'violet'
-    | 'purple'
-    | 'fuchsia'
-    | 'pink'
-    | 'rose'
-    | 'red'
-    | 'orange'
-    | 'amber'
-    | 'yellow'
-    | 'lime'
-    | 'green'
-    | 'emerald'
-    | 'teal'
-    | 'cyan'
-    | 'sky'
-    | 'blue'
-    | 'gray'
-
-export const Color = z.enum(['indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose', 'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan', 'sky', 'blue', 'gray'])
-
 export interface CanvasProps {
     position: Position
     zoom: ZoomLevel
@@ -427,7 +386,7 @@ export type ProjectVersion = 1 | 2
 export const ProjectVersion = z.union([z.literal(1), z.literal(2)])
 
 export interface Project {
-    organization: Organization
+    organization?: Organization
     id: ProjectId
     slug: ProjectSlug
     name: ProjectName
@@ -444,7 +403,7 @@ export interface Project {
 }
 
 export const Project = z.object({
-    organization: Organization,
+    organization: Organization.optional(),
     id: ProjectId,
     slug: ProjectSlug,
     name: ProjectName,
@@ -460,43 +419,14 @@ export const Project = z.object({
     version: ProjectVersion
 }).strict()
 
-export type ProjectJson =
-    Omit<Project, 'organization' | 'id' | 'storage' | 'createdAt' | 'updatedAt'>
-    & { _type: 'json' }
-export const ProjectJson = Project.omit({
-    organization: true,
-    id: true,
-    storage: true,
-    createdAt: true,
-    updatedAt: true
-}).extend({_type: z.literal('json')}).strict()
+export type ProjectJson = Omit<Project, 'organization' | 'id' | 'storage' | 'createdAt' | 'updatedAt'> & { _type: 'json' }
+export const ProjectJson = Project.omit({organization: true, id: true, storage: true, createdAt: true, updatedAt: true}).extend({_type: z.literal('json')}).strict()
 export type ProjectJsonLegacy = Omit<Project, 'organization' | 'slug' | 'description' | 'storage'>
-export const ProjectJsonLegacy = Project.omit({
-    organization: true,
-    slug: true,
-    description: true,
-    storage: true
-}).strict()
+export const ProjectJsonLegacy = Project.omit({organization: true, slug: true, description: true, storage: true}).strict()
 export type ProjectStored = ProjectJson | ProjectJsonLegacy
 export const ProjectStored = z.union([ProjectJson, ProjectJsonLegacy])
 export type ProjectStoredWithId = [ProjectId, ProjectStored]
 export const ProjectStoredWithId = z.tuple([ProjectId, ProjectStored])
-
-// required read transformations to satisfy Zod validations
-export function migrateLegacyProject(p: any): any {
-    if (p.storage === 'browser') {
-        p.storage = ProjectStorage.enum.local
-    }
-    if (p.storage === 'cloud') {
-        p.storage = ProjectStorage.enum.remote
-    }
-    if (p.createdAt) {
-        return p
-    } else {
-        const {id, ...res} = p
-        return res
-    }
-}
 
 export interface ProjectStats {
     nbSources: number
@@ -554,22 +484,6 @@ export type ProjectInfoLocalLegacy = Omit<ProjectInfoLocal, 'organization'>
 export const ProjectInfoLocalLegacy = ProjectInfoLocal.omit({organization: true}).strict()
 
 
-export interface Size {
-    width: number
-    height: number
-}
-
-export interface Delta {
-    dx: number
-    dy: number
-}
-
-export const Delta = z.object({
-    dx: z.number(),
-    dy: z.number()
-}).strict()
-
-
 export function isLocal(p: ProjectInfo): p is ProjectInfoLocal {
     return p.storage === ProjectStorage.enum.local
 }
@@ -582,46 +496,62 @@ export function isLegacy(p: ProjectStored): p is ProjectJsonLegacy {
     return 'createdAt' in p
 }
 
-export function buildProjectRemote(p: ProjectInfoRemote, content: ProjectJson): Project {
-    return {
-        ...content,
-        organization: p.organization,
-        id: p.id,
-        storage: ProjectStorage.enum.remote,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt
+// required read transformations to satisfy Zod validations
+export function migrateLegacyProject(p: any | undefined): any {
+    if (!p) return p
+    if (p.createdAt) { // if legacy, remove storage
+        const {storage, ...res} = p
+        return res
+    } else { // if not legacy, remove id
+        const {id, ...res} = p
+        return res
     }
 }
 
-export function buildProjectLocal(p: ProjectInfoLocal, content: ProjectJson): Project {
-    return {
-        ...content,
-        organization: p.organization,
-        id: p.id,
-        storage: ProjectStorage.enum.local,
-        createdAt: p.createdAt,
-        updatedAt: p.updatedAt
-    }
-}
-
-export function buildProjectLocalDraft(id: ProjectId, {_type, ...p}: ProjectJson): Project {
-    return {
+export function buildProjectLegacy(id: ProjectId, p: ProjectJsonLegacy): Project {
+    return Zod.validate({
         ...p,
-        organization: legacy,
+        id,
+        slug: id,
+        storage: ProjectStorage.enum.local
+    }, Project, 'Project')
+}
+
+export function buildProjectDraft(id: ProjectId, {_type, ...p}: ProjectJson): Project {
+    return Zod.validate({
+        ...p,
         id,
         slug: id,
         storage: ProjectStorage.enum.local,
         createdAt: Date.now(),
         updatedAt: Date.now()
-    }
+    }, Project, 'Project')
 }
 
-export function buildProjectLocalLegacy(id: ProjectId, p: ProjectJsonLegacy): Project {
-    return {...p, organization: legacy, id, slug: id, storage: ProjectStorage.enum.local}
+export function buildProjectLocal(info: ProjectInfoLocal, {_type, ...p}: ProjectJson): Project {
+    return Zod.validate({
+        ...p,
+        organization: info.organization,
+        id: info.id,
+        storage: ProjectStorage.enum.local,
+        createdAt: info.createdAt,
+        updatedAt: info.updatedAt
+    }, Project, 'Project')
+}
+
+export function buildProjectRemote(info: ProjectInfoRemote, {_type, ...p}: ProjectJson): Project {
+    return Zod.validate({
+        ...p,
+        organization: info.organization,
+        id: info.id,
+        storage: ProjectStorage.enum.remote,
+        createdAt: info.createdAt,
+        updatedAt: info.updatedAt
+    }, Project, 'Project')
 }
 
 export function buildProjectJson({organization, id, storage, createdAt, updatedAt, ...p}: Project): ProjectJson {
-    return {...p, _type: 'json'}
+    return Zod.validate({...p, _type: 'json'}, ProjectJson, 'ProjectJson')
 }
 
 export function computeStats(p: ProjectStored): ProjectStats {
@@ -629,7 +559,7 @@ export function computeStats(p: ProjectStored): ProjectStats {
     const tables = Array.groupBy(p.sources.flatMap(s => s.tables), t => `${t.schema}.${t.table}`)
     const types = Array.groupBy(p.sources.flatMap(s => s.types || []), t => `${t.schema}.${t.name}`)
 
-    return {
+    return Zod.validate({
         nbSources: p.sources.length,
         nbTables: Object.keys(tables).length,
         nbColumns: Object.values(tables).map(same => Math.max(...same.map(t => t.columns.length))).reduce((acc, cols) => acc + cols, 0),
@@ -638,5 +568,5 @@ export function computeStats(p: ProjectStored): ProjectStats {
         nbComments: p.sources.flatMap(s => s.tables.flatMap(t => [t.comment].concat(t.columns.map(c => c.comment)).filter(c => !!c))).length,
         nbNotes: Object.keys(p.notes || {}).length,
         nbLayouts: Object.keys(p.layouts).length
-    }
+    }, ProjectStats, 'ProjectStats')
 }

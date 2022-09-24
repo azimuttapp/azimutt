@@ -1,16 +1,9 @@
-import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFileMsg, Hotkey, HotkeyId, JsMsg} from "../types/elm";
-import {
-    Color,
-    ColumnId,
-    Delta,
-    Project,
-    ProjectInfoLocalLegacy,
-    Position,
-    ProjectId,
-    TableId
-} from "../types/project";
-import {ToastLevel} from "../types/basics";
+import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/elm";
+import {ColumnId, Project, ProjectId, ProjectInfoLocalLegacy, TableId} from "../types/project";
+import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
+import * as Zod from "../utils/zod";
+import {formatError} from "../utils/error";
 
 export class ElmApp {
     static init(flags: ElmFlags, logger: Logger) {
@@ -47,17 +40,22 @@ export class ElmApp {
     constructor(private elm: ElmRuntime<JsMsg, ElmMsg>, private logger: Logger) {
         this.elm.ports?.elmToJs.subscribe(msg => {
             this.logger.debug('ElmMsg', msg)
-            // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
-            // FIXME: use requestAnimationFrame instead!
-            setTimeout(() => {
-                const calls = this.callbacks[msg.kind]
-                if (calls.length > 0) {
-                    // @ts-ignore
-                    calls.map(call => call(msg))
-                } else {
-                    logger.error(`Message "${msg.kind}" not handled`, msg)
-                }
-            }, 100)
+            try {
+                const valid: ElmMsg = Zod.validate(msg, ElmMsg, `ElmMsg[${msg.kind}]`)
+                // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
+                // FIXME: use requestAnimationFrame instead!
+                setTimeout(() => {
+                    const calls = this.callbacks[valid.kind]
+                    if (calls.length > 0) {
+                        // @ts-ignore
+                        calls.map(call => call(valid))
+                    } else {
+                        logger.error(`Message "${valid.kind}" not handled`, valid)
+                    }
+                }, 100)
+            } catch (e) {
+                this.toast(ToastLevel.enum.error, formatError(e))
+            }
         })
     }
 
@@ -77,7 +75,7 @@ export class ElmApp {
         project ? this.send({kind: 'GotProject', project}) : this.send({kind: 'GotProject'})
     }
     dropProject = (id: ProjectId): void => this.send({kind: 'ProjectDeleted', id})
-    gotLocalFile = (msg: GetLocalFileMsg, content: string): void => this.send({
+    gotLocalFile = (msg: GetLocalFile, content: string): void => this.send({
         kind: 'GotLocalFile',
         sourceKind: msg.sourceKind,
         file: msg.file,
@@ -100,7 +98,12 @@ export class ElmApp {
 
     private send(msg: JsMsg): void {
         this.logger.debug('JsMsg', msg)
-        this.elm.ports?.jsToElm.send(msg)
+        try {
+            const valid: JsMsg = Zod.validate(msg, JsMsg, `JsMsg[${msg.kind}]`)
+            this.elm.ports?.jsToElm.send(valid)
+        } catch (e) {
+            this.toast(ToastLevel.enum.error, formatError(e))
+        }
     }
 }
 

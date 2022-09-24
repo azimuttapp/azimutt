@@ -35,7 +35,7 @@ export class IndexedDBStorage implements StorageApi {
                 store.openCursor().onsuccess = (event: any) => {
                     const cursor = event.target.result
                     if (cursor) {
-                        projects.push(Zod.validate([cursor.key, migrateLegacyProject(cursor.value)], ProjectStoredWithId))
+                        projects.push(Zod.validate([cursor.key, migrateLegacyProject(cursor.value)], ProjectStoredWithId, 'ProjectStoredWithId'))
                         cursor.continue()
                     } else {
                         resolve(projects)
@@ -58,7 +58,7 @@ export class IndexedDBStorage implements StorageApi {
                 if (project) {
                     return Promise.reject(`Project ${id} already exists in ${this.kind}`)
                 } else {
-                    return reqToPromise(store.add({...Zod.validate(p, ProjectJson), id})).then(_ => p)
+                    return reqToPromise(store.add({...Zod.validate(p, ProjectJson, 'ProjectJson'), id})).then(_ => p)
                 }
             })
         })
@@ -68,7 +68,7 @@ export class IndexedDBStorage implements StorageApi {
         return this.openStore('readwrite').then(store => {
             return this.getProject(store, id).then(project => {
                 if (project) {
-                    return reqToPromise(store.put({...Zod.validate(p, ProjectJson), id})).then(_ => p)
+                    return reqToPromise(store.put({...Zod.validate(p, ProjectJson, 'ProjectJson'), id})).then(_ => p)
                 } else {
                     return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)
                 }
@@ -84,9 +84,9 @@ export class IndexedDBStorage implements StorageApi {
         return new Promise<IDBObjectStore>(resolve => resolve(this.db.transaction(IndexedDBStorage.dbProjects, mode).objectStore(IndexedDBStorage.dbProjects)))
     }
 
-    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectJson | undefined> {
-        return new Promise<ProjectJson | undefined>((resolve, reject) => {
-            store.get(id).onsuccess = (event: any) => resolve(Zod.validate(migrateLegacyProject(event.target.result), ProjectJson.optional()));
+    private getProject(store: IDBObjectStore, id: ProjectId): Promise<ProjectStored | undefined> {
+        return new Promise<ProjectStored | undefined>((resolve, reject) => {
+            store.get(id).onsuccess = (event: any) => resolve(Zod.validate(migrateLegacyProject(event.target.result), ProjectStored.optional(), 'ProjectStored?'));
             (store as any).onerror = (err: any) => reject(`Unable to load project: ${err}`)
         })
     }

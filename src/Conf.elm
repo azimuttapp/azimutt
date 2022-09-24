@@ -4,6 +4,7 @@ import Components.Atoms.Icon exposing (Icon(..))
 import Dict exposing (Dict)
 import Libs.Models.Hotkey exposing (Hotkey, hotkey, target)
 import Libs.Models.HtmlId exposing (HtmlId)
+import Libs.Models.Uuid as Uuid
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Url as Url
@@ -52,7 +53,7 @@ constants =
     , azimuttEmail = "hey@azimutt.app"
     , defaultTitle = "Azimutt - Database explorer and analyzer"
     , defaultDescription = "Next gen ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths and much more..."
-    , tmpOrg = "tmp"
+    , tmpOrg = Uuid.zero
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
     , virtualRelationSourceName = "default"

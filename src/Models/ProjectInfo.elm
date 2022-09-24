@@ -9,6 +9,7 @@ import Libs.List as List
 import Libs.Time as Time
 import Models.Organization as Organization exposing (Organization)
 import Models.Project exposing (Project)
+import Models.Project.ProjectEncodingVersion as ProjectEncodingVersion exposing (ProjectEncodingVersion)
 import Models.Project.ProjectId as ProjectId exposing (ProjectId)
 import Models.Project.ProjectName as ProjectName exposing (ProjectName)
 import Models.Project.ProjectSlug as ProjectSlug exposing (ProjectSlug)
@@ -25,6 +26,7 @@ type alias ProjectInfo =
     , name : ProjectName
     , description : Maybe String
     , storage : ProjectStorage
+    , version : ProjectEncodingVersion
     , nbSources : Int
     , nbTables : Int
     , nbColumns : Int
@@ -52,6 +54,7 @@ fromProject p =
     , name = p.name
     , description = p.description
     , storage = p.storage
+    , version = p.version
     , nbSources = p.sources |> List.length
     , nbTables = tables |> Dict.size
     , nbColumns = tables |> Dict.values |> List.map (List.map (.columns >> Dict.size) >> List.maximum >> Maybe.withDefault 0) |> List.sum
@@ -74,6 +77,7 @@ encode value =
         , ( "name", value.name |> ProjectName.encode )
         , ( "description", value.description |> Encode.maybe Encode.string )
         , ( "storage", value.storage |> ProjectStorage.encode )
+        , ( "encodingVersion", value.version |> ProjectEncodingVersion.encode )
         , ( "nbSources", value.nbSources |> Encode.int )
         , ( "nbTables", value.nbTables |> Encode.int )
         , ( "nbColumns", value.nbColumns |> Encode.int )
@@ -89,13 +93,14 @@ encode value =
 
 decode : Decode.Decoder ProjectInfo
 decode =
-    Decode.map16 ProjectInfo
+    Decode.map17 ProjectInfo
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
         (Decode.field "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.maybeField "description" Decode.string)
         (Decode.field "storage" ProjectStorage.decode)
+        (Decode.field "encodingVersion" ProjectEncodingVersion.decode)
         (Decode.field "nbSources" Decode.int)
         (Decode.field "nbTables" Decode.int)
         (Decode.field "nbColumns" Decode.int)

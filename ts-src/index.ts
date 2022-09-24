@@ -1,23 +1,23 @@
 import {
-    CreateProjectMsg,
-    CreateProjectTmpMsg,
-    DeleteProjectMsg,
-    GetLocalFileMsg,
-    GetProjectMsg,
+    CreateProject,
+    CreateProjectTmp,
+    DeleteProject,
+    GetLocalFile,
+    GetProject,
     Hotkey,
     HotkeyId,
-    ListenKeysMsg,
-    ObserveSizesMsg,
-    SetMetaMsg,
-    UpdateProjectMsg
+    ListenKeys,
+    ObserveSizes,
+    SetMeta,
+    UpdateProject
 } from "./types/elm";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
 import {
     buildProjectJson,
     buildProjectLocal,
-    buildProjectLocalDraft,
-    buildProjectLocalLegacy,
+    buildProjectDraft,
+    buildProjectLegacy,
     buildProjectRemote,
     ProjectStorage
 } from "./types/project";
@@ -44,8 +44,8 @@ const app = ElmApp.init(flags, logger)
 const storage = new Storage(logger)
 const backend = new Backend(env, logger)
 const skipAnalytics = !!JSON.parse(localStorage.getItem('skip-analytics') || 'false')
-const analytics = env === Env.prod && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
-const errorTracking = env === Env.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
+const analytics = env === Env.enum.prod && !skipAnalytics ? new SplitbeeAnalytics(conf.splitbee) : new LogAnalytics(logger)
+const errorTracking = env === Env.enum.prod ? new SentryErrLogger(conf.sentry) : new LogErrLogger(logger)
 logger.info('Hi there! I hope you are enjoying Azimutt 👍️\n\n' +
     'Did you know you can access your current project in the console?\n' +
     'And even trigger some actions in Azimutt?\n\n' +
@@ -58,7 +58,7 @@ window.azimutt = new AzimuttApi(app, logger)
 
 /* PWA service worker */
 
-if ('serviceWorker' in navigator && env === Env.prod) {
+if ('serviceWorker' in navigator && env === Env.enum.prod) {
     navigator.serviceWorker.register("/service-worker.js")
     // .then(reg => logger.debug('service-worker registered!', reg))
     // .catch(err => logger.debug('service-worker failed to register!', err))
@@ -97,7 +97,7 @@ if (app.noListeners().length > 0) {
     logger.error(`Do not listen to elm events: ${app.noListeners().join(', ')}`)
 }
 
-function setMeta(meta: SetMetaMsg) {
+function setMeta(meta: SetMeta) {
     if (typeof meta.title === 'string') {
         document.title = meta.title
         document.querySelector('meta[property="og:title"]')?.setAttribute('content', meta.title)
@@ -129,7 +129,7 @@ function getLegacyProjects() {
     })
 }
 
-function getProject(msg: GetProjectMsg) {
+function getProject(msg: GetProject) {
     backend.getProject(msg.organization, msg.project).then(res => {
         if (res.storage === ProjectStorage.enum.remote) {
             return buildProjectRemote(res, res.content)
@@ -140,13 +140,13 @@ function getProject(msg: GetProjectMsg) {
         }
     }, err => {
         // FIXME: handle 401 (Unauthorized) errors, save orga in project to know if it's legacy or not, or change storage key?
-        if (err.status === 404) {
+        if (err.statusCode === 404) {
             if (msg.project === Uuid.zero) {
-                return storage.getProject(msg.project).then(p => buildProjectLocalDraft(msg.project, p))
+                return storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p))
             } else {
                 app.toast(ToastLevel.enum.warning, 'Unregistered project: create an Azimutt account and save it again to keep it. '
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
-                return storage.getLegacyProject(msg.project).then(p => buildProjectLocalLegacy(msg.project, p))
+                return storage.getLegacyProject(msg.project).then(p => buildProjectLegacy(msg.project, p))
             }
         } else {
             return Promise.reject(err)
@@ -159,14 +159,15 @@ function getProject(msg: GetProjectMsg) {
     })
 }
 
-function createProjectTmp(msg: CreateProjectTmpMsg): void {
+function createProjectTmp(msg: CreateProjectTmp): void {
+    const json = buildProjectJson(msg.project)
     storage.deleteProject(Uuid.zero)
-        .then(_ => storage.createProject(Uuid.zero, buildProjectJson(msg.project)))
-        .then(_ => app.gotProject(msg.project),
+        .then(_ => storage.createProject(Uuid.zero, json))
+        .then(_ => app.gotProject(buildProjectDraft(msg.project.id, json)),
             err => app.toast(ToastLevel.enum.error, `Can't save draft project: ${formatError(err)}`))
 }
 
-function createProject(msg: CreateProjectMsg): void {
+function createProject(msg: CreateProject): void {
     const json = buildProjectJson(msg.project)
     if (msg.storage == ProjectStorage.enum.local) {
         backend.createProjectLocal(msg.organization, json).then(res => {
@@ -178,6 +179,7 @@ function createProject(msg: CreateProjectMsg): void {
             app.toast(ToastLevel.enum.error, `Can't save project to backend: ${formatError(err)}`)
             return Promise.reject(err)
         }).then(p => {
+            // delete previously stored projects: draft and legacy one
             return Promise.all([storage.deleteProject(Uuid.zero), storage.deleteProject(msg.project.id)]).catch(err => {
                 app.toast(ToastLevel.enum.error, `Can't delete temporary project: ${formatError(err)}`)
                 return Promise.resolve()
@@ -198,8 +200,9 @@ function createProject(msg: CreateProjectMsg): void {
     }
 }
 
-function updateProject(msg: UpdateProjectMsg): void {
+function updateProject(msg: UpdateProject): void {
     const json = buildProjectJson(msg.project)
+    if(!msg.project.organization) return app.toast(ToastLevel.enum.error, 'Expecting an organization to update project')
     if (msg.project.storage == ProjectStorage.enum.local) {
         backend.updateProjectLocal(msg.project).then(res => {
             return storage.updateProject(res.id, json).then(_ => {
@@ -223,7 +226,7 @@ function updateProject(msg: UpdateProjectMsg): void {
     }
 }
 
-function deleteProject(msg: DeleteProjectMsg): void {
+function deleteProject(msg: DeleteProject): void {
     if (msg.project.organization) {
         backend.deleteProject(msg.project.organization.id, msg.project.id).catch(err => {
             app.toast(ToastLevel.enum.error, `Can't delete project in backend: ${formatError(err)}`)
@@ -244,7 +247,7 @@ function deleteProject(msg: DeleteProjectMsg): void {
     }
 }
 
-function getLocalFile(msg: GetLocalFileMsg) {
+function getLocalFile(msg: GetLocalFile) {
     const reader = new FileReader()
     reader.onload = (e: any) => app.gotLocalFile(msg, e.target.result)
     reader.readAsText(msg.file as any)
@@ -264,7 +267,7 @@ const resizeObserver = new ResizeObserver(entries => {
     }))
 })
 
-function observeSizes(msg: ObserveSizesMsg) {
+function observeSizes(msg: ObserveSizes) {
     msg.ids.flatMap(Utils.maybeElementById).forEach(elt => resizeObserver.observe(elt))
 }
 
@@ -278,7 +281,7 @@ function isInput(elt: Element) {
 function keydownHotkey(e: KeyboardEvent) {
     const target = e.target as HTMLElement
     const matches = (hotkeys[e.key] || []).filter(hotkey => {
-        return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === Platform.mac && hotkey.ctrl === e.metaKey)) &&
+        return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === Platform.enum.mac && hotkey.ctrl === e.metaKey)) &&
             (!hotkey.shift || e.shiftKey) &&
             (hotkey.alt === e.altKey) &&
             (hotkey.meta === e.metaKey) &&
@@ -295,7 +298,7 @@ function keydownHotkey(e: KeyboardEvent) {
     if (matches.length === 0 && e.key === "Escape" && isInput(target)) target.blur()
 }
 
-function listenHotkeys(msg: ListenKeysMsg) {
+function listenHotkeys(msg: ListenKeys) {
     Object.keys(hotkeys).forEach(key => hotkeys[key] = [])
     Object.entries(msg.keys).forEach(([id, alternatives]) => {
         alternatives.forEach(hotkey => {

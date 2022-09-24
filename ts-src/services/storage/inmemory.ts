@@ -11,25 +11,25 @@ export class InMemoryStorage implements StorageApi {
 
     listProjects = (): Promise<ProjectStoredWithId[]> => {
         this.logger.debug(`inMemory.listProjects()`)
-        return Promise.resolve(Zod.validate(Object.entries(this.projects), ProjectStoredWithId.array()))
+        return Promise.resolve(Zod.validate(Object.entries(this.projects), ProjectStoredWithId.array(), 'ProjectStoredWithId[]'))
     }
     loadProject = (id: ProjectId): Promise<ProjectStored> => {
         this.logger.debug(`inMemory.loadProject(${id})`)
-        return this.projects[id] ? Promise.resolve(Zod.validate(this.projects[id], ProjectJson)) : Promise.reject(`Project ${id} not found`)
+        return this.projects[id] ? Promise.resolve(Zod.validate(this.projects[id], ProjectJson, 'ProjectJson')) : Promise.reject(`Project ${id} not found`)
     }
     createProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`inMemory.createProject(${id})`, p)
         if(this.projects[id]) {
             return Promise.reject(`Project ${id} already exists in ${this.kind}`)
         } else {
-            this.projects[id] = Zod.validate(p, ProjectJson)
+            this.projects[id] = Zod.validate(p, ProjectJson, 'ProjectJson')
             return Promise.resolve(p)
         }
     }
     updateProject = (id: ProjectId, p: ProjectJson): Promise<ProjectJson> => {
         this.logger.debug(`inMemory.updateProject(${id})`, p)
         if(this.projects[id]) {
-            this.projects[id] = Zod.validate(p, ProjectJson)
+            this.projects[id] = Zod.validate(p, ProjectJson, 'ProjectJson')
             return Promise.resolve(p)
         } else {
             return Promise.reject(`Project ${id} doesn't exists in ${this.kind}`)

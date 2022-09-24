@@ -1,15 +1,7 @@
 import {Organization, OrganizationPlan} from "./organization";
+import {organization} from "../utils/constants.test";
 
 describe('organization', () => {
-    const organization: Organization = {
-        id: '84547c71-bec5-433b-87c7-685f1c9353b2',
-        slug: 'valid',
-        name: 'Valid',
-        activePlan: OrganizationPlan.enum.free,
-        logo: 'https://azimutt.app/logo.png',
-        location: 'Paris',
-        description: 'bla bla bla'
-    }
     test('zod full', () => {
         const res: Organization = Organization.parse(organization) // make sure parser result is aligned with TS type!
         expect(res).toEqual(organization)

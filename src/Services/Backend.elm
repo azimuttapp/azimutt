@@ -142,6 +142,7 @@ formatOrgasAndProjects orgas =
                             , name = p.name
                             , description = p.description
                             , storage = p.storage
+                            , version = p.encodingVersion
                             , nbSources = p.nbSources
                             , nbTables = p.nbTables
                             , nbColumns = p.nbColumns
