@@ -85,7 +85,7 @@ update req msg model =
             ( { model | selectedMenu = menu }, Cmd.none )
 
         DeleteProject project ->
-            ( model, Ports.deleteProject project )
+            ( model, Ports.deleteProject project Nothing )
 
         DropdownToggle id ->
             ( model |> Dropdown.update id, Cmd.none )

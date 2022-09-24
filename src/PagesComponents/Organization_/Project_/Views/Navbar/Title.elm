@@ -26,7 +26,7 @@ import Libs.Task as T
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage
 import Models.ProjectInfo exposing (ProjectInfo)
-import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..), prompt)
+import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..), confirmDanger, prompt)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
 import Services.Backend as Backend
@@ -73,6 +73,7 @@ viewProjectsDropdown platform env projects project htmlId openedDropdown =
             div [ class "divide-y divide-gray-100" ]
                 (([ [ ContextMenu.btnHotkey "" TriggerSaveProject [ text "Save project" ] platform (Conf.hotkeys |> Dict.getOrElse "save" [])
                     , ContextMenu.btn "" (RenameProject |> prompt "Rename project" (text "") project.name) [ text "Rename project" ]
+                    , ContextMenu.btn "" (DeleteProject |> confirmDanger "Delete project?" (text "This action is definitive!")) [ text "Delete project" ]
                     ]
                   ]
                     ++ B.cond (List.isEmpty otherProjects)

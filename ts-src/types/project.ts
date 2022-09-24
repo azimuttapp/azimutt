@@ -451,7 +451,7 @@ export const ProjectStats = z.object({
 }).strict()
 
 export interface ProjectInfoLocal extends ProjectStats {
-    organization: Organization
+    organization?: Organization
     id: ProjectId
     slug: ProjectSlug
     name: ProjectName
@@ -463,7 +463,7 @@ export interface ProjectInfoLocal extends ProjectStats {
 }
 
 export const ProjectInfoLocal = ProjectStats.extend({
-    organization: Organization,
+    organization: Organization.optional(),
     id: ProjectId,
     slug: ProjectSlug,
     name: ProjectName,

@@ -202,7 +202,7 @@ function createProject(msg: CreateProject): void {
 
 function updateProject(msg: UpdateProject): void {
     const json = buildProjectJson(msg.project)
-    if(!msg.project.organization) return app.toast(ToastLevel.enum.error, 'Expecting an organization to update project')
+    if (!msg.project.organization) return app.toast(ToastLevel.enum.error, 'Expecting an organization to update project')
     if (msg.project.storage == ProjectStorage.enum.local) {
         backend.updateProjectLocal(msg.project).then(res => {
             return storage.updateProject(res.id, json).then(_ => {
@@ -238,12 +238,12 @@ function deleteProject(msg: DeleteProject): void {
                     return Promise.reject(err)
                 })
             }
-        }).then(_ => app.dropProject(msg.project.id))
+        }).then(_ => msg.redirect ? window.location.href = msg.redirect : app.dropProject(msg.project.id))
     } else {
         storage.deleteProject(msg.project.id).catch(err => {
             app.toast(ToastLevel.enum.error, `Can't delete project locally: ${formatError(err)}`)
             return Promise.reject(err)
-        }).then(_ => app.dropProject(msg.project.id))
+        }).then(_ => msg.redirect ? window.location.href = msg.redirect : app.dropProject(msg.project.id))
     }
 }
 

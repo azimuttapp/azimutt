@@ -52,6 +52,7 @@ import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (
 import PagesComponents.Organization_.Project_.Views as Views
 import Ports exposing (JsMsg(..))
 import Random
+import Services.Backend as Backend
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
 import Services.Sort as Sort
@@ -84,6 +85,13 @@ update currentLayout env now urlOrganization organizations msg model =
 
         RenameProject name ->
             ( model |> mapErdM (mapProject (setName name)), Cmd.none )
+
+        DeleteProject ->
+            ( model
+            , model.erd
+                |> Maybe.map (\e -> Ports.deleteProject e.project ((e.project.organization |> Maybe.map .id) |> Backend.organizationUrl env |> Just))
+                |> Maybe.withDefault ("No project to delete!" |> Toasts.warning |> Toast |> T.send)
+            )
 
         ShowTable id hint ->
             model |> mapErdMCmd (showTable now id hint)

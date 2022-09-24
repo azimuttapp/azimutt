@@ -102,9 +102,9 @@ downloadFile filename content =
     messageToJs (DownloadFile filename content)
 
 
-deleteProject : ProjectInfo -> Cmd msg
-deleteProject project =
-    Cmd.batch [ messageToJs (DeleteProject project), track (Track.deleteProject project) ]
+deleteProject : ProjectInfo -> Maybe String -> Cmd msg
+deleteProject project redirect =
+    Cmd.batch [ messageToJs (DeleteProject project redirect), track (Track.deleteProject project) ]
 
 
 readLocalFile : String -> File -> Cmd msg
@@ -199,7 +199,7 @@ type ElmMsg
     | CreateProject OrganizationId ProjectStorage Project
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
-    | DeleteProject ProjectInfo
+    | DeleteProject ProjectInfo (Maybe String)
     | DownloadFile FileName FileContent
     | GetLocalFile String File
     | ObserveSizes (List HtmlId)
@@ -304,8 +304,8 @@ elmEncoder elm =
         MoveProjectTo project storage ->
             Encode.object [ ( "kind", "MoveProjectTo" |> Encode.string ), ( "project", project |> Project.encode ), ( "storage", storage |> ProjectStorage.encode ) ]
 
-        DeleteProject project ->
-            Encode.object [ ( "kind", "DeleteProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ) ]
+        DeleteProject project redirect ->
+            Encode.object [ ( "kind", "DeleteProject" |> Encode.string ), ( "project", project |> ProjectInfo.encode ), ( "redirect", redirect |> Encode.maybe Encode.string ) ]
 
         DownloadFile filename content ->
             Encode.object [ ( "kind", "DownloadFile" |> Encode.string ), ( "filename", filename |> Encode.string ), ( "content", content |> Encode.string ) ]

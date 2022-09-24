@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
@@ -149,6 +149,7 @@ type Msg
     | UpdateProject
     | MoveProjectTo ProjectStorage
     | RenameProject ProjectName
+    | DeleteProject
     | ShowTable TableId (Maybe PositionHint)
     | ShowTables (List TableId) (Maybe PositionHint)
     | ShowAllTables
@@ -307,6 +308,19 @@ confirm : String -> Html Msg -> Msg -> Msg
 confirm title content message =
     ConfirmOpen
         { color = Tw.blue
+        , icon = QuestionMarkCircle
+        , title = title
+        , message = content
+        , confirm = "Yes!"
+        , cancel = "Nope"
+        , onConfirm = T.send message
+        }
+
+
+confirmDanger : String -> Html Msg -> Msg -> Msg
+confirmDanger title content message =
+    ConfirmOpen
+        { color = Tw.red
         , icon = QuestionMarkCircle
         , title = title
         , message = content
