@@ -139,7 +139,6 @@ function getProject(msg: GetProject) {
             return Promise.reject('Invalid storage')
         }
     }, err => {
-        // FIXME: handle 401 (Unauthorized) errors, save orga in project to know if it's legacy or not, or change storage key?
         if (err.statusCode === 404) {
             if (msg.project === Uuid.zero) {
                 return storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p))
@@ -148,6 +147,8 @@ function getProject(msg: GetProject) {
                     + 'Your data will stay local, only statistics will be shared with Azimutt.')
                 return storage.getLegacyProject(msg.project).then(p => buildProjectLegacy(msg.project, p))
             }
+        } else if (err.statusCode === 401 && msg.project === Uuid.zero) {
+            return storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p))
         } else {
             return Promise.reject(err)
         }

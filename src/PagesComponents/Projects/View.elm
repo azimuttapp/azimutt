@@ -3,22 +3,21 @@ module PagesComponents.Projects.View exposing (viewProjects)
 import Components.Atoms.Icon as Icon
 import Components.Atoms.Link as Link
 import Components.Molecules.Alert as Alert
-import Components.Molecules.ItemList as ItemList
 import Components.Molecules.Modal as Modal
 import Components.Molecules.Tooltip as Tooltip
 import Conf
-import Dict
 import Gen.Route as Route
-import Html exposing (Html, a, button, div, h3, li, p, span, text, ul)
+import Html exposing (Html, a, button, div, h3, h4, li, p, span, text, ul)
 import Html.Attributes exposing (class, href, id, type_)
 import Html.Events exposing (onClick)
 import Html.Lazy as Lazy
 import Libs.Html exposing (bText)
-import Libs.Html.Attributes exposing (ariaHidden, css, role, track)
+import Libs.Html.Attributes exposing (css, role, track)
 import Libs.Maybe as Maybe
 import Libs.Models.DateTime exposing (formatDate)
+import Libs.Models.Env exposing (Env)
 import Libs.String as String
-import Libs.Tailwind as Tw exposing (TwClass, focus, focus_ring_500, hover, lg, md, sm)
+import Libs.Tailwind as Tw exposing (TwClass, hover, lg, md, sm)
 import Libs.Task as T
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project.ProjectStorage as ProjectStorage
@@ -43,96 +42,51 @@ viewProjects shared currentUrl urlOrganization model =
         DropdownToggle
         model
         [ text model.selectedMenu ]
-        [ viewContent currentUrl shared ]
+        [ viewContent shared ]
         [ viewModal model
         , Lazy.lazy2 Toasts.view Toast model.toasts
         ]
 
 
-viewContent : Url -> Shared.Model -> Html Msg
-viewContent currentUrl shared =
+viewContent : Shared.Model -> Html Msg
+viewContent shared =
     div [ css [ "p-8", sm [ "p-6" ] ] ]
-        [ viewProjectList shared
-        , if shared.legacyProjects /= Loading && shared.user == Nothing then
-            div [ class "mt-3" ]
-                [ Alert.withActions
-                    { color = Tw.blue
-                    , icon = Icon.InformationCircle
-                    , title = "You are not signed in"
-                    , actions =
-                        [ Link.secondary3 Tw.blue [ href (Backend.loginUrl shared.conf.env currentUrl) ] [ text "Sign in now" ]
-                        ]
-                    }
-                    [ text "Sign in to store your projects in your account, access them from anywhere and even share them with your team."
+        [ h3 [ css [ "text-lg font-medium" ] ] [ text "Legacy projects" ]
+        , div [ class "mt-3" ]
+            [ Alert.simple Tw.blue
+                Icon.InformationCircle
+                [ h4 [ class "font-medium text-blue-800" ] [ text "Azimutt has evolved!" ]
+                , div [ class "mt-2 text-sm text-blue-700" ]
+                    [ p [] [ text "You can now upload projects to our server and share it with other people!" ]
+                    , p [] [ text "Of course ", bText "we continue to support local projects", text " but they need to be referenced in your account." ]
+                    , p [] [ text "This allows us to know the encoding version still used and warn you when we stop supporting old ones." ]
+                    , p [ class "mt-2" ] [ bText "All you have to do is open your projects and save them." ]
                     ]
                 ]
-
-          else
-            div [] []
-        ]
-
-
-viewProjectList : Shared.Model -> Html Msg
-viewProjectList shared =
-    div []
-        [ h3 [ css [ "text-lg font-medium" ] ] [ text "Projects" ]
-        , if not shared.projectsLoaded then
-            div [ css [ "mt-6" ] ] [ projectList [ viewProjectPlaceholder ] ]
-
-          else if List.isEmpty shared.projects then
-            viewNoProjects
-
-          else
-            div [ css [ "mt-6" ] ] [ projectList ((shared.projects |> List.map (viewProjectCard shared.zone)) ++ [ viewNewProject ]) ]
+            ]
         , case shared.legacyProjects of
             Loading ->
-                div [] []
+                div [ css [ "mt-6" ] ] [ projectList [ viewProjectPlaceholder ] ]
 
             Loaded projects ->
                 if List.isEmpty projects then
-                    div [] []
+                    viewNoProjectsNew shared.conf.env
 
                 else
-                    div []
-                        [ h3 [ css [ "mt-6 text-lg font-medium" ] ] [ text "Legacy projects" ]
-                        , div [ css [ "mt-6" ] ] [ projectList (projects |> List.map (viewProjectCard shared.zone)) ]
-                        ]
+                    div [ css [ "mt-6" ] ] [ projectList (projects |> List.map (viewProjectCard shared.zone)) ]
         ]
 
 
-viewNoProjects : Html Msg
-viewNoProjects =
-    div []
-        [ p [ css [ "mt-1 text-sm text-gray-500" ] ]
-            [ text "You haven’t created any project yet. Import your own schema." ]
-        , viewFirstProject
-        , div [ css [ "mt-6 text-sm font-medium text-primary-600" ] ]
-            [ text "Or explore a sample one"
-            , span [ ariaHidden True ] [ text " →" ]
+viewNoProjectsNew : Env -> Html msg
+viewNoProjectsNew env =
+    div [ class "mx-auto max-w-7xl py-12 px-4 sm:px-6 md:py-16 lg:px-8 lg:py-20" ]
+        [ h4 [ class "text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl" ]
+            [ span [ class "block" ] [ text "No legacy projects!" ]
+            , span [ class "block text-indigo-600" ] [ text "Well done!" ]
             ]
-        , ItemList.withIcons
-            (Conf.schemaSamples
-                |> Dict.values
-                |> List.sortBy .tables
-                |> List.map
-                    (\s ->
-                        { color = s.color
-                        , icon = s.icon
-                        , title = s.name ++ " (" ++ (s.tables |> String.fromInt) ++ " tables)"
-                        , description = s.description
-                        , active = True
-                        , onClick = NavigateTo (Route.toHref Route.New ++ "?sample=" ++ s.key)
-                        }
-                    )
-            )
-        ]
-
-
-viewFirstProject : Html msg
-viewFirstProject =
-    a [ href (Route.toHref Route.New), css [ "mt-6 relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-400", hover [ "border-gray-400" ], focus [ "outline-none ring-2 ring-offset-2 ring-primary-500" ] ] ]
-        [ Icon.outline2x Icon.DocumentAdd "mx-auto"
-        , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
+        , div [ class "mt-8 flex" ]
+            [ div [ class "inline-flex" ] [ Link.primary4 Tw.primary [ href (Backend.organizationUrl env Nothing) ] [ text "Back to dashboard!" ] ]
+            ]
         ]
 
 
@@ -208,16 +162,6 @@ confirmDeleteProject project =
         , cancel = "Cancel"
         , onConfirm = T.send (DeleteProject project)
         }
-
-
-viewNewProject : Html msg
-viewNewProject =
-    li [ css [ "col-span-1" ] ]
-        [ a [ href (Route.toHref Route.New), css [ "relative block w-full border-2 border-gray-200 border-dashed rounded-lg py-12 text-center text-gray-200", hover [ "border-gray-400 text-gray-400" ], focus_ring_500 Tw.primary ] ]
-            [ Icon.outline2x Icon.DocumentAdd "mx-auto"
-            , span [ css [ "mt-2 block text-sm font-medium" ] ] [ text "Create a new project" ]
-            ]
-        ]
 
 
 viewModal : Model -> Html Msg

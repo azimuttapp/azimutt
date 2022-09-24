@@ -122,10 +122,10 @@ update _ msg model =
             ( { model | now = time }, Cmd.none )
 
         GotUser result ->
-            ( result |> Result.fold (\_ -> model) (\user -> { model | user = user, userLoaded = True }), Cmd.none )
+            ( result |> Result.fold (\_ -> { model | userLoaded = True }) (\user -> { model | user = user, userLoaded = True }), Cmd.none )
 
         GotBackendProjects result ->
-            ( result |> Result.fold (\_ -> model) (\( orgas, projects ) -> { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }), Cmd.none )
+            ( result |> Result.fold (\_ -> { model | projectsLoaded = True }) (\( orgas, projects ) -> { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }), Cmd.none )
 
         JsMessage (Ports.GotLegacyProjects ( _, projects )) ->
             ( { model | legacyProjects = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )

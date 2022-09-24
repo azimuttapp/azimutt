@@ -1,6 +1,5 @@
 module Pages.Projects exposing (Model, Msg, page)
 
-import Browser.Navigation as Navigation
 import Components.Molecules.Dropdown as Dropdown
 import Conf
 import Dict
@@ -28,7 +27,7 @@ page : Shared.Model -> Request.With Params -> Page.With Model Msg
 page shared req =
     Page.element
         { init = init
-        , update = update req
+        , update = update
         , view = view shared req
         , subscriptions = subscriptions
         }
@@ -53,7 +52,7 @@ title =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { selectedMenu = "Dashboard"
+    ( { selectedMenu = ""
       , mobileMenuOpen = False
       , openedDropdown = ""
       , toasts = Toasts.init
@@ -78,8 +77,8 @@ init =
 -- UPDATE
 
 
-update : Request.With Params -> Msg -> Model -> ( Model, Cmd Msg )
-update req msg model =
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -104,9 +103,6 @@ update req msg model =
 
         ModalClose message ->
             ( { model | modalOpened = False }, T.sendAfter Conf.ui.closeDuration message )
-
-        NavigateTo url ->
-            ( model, Navigation.pushUrl req.key url )
 
         JsMessage message ->
             model |> handleJsMessage message

@@ -33,6 +33,5 @@ type Msg
     | ConfirmAnswer Bool (Cmd Msg)
     | ModalOpen
     | ModalClose Msg
-    | NavigateTo String
     | JsMessage JsMsg
     | Noop String
