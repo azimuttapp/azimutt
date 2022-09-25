@@ -501,10 +501,25 @@ export function migrateLegacyProject(p: any | undefined): any {
     if (!p) return p
     if (p.createdAt) { // if legacy, remove storage
         const {storage, ...res} = p
-        return res
+        return {...res, sources: res.sources.map(migrateLegacySource)}
     } else { // if not legacy, remove id
         const {id, ...res} = p
         return res
+    }
+}
+
+export function migrateLegacySource(s: any) {
+    if (s.kind.kind === 'LocalFile') {
+        s.kind.kind = 'SqlLocalFile'
+        return s
+    } else if (s.kind.kind === 'RemoteFile') {
+        s.kind.kind = 'SqlRemoteFile'
+        return s
+    } else if (s.kind.kind === 'UserDefined') {
+        s.kind.kind = 'AmlEditor'
+        return s
+    } else {
+        return s
     }
 }
 

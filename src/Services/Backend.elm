@@ -39,18 +39,18 @@ loginUrl : Env -> Url -> String
 loginUrl env currentUrl =
     let
         ( url, redirect ) =
-            ( "/auth/github" |> withLinkHost env, Url.asString currentUrl )
+            ( "/login" |> withLinkHost env, currentUrl |> withOwnHost env )
     in
     if redirect == "" then
         url
 
     else
-        url ++ "?redirect=" ++ Url.percentEncode redirect
+        url ++ "/redirect?url=" ++ Url.percentEncode redirect
 
 
 logoutUrl : Env -> String
 logoutUrl env =
-    "/users/log_out" |> withLinkHost env
+    "/logout" |> withLinkHost env
 
 
 organizationUrl : Env -> Maybe OrganizationId -> String
@@ -60,14 +60,28 @@ organizationUrl env organization =
 
 withLinkHost : Env -> String -> String
 withLinkHost env path =
-    if env == Env.Dev then
-        "http://localhost:4000" ++ path
+    case env of
+        Env.Dev ->
+            "http://localhost:4000" ++ path
 
-    else if env == Env.Staging then
-        "https://azimutt.dev" ++ path
+        Env.Staging ->
+            "https://azimutt.dev" ++ path
 
-    else
-        "https://azimutt.app" ++ path
+        Env.Prod ->
+            "https://azimutt.app" ++ path
+
+
+withOwnHost : Env -> Url -> String
+withOwnHost env url =
+    case env of
+        Env.Dev ->
+            Url.toString url
+
+        Env.Staging ->
+            Url.asString url
+
+        Env.Prod ->
+            Url.asString url
 
 
 getCurrentUser : Env -> (Result Error (Maybe User) -> msg) -> Cmd msg

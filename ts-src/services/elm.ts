@@ -43,7 +43,7 @@ export class ElmApp {
             try {
                 const valid: ElmMsg = Zod.validate(msg, ElmMsg, `ElmMsg[${msg.kind}]`)
                 // setTimeout: a ugly hack to wait for Elm to render the model changes before running the commands :(
-                // FIXME: use requestAnimationFrame instead!
+                // TODO: use requestAnimationFrame instead!
                 setTimeout(() => {
                     const calls = this.callbacks[valid.kind]
                     if (calls.length > 0) {

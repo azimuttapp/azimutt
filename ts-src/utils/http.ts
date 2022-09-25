@@ -1,5 +1,6 @@
 import {ZodType} from "zod/lib/types";
 import * as Zod from "./zod";
+import * as Json from "./json";
 
 export const getJson = <Response>(url: string, zod: ZodType<Response>, label: string): Promise<Response> => fetch(url, {credentials: 'include'}).then(buildJsonResponse(zod, label))
 export const postJson = <Body, Response>(url: string, body: Body, zod: ZodType<Response>, label: string): Promise<Response> => fetchJson('POST', url, body, zod, label)
@@ -29,6 +30,6 @@ function fetchMultipart<Response>(method: Method, url: string, body: FormData, z
 }
 
 const buildJsonResponse = <T>(zod: ZodType<T>, label: string) => (res: Response): Promise<T> =>
-    res.ok ? res.json().then(v => Zod.validate(v, zod, label)) : res.json().then(err => Promise.reject(err))
+    res.ok ? res.text().then(v => Zod.validate(Json.parse(v), zod, label)) : res.text().then(err => Promise.reject(Json.parse(err)))
 const buildNoContentResponse = (res: Response): Promise<void> =>
-    res.ok ? Promise.resolve() : res.json().then(err => Promise.reject(err))
+    res.ok ? Promise.resolve() : res.text().then(err => Promise.reject(Json.parse(err)))

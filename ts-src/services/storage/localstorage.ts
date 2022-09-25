@@ -4,6 +4,7 @@ import {Logger} from "../logger";
 import {formatError} from "../../utils/error";
 import {successes} from "../../utils/promise";
 import * as Zod from "../../utils/zod";
+import * as Json from "../../utils/json";
 
 export class LocalStorageStorage implements StorageApi {
     static init(logger: Logger): Promise<LocalStorageStorage> {
@@ -60,7 +61,7 @@ export class LocalStorageStorage implements StorageApi {
             return Promise.reject(`Nothing in localStorage ${JSON.stringify(key)}`)
         }
         try {
-            return Promise.resolve(Zod.validate(migrateLegacyProject(JSON.parse(value)), ProjectStored, 'ProjectStored'))
+            return Promise.resolve(Zod.validate(migrateLegacyProject(Json.parse(value)), ProjectStored, 'ProjectStored'))
         } catch (e) {
             return Promise.reject(`Invalid JSON in localStorage ${JSON.stringify(key)}: ${formatError(e)}`)
         }

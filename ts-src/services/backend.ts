@@ -23,6 +23,7 @@ import {Env} from "../utils/env";
 import * as Http from "../utils/http";
 import {z} from "zod";
 import * as Zod from "../utils/zod";
+import * as Json from "../utils/json";
 
 
 export class Backend {
@@ -245,7 +246,7 @@ function toProjectInfoWithContent(p: ProjectWithContentResponse): ProjectInfoWit
 
 function decodeContent(p: ProjectWithContentResponse): ProjectJson {
     if (typeof p.content === 'string') {
-        return Zod.validate(JSON.parse(p.content), ProjectJson, 'ProjectJson')
+        return Zod.validate(Json.parse(p.content), ProjectJson, 'ProjectJson')
     } else {
         throw 'Missing content in backend response!'
     }
