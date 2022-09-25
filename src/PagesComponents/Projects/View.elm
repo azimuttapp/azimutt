@@ -15,7 +15,6 @@ import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (css, role, track)
 import Libs.Maybe as Maybe
 import Libs.Models.DateTime exposing (formatDate)
-import Libs.Models.Env exposing (Env)
 import Libs.String as String
 import Libs.Tailwind as Tw exposing (TwClass, hover, lg, md, sm)
 import Libs.Task as T
@@ -70,22 +69,22 @@ viewContent shared =
 
             Loaded projects ->
                 if List.isEmpty projects then
-                    viewNoProjectsNew shared.conf.env
+                    viewNoProjectsNew
 
                 else
                     div [ css [ "mt-6" ] ] [ projectList (projects |> List.map (viewProjectCard shared.zone)) ]
         ]
 
 
-viewNoProjectsNew : Env -> Html msg
-viewNoProjectsNew env =
+viewNoProjectsNew : Html msg
+viewNoProjectsNew =
     div [ class "mx-auto max-w-7xl py-12 px-4 sm:px-6 md:py-16 lg:px-8 lg:py-20" ]
         [ h4 [ class "text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl" ]
             [ span [ class "block" ] [ text "No legacy projects!" ]
             , span [ class "block text-indigo-600" ] [ text "Well done!" ]
             ]
         , div [ class "mt-8 flex" ]
-            [ div [ class "inline-flex" ] [ Link.primary4 Tw.primary [ href (Backend.organizationUrl env Nothing) ] [ text "Back to dashboard!" ] ]
+            [ div [ class "inline-flex" ] [ Link.primary4 Tw.primary [ href (Backend.organizationUrl Nothing) ] [ text "Back to dashboard!" ] ]
             ]
         ]
 

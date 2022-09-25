@@ -89,7 +89,7 @@ update currentLayout env now urlOrganization organizations msg model =
         DeleteProject ->
             ( model
             , model.erd
-                |> Maybe.map (\e -> Ports.deleteProject e.project ((e.project.organization |> Maybe.map .id) |> Backend.organizationUrl env |> Just))
+                |> Maybe.map (\e -> Ports.deleteProject e.project ((e.project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just))
                 |> Maybe.withDefault ("No project to delete!" |> Toasts.warning |> Toast |> T.send)
             )
 

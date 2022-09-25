@@ -17,7 +17,6 @@ import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
@@ -46,7 +45,7 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
            else
             div [] []
          , if eConf.projectManagement then
-            Lazy.lazy6 viewProjectsDropdown gConf.platform gConf.env projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy5 viewProjectsDropdown gConf.platform projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -55,8 +54,8 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
         )
 
 
-viewProjectsDropdown : Platform -> Env -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown platform env projects project htmlId openedDropdown =
+viewProjectsDropdown : Platform -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown platform projects project htmlId openedDropdown =
     let
         otherProjects : List ProjectInfo
         otherProjects =
@@ -88,7 +87,7 @@ viewProjectsDropdown platform env projects project htmlId openedDropdown =
                                         ]
                                 )
                         ]
-                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Backend.organizationUrl env, text = "Back to dashboard" } ] ]
+                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Backend.organizationUrl, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)

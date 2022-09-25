@@ -175,14 +175,14 @@ viewNotFound env currentUrl urlOrganization user conf =
     NotFound.simple
         { brand =
             { img = { src = "/logo.png", alt = "Azimutt" }
-            , link = { url = Backend.homeUrl env, text = "Azimutt" }
+            , link = { url = Backend.homeUrl, text = "Azimutt" }
             }
         , header = "404 error"
         , title = "Project not found."
         , message = "Sorry, we couldn't find the project you’re looking for."
         , links =
             (if conf.projectManagement then
-                [ { url = urlOrganization |> Backend.organizationUrl env, text = "Back to dashboard" } ]
+                [ { url = urlOrganization |> Backend.organizationUrl, text = "Back to dashboard" } ]
 
              else
                 [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]

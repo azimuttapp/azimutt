@@ -1,12 +1,14 @@
-module Main exposing (main)
+module Main exposing (Model, Msg, main)
 
 import Browser
 import Browser.Navigation as Nav exposing (Key)
 import Effect
+import Either
 import Gen.Model
 import Gen.Pages as Pages
 import Gen.Route as Route
 import Request
+import Services.Backend as Backend
 import Shared
 import Url exposing (Url)
 import View
@@ -68,14 +70,10 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ClickedLink (Browser.Internal url) ->
-            ( model
-            , Nav.pushUrl model.key (Url.toString url)
-            )
+            ( model, url |> Backend.internal model.shared.conf.env |> Either.unpack Nav.load (Url.toString >> Nav.pushUrl model.key) )
 
         ClickedLink (Browser.External url) ->
-            ( model
-            , Nav.load url
-            )
+            ( model, Nav.load url )
 
         ChangedUrl url ->
             if url.path /= model.url.path then
@@ -83,9 +81,7 @@ update msg model =
                     ( page, effect ) =
                         Pages.init (Route.fromUrl url) model.shared url model.key
                 in
-                ( { model | url = url, page = page }
-                , Effect.toCmd ( Shared, Page ) effect
-                )
+                ( { model | url = url, page = page }, Effect.toCmd ( Shared, Page ) effect )
 
             else
                 ( { model | url = url }, Cmd.none )
@@ -107,18 +103,14 @@ update msg model =
                 )
 
             else
-                ( { model | shared = shared }
-                , Cmd.map Shared sharedCmd
-                )
+                ( { model | shared = shared }, Cmd.map Shared sharedCmd )
 
         Page pageMsg ->
             let
                 ( page, effect ) =
                     Pages.update pageMsg model.page model.shared model.url model.key
             in
-            ( { model | page = page }
-            , Effect.toCmd ( Shared, Page ) effect
-            )
+            ( { model | page = page }, Effect.toCmd ( Shared, Page ) effect )
 
 
 

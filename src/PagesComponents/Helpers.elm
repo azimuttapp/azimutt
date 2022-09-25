@@ -42,9 +42,9 @@ appShell env currentUrl urlOrganization user onNavigationClick onProfileClick mo
     in
     [ div [ css [ "pb-32 bg-primary-600" ] ]
         [ Navbar.admin
-            { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = urlOrganization |> Backend.organizationUrl env, text = "Azimutt" } }
+            { brand = { img = { src = "/logo.png", alt = "Azimutt" }, link = { url = urlOrganization |> Backend.organizationUrl, text = "Azimutt" } }
             , navigation =
-                { links = [ { url = urlOrganization |> Backend.organizationUrl env, text = "Dashboard" } ]
+                { links = [ { url = urlOrganization |> Backend.organizationUrl, text = "Dashboard" } ]
                 , onClick = onNavigationClick
                 }
             , search = Nothing
@@ -82,7 +82,7 @@ viewProfileIcon env currentUrl maybeUser profileDropdown openedDropdown toggle =
                         div []
                             [ -- ContextMenu.link { url = Backend.organizationUrl env, text = "Your profile" }
                               --, ContextMenu.link { url = "#", text = "Settings" }
-                              ContextMenu.link { url = Backend.logoutUrl env, text = "Logout" }
+                              ContextMenu.link { url = Backend.logoutUrl, text = "Logout" }
                             ]
                     )
             )

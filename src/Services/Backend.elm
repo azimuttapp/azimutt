@@ -1,5 +1,6 @@
-module Services.Backend exposing (Error, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, loginUrl, logoutUrl, organizationUrl)
+module Services.Backend exposing (Error, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, internal, loginUrl, logoutUrl, organizationUrl)
 
+import Either exposing (Either(..))
 import Http exposing (Error(..))
 import Json.Decode as Decode
 import Json.Encode as Encode
@@ -30,16 +31,16 @@ errorToString (Error err) =
     err
 
 
-homeUrl : Env -> String
-homeUrl env =
-    "/" |> withLinkHost env
+homeUrl : String
+homeUrl =
+    "/"
 
 
 loginUrl : Env -> Url -> String
 loginUrl env currentUrl =
     let
         ( url, redirect ) =
-            ( "/login" |> withLinkHost env, currentUrl |> withOwnHost env )
+            ( "/login", currentUrl |> withOwnHost env )
     in
     if redirect == "" then
         url
@@ -48,18 +49,39 @@ loginUrl env currentUrl =
         url ++ "/redirect?url=" ++ Url.percentEncode redirect
 
 
-logoutUrl : Env -> String
-logoutUrl env =
-    "/logout" |> withLinkHost env
+logoutUrl : String
+logoutUrl =
+    "/logout"
 
 
-organizationUrl : Env -> Maybe OrganizationId -> String
-organizationUrl env organization =
-    organization |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home" |> withLinkHost env
+organizationUrl : Maybe OrganizationId -> String
+organizationUrl organization =
+    organization |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home"
+
+
+internal : Env -> Url -> Either String Url
+internal env url =
+    -- if internal: Right Url, if external: Left String
+    if isExternal url then
+        url |> Url.asString |> withLinkHost env |> Left
+
+    else
+        url |> Right
+
+
+isExternal : Url -> Bool
+isExternal url =
+    -- identify urls that are not inside Elm app and needs a page load (Elixir backend pages)
+    (url.path == "/")
+        || (url.path == "/home")
+        || (url.path |> String.startsWith "/login")
+        || (url.path == "/logout")
+        || (url.path |> String.startsWith "/organizations/")
 
 
 withLinkHost : Env -> String -> String
 withLinkHost env path =
+    -- FIXME: remove azimutt.dev & azimutt.app prefixes? (same domain)
     case env of
         Env.Dev ->
             "http://localhost:4000" ++ path
@@ -117,6 +139,7 @@ databaseSchemaBody url =
 
 withXhrHost : Env -> String -> String
 withXhrHost env path =
+    -- FIXME: to remove? (not in subdomain anymore)
     if env == Env.Dev then
         path
 

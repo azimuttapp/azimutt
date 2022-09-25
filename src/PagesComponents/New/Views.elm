@@ -61,7 +61,7 @@ viewNewProject shared currentUrl urlOrganization model =
         (\link -> SelectMenu link.text)
         DropdownToggle
         model
-        [ a [ href (urlOrganization |> Backend.organizationUrl shared.conf.env) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
+        [ a [ href (urlOrganization |> Backend.organizationUrl) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
             model
