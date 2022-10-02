@@ -46,7 +46,7 @@
     "ts:build": "cd frontend && npm run ts:build",
     "tailwind:dev": "cd frontend && npm run tailwind:dev",
     "tailwind:build": "cd frontend && npm run tailwind:build",
-    "clever": "npm run elm:setup && cd backend && mix deps.get && mix phx.server"
+    "clever": "npm run elm:setup && cd backend && mix deps.get && mix phx.digest && mix phx.server"
   },
   "devDependencies": {
     "concurrently": "^7.4.0"
