@@ -44,20 +44,27 @@ For local development you will need to set up the environment:
 - install [Phoenix](https://hexdocs.pm/phoenix/installation.html) and [Elixir](https://elixir-lang.org/install.html) if needed
 - install [PostgreSQL](https://www.postgresql.org/download) with a user `postgres` and password `postgres`
 - install [pre-commit](https://pre-commit.com) and run `pre-commit install` before committing
-
 - run `npm run setup` to install dependencies and configure your environment
-- run `npm run ex:dev` to launch backend server
-- run `npm run elm:dev` to launch frontend compilation
 
-⚠️ to launch the app you will need a few environment variables: `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
+Then you can choose to launch either:
 
-⚠️ Please see [Setup Stripe](#setup-stripe).
+- `npm run ex:dev` for Elixir server (frontend will still be available through compiled files)
+- `npm run elm:dev` for Elm/TypeScript frontend (useful when do develop on front)
+- `npm run dev` for both with live reload
 
 Now you can visit :
 
 - [`localhost:4000`](http://localhost:4000) for the main app
 - [`localhost:4000/api/v1/swagger`](http://localhost:4000/api/swagger) for the Swagger documentation
 - [`localhost:4000/storybook`](http://localhost:4000/storybook) for the Storybook
+
+⚠️ to launch the app you will need a few environment variables: `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SIGNING_SECRET`, `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
+
+⚠️ Please see [Setup Stripe](#setup-stripe).
+
+### Development commands
+
+- `npm run elm:book` to launch the Elm design system
 
 ### Setup Stripe
 
