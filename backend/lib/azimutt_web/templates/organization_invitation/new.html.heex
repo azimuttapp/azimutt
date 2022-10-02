@@ -1,0 +1,5 @@
+<h1>New Organization invitation</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.organization_invitation_path(@conn, :create, @organization_id)) %>
+
+<span><%= link "Back", to: Routes.organization_invitation_path(@conn, :index, @organization_id) %></span>

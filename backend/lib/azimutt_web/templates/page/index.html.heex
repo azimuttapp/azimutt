@@ -1,0 +1,262 @@
+<LandingPage.hero_section>
+    <:title>
+        Explore your <!-- -->
+        <span class="relative text-blue-600 whitespace-nowrap">
+            <svg aria-hidden="true" viewBox="0 0 418 42"
+                 class="absolute top-2/3 left-0 h-[0.58em] w-full fill-blue-300/70" preserveAspectRatio="none">
+                <path d="M203.371.916c-26.013-2.078-76.686 1.963-124.73 9.946L67.3 12.749C35.421 18.062 18.2 21.766 6.004 25.934 1.244 27.561.828 27.778.874 28.61c.07 1.214.828 1.121 9.595-1.176 9.072-2.377 17.15-3.92 39.246-7.496C123.565 7.986 157.869 4.492 195.942 5.046c7.461.108 19.25 1.696 19.17 2.582-.107 1.183-7.874 4.31-25.75 10.366-21.992 7.45-35.43 12.534-36.701 13.884-2.173 2.308-.202 4.407 4.442 4.734 2.654.187 3.263.157 15.593-.78 35.401-2.686 57.944-3.488 88.365-3.143 46.327.526 75.721 2.23 130.788 7.584 19.787 1.924 20.814 1.98 24.557 1.332l.066-.011c1.201-.203 1.53-1.825.399-2.335-2.911-1.31-4.893-1.604-22.048-3.261-57.509-5.556-87.871-7.36-132.059-7.842-23.239-.254-33.617-.116-50.627.674-11.629.54-42.371 2.494-46.696 2.967-2.359.259 8.133-3.625 26.504-9.81 23.239-7.825 27.934-10.149 28.304-14.005.417-4.348-3.529-6-16.878-7.066Z"></path>
+            </svg>
+            <span class="relative">database schema</span>
+        </span>
+        <!-- -->easily.
+    </:title>
+    <:description>
+        Never miss anomalies in your schema. Stay updated on your database. Share views and collaborate with your team.
+    </:description>
+    <:action_buttons>
+            <%= if @current_user do %>
+                <%= link "Explore my schema", class: "relative cursor-pointer inline-flex items-center space-x-2 text-center text-white font-regular transition ease-out duration-200 rounded outline-none transition-all outline-0 focus-visible:outline-4 focus-visible:outline-offset-1  bg-gray-800 hover:bg-gray-900 text-lo-contrast  focus-visible:outline-brand-600  shadow-sm text-sm px-4 py-2", to: Routes.user_dashboard_path(@conn, :index) %>
+            <% else %>
+                <div class="flex items-center space-x-2 sm:justify-center">
+                    <a href={ Routes.user_oauth_path(@conn, :request, "github")} class="relative inline-flex items-center px-4 py-2 space-x-2 text-sm text-center text-white transition-all transition duration-200 ease-out bg-gray-800 rounded shadow-sm outline-none cursor-pointer font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 hover:bg-gray-900 text-lo-contrast focus-visible:outline-brand-600" >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="sbui-icon ">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                        <span class="truncate">Sign In with GitHub</span>
+                    </a>
+                    <a href={Azimutt.config(:github_url)} class="relative inline-flex items-center px-4 py-2 space-x-2 text-sm text-center transition-all transition duration-200 ease-out rounded shadow-sm outline-none cursor-pointer  font-regular outline-0 focus-visible:outline-4 focus-visible:outline-offset-1 text-scale-1200 bg-scale-100 hover:bg-scale-300 bordershadow-scale-600 hover:bordershadow-scale-700 focus-visible:outline-brand-600">
+                        <span class="truncate">Docs</span>
+                    </a>
+                </div>
+            <% end %>
+    </:action_buttons>
+
+    <:cloud_logo><img src={Routes.static_path(@conn, "/images/fundimmo_logo.png")} alt="Fundimmo logo"/></:cloud_logo>
+    <:cloud_logo><img src={Routes.static_path(@conn, "/images/uncover_logo.png")} alt="Uncover logo"/></:cloud_logo>
+    <:cloud_logo><img src={Routes.static_path(@conn, "/images/locomote_logo.png")} alt="Locomote logo"/></:cloud_logo>
+    <:cloud_logo><img src={Routes.static_path(@conn, "/images/swile_logo.png")} alt="Swile logo"/></:cloud_logo>
+    <:cloud_logo><img src={Routes.static_path(@conn, "/images/neocase_logo.png")} alt="Neocase logo"/></:cloud_logo>
+    <:cloud_logo><img src={Routes.static_path(@conn, "/images/manomano_logo.png")} alt="Mano Mano logo"/></:cloud_logo>
+</LandingPage.hero_section>
+
+<section id="pricing" aria-label="Pricing" class="bg-slate-900 py-20 sm:py-32">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="md:text-center">
+            <h2 class="font-display text-3xl tracking-tight text-white sm:text-4xl">
+                <span class="relative whitespace-nowrap">
+                    <svg aria-hidden="true" viewBox="0 0 281 40" class="absolute top-1/2 left-0 h-[1em] w-full fill-blue-400" preserveAspectRatio="none">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M240.172 22.994c-8.007 1.246-15.477 2.23-31.26 4.114-18.506 2.21-26.323 2.977-34.487 3.386-2.971.149-3.727.324-6.566 1.523-15.124 6.388-43.775 9.404-69.425 7.31-26.207-2.14-50.986-7.103-78-15.624C10.912 20.7.988 16.143.734 14.657c-.066-.381.043-.344 1.324.456 10.423 6.506 49.649 16.322 77.8 19.468 23.708 2.65 38.249 2.95 55.821 1.156 9.407-.962 24.451-3.773 25.101-4.692.074-.104.053-.155-.058-.135-1.062.195-13.863-.271-18.848-.687-16.681-1.389-28.722-4.345-38.142-9.364-15.294-8.15-7.298-19.232 14.802-20.514 16.095-.934 32.793 1.517 47.423 6.96 13.524 5.033 17.942 12.326 11.463 18.922l-.859.874.697-.006c2.681-.026 15.304-1.302 29.208-2.953 25.845-3.07 35.659-4.519 54.027-7.978 9.863-1.858 11.021-2.048 13.055-2.145a61.901 61.901 0 0 0 4.506-.417c1.891-.259 2.151-.267 1.543-.047-.402.145-2.33.913-4.285 1.707-4.635 1.882-5.202 2.07-8.736 2.903-3.414.805-19.773 3.797-26.404 4.829Zm40.321-9.93c.1-.066.231-.085.29-.041.059.043-.024.096-.183.119-.177.024-.219-.007-.107-.079ZM172.299 26.22c9.364-6.058 5.161-12.039-12.304-17.51-11.656-3.653-23.145-5.47-35.243-5.576-22.552-.198-33.577 7.462-21.321 14.814 12.012 7.205 32.994 10.557 61.531 9.831 4.563-.116 5.372-.288 7.337-1.559Z"></path>
+                    </svg>
+                    <span class="relative">Simple pricing,</span>
+                </span> <!-- -->for everyone.
+            </h2>
+            <p class="mt-4 text-lg text-slate-400">
+                Start exploring for free, collaborate with a team, and analyse your database !
+            </p>
+        </div>
+        <div class="-mx-4 mt-16 grid max-w-2xl grid-cols-1 gap-y-10 sm:mx-auto lg:-mx-8 lg:max-w-none lg:grid-cols-3 xl:mx-0 xl:gap-x-8">
+            <section class="flex flex-col rounded-3xl px-6 sm:px-8 lg:py-8">
+                <h3 class="mt-5 font-display text-lg text-white">Free</h3>
+                <p class="mt-2 text-base text-slate-400">The basics for individuals and organizations for free
+                </p>
+                <p class="order-first font-display text-5xl font-light tracking-tight text-white">Free</p>
+                <ul role="list" class="order-last mt-10 flex flex-col gap-y-3 text-sm text-slate-200">
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Unlimited️ Tables</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Unlimited️ Projects</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Up to 3 peoples</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Up to 3 layouts per project</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Limited database analyse</span>
+                    </li>
+                </ul>
+                <a class="group inline-flex ring-1 items-center justify-center rounded-full py-2 px-4 text-sm focus:outline-none ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white mt-8"
+                   aria-label="Get started with the Starter plan for $9" href="/register">Get started
+                </a>
+            </section>
+            <section class="flex flex-col rounded-3xl px-6 sm:px-8 order-first bg-blue-600 py-8 lg:order-none">
+                <h3 class="mt-5 font-display text-lg text-white">Pro</h3>
+                <p class="mt-2 text-base text-white">Advanced collaboration for individuals and organizations</p>
+                <p class="order-first font-display text-5xl font-light tracking-tight text-white">$13 <span class="text-sm text-gray-50 ">per user/month</span></p>
+                <ul role="list" class="order-last mt-10 flex flex-col gap-y-3 text-sm text-white">
+                    <li class="flex">
+                         <span class="position-absolute top-0 left-0 fill-current stroke-current text-white">
+                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="text-white mr-2">
+                                <path fill-rule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z"></path>
+                            </svg>
+                         </span>
+                        <span class="ml-4">Everything included in Free, plus...</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-white">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Unlimited️ Layouts</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-white">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Database access</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-white">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Advanced schema analysis</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-white">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Advanced layout customization</span>
+                    </li>
+                </ul>
+                <a class="group inline-flex items-center justify-center rounded-full py-2 px-4 text-sm font-semibold focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 bg-white text-slate-900 hover:bg-blue-50 active:bg-blue-200 active:text-slate-600 focus-visible:outline-white mt-8"
+                   aria-label="Get started with the Small business plan for $15" href="/register">Get started</a>
+            </section>
+            <section class="flex flex-col rounded-3xl px-6 sm:px-8 lg:py-8"><h3
+                    class="mt-5 font-display text-lg text-white">Enterprise</h3>
+                <p class="mt-2 text-base text-slate-400">Security, compliance, and flexible integration</p>
+                <p class="order-first font-display text-5xl font-light tracking-tight text-white">Contact US</p>
+                <ul role="list" class="order-last mt-10 flex flex-col gap-y-3 text-sm text-slate-200">
+                    <li class="flex">
+                        <li class="flex">
+                         <span class="position-absolute top-0 left-0 fill-current stroke-current text-slate-400">
+                            <svg aria-hidden="true" height="16" viewBox="0 0 16 16" version="1.1" width="16" data-view-component="true" class="text-white mr-2">
+                                <path fill-rule="evenodd" d="M7.78 12.53a.75.75 0 01-1.06 0L2.47 8.28a.75.75 0 010-1.06l4.25-4.25a.75.75 0 011.06 1.06L4.81 7h7.44a.75.75 0 010 1.5H4.81l2.97 2.97a.75.75 0 010 1.06z"></path>
+                            </svg>
+                         </span>
+                            <span class="ml-4">Everything included in Pro, plus...</span>
+                        </li>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">SSO</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">End to end encryption</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Advanced roles</span>
+                    </li>
+                    <li class="flex">
+                        <svg aria-hidden="true" class="h-6 w-6 flex-none fill-current stroke-current text-slate-400">
+                            <path d="M9.307 12.248a.75.75 0 1 0-1.114 1.004l1.114-1.004ZM11 15.25l-.557.502a.75.75 0 0 0 1.15-.043L11 15.25Zm4.844-5.041a.75.75 0 0 0-1.188-.918l1.188.918Zm-7.651 3.043 2.25 2.5 1.114-1.004-2.25-2.5-1.114 1.004Zm3.4 2.457 4.25-5.5-1.187-.918-4.25 5.5 1.188.918Z"
+                                  stroke-width="0"></path>
+                            <circle cx="12" cy="12" r="8.25" fill="none" stroke-width="1.5" stroke-linecap="round"
+                                    stroke-linejoin="round"></circle>
+                        </svg>
+                        <span class="ml-4">Audit logs</span>
+                    </li>
+                </ul>
+                <a class="group inline-flex ring-1 items-center justify-center rounded-full py-2 px-4 text-sm focus:outline-none ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white mt-8"
+                   aria-label="Get started with the Enterprise plan for $39" href="/register">Contact us</a>
+            </section>
+        </div>
+    </div>
+</section>
+
+<section id="testimonials" aria-label="What our customers are saying" class="bg-slate-50 py-20 sm:py-32">
+<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-2xl md:text-center">
+        <h2 class="font-display text-3xl tracking-tight text-slate-900 sm:text-4xl">Loved by businesses worldwide.</h2>
+        <p class="mt-4 text-lg tracking-tight text-slate-700">Our software is so simple that people can’t help but fall
+            in love with it. Simplicity is easy when you just skip tons of mission-critical features.
+        </p>
+    </div>
+    <ul role="list"
+        class="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-6 sm:gap-8 lg:mt-20 lg:max-w-none lg:grid-cols-3">
+        <li>
+            <ul role="list" class="flex flex-col gap-y-6 sm:gap-y-8">
+                <LandingPage.testimonial_card title="Co-founder & CTO of pix.fr." name="Jérémy Buget" picture_url="https://avatars.githubusercontent.com/u/265963?v=4" link="https://twitter.com/jbuget/status/1561708207764029440" text="Aujourd'hui j'ai découvert @azimuttapp, un service en ligne pour y voir plus clair et plus joli dans son schéma de données. Idéal pour les nouveaux-venus d'un projet." />
+                <LandingPage.testimonial_card title="Head of Engineering at Swile" name="Jordan Temim" picture_url="https://media-exp1.licdn.com/dms/image/C4D03AQHICIgfkN-dpg/profile-displayphoto-shrink_400_400/0/1641135662382?e=1669852800&v=beta&t=rMVgGpDfYMeWS7Ld8ZpjRIDV4IGisAsv8z_TN5E8cQU" link="https://www.linkedin.com/feed/update/urn%3Ali%3Aactivity%3A6963834821580099584/" text="Quick summer message to highlight Loïc Knuchel's incredible work on Azimutt app!
+                    It's an advanced ER Diagram tool that allows you to explore your database schema, prepare migrations, focus on a group of tables precisely and even ask for the shortest path between several relationships.
+                    The app is Open Source and we can follow the roadmap and ask for features.
+                    If modeling is important to you, I recommend this tool!" />
+            </ul>
+        </li>
+        <li>
+            <ul role="list" class="flex flex-col gap-y-6 sm:gap-y-8">
+                <LandingPage.testimonial_card title="Software developer" name="Miguel Cobá" picture_url="https://pbs.twimg.com/profile_images/1572871996953747457/Awc2FLzZ_400x400.jpg" link="https://twitter.com/MiguelCoba_/status/1442434336653860874" text="Wow that's a dope app. It looks very responsive. And the controls seem very  polished. Amazing job, Loïc! And congrats on the release." />
+                <LandingPage.testimonial_card title="Consultant at Boulevard" name="Oliver Searle Barnes" picture_url="https://media-exp1.licdn.com/dms/image/C4D03AQGAIzpMZsv2MA/profile-displayphoto-shrink_400_400/0/1516273111173?e=1669852800&v=beta&t=Apm20DVNw5Vn5ZxKC0p7N6uGHd1P7tYzZyRig8hUoYs" link="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/10" text="I mainly wanted to add some praise. The app seems really well thought out, particularly the control you have over what to include in the diagram and the ability to save different views. This feels like the workflow I never knew I wanted until trying it just now." />
+            </ul>
+        </li>
+        <li>
+            <ul role="list" class="flex flex-col gap-y-6 sm:gap-y-8">
+                <LandingPage.testimonial_card title="CEO of feram.io" name="Adrian Sieber" picture_url="https://pbs.twimg.com/profile_images/1493681184156569606/uOLgIKUE_400x400.jpg" link="https://discourse.elm-lang.org/t/azimutt-explore-your-database-thanks-to-elm/7734/13" text="Nice! Really beautiful app and it works quite smoothly. I especially like that you can start from scratch and build up the graph with only the tables which you are interested in. In some other tools it’s always quite an info dump." />
+                <LandingPage.testimonial_card title="Building tweethunter.io & taplio.com " name="Tibo" picture_url="https://pbs.twimg.com/profile_images/1421725545017004032/Ge7H8BDx_400x400.jpg" link="https://twitter.com/tibo_maker/status/1443603421970386944?s=20&t=ivYxzf8OfWbi41W1KO5eSw" text="As a dev, i love it!!" />
+                <LandingPage.testimonial_card title="Techjournalism @i-programmer.info" name="nikosv" picture_url="https://pbs.twimg.com/profile_images/862615106005471233/l0Kui6R4_400x400.jpg" link="https://twitter.com/nikosvg/status/1557975423186878464" text="Azimutt has really made a difference. keep up the good work!" />
+
+            </ul>
+        </li>
+    </ul>
+</div>
+</section>

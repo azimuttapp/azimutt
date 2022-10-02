@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+    <head>
+        <meta charset="utf-8"/>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta name="csrf-token" content={csrf_token_value()}>
+        <%= live_title_tag assigns[:page_title] || "Azimutt", suffix: " · Oops" %>
+        <%= csrf_meta_tag() %>
+        <link rel="stylesheet" href="/assets/app.css"/>
+        <script type="text/javascript" src="/assets/app.js"></script>
+    </head>
+    <body class="h-full">
+        <div class="bg-white min-h-full px-4 py-16 sm:px-6 sm:py-24 md:grid md:place-items-center lg:px-8">
+            <div class="max-w-max mx-auto">
+                <main class="sm:flex">
+                    <p class="text-4xl tracking-tight font-bold text-blue-600 sm:text-5xl">404</p>
+                    <div class="sm:ml-6">
+                        <div class="sm:border-l sm:border-gray-200 sm:pl-6">
+                            <h1 class="text-4xl font-bold text-gray-900 tracking-tight sm:text-5xl">Page not found</h1>
+                            <p class="mt-1 text-base text-gray-500">Please check the URL in the address bar and try again.</p>
+                        </div>
+                        <div class="mt-10 flex space-x-3 sm:border-l sm:border-transparent sm:pl-6">
+                            <a href={Azimutt.config(:site_url)} class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"> Go back home </a>
+                            <a href={Azimutt.config(:github_new_issue)} class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"> Contact support </a>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </body>
+</html>

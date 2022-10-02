@@ -1,0 +1,81 @@
+repos:
+- repo: local
+  hooks:
+
+    - id: mix-test
+      name: 'Elixir test'
+      language: system
+      entry: npm run ex:test
+      pass_filenames: false
+      files: \.exs*$
+
+    - id: mix-lint
+      name: 'Elixir lint'
+      language: system
+      entry: npm run ex:lint
+      pass_filenames: false
+      files: \.exs*$
+
+    - id: mix-build
+      name: 'Elixir build'
+      language: system
+      entry: npm run ex:build
+      pass_filenames: false
+      files: \.ex$
+
+    - id: mix-format
+      name: 'Elixir format'
+      language: system
+      entry: bash -c 'cd backend && exec mix format --check-formatted'
+      files: \.exs*$
+
+    - id: elm-test
+      name: 'Elm test'
+      language: system
+      entry: npm run elm:test
+      pass_filenames: false
+      files: \.elm*$
+
+    - id: elm-lint
+      name: 'Elm lint'
+      language: system
+      entry: npm run elm:lint
+      pass_filenames: false
+      files: \.elm*$
+
+    - id: elm-build
+      name: 'Elm build'
+      language: system
+      entry: npm run elm:build
+      pass_filenames: false
+      files: \.elm*$
+
+    - id: elm-format
+      name: 'Elm format'
+      language: system
+      entry: npm run elm:format
+      pass_filenames: false
+      files: \.elm*$
+
+    - id: ts-test
+      name: 'TypeScript test'
+      language: system
+      entry: npm run ts:test
+      pass_filenames: false
+      files: \.ts*$
+
+- repo: https://github.com/commitizen-tools/commitizen
+  rev: v2.32.2
+  hooks:
+    - id: commitizen
+    - id: commitizen-branch
+      stages: [push]
+
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.3.0
+  hooks:
+    - id: trailing-whitespace
+      exclude_types: [markdown]
+    - id: check-merge-conflict
+    - id: check-yaml
+    - id: end-of-file-fixer

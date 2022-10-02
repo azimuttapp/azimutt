@@ -1,0 +1,16 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+  categories:
+    - title: Breaking Changes 🛠
+      labels:
+        - Major
+        - breaking-change
+    - title: New Features 🎉
+      labels:
+        - Minor
+        - enhancement
+    - title: Other Changes
+      labels:
+        - "*"

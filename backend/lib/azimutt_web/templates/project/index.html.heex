@@ -1,0 +1,54 @@
+<h1>Listing Projects</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Slug</th>
+      <th>Organization</th>
+      <th>Is archived</th>
+      <th>Is favorited</th>
+      <th>Nb tables</th>
+      <th>Nb columns</th>
+      <th>Nb relations</th>
+      <th>Nb layouts</th>
+      <th>Nb sources</th>
+      <th>Description</th>
+      <th>Last modifier</th>
+      <th>Storage link</th>
+      <th>Storage kink</th>
+      <th>Storage version</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for project <- @projects do %>
+    <tr>
+      <td><%= project.name %></td>
+      <td><%= project.slug %></td>
+      <td><%= project.organization_id %></td>
+      <td><%= project.is_archived %></td>
+      <td><%= project.is_favorited %></td>
+      <td><%= project.nb_tables %></td>
+      <td><%= project.nb_columns %></td>
+      <td><%= project.nb_relations %></td>
+      <td><%= project.nb_layouts %></td>
+      <td><%= project.nb_sources %></td>
+      <td><%= project.description %></td>
+      <td><%= project.last_modifier %></td>
+      <td><%= project.storage_link %></td>
+      <td><%= project.storage_kink %></td>
+      <td><%= project.storage_version %></td>
+
+      <td>
+        <span><%= link "Show", to: Routes.project_path(@conn, :show, project) %></span>
+        <span><%= link "Edit", to: Routes.project_path(@conn, :edit, project) %></span>
+        <span><%= link "Delete", to: Routes.project_path(@conn, :delete, project), method: :delete, data: [confirm: "Are you sure?"] %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Project", to: Routes.elm_path(@conn, :orga_new, @organization) %></span>

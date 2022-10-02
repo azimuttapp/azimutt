@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <%= render("_head.html", assigns) %>
+  <body class="font-sans antialiased">
+    <div>
+      <%= render "_user_menu.html", assigns %>
+      <%= @inner_content %>
+    </div>
+  </body>
+</html>

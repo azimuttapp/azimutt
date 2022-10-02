@@ -1,0 +1,30 @@
+<h1>Listing Organizations</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Contact Email</th>
+      <th>Is archived</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for organization <- @organizations do %>
+    <tr>
+      <td><%= organization.name %></td>
+      <td><%= organization.contact_email %></td>
+      <td><%= organization.is_archived %></td>
+
+      <td>
+        <span><%= link "Show", to: Routes.organization_path(@conn, :show, organization) %></span>
+        <span><%= link "Edit", to: Routes.organization_path(@conn, :edit, organization) %></span>
+        <span><%= link "Delete", to: Routes.organization_path(@conn, :delete, organization), method: :delete, data: [confirm: "Are you sure?"] %></span>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Organization", to: Routes.organization_path(@conn, :new) %></span>

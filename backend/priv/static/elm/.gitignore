@@ -1,0 +1,4 @@
+dist
+!./dist/.gitkeep
+script.js
+script.js.map

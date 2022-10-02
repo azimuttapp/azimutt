@@ -1,0 +1,74 @@
+<div class="max-w-lg lg:mt-12 mx-auto">
+    <h2 class="text-lg font-medium text-gray-900">Create your project</h2>
+    <p class="mt-1 text-sm text-gray-500">You haven’t created a project yet. Get started by selecting a template or start from an empty project.</p>
+    <ul role="list" class="mt-6 border-t border-b border-gray-200 divide-y divide-gray-200">
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                  <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-pink-500">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="True" class="h-6 w-6 text-white"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" vector-effect="non-scaling-stroke"></path></svg>
+                  </span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "From database connection", to: Routes.elm_path(@conn, :orga_new, @organization, database: "") %></div>
+                    <p class="text-sm text-gray-500">Extract your database schema directly from your database</p>
+                </div>
+                <div class="flex-shrink-0 self-center">
+                    <!-- Heroicon name: solid/chevron-right -->
+                    <svg class="h-5 w-5 text-gray-400 group-hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+        </li>
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+          <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-purple-500">
+              <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+              <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+            </svg>
+          </span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "From SQL structure", to: Routes.elm_path(@conn, :orga_new, @organization, sql: "") %></div>
+                    <p class="text-sm text-gray-500">Upload your structure.sql file and let azimutt parse your schema</p>
+                </div>
+                <div class="flex-shrink-0 self-center">
+                    <!-- Heroicon name: solid/chevron-right -->
+                    <svg class="h-5 w-5 text-gray-400 group-hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+        </li>
+        <li>
+            <div class="relative group py-4 flex items-start space-x-3">
+                <div class="flex-shrink-0">
+          <span class="inline-flex items-center justify-center h-10 w-10 rounded-lg bg-yellow-500">
+            <!-- Heroicon name: outline/calendar -->
+              <svg class="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+            </svg>
+          </span>
+                </div>
+                <div class="min-w-0 flex-1">
+                    <div class="text-sm font-medium text-gray-900"><%= link "From JSON", to: Routes.elm_path(@conn, :orga_new, @organization, json: "") %></div>
+                    <p class="text-sm text-gray-500">Import your custom source in JSON</p>
+                </div>
+                <div class="flex-shrink-0 self-center">
+                    <!-- Heroicon name: solid/chevron-right -->
+                    <svg class="h-5 w-5 text-gray-400 group-hover:text-gray-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+            </div>
+        </li>
+    </ul>
+    <div class="mt-6 flex">
+        <%= link to: Routes.elm_path(@conn, :orga_create, @organization, empty: ""), class: "text-sm font-medium text-indigo-600 hover:text-indigo-500" do %>
+          Or start from an empty project<span aria-hidden="true"> &rarr;</span>
+        <% end %>
+    </div>
+    <p class="mt-3">Access <%= link "legacy projects", to: Routes.elm_path(@conn, :projects_legacy), class: "text-indigo-600 font-semibold hover:text-indigo-900" %></p>
+</div>

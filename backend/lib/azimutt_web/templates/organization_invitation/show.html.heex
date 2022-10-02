@@ -1,0 +1,11 @@
+<div class="px-4 py-5 sm:p-6">
+  <h3 class="text-lg leading-6 font-medium text-gray-900"><%= @organization_invitation.sent_to %></h3>
+  <div class="mt-2 max-w-xl text-sm text-gray-500">
+    <p>An invitation has been sent to this email address.</p>
+  </div>
+  <div class="mt-3 text-sm">
+    <%= link "Back", class: "font-medium text-indigo-600 hover:text-indigo-500", to: Routes.user_dashboard_path(@conn, :index) %>
+    <%= link "Accept", class: "font-medium text-indigo-600 hover:text-indigo-500", to: Routes.invitation_path(@conn, :accept, @organization_invitation.id), method: :patch %>
+    <%= link "Refuse", class: "font-medium text-indigo-600 hover:text-indigo-500", to: Routes.invitation_path(@conn, :refuse, @organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"] %>
+  </div>
+</div>

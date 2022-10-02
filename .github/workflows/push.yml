@@ -1,0 +1,96 @@
+name: "👾 Azimutt CI"
+on:
+  push:
+    branches-ignore:
+      - refs/tags/*
+  pull_request:
+    types: [ open ]
+
+jobs:
+  cancel:
+    name: "❌ Cancel Previous Runs"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: styfle/cancel-workflow-action@0.10.0
+        with:
+          access_token: ${{ github.token }}
+  test:
+    name: "🛠 Build and test"
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    strategy:
+      matrix:
+        elixir: [ '1.13' ]
+        otp: [ '24' ]
+    services:
+      db:
+        image: postgres:14
+        ports: [ '5432:5432' ]
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+      - name: Get deps cache
+        uses: actions/cache@v3
+        with:
+          path: deps/
+          key: deps-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+      - name: Get build cache
+        uses: actions/cache@v3
+        with:
+          path: _build/test/
+          key: build-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+      - name: Install Dependencies
+        run: |
+          npm run ex:install
+          npm run elm:setup
+
+      - name: Check format
+        run: |
+          npm run ex:format
+          npm run elm:format
+
+      - name: Check lint
+        run: |
+          npm run ex:lint
+          npm run elm:lint
+
+      - name: Check build
+        run: |
+          npm run ex:build
+          npm run elm:build
+
+      - name: Run tests
+        run: |
+          npm run elm:test
+
+  deploy_staging:
+    name: "🐴 Deploy to staging"
+    environment:
+      name: staging_environment
+      url: https://azimutt.dev
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    needs: [ test ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: 47ng/actions-clever-cloud@v1.2.0
+        with:
+          appID: ${{ secrets.CLEVER_APP_ID }}
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}

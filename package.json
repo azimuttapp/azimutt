@@ -1,7 +1,7 @@
 {
   "name": "azimutt",
   "version": "1.0.0",
-  "description": "Next gen ERD: explore and analyze your SQL database schema",
+  "description": "Next gen ERD: design, explore, document and analyze your SQL database schema",
   "keywords": [
     "erd",
     "entity-relationship diagram",
@@ -9,7 +9,9 @@
     "database schema",
     "diagram"
   ],
-  "homepage": "https://github.com/azimuttapp/azimutt",
+  "homepage": "https://azimutt.app",
+  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/azimuttapp/azimutt.git"
@@ -17,43 +19,36 @@
   "bugs": {
     "url": "https://github.com/azimuttapp/azimutt/issues"
   },
-  "license": "MIT",
-  "author": "Loïc Knuchel <loicknuchel@gmail.com> (https://loicknuchel.fr)",
   "scripts": {
-    "start": "npm install && npm run dev",
-    "dev": "concurrently \"npm run dev:tailwind\" \"npm run dev:ts\" \"npm run dev:elm\"",
-    "build": "npm run build:tailwind && npm run build:ts && npm run build:elm",
-    "dev:elm": "elm-live .elm-spa/defaults/Main.elm --dir=public --pushstate -- --output=public/dist/elm.js",
-    "build:elm": "npx elm-spa build",
-    "dev:ts": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=public/script.js --bundle --watch",
-    "build:ts": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=public/script.js --bundle --minify --sourcemap",
-    "dev:tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --watch",
-    "build:tailwind": "npx tailwindcss -i ./public/styles.css -o ./public/dist/styles.css --minify",
-    "book": "elm-book src/Components/Book.elm --dir=public --start-page=book.html --port 8001 -- --output=public/dist/book.js",
-    "upgrade": "npx npm-check-updates -u",
-    "test": "jest"
-  },
-  "dependencies": {
-    "@sentry/browser": "^7.1.1",
-    "@sentry/tracing": "^7.1.1",
-    "@splitbee/web": "^0.3.0",
-    "@supabase/supabase-js": "^1.35.3",
-    "canvas-confetti": "^1.5.1",
-    "jiff": "^0.7.3"
+    "setup": "npm run ex:setup && npm run elm:setup",
+    "start": "npm run dev",
+    "dev": "concurrently \"npm run tailwind:dev\" \"npm run ts:dev\" \"npm run elm:dev\" \"npm run ex:dev\"",
+    "server": "concurrently \"npm run tailwind:dev\" \"npm run ts:dev\" \"npm run elm:server\" \"npm run ex:dev\"",
+    "test": "npm run ts:test && npm run elm:test && npm run ex:test",
+    "build": "npm run tailwind:build && npm run ts:build && npm run elm:build && npm run ex:build",
+    "ex:install": "cd backend && mix local.hex --force && mix deps.get",
+    "ex:setup": "cd backend && mix deps.get && mix ecto.setup",
+    "ex:dev": "cd backend && mix phx.server",
+    "ex:test": "cd backend && mix test",
+    "ex:lint": "cd backend && mix credo --strict",
+    "ex:build": "cd backend && mix compile --force",
+    "ex:format": "cd backend && mix format --check-formatted",
+    "elm:setup": "cd frontend && npm run build",
+    "elm:dev": "cd frontend && npm run elm:dev",
+    "elm:server": "cd frontend && npm run elm:server",
+    "elm:test": "cd frontend && npm run elm:test",
+    "elm:lint": "cd frontend && npm run elm:review",
+    "elm:build": "cd frontend && npm run elm:build",
+    "elm:format": "cd frontend && npm run elm:format",
+    "elm:book": "cd frontend && npm run book",
+    "ts:dev": "cd frontend && npm run ts:dev",
+    "ts:test": "cd frontend && npm run ts:test",
+    "ts:build": "cd frontend && npm run ts:build",
+    "tailwind:dev": "cd frontend && npm run tailwind:dev",
+    "tailwind:build": "cd frontend && npm run tailwind:build",
+    "clever": "npm run elm:setup && cd backend && mix deps.get && mix phx.server"
   },
   "devDependencies": {
-    "@tailwindcss/forms": "^0.5.0",
-    "@tailwindcss/typography": "^0.5.2",
-    "@types/canvas-confetti": "^1.4.2",
-    "@types/jest": "^28.1.1",
-    "concurrently": "^7.1.0",
-    "elm-coverage": "^0.4.1",
-    "elm-review": "^2.7.1",
-    "elm-test": "^0.19.1-revision7",
-    "esbuild": "^0.14.39",
-    "jest": "^28.1.0",
-    "tailwindcss": "^3.0.24",
-    "ts-jest": "^28.0.3",
-    "typescript": "^4.6.4"
+    "concurrently": "^7.4.0"
   }
 }

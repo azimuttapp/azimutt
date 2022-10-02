@@ -1,14 +1,6 @@
-/.coverage
-/.elm-spa
-/elm-stuff
-/local
-/node_modules
-/public/dist
-/review/elm-stuff/
-/public/script.js
-/public/script.js.map
-/public/blog/drafts/
-
-# Supabase
-**/supabase/.branches
-**/supabase/.temp
+*.iml
+.idea
+.DS_Store
+.env
+.clever.json
+/node_modules/

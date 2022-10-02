@@ -1,0 +1,101 @@
+<nav x-data="{ open: false }" class="flex-shrink-0 bg-white shadow-sm z-50">
+    <div class="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div class="relative flex items-center justify-between h-16">
+            <!-- Logo section -->
+            <div class="flex items-center px-2 lg:px-0 xl:w-64">
+                <div class="flex-shrink-0">
+                    <a aria-label="Home" href="/#">
+                        <AzimuttWeb.Components.Brand.logo class="h-8 w-auto" />
+                    </a>
+                </div>
+            </div>
+            <div class="flex lg:hidden">
+                <!-- Mobile menu button -->
+                <button type="button" class="bg-gray-50 inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-white hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-700 focus:ring-white" aria-controls="mobile-menu" @click="open = !open" aria-expanded="false" x-bind:aria-expanded="open.toString()">
+                    <span class="sr-only">Open main menu</span>
+                    <svg x-description="Icon when menu is closed. Heroicon name: outline/menu-alt-1" x-state:on="Menu open" x-state:off="Menu closed" class="block h-6 w-6" :class="{ 'hidden': open, 'block': !(open) }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h8m-8 6h16"></path>
+                    </svg>
+                    <svg x-description="Icon when menu is open. Heroicon name: outline/x" x-state:on="Menu open" x-state:off="Menu closed" class="hidden h-6 w-6" :class="{ 'block': open, 'hidden': !(open) }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <!-- Links section -->
+            <div class="hidden lg:block lg:w-80">
+                <div class="flex items-center justify-end">
+                    <div class="flex">
+                        <%= link "Dashboard", to: Routes.user_dashboard_path(@conn, :index), class: "rounded-lg py-1 px-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900" %>
+                    </div>
+                    <div @click.outside="open = false" class="ml-4 relative shrink-0" x-data="{ open: false }">
+                        <div>
+                            <button @click="open = !open" class="bg-gray-800 rounded-full flex text-sm text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white" id="user-menu" aria-haspopup="true" x-bind:aria-expanded="open" aria-expanded="false">
+                                <span class="sr-only">Open user menu</span>
+                                <img class="h-8 w-8 rounded-full" src={@current_user.avatar}>
+                            </button>
+                        </div>
+                    <div x-show="open" x-description="Profile dropdown panel, show/hide based on dropdown state." x-transition:enter="transition ease-out duration-100" x-transition:enter-start="transform opacity-0 scale-95" x-transition:enter-end="transform opacity-100 scale-100" x-transition:leave="transition ease-in duration-75" x-transition:leave-start="transform opacity-100 scale-100" x-transition:leave-end="transform opacity-0 scale-95" class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white z-50" role="menu" aria-orientation="vertical" aria-labelledby="user-menu" style="display: none;">
+                        <div class="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100">
+                            <div class="px-4 py-3">
+                                <p class="text-sm">
+                                    Connected with
+                                </p>
+                                <p class="text-xs font-medium text-gray-900 truncate">
+                                    <%= @current_user.email %>
+                                </p>
+                            </div>
+                            <div class="py-1">
+                                <a class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" href={Routes.user_settings_path(@conn, :edit)} >Settings</a>
+                            </div>
+
+                            <%= if @current_user.is_admin do %>
+                            <div class="py-1">
+                                <div class="px-4 py-3" role="none">
+                                    <div class="flex items-center text-sm" role="none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path>
+                                        </svg>
+                                        <span class="text-sm font-medium text-gray-900 px-2">Admin</span>
+                                    </div>
+                                </div>
+                                <a class="block px-8 py-2 text-sm text-gray-700 hover:bg-gray-100" href="/admin/users">Administrateurs</a>
+                            </div>
+                            <% end %>
+
+                            <%= if Application.get_env(:azimutt, :environment) == :dev do %>
+                                <div class="py-1">
+                                    <div class="px-4 py-3" role="none">
+                                        <div class="flex items-center text-sm" role="none">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                                            </svg>
+                                            <span class="text-sm font-medium text-gray-900 px-2">Developers tools</span>
+                                        </div>
+                                    </div>
+                                    <a class="block px-8 py-2 text-sm text-gray-700 hover:bg-gray-100" href="/dashboard">LiveDashboard</a>
+                                    <a class="block px-8 py-2 text-sm text-gray-700 hover:bg-gray-100" href="/dev/mailbox">Mailbox</a>
+                                </div>
+                            <% end %>
+                            <div class="py-1">
+                                <%= link "Log out", class: "block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100", to: Routes.user_session_path(@conn, :delete), method: :delete %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-description="Mobile menu, show/hide based on menu state." class="lg:hidden" id="mobile-menu" x-show="open" style="display: none;">
+        <div class="px-2 pt-2 pb-3 space-y-1">
+            <a href="#" class="text-white bg-gray-800 block px-3 py-2 rounded-md text-base font-medium" x-state:on="Current" x-state:off="Default" aria-current="page" >Dashboard</a>
+        </div>
+        <div class="pt-4 pb-3 border-t border-gray-800">
+            <div class="px-2 space-y-1">
+                <a href="#" class="text-gray-700 hover:text-gray-50 hover:bg-gray-600 block px-3 py-2 rounded-md text-base font-medium">Settings</a>
+                <a href="#" class="text-gray-700 hover:text-gray-50 hover:bg-gray-600 block px-3 py-2 rounded-md text-base font-medium">Sign out</a>
+            </div>
+        </div>
+    </div>
+</nav>

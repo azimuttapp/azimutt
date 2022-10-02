@@ -1,0 +1,45 @@
+defmodule AzimuttWeb.Components.Brand do
+  @moduledoc """
+  Brand component
+  """
+  use Phoenix.Component
+
+  @doc "Displays full logo. "
+  def logo(assigns) do
+    assigns =
+      assigns
+      |> assign_new(:class, fn -> "h-10" end)
+      |> assign_new(:variant, fn -> nil end)
+
+    ~H"""
+    <%= if @variant do %>
+      <img class={@class} src={"/images/logo_#{@variant}.svg"} />
+    <% else %>
+      <img class={@class <> " block"} src="/images/logo_dark.svg" />
+    <% end %>
+    """
+  end
+
+  @doc "Displays just the icon part of the logo"
+  def logo_icon(assigns) do
+    assigns =
+      assigns
+      |> assign_new(:class, fn -> "h-9 w-9" end)
+      |> assign_new(:variant, fn -> nil end)
+
+    ~H"""
+    <%= if @variant do %>
+      <img class={@class} src={"/images/logo_icon_#{@variant}.svg"} />
+    <% else %>
+      <img class={@class <> " block"} src="/images/logo_icon_dark.svg" />
+    <% end %>
+    """
+  end
+
+  @doc "Displays the full logo from cloudinary"
+  def logo_for_emails(assigns) do
+    ~H"""
+    <img height="60" src={Azimutt.config(:logo_url_for_emails)} />
+    """
+  end
+end

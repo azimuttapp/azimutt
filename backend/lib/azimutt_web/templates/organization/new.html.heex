@@ -1,0 +1,51 @@
+<div class="bg-white">
+    <div class="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8">
+        <div class="sm:flex sm:flex-col sm:align-center">
+            <h1 class="text-5xl tracking-tight font-bold text-gray-900 sm:text-center">Set up your organization</h1>
+            <p class="mt-5 text-xl text-gray-500 sm:text-center">Tell us about your organization.</p>
+        </div>
+    <.form let={f} for={@changeset} action={Routes.organization_path(@conn, :create)} class="mt-12">
+        <%= text_input f, :active_plan, value: :free, class: "hidden" %>
+        <%= text_input f, :logo, value: @logo, class: "hidden" %>
+        <div class="space-y-8 divide-y divide-gray-200">
+            <%= if @changeset.action do %>
+            <div class="alert alert-danger">
+                <p>Oops, something went wrong! Please check the errors below.</p>
+            </div>
+            <% end %>
+            <div class="max-w-2xl mx-auto">
+                <div class="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                    <div class="sm:col-span-4">
+                        <%= label f, :name, class: "block text-sm font-medium text-gray-700" %>
+                        <div class="my-1">
+                            <%= text_input f, :name, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
+                        </div>
+                        <%= error_tag f, :name %>
+                    </div>
+                    <div class="sm:col-span-4">
+                        <%= label f, :contact_email, required: true, class: "block text-sm font-medium text-gray-700" %>
+                        <div class="mt-1">
+                            <%= text_input f, :contact_email, required: true, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" %>
+
+                        </div>
+                    </div>
+
+                    <div class="sm:col-span-6">
+                        <%= label f, :description, class: "block text-sm font-medium text-gray-700" %>
+                        <div class="mt-1">
+                            <%= textarea f, :description, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border border-gray-300 rounded-md" %>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-500">Will be display on your public page (if activated).</p>
+                        <%= error_tag f, :description %>
+                    </div>
+
+                </div>
+                <div class="pt-10">
+                    <%= link "Cancel", to: Routes.user_plan_path(@conn, :index), class: "bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+                    <%= submit "Save", class: "ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+                </div>
+            </div>
+        </div>
+    </.form>
+</div>
+</div>
