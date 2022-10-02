@@ -20,7 +20,7 @@
     "url": "https://github.com/azimuttapp/azimutt/issues"
   },
   "scripts": {
-    "setup": "npm run ex:setup && npm run elm:setup",
+    "setup": "npm install && npm run ex:setup && npm run elm:setup",
     "start": "npm run dev",
     "dev": "concurrently \"npm run tailwind:dev\" \"npm run ts:dev\" \"npm run elm:dev\" \"npm run ex:dev\"",
     "server": "concurrently \"npm run tailwind:dev\" \"npm run ts:dev\" \"npm run elm:server\" \"npm run ex:dev\"",
