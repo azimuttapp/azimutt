@@ -19,7 +19,7 @@ I know some of you can't wait to see this, and we were hard at work the whole mo
 
 ## Project sharing
 
-[Azimutt]({{app_link}}) is a tool to explore and understand your database schema. This information can be sensitive, and thus we decided to make it privacy first. Everything happen on your browser: from loading the SQL, exploring it and saving the project in the local storage. You can see it as a local app delivered through your browser.
+[Azimutt]({{app_link}}) is a tool to explore and understand your database schema. This information can be sensitive, and thus we decided to make it privacy first. Everything happens on your browser: from loading the SQL, exploring it and saving the project in the local storage. You can see it as a local app delivered through your browser.
 
 This is awesome, but also has some limitations. The biggest one is when it comes to collaboration, you have no way to collaborate on a single project and build a permanent diagram and documentation for your company. Not anymore:
 
@@ -27,7 +27,7 @@ This is awesome, but also has some limitations. The biggest one is when it comes
 
 You can now create an account and save your project. You can keep it **local**, like now, and only metadata will be stored in Azimutt to manage project versions and migrations when needed. But you can also choose **remote** to upload it to Azimutt and then share it with other people and collaborate on a single reference.
 
-We also introduced paying plans when you share with more than 3 people as it's becoming a true professional tool. And as this were not enough, we reworked our public website and logo, let's say it hello:
+We also introduced paying plans when you share with more than 3 people as it's becoming a true professional tool. And as if this was not enough, we reworked our public website and logo, let's say hello to it:
 
 ![Azimutt logo]({{base_link}}/azimutt-logo.svg)
 
@@ -43,19 +43,19 @@ We couldn't finish it in one month, but it's almost here. You will have it soon!
 
 When preparing the talk for [Cloud Nord](#cloud-nord) we took a step back and noticed that Azimutt had grown a lot during this first year. It's not just an exploration tool. It's becoming a full-featured tool to understand your database with **exploration**, **design**, **documentation** and **analysis**. For example database design capabilities were [introduced in June](./changelog-2022-06), just in time for the Sunny Tech conference.
 
-So we made this mind map make it clearer, with existing features but also planned ones, so you can see what is coming and where:
+So we made this mind map to make it clearer, with existing features but also planned ones, so you can see what is coming:
 
 [![Azimutt mind map]({{base_link}}/azimutt-mind-map.png)](https://mm.tt/map/2434161843?t=N2yWZj1pc1)
 
-As you can see, there is a lot of planned features and with the continuous improvement of the existing ones we can't commit on date for each one but the project sharing is just around the corner and the probable next ones are database stats and markdown documentation with sticky notes (from very different areas ^^).
+As you can see, there is a lot of planned features and with the continuous improvement of the existing ones we can't commit on a date for each one but the project sharing is just around the corner and the probable next ones are database stats and markdown documentation with sticky notes (from very different areas ^^).
 
 We are also counting on you to help us prioritize the most impactful ones or suggest new ones! Come and discuss in our [GitHub issues]({{issues_link}}).
 
 ## PostgreSQL internals
 
-In July, we added the ability to [import your database schema using your database connection](./changelog-2022-07) instead of only your exported schema. This was a great help for less technical people as they just need to provide database credentials. But this was also very interesting for us as we had to investigate PostgreSQL internals.
+In July, we added the ability to [import your database schema using your database connection](./changelog-2022-07) instead of just your exported schema. This was a great help for less technical people as they just need to provide database credentials. But this was also very interesting for us as we had to investigate PostgreSQL internals.
 
-We finally took the time write an complete article about our process and findings [exploring PostgreSQL internals](./explore-postgresql-internals). Not only we dived into `pg_catalog` and `information_schema` but we also took the opportunity to provide them as a [sample Azimutt project](/projects/new?sample=postgresql) with full documentation, so you can explore and understand much more easily 🎁
+We finally took the time to write a complete article about our process and findings [exploring PostgreSQL internals](./explore-postgresql-internals). Not only we dived into `pg_catalog` and `information_schema` but we also took the opportunity to provide them as a [sample Azimutt project](/projects/new?sample=postgresql) with full documentation, so you can explore and understand much more easily 🎁
 
 ## Cloud Nord
 
