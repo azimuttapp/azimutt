@@ -12,7 +12,7 @@ defmodule AzimuttWeb.Components.Header do
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <nav class="relative z-50 flex justify-between">
           <div class="flex items-center md:gap-x-12">
-            <a aria-label="Home" href="/#">
+            <a aria-label="Home" href="/">
               <.logo class="h-12 transition-transform duration-300 ease-out transform hover:scale-105" />
             </a>
             <div class="hidden md:flex md:gap-x-6">
