@@ -213,6 +213,7 @@ blogPosts =
     , "changelog-2022-07"
     , "changelog-2022-08"
     , "explore-postgresql-internals"
+    , "changelog-2022-09"
 
     --, "make-your-app-hackable"
     ]
