@@ -15,7 +15,7 @@ defmodule AzimuttWeb.OrganizationInvitationControllerTest do
   describe "index" do
     @tag :skip
     test "lists all organization_invitations", %{conn: conn, organization: organization} do
-      conn = get(conn, Routes.organization_invitation_path(conn, :index, organization.id))
+      conn = get(conn, Routes.organization_member_path(conn, :index, organization.id))
       assert html_response(conn, 200) =~ "Add team members"
     end
   end
@@ -28,9 +28,7 @@ defmodule AzimuttWeb.OrganizationInvitationControllerTest do
         |> Map.put(:organization_id, organization.id)
 
       conn =
-        post(conn, Routes.organization_invitation_path(conn, :create, organization.id),
-          organization_invitation: organization_invitation_attrs
-        )
+        post(conn, Routes.organization_member_path(conn, :invite, organization.id), organization_invitation: organization_invitation_attrs)
 
       assert %{id: id} = redirected_params(conn)
 
@@ -43,7 +41,7 @@ defmodule AzimuttWeb.OrganizationInvitationControllerTest do
 
     @tag :skip
     test "renders errors when data is invalid", %{conn: conn, organization: organization} do
-      conn = post(conn, Routes.organization_invitation_path(conn, :create, organization.id), organization_invitation: @invalid_attrs)
+      conn = post(conn, Routes.organization_member_path(conn, :invite, organization.id), organization_invitation: @invalid_attrs)
 
       assert html_response(conn, 200) =~ "Add team members"
     end
@@ -73,7 +71,7 @@ defmodule AzimuttWeb.OrganizationInvitationControllerTest do
         )
 
       assert redirected_to(conn) ==
-               Routes.organization_invitation_path(conn, :index, organization.id)
+               Routes.organization_member_path(conn, :index, organization.id)
 
       assert_error_sent 404, fn ->
         get(

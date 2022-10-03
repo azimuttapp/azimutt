@@ -32,7 +32,7 @@
     "ex:test": "cd backend && mix test",
     "ex:lint": "cd backend && mix credo --strict",
     "ex:build": "cd backend && mix compile --force",
-    "ex:format": "cd backend && mix format --check-formatted",
+    "ex:format": "cd backend && mix format",
     "elm:setup": "cd frontend && npm run build",
     "elm:dev": "cd frontend && npm run elm:dev",
     "elm:server": "cd frontend && npm run elm:server",

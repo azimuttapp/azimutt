@@ -65,9 +65,10 @@ defmodule AzimuttWeb.Router do
     get "/login/redirect", UserSessionController, :redirect_to
 
     resources "/organizations", OrganizationController, except: [:index] do
+      # FIXME: don't work, still useful? get "/projects", ProjectController, :index
       get "/billing", OrganizationBillingController, :index, as: :billing
-      get "/projects", ProjectController, :index
-      resources "/invitations", OrganizationInvitationController, only: [:index, :create], as: :invitation
+      get "/members", OrganizationMemberController, :index, as: :member
+      post "/members/invite", OrganizationMemberController, :invite, as: :member
     end
 
     get "/invitations/:id", OrganizationInvitationController, :show, as: :invitation
@@ -90,11 +91,12 @@ defmodule AzimuttWeb.Router do
   end
 
   # authed admin routes
-  scope "/admin", AzimuttWeb do
-    pipe_through [:browser, :require_authenticated_user]
-    get "/users/projects", ProjectController, :index
-    resources "/organizations", OrganizationController
-  end
+  # FIXME: doesn't work :(
+  # scope "/admin", AzimuttWeb do
+  #   pipe_through [:browser, :require_authenticated_user]
+  #   get "/users/projects", ProjectController, :index
+  #   resources "/organizations", OrganizationController
+  # end
 
   # FIXME '/api' will catch all :(
   scope "/api/v1/swagger" do

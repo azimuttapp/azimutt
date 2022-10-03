@@ -11,7 +11,7 @@
                     <h2 class="mt-2 text-lg font-medium text-gray-900">Add team members</h2>
                     <p class="mt-1 text-sm text-gray-500">You haven’t added any team members to your project yet. As the owner of this project, you can manage team member permissions.</p>
                 </div>
-                <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_invitation_path(@conn, :create, @organization.id)} class="mt-6 flex">
+                <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :invite, @organization.id)} class="mt-6 flex">
                 <%= label f, :sent_to, class: "sr-only" %>
                 <%= email_input f, :sent_to, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md", placeholder: "Enter an email" %>
                 <%= error_tag f, :sent_to %>
