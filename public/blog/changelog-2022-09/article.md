@@ -4,7 +4,7 @@ excerpt: The big launch teased last month still needs a bit of polish, but we ca
 category: azimutt
 tags: changelog, azimutt
 author: loic
-published: 2022-10-03
+published: 2022-10-04
 ---
 
 I know some of you can't wait to see this, and we were hard at work the whole month, but we still need a bit of polish before releasing the **project sharing**. It's a game changing feature for you, as you will be able to work as a team on your database schema but also for us as it was quite challenging to keep our strong data privacy with this. We can't wait to hear your feedback on it, so we can continue to improve 🚀
@@ -26,18 +26,6 @@ This is awesome, but also has some limitations. The biggest one is when it comes
 ![Save Azimutt project]({{base_link}}/save-project.png)
 
 You can now create an account and save your project. You can keep it **local**, like now, and only metadata will be stored in Azimutt to manage project versions and migrations when needed. But you can also choose **remote** to upload it to Azimutt and then share it with other people and collaborate on a single reference.
-
-We also introduced paying plans when you share with more than 3 people as it's becoming a true professional tool. And as if this was not enough, we reworked our public website and logo, let's say hello to it:
-
-![Azimutt logo]({{base_link}}/azimutt-logo.svg)
-
-As you may guess, all this was quite a huge work 🤯
-
-[![Huge Azimutt pull-request]({{base_link}}/cloud-diff.jpg)](https://github.com/azimuttapp/azimutt/pull/122)
-
-We couldn't finish it in one month, but it's almost here. You will have it soon! If you want a first preview, here is our new home page (soon):
-
-![Azimutt home page]({{base_link}}/azimutt-home.png)
 
 ## Azimutt mind map
 
