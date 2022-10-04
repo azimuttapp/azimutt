@@ -1,4 +1,4 @@
-module Models.Project.TableId exposing (TableId, decode, decodeWith, encode, fromHtmlId, fromString, parse, show, toHtmlId, toString)
+module Models.Project.TableId exposing (TableId, decode, decodeWith, encode, fromHtmlId, fromString, parse, parseWith, show, toHtmlId, toString)
 
 import Conf
 import Json.Decode as Decode
@@ -55,12 +55,17 @@ show defaultSchema ( schema, table ) =
 
 parse : String -> TableId
 parse tableId =
+    parseWith Conf.schema.empty tableId
+
+
+parseWith : SchemaName -> String -> TableId
+parseWith defaultSchema tableId =
     case tableId |> String.split "." of
         schema :: table :: [] ->
             ( schema, table )
 
         _ ->
-            ( Conf.schema.empty, tableId )
+            ( defaultSchema, tableId )
 
 
 encode : TableId -> Value
