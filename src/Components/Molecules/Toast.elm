@@ -13,37 +13,37 @@ import Libs.Html.Attributes exposing (ariaLive, css)
 import Libs.Tailwind as Tw exposing (Color, TwClass, batch, focus_ring_500, hover, sm, text_400)
 
 
-type alias Model =
-    { key : String, content : Content, isOpen : Bool }
+type alias Model msg =
+    { key : String, content : Content msg, isOpen : Bool }
 
 
-type Content
-    = Simple SimpleModel
+type Content msg
+    = Simple (SimpleModel msg)
 
 
-type alias SimpleModel =
+type alias SimpleModel msg =
     { color : Color
     , icon : Icon
     , title : String
-    , message : String
+    , message : Html msg
     }
 
 
-render : msg -> Model -> ( String, Html msg )
+render : msg -> Model msg -> ( String, Html msg )
 render onClose model =
     case model.content of
         Simple content ->
             ( model.key, simple onClose model.isOpen content )
 
 
-simple : msg -> Bool -> SimpleModel -> Html msg
+simple : msg -> Bool -> SimpleModel msg -> Html msg
 simple onClose isOpen model =
     toast
         (div [ class "flex items-start" ]
             [ div [ class "flex-shrink-0" ] [ Icon.outline model.icon (text_400 model.color) ]
             , div [ class "ml-3 w-0 flex-1 pt-0.5" ]
                 [ p [ class "text-sm font-medium text-gray-900" ] [ text model.title ]
-                , p [ class "mt-1 text-sm text-gray-500" ] [ text model.message ]
+                , p [ class "mt-1 text-sm text-gray-500" ] [ model.message ]
                 ]
             , div [ class "ml-4 flex-shrink-0 flex" ]
                 [ button [ onClick onClose, css [ "bg-white rounded-md inline-flex text-gray-400", hover [ "text-gray-500" ], focus_ring_500 Tw.primary ] ]
@@ -74,7 +74,7 @@ toast content isOpen =
         ]
 
 
-container : List Model -> (String -> msg) -> Html msg
+container : List (Model msg) -> (String -> msg) -> Html msg
 container toasts close =
     div [ ariaLive "assertive", css [ "fixed inset-0 flex items-end p-4 z-max pointer-events-none", sm [ "items-end" ] ] ]
         [ Keyed.node "div"
@@ -88,31 +88,38 @@ container toasts close =
 
 
 type alias SharedDocState x =
-    { x | toastDocState : DocState }
+    { x | toastDocState : DocState x }
 
 
-type alias DocState =
-    { index : Int, toasts : List Model }
+type DocState x
+    = DocState { index : Int, toasts : List (Model (SharedDocState x)) }
 
 
-initDocState : DocState
+initDocState : DocState x
 initDocState =
-    { index = 0, toasts = [] }
+    DocState { index = 0, toasts = [] }
 
 
-updateDocState : (DocState -> DocState) -> Msg (SharedDocState x)
+updateDocState : (DocState x -> DocState x) -> Msg (SharedDocState x)
 updateDocState transform =
     Actions.updateState (\s -> { s | toastDocState = s.toastDocState |> transform })
 
 
-addToast : Content -> Msg (SharedDocState x)
+addToast : Content (SharedDocState x) -> Msg (SharedDocState x)
 addToast c =
-    updateDocState (\s -> { s | index = s.index + 1, toasts = { key = String.fromInt s.index, content = c, isOpen = True } :: s.toasts })
+    updateDocState
+        (\(DocState s) ->
+            DocState
+                { s
+                    | index = s.index + 1
+                    , toasts = { key = String.fromInt s.index, content = c, isOpen = True } :: s.toasts
+                }
+        )
 
 
 removeToast : String -> Msg (SharedDocState x)
 removeToast key =
-    updateDocState (\s -> { s | toasts = s.toasts |> List.filter (\t -> t.key /= key) })
+    updateDocState (\(DocState s) -> DocState { s | toasts = s.toasts |> List.filter (\t -> t.key /= key) })
 
 
 noop : Msg (SharedDocState x)
@@ -124,22 +131,29 @@ doc : Chapter (SharedDocState x)
 doc =
     Chapter.chapter "Toast"
         |> Chapter.renderStatefulComponentList
-            [ ( "simple", \_ -> simple noop True { color = Tw.green, icon = CheckCircle, title = "Successfully saved!", message = "Anyone with a link can now view this file." } )
+            [ ( "simple", \_ -> simple noop True { color = Tw.green, icon = CheckCircle, title = "Successfully saved!", message = text "Anyone with a link can now view this file." } )
             , ( "add toasts"
               , \{ toastDocState } ->
-                    Button.primary3 Tw.primary
-                        [ onClick
-                            (addToast
-                                (Simple
-                                    { color = Tw.green
-                                    , icon = CheckCircle
-                                    , title = (toastDocState.index |> String.fromInt) ++ ". Successfully saved!"
-                                    , message = "Anyone with a link can now view this file."
-                                    }
-                                )
-                            )
-                        ]
-                        [ text "Simple toast!" ]
+                    case toastDocState of
+                        DocState state ->
+                            Button.primary3 Tw.primary
+                                [ onClick
+                                    (addToast
+                                        (Simple
+                                            { color = Tw.green
+                                            , icon = CheckCircle
+                                            , title = (state.index |> String.fromInt) ++ ". Successfully saved!"
+                                            , message = text "Anyone with a link can now view this file."
+                                            }
+                                        )
+                                    )
+                                ]
+                                [ text "Simple toast!" ]
               )
-            , ( "container", \{ toastDocState } -> container toastDocState.toasts removeToast )
+            , ( "container"
+              , \{ toastDocState } ->
+                    case toastDocState of
+                        DocState state ->
+                            container state.toasts removeToast
+              )
             ]
