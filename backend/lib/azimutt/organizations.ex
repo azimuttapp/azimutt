@@ -5,6 +5,7 @@ defmodule Azimutt.Organizations do
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserNotifier
   alias Azimutt.Organizations.Organization
+  alias Azimutt.Organizations.Organization.Benefits
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
@@ -113,31 +114,10 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a organization.
-
-  ## Examples
-
-      iex> delete_organization(organization)
-      {:ok, %Organization{}}
-
-      iex> delete_organization(organization)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_organization(%Organization{} = organization) do
     Repo.delete(organization)
   end
 
-  @doc """
-  Returns the list of organization invitations.
-
-  ## Examples
-
-      iex> list_organization_invitations()
-      [%OrganizationInvitation{}, ...]
-
-  """
   def list_organization_invitations do
     Repo.all(OrganizationInvitation)
   end
@@ -146,20 +126,6 @@ defmodule Azimutt.Organizations do
     Repo.all(OrganizationInvitation, id)
   end
 
-  @doc """
-  Gets a single organization invitation.
-
-  Raises `Ecto.NoResultsError` if the Organization invitation does not exist.
-
-  ## Examples
-
-      iex> get_organization_invitation!(123)
-      %OrganizationInvitation{}
-
-      iex> get_organization_invitation!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_organization_invitation(id) do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
@@ -168,20 +134,6 @@ defmodule Azimutt.Organizations do
     |> Repo.one()
   end
 
-  @doc """
-  Gets a single invitation for the specified organization and user.
-
-  Returns `nil` if the Organization invitation does not exist.
-
-  ## Examples
-
-      iex> get_user_organization_invitation(user, organization)
-      %OrganizationInvitation{}
-
-      iex> get_user_organization_invitation(user, organization)
-      nil
-
-  """
   def get_user_organization_invitation(%User{} = user, %Organization{} = organization) do
     OrganizationInvitation
     |> where([oi], oi.sent_to == ^user.email and oi.organization_id == ^organization.id)
@@ -189,9 +141,6 @@ defmodule Azimutt.Organizations do
     |> Repo.one()
   end
 
-  @doc """
-  Creates a invitation for an organization and notify the invited member.
-  """
   def create_organization_invitation(attrs \\ %{}, invitation_url, organization_id, current_user, now) do
     %OrganizationInvitation{}
     |> OrganizationInvitation.create_changeset(attrs, organization_id, current_user, Timex.shift(now, days: 7))
@@ -203,6 +152,28 @@ defmodule Azimutt.Organizations do
 
       error ->
         error
+    end
+  end
+
+  def get_organization_benefits(%Organization{} = organization) do
+    if organization.active_plan == :team do
+      {:ok,
+       %Benefits{
+         members: 5,
+         layouts: nil,
+         colors: true,
+         db_analysis: true,
+         db_access: true
+       }}
+    else
+      {:ok,
+       %Benefits{
+         members: 3,
+         layouts: 3,
+         colors: false,
+         db_analysis: false,
+         db_access: false
+       }}
     end
   end
 end

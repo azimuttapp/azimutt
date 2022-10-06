@@ -4,9 +4,8 @@ defmodule Azimutt.Organizations.Organization do
   """
   use Ecto.Schema
   use Azimutt.Schema
-
+  use TypedStruct
   import Ecto.Changeset
-
   alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
@@ -115,5 +114,14 @@ defmodule Azimutt.Organizations.Organization do
       :twitter_username
     ])
     |> put_change(:updated_by, current_user)
+  end
+
+  typedstruct module: Benefits, enforce: true do
+    @moduledoc false
+    field :members, integer()
+    field :layouts, integer() | nil
+    field :colors, boolean()
+    field :db_analysis, boolean()
+    field :db_access, boolean()
   end
 end

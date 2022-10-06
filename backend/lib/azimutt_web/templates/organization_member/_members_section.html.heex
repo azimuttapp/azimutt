@@ -4,64 +4,77 @@
     <% else %>
         <div class="max-w-lg mt-6 mx-auto">
             <div>
+                <% used_seats = (Enum.count @organization.members) + (Enum.count @organization_invitations) %>
+                <% remaining_seats = @organization_benefits.members - used_seats %>
                 <div class="text-center">
                     <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M34 40h10v-4a6 6 0 00-10.712-3.714M34 40H14m20 0v-4a9.971 9.971 0 00-.712-3.714M14 40H4v-4a6 6 0 0110.713-3.714M14 40v-4c0-1.313.253-2.566.713-3.714m0 0A10.003 10.003 0 0124 26c4.21 0 7.813 2.602 9.288 6.286M30 14a6 6 0 11-12 0 6 6 0 0112 0zm12 6a4 4 0 11-8 0 4 4 0 018 0zm-28 0a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <h2 class="mt-2 text-lg font-medium text-gray-900">Add team members</h2>
-                    <p class="mt-1 text-sm text-gray-500">You haven’t added any team members to your project yet. As the owner of this project, you can manage team member permissions.</p>
-                </div>
-                <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :invite, @organization.id)} class="mt-6 flex">
-                <%= label f, :sent_to, class: "sr-only" %>
-                <%= email_input f, :sent_to, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md", placeholder: "Enter an email" %>
-                <%= error_tag f, :sent_to %>
-                <%= submit "Send invite", class: "ml-4 flex-shrink-0 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
-            </.form>
-        </div>
-            <div class="mt-10">
-            <h3 class="text-sm font-medium text-gray-500">Team members previously added to projects</h3>
-            <ul role="list" class="mt-4 border-t border-b border-gray-200 divide-y divide-gray-200">
-                <%= for organization_invitation <- @organization_invitations do %>
-                <li class="py-4 flex items-center justify-between space-x-3">
-                    <div class="min-w-0 flex-1 flex items-center space-x-3">
-                        <div class="flex-shrink-0">
-                                    <span class="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100">
-                                      <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                                      </svg>
-                                    </span>
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-medium text-gray-900 truncate"><%= organization_invitation.sent_to %></p>
-                            <p class="text-sm font-medium text-gray-500 truncate">Invitation pending</p>
-                        </div>
-                    </div>
-                    <div class="flex-shrink-0">
-                        <%= link class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500", to: Routes.invitation_path(@conn, :cancel, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"] do %>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-0.5 h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                        <span class="text-sm font-medium text-gray-900"> Cancel </span>
+                    <p class="mt-1 text-sm text-gray-500">
+                        <%= if used_seats == 1 do %>
+                            You haven’t added any team members to your project yet. As the owner of this project, you can manage team member permissions.
+                        <% else %>
+                            <%= if remaining_seats > 0 do %>
+                                You still have <b><%= remaining_seats %> remaining seats</b> for people in your organization.
+                            <% else %>
+                                You have no remaining seat in your organization.<br>
+                                You can <%= link "increase available seats", to: "#FIXME", class: "text-indigo-600 font-semibold hover:text-indigo-900" %>.
+                            <% end %>
                         <% end %>
-                    </div>
-                </li>
+                    </p>
+                </div>
+                <%= if remaining_seats > 0 do %>
+                    <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :invite, @organization.id)} class="mt-6 flex">
+                        <%= label f, :sent_to, class: "sr-only" %>
+                        <%= email_input f, :sent_to, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md", placeholder: "Enter an email" %>
+                        <%= error_tag f, :sent_to %>
+                        <%= submit "Send invite", class: "ml-4 flex-shrink-0 px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" %>
+                    </.form>
                 <% end %>
-                <%= for member <- @organization.members do %>
-                <li class="py-4 flex items-center justify-between space-x-3">
-                    <div class="min-w-0 flex-1 flex items-center space-x-3">
-                        <div class="flex-shrink-0">
-                            <!-- FIXME: pas ouf de passer par member.user, voir pour ajouter un helper ? -->
-                            <img class="h-10 w-10 rounded-full" src={member.user.avatar} alt="">
+            </div>
+            <div class="mt-10">
+                <h3 class="text-sm font-medium text-gray-500">Organization members</h3>
+                <ul role="list" class="mt-4 border-t border-b border-gray-200 divide-y divide-gray-200">
+                    <%= for organization_invitation <- @organization_invitations do %>
+                    <li class="py-4 flex items-center justify-between space-x-3">
+                        <div class="min-w-0 flex-1 flex items-center space-x-3">
+                            <div class="flex-shrink-0">
+                                        <span class="inline-block h-10 w-10 rounded-full overflow-hidden bg-gray-100">
+                                          <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                                          </svg>
+                                        </span>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium text-gray-900 truncate"><%= organization_invitation.sent_to %></p>
+                                <p class="text-sm font-medium text-gray-500 truncate">Invitation pending</p>
+                            </div>
                         </div>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-medium text-gray-900 truncate"><%= member.user.email %></p>
-                            <p class="text-sm font-medium text-gray-500 truncate"><%= member.user.name %></p>
+                        <div class="flex-shrink-0 text-gray-400">
+                            <%= link class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500", to: Routes.invitation_path(@conn, :cancel, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"] do %>
+                                <AzimuttWeb.Components.Icon.x class="-ml-1 mr-0.5" />
+                                <span class="text-sm font-medium">Cancel</span>
+                            <% end %>
                         </div>
-                    </div>
-                </li>
-                <% end %>
-            </ul>
-        </div>
+                    </li>
+                    <% end %>
+                    <%= for member <- @organization.members do %>
+                    <li class="py-4 flex items-center justify-between space-x-3">
+                        <div class="min-w-0 flex-1 flex items-center space-x-3">
+                            <div class="flex-shrink-0">
+                                <!-- FIXME: pas ouf de passer par member.user, voir pour ajouter un helper ? -->
+                                <img class="h-10 w-10 rounded-full" src={member.user.avatar} alt="">
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium text-gray-900 truncate"><%= member.user.email %></p>
+                                <p class="text-sm font-medium text-gray-500 truncate"><%= member.user.name %></p>
+                            </div>
+                        </div>
+                    </li>
+                    <% end %>
+                </ul>
+            </div>
         </div>
     <% end %>
 </div>
