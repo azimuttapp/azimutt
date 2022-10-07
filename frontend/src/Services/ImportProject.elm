@@ -105,7 +105,7 @@ update wrap msg model =
         ParseProject ->
             model.loadedProject
                 |> Maybe.andThen Result.toMaybe
-                |> Maybe.mapOrElse
+                |> Maybe.map
                     (\loadedProject ->
                         case loadedProject |> Decode.decodeString Project.decode of
                             Ok project ->
@@ -114,16 +114,13 @@ update wrap msg model =
                             Err err ->
                                 ( { model | parsedProject = err |> Err |> Just } |> setProject (err |> Decode.errorToString |> Err |> Just), Cmd.none )
                     )
-                    ( model, Cmd.none )
+                |> Maybe.withDefault ( model, Cmd.none )
 
         BuildProject ->
             model.parsedProject
                 |> Maybe.andThen Result.toMaybe
-                |> Maybe.mapOrElse
-                    (\parsedProject ->
-                        ( model |> setProject (parsedProject |> Ok |> Just), Cmd.none )
-                    )
-                    ( model, Cmd.none )
+                |> Maybe.map (\parsedProject -> ( model |> setProject (parsedProject |> Ok |> Just), Cmd.none ))
+                |> Maybe.withDefault ( model, Cmd.none )
 
         UiToggle htmlId ->
             ( model |> mapShow (\s -> B.cond (s == htmlId) "" htmlId), Cmd.none )

@@ -130,6 +130,7 @@ defmodule AzimuttWeb.Router do
     get "/last", ElmController, :last
     get "/new", ElmController, :new
     get "/projects", ElmController, :projects_legacy
+    get "/:organization_id", ElmController, :orga_show
     get "/:organization_id/create", ElmController, :orga_create
     get "/:organization_id/new", ElmController, :orga_new
     get "/:organization_id/:project_id", ElmController, :project_show

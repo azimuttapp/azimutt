@@ -149,5 +149,8 @@ handleJsMessage now msg model =
         Error json err ->
             ( model, Cmd.batch [ "Unable to decode JavaScript message: " ++ Decode.errorToString err ++ " in " ++ Encode.encode 0 json |> Toasts.error |> Toast |> T.send, Ports.trackJsonError "js-message" err ] )
 
+        GotSizes _ ->
+            ( model, Cmd.none )
+
         _ ->
             ( model, Ports.unhandledJsMsgError msg |> Toasts.create "warning" |> Toast |> T.send )

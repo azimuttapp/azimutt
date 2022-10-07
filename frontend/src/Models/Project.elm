@@ -213,7 +213,7 @@ decode =
         (Decode.defaultField "usedLayout" LayoutName.decode Conf.constants.defaultLayout)
         (Decode.defaultField "layouts" (Decode.customDict LayoutName.fromString Layout.decode) Dict.empty)
         (Decode.defaultFieldDeep "settings" ProjectSettings.decode (ProjectSettings.init Conf.schema.empty))
-        (Decode.field "storage" ProjectStorage.decode)
+        (Decode.defaultField "storage" ProjectStorage.decode ProjectStorage.Local)
         (Decode.field "version" ProjectEncodingVersion.decode)
         (Decode.field "createdAt" Time.decode)
         (Decode.field "updatedAt" Time.decode)

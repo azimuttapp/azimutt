@@ -14,4 +14,12 @@ defmodule AzimuttWeb.ElmController do
   defp load_elm(conn) do
     conn |> put_root_layout({AzimuttWeb.LayoutView, "elm.html"}) |> render("index.html")
   end
+
+  def orga_show(conn, %{"organization_id" => organization_id}) do
+    if organization_id |> String.length() == 36 do
+      redirect(conn, to: Routes.organization_path(conn, :show, organization_id))
+    else
+      {:error, :not_found}
+    end
+  end
 end
