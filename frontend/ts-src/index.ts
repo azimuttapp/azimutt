@@ -131,29 +131,28 @@ function getLegacyProjects() {
 }
 
 function getProject(msg: GetProject) {
-    backend.getProject(msg.organization, msg.project).then(res => {
-        if (res.storage === ProjectStorage.enum.remote) {
-            return buildProjectRemote(res, res.content)
-        } else if (res.storage === ProjectStorage.enum.local) {
-            return storage.getProject(msg.project).then(p => buildProjectLocal(res, p))
-        } else {
-            return Promise.reject('Invalid storage')
-        }
-    }, err => {
-        if (err.statusCode === 404) {
-            if (msg.project === Uuid.zero) {
-                return storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p))
-            } else {
-                app.toast(ToastLevel.enum.warning, 'Unregistered project: save it again to keep it in you Azimutt account. '
-                    + 'Your data will stay local, only statistics will be shared with Azimutt.')
-                return storage.getLegacyProject(msg.project).then(p => buildProjectLegacy(msg.project, p))
-            }
-        } else if (err.statusCode === 401 && msg.project === Uuid.zero) {
-            return storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p))
-        } else {
-            return Promise.reject(err)
-        }
-    }).then(project => {
+    (msg.project === Uuid.zero ?
+            storage.getProject(msg.project).then(p => buildProjectDraft(msg.project, p)) :
+            backend.getProject(msg.organization, msg.project).then(res => {
+                if (res.storage === ProjectStorage.enum.remote) {
+                    return buildProjectRemote(res, res.content)
+                } else if (res.storage === ProjectStorage.enum.local) {
+                    return storage.getProject(msg.project).then(p => buildProjectLocal(res, p))
+                } else {
+                    return Promise.reject('Invalid storage')
+                }
+            }, err => {
+                if (err.statusCode === 404) {
+                    return storage.getLegacyProject(msg.project).then(p => {
+                        app.toast(ToastLevel.enum.warning, 'Unregistered project: save it again to keep it in you Azimutt account. '
+                            + 'Your data will stay local, only statistics will be shared with Azimutt.')
+                        return buildProjectLegacy(msg.project, p)
+                    })
+                } else {
+                    return Promise.reject(err)
+                }
+            })
+    ).then(project => {
         app.gotProject(project)
     }, err => {
         reportError(`Can't load project`, err)

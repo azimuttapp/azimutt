@@ -204,7 +204,7 @@ decode =
     Decode.map15 decodeProject
         (Decode.maybeField "organization" Organization.decode)
         (Decode.field "id" ProjectId.decode)
-        (Decode.field "slug" ProjectSlug.decode)
+        (Decode.maybeField "slug" ProjectSlug.decode)
         (Decode.field "name" ProjectName.decode)
         (Decode.maybeField "description" Decode.string)
         (Decode.field "sources" (Decode.list Source.decode))
@@ -219,8 +219,8 @@ decode =
         (Decode.field "updatedAt" Time.decode)
 
 
-decodeProject : Maybe Organization -> ProjectId -> ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
-decodeProject organization id slug name description sources notes layout usedLayout layouts settings storage version createdAt updatedAt =
+decodeProject : Maybe Organization -> ProjectId -> Maybe ProjectSlug -> ProjectName -> Maybe String -> List Source -> Dict NotesKey Notes -> Layout -> LayoutName -> Dict LayoutName Layout -> ProjectSettings -> ProjectStorage -> ProjectEncodingVersion -> Time.Posix -> Time.Posix -> Project
+decodeProject organization id maybeSlug name description sources notes layout usedLayout layouts settings storage version createdAt updatedAt =
     let
         allLayouts : Dict LayoutName Layout
         allLayouts =
@@ -230,5 +230,10 @@ decodeProject organization id slug name description sources notes layout usedLay
 
             else
                 layouts |> Dict.insert Conf.constants.defaultLayout layout
+
+        slug : ProjectSlug
+        slug =
+            -- retro-compatibility with old projects
+            maybeSlug |> Maybe.withDefault id
     in
     new organization id slug name description sources notes usedLayout allLayouts settings storage version createdAt updatedAt

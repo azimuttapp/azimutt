@@ -10,6 +10,7 @@ import Libs.Models.Env exposing (Env)
 import Libs.Task as T
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project
+import Models.Project.ProjectId as ProjectId
 import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.SourceInfo as SourceInfo
@@ -93,7 +94,7 @@ update req env now urlOrganization msg model =
                 |> Tuple.mapSecond (\cmd -> B.cond (message == ImportProject.BuildProject) (Cmd.batch [ cmd, Ports.confetti "create-project-btn" ]) cmd)
 
         CreateProject project ->
-            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project), Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault Conf.constants.tmpOrg, project = project.id }) req ] )
+            ( model, Cmd.batch [ Ports.createProjectTmp project, Ports.track (Track.initProject project), Request.pushRoute (Route.Organization___Project_ { organization = urlOrganization |> Maybe.withDefault Conf.constants.tmpOrg, project = ProjectId.zero }) req ] )
 
         CreateEmptyProject name ->
             ( model, SourceId.generator |> Random.generate (Source.aml Conf.constants.virtualRelationSourceName now >> Project.create model.projects name >> CreateProject) )
