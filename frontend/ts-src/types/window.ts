@@ -1,4 +1,4 @@
-import {ElmFlags, ElmMsg, ElmProgram, JsMsg} from "./elm";
+import {ElmFlags, ElmMsg, ElmProgram, JsMsg} from "./ports";
 import {AzimuttApi} from "../services/api";
 
 declare global {

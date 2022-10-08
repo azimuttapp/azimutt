@@ -77,7 +77,7 @@ viewApp : Url -> Maybe OrganizationId -> Shared.Model -> Model -> HtmlId -> Erd 
 viewApp currentUrl urlOrganization shared model htmlId erd =
     div [ class "az-app h-full" ]
         [ if model.conf.showNavbar then
-            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd model.projects model.navbar (Navbar.argsToString currentUrl urlOrganization (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
+            Lazy.lazy8 viewNavbar shared.conf shared.user model.conf model.virtualRelation erd shared.projects model.navbar (Navbar.argsToString currentUrl urlOrganization (htmlId ++ "-nav") (model.openedDropdown |> String.filterStartsWith (htmlId ++ "-nav")))
 
           else
             div [] []
@@ -148,7 +148,7 @@ viewModal currentUrl shared model _ =
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
          , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.member m.id) e m )) model.erd
-         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject shared.conf.env currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
+         , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))
          , model.embedSourceParsing |> Maybe.map (\m -> ( m.id, EmbedSourceParsingDialog.view EmbedSourceParsingMsg SourceParsed ModalClose Noop (model.openedDialogs |> List.member m.id) m ))
@@ -187,7 +187,7 @@ viewNotFound env currentUrl urlOrganization user conf =
              else
                 [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]
             )
-                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Backend.loginUrl env currentUrl, text = "Sign in" } ])
+                ++ (user |> Maybe.mapOrElse (\_ -> []) [ { url = Backend.loginUrl currentUrl, text = "Sign in" } ])
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }

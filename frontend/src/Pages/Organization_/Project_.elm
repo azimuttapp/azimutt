@@ -32,7 +32,7 @@ page shared req =
     in
     Page.element
         { init = init req.params
-        , update = Updates.update Nothing shared.conf.env shared.now urlOrganization shared.organizations
+        , update = Updates.update Nothing shared.conf.env shared.now urlOrganization shared.organizations shared.projects
         , view = Views.view (Request.pushRoute Route.Projects req) req.url urlOrganization shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -57,7 +57,6 @@ init params =
       , erdElem = ErdProps.zero
       , loaded = False
       , erd = Nothing
-      , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorMode.Select

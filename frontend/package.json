@@ -33,6 +33,7 @@
     "elm:format": "elm-format src tests --validate",
     "ts:dev": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../backend/priv/static/elm/script.js --bundle --sourcemap --watch",
     "ts:build": "./node_modules/.bin/esbuild ts-src/index.ts --outfile=../backend/priv/static/elm/script.js --bundle --sourcemap --minify",
+    "ts:compile": "tsc --project tsconfig.json && rm -rf ./public",
     "ts:test": "jest",
     "tailwind:dev": "tailwindcss -i ../backend/priv/static/elm/styles.css -o ../backend/priv/static/elm/dist/styles.css --watch",
     "tailwind:build": "tailwindcss -i ../backend/priv/static/elm/styles.css -o ../backend/priv/static/elm/dist/styles.css --minify",

@@ -1,14 +1,22 @@
-import {Organization, OrganizationPlan} from "../types/organization";
+import {Organization, Plan, PlanId, PlanName} from "../types/organization";
 import {Timestamp} from "../types/basics";
 import {Layout, Origin, Project, ProjectStorage, Relation, Source, Table, Type} from "../types/project";
 
 export const uuid = '84547c71-bec5-433b-87c7-685f1c9353b2'
 export const now: Timestamp = 1663789596755
+export const plan: Plan = {
+    id: PlanId.enum.free,
+    name: PlanName.enum.free,
+    layouts: 3,
+    colors: false,
+    db_analysis: false,
+    db_access: false
+}
 export const organization: Organization = {
     id: uuid,
     slug: 'valid',
     name: 'Valid',
-    activePlan: OrganizationPlan.enum.free,
+    plan: plan,
     logo: 'https://azimutt.app/logo.png',
     location: 'Paris',
     description: 'bla bla bla'

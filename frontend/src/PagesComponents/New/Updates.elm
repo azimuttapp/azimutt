@@ -6,7 +6,6 @@ import Gen.Route as Route
 import Json.Decode as Decode
 import Json.Encode as Encode
 import Libs.Bool as B
-import Libs.Models.Env exposing (Env)
 import Libs.Task as T
 import Models.OrganizationId exposing (OrganizationId)
 import Models.Project as Project
@@ -29,8 +28,8 @@ import Time
 import Track
 
 
-update : Request.With params -> Env -> Time.Posix -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
-update req env now urlOrganization msg model =
+update : Request.With params -> Time.Posix -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
+update req now urlOrganization msg model =
     case msg of
         SelectMenu menu ->
             ( { model | selectedMenu = menu }, Cmd.none )
@@ -66,7 +65,7 @@ update req env now urlOrganization msg model =
             )
 
         DatabaseSourceMsg message ->
-            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg env now message))
+            (model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now message))
                 |> Tuple.mapSecond
                     (\cmd ->
                         case message of

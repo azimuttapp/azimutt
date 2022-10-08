@@ -1,4 +1,4 @@
-import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/elm";
+import {ElementSize, ElmFlags, ElmMsg, ElmRuntime, GetLocalFile, Hotkey, HotkeyId, JsMsg} from "../types/ports";
 import {ColumnId, Project, ProjectId, ProjectInfoLocalLegacy, TableId} from "../types/project";
 import {Color, Delta, Position, ToastLevel} from "../types/basics";
 import {Logger} from "./logger";
@@ -19,6 +19,7 @@ export class ElmApp {
         Fullscreen: [],
         SetMeta: [],
         AutofocusWithin: [],
+        Toast: [],
         GetLegacyProjects: [],
         GetProject: [],
         CreateProjectTmp: [],

@@ -86,7 +86,7 @@ viewProfileIcon env currentUrl maybeUser profileDropdown openedDropdown toggle =
                             ]
                     )
             )
-            (a [ href (Backend.loginUrl env currentUrl), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
+            (a [ href (Backend.loginUrl currentUrl), css [ "mx-1 flex-shrink-0 bg-primary-600 p-1 rounded-full text-primary-200", hover [ "text-white animate-flip-h" ], focus_ring_offset_600 Tw.primary ] ]
                 [ span [ class "sr-only" ] [ text "Sign in" ]
                 , Icon.outline Icon.User ""
                 ]

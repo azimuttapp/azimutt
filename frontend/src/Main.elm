@@ -70,7 +70,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         ClickedLink (Browser.Internal url) ->
-            ( model, url |> Backend.internal model.shared.conf.env |> Either.unpack Nav.load (Url.toString >> Nav.pushUrl model.key) )
+            ( model, url |> Backend.internal |> Either.unpack Nav.load (Url.toString >> Nav.pushUrl model.key) )
 
         ClickedLink (Browser.External url) ->
             ( model, Nav.load url )

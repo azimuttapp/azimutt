@@ -10,7 +10,7 @@ import {
     ObserveSizes,
     SetMeta,
     UpdateProject
-} from "./types/elm";
+} from "./types/ports";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
 import {
@@ -75,12 +75,13 @@ app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIn
 app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
+app.on('Toast', msg => app.toast(msg.level, msg.message))
 app.on('GetLegacyProjects', getLegacyProjects)
 app.on('GetProject', getProject)
 app.on('CreateProjectTmp', createProjectTmp)
 app.on('CreateProject', createProject)
 app.on('UpdateProject', updateProject)
-// app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.enum.error, err)))
+// FIXME: app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.enum.error, err)))
 app.on('DeleteProject', deleteProject)
 app.on('DownloadFile', msg => Utils.downloadFile(msg.filename, msg.content))
 app.on('GetLocalFile', getLocalFile)

@@ -2,6 +2,7 @@ module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, StoredPr
 
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
+import Libs.Json.Decode as Decode
 import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
 import Libs.Result as Result
@@ -101,8 +102,8 @@ init _ flags =
       }
     , Cmd.batch
         [ Task.perform ZoneChanged Time.here
-        , Backend.getCurrentUser env GotUser
-        , Backend.getOrganizationsAndProjects env GotBackendProjects
+        , Backend.getCurrentUser GotUser
+        , Backend.getOrganizationsAndProjects GotBackendProjects
         , Ports.getLegacyProjects
         ]
     )
@@ -122,16 +123,34 @@ update _ msg model =
             ( { model | now = time }, Cmd.none )
 
         GotUser result ->
-            ( result |> Result.fold (\_ -> { model | userLoaded = True }) (\user -> { model | user = user, userLoaded = True }), Cmd.none )
+            result
+                |> Result.fold
+                    (\err -> ( { model | userLoaded = True }, Ports.toast "error" ("Can't decode current user: " ++ Backend.errorToString err) ))
+                    (\user -> ( { model | user = user, userLoaded = True }, Cmd.none ))
 
         GotBackendProjects result ->
-            ( result |> Result.fold (\_ -> { model | projectsLoaded = True }) (\( orgas, projects ) -> { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }), Cmd.none )
+            result
+                |> Result.fold
+                    (\err -> ( { model | projectsLoaded = True }, Ports.toast "error" ("Can't decode backend projects: " ++ Backend.errorToString err) ))
+                    (\( orgas, projects ) -> ( { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }, Cmd.none ))
 
-        JsMessage (Ports.GotLegacyProjects ( _, projects )) ->
-            ( { model | legacyProjects = Loaded (Sort.lastUpdatedFirst projects) }, Cmd.none )
+        JsMessage (Ports.GotLegacyProjects ( errors, projects )) ->
+            ( { model | legacyProjects = Loaded (Sort.lastUpdatedFirst projects) }
+            , Cmd.batch
+                (errors
+                    |> List.concatMap
+                        (\( name, err ) ->
+                            [ "Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err |> Ports.toast "error"
+                            , Ports.trackJsonError "decode-project" err
+                            ]
+                        )
+                )
+            )
 
-        JsMessage (Ports.ProjectDeleted _) ->
-            ( model, Cmd.batch [ Backend.getOrganizationsAndProjects model.conf.env GotBackendProjects, Ports.getLegacyProjects ] )
+        JsMessage (Ports.ProjectDeleted projectId) ->
+            ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }
+            , Cmd.batch [ Backend.getOrganizationsAndProjects GotBackendProjects, Ports.getLegacyProjects ]
+            )
 
         JsMessage _ ->
             ( model, Cmd.none )

@@ -7,13 +7,14 @@ import Libs.Json.Encode as Encode
 import Models.OrganizationId as OrganizationId exposing (OrganizationId)
 import Models.OrganizationName as OrganizationName exposing (OrganizationName)
 import Models.OrganizationSlug as OrganizationSlug exposing (OrganizationSlug)
+import Models.Plan as Plan exposing (Plan)
 
 
 type alias Organization =
     { id : OrganizationId
     , slug : OrganizationSlug
     , name : OrganizationName
-    , activePlan : String
+    , plan : Plan
     , logo : String
     , location : Maybe String
     , description : Maybe String
@@ -26,7 +27,7 @@ encode value =
         [ ( "id", value.id |> OrganizationId.encode )
         , ( "slug", value.slug |> OrganizationSlug.encode )
         , ( "name", value.name |> OrganizationName.encode )
-        , ( "activePlan", value.activePlan |> Encode.string )
+        , ( "plan", value.plan |> Plan.encode )
         , ( "logo", value.logo |> Encode.string )
         , ( "location", value.location |> Encode.maybe Encode.string )
         , ( "description", value.description |> Encode.maybe Encode.string )
@@ -39,7 +40,7 @@ decode =
         (Decode.field "id" OrganizationId.decode)
         (Decode.field "slug" OrganizationSlug.decode)
         (Decode.field "name" OrganizationName.decode)
-        (Decode.field "activePlan" Decode.string)
+        (Decode.field "plan" Plan.decode)
         (Decode.field "logo" Decode.string)
         (Decode.maybeField "location" Decode.string)
         (Decode.maybeField "description" Decode.string)

@@ -1,4 +1,4 @@
-import {Organization, OrganizationPlan} from "./organization";
+import {Organization} from "./organization";
 import {organization} from "../utils/constants.test";
 
 describe('organization', () => {
@@ -7,7 +7,7 @@ describe('organization', () => {
         expect(res).toEqual(organization)
     })
     test('zod empty', () => {
-        const valid: Organization = {...organization, activePlan: OrganizationPlan.enum.pro, location: undefined, description: undefined}
+        const valid: Organization = {...organization, location: undefined, description: undefined}
         const res: Organization = Organization.parse(valid)
         expect(res).toEqual(valid)
     })

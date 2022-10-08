@@ -64,6 +64,13 @@ repos:
       pass_filenames: false
       files: \.ts*$
 
+    - id: ts-lint
+      name: 'TypeScript lint'
+      language: system
+      entry: npm run ts:lint
+      pass_filenames: false
+      files: \.ts*$
+
 - repo: https://github.com/commitizen-tools/commitizen
   rev: v2.32.2
   hooks:

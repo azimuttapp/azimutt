@@ -59,7 +59,7 @@ viewContent shared =
                 , div [ class "mt-2 text-sm text-blue-700" ]
                     [ p [] [ text "You can now upload projects to our server and share it with other people!" ]
                     , p [] [ text "Of course ", bText "we continue to support local projects", text " but they need to be referenced in your account." ]
-                    , p [] [ text "This allows us to know the encoding version still used and warn you when we stop supporting old ones." ]
+                    , p [] [ text "This allows us to know used encoding version and warn you when we stop supporting old ones." ]
                     , p [ class "mt-2" ] [ bText "All you have to do is open your projects and save them." ]
                     ]
                 ]

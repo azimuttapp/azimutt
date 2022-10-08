@@ -17,7 +17,7 @@ import {
     ProjectStorage,
     ProjectVersion
 } from "../types/project";
-import {Organization, OrganizationId, OrganizationPlan, OrganizationSlug} from "../types/organization";
+import {Organization, OrganizationId, OrganizationSlug, Plan} from "../types/organization";
 import {DateTime} from "../types/basics";
 import {Env} from "../utils/env";
 import * as Http from "../utils/http";
@@ -32,7 +32,7 @@ export class Backend {
 
     getProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p})`)
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,content`)
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,organization.plan,content`)
         return Http.getJson(url, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
     }
 
@@ -128,7 +128,7 @@ export interface OrganizationResponse {
     id: OrganizationId
     slug: OrganizationSlug
     name: string
-    active_plan: OrganizationPlan
+    plan: Plan
     logo: string
     location: string | null
     description: string | null
@@ -138,7 +138,7 @@ export const OrganizationResponse = z.object({
     id: OrganizationId,
     slug: OrganizationSlug,
     name: z.string(),
-    active_plan: OrganizationPlan,
+    plan: Plan,
     logo: z.string(),
     location: z.string().nullable(),
     description: z.string().nullable()
@@ -219,7 +219,7 @@ function toOrganization(o: OrganizationResponse): Organization {
         id: o.id,
         slug: o.slug,
         name: o.name,
-        activePlan: o.active_plan,
+        plan: o.plan,
         logo: o.logo,
         location: o.location || undefined,
         description: o.description || undefined

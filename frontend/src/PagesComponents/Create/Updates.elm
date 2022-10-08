@@ -4,7 +4,6 @@ import Conf
 import Dict
 import Gen.Route as Route
 import Libs.Maybe as Maybe
-import Libs.Models.Env exposing (Env)
 import Libs.Result as Result
 import Libs.String as String
 import Libs.Task as T
@@ -26,8 +25,8 @@ import Time
 import Track
 
 
-update : Request.With params -> Env -> Time.Posix -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
-update req env now urlOrganization msg model =
+update : Request.With params -> Time.Posix -> Maybe OrganizationId -> Msg -> Model -> ( Model, Cmd Msg )
+update req now urlOrganization msg model =
     case msg of
         InitProject ->
             ( (req.query |> Dict.get "database" |> Maybe.map (\_ -> { model | databaseSource = Just (DatabaseSource.init Nothing (createProject model)) }))
@@ -42,7 +41,7 @@ update req env now urlOrganization msg model =
             )
 
         DatabaseSourceMsg message ->
-            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg env now message)
+            model |> mapDatabaseSourceMCmd (DatabaseSource.update DatabaseSourceMsg now message)
 
         JsonSourceMsg message ->
             model |> mapJsonSourceMCmd (JsonSource.update JsonSourceMsg now message)

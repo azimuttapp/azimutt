@@ -1,6 +1,6 @@
 import {Logger} from "./logger";
 import splitbee from '@splitbee/web';
-import {Data} from "../types/elm";
+import {Data} from "../types/ports";
 import {SplitbeeConf} from "../conf";
 
 export interface Analytics {

@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -57,14 +57,19 @@ fullscreen maybeId =
     messageToJs (Fullscreen maybeId)
 
 
+setMeta : MetaInfos -> Cmd msg
+setMeta payload =
+    messageToJs (SetMeta payload)
+
+
 autofocusWithin : HtmlId -> Cmd msg
 autofocusWithin id =
     messageToJs (AutofocusWithin id)
 
 
-setMeta : MetaInfos -> Cmd msg
-setMeta payload =
-    messageToJs (SetMeta payload)
+toast : String -> String -> Cmd msg
+toast level message =
+    messageToJs (Toast level message)
 
 
 getLegacyProjects : Cmd msg
@@ -193,6 +198,7 @@ type ElmMsg
     | Fullscreen (Maybe HtmlId)
     | SetMeta MetaInfos
     | AutofocusWithin HtmlId
+    | Toast String String
     | GetLegacyProjects
     | GetProject OrganizationId ProjectId
     | CreateProjectTmp Project
@@ -285,6 +291,9 @@ elmEncoder elm =
 
         AutofocusWithin id ->
             Encode.object [ ( "kind", "AutofocusWithin" |> Encode.string ), ( "id", id |> Encode.string ) ]
+
+        Toast level message ->
+            Encode.object [ ( "kind", "Toast" |> Encode.string ), ( "level", level |> Encode.string ), ( "message", message |> Encode.string ) ]
 
         GetLegacyProjects ->
             Encode.object [ ( "kind", "GetLegacyProjects" |> Encode.string ) ]

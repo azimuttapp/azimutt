@@ -6,12 +6,13 @@ import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
 import Models.OrganizationName exposing (OrganizationName)
 import Models.OrganizationSlug exposing (OrganizationSlug)
-import TestHelpers.Fuzzers exposing (identifier, stringSmall, uuid)
+import Models.Plan exposing (Plan)
+import TestHelpers.Fuzzers exposing (identifier, intPosSmall, stringSmall, uuid)
 
 
 organization : Fuzzer Organization
 organization =
-    Fuzz.map7 Organization organizationId organizationSlug organizationName activePlan logo (Fuzz.maybe location) (Fuzz.maybe description)
+    Fuzz.map7 Organization organizationId organizationSlug organizationName plan logo (Fuzz.maybe location) (Fuzz.maybe description)
 
 
 organizationId : Fuzzer OrganizationId
@@ -29,9 +30,19 @@ organizationName =
     identifier
 
 
-activePlan : Fuzzer String
-activePlan =
-    Fuzz.oneOf ([ "free", "pro" ] |> List.map Fuzz.constant)
+plan : Fuzzer Plan
+plan =
+    Fuzz.map6 Plan planId planName intPosSmall Fuzz.bool Fuzz.bool Fuzz.bool
+
+
+planId : Fuzzer String
+planId =
+    Fuzz.oneOf ([ "free", "team" ] |> List.map Fuzz.constant)
+
+
+planName : Fuzzer String
+planName =
+    Fuzz.oneOf ([ "free", "team" ] |> List.map Fuzz.constant)
 
 
 logo : Fuzzer String

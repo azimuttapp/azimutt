@@ -48,7 +48,7 @@ page shared req =
     in
     Page.element
         { init = init query
-        , update = Updates.update query.layout shared.conf.env shared.now urlOrganization shared.organizations
+        , update = Updates.update query.layout shared.conf.env shared.now urlOrganization shared.organizations shared.projects
         , view = Views.view (Request.pushRoute Route.NotFound req) req.url urlOrganization shared
         , subscriptions = Subscriptions.subscriptions
         }
@@ -84,7 +84,6 @@ init query =
       , erdElem = ErdProps.zero
       , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
       , erd = Nothing
-      , projects = []
       , hoverTable = Nothing
       , hoverColumn = Nothing
       , cursorMode = CursorMode.Select

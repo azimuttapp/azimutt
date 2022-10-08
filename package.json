@@ -44,6 +44,7 @@
     "ts:dev": "cd frontend && npm run ts:dev",
     "ts:test": "cd frontend && npm run ts:test",
     "ts:build": "cd frontend && npm run ts:build",
+    "ts:lint": "cd frontend && npm run ts:compile",
     "tailwind:dev": "cd frontend && npm run tailwind:dev",
     "tailwind:build": "cd frontend && npm run tailwind:build",
     "clever": "npm run elm:setup && cd backend && mix deps.get && mix assets.deploy && mix phx.server"

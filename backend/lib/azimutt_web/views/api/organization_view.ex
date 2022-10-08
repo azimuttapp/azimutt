@@ -1,11 +1,11 @@
 defmodule AzimuttWeb.Api.OrganizationView do
   use AzimuttWeb, :view
+  alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias AzimuttWeb.Utils.CtxParams
 
-  # FIXME: how to pattern match on list or organizations?
+  # FIXME: how to pattern match on list of organizations?
   def render("index.json", %{organizations: organizations, ctx: %CtxParams{} = ctx}) do
-    # FIXME: should we add a root object? like: {data: []}
     render_many(organizations, __MODULE__, "show.json", ctx: ctx)
   end
 
@@ -16,13 +16,32 @@ defmodule AzimuttWeb.Api.OrganizationView do
       name: organization.name,
       logo: organization.logo,
       location: organization.location,
-      description: organization.description,
-      active_plan: organization.active_plan
+      description: organization.description
     }
+    |> put_plan(organization, ctx)
     |> put_projects(organization, ctx)
   end
 
-  defp put_projects(json, organization, ctx) do
+  defp put_plan(json, %Organization{} = organization, %CtxParams{} = ctx) do
+    {:ok, benefits} = Organizations.get_organization_benefits(organization)
+
+    if ctx.expand |> Enum.member?("plan") do
+      json
+      |> Map.put(:plan, %{
+        id: organization.active_plan,
+        name: organization.active_plan,
+        layouts: benefits.layouts,
+        layouts: benefits.layouts,
+        colors: benefits.colors,
+        db_analysis: benefits.db_analysis,
+        db_access: benefits.db_access
+      })
+    else
+      json
+    end
+  end
+
+  defp put_projects(json, %Organization{} = organization, %CtxParams{} = ctx) do
     if ctx.expand |> Enum.member?("projects") do
       project_ctx = ctx |> CtxParams.nested("projects")
       json |> Map.put(:projects, render_many(organization.projects, AzimuttWeb.Api.ProjectView, "show.json", ctx: project_ctx))

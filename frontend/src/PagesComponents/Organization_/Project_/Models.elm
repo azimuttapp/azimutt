@@ -26,7 +26,6 @@ import Models.Project.Source exposing (Source)
 import Models.Project.SourceId exposing (SourceId)
 import Models.Project.SourceName exposing (SourceName)
 import Models.Project.TableId exposing (TableId)
-import Models.ProjectInfo exposing (ProjectInfo)
 import Models.RelationStyle exposing (RelationStyle)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.EmbedSourceParsingDialog as EmbedSourceParsingDialog
@@ -56,7 +55,6 @@ type alias Model =
     , erdElem : ErdProps
     , loaded : Bool
     , erd : Maybe Erd
-    , projects : List ProjectInfo
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode

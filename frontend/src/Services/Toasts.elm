@@ -13,7 +13,7 @@ import Services.Lenses exposing (mapIndex, mapList, mapToasts, setIsOpen)
 
 
 {-
-   Add following codes in following places:
+   To integrate this, add the following codes in following places:
     - Model:  `toasts : Toasts.Model`
     - Msg:    `Toast Toasts.Msg`
     - init:   `toasts = Toasts.init`

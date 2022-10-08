@@ -11,13 +11,14 @@ import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
-import Libs.Models.Env as Env exposing (Env)
+import Libs.Models.Env exposing (Env)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Time as Time
 import Libs.Url as Url
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
+import Models.Plan as Plan exposing (Plan)
 import Models.Project.LayoutName exposing (LayoutName)
 import Models.Project.ProjectStorage as ProjectStorage exposing (ProjectStorage)
 import Models.ProjectInfo exposing (ProjectInfo)
@@ -42,11 +43,11 @@ homeUrl _ =
     "/"
 
 
-loginUrl : Env -> Url -> String
-loginUrl env currentUrl =
+loginUrl : Url -> String
+loginUrl currentUrl =
     let
         ( url, redirect ) =
-            ( "/login", currentUrl |> withOwnHost env )
+            ( "/login", currentUrl |> Url.asString )
     in
     if redirect == "" then
         url
@@ -111,11 +112,10 @@ schemaSamples =
         |> Dict.fromList
 
 
-internal : Env -> Url -> Either String Url
-internal env url =
-    -- if internal: Right Url, if external: Left String
+internal : Url -> Either String Url
+internal url =
     if isExternal url then
-        url |> Url.asString |> withLinkHost env |> Left
+        url |> Url.asString |> Left
 
     else
         url |> Right
@@ -131,53 +131,26 @@ isExternal url =
         || (url.path |> String.startsWith "/organizations/")
 
 
-withLinkHost : Env -> String -> String
-withLinkHost env path =
-    -- FIXME: remove azimutt.dev & azimutt.app prefixes? (same domain)
-    case env of
-        Env.Dev ->
-            "http://localhost:4000" ++ path
-
-        Env.Staging ->
-            "https://azimutt.dev" ++ path
-
-        Env.Prod ->
-            "https://azimutt.app" ++ path
-
-
-withOwnHost : Env -> Url -> String
-withOwnHost env url =
-    case env of
-        Env.Dev ->
-            Url.toString url
-
-        Env.Staging ->
-            Url.asString url
-
-        Env.Prod ->
-            Url.asString url
-
-
-getCurrentUser : Env -> (Result Error (Maybe User) -> msg) -> Cmd msg
-getCurrentUser env toMsg =
+getCurrentUser : (Result Error (Maybe User) -> msg) -> Cmd msg
+getCurrentUser toMsg =
     riskyGet
-        { url = "/api/v1/users/current" |> withXhrHost env
+        { url = "/api/v1/users/current"
         , expect = Http.expectJson (recoverUnauthorized >> Result.mapError buildError >> toMsg) User2.decode
         }
 
 
-getOrganizationsAndProjects : Env -> (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
-getOrganizationsAndProjects env toMsg =
+getOrganizationsAndProjects : (Result Error ( List Organization, List ProjectInfo ) -> msg) -> Cmd msg
+getOrganizationsAndProjects toMsg =
     riskyGet
-        { url = "/api/v1/organizations?expand=projects" |> withXhrHost env
+        { url = "/api/v1/organizations?expand=plan,projects"
         , expect = Http.expectJson (Result.bimap buildError formatOrgasAndProjects >> toMsg) (Decode.list decodeOrga)
         }
 
 
-getDatabaseSchema : Env -> DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
-getDatabaseSchema env url toMsg =
+getDatabaseSchema : DatabaseUrl -> (Result Error String -> msg) -> Cmd msg
+getDatabaseSchema url toMsg =
     riskyPost
-        { url = "/api/v1/analyzer/schema" |> withXhrHost env
+        { url = "/api/v1/analyzer/schema"
         , body = url |> databaseSchemaBody |> Http.jsonBody
         , expect = Http.expectStringResponse toMsg handleResponse
         }
@@ -187,19 +160,6 @@ databaseSchemaBody : DatabaseUrl -> Encode.Value
 databaseSchemaBody url =
     Encode.object
         [ ( "url", url |> DatabaseUrl.encode ) ]
-
-
-withXhrHost : Env -> String -> String
-withXhrHost env path =
-    -- FIXME: to remove? (not in subdomain anymore)
-    if env == Env.Dev then
-        path
-
-    else if env == Env.Staging then
-        "https://azimutt.dev" ++ path
-
-    else
-        "https://azimutt.app" ++ path
 
 
 riskyGet : { url : String, expect : Http.Expect msg } -> Cmd msg
@@ -253,7 +213,7 @@ buildOrganization o =
     { id = o.id
     , slug = o.slug
     , name = o.name
-    , activePlan = o.activePlan
+    , plan = o.plan
     , logo = o.logo
     , location = o.location
     , description = o.description
@@ -264,7 +224,7 @@ type alias OrgaWithProjects =
     { id : String
     , slug : String
     , name : String
-    , activePlan : String
+    , plan : Plan
     , logo : String
     , location : Maybe String
     , description : Maybe String
@@ -299,7 +259,7 @@ decodeOrga =
         (Decode.field "id" Decode.string)
         (Decode.field "slug" Decode.string)
         (Decode.field "name" Decode.string)
-        (Decode.field "active_plan" Decode.string)
+        (Decode.field "plan" Plan.decode)
         (Decode.defaultField "logo" Decode.string "")
         (Decode.maybeField "location" Decode.string)
         (Decode.maybeField "description" Decode.string)

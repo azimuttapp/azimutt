@@ -4,7 +4,6 @@ import Components.Molecules.Modal as Modal
 import Components.Slices.ProjectSaveDialogBody as ProjectSaveDialogBody
 import Html exposing (Html)
 import Libs.Maybe as Maybe
-import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
 import Models.Organization exposing (Organization)
@@ -46,8 +45,8 @@ update modalOpen msg model =
             model |> Maybe.mapOrElse (ProjectSaveDialogBody.update m >> Tuple.mapFirst Just) ( model, Cmd.none )
 
 
-view : (Msg -> msg) -> (msg -> msg) -> (ProjectName -> Organization -> ProjectStorage -> msg) -> Env -> Url -> Maybe User -> List Organization -> Bool -> Erd -> Model -> Html msg
-view wrap modalClose saveProject env currentUrl user organizations opened erd model =
+view : (Msg -> msg) -> (msg -> msg) -> (ProjectName -> Organization -> ProjectStorage -> msg) -> Url -> Maybe User -> List Organization -> Bool -> Erd -> Model -> Html msg
+view wrap modalClose saveProject currentUrl user organizations opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -65,5 +64,5 @@ view wrap modalClose saveProject env currentUrl user organizations opened erd mo
         }
         [ user
             |> Maybe.map (\_ -> ProjectSaveDialogBody.selectSave (BodyMsg >> wrap) close saveProject titleId organizations erd.project.name model)
-            |> Maybe.withDefault (ProjectSaveDialogBody.signIn close (Backend.loginUrl env currentUrl) titleId)
+            |> Maybe.withDefault (ProjectSaveDialogBody.signIn close (Backend.loginUrl currentUrl) titleId)
         ]

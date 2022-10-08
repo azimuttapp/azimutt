@@ -1,5 +1,5 @@
-import {Color, ColumnId, Project, Relation, Table, TableId} from "../types/project";
-import {Px} from "../types/basics";
+import {ColumnId, Project, Relation, Table, TableId} from "../types/project";
+import {Color, Px} from "../types/basics";
 import {ElmApp} from "./elm";
 import {Logger} from "./logger";
 

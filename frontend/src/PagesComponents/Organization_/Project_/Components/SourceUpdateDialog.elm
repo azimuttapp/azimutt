@@ -14,7 +14,6 @@ import Libs.Html.Attributes exposing (css, role)
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl exposing (DatabaseUrl)
 import Libs.Models.DateTime as DateTime
-import Libs.Models.Env exposing (Env)
 import Libs.Models.FileName exposing (FileName)
 import Libs.Models.FileUpdatedAt exposing (FileUpdatedAt)
 import Libs.Models.FileUrl exposing (FileUrl)
@@ -67,8 +66,8 @@ init noop source =
     }
 
 
-update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Env -> Time.Posix -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
-update wrap modalOpen noop env now msg model =
+update : (Msg -> msg) -> (HtmlId -> msg) -> (String -> msg) -> Time.Posix -> Msg -> Maybe (Model msg) -> ( Maybe (Model msg), Cmd msg )
+update wrap modalOpen noop now msg model =
     case msg of
         Open source ->
             ( Just (init noop source), T.sendAfter 1 (modalOpen Conf.ids.sourceUpdateDialog) )
@@ -77,7 +76,7 @@ update wrap modalOpen noop env now msg model =
             ( Nothing, Cmd.none )
 
         DatabaseSourceMsg message ->
-            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) env now message))
+            model |> mapMCmd (mapDatabaseSourceCmd (DatabaseSource.update (DatabaseSourceMsg >> wrap) now message))
 
         SqlSourceMsg message ->
             model |> mapMCmd (mapSqlSourceCmd (SqlSource.update (SqlSourceMsg >> wrap) now message))

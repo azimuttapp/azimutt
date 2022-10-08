@@ -1,6 +1,6 @@
-import {Click, MouseDown} from "./elm";
+import {Click, MouseDown} from "./ports";
 
-describe('elm', () => {
+describe('ports', () => {
     test('Click', () => {
         const data = { kind: 'Click', id: 'header' }
         const res: Click = Click.parse(data) // make sure parser result is aligned with TS type!

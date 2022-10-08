@@ -23,6 +23,7 @@ import Models.Project.Source as Source
 import Models.Project.SourceId as SourceId
 import Models.Project.SourceKind as SourceKind
 import Models.Project.TableId as TableId
+import Models.ProjectInfo exposing (ProjectInfo)
 import Models.Size as Size
 import Models.SourceInfo as SourceInfo
 import PagesComponents.Organization_.Project_.Components.AmlSidebar as AmlSidebar
@@ -55,15 +56,14 @@ import Random
 import Services.Backend as Backend
 import Services.JsonSource as JsonSource
 import Services.Lenses exposing (mapAmlSidebarM, mapCanvas, mapColumns, mapConf, mapContextMenuM, mapDetailsSidebarCmd, mapEmbedSourceParsingMCmd, mapErdM, mapErdMCmd, mapHoverTable, mapMobileMenuOpen, mapNavbar, mapOpened, mapOpenedDialogs, mapPosition, mapProject, mapPromptM, mapProps, mapSaveCmd, mapSchemaAnalysisM, mapSearch, mapSelected, mapShowHiddenColumns, mapTables, mapTablesCmd, mapToastsCmd, setActive, setCollapsed, setColor, setConfirm, setContextMenu, setCursorMode, setDragging, setHoverColumn, setHoverTable, setInput, setLast, setName, setOpenedDropdown, setOpenedPopover, setPosition, setPrompt, setSchemaAnalysis, setSelected, setShow, setSize, setText)
-import Services.Sort as Sort
 import Services.SqlSource as SqlSource
 import Services.Toasts as Toasts
 import Time
 import Track
 
 
-update : Maybe LayoutName -> Env -> Time.Posix -> Maybe OrganizationId -> List Organization -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout env now urlOrganization organizations msg model =
+update : Maybe LayoutName -> Env -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout env now urlOrganization organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -211,13 +211,13 @@ update currentLayout env now urlOrganization organizations msg model =
             model |> mapSaveCmd (ProjectSaveDialog.update ModalOpen message)
 
         ProjectSettingsMsg message ->
-            model |> handleProjectSettings env now message
+            model |> handleProjectSettings now message
 
         EmbedSourceParsingMsg message ->
-            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg env now message)
+            model |> mapEmbedSourceParsingMCmd (EmbedSourceParsingDialog.update EmbedSourceParsingMsg now message)
 
         SourceParsed source ->
-            ( model, Project.create model.projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
+            ( model, Project.create projects source.name source |> Ok |> Just |> GotProject |> JsMessage |> T.send )
 
         HelpMsg message ->
             model |> handleHelp message
@@ -323,19 +323,6 @@ handleJsMessage now currentLayout msg model =
         GotSizes sizes ->
             model |> updateSizes sizes
 
-        GotLegacyProjects ( errors, projects ) ->
-            ( { model | projects = Sort.lastUpdatedFirst projects }
-            , Cmd.batch
-                (errors
-                    |> List.concatMap
-                        (\( name, err ) ->
-                            [ "Unable to read project " ++ name ++ ": " ++ Decode.errorToHtml err |> Toasts.error |> Toast |> T.send
-                            , Ports.trackJsonError "decode-project" err
-                            ]
-                        )
-                )
-            )
-
         GotProject res ->
             case res of
                 Nothing ->
@@ -364,8 +351,13 @@ handleJsMessage now currentLayout msg model =
                         )
                     )
 
-        ProjectDeleted projectId ->
-            ( { model | projects = model.projects |> List.filter (\p -> p.id /= projectId) }, Cmd.none )
+        GotLegacyProjects _ ->
+            -- handled in Shared
+            ( model, Cmd.none )
+
+        ProjectDeleted _ ->
+            -- handled in Shared
+            ( model, Cmd.none )
 
         GotLocalFile kind file content ->
             if kind == SqlSource.kind then
