@@ -65,6 +65,11 @@ defmodule Azimutt.Blog.Article do
             }}
   end
 
+  def path_has_hash(path) do
+    # hash has a length of 32, so if last segment is 35 char long (hash + ".md"), it's probably a hash
+    path |> String.split("-") |> Enum.take(-1) |> Enum.at(0) |> String.length() == 35
+  end
+
   def path_to_id(path) do
     path |> String.split("/") |> Enum.take(-1) |> Enum.at(0) |> String.replace_suffix(".md", "")
   end
