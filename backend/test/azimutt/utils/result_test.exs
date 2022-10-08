@@ -56,6 +56,25 @@ defmodule Azimutt.Utils.ResultTest do
       assert {:error, "err"} = :error |> Result.map_both(fn _ -> "err" end, on_ok)
     end
 
+    test "tap" do
+      assert {:ok, 1} = {:ok, 1} |> Result.tap(fn x -> x + 1 end)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.tap(fn x -> x + 1 end)
+    end
+
+    test "tap_error" do
+      assert {:ok, 1} = {:ok, 1} |> Result.tap_error(fn e -> e <> "ss" end)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.tap_error(fn e -> e <> "ss" end)
+      assert :error = :error |> Result.tap_error(fn _ -> "err" end)
+    end
+
+    test "tap_both" do
+      on_ok = fn x -> x + 1 end
+      on_err = fn e -> e <> "ss" end
+      assert {:ok, 1} = {:ok, 1} |> Result.tap_both(on_err, on_ok)
+      assert {:error, "oops"} = {:error, "oops"} |> Result.tap_both(on_err, on_ok)
+      assert :error = :error |> Result.tap_both(fn _ -> "err" end, on_ok)
+    end
+
     test "sequence" do
       assert {:ok, [1, 2, 3]} = [{:ok, 1}, {:ok, 2}, {:ok, 3}] |> Result.sequence()
       assert {:error, "e1"} = [{:ok, 1}, {:error, "e1"}, {:error, "e2"}] |> Result.sequence()

@@ -8,9 +8,9 @@ defmodule Azimutt.OrganizationsFixtures do
         name: "some name",
         description: "some description",
         contact_email: "contact#{System.unique_integer()}@example.com",
-        active_plan: :free,
         logo: "",
         location: "some location",
+        stripe_customer_id: "cus_xxx",
         is_archived: false,
         is_private: true,
         is_personal: false

@@ -34,6 +34,9 @@ stripe_webhook_key =
     You can obtain it from the stripe dashboard: https://dashboard.stripe.com/account/webhooks
     """
 
+config :azimutt,
+  stripe_api_key: stripe_api_key
+
 config :stripity_stripe,
   api_key: stripe_api_key,
   signing_secret: stripe_webhook_key

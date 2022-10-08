@@ -7,6 +7,6 @@ defmodule AzimuttWeb.OrganizationBillingController do
     current_user = conn.assigns.current_user
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(id, current_user),
-         do: conn |> put_view(AzimuttWeb.OrganizationView) |> render("billing.html", organization: organization)
+         do: conn |> put_view(AzimuttWeb.OrganizationView) |> render("billing.html", organization: organization, active_plan: :free)
   end
 end

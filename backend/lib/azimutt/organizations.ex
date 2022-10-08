@@ -9,6 +9,7 @@ defmodule Azimutt.Organizations do
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
+  alias Azimutt.Services.Stripe
   alias Azimutt.Utils.Result
 
   def get_organization(id, %User{} = current_user) do
@@ -40,23 +41,59 @@ defmodule Azimutt.Organizations do
   end
 
   def create_personal_organization(%User{} = current_user) do
-    member_changeset = OrganizationMember.creator_changeset(current_user)
+    Stripe.init_customer()
+    |> Result.flat_map(fn stripe_customer ->
+      member_changeset = OrganizationMember.creator_changeset(current_user)
 
-    %Organization{}
-    |> Repo.preload(:members)
-    |> Organization.create_personal_changeset(current_user)
-    |> Ecto.Changeset.put_assoc(:members, [member_changeset])
-    |> Repo.insert()
+      %Organization{}
+      |> Repo.preload(:members)
+      |> Organization.create_personal_changeset(current_user, stripe_customer)
+      |> Ecto.Changeset.put_assoc(:members, [member_changeset])
+      |> Repo.insert()
+      |> Result.tap_both(
+        fn _ -> Stripe.delete_customer(stripe_customer) end,
+        fn o ->
+          Stripe.update_organization(
+            stripe_customer,
+            o.id,
+            o.name,
+            o.contact_email,
+            o.description,
+            true,
+            current_user.name,
+            current_user.email
+          )
+        end
+      )
+    end)
   end
 
   def create_non_personal_organization(attrs \\ %{}, %User{} = current_user) do
-    member_changeset = OrganizationMember.creator_changeset(current_user)
+    Stripe.init_customer()
+    |> Result.flat_map(fn stripe_customer ->
+      member_changeset = OrganizationMember.creator_changeset(current_user)
 
-    %Organization{}
-    |> Repo.preload(:members)
-    |> Organization.create_non_personal_changeset(attrs, current_user)
-    |> Ecto.Changeset.put_assoc(:members, [member_changeset])
-    |> Repo.insert()
+      %Organization{}
+      |> Repo.preload(:members)
+      |> Organization.create_non_personal_changeset(current_user, stripe_customer, attrs)
+      |> Ecto.Changeset.put_assoc(:members, [member_changeset])
+      |> Repo.insert()
+      |> Result.tap_both(
+        fn _ -> Stripe.delete_customer(stripe_customer) end,
+        fn o ->
+          Stripe.update_organization(
+            stripe_customer,
+            o.id,
+            o.name,
+            o.contact_email,
+            o.description,
+            false,
+            current_user.name,
+            current_user.email
+          )
+        end
+      )
+    end)
   end
 
   def accept_organization_invitation(%OrganizationInvitation{} = organization_invitation, %User{} = current_user, now) do
@@ -156,24 +193,26 @@ defmodule Azimutt.Organizations do
   end
 
   def get_organization_benefits(%Organization{} = organization) do
-    if organization.active_plan == :team do
-      {:ok,
-       %Benefits{
-         members: 5,
-         layouts: nil,
-         colors: true,
-         db_analysis: true,
-         db_access: true
-       }}
-    else
-      {:ok,
-       %Benefits{
-         members: 3,
-         layouts: 3,
-         colors: false,
-         db_analysis: false,
-         db_access: false
-       }}
-    end
+    # FIXME: active_plan
+    # if organization.active_plan == :team do
+    #   {:ok,
+    #    %Benefits{
+    #      members: 5,
+    #      layouts: nil,
+    #      colors: true,
+    #      db_analysis: true,
+    #      db_access: true
+    #    }}
+    # else
+    {:ok,
+     %Benefits{
+       members: 3,
+       layouts: 3,
+       colors: false,
+       db_analysis: false,
+       db_access: false
+     }}
+
+    # end
   end
 end

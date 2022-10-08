@@ -69,12 +69,13 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
       add :slug, :string, null: false
       add :name, :string, null: false
       add :contact_email, :string, null: false
-      add :active_plan, :string, null: false
       add :logo, :string
       add :location, :string
       add :description, :text
       add :github_username, :string
       add :twitter_username, :string
+      add :stripe_customer_id, :string, null: false
+      add :stripe_subscription_id, :string
 
       add :is_personal, :boolean,
         null: false,

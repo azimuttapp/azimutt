@@ -20,6 +20,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
 
       render(conn, "index.html",
         organization: organization,
+        active_plan: :free,
         organization_benefits: organization_benefits,
         organization_invitations: organization_invitations,
         organization_invitation_changeset: organization_invitation_changeset

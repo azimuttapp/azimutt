@@ -124,6 +124,66 @@ defmodule Azimutt.Utils.Result do
   def map_both(:error, f_error, _f_ok), do: error(f_error.(nil))
 
   @doc """
+  Execute the function on :ok but does not change the result
+  ## Examples
+      iex> {:ok, 1} |> Result.tap(fn x -> x + 1 end)
+      {:ok, 1}
+      iex> {:error, 1} |> Result.tap(fn x -> x + 1 end)
+      {:error, 1}
+  """
+  def tap({:ok, val} = res, f) do
+    f.(val)
+    res
+  end
+
+  def tap({:error, _err} = res, _f), do: res
+
+  @doc """
+  Execure the function on :error but does not change the result
+  ## Examples
+      iex> {:ok, 1} |> Result.tap_error(fn x -> x + 1 end)
+      {:ok, 1}
+      iex> {:error, 1} |> Result.tap_error(fn x -> x + 1 end)
+      {:error, 1}
+      iex> :error |> Result.tap_error(fn _ -> 1 end)
+      :error
+  """
+  def tap_error({:ok, _val} = res, _f), do: res
+
+  def tap_error({:error, err} = res, f) do
+    f.(err)
+    res
+  end
+
+  def tap_error(:error = res, f) do
+    f.(nil)
+    res
+  end
+
+  @doc """
+  Execute a function depending on the result but do not alter the result
+  ## Examples
+      iex> {:ok, 1} |> Result.tap_both(fn x -> x + 1 end, fn x -> x + 10 end)
+      {:ok, 1}
+      iex> {:error, 1} |> Result.tap_both(fn x -> x + 1 end, fn x -> x + 10 end)
+      {:error, 1}
+  """
+  def tap_both({:ok, val} = res, _f_error, f_ok) do
+    f_ok.(val)
+    res
+  end
+
+  def tap_both({:error, err} = res, f_error, _f_ok) do
+    f_error.(err)
+    res
+  end
+
+  def tap_both(:error = res, f_error, _f_ok) do
+    f_error.(nil)
+    res
+  end
+
+  @doc """
   Transforms a list of results into a result of list.
   If they are all :ok, it will be :ok, otherwise returns the first :error.
   ## Examples

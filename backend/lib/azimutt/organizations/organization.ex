@@ -17,12 +17,13 @@ defmodule Azimutt.Organizations.Organization do
     field :slug, :string
     field :name, :string
     field :contact_email, :string
-    field :active_plan, Ecto.Enum, values: [:free, :team, :enterprise], default: :free
     field :logo, :string
     field :location, :string
     field :description, :string
     field :github_username, :string
     field :twitter_username, :string
+    field :stripe_customer_id, :string
+    field :stripe_subscription_id, :string
     field :is_personal, :boolean
     belongs_to :created_by, User, source: :created_by
     belongs_to :updated_by, User, source: :updated_by
@@ -36,7 +37,7 @@ defmodule Azimutt.Organizations.Organization do
   end
 
   @doc false
-  def create_personal_changeset(%Organization{} = organization, %User{} = current_user) do
+  def create_personal_changeset(%Organization{} = organization, %User{} = current_user, %Stripe.Customer{} = stripe_customer) do
     organization
     |> cast(
       %{
@@ -60,8 +61,8 @@ defmodule Azimutt.Organizations.Organization do
         :twitter_username
       ]
     )
-    |> put_change(:active_plan, :free)
     |> put_change(:is_personal, true)
+    |> put_change(:stripe_customer_id, stripe_customer.id)
     |> put_assoc(:created_by, current_user)
     |> put_assoc(:updated_by, current_user)
   end
@@ -69,8 +70,9 @@ defmodule Azimutt.Organizations.Organization do
   @doc false
   def create_non_personal_changeset(
         %Organization{} = organization,
-        attrs \\ %{},
-        %User{} = current_user
+        %User{} = current_user,
+        %Stripe.Customer{} = stripe_customer,
+        attrs \\ %{}
       ) do
     organization
     |> cast(attrs, [
@@ -83,8 +85,8 @@ defmodule Azimutt.Organizations.Organization do
       :twitter_username
     ])
     |> Slugme.generate_slug(:name)
-    |> put_change(:active_plan, :free)
     |> put_change(:is_personal, false)
+    |> put_change(:stripe_customer_id, stripe_customer.id)
     |> put_change(:created_by, current_user)
     |> put_change(:updated_by, current_user)
     |> validate_required([:name, :contact_email])

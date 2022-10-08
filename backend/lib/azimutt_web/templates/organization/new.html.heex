@@ -5,7 +5,6 @@
             <p class="mt-5 text-xl text-gray-500 sm:text-center">Tell us about your organization.</p>
         </div>
     <.form let={f} for={@changeset} action={Routes.organization_path(@conn, :create)} class="mt-12">
-        <%= text_input f, :active_plan, value: :free, class: "hidden" %>
         <%= text_input f, :logo, value: @logo, class: "hidden" %>
         <div class="space-y-8 divide-y divide-gray-200">
             <%= if @changeset.action do %>

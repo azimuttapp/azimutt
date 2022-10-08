@@ -47,8 +47,8 @@ defmodule AzimuttWeb.LayoutView do
     end
   end
 
-  def generate_organization_plan_badge(%Azimutt.Organizations.Organization{} = organization) do
-    case organization.active_plan do
+  def generate_organization_plan_badge(active_plan) do
+    case active_plan do
       :free ->
         content_tag(:span, "Free plan",
           class: "inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800"

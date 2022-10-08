@@ -30,7 +30,7 @@ user_admin_attrs = %User{
 }
 
 user_admin = Azimutt.Repo.insert!(user_admin_attrs)
-{:ok, user_org} = Azimutt.Organizations.create_personal_organization(user_admin)
+{:ok, _user_org} = Azimutt.Organizations.create_personal_organization(user_admin)
 
 azimutt_org_attrs = %{
   name: "Azimutt",
@@ -65,31 +65,31 @@ for i <- 1..5 do
   )
 end
 
-for i <- 1..10 do
-  user = %{
-    name: Faker.Person.name() <> Integer.to_string(i),
-    email: Faker.Internet.email(),
-    password: "passpasspass",
-    avatar: Faker.Avatar.image_url(),
-    company: Faker.Company.En.name(),
-    location: Faker.Address.En.country(),
-    description: Faker.Lorem.paragraph(),
-    github_username: Faker.Internet.user_name(),
-    twitter_username: Faker.Internet.user_name()
-  }
-
-  Azimutt.Accounts.register_password_user(user, now)
-end
-
-# Non personal Organizations
-for i <- 1..3 do
-  organization = %{
-    name: Faker.Company.name() <> Integer.to_string(i),
-    contact_email: user_admin.email,
-    logo: Faker.Avatar.image_url(),
-    location: Faker.Address.En.country(),
-    description: Faker.Lorem.sentence(14, "...")
-  }
-
-  Azimutt.Organizations.create_non_personal_organization(organization, user_admin)
-end
+# for i <- 1..10 do
+#  user = %{
+#    name: Faker.Person.name() <> Integer.to_string(i),
+#    email: Faker.Internet.email(),
+#    password: "passpasspass",
+#    avatar: Faker.Avatar.image_url(),
+#    company: Faker.Company.En.name(),
+#    location: Faker.Address.En.country(),
+#    description: Faker.Lorem.paragraph(),
+#    github_username: Faker.Internet.user_name(),
+#    twitter_username: Faker.Internet.user_name()
+#  }
+#
+#  Azimutt.Accounts.register_password_user(user, now)
+# end
+#
+## Non personal Organizations
+# for i <- 1..3 do
+#  organization = %{
+#    name: Faker.Company.name() <> Integer.to_string(i),
+#    contact_email: user_admin.email,
+#    logo: Faker.Avatar.image_url(),
+#    location: Faker.Address.En.country(),
+#    description: Faker.Lorem.sentence(14, "...")
+#  }
+#
+#  Azimutt.Organizations.create_non_personal_organization(organization, user_admin)
+# end
