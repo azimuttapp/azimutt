@@ -17,7 +17,7 @@ config :azimutt,
   twitter_url: "https://twitter.com/azimuttapp",
   github_url: "https://github.com/azimuttapp",
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",
-  team_plan_price_id: "price_1LYZckCaPXsf4vehR7IcKJ08"
+  team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]

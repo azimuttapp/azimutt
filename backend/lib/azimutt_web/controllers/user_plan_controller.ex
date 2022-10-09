@@ -26,7 +26,12 @@ defmodule AzimuttWeb.UserPlanController do
     # Handle storing and retrieving customer_id
     # Is on the format
     # customer_id = "cus_MH7xcT1tSmxOo3"
-    "cus_MH7xcT1tSmxOo3"
+    # papbrow customer account : cus_MZnRiyKh5KvU92
+    "cus_MZnRiyKh5KvU92"
+  end
+
+  defp get_seats_from_organization(_organization_id) do
+    4
   end
 
   def new(conn, %{"email" => email}) do
@@ -34,7 +39,7 @@ defmodule AzimuttWeb.UserPlanController do
     customer_id = get_customer_from_email(email)
     # Get this from the Stripe dashboard for your product
     price_id = Azimutt.config(:team_plan_price_id)
-    quantity = 1
+    quantity = get_seats_from_organization(email)
 
     session_config = %{
       success_url: Routes.user_plan_url(conn, :success),

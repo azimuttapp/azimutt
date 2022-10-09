@@ -121,20 +121,7 @@ defmodule AzimuttWeb.Router do
     end
   end
 
-  # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
-  # routes listed in the same order than in `elm/src/Pages`
-  scope "/", AzimuttWeb do
-    pipe_through :browser
-    get "/create", ElmController, :create
-    get "/embed", ElmController, :embed
-    get "/last", ElmController, :last
-    get "/new", ElmController, :new
-    get "/projects", ElmController, :projects_legacy
-    get "/:organization_id", ElmController, :orga_show
-    get "/:organization_id/create", ElmController, :orga_create
-    get "/:organization_id/new", ElmController, :orga_new
-    get "/:organization_id/:project_id", ElmController, :project_show
-  end
+
 
   # Enables LiveDashboard only for development
   #
@@ -183,5 +170,20 @@ defmodule AzimuttWeb.Router do
       consumes: ["application/json"],
       produces: ["application/json"]
     }
+  end
+
+  # elm routes, must be at the end (because of `/:organization_id/:project_id` "catch all")
+  # routes listed in the same order than in `elm/src/Pages`
+  scope "/", AzimuttWeb do
+    pipe_through :browser
+    get "/create", ElmController, :create
+    get "/embed", ElmController, :embed
+    get "/last", ElmController, :last
+    get "/new", ElmController, :new
+    get "/projects", ElmController, :projects_legacy
+    get "/:organization_id", ElmController, :orga_show
+    get "/:organization_id/create", ElmController, :orga_create
+    get "/:organization_id/new", ElmController, :orga_new
+    get "/:organization_id/:project_id", ElmController, :project_show
   end
 end
