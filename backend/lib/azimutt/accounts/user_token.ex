@@ -19,7 +19,7 @@ defmodule Azimutt.Accounts.UserToken do
   @change_email_validity_in_days 7
   @session_validity_in_days 60
 
-  schema "users_tokens" do
+  schema "user_tokens" do
     belongs_to :user, User
     field :token, :binary
     field :context, :string

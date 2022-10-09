@@ -54,7 +54,7 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
     #    end
     #    create index(:github_profiles, [:user_id])
 
-    create table(:users_tokens, comment: "needed for login/pass auth") do
+    create table(:user_tokens, comment: "needed for login/pass auth") do
       add :user_id, references(:users, on_delete: :delete_all), null: false
       add :token, :binary, null: false
       add :context, :string, null: false
@@ -62,8 +62,8 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
       timestamps(updated_at: false)
     end
 
-    create unique_index(:users_tokens, [:context, :token])
-    create index(:users_tokens, [:user_id])
+    create unique_index(:user_tokens, [:context, :token])
+    create index(:user_tokens, [:user_id])
 
     create table(:organizations) do
       add :slug, :string, null: false
@@ -93,8 +93,9 @@ defmodule Azimutt.Repo.Migrations.InitDatabase do
 
     create unique_index(:organizations, [:slug])
     create unique_index(:organizations, [:name])
+    create unique_index(:organizations, [:stripe_customer_id])
 
-    create table(:organizations_members, primary_key: false) do
+    create table(:organization_members, primary_key: false) do
       add :user_id, references(:users), primary_key: true, null: false
       add :organization_id, references(:organizations), primary_key: true, null: false
       add :created_by, references(:users), null: false

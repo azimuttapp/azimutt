@@ -10,7 +10,7 @@ defmodule Azimutt.Organizations.OrganizationMember do
   alias Azimutt.Organizations.OrganizationMember
 
   @primary_key false
-  schema "organizations_members" do
+  schema "organization_members" do
     belongs_to :user, User, primary_key: true
     belongs_to :organization, Organization, primary_key: true
     belongs_to :created_by, User, source: :created_by

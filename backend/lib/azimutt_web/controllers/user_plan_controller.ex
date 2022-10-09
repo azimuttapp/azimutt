@@ -3,8 +3,8 @@ defmodule AzimuttWeb.UserPlanController do
     The stripe subscription controller
   """
   use AzimuttWeb, :controller
-  alias AzimuttWeb.Router.Helpers, as: Routes
   alias Azimutt.Organizations
+  alias AzimuttWeb.Router.Helpers, as: Routes
   require Logger
 
   def index(conn, _params) do
