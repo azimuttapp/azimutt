@@ -281,18 +281,20 @@ function isInput(elt: Element) {
 }
 
 function keydownHotkey(e: KeyboardEvent) {
+    console.log(e)
     const target = e.target as HTMLElement
     const matches = (hotkeys[e.key] || []).filter(hotkey => {
         return (hotkey.ctrl === e.ctrlKey || (Utils.getPlatform() === Platform.enum.mac && hotkey.ctrl === e.metaKey)) &&
             (!hotkey.shift || e.shiftKey) &&
             (hotkey.alt === e.altKey) &&
-            (hotkey.meta === e.metaKey) &&
+            (hotkey.meta === e.metaKey || Utils.getPlatform() === Platform.enum.mac) &&
             ((!hotkey.target && (hotkey.onInput || !isInput(target))) ||
                 (hotkey.target &&
                     (!hotkey.target.id || hotkey.target.id === target.id) &&
                     (!hotkey.target.class || target.className.split(' ').includes(hotkey.target.class)) &&
                     (!hotkey.target.tag || hotkey.target.tag === target.localName)))
     })
+    console.log(matches)
     matches.map(hotkey => {
         if (hotkey.preventDefault) e.preventDefault()
         app.gotHotkey(hotkey)
