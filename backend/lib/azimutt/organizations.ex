@@ -36,10 +36,6 @@ defmodule Azimutt.Organizations do
     |> Repo.all()
   end
 
-  def has_member?(%Organization{} = organization, %User{} = current_user) do
-    organization.members |> Enum.any?(fn m -> m.user.id == current_user.id end)
-  end
-
   def create_personal_organization(%User{} = current_user) do
     StripeSrv.init_customer()
     |> Result.flat_map(fn stripe_customer ->
@@ -87,34 +83,64 @@ defmodule Azimutt.Organizations do
     )
   end
 
-  def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
-    with {:ok, subscription} = StripeSrv.get_subscription(stripe_subscription_id) do
-      case subscription.status do
-        "active" ->
-          :active
+  def update_organization(%Organization{} = organization, attrs, %User{} = current_user) do
+    organization
+    |> Organization.update_changeset(attrs, current_user)
+    |> Repo.update()
+  end
 
-        "past_due" ->
-          :past_due
+  # Organization members
 
-        "unpaid" ->
-          :unpaid
+  def has_member?(%Organization{} = organization, %User{} = current_user) do
+    organization.members |> Enum.any?(fn m -> m.user.id == current_user.id end)
+  end
 
-        "canceled" ->
-          :canceled
+  def remove_member(%Organization{} = organization, member_id) do
+    with {:ok, %OrganizationMember{} = member} <- organization.members |> Enum.filter(fn m -> m.user.id == member_id end) |> Enumx.one(),
+         {:ok, _} <- Repo.delete(member),
+         do: {:ok, member}
+  end
 
-        "incomplete" ->
-          :incomplete
+  # Organization invitations
 
-        "incomplete_expired" ->
-          :incomplete_expired
+  def list_organization_invitations do
+    Repo.all(OrganizationInvitation)
+  end
 
-        "trialing" ->
-          :trialing
+  def list_organization_invitations(id) do
+    Repo.all(OrganizationInvitation, id)
+  end
 
-        other ->
-          Logger.warning("Get unexpected subscription status : #{other}")
-          :incomplete
-      end
+  def get_organization_invitation(id) do
+    OrganizationInvitation
+    |> where([oi], oi.id == ^id)
+    |> preload(:organization)
+    |> preload(:answered_by)
+    |> Repo.one()
+  end
+
+  def get_user_organization_invitation(%User{} = user, %Organization{} = organization, now) do
+    OrganizationInvitation
+    |> where(
+      [oi],
+      oi.sent_to == ^user.email and oi.organization_id == ^organization.id and oi.expire_at > ^now and is_nil(oi.cancel_at) and
+        is_nil(oi.accepted_at) and is_nil(oi.refused_at)
+    )
+    |> preload(:organization)
+    |> Repo.one()
+  end
+
+  def create_organization_invitation(attrs \\ %{}, invitation_url, organization_id, current_user, now) do
+    %OrganizationInvitation{}
+    |> OrganizationInvitation.create_changeset(attrs, organization_id, current_user, Timex.shift(now, days: 7))
+    |> Repo.insert()
+    |> case do
+      {:ok, organization_invitation} ->
+        UserNotifier.deliver_organization_invitation_instructions(organization_invitation, invitation_url.(organization_invitation.id))
+        {:ok, organization_invitation}
+
+      error ->
+        error
     end
   end
 
@@ -167,50 +193,38 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def update_organization(%Organization{} = organization, attrs, %User{} = current_user) do
-    organization
-    |> Organization.update_changeset(attrs, current_user)
-    |> Repo.update()
-  end
-
   def delete_organization(%Organization{} = organization) do
     Repo.delete(organization)
   end
 
-  def list_organization_invitations do
-    Repo.all(OrganizationInvitation)
-  end
+  def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
+    with {:ok, subscription} = StripeSrv.get_subscription(stripe_subscription_id) do
+      case subscription.status do
+        "active" ->
+          :active
 
-  def list_organization_invitations(id) do
-    Repo.all(OrganizationInvitation, id)
-  end
+        "past_due" ->
+          :past_due
 
-  def get_organization_invitation(id) do
-    OrganizationInvitation
-    |> where([oi], oi.id == ^id)
-    |> preload(:organization)
-    |> preload(:answered_by)
-    |> Repo.one()
-  end
+        "unpaid" ->
+          :unpaid
 
-  def get_user_organization_invitation(%User{} = user, %Organization{} = organization) do
-    OrganizationInvitation
-    |> where([oi], oi.sent_to == ^user.email and oi.organization_id == ^organization.id)
-    |> preload(:organization)
-    |> Repo.one()
-  end
+        "canceled" ->
+          :canceled
 
-  def create_organization_invitation(attrs \\ %{}, invitation_url, organization_id, current_user, now) do
-    %OrganizationInvitation{}
-    |> OrganizationInvitation.create_changeset(attrs, organization_id, current_user, Timex.shift(now, days: 7))
-    |> Repo.insert()
-    |> case do
-      {:ok, organization_invitation} ->
-        UserNotifier.deliver_organization_invitation_instructions(organization_invitation, invitation_url.(organization_invitation.id))
-        {:ok, organization_invitation}
+        "incomplete" ->
+          :incomplete
 
-      error ->
-        error
+        "incomplete_expired" ->
+          :incomplete_expired
+
+        "trialing" ->
+          :trialing
+
+        other ->
+          Logger.warning("Get unexpected subscription status : #{other}")
+          :incomplete
+      end
     end
   end
 

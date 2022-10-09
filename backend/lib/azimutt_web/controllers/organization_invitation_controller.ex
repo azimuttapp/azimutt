@@ -8,7 +8,8 @@ defmodule AzimuttWeb.OrganizationInvitationController do
 
     render(conn, "show.html",
       organization_invitation: organization_invitation,
-      organization: organization_invitation.organization
+      organization: organization_invitation.organization,
+      active_plan: :free
     )
   end
 

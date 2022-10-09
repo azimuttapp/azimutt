@@ -3,6 +3,8 @@ defmodule AzimuttWeb.OrganizationMemberController do
   alias Azimutt.Organizations
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
+  alias Azimutt.Organizations.OrganizationMember
+  alias Azimutt.Utils.Enumx
 
   def index(conn, %{"organization_id" => organization_id}) do
     now = DateTime.utc_now()
@@ -60,5 +62,14 @@ defmodule AzimuttWeb.OrganizationMemberController do
   end
 
   def delete(conn, %{"organization_id" => organization_id, "id" => user_id}) do
+    current_user = conn.assigns.current_user
+
+    with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
+         {:ok, %OrganizationMember{} = member} <- Organizations.remove_member(organization, user_id),
+         # FIXME: update stripe customer number of members
+         do:
+           conn
+           |> put_flash(:info, "Successfully removed #{member.user.name} from #{organization.name}.")
+           |> redirect(to: Routes.organization_member_path(conn, :index, organization))
   end
 end
