@@ -67,13 +67,13 @@ defmodule AzimuttWeb.Router do
     resources "/organizations", OrganizationController, except: [:index] do
       # FIXME: don't work, still useful? get "/projects", ProjectController, :index
       get "/billing", OrganizationBillingController, :index, as: :billing
+      post "/billing/new", OrganizationBillingController, :new, as: :billing
+      post "/billing/edit", OrganizationBillingController, :edit, as: :billing
+      get "/billing/success", OrganizationBillingController, :success, as: :billing
+      get "/billing/cancel", OrganizationBillingController, :cancel, as: :billing
       get "/members", OrganizationMemberController, :index, as: :member
       post "/members/invite", OrganizationMemberController, :invite, as: :member
       delete "/members/:id", OrganizationMemberController, :delete, as: :member
-      post "/billing/new", BillingController, :new
-      post "/billing/edit", BillingController, :edit
-      get "/billing/success", BillingController, :success
-      get "/billing/cancel", BillingController, :cancel
     end
 
     get "/invitations/:id", OrganizationInvitationController, :show, as: :invitation
