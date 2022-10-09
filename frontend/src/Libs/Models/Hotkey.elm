@@ -7,7 +7,7 @@ import Libs.Models.Platform as Platform exposing (Platform)
 
 
 type alias Hotkey =
-    { key : String, ctrl : Bool, shift : Bool, alt : Bool, meta : Bool, target : Maybe HotkeyTarget, onInput : Bool, preventDefault : Bool }
+    { key : String, ctrl : Bool, shift : Bool, alt : Bool, target : Maybe HotkeyTarget, onInput : Bool, preventDefault : Bool }
 
 
 type alias HotkeyTarget =
@@ -16,7 +16,7 @@ type alias HotkeyTarget =
 
 hotkey : Hotkey
 hotkey =
-    { key = "", ctrl = False, shift = False, alt = False, meta = False, target = Nothing, onInput = False, preventDefault = False }
+    { key = "", ctrl = False, shift = False, alt = False, target = Nothing, onInput = False, preventDefault = False }
 
 
 target : HotkeyTarget
@@ -29,7 +29,6 @@ keys platform h =
     [ B.cond h.ctrl (Just (B.cond (platform == Platform.Mac) "Cmd" "Ctrl")) Nothing
     , B.cond h.alt (Just "Alt") Nothing
     , B.cond h.shift (Just "Shift") Nothing
-    , B.cond h.meta (Just "Meta") Nothing
     , Just
         (case h.key of
             "ArrowUp" ->
@@ -58,7 +57,6 @@ encode key =
         , ( "ctrl", key.ctrl |> Encode.bool )
         , ( "shift", key.shift |> Encode.bool )
         , ( "alt", key.alt |> Encode.bool )
-        , ( "meta", key.meta |> Encode.bool )
         , ( "target", key.target |> Encode.maybe targetEncoder )
         , ( "onInput", key.onInput |> Encode.bool )
         , ( "preventDefault", key.preventDefault |> Encode.bool )

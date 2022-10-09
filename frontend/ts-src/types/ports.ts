@@ -68,7 +68,6 @@ export interface Hotkey {
     ctrl: boolean
     shift: boolean
     alt: boolean
-    meta: boolean
     target: { id: string | null, class: string | null, tag: string | null } | null
     onInput: boolean
     preventDefault: boolean
@@ -79,7 +78,6 @@ export const Hotkey = z.object({
     ctrl: z.boolean(),
     shift: z.boolean(),
     alt: z.boolean(),
-    meta: z.boolean(),
     target: z.object({
         id: z.string().nullable(),
         class: z.string().nullable(),
