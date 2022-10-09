@@ -1,6 +1,6 @@
 defmodule Azimutt.Services.StripeSrv do
   @moduledoc false
-
+  require Logger
   # https://stripe.com/docs/api/customers/create
   def init_customer, do: Stripe.Customer.create(%{})
 
@@ -29,5 +29,16 @@ defmodule Azimutt.Services.StripeSrv do
         created_by_email: creator_email
       }
     })
+  end
+
+  def get_subscription(subscription_id) when is_bitstring(subscription_id) do
+    case Stripe.Subscription.retrieve(subscription_id) do
+      {:ok, %Stripe.Subscription{} = subscription} ->
+        {:ok, subscription}
+
+      {:error, %Stripe.Error{} = error} ->
+        Logger.error(error.message)
+        {:error, error.message}
+    end
   end
 end

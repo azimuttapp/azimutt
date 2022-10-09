@@ -87,6 +87,37 @@ defmodule Azimutt.Organizations do
     )
   end
 
+  def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
+    with {:ok, subscription} = StripeSrv.get_subscription(stripe_subscription_id) do
+      case subscription.status do
+        "active" ->
+          :active
+
+        "past_due" ->
+          :past_due
+
+        "unpaid" ->
+          :unpaid
+
+        "canceled" ->
+          :canceled
+
+        "incomplete" ->
+          :incomplete
+
+        "incomplete_expired" ->
+          :incomplete_expired
+
+        "trialing" ->
+          :trialing
+
+        other ->
+          Logger.warning("Get unexpected subscription status : #{other}")
+          :incomplete
+      end
+    end
+  end
+
   def accept_organization_invitation(%OrganizationInvitation{} = organization_invitation, %User{} = current_user, now) do
     result =
       Ecto.Multi.new()
