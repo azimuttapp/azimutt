@@ -103,14 +103,6 @@ defmodule Azimutt.Organizations do
 
   # Organization invitations
 
-  def list_organization_invitations do
-    Repo.all(OrganizationInvitation)
-  end
-
-  def list_organization_invitations(id) do
-    Repo.all(OrganizationInvitation, id)
-  end
-
   def get_organization_invitation(id) do
     OrganizationInvitation
     |> where([oi], oi.id == ^id)
@@ -198,7 +190,7 @@ defmodule Azimutt.Organizations do
   end
 
   def get_subscription_status(stripe_subscription_id) when is_bitstring(stripe_subscription_id) do
-    with {:ok, subscription} = StripeSrv.get_subscription(stripe_subscription_id) do
+    with {:ok, subscription} <- StripeSrv.get_subscription(stripe_subscription_id) do
       case subscription.status do
         "active" ->
           :active
