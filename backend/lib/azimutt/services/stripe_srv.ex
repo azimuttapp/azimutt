@@ -2,7 +2,7 @@ defmodule Azimutt.Services.StripeSrv do
   @moduledoc false
   require Logger
   # https://stripe.com/docs/api/customers/create
-  def init_customer, do: Stripe.Customer.create(%{})
+  def init_customer(name), do: Stripe.Customer.create(%{name: name})
 
   # https://stripe.com/docs/api/customers/delete
   def delete_customer(%Stripe.Customer{} = customer), do: Stripe.Customer.delete(customer.id)

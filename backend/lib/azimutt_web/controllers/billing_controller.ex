@@ -1,4 +1,4 @@
-defmodule AzimuttWeb.UserPlanController do
+defmodule AzimuttWeb.BillingController do
   @moduledoc """
     The stripe subscription controller
   """
@@ -7,37 +7,17 @@ defmodule AzimuttWeb.UserPlanController do
   alias AzimuttWeb.Router.Helpers, as: Routes
   require Logger
 
-  def index(conn, _params) do
-    render(conn, "index.html")
-  end
-
-  def success(conn, _params) do
-    conn
-    |> put_flash(:info, "Thanks for subscribing!")
-    |> redirect(to: Routes.user_dashboard_path(conn, :index))
-  end
-
-  def cancel(conn, _params) do
-    conn
-    |> put_flash(:info, "Sorry you didn't like Our Stuff.")
-    |> redirect(to: Routes.user_dashboard_path(conn, :index))
-  end
-
-  defp get_seats_from_organization(organization) do
-    organization.members |> length
-  end
-
-  def new(conn, %{"id" => id}) do
+  def new(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
-    {:ok, organization} = Organizations.get_organization(id, current_user)
+    {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
     # Get this from the Stripe dashboard for your product
     price_id = Azimutt.config(:team_plan_price_id)
     quantity = get_seats_from_organization(organization)
 
     session_config = %{
-      success_url: Routes.user_plan_url(conn, :success),
-      cancel_url: Routes.user_plan_url(conn, :cancel),
+      success_url: Routes.organization_billing_url(conn, :success, organization_id),
+      cancel_url: Routes.organization_billing_url(conn, :cancel, organization_id),
       mode: "subscription",
       customer: organization.stripe_customer_id,
       line_items: [
@@ -62,9 +42,13 @@ defmodule AzimuttWeb.UserPlanController do
     end
   end
 
-  def edit(conn, %{"id" => id}) do
+  defp get_seats_from_organization(organization) do
+    organization.members |> length
+  end
+
+  def edit(conn, %{"organization_id" => organization_id}) do
     current_user = conn.assigns.current_user
-    {:ok, organization} = Organizations.get_organization(id, current_user)
+    {:ok, organization} = Organizations.get_organization(organization_id, current_user)
 
     case Stripe.BillingPortal.Session.create(%{
            customer: organization.stripe_customer_id,
@@ -81,5 +65,17 @@ defmodule AzimuttWeb.UserPlanController do
         |> put_flash(:error, "Sorry something went wrong.")
         |> redirect(to: Routes.user_dashboard_path(conn, :index))
     end
+  end
+
+  def success(conn, %{"organization_id" => organization_id}) do
+    conn
+    |> put_flash(:info, "Thanks for subscribing!")
+    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
+  end
+
+  def cancel(conn, %{"organization_id" => organization_id}) do
+    conn
+    |> put_flash(:info, "Sorry you didn't like our stuff.")
+    |> redirect(to: Routes.organization_billing_path(conn, :index, organization_id))
   end
 end

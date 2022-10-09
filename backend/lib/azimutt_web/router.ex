@@ -70,6 +70,10 @@ defmodule AzimuttWeb.Router do
       get "/members", OrganizationMemberController, :index, as: :member
       post "/members/invite", OrganizationMemberController, :invite, as: :member
       delete "/members/:id", OrganizationMemberController, :delete, as: :member
+      post "/billing/new", BillingController, :new
+      post "/billing/edit", BillingController, :edit
+      get "/billing/success", BillingController, :success
+      get "/billing/cancel", BillingController, :cancel
     end
 
     get "/invitations/:id", OrganizationInvitationController, :show, as: :invitation
@@ -84,11 +88,6 @@ defmodule AzimuttWeb.Router do
     get "/users/settings", UserSettingsController, :edit
     put "/users/settings", UserSettingsController, :update
     get "/users/settings/confirm_email/:token", UserSettingsController, :confirm_email
-    get "/plans", UserPlanController, :index
-    post "/plans/new", UserPlanController, :new
-    get "/plans/new/success", UserPlanController, :success
-    get "/plans/new/cancel", UserPlanController, :cancel
-    post "/plans/manage", UserPlanController, :edit
   end
 
   # authed admin routes
