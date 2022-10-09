@@ -14,18 +14,12 @@
             <li class="flex space-x-3"><Icon.heart class="flex-shrink-0 text-rose-500" /><span class="text-sm text-gray-500">Support Azimutt development</span></li>
         </ul>
     </div>
-    <div class="py-5">
-        <h4 class="text-lg leading-6 font-medium text-gray-900">Manage subscription</h4>
         <div class="mt-2 sm:flex sm:items-start sm:justify-between">
-            <div class="max-w-xl text-sm text-gray-500">
-                <p>Azimutt partner with Stripe to handle subscriptions. You can cancel your subscription anytime.</p>
-            </div>
             <div class="mt-5 sm:mt-0 sm:ml-6 sm:flex-shrink-0 sm:flex sm:items-center">
-                <.form let={f} for={@conn} action={Routes.user_plan_path(@conn, :edit)}>
-                    <%= email_input f, :email, [class: "hidden", required: true, value: @current_user.email] %>
-                    <%= submit "Manage", class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm" %>
-                </.form>
-            </div>
+                <.form let={f} for={@conn} action={Routes.user_plan_path(@conn, :new)}>
+                <%= text_input f, :id, [class: "hidden", required: true, value: @organization.id] %>
+                <%= submit "Subscribe", class: "inline-flex items-center px-4 py-2 border border-transparent shadow-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm" %>
+            </.form>
         </div>
-    </div>
+</div>
 </div>

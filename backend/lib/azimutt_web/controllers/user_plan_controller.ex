@@ -4,6 +4,7 @@ defmodule AzimuttWeb.UserPlanController do
   """
   use AzimuttWeb, :controller
   alias AzimuttWeb.Router.Helpers, as: Routes
+  alias Azimutt.Organizations
   require Logger
 
   def index(conn, _params) do
@@ -22,29 +23,23 @@ defmodule AzimuttWeb.UserPlanController do
     |> redirect(to: Routes.user_dashboard_path(conn, :index))
   end
 
-  defp get_customer_from_email(_email) do
-    # Handle storing and retrieving customer_id
-    # Is on the format
-    # customer_id = "cus_MH7xcT1tSmxOo3"
-    # papbrow customer account : cus_MZnRiyKh5KvU92
-    "cus_MZnRiyKh5KvU92"
+  defp get_seats_from_organization(organization) do
+    organization.members |> length
   end
 
-  defp get_seats_from_organization(_organization_id) do
-    4
-  end
+  def new(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+    {:ok, organization} = Organizations.get_organization(id, current_user)
 
-  def new(conn, %{"email" => email}) do
-    # Or if it is a recurring customer, you can provide customer_id
-    customer_id = get_customer_from_email(email)
     # Get this from the Stripe dashboard for your product
     price_id = Azimutt.config(:team_plan_price_id)
-    quantity = get_seats_from_organization(email)
+    quantity = get_seats_from_organization(organization)
 
     session_config = %{
       success_url: Routes.user_plan_url(conn, :success),
       cancel_url: Routes.user_plan_url(conn, :cancel),
       mode: "subscription",
+      customer: organization.stripe_customer_id,
       line_items: [
         %{
           price: price_id,
@@ -52,13 +47,6 @@ defmodule AzimuttWeb.UserPlanController do
         }
       ]
     }
-
-    # Previous customer? customer_id else customer_email
-    # The stripe API only allows one of {customer_email, customer}
-    session_config =
-      if customer_id,
-        do: Map.put(session_config, :customer, customer_id),
-        else: Map.put(session_config, :customer_email, email)
 
     case Stripe.Session.create(session_config) do
       {:ok, session} ->
@@ -74,11 +62,9 @@ defmodule AzimuttWeb.UserPlanController do
     end
   end
 
-  def edit(conn, %{"email" => email}) do
-    customer_id = get_customer_from_email(email)
-
+  def edit(conn, organization) do
     case Stripe.BillingPortal.Session.create(%{
-           customer: customer_id,
+           customer: organization.stripe_customer_id,
            return_url: Routes.page_url(conn, :index)
          }) do
       {:ok, session} ->

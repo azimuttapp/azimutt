@@ -20,7 +20,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
           :trialing -> generate_billing_view(conn, "billing.html", organization, "You are in free trial")
         end
       else
-        generate_billing_view(conn, "billing.html", organization, "You haven't got subscribe yet !")
+        generate_billing_view(conn, "subscribe.html", organization, "You haven't got subscribe yet !")
       end
     end
   end
