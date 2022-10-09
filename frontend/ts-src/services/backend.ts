@@ -38,14 +38,14 @@ export class Backend {
 
     createProjectLocal = (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.createProjectLocal(${o})`, json)
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization,organization.plan`)
         return Http.postJson(url, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
     createProjectRemote = (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, json)
-        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization`)
+        const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization,organization.plan`)
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
@@ -58,7 +58,7 @@ export class Backend {
     updateProjectLocal = (p: Project): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.updateProjectLocal(${p.organization?.id}, ${p.id})`, p)
         if(!p.organization) return Promise.reject('Expecting an organization to update project')
-        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
+        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`)
         const json = buildProjectJson(p)
         return Http.putJson(url, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
@@ -67,7 +67,7 @@ export class Backend {
     updateProjectRemote = (p: Project): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.updateProjectRemote(${p.organization?.id}, ${p.id})`, p)
         if(!p.organization) return Promise.reject('Expecting an organization to update project')
-        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization`)
+        const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`)
         const json = buildProjectJson(p)
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
