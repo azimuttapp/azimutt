@@ -1,29 +1,29 @@
 <nav class="space-y-1">
     <a class={active(@conn.request_path, Routes.organization_path(@conn, :show, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_path(@conn, :show, @organization)}>
-    <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-    </svg>
-    <span class="truncate">Projects</span>
-</a>
-<a class={active(@conn.request_path, Routes.organization_billing_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_billing_path(@conn, :index, @organization)}>
-<svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-<path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-</svg>
-<span class="truncate">Billing</span>
-        </a>
-<a class={active(@conn.request_path, Routes.organization_member_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_member_path(@conn, :index, @organization)}>
-<svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-</svg>
-<span class="truncate">Members</span>
-        </a>
-<a class={active(@conn.request_path, Routes.organization_path(@conn, :edit, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_path(@conn, :edit, @organization)} >
-<svg role="img" class="text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" viewBox="0 0 20 20" style="pointer-events: none; width: 24px; height: 24px; ;" fill="currentColor">
-<g buffered-rendering="static">
-    <path d="M5.48 17.979h9.04A3.317 3.317 0 0018 14.682a3.317 3.317 0 00-3.48-3.297H5.48A3.317 3.317 0 002 14.682a3.317 3.317 0 003.302 3.301l.178-.004zm0-9.381h9.04A3.318 3.318 0 0018 5.301a3.318 3.318 0 00-3.48-3.297H5.48A3.318 3.318 0 002 5.301a3.318 3.318 0 003.302 3.302l.178-.005z" fill-opacity=".35"></path>
-    <path d="M14.696 11.413h.019A3.3 3.3 0 0118 14.698a3.3 3.3 0 01-3.285 3.285 3.3 3.3 0 01-3.285-3.285v-.019a3.281 3.281 0 013.266-3.266zM5.343 1.992a3.3 3.3 0 013.228 3.285 3.301 3.301 0 01-3.286 3.285A3.3 3.3 0 012 5.277a3.301 3.301 0 013.285-3.286l.058.001z"></path>
-</g>
-</svg>
-<span class="truncate">Settings</span>
-        </a>
-        </nav>
+        <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+        </svg>
+        <span class="truncate">Projects</span>
+    </a>
+    <a class={active(@conn.request_path, Routes.organization_member_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_member_path(@conn, :index, @organization)}>
+        <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <span class="truncate">Members</span>
+    </a>
+    <a class={active(@conn.request_path, Routes.organization_billing_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_billing_path(@conn, :index, @organization)}>
+        <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+        </svg>
+        <span class="truncate">Billing</span>
+    </a>
+    <a class={active(@conn.request_path, Routes.organization_path(@conn, :edit, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_path(@conn, :edit, @organization)} >
+        <svg role="img" class="text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" viewBox="0 0 20 20" style="pointer-events: none; width: 24px; height: 24px; ;" fill="currentColor">
+            <g buffered-rendering="static">
+                <path d="M5.48 17.979h9.04A3.317 3.317 0 0018 14.682a3.317 3.317 0 00-3.48-3.297H5.48A3.317 3.317 0 002 14.682a3.317 3.317 0 003.302 3.301l.178-.004zm0-9.381h9.04A3.318 3.318 0 0018 5.301a3.318 3.318 0 00-3.48-3.297H5.48A3.318 3.318 0 002 5.301a3.318 3.318 0 003.302 3.302l.178-.005z" fill-opacity=".35"></path>
+                <path d="M14.696 11.413h.019A3.3 3.3 0 0118 14.698a3.3 3.3 0 01-3.285 3.285 3.3 3.3 0 01-3.285-3.285v-.019a3.281 3.281 0 013.266-3.266zM5.343 1.992a3.3 3.3 0 013.228 3.285 3.301 3.301 0 01-3.286 3.285A3.3 3.3 0 012 5.277a3.301 3.301 0 013.285-3.286l.058.001z"></path>
+            </g>
+        </svg>
+        <span class="truncate">Settings</span>
+    </a>
+</nav>
