@@ -90,6 +90,17 @@ defmodule Azimutt.Organizations do
     |> Repo.update()
   end
 
+  def update_organization_subscription(customer_id, subscription_id) do
+    organization = Azimutt.Repo.get_by!(Organization, stripe_customer_id: customer_id)
+
+    if organization.stripe_subscription_id do
+      Logger.error("Organization #{organization.id} as already a subscription #{organization.stripe_subscription_id}, it will be replace")
+    end
+
+    organization = Ecto.Changeset.change(organization, stripe_subscription_id: subscription_id)
+    Azimutt.Repo.update!(organization)
+  end
+
   # Organization members
 
   def has_member?(%Organization{} = organization, %User{} = current_user) do

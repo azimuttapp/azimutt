@@ -14,7 +14,7 @@ defmodule AzimuttWeb.OrganizationBillingController do
           :active -> generate_billing_view(conn, "billing.html", organization, "Your subscription is active !")
           :past_due -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
           :unpaid -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
-          :canceled -> generate_billing_view(conn, "billing.html", organization, "Your subscription is canceled")
+          :canceled -> generate_billing_view(conn, "subscribe.html", organization, "Your subscription is canceled")
           :incomplete -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
           :incomplete_expired -> generate_billing_view(conn, "billing.html", organization, "We have an issue with your subscription")
           :trialing -> generate_billing_view(conn, "billing.html", organization, "You are in free trial")

@@ -62,7 +62,10 @@ defmodule AzimuttWeb.UserPlanController do
     end
   end
 
-  def edit(conn, organization) do
+  def edit(conn, %{"id" => id}) do
+    current_user = conn.assigns.current_user
+    {:ok, organization} = Organizations.get_organization(id, current_user)
+
     case Stripe.BillingPortal.Session.create(%{
            customer: organization.stripe_customer_id,
            return_url: Routes.page_url(conn, :index)

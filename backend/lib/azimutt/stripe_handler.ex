@@ -1,6 +1,7 @@
 defmodule Azimutt.StripeHandler do
   @moduledoc false
   @behaviour Stripe.WebhookHandler
+  alias Azimutt.Organizations
   # credo:disable-for-this-file
 
   @impl true
@@ -29,6 +30,17 @@ defmodule Azimutt.StripeHandler do
     IO.inspect(event)
     # Payment is successful and the subscription is created.
     # You should provision the subscription and save the customer ID to your database.
+    :ok
+  end
+
+  @impl true
+  def handle_event(%Stripe.Event{type: "customer.subscription.created"} = event) do
+    customer_id = event.data.object.customer
+    subscription_id = event.data.object.id
+    IO.inspect(customer_id)
+    IO.inspect(subscription_id)
+    IO.inspect(event)
+    Organizations.update_organization_subscription(customer_id, subscription_id)
     :ok
   end
 
