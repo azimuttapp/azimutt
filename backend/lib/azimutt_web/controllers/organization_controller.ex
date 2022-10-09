@@ -39,17 +39,17 @@ defmodule AzimuttWeb.OrganizationController do
   def show(conn, %{"id" => id}) do
     now = DateTime.utc_now()
     current_user = conn.assigns.current_user
-    {:ok, organization} = Organizations.get_organization(id, current_user)
-    projects = Projects.list_projects(organization, current_user)
-    current_user_invitation = Organizations.get_user_organization_invitation(current_user, organization, now)
 
-    render(conn, "show.html",
-      organization: organization,
-      # FIXME: active_plan
-      active_plan: :free,
-      projects: projects,
-      current_user_invitation: current_user_invitation
-    )
+    with {:ok, organization} <- Organizations.get_organization(id, current_user) do
+      projects = Projects.list_projects(organization, current_user)
+
+      render(conn, "show.html",
+        organization: organization,
+        # FIXME: active_plan
+        active_plan: :free,
+        projects: projects
+      )
+    end
   end
 
   def edit(conn, %{"id" => id}) do

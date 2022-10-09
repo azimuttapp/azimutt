@@ -148,56 +148,74 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def accept_organization_invitation(%OrganizationInvitation{} = organization_invitation, %User{} = current_user, now) do
-    result =
+  def accept_organization_invitation(id, %User{} = current_user, now) do
+    invitation = get_organization_invitation(id)
+
+    if is_valid(invitation, current_user, now) do
       Ecto.Multi.new()
-      |> Ecto.Multi.insert(:add_member, OrganizationMember.new_member_changeset(organization_invitation.organization_id, current_user))
-      |> Ecto.Multi.update(:accept_invitation, OrganizationInvitation.accept_changeset(organization_invitation, current_user, now))
+      |> Ecto.Multi.insert(:add_member, OrganizationMember.new_member_changeset(invitation.organization_id, current_user))
+      |> Ecto.Multi.update(:accept_invitation, OrganizationInvitation.accept_changeset(invitation, current_user, now))
       |> Repo.transaction()
+      |> case do
+        {:ok, _} ->
+          {:ok, invitation}
 
-    case result do
-      {:ok, _} ->
-        {:ok, nil}
+        {:error, :add_member, changeset, _} ->
+          {:error, changeset}
 
-      {:error, :add_member, changeset, _} ->
-        {:error, changeset}
-
-      {:error, :accept_invitation, changeset, _} ->
-        {:error, changeset}
+        {:error, :accept_invitation, changeset, _} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :invalid}
     end
   end
 
-  def refuse_organization_invitation(%OrganizationInvitation{} = organization_invitation, %User{} = current_user, now) do
-    result =
+  def refuse_organization_invitation(id, %User{} = current_user, now) do
+    invitation = get_organization_invitation(id)
+
+    if is_valid(invitation, current_user, now) do
       Ecto.Multi.new()
-      |> Ecto.Multi.update(:refuse_invitation, OrganizationInvitation.refuse_changeset(organization_invitation, current_user, now))
+      |> Ecto.Multi.update(:refuse_invitation, OrganizationInvitation.refuse_changeset(invitation, current_user, now))
       |> Repo.transaction()
+      |> case do
+        {:ok, _} ->
+          {:ok, invitation}
 
-    case result do
-      {:ok, _} ->
-        {:ok, nil}
-
-      {:error, :refuse_invitation, changeset, _} ->
-        {:error, changeset}
+        {:error, :refuse_invitation, changeset, _} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :invalid}
     end
   end
 
-  def cancel_organization_invitation(%OrganizationInvitation{} = organization_invitation, %User{} = current_user, now) do
-    result =
+  defp is_valid(%OrganizationInvitation{} = invitation, %User{} = current_user, now) do
+    invitation.sent_to == current_user.email && invitation.cancel_at == nil && invitation.accepted_at == nil && invitation.refused_at == nil &&
+      invitation.expire_at > now
+  end
+
+  def cancel_organization_invitation(id, %User{} = current_user, now) do
+    invitation = get_organization_invitation(id)
+
+    if invitation.created_by_id == current_user.id do
       Ecto.Multi.new()
-      |> Ecto.Multi.update(:cancel_invitation, OrganizationInvitation.cancel_changeset(organization_invitation, current_user, now))
+      |> Ecto.Multi.update(:cancel_invitation, OrganizationInvitation.cancel_changeset(invitation, current_user, now))
       |> Repo.transaction()
+      |> case do
+        {:ok, _} ->
+          {:ok, invitation}
 
-    case result do
-      {:ok, _} ->
-        {:ok, nil}
-
-      {:error, :cancel_invitation, changeset, _} ->
-        {:error, changeset}
+        {:error, :cancel_invitation, changeset, _} ->
+          {:error, changeset}
+      end
+    else
+      {:error, :not_owner}
     end
   end
 
   def delete_organization(%Organization{} = organization) do
+    # FIXME: check current_user is owner
     Repo.delete(organization)
   end
 

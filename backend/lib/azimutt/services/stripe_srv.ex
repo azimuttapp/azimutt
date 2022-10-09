@@ -1,5 +1,6 @@
 defmodule Azimutt.Services.StripeSrv do
   @moduledoc false
+  alias Azimutt.Utils.Result
   require Logger
   # https://stripe.com/docs/api/customers/create
   def init_customer(name), do: Stripe.Customer.create(%{name: name})

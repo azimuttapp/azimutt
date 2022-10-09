@@ -18,7 +18,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
     end
   end
 
-  def invite(conn, %{
+  def create_invitation(conn, %{
         "organization_id" => organization_id,
         "organization_invitation" => organization_invitation_params
       }) do
@@ -33,21 +33,41 @@ defmodule AzimuttWeb.OrganizationMemberController do
            current_user,
            now
          ) do
-      {:ok, organization_invitation} ->
+      {:ok, invitation} ->
         conn
-        |> put_flash(:info, "Organization invitation send successfully.")
-        |> redirect(to: Routes.organization_member_path(conn, :index, organization_invitation.organization_id))
+        |> put_flash(:info, "Invited #{invitation.sent_to} to #{organization.name} 🚀")
+        |> redirect(to: Routes.organization_member_path(conn, :index, invitation.organization_id))
 
       {:error, %Ecto.Changeset{} = changeset} ->
         render_index(conn, organization, changeset)
     end
   end
 
-  def delete(conn, %{"organization_id" => organization_id, "id" => user_id}) do
+  def cancel_invitation(conn, %{"organization_id" => organization_id, "invitation_id" => invitation_id}) do
+    now = DateTime.utc_now()
+    current_user = conn.assigns.current_user
+
+    case Organizations.cancel_organization_invitation(invitation_id, current_user, now) do
+      {:ok, invitation} ->
+        conn
+        |> put_flash(:info, "Canceled #{invitation.sent_to} invitation to #{invitation.organization.name}")
+        |> redirect(to: Routes.organization_member_path(conn, :index, invitation.organization_id))
+
+      {:error, err} ->
+        message = if err == :not_owner, do: "Only the issuer can cancel an invitation.", else: "Failed to cancel invitation 😵"
+
+        conn
+        |> put_flash(:error, message)
+        |> redirect(to: Routes.organization_member_path(conn, :index, organization_id))
+    end
+  end
+
+  def remove(conn, %{"organization_id" => organization_id, "user_id" => user_id}) do
     current_user = conn.assigns.current_user
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, %OrganizationMember{} = member} <- Organizations.remove_member(organization, user_id) do
+      # FIXME: send email to removed user
       if organization.stripe_subscription_id do
         StripeSrv.update_quantity(organization.stripe_subscription_id, length(organization.members) - 1)
       end

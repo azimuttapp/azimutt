@@ -72,14 +72,14 @@ defmodule AzimuttWeb.Router do
       get "/billing/success", OrganizationBillingController, :success, as: :billing
       get "/billing/cancel", OrganizationBillingController, :cancel, as: :billing
       get "/members", OrganizationMemberController, :index, as: :member
-      post "/members/invite", OrganizationMemberController, :invite, as: :member
-      delete "/members/:id", OrganizationMemberController, :delete, as: :member
+      post "/members", OrganizationMemberController, :create_invitation, as: :member
+      patch "/members/:invitation_id/cancel", OrganizationMemberController, :cancel_invitation, as: :member
+      delete "/members/:user_id/remove", OrganizationMemberController, :remove, as: :member
     end
 
     get "/invitations/:id", OrganizationInvitationController, :show, as: :invitation
     patch "/invitations/:id/accept", OrganizationInvitationController, :accept, as: :invitation
     patch "/invitations/:id/refuse", OrganizationInvitationController, :refuse, as: :invitation
-    patch "/invitations/:id/cancel", OrganizationInvitationController, :cancel, as: :invitation
   end
 
   # authed session routes

@@ -27,7 +27,7 @@
                     </p>
                 </div>
                 <%= if remaining_seats > 0 do %>
-                    <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :invite, @organization.id)} class="mt-6 flex">
+                    <.form let={f} for={@organization_invitation_changeset} action={Routes.organization_member_path(@conn, :create_invitation, @organization.id)} class="mt-6 flex">
                         <%= label f, :sent_to, class: "sr-only" %>
                         <%= email_input f, :sent_to, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md", placeholder: "Enter an email" %>
                         <%= error_tag f, :sent_to %>
@@ -54,7 +54,7 @@
                             </div>
                         </div>
                         <div class="flex-shrink-0 text-gray-400">
-                            <%= link to: Routes.invitation_path(@conn, :cancel, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"], class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
+                            <%= link to: Routes.organization_member_path(@conn, :cancel_invitation, @organization.id, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"], class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
                                 <Icon.x_mark class="-ml-1 mr-0.5" />
                                 <span class="text-sm font-medium">Cancel</span>
                             <% end %>
@@ -75,12 +75,12 @@
                         </div>
                         <%= if member.user.id == @current_user.id do %>
                             <%= if (Enum.count @organization.members) > 1 do %>
-                                <%= link to: Routes.organization_member_path(@conn, :delete, @organization, member.user), method: :delete, title: "Leave #{@organization.name}", data: [confirm: "Leave #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
+                                <%= link to: Routes.organization_member_path(@conn, :remove, @organization, member.user), method: :delete, title: "Leave #{@organization.name}", data: [confirm: "Leave #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
                                     <Icon.arrow_left_on_rectangle kind="outline" class="-ml-1 mr-0.5" />
                                 <% end %>
                             <% end %>
                         <% else %>
-                            <%= link to: Routes.organization_member_path(@conn, :delete, @organization, member.user), method: :delete, title: "Remove #{member.user.name} from #{@organization.name}", data: [confirm: "Remove #{member.user.name} from #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
+                            <%= link to: Routes.organization_member_path(@conn, :remove, @organization, member.user), method: :delete, title: "Remove #{member.user.name} from #{@organization.name}", data: [confirm: "Remove #{member.user.name} from #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
                                 <Icon.x_circle kind="outline" class="-ml-1 mr-0.5" />
                             <% end %>
                         <% end %>

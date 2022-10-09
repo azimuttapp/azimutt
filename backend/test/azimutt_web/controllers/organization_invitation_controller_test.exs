@@ -28,7 +28,9 @@ defmodule AzimuttWeb.OrganizationInvitationControllerTest do
         |> Map.put(:organization_id, organization.id)
 
       conn =
-        post(conn, Routes.organization_member_path(conn, :invite, organization.id), organization_invitation: organization_invitation_attrs)
+        post(conn, Routes.organization_member_path(conn, :create_invitation, organization.id),
+          organization_invitation: organization_invitation_attrs
+        )
 
       assert %{id: id} = redirected_params(conn)
 
@@ -41,7 +43,7 @@ defmodule AzimuttWeb.OrganizationInvitationControllerTest do
 
     @tag :skip
     test "renders errors when data is invalid", %{conn: conn, organization: organization} do
-      conn = post(conn, Routes.organization_member_path(conn, :invite, organization.id), organization_invitation: @invalid_attrs)
+      conn = post(conn, Routes.organization_member_path(conn, :create_invitation, organization.id), organization_invitation: @invalid_attrs)
 
       assert html_response(conn, 200) =~ "Add team members"
     end
