@@ -61,7 +61,7 @@
                         </div>
                     </li>
                     <% end %>
-                    <%= for member <- @organization.members do %>
+                    <%= for member <- @organization.members |> Enum.sort_by(fn m -> m.user.name end) do %>
                     <li class="py-4 flex items-center justify-between space-x-3">
                         <div class="min-w-0 flex-1 flex items-center space-x-3">
                             <div class="flex-shrink-0">
@@ -69,12 +69,20 @@
                                 <img class="h-10 w-10 rounded-full" src={member.user.avatar} alt="">
                             </div>
                             <div class="min-w-0 flex-1">
-                                <p class="text-sm font-medium text-gray-900 truncate"><%= member.user.email %></p>
-                                <p class="text-sm font-medium text-gray-500 truncate"><%= member.user.name %></p>
+                                <p class="text-sm font-medium text-gray-900 truncate"><%= member.user.name %></p>
+                                <p class="text-sm font-medium text-gray-500 truncate"><%= member.user.email %></p>
                             </div>
                         </div>
-                        <%= link to: Routes.organization_member_path(@conn, :delete, @organization, member.user), method: :delete, title: "Remove user", data: [confirm: "Are you sure?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
-                            <Icon.x_circle kind="outline" class="-ml-1 mr-0.5" />
+                        <%= if member.user.id == @current_user.id do %>
+                            <%= if (Enum.count @organization.members) > 1 do %>
+                                <%= link to: Routes.organization_member_path(@conn, :delete, @organization, member.user), method: :delete, title: "Leave #{@organization.name}", data: [confirm: "Leave #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
+                                    <Icon.arrow_left_on_rectangle kind="outline" class="-ml-1 mr-0.5" />
+                                <% end %>
+                            <% end %>
+                        <% else %>
+                            <%= link to: Routes.organization_member_path(@conn, :delete, @organization, member.user), method: :delete, title: "Remove #{member.user.name} from #{@organization.name}", data: [confirm: "Remove #{member.user.name} from #{@organization.name}?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
+                                <Icon.x_circle kind="outline" class="-ml-1 mr-0.5" />
+                            <% end %>
                         <% end %>
                     </li>
                     <% end %>

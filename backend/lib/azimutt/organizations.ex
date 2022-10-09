@@ -10,6 +10,7 @@ defmodule Azimutt.Organizations do
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
   alias Azimutt.Services.StripeSrv
+  alias Azimutt.Utils.Enumx
   alias Azimutt.Utils.Result
 
   def get_organization(id, %User{} = current_user) do
