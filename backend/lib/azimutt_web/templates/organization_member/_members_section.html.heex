@@ -54,8 +54,8 @@
                             </div>
                         </div>
                         <div class="flex-shrink-0 text-gray-400">
-                            <%= link class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500", to: Routes.invitation_path(@conn, :cancel, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"] do %>
-                                <AzimuttWeb.Components.Icon.x_mark_mini class="-ml-1 mr-0.5" />
+                            <%= link to: Routes.invitation_path(@conn, :cancel, organization_invitation.id), method: :patch, data: [confirm: "Are you sure?"], class: "inline-flex items-center py-2 px-3 border border-transparent rounded-full bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" do %>
+                                <Icon.x_mark class="-ml-1 mr-0.5" />
                                 <span class="text-sm font-medium">Cancel</span>
                             <% end %>
                         </div>
@@ -73,6 +73,9 @@
                                 <p class="text-sm font-medium text-gray-500 truncate"><%= member.user.name %></p>
                             </div>
                         </div>
+                        <%= link to: Routes.organization_member_path(@conn, :delete, @organization, member.user), method: :delete, title: "Remove user", data: [confirm: "Are you sure?"], class: "py-2 px-3 text-gray-400 hover:text-gray-500" do %>
+                            <Icon.x_circle kind="outline" class="-ml-1 mr-0.5" />
+                        <% end %>
                     </li>
                     <% end %>
                 </ul>

@@ -9,7 +9,7 @@ defmodule Azimutt.Organizations do
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
   alias Azimutt.Repo
-  alias Azimutt.Services.Stripe
+  alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Result
 
   def get_organization(id, %User{} = current_user) do
@@ -41,7 +41,7 @@ defmodule Azimutt.Organizations do
   end
 
   def create_personal_organization(%User{} = current_user) do
-    Stripe.init_customer()
+    StripeSrv.init_customer()
     |> Result.flat_map(fn stripe_customer ->
       member_changeset = OrganizationMember.creator_changeset(current_user)
 
@@ -51,25 +51,14 @@ defmodule Azimutt.Organizations do
       |> Ecto.Changeset.put_assoc(:members, [member_changeset])
       |> Repo.insert()
       |> Result.tap_both(
-        fn _ -> Stripe.delete_customer(stripe_customer) end,
-        fn o ->
-          Stripe.update_organization(
-            stripe_customer,
-            o.id,
-            o.name,
-            o.contact_email,
-            o.description,
-            true,
-            current_user.name,
-            current_user.email
-          )
-        end
+        fn _err -> StripeSrv.delete_customer(stripe_customer) end,
+        fn org -> update_stripe_customer(org, current_user, stripe_customer, true) end
       )
     end)
   end
 
   def create_non_personal_organization(attrs \\ %{}, %User{} = current_user) do
-    Stripe.init_customer()
+    StripeSrv.init_customer()
     |> Result.flat_map(fn stripe_customer ->
       member_changeset = OrganizationMember.creator_changeset(current_user)
 
@@ -79,21 +68,23 @@ defmodule Azimutt.Organizations do
       |> Ecto.Changeset.put_assoc(:members, [member_changeset])
       |> Repo.insert()
       |> Result.tap_both(
-        fn _ -> Stripe.delete_customer(stripe_customer) end,
-        fn o ->
-          Stripe.update_organization(
-            stripe_customer,
-            o.id,
-            o.name,
-            o.contact_email,
-            o.description,
-            false,
-            current_user.name,
-            current_user.email
-          )
-        end
+        fn _err -> StripeSrv.delete_customer(stripe_customer) end,
+        fn org -> update_stripe_customer(org, current_user, stripe_customer, false) end
       )
     end)
+  end
+
+  defp update_stripe_customer(%Organization{} = organization, %User{} = current_user, %Stripe.Customer{} = stripe_customer, is_personal) do
+    StripeSrv.update_organization(
+      stripe_customer,
+      organization.id,
+      organization.name,
+      organization.contact_email,
+      organization.description,
+      is_personal,
+      current_user.name,
+      current_user.email
+    )
   end
 
   def accept_organization_invitation(%OrganizationInvitation{} = organization_invitation, %User{} = current_user, now) do

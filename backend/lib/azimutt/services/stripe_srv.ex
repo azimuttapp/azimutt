@@ -1,16 +1,15 @@
-defmodule Azimutt.Services.Stripe do
+defmodule Azimutt.Services.StripeSrv do
   @moduledoc false
-  alias Stripe, as: Stripity
 
   # https://stripe.com/docs/api/customers/create
-  def init_customer, do: Stripity.Customer.create(%{})
+  def init_customer, do: Stripe.Customer.create(%{})
 
   # https://stripe.com/docs/api/customers/delete
-  def delete_customer(%Stripity.Customer{} = customer), do: Stripity.Customer.delete(customer.id)
+  def delete_customer(%Stripe.Customer{} = customer), do: Stripe.Customer.delete(customer.id)
 
   # https://stripe.com/docs/api/customers/update
   def update_organization(
-        %Stripity.Customer{} = customer,
+        %Stripe.Customer{} = customer,
         organization_id,
         name,
         email,
@@ -19,7 +18,7 @@ defmodule Azimutt.Services.Stripe do
         creator_name,
         creator_email
       ) do
-    Stripity.Customer.update(customer.id, %{
+    Stripe.Customer.update(customer.id, %{
       name: name,
       email: email,
       description: description,

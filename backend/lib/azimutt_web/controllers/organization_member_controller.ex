@@ -58,4 +58,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
         )
     end
   end
+
+  def delete(conn, %{"organization_id" => organization_id, "id" => user_id}) do
+  end
 end

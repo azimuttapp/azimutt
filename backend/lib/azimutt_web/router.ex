@@ -69,6 +69,7 @@ defmodule AzimuttWeb.Router do
       get "/billing", OrganizationBillingController, :index, as: :billing
       get "/members", OrganizationMemberController, :index, as: :member
       post "/members/invite", OrganizationMemberController, :invite, as: :member
+      post "/members/:id", OrganizationMemberController, :delete, as: :member
     end
 
     get "/invitations/:id", OrganizationInvitationController, :show, as: :invitation
