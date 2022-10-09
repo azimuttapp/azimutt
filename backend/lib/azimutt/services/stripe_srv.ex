@@ -31,6 +31,12 @@ defmodule Azimutt.Services.StripeSrv do
     })
   end
 
+  def update_quantity(subscription_id, quantity) when is_bitstring(subscription_id) do
+    Stripe.Subscription.update(subscription_id, %{quantity: quantity})
+    |> Result.map_error(fn error -> error.message end)
+    |> Result.tap_error(&Logger.error/1)
+  end
+
   def get_subscription(subscription_id) when is_bitstring(subscription_id) do
     case Stripe.Subscription.retrieve(subscription_id) do
       {:ok, %Stripe.Subscription{} = subscription} ->

@@ -4,6 +4,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
+  alias Azimutt.Services.StripeSrv
 
   def index(conn, %{"organization_id" => organization_id}) do
     now = DateTime.utc_now()
@@ -47,7 +48,10 @@ defmodule AzimuttWeb.OrganizationMemberController do
 
     with {:ok, %Organization{} = organization} <- Organizations.get_organization(organization_id, current_user),
          {:ok, %OrganizationMember{} = member} <- Organizations.remove_member(organization, user_id) do
-      # FIXME: update stripe customer number of members
+      if organization.stripe_subscription_id do
+        StripeSrv.update_quantity(organization.stripe_subscription_id, length(organization.members) - 1)
+      end
+
       if member.user.id == current_user.id do
         conn
         |> put_flash(:info, "Successfully leaved #{organization.name}.")
