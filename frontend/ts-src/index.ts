@@ -213,16 +213,10 @@ function updateProject(msg: UpdateProject): void {
             }, err => reportError(`Can't update project locally`, err))
         }, err => reportError(`Can't update project to backend`, err))
     } else if (msg.project.storage == ProjectStorage.enum.remote) {
-        backend.getProject(msg.project.organization.id, msg.project.id).then(current => {
-            if (current.updatedAt === msg.project.updatedAt) {
-                backend.updateProjectRemote(msg.project).then(res => {
-                    app.toast(ToastLevel.enum.success, 'Project saved')
-                    app.gotProject(buildProjectRemote(res, json))
-                }, err => reportError(`Can't update project`, err))
-            } else {
-                reportError(`Project was updated by someone else, please refresh to get the new version.`)
-            }
-        }, err => reportError(`Can't fetch current project from backend`, err))
+        backend.updateProjectRemote(msg.project).then(res => {
+            app.toast(ToastLevel.enum.success, 'Project saved')
+            app.gotProject(buildProjectRemote(res, json))
+        }, err => reportError(`Can't update project`, err))
     } else {
         reportError(`Unknown ProjectStorage`, msg.project.storage)
     }

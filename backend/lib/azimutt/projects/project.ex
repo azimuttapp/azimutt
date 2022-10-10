@@ -122,7 +122,7 @@ defmodule Azimutt.Projects.Project do
 
     project
     |> cast(attrs, required ++ [:description])
-    |> put_change(:updated_by, current_user)
+    |> put_change(:updated_by_id, current_user.id)
     |> validate_required(required)
   end
 
@@ -145,7 +145,7 @@ defmodule Azimutt.Projects.Project do
     project
     |> cast(attrs, required ++ [:description])
     |> cast_attachments(attrs, [:file])
-    |> put_change(:updated_by, current_user)
+    |> put_change(:updated_by_id, current_user.id)
     |> validate_required(required)
   end
 end

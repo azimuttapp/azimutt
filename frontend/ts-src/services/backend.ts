@@ -24,14 +24,25 @@ import * as Http from "../utils/http";
 import {z} from "zod";
 import * as Zod from "../utils/zod";
 import * as Json from "../utils/json";
+import * as jiff from "jiff";
 
 
 export class Backend {
+    private projects: { [id: ProjectId]: ProjectJson } = {}
+
     constructor(private env: Env, private logger: Logger) {
     }
 
-    getProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
+    getProject = async (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
         this.logger.debug(`backend.getProject(${o}, ${p})`)
+        const project = await this.fetchProject(o, p)
+        if (project.storage === ProjectStorage.enum.remote) {
+            this.projects[p] = project.content
+        }
+        return project
+    }
+
+    private fetchProject = (o: OrganizationId, p: ProjectId): Promise<ProjectInfoWithContent> => {
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}?expand=organization,organization.plan,content`)
         return Http.getJson(url, ProjectWithContentResponse, 'ProjectWithContentResponse').then(toProjectInfoWithContent)
     }
@@ -43,7 +54,7 @@ export class Backend {
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    createProjectRemote = (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
+    createProjectRemote = async (o: OrganizationId, json: ProjectJson): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.createProjectRemote(${o})`, json)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects?expand=organization,organization.plan`)
         const formData: FormData = new FormData()
@@ -51,37 +62,58 @@ export class Backend {
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${json.name}.json`)
-        return Http.postMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
-            .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
+        const res = await Http.postMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        this.projects[res.id] = json
+        return isRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
 
     updateProjectLocal = (p: Project): Promise<ProjectInfoLocal> => {
         this.logger.debug(`backend.updateProjectLocal(${p.organization?.id}, ${p.id})`, p)
-        if(!p.organization) return Promise.reject('Expecting an organization to update project')
+        if (!p.organization) return Promise.reject('Expecting an organization to update project')
+        if (p.storage !== ProjectStorage.enum.local) return Promise.reject('Expecting a local project')
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`)
         const json = buildProjectJson(p)
         return Http.putJson(url, toProjectBody(json, ProjectStorage.enum.local), ProjectResponse, 'ProjectResponse').then(toProjectInfo)
             .then(res => isLocal(res) ? res : Promise.reject('Expecting a local project'))
     }
 
-    updateProjectRemote = (p: Project): Promise<ProjectInfoRemote> => {
+    updateProjectRemote = async (p: Project): Promise<ProjectInfoRemote> => {
         this.logger.debug(`backend.updateProjectRemote(${p.organization?.id}, ${p.id})`, p)
-        if(!p.organization) return Promise.reject('Expecting an organization to update project')
+        if (!p.organization) return Promise.reject('Expecting an organization to update project')
+        if (p.storage !== ProjectStorage.enum.remote) return Promise.reject('Expecting a remote project')
+
+        const initial = this.projects[p.id] // where the user started
+        const current = await this.fetchProject(p.organization.id, p.id) // server version
+            .then(p => isRemote(p) ? p : Promise.reject('Expecting a remote project'))
+        let json = buildProjectJson(p)
+        if (current.updatedAt !== p.updatedAt) {
+            try {
+                // FIXME: fail most of the time because of current_layout conflict :(
+                const patch = jiff.diff(initial, json) // compute changes made by user
+                json = jiff.patch(patch, current.content) // apply changes made by user
+            } catch (e) {
+                console.warn('patch failed', e)
+                return Promise.reject('already updated by someone else, please reload')
+            }
+        }
+
+        if (!p.organization) return Promise.reject('Expecting an organization to update project')
         const url = this.withXhrHost(`/api/v1/organizations/${p.organization.id}/projects/${p.id}?expand=organization,organization.plan`)
-        const json = buildProjectJson(p)
         const formData: FormData = new FormData()
         Object.entries(toProjectBody(json, ProjectStorage.enum.remote))
             .filter(([_, value]) => value !== null && value !== undefined)
             .map(([key, value]) => formData.append(key, typeof value === 'string' ? value : JSON.stringify(value)))
         formData.append('file', new Blob([encodeContent(json)], {type: 'application/json'}), `${p.organization.id}-${p.name}.json`)
-        return Http.putMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
-            .then(res => isRemote(res) ? res : Promise.reject('Expecting a remote project'))
+        const res = await Http.putMultipart(url, formData, ProjectResponse, 'ProjectResponse').then(toProjectInfo)
+        this.projects[p.id] = json
+        return isRemote(res) ? res : Promise.reject('Expecting a remote project')
     }
 
-    deleteProject = (o: OrganizationId, p: ProjectId): Promise<void> => {
+    deleteProject = async (o: OrganizationId, p: ProjectId): Promise<void> => {
         this.logger.debug(`backend.deleteProject(${o}, ${p})`)
         const url = this.withXhrHost(`/api/v1/organizations/${o}/projects/${p}`)
-        return Http.deleteNoContent(url)
+        await Http.deleteNoContent(url)
+        delete this.projects[p]
     }
 
     private withXhrHost(path: string): string {

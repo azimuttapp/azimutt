@@ -115,6 +115,6 @@ defmodule Azimutt.Organizations.Organization do
       :github_username,
       :twitter_username
     ])
-    |> put_change(:updated_by, current_user)
+    |> put_change(:updated_by_id, current_user.id)
   end
 end
