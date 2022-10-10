@@ -1,19 +1,14 @@
 defmodule AzimuttWeb.OrganizationInvitationController do
   use AzimuttWeb, :controller
   alias Azimutt.Organizations
-  alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Services.StripeSrv
 
   def show(conn, %{"id" => id}) do
-    now = DateTime.utc_now()
-    current_user = conn.assigns.current_user
-    organization_invitation = Organizations.get_organization_invitation(id)
-
-    render(conn, "show.html",
-      organization_invitation: organization_invitation,
-      organization: organization_invitation.organization,
-      active_plan: :free
-    )
+    # FIXME: don't show organization & plan anymore => change layout + remove `get_organization_plan`
+    invitation = Organizations.get_organization_invitation(id)
+    organization = invitation.organization
+    {:ok, plan} = Organizations.get_organization_plan(organization)
+    render(conn, "show.html", organization_invitation: invitation, organization: organization, plan: plan)
   end
 
   def accept(conn, %{"id" => id}) do

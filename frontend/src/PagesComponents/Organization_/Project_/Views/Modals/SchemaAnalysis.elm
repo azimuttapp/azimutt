@@ -43,6 +43,8 @@ import Services.Backend as Backend
    - Tables without indexes
    - Columns whose default value is the word 'NULL' or 'null'
    - Tables with incrementing column names, potentially indicating denormalization
+
+   https://www.databasestar.com/database-design-mistakes
 -}
 
 

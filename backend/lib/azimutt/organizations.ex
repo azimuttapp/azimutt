@@ -5,9 +5,9 @@ defmodule Azimutt.Organizations do
   alias Azimutt.Accounts.User
   alias Azimutt.Accounts.UserNotifier
   alias Azimutt.Organizations.Organization
-  alias Azimutt.Organizations.Organization.Benefits
   alias Azimutt.Organizations.OrganizationInvitation
   alias Azimutt.Organizations.OrganizationMember
+  alias Azimutt.Organizations.OrganizationPlan
   alias Azimutt.Repo
   alias Azimutt.Services.StripeSrv
   alias Azimutt.Utils.Enumx
@@ -250,27 +250,18 @@ defmodule Azimutt.Organizations do
     end
   end
 
-  def get_organization_benefits(%Organization{} = organization) do
-    # FIXME: active_plan
-    # if organization.active_plan == :team do
-    #   {:ok,
-    #    %Benefits{
-    #      members: 5,
-    #      layouts: nil,
-    #      colors: true,
-    #      db_analysis: true,
-    #      db_access: true
-    #    }}
-    # else
-    {:ok,
-     %Benefits{
-       members: 3,
-       layouts: 3,
-       colors: false,
-       db_analysis: false,
-       db_access: false
-     }}
-
-    # end
+  def get_organization_plan(%Organization{} = organization) do
+    if organization.stripe_subscription_id do
+      StripeSrv.get_subscription(organization.stripe_subscription_id)
+      |> Result.map(fn s ->
+        if s.status == "active" || s.status == "past_due" || s.status == "unpaid" do
+          OrganizationPlan.team()
+        else
+          OrganizationPlan.free()
+        end
+      end)
+    else
+      {:ok, OrganizationPlan.free()}
+    end
   end
 end

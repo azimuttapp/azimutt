@@ -117,13 +117,4 @@ defmodule Azimutt.Organizations.Organization do
     ])
     |> put_change(:updated_by, current_user)
   end
-
-  typedstruct module: Benefits, enforce: true do
-    @moduledoc false
-    field :members, integer()
-    field :layouts, integer() | nil
-    field :colors, boolean()
-    field :db_analysis, boolean()
-    field :db_access, boolean()
-  end
 end

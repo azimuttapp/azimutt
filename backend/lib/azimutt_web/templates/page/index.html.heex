@@ -64,18 +64,19 @@
                 <ul role="list" class="order-last mt-10 flex flex-col gap-y-3 text-sm text-slate-200">
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Unlimited Projects</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Unlimited Tables</span></li>
-                    <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Up to 3 layouts per project</span></li>
-                    <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Share with up to 3 people</span></li>
+                    <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Up to <%= Azimutt.config(:free_plan_layouts) %> layouts per project</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Limited database analysis</span></li>
+                    <li class="flex"><Icon.check_circle kind="outline" class="text-slate-400" /><span class="ml-4">Share with up to <%= Azimutt.config(:free_plan_seats) %> people</span></li>
                 </ul>
                 <a class="group inline-flex ring-1 items-center justify-center rounded-full py-2 px-4 text-sm focus:outline-none ring-slate-700 text-white hover:ring-slate-500 active:ring-slate-700 active:text-slate-400 focus-visible:outline-white mt-8"
-                   aria-label="Get started with the Starter plan for $9" href="/register">Get started
-                </a>
+                   aria-label="Get started with the Starter plan for $9" href="/register">Get started</a>
             </section>
             <section class="flex flex-col rounded-3xl px-6 sm:px-8 order-first bg-blue-600 py-8 lg:order-none">
                 <h3 class="mt-5 font-display text-lg text-white">Team</h3>
                 <p class="mt-2 text-base text-white">Advanced collaboration for individuals and organizations</p>
-                <p class="order-first font-display text-5xl font-light tracking-tight text-white">$13 <span class="text-sm text-gray-50 ">per user/month</span></p>
+                <p class="order-first font-display text-5xl font-light tracking-tight text-white">
+                    $<%= Azimutt.config(:team_plan_seat_price) %><span class="text-sm text-gray-50 "> / month / user</span>
+                </p>
                 <ul role="list" class="order-last mt-10 flex flex-col gap-y-3 text-sm text-white">
                     <li class="flex">
                          <span class="position-absolute top-0 left-0 fill-current stroke-current text-white">
@@ -88,7 +89,7 @@
                     <li class="flex"><Icon.check_circle kind="outline" class="text-white" /><span class="ml-4">Unlimited Layouts</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-white" /><span class="ml-4">Full schema analysis</span></li>
                     <li class="flex"><Icon.check_circle kind="outline" class="text-white" /><span class="ml-4">Layout customization</span></li>
-                    <li class="flex"><Icon.check_circle kind="outline" class="text-white" /><span class="ml-4">Database access</span></li>
+                    <li class="flex"><Icon.check_circle kind="outline" class="text-white" /><span class="ml-4" title="Soon...">*Database access</span></li>
                 </ul>
                 <a class="group inline-flex items-center justify-center rounded-full py-2 px-4 text-sm font-semibold focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 bg-white text-slate-900 hover:bg-blue-50 active:bg-blue-200 active:text-slate-600 focus-visible:outline-white mt-8"
                    aria-label="Get started with the Small business plan for $15" href="/register">Get started</a>

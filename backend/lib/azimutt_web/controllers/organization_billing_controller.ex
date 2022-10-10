@@ -28,9 +28,11 @@ defmodule AzimuttWeb.OrganizationBillingController do
   end
 
   defp generate_billing_view(conn, file, organization, message) do
-    conn
-    |> put_view(AzimuttWeb.OrganizationView)
-    |> render(file, organization: organization, active_plan: :free, message: message)
+    with {:ok, plan} <- Organizations.get_organization_plan(organization) do
+      conn
+      |> put_view(AzimuttWeb.OrganizationView)
+      |> render(file, organization: organization, plan: plan, message: message)
+    end
   end
 
   def new(conn, %{"organization_id" => organization_id}) do

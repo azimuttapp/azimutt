@@ -37,26 +37,24 @@ defmodule AzimuttWeb.OrganizationController do
   end
 
   def show(conn, %{"id" => id}) do
-    now = DateTime.utc_now()
     current_user = conn.assigns.current_user
 
-    with {:ok, organization} <- Organizations.get_organization(id, current_user) do
+    with {:ok, organization} <- Organizations.get_organization(id, current_user),
+         {:ok, plan} <- Organizations.get_organization_plan(organization) do
       projects = Projects.list_projects(organization, current_user)
 
-      render(conn, "show.html",
-        organization: organization,
-        # FIXME: active_plan
-        active_plan: :free,
-        projects: projects
-      )
+      render(conn, "show.html", organization: organization, plan: plan, projects: projects)
     end
   end
 
   def edit(conn, %{"id" => id}) do
     current_user = conn.assigns.current_user
-    {:ok, organization} = Organizations.get_organization(id, current_user)
-    changeset = Organization.update_changeset(organization, %{}, current_user)
-    render(conn, "edit.html", organization: organization, active_plan: :free, changeset: changeset)
+
+    with {:ok, organization} <- Organizations.get_organization(id, current_user),
+         {:ok, plan} <- Organizations.get_organization_plan(organization) do
+      changeset = Organization.update_changeset(organization, %{}, current_user)
+      render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
+    end
   end
 
   def update(conn, %{"id" => id, "organization" => organization_params}) do
@@ -70,7 +68,8 @@ defmodule AzimuttWeb.OrganizationController do
         |> redirect(to: Routes.organization_path(conn, :show, organization))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "edit.html", organization: organization, active_plan: :free, changeset: changeset)
+        with {:ok, plan} <- Organizations.get_organization_plan(organization),
+             do: render(conn, "edit.html", organization: organization, plan: plan, changeset: changeset)
     end
   end
 

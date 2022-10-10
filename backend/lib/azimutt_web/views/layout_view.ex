@@ -1,5 +1,7 @@
 defmodule AzimuttWeb.LayoutView do
   use AzimuttWeb, :view
+  alias Azimutt.Organizations.OrganizationPlan
+
   # Phoenix LiveDashboard is available only in development by default,
   # so we instruct Elixir to not warn if the dashboard route is missing.
   @compile {:no_warn_undefined, {Routes, :live_dashboard_path, 2}}
@@ -47,25 +49,14 @@ defmodule AzimuttWeb.LayoutView do
     end
   end
 
-  def generate_organization_plan_badge(active_plan) do
-    case active_plan do
-      :free ->
-        content_tag(:span, "Free plan",
-          class: "inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-gray-100 text-gray-800"
-        )
+  def generate_organization_plan_badge(%OrganizationPlan{} = plan) do
+    classes = "inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium"
 
-      :team ->
-        content_tag(:span, "Team plan",
-          class: "inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-yellow-100 text-yellow-800"
-        )
-
-      :enterprise ->
-        content_tag(:span, "Enterprise plan",
-          class: "inline-flex items-center px-2.5 py-0.5 rounded-md text-sm font-medium bg-purple-100 text-purple-800"
-        )
-
-      _ ->
-        ""
+    case plan.id do
+      :free -> content_tag(:span, "Free plan", class: "#{classes} bg-gray-100 text-gray-800")
+      :team -> content_tag(:span, "Team plan", class: "#{classes} bg-yellow-100 text-yellow-800")
+      :enterprise -> content_tag(:span, "Enterprise plan", class: "#{classes} bg-purple-100 text-purple-800")
+      _ -> content_tag(:span, "Unknown plan #{plan.id}", class: "#{classes} bg-red-100 text-red-800")
     end
   end
 end

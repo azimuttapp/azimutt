@@ -85,7 +85,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
   end
 
   defp render_index(conn, organization, changeset) do
-    with {:ok, organization_benefits} <- Organizations.get_organization_benefits(organization) do
+    with {:ok, plan} <- Organizations.get_organization_plan(organization) do
       # FIXME: create a `Organizations.get_pending_invitations(organization.id)`
       organization_invitations =
         organization.invitations
@@ -93,8 +93,7 @@ defmodule AzimuttWeb.OrganizationMemberController do
 
       render(conn, "index.html",
         organization: organization,
-        active_plan: :free,
-        organization_benefits: organization_benefits,
+        plan: plan,
         organization_invitations: organization_invitations,
         organization_invitation_changeset: changeset
       )

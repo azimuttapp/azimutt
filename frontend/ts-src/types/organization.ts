@@ -10,13 +10,11 @@ export type OrganizationName = string
 export const OrganizationName = z.string()
 export type PlanId = 'free' | 'team'
 export const PlanId = z.enum(['free', 'team'])
-export type PlanName = 'free' | 'team'
-export const PlanName = z.enum(['free', 'team'])
 
 export interface Plan {
     id: PlanId
-    name: PlanName
-    layouts: number
+    name: string
+    layouts: number | null
     colors: boolean
     db_analysis: boolean
     db_access: boolean
@@ -24,8 +22,8 @@ export interface Plan {
 
 export const Plan = z.object({
     id: PlanId,
-    name: PlanName,
-    layouts: z.number(),
+    name: z.string(),
+    layouts: z.number().nullable(),
     colors: z.boolean(),
     db_analysis: z.boolean(),
     db_access: z.boolean()

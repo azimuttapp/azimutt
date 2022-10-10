@@ -23,20 +23,9 @@ defmodule AzimuttWeb.Api.OrganizationView do
   end
 
   defp put_plan(json, %Organization{} = organization, %CtxParams{} = ctx) do
-    {:ok, benefits} = Organizations.get_organization_benefits(organization)
-
     if ctx.expand |> Enum.member?("plan") do
-      json
-      |> Map.put(:plan, %{
-        # FIXME: active_plan: organization.active_plan,
-        id: "free",
-        # FIXME: active_plan: organization.active_plan,
-        name: "free",
-        layouts: benefits.layouts,
-        colors: benefits.colors,
-        db_analysis: benefits.db_analysis,
-        db_access: benefits.db_access
-      })
+      {:ok, plan} = Organizations.get_organization_plan(organization)
+      json |> Map.put(:plan, plan)
     else
       json
     end

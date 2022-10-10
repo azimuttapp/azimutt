@@ -2,9 +2,7 @@ defmodule Azimutt.Organizations.OrganizationMember do
   @moduledoc false
   use Ecto.Schema
   use Azimutt.Schema
-
   import Ecto.Changeset
-
   alias Azimutt.Accounts.User
   alias Azimutt.Organizations.Organization
   alias Azimutt.Organizations.OrganizationMember

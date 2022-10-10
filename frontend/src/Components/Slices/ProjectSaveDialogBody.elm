@@ -236,7 +236,7 @@ sampleProjectName =
 
 samplePlan : Plan
 samplePlan =
-    Plan "free" "free" 3 False False False
+    Plan "free" "Free plan" (Just 3) False False False
 
 
 sampleOrganizations : List Organization

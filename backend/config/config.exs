@@ -17,7 +17,10 @@ config :azimutt,
   twitter_url: "https://twitter.com/azimuttapp",
   github_url: "https://github.com/azimuttapp",
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",
-  team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd"
+  team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd",
+  team_plan_seat_price: 13,
+  free_plan_seats: 3,
+  free_plan_layouts: 3
 
 config :azimutt,
   ecto_repos: [Azimutt.Repo]

@@ -32,7 +32,7 @@ organizationName =
 
 plan : Fuzzer Plan
 plan =
-    Fuzz.map6 Plan planId planName intPosSmall Fuzz.bool Fuzz.bool Fuzz.bool
+    Fuzz.map6 Plan planId planName (Fuzz.maybe intPosSmall) Fuzz.bool Fuzz.bool Fuzz.bool
 
 
 planId : Fuzzer String
@@ -42,7 +42,7 @@ planId =
 
 planName : Fuzzer String
 planName =
-    Fuzz.oneOf ([ "free", "team" ] |> List.map Fuzz.constant)
+    Fuzz.oneOf ([ "Free plan", "Team plan" ] |> List.map Fuzz.constant)
 
 
 logo : Fuzzer String
