@@ -5,18 +5,20 @@
         </svg>
         <span class="truncate">Projects</span>
     </a>
-    <a class={active(@conn.request_path, Routes.organization_member_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_member_path(@conn, :index, @organization)}>
-        <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
-        </svg>
-        <span class="truncate">Members</span>
-    </a>
-    <a class={active(@conn.request_path, Routes.organization_billing_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_billing_path(@conn, :index, @organization)}>
-        <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
-        </svg>
-        <span class="truncate">Billing</span>
-    </a>
+    <%= if !@organization.is_personal do %>
+        <a class={active(@conn.request_path, Routes.organization_member_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_member_path(@conn, :index, @organization)}>
+            <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <span class="truncate">Members</span>
+        </a>
+        <a class={active(@conn.request_path, Routes.organization_billing_path(@conn, :index, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_billing_path(@conn, :index, @organization)}>
+            <svg xmlns="http://www.w3.org/2000/svg" style="pointer-events: none; width: 24px; height: 24px; ;" class="h-6 w-6 text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span class="truncate">Billing</span>
+        </a>
+    <% end %>
     <a class={active(@conn.request_path, Routes.organization_path(@conn, :edit, @organization))} data-phx-link="redirect" data-phx-link-state="push" href={Routes.organization_path(@conn, :edit, @organization)} >
         <svg role="img" class="text-gray-400 flex-shrink-0 -ml-1 mr-3 h-6 w-6" viewBox="0 0 20 20" style="pointer-events: none; width: 24px; height: 24px; ;" fill="currentColor">
             <g buffered-rendering="static">

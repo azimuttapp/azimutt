@@ -95,13 +95,13 @@ selectSave wrap modalClose save titleId organizations projectName model =
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-center text-gray-900" ]
                     [ text ("Save " ++ projectName) ]
                 , div [ class "mt-2" ]
-                    [ FormLabel.bold "mt-3" (model.id ++ "-project") "Project name" (\fieldId -> InputText.simple fieldId "" model.name (UpdateProjectName >> wrap))
+                    [ FormLabel.bold "mt-3" (model.id ++ "-project") "Name" (\fieldId -> InputText.simple fieldId "" model.name (UpdateProjectName >> wrap))
                     , FormLabel.bold "mt-3"
                         (model.id ++ "-organization")
                         "Organization"
                         (\fieldId ->
                             Select.simple fieldId
-                                ({ value = "", label = "-- choose an organization" } :: (organizations |> List.map (\o -> { value = o.id, label = o.name })))
+                                ({ value = "", label = "-- choose an organization" } :: (organizations |> List.sortBy .name |> List.map (\o -> { value = o.id, label = o.name })))
                                 (model.organization |> Maybe.mapOrElse .id "")
                                 (\orgId -> organizations |> List.findBy .id orgId |> UpdateOrganization |> wrap)
                         )
@@ -115,8 +115,8 @@ selectSave wrap modalClose save titleId organizations projectName model =
         , div [ class "mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense" ]
             [ Button.white3 Tw.default [ onClick modalClose ] [ text "Stay in draft" ]
             , Maybe.map2 (\name orga -> save name orga model.storage) (String.nonEmptyMaybe model.name) model.organization
-                |> Maybe.map (\msg -> Button.primary3 Tw.primary [ onClick msg, class "w-full" ] [ text "Save project" ])
-                |> Maybe.withDefault (Button.primary3 Tw.primary [ disabled True, class "w-full" ] [ text "Save project" ])
+                |> Maybe.map (\msg -> Button.primary3 Tw.primary [ onClick msg, class "w-full" ] [ text "Create project" ])
+                |> Maybe.withDefault (Button.primary3 Tw.primary [ disabled True, class "w-full" ] [ text "Create project" ])
             ]
         ]
 
@@ -128,8 +128,8 @@ type alias Card =
 radioCards : HtmlId -> (String -> msg) -> ProjectStorage -> Html msg
 radioCards fieldId fieldChange fieldValue =
     div [ class "grid grid-cols-1 gap-y-2" ]
-        ([ Card (storageToString ProjectStorage.Remote) "Save your project in Azimutt server to share it" "Needs pro account"
-         , Card (storageToString ProjectStorage.Local) "Keep your project locally" "Free"
+        ([ Card (storageToString ProjectStorage.Remote) "Save in Azimutt and share it with other people" "Free up to 3 people"
+         , Card (storageToString ProjectStorage.Local) "Keep your project in your browser" "Free forever"
          ]
             |> List.indexedMap (radioCardLabel fieldId (storageToString fieldValue) fieldChange)
         )

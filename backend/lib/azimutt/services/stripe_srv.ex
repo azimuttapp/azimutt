@@ -39,6 +39,8 @@ defmodule Azimutt.Services.StripeSrv do
   end
 
   def get_subscription(subscription_id) when is_bitstring(subscription_id) do
+    # FIXME: add cache to limit Stripe reads: https://github.com/sasa1977/con_cache
+    # https://medium.com/@toddresudek/caching-in-an-elixir-phoenix-app-a499cdf91046
     case Stripe.Subscription.retrieve(subscription_id) do
       {:ok, %Stripe.Subscription{} = subscription} ->
         {:ok, subscription}
