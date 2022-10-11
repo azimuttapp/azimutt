@@ -29,7 +29,6 @@ suite =
             , test "single quote" (\_ -> noEnclosingQuotes "'aaa'" |> Expect.equal "aaa")
             , test "back quote" (\_ -> noEnclosingQuotes "`aaa`" |> Expect.equal "aaa")
             , test "brackets" (\_ -> noEnclosingQuotes "[aaa]" |> Expect.equal "aaa")
-            , test "extra info" (\_ -> noEnclosingQuotes "`aaa`(42)" |> Expect.equal "aaa")
             ]
         , describe "commaSplit"
             [ test "split on comma" (\_ -> commaSplit "aaa,bbb,ccc" |> Expect.equal [ "aaa", "bbb", "ccc" ])

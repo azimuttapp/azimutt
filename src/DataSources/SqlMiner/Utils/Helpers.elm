@@ -1,6 +1,6 @@
-module DataSources.SqlMiner.Utils.Helpers exposing (buildColumnName, buildColumnType, buildComment, buildConstraintName, buildEnumValue, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, buildTypeName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
+module DataSources.SqlMiner.Utils.Helpers exposing (buildColumnName, buildColumnType, buildColumnValue, buildComment, buildConstraintName, buildEnumValue, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, buildTypeName, commaSplit, deferrable, noEnclosingQuotes, parseIndexDefinition, sqlTriggers)
 
-import DataSources.SqlMiner.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlComment, SqlConstraintName, SqlEnumValue, SqlSchemaName, SqlStatement, SqlTableName, SqlTypeName)
+import DataSources.SqlMiner.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnType, SqlColumnValue, SqlComment, SqlConstraintName, SqlEnumValue, SqlSchemaName, SqlStatement, SqlTableName, SqlTypeName)
 import Libs.Nel as Nel
 import Libs.Regex as Regex
 
@@ -60,6 +60,11 @@ buildColumnType name =
     name |> String.trim |> noEnclosingQuotes
 
 
+buildColumnValue : String -> SqlColumnValue
+buildColumnValue value =
+    value |> String.trim |> noEnclosingQuotes |> noEnclosingParenthesis
+
+
 buildTypeName : String -> SqlTypeName
 buildTypeName name =
     name |> String.trim |> noEnclosingQuotes
@@ -82,7 +87,12 @@ buildComment comment =
 
 noEnclosingQuotes : String -> String
 noEnclosingQuotes text =
-    text |> extract "\"(.*)\"" |> extract "'(.*)'" |> extract "`(.*)`" |> extract "\\[(.*)]"
+    text |> extract "^\"(.*)\"$" |> extract "^'(.*)'$" |> extract "^`(.*)`$" |> extract "^\\[(.*)]$"
+
+
+noEnclosingParenthesis : String -> String
+noEnclosingParenthesis text =
+    text |> extract "^\\((.*)\\)$"
 
 
 extract : String -> String -> String

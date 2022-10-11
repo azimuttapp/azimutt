@@ -1,6 +1,6 @@
 module DataSources.SqlMiner.Parsers.AlterTableTest exposing (..)
 
-import DataSources.SqlMiner.Parsers.AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..), parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
+import DataSources.SqlMiner.Parsers.AlterTable exposing (ColumnUpdate(..), TableConstraint(..), TableUpdate(..), parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey, parseAlterTableColumnDefault)
 import DataSources.SqlMiner.TestHelpers.Tests exposing (testSql, testStatement)
 import Libs.Nel exposing (Nel)
 import Test exposing (Test, describe)
@@ -46,6 +46,9 @@ suite =
             , testStatement ( parseAlterTable, "column default with quotes" )
                 "ALTER TABLE public.table1 ALTER COLUMN \"id\" SET DEFAULT 1;"
                 (AlterColumn (Just "public") "table1" (ColumnDefault "id" "1"))
+            , testStatement ( parseAlterTable, "column default value" )
+                "ALTER TABLE t1 ADD  DEFAULT (getdate()) FOR [CreatedDate];"
+                (AlterColumn Nothing "t1" (ColumnDefault "CreatedDate" "getdate()"))
             , testStatement ( parseAlterTable, "column mssql value" )
                 "ALTER TABLE t1 ADD DEFAULT N'gitlab_' + CAST(NEXT VALUE FOR dbo.abuse_id_seq as NVARCHAR(20)) FOR id;"
                 (AlterColumn Nothing "t1" (ColumnDefault "id" "N'gitlab_' + CAST(NEXT VALUE FOR dbo.abuse_id_seq as NVARCHAR(20))"))
@@ -85,6 +88,9 @@ suite =
             , testStatement ( parseAlterTable, "row level security" )
                 "alter table users enable row level security;"
                 (IgnoredCommand "enable row level security")
+            , testStatement ( parseAlterTable, "with check" )
+                "ALTER TABLE [dbo].[Account]  WITH CHECK ADD  CONSTRAINT [FK_1] FOREIGN KEY([PayoutAccountId]) REFERENCES dbo.Payout.AccountId;"
+                (AddTableConstraint (Just "dbo") "Account" (ParsedForeignKey (Just "FK_1") { head = { column = "PayoutAccountId", ref = { column = Nothing, schema = Just "dbo", table = "Payout" } }, tail = [] }))
             ]
         , describe "parseAlterTableAddConstraint"
             [ testSql ( parseAlterTableAddConstraint, "unique" )
@@ -114,5 +120,10 @@ suite =
                     , { column = "TRIGGER_GROUP", ref = { schema = Just "CRPDTA", table = "QRTZ_TRIGGERS", column = Just "TRIGGER_GROUP" } }
                     ]
                 )
+            ]
+        , describe "parseAlterTableColumnDefault"
+            [ testSql ( parseAlterTableColumnDefault, "with double space" )
+                "ADD  DEFAULT (getdate()) FOR [CreatedDate]"
+                (ColumnDefault "CreatedDate" "getdate()")
             ]
         ]

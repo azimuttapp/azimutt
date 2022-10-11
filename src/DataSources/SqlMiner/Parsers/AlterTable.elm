@@ -1,6 +1,6 @@
-module DataSources.SqlMiner.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey)
+module DataSources.SqlMiner.Parsers.AlterTable exposing (CheckInner, ColumnUpdate(..), ForeignKeyInner, PrimaryKeyInner, SqlUser, TableConstraint(..), TableUpdate(..), UniqueInner, parseAlterTable, parseAlterTableAddConstraint, parseAlterTableAddConstraintForeignKey, parseAlterTableColumnDefault)
 
-import DataSources.SqlMiner.Utils.Helpers exposing (buildColumnName, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition, sqlTriggers)
+import DataSources.SqlMiner.Utils.Helpers exposing (buildColumnName, buildColumnValue, buildConstraintName, buildRawSql, buildSchemaName, buildSqlLine, buildTableName, parseIndexDefinition, sqlTriggers)
 import DataSources.SqlMiner.Utils.Types exposing (ParseError, RawSql, SqlColumnName, SqlColumnValue, SqlConstraintName, SqlForeignKeyRef, SqlPredicate, SqlSchemaName, SqlStatement, SqlTableName)
 import Libs.List as List
 import Libs.Maybe as Maybe
@@ -53,7 +53,7 @@ type alias SqlUser =
 
 parseAlterTable : SqlStatement -> Result (List ParseError) TableUpdate
 parseAlterTable statement =
-    case statement |> buildSqlLine |> Regex.matches "^ALTER TABLE(?:\\s+ONLY)?(?:\\s+IF EXISTS)?\\s+(?:(?<schema>[^ .]+)\\.\\s*)?(?<table>[^ .]+)\\s+(?<command>.*);$" of
+    case statement |> buildSqlLine |> Regex.matches "^ALTER TABLE(?:\\s+ONLY)?(?:\\s+IF EXISTS)?\\s+(?:(?<schema>[^ .]+)\\.\\s*)?(?<table>[^ .]+)\\s+(?:WITH\\s+CHECK\\s+)?(?<command>.*);$" of
         schema :: (Just table) :: (Just command) :: [] ->
             -- FIXME manage multiple commands, ex: "ADD PRIMARY KEY (`id`), ADD KEY `IDX_ABC` (`user_id`), ADD KEY `IDX_DEF` (`event_id`)"
             -- TODO try to merge "ADD PRIMARY KEY" with "ADD CONSTRAINT" (make CONSTRAINT optional)
@@ -66,37 +66,37 @@ parseAlterTable statement =
                 tableName =
                     table |> buildTableName
             in
-            if command |> String.toUpper |> String.startsWith "ADD PRIMARY KEY " then
+            if command |> Regex.matchI "^ADD\\s+PRIMARY\\s+KEY( |$)" then
                 parseAlterTableAddConstraintPrimaryKey (command |> String.dropLeft 4) |> Result.map (\r -> AddTableConstraint schemaName tableName (ParsedPrimaryKey Nothing r))
 
-            else if command |> String.toUpper |> String.startsWith "ADD CONSTRAINT " then
+            else if command |> Regex.matchI "^ADD\\s+CONSTRAINT( |$)" then
                 parseAlterTableAddConstraint command |> Result.map (AddTableConstraint schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "ADD FOREIGN KEY " then
+            else if command |> Regex.matchI "^ADD\\s+FOREIGN\\s+KEY( |$)" then
                 command |> String.dropLeft 4 |> parseAlterTableAddConstraintForeignKey |> Result.map (ParsedForeignKey Nothing) |> Result.map (AddTableConstraint schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "ALTER COLUMN " then
+            else if command |> Regex.matchI "^ALTER\\s+COLUMN( |$)" then
                 parseAlterTableAlterColumn command |> Result.map (AlterColumn schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "ADD DEFAULT " then
+            else if command |> Regex.matchI "^ADD\\s+DEFAULT( |$)" then
                 parseAlterTableColumnDefault command |> Result.map (AlterColumn schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "DROP COLUMN " then
+            else if command |> Regex.matchI "^DROP\\s+COLUMN( |$)" then
                 parseAlterTableDropColumn command |> Result.map (DropColumn schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "OWNER TO " then
+            else if command |> Regex.matchI "^OWNER\\s+TO( |$)" then
                 parseAlterTableOwnerTo command |> Result.map (AddTableOwner schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "ATTACH PARTITION " then
+            else if command |> Regex.matchI "^ATTACH\\s+PARTITION( |$)" then
                 Ok (AttachPartition schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "DROP CONSTRAINT " then
+            else if command |> Regex.matchI "^DROP\\s+CONSTRAINT( |$)" then
                 parseAlterTableDropConstraint command |> Result.map (DropConstraint schemaName tableName)
 
-            else if command |> String.toUpper |> String.startsWith "REPLICA IDENTITY " then
+            else if command |> Regex.matchI "^REPLICA\\s+IDENTITY( |$)" then
                 Ok (IgnoredCommand command)
 
-            else if command |> String.toUpper |> String.startsWith "ENABLE ROW LEVEL SECURITY" then
+            else if command |> Regex.matchI "^ENABLE\\s+ROW\\s+LEVEL\\s+SECURITY" then
                 Ok (IgnoredCommand command)
 
             else
@@ -108,21 +108,21 @@ parseAlterTable statement =
 
 parseAlterTableAddConstraint : RawSql -> Result (List ParseError) TableConstraint
 parseAlterTableAddConstraint command =
-    case command |> Regex.matches ("^ADD CONSTRAINT\\s+(?<name>[^ ]+)\\s+(?<constraint>.*?)(?:\\s+match simple)?" ++ sqlTriggers ++ "$") of
+    case command |> Regex.matches ("^ADD\\s+CONSTRAINT\\s+(?<name>[^ ]+)\\s+(?<constraint>.*?)(?:\\s+match simple)?" ++ sqlTriggers ++ "$") of
         (Just name) :: (Just constraint) :: [] ->
-            if constraint |> String.toUpper |> String.startsWith "PRIMARY KEY" then
+            if constraint |> Regex.matchI "^PRIMARY\\s+KEY" then
                 parseAlterTableAddConstraintPrimaryKey constraint |> Result.map (ParsedPrimaryKey (Just (name |> buildConstraintName)))
 
-            else if constraint |> String.toUpper |> String.startsWith "FOREIGN KEY" then
+            else if constraint |> Regex.matchI "^FOREIGN\\s+KEY" then
                 parseAlterTableAddConstraintForeignKey constraint |> Result.map (ParsedForeignKey (name |> buildConstraintName |> Just))
 
-            else if constraint |> String.toUpper |> String.startsWith "UNIQUE" then
+            else if constraint |> Regex.matchI "^UNIQUE" then
                 parseAlterTableAddConstraintUnique constraint |> Result.map (ParsedUnique (name |> buildConstraintName))
 
-            else if constraint |> String.toUpper |> String.startsWith "CHECK" then
+            else if constraint |> Regex.matchI "^CHECK" then
                 parseAlterTableAddConstraintCheck constraint |> Result.map (ParsedCheck (name |> buildConstraintName))
 
-            else if constraint |> String.toUpper |> String.startsWith "EXCLUDE USING" then
+            else if constraint |> Regex.matchI "^EXCLUDE\\s+USING" then
                 Ok (IgnoredConstraint constraint)
 
             else
@@ -134,7 +134,7 @@ parseAlterTableAddConstraint command =
 
 parseAlterTableAddConstraintPrimaryKey : RawSql -> Result (List ParseError) PrimaryKeyInner
 parseAlterTableAddConstraintPrimaryKey constraint =
-    case constraint |> Regex.matches "^PRIMARY KEY(?:\\s+(?:CLUSTERED|NONCLUSTERED))?\\s*\\((?<columns>[^)]+)\\).*$" of
+    case constraint |> Regex.matches "^PRIMARY\\s+KEY(?:\\s+(?:CLUSTERED|NONCLUSTERED))?\\s*\\((?<columns>[^)]+)\\).*$" of
         (Just columns) :: [] ->
             columns |> String.split "," |> List.map buildColumnName |> Nel.fromList |> Result.fromMaybe [ "Primary key can't have empty columns" ]
 
@@ -144,12 +144,12 @@ parseAlterTableAddConstraintPrimaryKey constraint =
 
 parseAlterTableAddConstraintForeignKey : RawSql -> Result (List ParseError) (Nel ForeignKeyInner)
 parseAlterTableAddConstraintForeignKey constraint =
-    case constraint |> Regex.matches "^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?" of
+    case constraint |> Regex.matches "^FOREIGN\\s+KEY\\s*\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\s*\\((?<column_b>[^)]+)\\))?" of
         (Just columns) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
             buildForeignKeyInner constraint columns schemaDest tableDest columnDest
 
         _ ->
-            case constraint |> Regex.matches "^FOREIGN KEY\\s+\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\((?<column_b>[^ .]+)\\))?$" of
+            case constraint |> Regex.matches "^FOREIGN\\s+KEY\\s*\\((?<column>[^)]+)\\)\\s+REFERENCES\\s+(?:(?<schema_b>[^ .]+)\\.)?(?<table_b>[^ .(]+)(?:\\((?<column_b>[^ .]+)\\))?$" of
                 (Just columns) :: schemaDest :: (Just tableDest) :: columnDest :: [] ->
                     buildForeignKeyInner constraint columns schemaDest tableDest columnDest
 
@@ -204,12 +204,12 @@ parseAlterTableAddConstraintCheck constraint =
 
 parseAlterTableAlterColumn : RawSql -> Result (List ParseError) ColumnUpdate
 parseAlterTableAlterColumn command =
-    case command |> Regex.matches "^ALTER COLUMN\\s+(?<column>[^ .]+)\\s+SET\\s+(?<property>.+)$" of
+    case command |> Regex.matches "^ALTER\\s+COLUMN\\s+(?<column>[^ .]+)\\s+SET\\s+(?<property>.+)$" of
         (Just column) :: (Just property) :: [] ->
-            if property |> String.toUpper |> String.startsWith "DEFAULT" then
+            if property |> Regex.matchI "^DEFAULT" then
                 parseAlterTableAlterColumnDefault property |> Result.map (ColumnDefault (buildColumnName column))
 
-            else if property |> String.toUpper |> String.startsWith "STATISTICS" then
+            else if property |> Regex.matchI "^STATISTICS" then
                 parseAlterTableAlterColumnStatistics property |> Result.map (ColumnStatistics (buildColumnName column))
 
             else
@@ -221,9 +221,9 @@ parseAlterTableAlterColumn command =
 
 parseAlterTableColumnDefault : RawSql -> Result (List ParseError) ColumnUpdate
 parseAlterTableColumnDefault command =
-    case command |> Regex.matches "^ADD DEFAULT\\s+(?<value>.*)\\s+FOR\\s+(?<column>[^ .]+)\\s*$" of
+    case command |> Regex.matches "^ADD\\s+DEFAULT\\s+(?<value>.*)\\s+FOR\\s+(?<column>[^ .]+)\\s*$" of
         (Just value) :: (Just column) :: [] ->
-            Ok (ColumnDefault (buildColumnName column) value)
+            Ok (ColumnDefault (buildColumnName column) (buildColumnValue value))
 
         _ ->
             Err [ "Can't parse add default: '" ++ command ++ "'" ]
@@ -231,7 +231,7 @@ parseAlterTableColumnDefault command =
 
 parseAlterTableDropColumn : RawSql -> Result (List ParseError) SqlColumnName
 parseAlterTableDropColumn command =
-    case command |> Regex.matches "^DROP COLUMN\\s+(?<column>[^ .]+)$" of
+    case command |> Regex.matches "^DROP\\s+COLUMN\\s+(?<column>[^ .]+)$" of
         (Just column) :: [] ->
             Ok (buildColumnName column)
 
@@ -261,7 +261,7 @@ parseAlterTableAlterColumnStatistics property =
 
 parseAlterTableOwnerTo : RawSql -> Result (List ParseError) SqlUser
 parseAlterTableOwnerTo command =
-    case command |> Regex.matches "^OWNER TO\\s+(?<user>.+)$" of
+    case command |> Regex.matches "^OWNER\\s+TO\\s+(?<user>.+)$" of
         (Just user) :: [] ->
             Ok user
 
@@ -271,7 +271,7 @@ parseAlterTableOwnerTo command =
 
 parseAlterTableDropConstraint : RawSql -> Result (List ParseError) SqlConstraintName
 parseAlterTableDropConstraint command =
-    case command |> Regex.matches "^DROP CONSTRAINT(?:\\s+IF EXISTS)? (?<name>.+)$" of
+    case command |> Regex.matches "^DROP\\s+CONSTRAINT(?:\\s+IF EXISTS)? (?<name>.+)$" of
         (Just name) :: [] ->
             Ok name
 
