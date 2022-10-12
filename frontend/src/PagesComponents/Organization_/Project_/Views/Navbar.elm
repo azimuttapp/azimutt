@@ -32,7 +32,7 @@ import PagesComponents.Organization_.Project_.Models exposing (FindPathMsg(..), 
 import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Views.Navbar.Search exposing (viewNavbarSearch)
-import PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (viewNavbarTitle)
+import PagesComponents.Organization_.Project_.Views.Navbar.Title as Title exposing (viewNavbarTitle)
 import Services.Backend as Backend
 import Shared exposing (GlobalConf)
 import Url exposing (Url)
@@ -46,25 +46,25 @@ type alias NavbarArgs =
     String
 
 
-argsToString : Url -> Maybe OrganizationId -> HtmlId -> HtmlId -> NavbarArgs
-argsToString currentUrl urlOrganization htmlId openedDropdown =
-    Url.toString currentUrl ++ "~" ++ Maybe.withDefault "" urlOrganization ++ "~" ++ htmlId ++ "~" ++ openedDropdown
+argsToString : Url -> Maybe OrganizationId -> Bool -> HtmlId -> HtmlId -> NavbarArgs
+argsToString currentUrl urlOrganization dirty htmlId openedDropdown =
+    [ Url.toString currentUrl, Maybe.withDefault "" urlOrganization, B.cond dirty "Y" "N", htmlId, openedDropdown ] |> String.join "~"
 
 
-stringToArgs : NavbarArgs -> ( ( Url, Maybe OrganizationId ), ( HtmlId, HtmlId ) )
+stringToArgs : NavbarArgs -> ( ( Url, Maybe OrganizationId, Bool ), ( HtmlId, HtmlId ) )
 stringToArgs args =
     case String.split "~" args of
-        [ url, urlOrganization, htmlId, openedDropdown ] ->
-            ( ( url |> Url.fromString |> Maybe.withDefault Url.empty, urlOrganization |> String.nonEmptyMaybe ), ( htmlId, openedDropdown ) )
+        [ url, urlOrganization, dirty, htmlId, openedDropdown ] ->
+            ( ( url |> Url.fromString |> Maybe.withDefault Url.empty, urlOrganization |> String.nonEmptyMaybe, dirty == "Y" ), ( htmlId, openedDropdown ) )
 
         _ ->
-            ( ( Url.empty, Nothing ), ( "", "" ) )
+            ( ( Url.empty, Nothing, False ), ( "", "" ) )
 
 
 viewNavbar : GlobalConf -> Maybe User -> ErdConf -> Maybe VirtualRelation -> Erd -> List ProjectInfo -> NavbarModel -> NavbarArgs -> Html Msg
 viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
     let
-        ( ( currentUrl, urlOrganization ), ( htmlId, openedDropdown ) ) =
+        ( ( currentUrl, urlOrganization, dirty ), ( htmlId, openedDropdown ) ) =
             stringToArgs args
 
         features : List (Btn Msg)
@@ -89,7 +89,7 @@ viewNavbar gConf maybeUser eConf virtualRelation erd projects model args =
                     , viewNavbarHelp
                     ]
                 , div [ class "flex-1 flex justify-center px-2" ]
-                    [ Lazy.lazy8 viewNavbarTitle gConf eConf projects erd.project erd.currentLayout erd.layouts (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title"))
+                    [ Lazy.lazy6 viewNavbarTitle gConf eConf projects erd.project erd.layouts (Title.argsToString dirty erd.currentLayout (htmlId ++ "-title") (openedDropdown |> String.filterStartsWith (htmlId ++ "-title")))
                     ]
                 , navbarMobileButton model.mobileMenuOpen
                 , div [ css [ "hidden", lg [ "block ml-4" ] ] ]

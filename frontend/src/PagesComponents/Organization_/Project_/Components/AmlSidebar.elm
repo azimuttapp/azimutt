@@ -34,14 +34,15 @@ import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (Er
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint(..))
 import PagesComponents.Organization_.Project_.Models.ShowColumns as ShowColumns
 import Ports
-import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setErrors, setSelected, setUpdatedAt)
+import Services.Lenses exposing (mapAmlSidebarM, mapErdM, setAmlSidebar, setContent, setDirty, setErrors, setSelected, setUpdatedAt)
 import Time
 import Track
 
 
 type alias Model x =
     { x
-        | erd : Maybe Erd
+        | dirty : Bool
+        , erd : Maybe Erd
         , cursorMode : CursorMode
         , amlSidebar : Maybe AmlSidebar
     }
@@ -86,7 +87,7 @@ update now msg model =
         AUpdateSource id value ->
             model.erd
                 |> Maybe.andThen (.sources >> List.find (\s -> s.id == id))
-                |> Maybe.map (\s -> updateSource now s value model)
+                |> Maybe.map (\s -> model |> setDirty True |> updateSource now s value)
                 |> Maybe.withDefault ( model |> mapAmlSidebarM (setErrors [ { row = 0, col = 0, problem = "Invalid source" } ]), Cmd.none )
 
 

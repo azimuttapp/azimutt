@@ -318,6 +318,7 @@ export interface TableProps {
     columns: ColumnName[]
     selected?: boolean
     collapsed?: boolean
+    hiddenColumns?: boolean
 }
 
 export const TableProps = z.object({
@@ -327,7 +328,8 @@ export const TableProps = z.object({
     color: Color,
     columns: ColumnName.array(),
     selected: z.boolean().optional(),
-    collapsed: z.boolean().optional()
+    collapsed: z.boolean().optional(),
+    hiddenColumns: z.boolean().optional()
 }).strict()
 
 export interface Layout {

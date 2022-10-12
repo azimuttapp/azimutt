@@ -83,6 +83,7 @@ init query =
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , erdElem = ErdProps.zero
       , loaded = [ query.projectId, query.projectUrl, query.databaseSource, query.sqlSource, query.jsonSource ] |> List.all (\a -> a == Nothing)
+      , dirty = False
       , erd = Nothing
       , hoverTable = Nothing
       , hoverColumn = Nothing

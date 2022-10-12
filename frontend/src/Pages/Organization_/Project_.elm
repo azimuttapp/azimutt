@@ -56,6 +56,7 @@ init params =
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , erdElem = ErdProps.zero
       , loaded = False
+      , dirty = False
       , erd = Nothing
       , hoverTable = Nothing
       , hoverColumn = Nothing

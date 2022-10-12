@@ -54,6 +54,7 @@ type alias Model =
     , navbar : NavbarModel
     , erdElem : ErdProps
     , loaded : Bool
+    , dirty : Bool
     , erd : Maybe Erd
     , hoverTable : Maybe TableId
     , hoverColumn : Maybe ColumnRef

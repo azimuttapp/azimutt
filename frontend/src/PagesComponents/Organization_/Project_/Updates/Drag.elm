@@ -14,7 +14,7 @@ import PagesComponents.Organization_.Project_.Models exposing (Model)
 import PagesComponents.Organization_.Project_.Models.DragState exposing (DragState)
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
-import Services.Lenses exposing (mapCanvas, mapErdM, mapPosition, mapProps, mapTables, setSelected, setSelectionBox)
+import Services.Lenses exposing (mapCanvas, mapErdM, mapPosition, mapProps, mapTables, setDirty, setSelected, setSelectionBox)
 import Time
 
 
@@ -27,7 +27,7 @@ handleDrag now drag isEnd model =
     in
     if drag.id == Conf.ids.erd then
         if isEnd then
-            model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag)))
+            model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag)))
 
         else
             model
@@ -42,11 +42,12 @@ handleDrag now drag isEnd model =
                 |> (\area ->
                         model
                             |> setSelectionBox (Just area)
+                            |> setDirty True
                             |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapCanvas area { position = p.position |> Position.offGrid, size = p.size }))))))
                    )
 
     else if isEnd then
-        model |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom)))
+        model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom)))
 
     else
         model

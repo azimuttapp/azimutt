@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (viewNavbarTitle)
+module PagesComponents.Organization_.Project_.Views.Navbar.Title exposing (NavbarTitleArgs, argsToString, viewNavbarTitle)
 
 import Components.Atoms.Icon as Icon exposing (Icon(..))
 import Components.Molecules.ContextMenu as ContextMenu exposing (Direction(..))
@@ -33,8 +33,31 @@ import Services.Backend as Backend
 import Shared exposing (GlobalConf)
 
 
-viewNavbarTitle : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> LayoutName -> Dict LayoutName ErdLayout -> HtmlId -> HtmlId -> Html Msg
-viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId openedDropdown =
+type alias NavbarTitleArgs =
+    String
+
+
+argsToString : Bool -> LayoutName -> HtmlId -> HtmlId -> NavbarTitleArgs
+argsToString dirty currentLayout htmlId openedDropdown =
+    [ B.cond dirty "Y" "N", currentLayout, htmlId, openedDropdown ] |> String.join "~"
+
+
+stringToArgs : NavbarTitleArgs -> ( ( Bool, LayoutName ), ( HtmlId, HtmlId ) )
+stringToArgs args =
+    case args |> String.split "~" of
+        [ dirty, currentLayout, htmlId, openedDropdown ] ->
+            ( ( dirty == "Y", currentLayout ), ( htmlId, openedDropdown ) )
+
+        _ ->
+            ( ( False, "" ), ( "", "" ) )
+
+
+viewNavbarTitle : GlobalConf -> ErdConf -> List ProjectInfo -> ProjectInfo -> Dict LayoutName ErdLayout -> NavbarTitleArgs -> Html Msg
+viewNavbarTitle gConf eConf projects project layouts args =
+    let
+        ( ( dirty, currentLayout ), ( htmlId, openedDropdown ) ) =
+            stringToArgs args
+    in
     div [ class "flex justify-center items-center text-white" ]
         ([ if eConf.projectManagement then
             -- FIXME: propose to move project from local to remote and the reverse
@@ -46,7 +69,7 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
            else
             div [] []
          , if eConf.projectManagement then
-            Lazy.lazy6 viewProjectsDropdown gConf.platform gConf.env projects project (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy7 viewProjectsDropdown gConf.platform gConf.env projects project dirty (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -55,8 +78,8 @@ viewNavbarTitle gConf eConf projects project currentLayout layouts htmlId opened
         )
 
 
-viewProjectsDropdown : Platform -> Env -> List ProjectInfo -> ProjectInfo -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown platform env projects project htmlId openedDropdown =
+viewProjectsDropdown : Platform -> Env -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown platform env projects project dirty htmlId openedDropdown =
     let
         otherProjects : List ProjectInfo
         otherProjects =
@@ -65,7 +88,8 @@ viewProjectsDropdown platform env projects project htmlId openedDropdown =
     Dropdown.dropdown { id = htmlId, direction = BottomRight, isOpen = openedDropdown == htmlId }
         (\m ->
             button [ type_ "button", id m.id, onClick (DropdownToggle m.id), ariaExpanded False, ariaHaspopup "true", css [ "flex justify-center items-center p-1 rounded-full", focus_ring_offset_600 Tw.primary ] ]
-                [ span [] [ text project.name ]
+                [ span [ css [ "mr-1", B.cond dirty "opacity-1" "opacity-0" ] ] [ text "*" ]
+                , span [] [ text project.name ]
                 , Icon.solid ChevronDown ("transform transition " ++ B.cond m.isOpen "-rotate-180" "")
                 ]
         )

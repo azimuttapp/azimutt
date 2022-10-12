@@ -9,7 +9,7 @@ import PagesComponents.Organization_.Project_.Models exposing (LayoutDialog, Lay
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdLayout as ErdLayout
 import Ports
-import Services.Lenses exposing (mapErdMCmd, mapLayouts, mapNewLayoutM, setCurrentLayout, setName, setNewLayout)
+import Services.Lenses exposing (mapErdMCmd, mapLayouts, mapNewLayoutM, setCurrentLayout, setDirty, setName, setNewLayout)
 import Services.Toasts as Toasts
 import Time
 import Track
@@ -17,8 +17,9 @@ import Track
 
 type alias Model x =
     { x
-        | newLayout : Maybe LayoutDialog
+        | dirty : Bool
         , erd : Maybe Erd
+        , newLayout : Maybe LayoutDialog
     }
 
 
@@ -32,16 +33,16 @@ handleLayout now msg model =
             ( model |> mapNewLayoutM (setName name), Cmd.none )
 
         LCreate from name ->
-            model |> setNewLayout Nothing |> mapErdMCmd (createLayout from name now)
+            model |> setNewLayout Nothing |> setDirty True |> mapErdMCmd (createLayout from name now)
 
         LCancel ->
             ( model |> setNewLayout Nothing, Cmd.none )
 
         LLoad name ->
-            model |> mapErdMCmd (loadLayout name)
+            model |> setDirty True |> mapErdMCmd (loadLayout name)
 
         LDelete name ->
-            model |> mapErdMCmd (deleteLayout name)
+            model |> setDirty True |> mapErdMCmd (deleteLayout name)
 
 
 createLayout : Maybe LayoutName -> LayoutName -> Time.Posix -> Erd -> ( Erd, Cmd Msg )

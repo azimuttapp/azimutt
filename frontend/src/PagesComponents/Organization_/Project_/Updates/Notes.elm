@@ -7,14 +7,15 @@ import PagesComponents.Organization_.Project_.Models exposing (Msg(..), NotesDia
 import PagesComponents.Organization_.Project_.Models.Erd exposing (Erd)
 import PagesComponents.Organization_.Project_.Models.ErdTableNotes as ErdTableNotes
 import Ports
-import Services.Lenses exposing (mapEditNotesM, mapErdM, mapNotes, setEditNotes, setNotes)
+import Services.Lenses exposing (mapEditNotesM, mapErdM, mapNotes, setDirty, setEditNotes, setNotes)
 import Track
 
 
 type alias Model x =
     { x
-        | editNotes : Maybe NotesDialog
+        | dirty : Bool
         , erd : Maybe Erd
+        , editNotes : Maybe NotesDialog
     }
 
 
@@ -37,7 +38,7 @@ handleNotes msg model =
             ( model |> mapEditNotesM (setNotes notes), Cmd.none )
 
         NSave ref notes ->
-            ( model |> setEditNotes Nothing |> mapErdM (mapNotes (ErdTableNotes.set ref (String.nonEmptyMaybe notes))), Cmd.none )
+            ( model |> setEditNotes Nothing |> setDirty True |> mapErdM (mapNotes (ErdTableNotes.set ref (String.nonEmptyMaybe notes))), Cmd.none )
 
         NCancel ->
             ( model |> setEditNotes Nothing, Cmd.none )

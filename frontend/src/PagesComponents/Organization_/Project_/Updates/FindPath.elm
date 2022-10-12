@@ -22,13 +22,14 @@ import PagesComponents.Organization_.Project_.Models.FindPathState as FindPathSt
 import PagesComponents.Organization_.Project_.Models.FindPathStep exposing (FindPathStep)
 import PagesComponents.Organization_.Project_.Models.FindPathStepDir exposing (FindPathStepDir(..))
 import Ports
-import Services.Lenses exposing (mapErdM, mapFindPathM, mapOpened, mapResult, mapSettings, mapShowSettings, setFindPath, setFrom, setResult, setTo)
+import Services.Lenses exposing (mapErdM, mapFindPathM, mapOpened, mapResult, mapSettings, mapShowSettings, setDirty, setFindPath, setFrom, setResult, setTo)
 import Track
 
 
 type alias Model x =
     { x
-        | erd : Maybe Erd
+        | dirty : Bool
+        , erd : Maybe Erd
         , findPath : Maybe FindPathDialog
     }
 
@@ -47,6 +48,7 @@ handleFindPath msg model =
                         , result = Empty
                         }
                     )
+                |> setDirty True
                 |> mapErdM (mapSettings ProjectSettings.fillFindPath)
             , Cmd.batch [ T.sendAfter 1 (ModalOpen Conf.ids.findPathDialog), Ports.track Track.openFindPath ]
             )
@@ -73,7 +75,7 @@ handleFindPath msg model =
             ( model |> mapFindPathM (mapResult (FindPathState.map (mapOpened (\o -> B.cond (o == Just index) Nothing (Just index))))), Cmd.none )
 
         FPSettingsUpdate settings ->
-            ( model |> mapErdM (mapSettings (setFindPath settings)), Cmd.none )
+            ( model |> setDirty True |> mapErdM (mapSettings (setFindPath settings)), Cmd.none )
 
         FPClose ->
             ( model |> setFindPath Nothing, Cmd.none )
