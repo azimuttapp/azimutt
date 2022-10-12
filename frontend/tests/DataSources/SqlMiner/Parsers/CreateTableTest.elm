@@ -144,6 +144,6 @@ suite =
                 { name = "fk_user_id", columns = Nel "user_id" [], definition = "KEY `fk_user_id` (`user_id`) USING BTREE" }
             , testSql ( parseCreateTableKey, "nested parenthesis" )
                 "KEY `ResourceId` (`ResourceId`(333))"
-                { name = "ResourceId", columns = Nel "ResourceId" [], definition = "KEY `ResourceId` (`ResourceId`(333))" }
+                { name = "ResourceId", columns = Nel "`ResourceId`(333)" [], definition = "KEY `ResourceId` (`ResourceId`(333))" }
             ]
         ]
