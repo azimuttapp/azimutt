@@ -15,7 +15,7 @@ config :azimutt,
   seo_description:
     "An open source ERD: explore and analyze your SQL database schema. Search and display what you want, follow relations, find paths, work with other and much more.",
   twitter_url: "https://twitter.com/azimuttapp",
-  github_url: "https://github.com/azimuttapp",
+  github_url: "https://github.com/azimuttapp/azimutt",
   github_new_issue: "https://github.com/azimuttapp/azimutt/issues/new",
   team_plan_price_id: "price_1LqdRzCaPXsf4vehSyyUn4pd",
   team_plan_seat_price: 13,
