@@ -42,9 +42,7 @@
                             </ul>
                         </div>
                     </div>
-                    <%= if !@organization.is_personal do %>
-                        <%= generate_organization_plan_badge(@plan) %>
-                    <% end %>
+                    <%= generate_organization_plan_badge(@plan) %>
                     <%= if @organization.description do %>
                         <p class="text-sm text-gray-500 py-4"><%= @organization.description %></p>
                     <% end %>

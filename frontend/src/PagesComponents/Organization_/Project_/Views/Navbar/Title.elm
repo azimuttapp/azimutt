@@ -17,7 +17,6 @@ import Libs.Html exposing (bText)
 import Libs.Html.Attributes exposing (ariaExpanded, ariaHaspopup, css, role)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Models.Platform exposing (Platform)
 import Libs.String as String
@@ -29,6 +28,7 @@ import Models.ProjectInfo exposing (ProjectInfo)
 import PagesComponents.Organization_.Project_.Models exposing (LayoutMsg(..), Msg(..), confirmDanger, prompt)
 import PagesComponents.Organization_.Project_.Models.ErdConf exposing (ErdConf)
 import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayout)
+import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Services.Backend as Backend
 import Shared exposing (GlobalConf)
 
@@ -69,7 +69,7 @@ viewNavbarTitle gConf eConf projects project layouts args =
            else
             div [] []
          , if eConf.projectManagement then
-            Lazy.lazy7 viewProjectsDropdown gConf.platform gConf.env projects project dirty (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
+            Lazy.lazy6 viewProjectsDropdown gConf.platform projects project dirty (htmlId ++ "-projects") (openedDropdown |> String.filterStartsWith (htmlId ++ "-projects"))
 
            else
             div [] [ text project.name ]
@@ -78,8 +78,8 @@ viewNavbarTitle gConf eConf projects project layouts args =
         )
 
 
-viewProjectsDropdown : Platform -> Env -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
-viewProjectsDropdown platform env projects project dirty htmlId openedDropdown =
+viewProjectsDropdown : Platform -> List ProjectInfo -> ProjectInfo -> Bool -> HtmlId -> HtmlId -> Html Msg
+viewProjectsDropdown platform projects project dirty htmlId openedDropdown =
     let
         otherProjects : List ProjectInfo
         otherProjects =
@@ -112,7 +112,7 @@ viewProjectsDropdown platform env projects project dirty htmlId openedDropdown =
                                         ]
                                 )
                         ]
-                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Backend.organizationUrl env, text = "Back to dashboard" } ] ]
+                    ++ [ [ ContextMenu.link { url = project.organization |> Maybe.map .id |> Backend.organizationUrl, text = "Back to dashboard" } ] ]
                  )
                     |> List.filterNot List.isEmpty
                     |> List.map (\section -> div [ role "none", class "py-1" ] section)
@@ -143,7 +143,7 @@ viewLayouts platform currentLayout layouts htmlId openedDropdown =
         (\_ ->
             div [ class "min-w-max divide-y divide-gray-100" ]
                 [ div [ role "none", class "py-1" ]
-                    [ ContextMenu.btnHotkey "" (LOpen Nothing |> LayoutMsg) [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
+                    [ ContextMenu.btnHotkey "" (NewLayout.Open Nothing |> NewLayoutMsg) [ text "Create new layout" ] platform (Conf.hotkeys |> Dict.getOrElse "create-layout" []) ]
                 , div [ role "none", class "py-1" ]
                     (layouts
                         |> Dict.toList
@@ -158,7 +158,7 @@ viewLayoutItem : Bool -> LayoutName -> ErdLayout -> Html Msg
 viewLayoutItem isCurrent name layout =
     span [ role "menuitem", tabindex -1, css [ "flex", B.cond isCurrent ContextMenu.itemCurrentStyles ContextMenu.itemStyles ] ]
         [ button [ type_ "button", onClick (name |> confirmDeleteLayout layout), disabled isCurrent, css [ focus [ "outline-none" ], Tw.disabled [ "text-gray-400" ] ] ] [ Icon.solid Trash "inline-block" ] |> Tooltip.t (B.cond isCurrent "" "Delete this layout")
-        , button [ type_ "button", onClick (name |> Just |> LOpen |> LayoutMsg), css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid DocumentDuplicate "inline-block" ] |> Tooltip.t "Duplicate this layout"
+        , button [ type_ "button", onClick (name |> Just |> NewLayout.Open |> NewLayoutMsg), css [ "ml-1", focus [ "outline-none" ] ] ] [ Icon.solid DocumentDuplicate "inline-block" ] |> Tooltip.t "Duplicate this layout"
         , button [ type_ "button", onClick (name |> LLoad |> LayoutMsg), css [ "flex-grow text-left ml-3", focus [ "outline-none" ] ] ]
             [ text name
             , text " "

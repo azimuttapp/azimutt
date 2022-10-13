@@ -1,5 +1,6 @@
-module Models.Plan exposing (Plan, decode, encode)
+module Models.Plan exposing (Plan, decode, encode, free)
 
+import Conf
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
 import Libs.Json.Decode as Decode
@@ -13,6 +14,18 @@ type alias Plan =
     , colors : Bool
     , dbAnalysis : Bool
     , dbAccess : Bool
+    }
+
+
+free : Plan
+free =
+    -- MUST stay in sync with backend/lib/azimutt/organizations/organization_plan.ex#free
+    { id = "free"
+    , name = "Free plan"
+    , layouts = Just Conf.constants.freePlanLayouts
+    , colors = False
+    , dbAnalysis = False
+    , dbAccess = False
     }
 
 

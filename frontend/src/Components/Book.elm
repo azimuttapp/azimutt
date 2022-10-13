@@ -25,6 +25,7 @@ import Components.Organisms.Details as Details
 import Components.Organisms.Navbar as Navbar
 import Components.Organisms.Relation as Relation
 import Components.Organisms.Table as Table
+import Components.Slices.NewLayoutBody as NewLayoutBody
 import Components.Slices.NotFound as NotFound
 import Components.Slices.ProjectSaveDialogBody as ProjectSaveDialogBody
 import ElmBook
@@ -46,6 +47,7 @@ type alias DocState =
     , inputTextDocState : InputText.DocState
     , modalDocState : Modal.DocState
     , navbarDocState : Navbar.DocState
+    , newLayoutDocState : NewLayoutBody.DocState
     , popoverDocState : Popover.DocState
     , projectSaveDocState : ProjectSaveDialogBody.DocState
     , selectDocState : Select.DocState
@@ -64,6 +66,7 @@ init =
     , inputTextDocState = InputText.initDocState
     , modalDocState = Modal.initDocState
     , navbarDocState = Navbar.initDocState
+    , newLayoutDocState = NewLayoutBody.initDocState
     , popoverDocState = Popover.initDocState
     , projectSaveDocState = ProjectSaveDialogBody.initDocState
     , selectDocState = Select.initDocState
@@ -89,7 +92,7 @@ main =
             , ( "Atoms", [ Badge.doc, Button.doc, colorsDoc, Icon.doc, Input.doc, Kbd.doc, Link.doc, Loader.doc ] )
             , ( "Molecules", [ Alert.doc, Divider.doc, Dropdown.doc, Editor.doc, FileInput.doc, FormLabel.doc, InputText.doc, ItemList.doc, Modal.doc, Popover.doc, Select.doc, Slideover.doc, Toast.doc, Tooltip.doc ] )
             , ( "Organisms", [ Details.doc, Navbar.doc, Relation.doc, Table.doc ] )
-            , ( "Slices", [ NotFound.doc, ProjectSaveDialogBody.doc ] )
+            , ( "Slices", [ NotFound.doc, NewLayoutBody.doc, ProjectSaveDialogBody.doc ] )
             ]
 
 

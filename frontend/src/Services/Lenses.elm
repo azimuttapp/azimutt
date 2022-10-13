@@ -37,6 +37,7 @@ module Services.Lenses exposing
     , mapMobileMenuOpen
     , mapNavbar
     , mapNewLayoutM
+    , mapNewLayoutMCmd
     , mapNotes
     , mapOpened
     , mapOpenedDialogs
@@ -649,6 +650,11 @@ setNewLayout =
 mapNewLayoutM : (v -> v) -> { item | newLayout : Maybe v } -> { item | newLayout : Maybe v }
 mapNewLayoutM =
     mapM_ .newLayout setNewLayout
+
+
+mapNewLayoutMCmd : (v -> ( v, Cmd msg )) -> { item | newLayout : Maybe v } -> ( { item | newLayout : Maybe v }, Cmd msg )
+mapNewLayoutMCmd =
+    mapMCmd_ .newLayout setNewLayout
 
 
 setNotes : v -> { item | notes : v } -> { item | notes : v }

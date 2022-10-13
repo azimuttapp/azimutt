@@ -57,10 +57,9 @@ viewNewProject shared currentUrl urlOrganization model =
     let
         backUrl : String
         backUrl =
-            shared.user |> Maybe.mapOrElse (\_ -> urlOrganization |> Backend.organizationUrl shared.conf.env) Backend.homeUrl
+            shared.user |> Maybe.mapOrElse (\_ -> urlOrganization |> Backend.organizationUrl) Backend.homeUrl
     in
-    appShell shared.conf.env
-        currentUrl
+    appShell currentUrl
         urlOrganization
         shared.user
         (\link -> SelectMenu link.text)

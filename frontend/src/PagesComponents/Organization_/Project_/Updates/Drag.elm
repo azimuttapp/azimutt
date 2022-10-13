@@ -26,7 +26,7 @@ handleDrag now drag isEnd model =
             model.erd |> Maybe.mapOrElse (Erd.currentLayout >> .canvas) CanvasProps.empty
     in
     if drag.id == Conf.ids.erd then
-        if isEnd then
+        if isEnd && drag.init /= drag.last then
             model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (moveCanvas drag)))
 
         else
@@ -42,11 +42,10 @@ handleDrag now drag isEnd model =
                 |> (\area ->
                         model
                             |> setSelectionBox (Just area)
-                            |> setDirty True
                             |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (List.map (mapProps (\p -> p |> setSelected (Area.overlapCanvas area { position = p.position |> Position.offGrid, size = p.size }))))))
                    )
 
-    else if isEnd then
+    else if isEnd && drag.init /= drag.last then
         model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapTables (moveTables drag canvas.zoom)))
 
     else

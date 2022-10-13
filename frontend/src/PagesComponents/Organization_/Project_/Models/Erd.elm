@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
+module PagesComponents.Organization_.Project_.Models.Erd exposing (Erd, create, currentLayout, defaultSchemaM, getColumn, getColumnPos, getOrganization, getTable, isShown, mapCurrentLayout, mapCurrentLayoutCmd, mapCurrentLayoutWithTime, mapSettings, mapSource, mapSources, setSettings, setSources, unpack, viewportM, viewportToCanvas)
 
 import Conf
 import Dict exposing (Dict)
@@ -8,6 +8,7 @@ import Libs.Maybe as Maybe
 import Libs.Time as Time
 import Models.Area as Area
 import Models.ErdProps exposing (ErdProps)
+import Models.Organization as Organization exposing (Organization)
 import Models.Position as Position
 import Models.Project as Project exposing (Project)
 import Models.Project.CanvasProps as CanvasProps exposing (CanvasProps)
@@ -106,6 +107,11 @@ mapCurrentLayoutWithTime now transform erd =
 mapCurrentLayoutCmd : Time.Posix -> (ErdLayout -> ( ErdLayout, Cmd msg )) -> Erd -> ( Erd, Cmd msg )
 mapCurrentLayoutCmd now transform erd =
     erd |> mapLayoutsDCmd erd.currentLayout (transform >> Tuple.mapFirst (\l -> { l | updatedAt = now }))
+
+
+getOrganization : Erd -> Organization
+getOrganization erd =
+    erd.project.organization |> Maybe.withDefault Organization.free
 
 
 getColumn : ColumnRef -> Erd -> Maybe ErdColumn

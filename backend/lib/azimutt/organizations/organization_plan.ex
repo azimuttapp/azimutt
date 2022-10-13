@@ -14,6 +14,7 @@ defmodule Azimutt.Organizations.OrganizationPlan do
   end
 
   def free do
+    # MUST stay in sync with frontend/src/Models/Plan.elm#free
     %OrganizationPlan{
       id: :free,
       name: "Free plan",

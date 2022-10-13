@@ -10,7 +10,6 @@ import Libs.List as List
 import Libs.Maybe as Maybe
 import Libs.Models exposing (SizeChange)
 import Libs.Models.Delta as Delta exposing (Delta)
-import Libs.Models.Env exposing (Env)
 import Libs.Models.ZoomLevel exposing (ZoomLevel)
 import Libs.Task as T
 import Models.Area as Area
@@ -51,6 +50,7 @@ import PagesComponents.Organization_.Project_.Updates.Source as Source
 import PagesComponents.Organization_.Project_.Updates.Table exposing (hideColumn, hideColumns, hideRelatedTables, hideTable, hoverColumn, hoverNextColumn, mapTablePropOrSelected, showAllTables, showColumn, showColumns, showRelatedTables, showTable, showTables, sortColumns)
 import PagesComponents.Organization_.Project_.Updates.VirtualRelation exposing (handleVirtualRelation)
 import PagesComponents.Organization_.Project_.Views as Views
+import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg(..))
 import Random
 import Services.Backend as Backend
@@ -62,8 +62,8 @@ import Time
 import Track
 
 
-update : Maybe LayoutName -> Env -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
-update currentLayout env now urlOrganization organizations projects msg model =
+update : Maybe LayoutName -> Time.Posix -> Maybe OrganizationId -> List Organization -> List ProjectInfo -> Msg -> Model -> ( Model, Cmd Msg )
+update currentLayout now urlOrganization organizations projects msg model =
     case msg of
         ToggleMobileMenu ->
             ( model |> mapNavbar (mapMobileMenuOpen not), Cmd.none )
@@ -89,7 +89,7 @@ update currentLayout env now urlOrganization organizations projects msg model =
         DeleteProject ->
             ( model
             , model.erd
-                |> Maybe.map (\e -> Ports.deleteProject e.project ((e.project.organization |> Maybe.map .id) |> Backend.organizationUrl env |> Just))
+                |> Maybe.map (\e -> Ports.deleteProject e.project ((e.project.organization |> Maybe.map .id) |> Backend.organizationUrl |> Just))
                 |> Maybe.withDefault ("No project to delete!" |> Toasts.warning |> Toast |> T.send)
             )
 
@@ -177,8 +177,11 @@ update currentLayout env now urlOrganization organizations projects msg model =
         CreateRelation src ref ->
             model |> setDirty True |> mapErdMCmd (Source.createRelation now src ref)
 
+        NewLayoutMsg message ->
+            model |> NewLayout.update ModalOpen Toast now message
+
         LayoutMsg message ->
-            model |> handleLayout now message
+            model |> handleLayout message
 
         NotesMsg message ->
             model |> handleNotes message

@@ -29,8 +29,8 @@ constants :
     , tmpOrg : String
     , newProjectName : ProjectName
     , defaultLayout : LayoutName
+    , freePlanLayouts : Int
     , virtualRelationSourceName : SourceName
-    , externalAssets : String
     , cheeringTweet : String
     , sharingTweet : String
     }
@@ -52,8 +52,8 @@ constants =
     , tmpOrg = Uuid.zero
     , newProjectName = "New Project"
     , defaultLayout = "initial layout"
+    , freePlanLayouts = 3 -- MUST stay in sync with free_plan_layouts in backend/config/config.exs
     , virtualRelationSourceName = "default"
-    , externalAssets = "https://xkwctrduvpdgjarqzjkc.supabase.co/storage/v1/object/public/assets"
     , cheeringTweet = "Hi team, I really like what you've done with @" ++ twitter ++ ". Keep up the good work 💪"
     , sharingTweet = "Hi @" ++ twitter ++ ", I just published my schema at ..., I would love if you can share 🚀"
     }
@@ -111,7 +111,6 @@ ids :
     , sourceParsingDialog : HtmlId
     , erd : HtmlId
     , selectionBox : HtmlId
-    , newLayoutDialog : HtmlId
     , editNotesDialog : HtmlId
     , amlSidebarDialog : HtmlId
     , detailsSidebarDialog : HtmlId
@@ -130,7 +129,6 @@ ids =
     , sourceParsingDialog = "source-parsing-dialog"
     , erd = "erd"
     , selectionBox = "selection-box"
-    , newLayoutDialog = "new-layout-dialog"
     , editNotesDialog = "edit-notes-dialog"
     , amlSidebarDialog = "aml-sidebar"
     , detailsSidebarDialog = "details-sidebar"

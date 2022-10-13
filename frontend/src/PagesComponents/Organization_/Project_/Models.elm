@@ -1,4 +1,4 @@
-module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutDialog, LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
+module PagesComponents.Organization_.Project_.Models exposing (AmlSidebar, AmlSidebarMsg(..), ConfirmDialog, ContextMenu, FindPathMsg(..), HelpDialog, HelpMsg(..), LayoutMsg(..), Model, Msg(..), NavbarModel, NotesDialog, NotesMsg(..), ProjectSettingsDialog, ProjectSettingsMsg(..), PromptDialog, SchemaAnalysisDialog, SchemaAnalysisMsg(..), SearchModel, SharingDialog, SharingMsg(..), VirtualRelation, VirtualRelationMsg(..), confirm, confirmDanger, prompt, simplePrompt)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import DataSources.AmlMiner.AmlAdapter exposing (AmlSchemaError)
@@ -44,6 +44,7 @@ import PagesComponents.Organization_.Project_.Models.HideColumns exposing (HideC
 import PagesComponents.Organization_.Project_.Models.Notes exposing (Notes, NotesRef)
 import PagesComponents.Organization_.Project_.Models.PositionHint exposing (PositionHint)
 import PagesComponents.Organization_.Project_.Models.ShowColumns exposing (ShowColumns)
+import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports exposing (JsMsg)
 import Services.Toasts as Toasts
 import Shared exposing (Confirm, Prompt)
@@ -60,7 +61,7 @@ type alias Model =
     , hoverColumn : Maybe ColumnRef
     , cursorMode : CursorMode
     , selectionBox : Maybe Area.Canvas
-    , newLayout : Maybe LayoutDialog
+    , newLayout : Maybe NewLayout.Model
     , editNotes : Maybe NotesDialog
     , amlSidebar : Maybe AmlSidebar
     , detailsSidebar : Maybe DetailsSidebar.Model
@@ -94,10 +95,6 @@ type alias NavbarModel =
 
 type alias SearchModel =
     { text : String, active : Int }
-
-
-type alias LayoutDialog =
-    { id : HtmlId, from : Maybe LayoutName, name : LayoutName }
 
 
 type alias NotesDialog =
@@ -174,6 +171,7 @@ type Msg
     | CreateUserSource SourceName
     | CreateUserSourceWithId Source
     | CreateRelation ColumnRef ColumnRef
+    | NewLayoutMsg NewLayout.Msg
     | LayoutMsg LayoutMsg
     | NotesMsg NotesMsg
     | AmlSidebarMsg AmlSidebarMsg
@@ -219,11 +217,7 @@ type Msg
 
 
 type LayoutMsg
-    = LOpen (Maybe LayoutName)
-    | LEdit LayoutName
-    | LCreate (Maybe LayoutName) LayoutName
-    | LCancel
-    | LLoad LayoutName
+    = LLoad LayoutName
     | LDelete LayoutName
 
 

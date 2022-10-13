@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, internal, loginUrl, logoutUrl, organizationUrl, resourceUrl, schemaSamples)
+module Services.Backend exposing (Error, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, internal, loginUrl, logoutUrl, organizationBillingUrl, organizationUrl, resourceUrl, schemaSamples)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Dict exposing (Dict)
@@ -11,7 +11,6 @@ import Libs.Http as Http
 import Libs.Json.Decode as Decode
 import Libs.Maybe as Maybe
 import Libs.Models.DatabaseUrl as DatabaseUrl exposing (DatabaseUrl)
-import Libs.Models.Env exposing (Env)
 import Libs.Result as Result
 import Libs.Tailwind as Tw exposing (Color)
 import Libs.Time as Time
@@ -61,14 +60,19 @@ loginUrl currentUrl =
         url ++ "/redirect?url=" ++ Url.percentEncode redirect
 
 
-logoutUrl : Env -> String
-logoutUrl _ =
+logoutUrl : String
+logoutUrl =
     "/logout"
 
 
-organizationUrl : Env -> Maybe OrganizationId -> String
-organizationUrl _ organization =
+organizationUrl : Maybe OrganizationId -> String
+organizationUrl organization =
     organization |> Maybe.mapOrElse (\id -> "/organizations/" ++ id) "/home"
+
+
+organizationBillingUrl : OrganizationId -> String
+organizationBillingUrl organization =
+    "/organizations/" ++ organization ++ "/billing"
 
 
 blogUrl : String

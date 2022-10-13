@@ -13,7 +13,6 @@ import Libs.Bool as B
 import Libs.Html.Attributes exposing (css)
 import Libs.List as List
 import Libs.Maybe as Maybe
-import Libs.Models.Env exposing (Env)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.String as String
 import Models.OrganizationId exposing (OrganizationId)
@@ -31,10 +30,10 @@ import PagesComponents.Organization_.Project_.Models.ErdLayout exposing (ErdLayo
 import PagesComponents.Organization_.Project_.Views.Commands exposing (viewCommands)
 import PagesComponents.Organization_.Project_.Views.Erd as Erd exposing (viewErd)
 import PagesComponents.Organization_.Project_.Views.Modals.Confirm exposing (viewConfirm)
-import PagesComponents.Organization_.Project_.Views.Modals.CreateLayout exposing (viewCreateLayout)
 import PagesComponents.Organization_.Project_.Views.Modals.EditNotes exposing (viewEditNotes)
 import PagesComponents.Organization_.Project_.Views.Modals.FindPath exposing (viewFindPath)
 import PagesComponents.Organization_.Project_.Views.Modals.Help exposing (viewHelp)
+import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import PagesComponents.Organization_.Project_.Views.Modals.ProjectSettings exposing (viewProjectSettings)
 import PagesComponents.Organization_.Project_.Views.Modals.Prompt exposing (viewPrompt)
 import PagesComponents.Organization_.Project_.Views.Modals.SchemaAnalysis exposing (viewSchemaAnalysis)
@@ -63,7 +62,7 @@ view onDelete currentUrl urlOrganization shared model =
 viewProject : Cmd Msg -> Url -> Maybe OrganizationId -> Shared.Model -> Model -> List (Html Msg)
 viewProject onDelete currentUrl urlOrganization shared model =
     [ if model.loaded then
-        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlOrganization shared model "app") (viewNotFound shared.conf.env currentUrl urlOrganization shared.user model.conf)
+        model.erd |> Maybe.mapOrElse (viewApp currentUrl urlOrganization shared model "app") (viewNotFound currentUrl urlOrganization shared.user model.conf)
 
       else
         Loader.fullScreen
@@ -143,7 +142,7 @@ viewModal currentUrl shared model _ =
         [ class "az-modals" ]
         ([ model.confirm |> Maybe.map (\m -> ( m.id, viewConfirm (model.openedDialogs |> List.member m.id) m ))
          , model.prompt |> Maybe.map (\m -> ( m.id, viewPrompt (model.openedDialogs |> List.member m.id) m ))
-         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, viewCreateLayout (e.layouts |> Dict.keys) (model.openedDialogs |> List.member m.id) m )) model.erd
+         , model.newLayout |> Maybe.map2 (\e m -> ( m.id, NewLayout.view NewLayoutMsg ModalClose (e |> Erd.getOrganization) (e.layouts |> Dict.keys) (model.openedDialogs |> List.member m.id) m )) model.erd
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
@@ -170,8 +169,8 @@ viewContextMenu menu =
             (div [ class "az-context-menu" ] [])
 
 
-viewNotFound : Env -> Url -> Maybe OrganizationId -> Maybe User -> ErdConf -> Html msg
-viewNotFound env currentUrl urlOrganization user conf =
+viewNotFound : Url -> Maybe OrganizationId -> Maybe User -> ErdConf -> Html msg
+viewNotFound currentUrl urlOrganization user conf =
     NotFound.simple
         { brand =
             { img = { src = Backend.resourceUrl "/logo.png", alt = "Azimutt" }
@@ -182,7 +181,7 @@ viewNotFound env currentUrl urlOrganization user conf =
         , message = "Sorry, we couldn't find the project you’re looking for."
         , links =
             (if conf.projectManagement then
-                [ { url = urlOrganization |> Backend.organizationUrl env, text = "Back to dashboard" } ]
+                [ { url = urlOrganization |> Backend.organizationUrl, text = "Back to dashboard" } ]
 
              else
                 [ { url = Conf.constants.azimuttWebsite, text = "Visit Azimutt" } ]

@@ -1,4 +1,4 @@
-module Models.Organization exposing (Organization, decode, encode)
+module Models.Organization exposing (Organization, decode, encode, free)
 
 import Json.Decode as Decode
 import Json.Encode as Encode exposing (Value)
@@ -18,6 +18,18 @@ type alias Organization =
     , logo : String
     , location : Maybe String
     , description : Maybe String
+    }
+
+
+free : Organization
+free =
+    { id = OrganizationId.zero
+    , slug = OrganizationId.zero
+    , name = "zero"
+    , plan = Plan.free
+    , logo = "https://azimutt.app/logo.png"
+    , location = Nothing
+    , description = Nothing
     }
 
 

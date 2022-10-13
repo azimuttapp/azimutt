@@ -11,10 +11,11 @@ import Models.Project.TableId exposing (TableId)
 import PagesComponents.Organization_.Project_.Components.DetailsSidebar as DetailsSidebar
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
 import PagesComponents.Organization_.Project_.Components.SourceUpdateDialog as SourceUpdateDialog
-import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), LayoutMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
+import PagesComponents.Organization_.Project_.Models exposing (AmlSidebarMsg(..), FindPathMsg(..), HelpMsg(..), Model, Msg(..), NotesMsg(..), ProjectSettingsMsg(..), SchemaAnalysisMsg(..), SharingMsg(..), VirtualRelationMsg(..))
 import PagesComponents.Organization_.Project_.Models.Erd as Erd
 import PagesComponents.Organization_.Project_.Models.ErdTableLayout exposing (ErdTableLayout)
 import PagesComponents.Organization_.Project_.Models.Notes as NoteRef
+import PagesComponents.Organization_.Project_.Views.Modals.NewLayout as NewLayout
 import Ports
 import Services.Lenses exposing (mapActive, mapNavbar, mapSearch)
 import Services.Toasts as Toasts
@@ -85,7 +86,7 @@ handleHotkey _ model hotkey =
             ( model, T.send SelectAllTables )
 
         "create-layout" ->
-            ( model, LOpen Nothing |> LayoutMsg |> T.send )
+            ( model, Nothing |> NewLayout.Open |> NewLayoutMsg |> T.send )
 
         "create-virtual-relation" ->
             ( model, T.send (VirtualRelationMsg (model.virtualRelation |> Maybe.mapOrElse (\_ -> VRCancel) (VRCreate (model |> currentColumn)))) )
@@ -173,7 +174,7 @@ cancelElement model =
         |> Maybe.orElse (model.prompt |> Maybe.map (\_ -> ModalClose (PromptAnswer Cmd.none)))
         |> Maybe.orElse (model.virtualRelation |> Maybe.map (\_ -> VirtualRelationMsg VRCancel))
         |> Maybe.orElse (model.dragging |> Maybe.map (\_ -> DragCancel))
-        |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (LayoutMsg LCancel)))
+        |> Maybe.orElse (model.newLayout |> Maybe.map (\_ -> ModalClose (NewLayoutMsg NewLayout.Cancel)))
         |> Maybe.orElse (model.editNotes |> Maybe.map (\_ -> ModalClose (NotesMsg NCancel)))
         |> Maybe.orElse (model.save |> Maybe.map (\_ -> ModalClose (ProjectSaveMsg ProjectSaveDialog.Close)))
         |> Maybe.orElse (model.schemaAnalysis |> Maybe.map (\_ -> ModalClose (SchemaAnalysisMsg SAClose)))
