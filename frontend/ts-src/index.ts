@@ -9,7 +9,8 @@ import {
     ListenKeys,
     ObserveSizes,
     SetMeta,
-    UpdateProject
+    UpdateProject,
+    UpdateProjectTmp
 } from "./types/ports";
 import {ElmApp} from "./services/elm";
 import {AzimuttApi} from "./services/api";
@@ -79,6 +80,7 @@ app.on('Toast', msg => app.toast(msg.level, msg.message))
 app.on('GetLegacyProjects', getLegacyProjects)
 app.on('GetProject', getProject)
 app.on('CreateProjectTmp', createProjectTmp)
+app.on('UpdateProjectTmp', updateProjectTmp)
 app.on('CreateProject', createProject)
 app.on('UpdateProject', updateProject)
 // FIXME: app.on('MoveProjectTo', msg => store.moveProjectTo(msg.project, msg.storage).then(app.gotProject).catch(err => app.toast(ToastLevel.enum.error, err)))
@@ -167,6 +169,12 @@ function createProjectTmp(msg: CreateProjectTmp): void {
         .then(_ => storage.createProject(Uuid.zero, json))
         .then(_ => app.gotProject(buildProjectDraft(msg.project.id, json)),
             err => reportError(`Can't save draft project`, err))
+}
+
+function updateProjectTmp(msg: UpdateProjectTmp): void {
+    const json = buildProjectJson(msg.project)
+    storage.updateProject(Uuid.zero, json)
+        .then(_ => {}, err => reportError(`Can't update draft project`, err))
 }
 
 function createProject(msg: CreateProject): void {

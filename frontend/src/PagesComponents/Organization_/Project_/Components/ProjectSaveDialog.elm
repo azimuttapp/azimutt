@@ -6,6 +6,7 @@ import Html exposing (Html)
 import Libs.Maybe as Maybe
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Task as T
+import Libs.Url as Url
 import Models.Organization exposing (Organization)
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
@@ -64,5 +65,5 @@ view wrap modalClose saveProject currentUrl user organizations opened erd model 
         }
         [ user
             |> Maybe.map (\_ -> ProjectSaveDialogBody.selectSave (BodyMsg >> wrap) close saveProject titleId organizations erd.project.name model)
-            |> Maybe.withDefault (ProjectSaveDialogBody.signIn close (Backend.loginUrl currentUrl) titleId)
+            |> Maybe.withDefault (ProjectSaveDialogBody.signIn close (Backend.loginUrl (currentUrl |> Url.addQuery "save" "")) titleId)
         ]

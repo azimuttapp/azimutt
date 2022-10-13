@@ -1,4 +1,4 @@
-port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject)
+port module Ports exposing (JsMsg(..), MetaInfos, autofocusWithin, blur, click, confetti, confettiPride, createProject, createProjectTmp, deleteProject, downloadFile, focus, fullscreen, getLegacyProjects, getProject, listenHotkeys, mouseDown, moveProjectTo, observeSize, observeTableSize, observeTablesSize, onJsMessage, readLocalFile, scrollTo, setMeta, toast, track, trackError, trackJsonError, trackPage, unhandledJsMsgError, updateProject, updateProjectTmp)
 
 import Dict exposing (Dict)
 import FileValue exposing (File)
@@ -85,6 +85,11 @@ getProject organization project =
 createProjectTmp : Project -> Cmd msg
 createProjectTmp project =
     messageToJs (CreateProjectTmp project)
+
+
+updateProjectTmp : Project -> Cmd msg
+updateProjectTmp project =
+    messageToJs (UpdateProjectTmp project)
 
 
 createProject : OrganizationId -> ProjectStorage -> Project -> Cmd msg
@@ -202,6 +207,7 @@ type ElmMsg
     | GetLegacyProjects
     | GetProject OrganizationId ProjectId
     | CreateProjectTmp Project
+    | UpdateProjectTmp Project
     | CreateProject OrganizationId ProjectStorage Project
     | UpdateProject Project
     | MoveProjectTo Project ProjectStorage
@@ -303,6 +309,9 @@ elmEncoder elm =
 
         CreateProjectTmp project ->
             Encode.object [ ( "kind", "CreateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]
+
+        UpdateProjectTmp project ->
+            Encode.object [ ( "kind", "UpdateProjectTmp" |> Encode.string ), ( "project", project |> Project.encode ) ]
 
         CreateProject organization storage project ->
             Encode.object [ ( "kind", "CreateProject" |> Encode.string ), ( "organization", organization |> OrganizationId.encode ), ( "storage", storage |> ProjectStorage.encode ), ( "project", project |> Project.encode ) ]

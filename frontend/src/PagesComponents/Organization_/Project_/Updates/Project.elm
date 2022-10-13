@@ -5,6 +5,7 @@ import Libs.Maybe as Maybe
 import Libs.Task as T
 import Models.Organization exposing (Organization)
 import Models.OrganizationId exposing (OrganizationId)
+import Models.Project.ProjectId as ProjectId
 import Models.Project.ProjectName exposing (ProjectName)
 import Models.Project.ProjectStorage exposing (ProjectStorage)
 import PagesComponents.Organization_.Project_.Components.ProjectSaveDialog as ProjectSaveDialog
@@ -22,7 +23,22 @@ triggerSaveProject urlOrganization organizations model =
         preselectedOrg =
             urlOrganization |> Maybe.andThen (\id -> organizations |> List.findBy .id id) |> Maybe.orElse (organizations |> List.one)
     in
-    ( model, model.erd |> Maybe.mapOrElse (\e -> e.project.organization |> Maybe.mapOrElse (\_ -> UpdateProject) (ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg) |> T.send) Cmd.none )
+    ( model
+    , model.erd
+        |> Maybe.mapOrElse
+            (\e ->
+                e.project.organization
+                    |> Maybe.map (\_ -> UpdateProject |> T.send)
+                    |> Maybe.withDefault
+                        (if e.project.id == ProjectId.zero then
+                            Cmd.batch [ ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send, e |> Erd.unpack |> Ports.updateProjectTmp ]
+
+                         else
+                            ProjectSaveDialog.Open e.project.name preselectedOrg |> ProjectSaveMsg |> T.send
+                        )
+            )
+            Cmd.none
+    )
 
 
 createProject : ProjectName -> Organization -> ProjectStorage -> Model -> ( Model, Cmd Msg )

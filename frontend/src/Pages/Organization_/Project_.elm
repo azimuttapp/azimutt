@@ -1,13 +1,15 @@
 module Pages.Organization_.Project_ exposing (Model, Msg, page)
 
 import Conf
-import Dict
+import Dict exposing (Dict)
 import Gen.Params.Organization_.Project_ exposing (Params)
 import Gen.Route as Route
+import Libs.Bool as Bool
+import Libs.Task as T
 import Models.ErdProps as ErdProps
 import Models.OrganizationId exposing (OrganizationId)
 import Page
-import PagesComponents.Organization_.Project_.Models as Models exposing (Msg)
+import PagesComponents.Organization_.Project_.Models as Models exposing (Msg(..))
 import PagesComponents.Organization_.Project_.Models.CursorMode as CursorMode
 import PagesComponents.Organization_.Project_.Models.ErdConf as ErdConf
 import PagesComponents.Organization_.Project_.Subscriptions as Subscriptions
@@ -31,7 +33,7 @@ page shared req =
             Just req.params.organization
     in
     Page.element
-        { init = init req.params
+        { init = init req.params req.query
         , update = Updates.update Nothing shared.conf.env shared.now urlOrganization shared.organizations shared.projects
         , view = Views.view (Request.pushRoute Route.Projects req) req.url urlOrganization shared
         , subscriptions = Subscriptions.subscriptions
@@ -50,8 +52,8 @@ type alias Msg =
 -- INIT
 
 
-init : Params -> ( Model, Cmd Msg )
-init params =
+init : Params -> Dict String String -> ( Model, Cmd Msg )
+init params query =
     ( { conf = ErdConf.default
       , navbar = { mobileMenuOpen = False, search = { text = "", active = 0 } }
       , erdElem = ErdProps.zero
@@ -98,5 +100,6 @@ init params =
         -- , Ports.loadProject id
         , Ports.getLegacyProjects
         , Ports.getProject params.organization params.project
+        , Bool.cond (query |> Dict.member "save") (T.sendAfter 500 TriggerSaveProject) Cmd.none
         ]
     )

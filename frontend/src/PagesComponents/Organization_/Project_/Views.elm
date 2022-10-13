@@ -175,7 +175,7 @@ viewNotFound env currentUrl urlOrganization user conf =
     NotFound.simple
         { brand =
             { img = { src = Backend.resourceUrl "/logo.png", alt = "Azimutt" }
-            , link = { url = Backend.homeUrl env, text = "Azimutt" }
+            , link = { url = Backend.homeUrl, text = "Azimutt" }
             }
         , header = "404 error"
         , title = "Project not found."

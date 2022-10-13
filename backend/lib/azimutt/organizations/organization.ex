@@ -46,7 +46,6 @@ defmodule Azimutt.Organizations.Organization do
         contact_email: current_user.email,
         logo: current_user.avatar,
         location: current_user.location,
-        description: "#{current_user.description}'s organization",
         github_username: current_user.github_username,
         twitter_username: current_user.twitter_username
       },

@@ -54,6 +54,11 @@ view shared currentUrl urlOrganization model =
 
 viewNewProject : Shared.Model -> Url -> Maybe OrganizationId -> Model -> List (Html Msg)
 viewNewProject shared currentUrl urlOrganization model =
+    let
+        backUrl : String
+        backUrl =
+            shared.user |> Maybe.mapOrElse (\_ -> urlOrganization |> Backend.organizationUrl shared.conf.env) Backend.homeUrl
+    in
     appShell shared.conf.env
         currentUrl
         urlOrganization
@@ -61,7 +66,7 @@ viewNewProject shared currentUrl urlOrganization model =
         (\link -> SelectMenu link.text)
         DropdownToggle
         model
-        [ a [ href (urlOrganization |> Backend.organizationUrl shared.conf.env) ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
+        [ a [ href backUrl ] [ Icon.outline Icon.ArrowLeft "inline-block", text " ", text model.selectedMenu ] ]
         [ viewContent "new-project"
             shared.zone
             model

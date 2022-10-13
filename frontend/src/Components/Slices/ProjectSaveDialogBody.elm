@@ -69,11 +69,9 @@ signIn modalClose loginUrl titleId =
                 [ h3 [ id titleId, class "text-lg leading-6 font-medium text-gray-900" ]
                     [ text "Sign in to save your project" ]
                 , div [ class "mt-2" ]
-                    [ p [ class "text-sm text-gray-500" ]
-                        [ text "Azimutt has "
-                        , bText "upgraded"
-                        , text "! You can now create an account and privately upload your diagram. After that, you will be able to find it anywhere and even share it with your colleagues."
-                        ]
+                    [ p [ class "text-sm text-gray-500" ] [ text "Azimutt has ", bText "upgraded", text "!" ]
+                    , p [ class "text-sm text-gray-500" ] [ text "You can now create an account and privately upload your diagram." ]
+                    , p [ class "text-sm text-gray-500" ] [ text "After that, you will be able to find it anywhere and even share it with your colleagues." ]
                     ]
                 ]
             ]

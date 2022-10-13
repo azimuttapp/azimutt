@@ -1,5 +1,6 @@
-module Libs.Url exposing (asString, buildQueryString, empty)
+module Libs.Url exposing (addQuery, asString, buildQueryString, empty)
 
+import Libs.Maybe as Maybe
 import Url exposing (Url)
 
 
@@ -11,6 +12,11 @@ empty =
 buildQueryString : List ( String, String ) -> String
 buildQueryString params =
     params |> List.map (\( key, value ) -> key ++ "=" ++ Url.percentEncode value) |> String.join "&"
+
+
+addQuery : String -> String -> Url -> Url
+addQuery key value url =
+    { url | query = (url.query |> Maybe.mapOrElse (\q -> q ++ "&") "") ++ (key ++ "=" ++ Url.percentEncode value) |> Just }
 
 
 asString : Url -> String

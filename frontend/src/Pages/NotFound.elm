@@ -7,7 +7,6 @@ import Gen.Params.NotFound exposing (Params)
 import Gen.Route as Route
 import Html exposing (Html)
 import Html.Lazy as Lazy
-import Libs.Models.Env exposing (Env)
 import Libs.Task as T
 import Page
 import Ports exposing (JsMsg(..))
@@ -20,11 +19,11 @@ import View exposing (View)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
+page _ req =
     Page.element
         { init = init req
         , update = update
-        , view = view shared.conf.env
+        , view = view
         , subscriptions = subscriptions
         }
 
@@ -114,22 +113,22 @@ subscriptions _ =
 -- VIEW
 
 
-view : Env -> Model -> View Msg
-view env model =
-    { title = title, body = model |> viewNotFound env }
+view : Model -> View Msg
+view model =
+    { title = title, body = model |> viewNotFound }
 
 
-viewNotFound : Env -> Model -> List (Html Msg)
-viewNotFound env model =
+viewNotFound : Model -> List (Html Msg)
+viewNotFound model =
     [ NotFound.simple
         { brand =
             { img = { src = Backend.resourceUrl "/logo.png", alt = "Azimutt" }
-            , link = { url = Backend.homeUrl env, text = "Azimutt" }
+            , link = { url = Backend.homeUrl, text = "Azimutt" }
             }
         , header = "404 error"
         , title = "Page not found."
         , message = "Sorry, we couldn't find the page you’re looking for."
-        , links = [ { url = Backend.homeUrl env, text = "Go back home" } ]
+        , links = [ { url = Backend.homeUrl, text = "Go back home" } ]
         , footer =
             [ { url = Conf.constants.azimuttDiscussions, text = "Contact Support" }
             , { url = Conf.constants.azimuttTwitter, text = "Twitter" }

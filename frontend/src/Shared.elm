@@ -2,6 +2,7 @@ module Shared exposing (Confirm, Flags, GlobalConf, Model, Msg, Prompt, StoredPr
 
 import Components.Atoms.Icon exposing (Icon)
 import Html exposing (Html)
+import Libs.Bool as Bool
 import Libs.Json.Decode as Decode
 import Libs.Models.Env as Env exposing (Env)
 import Libs.Models.Platform as Platform exposing (Platform)
@@ -131,7 +132,7 @@ update _ msg model =
         GotBackendProjects result ->
             result
                 |> Result.fold
-                    (\err -> ( { model | projectsLoaded = True }, Ports.toast "error" ("Can't decode backend projects: " ++ Backend.errorToString err) ))
+                    (\err -> ( { model | projectsLoaded = True }, Bool.cond (Backend.errorStatus err == 401) Cmd.none (Ports.toast "error" ("Can't decode backend projects: " ++ Backend.errorToString err)) ))
                     (\( orgas, projects ) -> ( { model | organizations = orgas, projects = Sort.lastUpdatedFirst projects, projectsLoaded = True }, Cmd.none ))
 
         JsMessage (Ports.GotLegacyProjects ( errors, projects )) ->

@@ -1,4 +1,4 @@
-module Services.Backend exposing (Error, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, internal, loginUrl, logoutUrl, organizationUrl, resourceUrl, schemaSamples)
+module Services.Backend exposing (Error, SampleSchema, blogArticleUrl, blogUrl, embedUrl, errorStatus, errorToString, getCurrentUser, getDatabaseSchema, getOrganizationsAndProjects, homeUrl, internal, loginUrl, logoutUrl, organizationUrl, resourceUrl, schemaSamples)
 
 import Components.Atoms.Icon exposing (Icon(..))
 import Dict exposing (Dict)
@@ -30,16 +30,21 @@ import Url exposing (Url)
 
 
 type Error
-    = Error String
+    = Error Int String
+
+
+errorStatus : Error -> Int
+errorStatus (Error status _) =
+    status
 
 
 errorToString : Error -> String
-errorToString (Error err) =
+errorToString (Error _ err) =
     err
 
 
-homeUrl : Env -> String
-homeUrl _ =
+homeUrl : String
+homeUrl =
     "/"
 
 
@@ -303,10 +308,10 @@ handleResponse response =
         Http.BadStatus_ metadata body ->
             case body |> Decode.decodeString errorDecoder of
                 Ok err ->
-                    metadata.statusText ++ ": " ++ err |> Error |> Err
+                    metadata.statusText ++ ": " ++ err |> Error metadata.statusCode |> Err
 
                 Err _ ->
-                    (Http.BadStatus metadata.statusCode |> Http.errorToString) ++ (Bool.cond (String.isEmpty body) "" ": " ++ body) |> Error |> Err
+                    (Http.BadStatus metadata.statusCode |> Http.errorToString) ++ (Bool.cond (String.isEmpty body) "" ": " ++ body) |> Error metadata.statusCode |> Err
 
         Http.GoodStatus_ _ body ->
             Ok body
@@ -327,7 +332,12 @@ recoverUnauthorized r =
 
 buildError : Http.Error -> Error
 buildError error =
-    error |> Http.errorToString |> Error
+    case error of
+        BadStatus status ->
+            error |> Http.errorToString |> Error status
+
+        _ ->
+            error |> Http.errorToString |> Error 0
 
 
 errorDecoder : Decode.Decoder String
