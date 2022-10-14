@@ -6,7 +6,7 @@ tags: entity relationship diagram
 author: loic
 ---
 
-[Azimutt](https://azimutt.app/projects) is already the perfect tool to explore your database schema, I hope you experienced it yourself. You can search, display what you need, follow relations and even use advanced feature like find needed joins between two tables or identify problems in your schema such as missing relations. You may like all this and make great use of it in your own investigations, but, it was only personal research. No way to easily share this with your co-workers or anyone else.
+[Azimutt](/home) is already the perfect tool to explore your database schema, I hope you experienced it yourself. You can search, display what you need, follow relations and even use advanced feature like find needed joins between two tables or identify problems in your schema such as missing relations. You may like all this and make great use of it in your own investigations, but, it was only personal research. No way to easily share this with your co-workers or anyone else.
 
 Not anymore! Embed your schema and make it accessible to whom you want:
 

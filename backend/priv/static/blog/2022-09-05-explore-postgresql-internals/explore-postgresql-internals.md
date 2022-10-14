@@ -26,7 +26,7 @@ pg_dump --schema-only --table='pg_catalog.*' --dbname=postgres://postgres:postgr
 pg_dump --schema-only --table='information_schema.*' --dbname=postgres://postgres:postgres@localhost:5432/my_db > information_schema.sql
 ```
 
-And then imported them into [Azimutt](/projects/new?sql):
+And then imported them into [Azimutt](/new?sql):
 
 ![pg_catalog schema in Azimutt]({{base_link}}/pg_catalog-schema-in-azimutt.png)
 
@@ -255,7 +255,7 @@ ORDER BY type_schema, type_name
 
 Here we are, the hardest query of all 😵 It contains almost every trick I needed until now, and also a few more... Especially on the filtering to avoid all the types already defined by PostgreSQL or the ones automatically generated alongside your custom types. I must admit I still don't fully understand it but after a lot of trials, I settled on this as recommended in some discussions... 😬
 
-Finally, the last but very important piece is *comments*. Some companies use them as documentation, so it's key to have them accessible from [Azimutt UI](/projects):
+Finally, the last but very important piece is *comments*. Some companies use them as documentation, so it's key to have them accessible from [Azimutt UI](/home):
 
 ```sql
 -- fetch table & column comments
@@ -277,12 +277,12 @@ If you want to have a look at how I mix the query results to build my JSON schem
 
 ## Explore PostgreSQL schema
 
-That was a long way and explanation. Luckily for you, I packaged my investigations in the [PostgreSQL Azimutt project](/projects/new?sample=postgresql) to make it as easy as possible for you to explore it. Try it out and [tell me]({{azimutt_twitter}}) how it goes 😊
+That was a long way and explanation. Luckily for you, I packaged my investigations in the [PostgreSQL Azimutt project](/new?sample=postgresql) to make it as easy as possible for you to explore it. Try it out and [tell me]({{azimutt_twitter}}) how it goes 😊
 
 And for even more immediate access, here is its embed version (use the fullscreen button for easier exploration):
 
-<iframe width="100%" height="800px" src="/embed?project-url=%2Fsamples%2Fpostgresql.azimutt.json&layout=extract%20schema%20tables&mode=advanced" title="PostgreSQL internals" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
+<iframe width="100%" height="800px" src="/embed?project-url=%2Felm%2Fsamples%2Fpostgresql.azimutt.json&layout=extract%20schema%20tables&mode=advanced" title="PostgreSQL internals" frameborder="0" allowtransparency="true" allowfullscreen="true" scrolling="no" style="box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); border-radius:5px;"></iframe>
 
 Thanks for following me until there, on such a long post ^^
-Don't hesitate if you have any questions and if you haven't tried Azimutt yet, that's your perfect occasion to [discover it](/projects)!
+Don't hesitate if you have any questions and if you haven't tried Azimutt yet, that's your perfect occasion to [discover it](/home)!
 See you soon and **happy hacking!**

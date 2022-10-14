@@ -42,7 +42,7 @@ We are also counting on you to help us prioritize the most impactful ones or sug
 
 In July, we added the ability to [import your database schema using your database connection](./changelog-2022-07) instead of just your exported schema. This was a great help for less technical people as they just need to provide database credentials. But this was also very interesting for us as we had to investigate PostgreSQL internals.
 
-We finally took the time to write a complete article about our process and findings [exploring PostgreSQL internals](./explore-postgresql-internals). Not only we dived into `pg_catalog` and `information_schema` but we also took the opportunity to provide them as a [sample Azimutt project](/projects/new?sample=postgresql) with full documentation, so you can explore and understand much more easily 🎁
+We finally took the time to write a complete article about our process and findings [exploring PostgreSQL internals](./explore-postgresql-internals). Not only we dived into `pg_catalog` and `information_schema` but we also took the opportunity to provide them as a [sample Azimutt project](/new?sample=postgresql) with full documentation, so you can explore and understand much more easily 🎁
 
 ## Cloud Nord
 
