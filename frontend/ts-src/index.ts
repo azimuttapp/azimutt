@@ -73,7 +73,7 @@ app.on('MouseDown', msg => Utils.getElementById(msg.id).dispatchEvent(new Event(
 app.on('Focus', msg => Utils.getElementById(msg.id).focus())
 app.on('Blur', msg => Utils.getElementById(msg.id).blur())
 app.on('ScrollTo', msg => Utils.maybeElementById(msg.id).forEach(e => e.scrollIntoView(msg.position !== ViewPosition.enum.end)))
-app.on('Fullscreen', msg => Utils.fullscreen(msg.maybeId))
+app.on('Fullscreen', msg => Utils.fullscreen(msg.id))
 app.on('SetMeta', setMeta)
 app.on('AutofocusWithin', msg => (Utils.getElementById(msg.id).querySelector<HTMLElement>('[autofocus]'))?.focus())
 app.on('Toast', msg => app.toast(msg.level, msg.message))

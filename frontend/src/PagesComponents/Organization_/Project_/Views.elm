@@ -146,7 +146,7 @@ viewModal currentUrl shared model _ =
          , model.editNotes |> Maybe.map2 (\e m -> ( m.id, viewEditNotes (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.findPath |> Maybe.map2 (\e m -> ( m.id, viewFindPath (model.openedDialogs |> List.member m.id) model.openedDropdown e.settings.defaultSchema e.tables e.settings.findPath m )) model.erd
          , model.schemaAnalysis |> Maybe.map2 (\e m -> ( m.id, viewSchemaAnalysis (e |> Erd.getOrganization) (model.openedDialogs |> List.member m.id) e.settings.defaultSchema e.tables m )) model.erd
-         , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing (model.openedDialogs |> List.member m.id) e m )) model.erd
+         , model.sharing |> Maybe.map2 (\e m -> ( m.id, viewSharing currentUrl (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.save |> Maybe.map2 (\e m -> ( m.id, ProjectSaveDialog.view ProjectSaveMsg ModalClose CreateProject currentUrl shared.user shared.organizations (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.settings |> Maybe.map2 (\e m -> ( m.id, viewProjectSettings shared.zone (model.openedDialogs |> List.member m.id) e m )) model.erd
          , model.sourceUpdate |> Maybe.map (\m -> ( m.id, SourceUpdateDialog.view (PSSourceUpdate >> ProjectSettingsMsg) (PSSourceSet >> ProjectSettingsMsg) ModalClose Noop shared.zone shared.now (model.openedDialogs |> List.member m.id) m ))

@@ -15,6 +15,7 @@ import Libs.Html.Attributes exposing (css)
 import Libs.Models.HtmlId exposing (HtmlId)
 import Libs.Tailwind as Tw exposing (focus, sm)
 import Libs.Time as Time
+import Libs.Url as Url
 import Models.Project as Project exposing (Project)
 import Models.Project.Layout as Layout exposing (Layout)
 import Models.Project.LayoutName exposing (LayoutName)
@@ -25,10 +26,11 @@ import PagesComponents.Organization_.Project_.Models.Erd as Erd exposing (Erd)
 import Ports
 import Services.Backend as Backend
 import Services.Lenses exposing (mapRelations, mapSources, mapTables, setContent, setLayouts)
+import Url exposing (Url)
 
 
-viewSharing : Bool -> Erd -> SharingDialog -> Html Msg
-viewSharing opened erd model =
+viewSharing : Url -> Bool -> Erd -> SharingDialog -> Html Msg
+viewSharing currentUrl opened erd model =
     let
         titleId : HtmlId
         titleId =
@@ -36,14 +38,14 @@ viewSharing opened erd model =
 
         iframeUrl : Maybe String
         iframeUrl =
-            buildIframeUrl model.kind model.content model.layout model.mode
+            buildIframeUrl currentUrl model.kind model.content model.layout model.mode
     in
     Modal.modal { id = model.id, titleId = titleId, isOpen = opened, onBackgroundClick = ModalClose (SharingMsg SClose) }
         [ div [ class "flex" ]
             [ viewIframe iframeUrl
             , div [ class "p-4", style "width" "65ch" ]
                 [ viewHeader titleId
-                , viewBody erd model
+                , viewBody currentUrl erd model
                 ]
             ]
         ]
@@ -77,14 +79,14 @@ viewHeader titleId =
         ]
 
 
-viewBody : Erd -> SharingDialog -> Html Msg
-viewBody erd model =
+viewBody : Url -> Erd -> SharingDialog -> Html Msg
+viewBody currentUrl erd model =
     div []
         [ viewBodyDownload erd
         , viewBodyKindContentInput (model.id ++ "-input") model.kind model.content
         , viewBodyLayoutInput (model.id ++ "-input-layout") model.layout (erd.layouts |> Dict.keys)
         , viewBodyModeInput (model.id ++ "-input-mode") model.mode
-        , viewBodyIframe model
+        , viewBodyIframe currentUrl model
         ]
 
 
@@ -196,12 +198,12 @@ viewBodyModeInput inputId inputValue =
         ]
 
 
-viewBodyIframe : SharingDialog -> Html msg
-viewBodyIframe model =
+viewBodyIframe : Url -> SharingDialog -> Html msg
+viewBodyIframe currentUrl model =
     let
         iframeUrl : Maybe String
         iframeUrl =
-            buildIframeUrl model.kind model.content model.layout model.mode
+            buildIframeUrl currentUrl model.kind model.content model.layout model.mode
     in
     iframeUrl
         |> Maybe.map
@@ -219,10 +221,10 @@ viewBodyIframe model =
         |> Maybe.withDefault (div [] [])
 
 
-buildIframeUrl : EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe String
-buildIframeUrl kind content layout mode =
+buildIframeUrl : Url -> EmbedKind -> String -> LayoutName -> EmbedModeId -> Maybe String
+buildIframeUrl currentUrl kind content layout mode =
     if content /= "" then
-        Just (Conf.constants.azimuttWebsite ++ Backend.embedUrl kind content layout mode)
+        Just (Url.domain currentUrl ++ Backend.embedUrl kind content layout mode)
 
     else
         Nothing

@@ -1,4 +1,4 @@
-module Libs.Url exposing (addQuery, asString, buildQueryString, empty)
+module Libs.Url exposing (addQuery, buildQueryString, domain, empty, relative)
 
 import Libs.Maybe as Maybe
 import Url exposing (Url)
@@ -19,12 +19,41 @@ addQuery key value url =
     { url | query = (url.query |> Maybe.mapOrElse (\q -> q ++ "&") "") ++ (key ++ "=" ++ Url.percentEncode value) |> Just }
 
 
-asString : Url -> String
-asString url =
+domain : Url -> String
+domain url =
+    let
+        http : String
+        http =
+            case url.protocol of
+                Url.Http ->
+                    "http://"
+
+                Url.Https ->
+                    "https://"
+    in
+    addPort url.port_ (http ++ url.host)
+
+
+relative : Url -> String
+relative url =
     -- similar to Url.toString but without the host
     url.path
         |> addPrefixed "?" url.query
         |> addPrefixed "#" url.fragment
+
+
+
+-- taken from Url.elm because they are not exported
+
+
+addPort : Maybe Int -> String -> String
+addPort maybePort starter =
+    case maybePort of
+        Nothing ->
+            starter
+
+        Just port_ ->
+            starter ++ ":" ++ String.fromInt port_
 
 
 addPrefixed : String -> Maybe String -> String -> String

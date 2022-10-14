@@ -51,7 +51,7 @@ loginUrl : Url -> String
 loginUrl currentUrl =
     let
         ( url, redirect ) =
-            ( "/login", currentUrl |> Url.asString )
+            ( "/login", currentUrl |> Url.relative )
     in
     if redirect == "" then
         url
@@ -124,7 +124,7 @@ schemaSamples =
 internal : Url -> Either String Url
 internal url =
     if isExternal url then
-        url |> Url.asString |> Left
+        url |> Url.relative |> Left
 
     else
         url |> Right

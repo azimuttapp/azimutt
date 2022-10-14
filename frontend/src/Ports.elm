@@ -53,8 +53,8 @@ scrollTo id position =
 
 
 fullscreen : Maybe HtmlId -> Cmd msg
-fullscreen maybeId =
-    messageToJs (Fullscreen maybeId)
+fullscreen id =
+    messageToJs (Fullscreen id)
 
 
 setMeta : MetaInfos -> Cmd msg
@@ -282,8 +282,8 @@ elmEncoder elm =
         ScrollTo id position ->
             Encode.object [ ( "kind", "ScrollTo" |> Encode.string ), ( "id", id |> Encode.string ), ( "position", position |> Encode.string ) ]
 
-        Fullscreen maybeId ->
-            Encode.object [ ( "kind", "Fullscreen" |> Encode.string ), ( "maybeId", maybeId |> Encode.maybe Encode.string ) ]
+        Fullscreen id ->
+            Encode.notNullObject [ ( "kind", "Fullscreen" |> Encode.string ), ( "id", id |> Encode.maybe Encode.string ) ]
 
         SetMeta meta ->
             Encode.object

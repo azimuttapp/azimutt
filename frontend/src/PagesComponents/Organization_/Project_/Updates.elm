@@ -241,8 +241,8 @@ update currentLayout now urlOrganization organizations projects msg model =
         FitContent ->
             model |> setDirty True |> mapErdMCmd (fitCanvas now model.erdElem)
 
-        Fullscreen maybeId ->
-            ( model, Ports.fullscreen maybeId )
+        Fullscreen id ->
+            ( model, Ports.fullscreen id )
 
         OnWheel event ->
             ( model |> setDirty True |> mapErdM (Erd.mapCurrentLayoutWithTime now (mapCanvas (handleWheel event model.erdElem))), Cmd.none )
