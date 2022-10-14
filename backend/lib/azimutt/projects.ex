@@ -51,7 +51,7 @@ defmodule Azimutt.Projects do
 
         cond do
           storage == Storage.local() -> attrs |> Project.create_local_changeset(organization, current_user, uuid)
-          storage == Storage.remote() -> attrs |> Project.create_azimutt_changeset(organization, current_user, uuid)
+          storage == Storage.remote() -> attrs |> Project.create_remote_changeset(organization, current_user, uuid)
           true -> raise "Invalid storage: '#{storage}'"
         end
         |> Repo.insert()
@@ -65,13 +65,13 @@ defmodule Azimutt.Projects do
     end
   end
 
-  def update_project(%Project{} = project, attrs, %User{} = current_user) do
+  def update_project(%Project{} = project, attrs, %User{} = current_user, now) do
     # FIXME: atom for seeds and string for api, how make it work for both?
     storage = Storage.from_string_or_atom(attrs[:storage_kind] || attrs["storage_kind"])
 
     cond do
-      storage == Storage.local() -> project |> Project.update_local_changeset(attrs, current_user)
-      storage == Storage.remote() -> project |> Project.update_azimutt_changeset(attrs, current_user)
+      storage == Storage.local() -> project |> Project.update_local_changeset(attrs, current_user, now)
+      storage == Storage.remote() -> project |> Project.update_remote_changeset(attrs, current_user, now)
       true -> raise "Invalid storage: '#{storage}'"
     end
     |> Repo.update()

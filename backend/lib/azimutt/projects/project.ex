@@ -77,7 +77,7 @@ defmodule Azimutt.Projects.Project do
   end
 
   @doc false
-  def create_azimutt_changeset(attrs, %Organization{} = organization, %User{} = current_user, uuid) do
+  def create_remote_changeset(attrs, %Organization{} = organization, %User{} = current_user, uuid) do
     required = [
       :name,
       :encoding_version,
@@ -104,7 +104,7 @@ defmodule Azimutt.Projects.Project do
   end
 
   @doc false
-  def update_local_changeset(%Project{} = project, attrs, %User{} = current_user) do
+  def update_local_changeset(%Project{} = project, attrs, %User{} = current_user, now) do
     # FIXME: check that current_user == local_owner
     required = [
       :name,
@@ -123,11 +123,12 @@ defmodule Azimutt.Projects.Project do
     project
     |> cast(attrs, required ++ [:description])
     |> put_change(:updated_by_id, current_user.id)
+    |> put_change(:updated_at, now)
     |> validate_required(required)
   end
 
   @doc false
-  def update_azimutt_changeset(%Project{} = project, attrs, %User{} = current_user) do
+  def update_remote_changeset(%Project{} = project, attrs, %User{} = current_user, now) do
     required = [
       :name,
       :encoding_version,
@@ -146,6 +147,7 @@ defmodule Azimutt.Projects.Project do
     |> cast(attrs, required ++ [:description])
     |> cast_attachments(attrs, [:file])
     |> put_change(:updated_by_id, current_user.id)
+    |> put_change(:updated_at, now)
     |> validate_required(required)
   end
 end

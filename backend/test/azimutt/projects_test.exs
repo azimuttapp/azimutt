@@ -87,6 +87,7 @@ defmodule Azimutt.ProjectsTest do
 
     @tag :skip
     test "update_project/2 with valid data updates the project" do
+      now = DateTime.utc_now()
       user = user_fixture()
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
@@ -108,7 +109,7 @@ defmodule Azimutt.ProjectsTest do
         storage_version: "some updated storage_version"
       }
 
-      assert {:ok, %Project{} = project} = Projects.update_project(project, update_attrs)
+      assert {:ok, %Project{} = project} = Projects.update_project(project, update_attrs, user, now)
       assert project.description == "some updated description"
       assert project.is_archived == false
       assert project.is_favorited == false
@@ -128,10 +129,11 @@ defmodule Azimutt.ProjectsTest do
 
     @tag :skip
     test "update_project/2 with invalid data returns error changeset" do
+      now = DateTime.utc_now()
       user = user_fixture()
       organization = organization_fixture(user)
       project = project_fixture(organization, user)
-      assert {:error, %Ecto.Changeset{}} = Projects.update_project(project, @invalid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Projects.update_project(project, @invalid_attrs, user, now)
       assert {:ok, project} == Projects.get_project(project.id)
     end
 

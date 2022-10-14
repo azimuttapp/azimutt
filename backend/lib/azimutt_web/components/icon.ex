@@ -139,6 +139,27 @@ defmodule AzimuttWeb.Components.Icon do
     end
   end
 
+  def cloud(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path fill-rule="evenodd" d="M4.5 9.75a6 6 0 0111.573-2.226 3.75 3.75 0 014.133 4.303A4.5 4.5 0 0118 20.25H6.75a5.25 5.25 0 01-2.23-10.004 6.072 6.072 0 01-.02-.496z" clip-rule="evenodd" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path d="M1 12.5A4.5 4.5 0 005.5 17H15a4 4 0 001.866-7.539 3.504 3.504 0 00-4.504-4.272A4.5 4.5 0 004.06 8.235 4.502 4.502 0 001 12.5z" /></.mini>
+        """
+    end
+  end
+
   def code_bracket(assigns) do
     classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
 
@@ -204,6 +225,27 @@ defmodule AzimuttWeb.Components.Icon do
       _ ->
         ~H"""
         <.mini classes={classes}><path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 003 3.5v13A1.5 1.5 0 004.5 18h11a1.5 1.5 0 001.5-1.5V7.621a1.5 1.5 0 00-.44-1.06l-4.12-4.122A1.5 1.5 0 0011.378 2H4.5zm2.25 8.5a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5zm0 3a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clip-rule="evenodd" /></.mini>
+        """
+    end
+  end
+
+  def folder(assigns) do
+    classes = if assigns[:class], do: " #{assigns[:class]}", else: ""
+
+    case assigns[:kind] do
+      "outline" ->
+        ~H"""
+        <.outline classes={classes}><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></.outline>
+        """
+
+      "solid" ->
+        ~H"""
+        <.solid classes={classes}><path d="M19.5 21a3 3 0 003-3v-4.5a3 3 0 00-3-3h-15a3 3 0 00-3 3V18a3 3 0 003 3h15zM1.5 10.146V6a3 3 0 013-3h5.379a2.25 2.25 0 011.59.659l2.122 2.121c.14.141.331.22.53.22H19.5a3 3 0 013 3v1.146A4.483 4.483 0 0019.5 9h-15a4.483 4.483 0 00-3 1.146z" /></.solid>
+        """
+
+      _ ->
+        ~H"""
+        <.mini classes={classes}><path d="M3.75 3A1.75 1.75 0 002 4.75v3.26a3.235 3.235 0 011.75-.51h12.5c.644 0 1.245.188 1.75.51V6.75A1.75 1.75 0 0016.25 5h-4.836a.25.25 0 01-.177-.073L9.823 3.513A1.75 1.75 0 008.586 3H3.75zM3.75 9A1.75 1.75 0 002 10.75v4.5c0 .966.784 1.75 1.75 1.75h12.5A1.75 1.75 0 0018 15.25v-4.5A1.75 1.75 0 0016.25 9H3.75z" /></.mini>
         """
     end
   end
